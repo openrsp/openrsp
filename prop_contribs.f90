@@ -56,37 +56,42 @@ module prop_contribs
    private
 
    type ptb !private: 'perturbation'
-      character*4  :: code  !four-letter abbreviation
-      character*64 :: name  !long name
-      integer      :: ncomp !number of components (when known, 0 otherwise)
-      logical      :: anti  !anti-symmetric (1,3,5th ord.) perturbed integrals
-      logical      :: bas   !basis dependent (sa. GEO and MAG)
-      logical      :: lin   !one-electron operator linear in field strength (EL)
-      logical      :: quad  !one-electron operator quadratic in field strength (MAGO)
+      character(4)  :: code  !four-letter abbreviation
+      character(64) :: name  !long name
+      integer       :: ncomp !number of components (when known, 0 otherwise)
+      logical       :: anti  !anti-symmetric (1,3,5th ord.) perturbed integrals
+      logical       :: bas   !basis dependent (sa. GEO and MAG)
+      logical       :: lin   !one-electron operator linear in field strength (EL)
+      logical       :: quad  !one-electron operator quadratic in field strength (MAGO)
    end type
 
    ! to compactify the table
-   logical, parameter:: T = .true., F = .false.
+   logical, parameter :: T = .true.
+   logical, parameter :: F = .false.
 
-   ! ajt note: EXCI is a ZERO (no) perturbation, and is introduced to
-   !           allow the same code to contract response functions and
-   !           "generalized transition moments".
-   ! ajt note: AUX0..AUX9 are 10 configurable basis-independent 1-electron
-   !           perturbations, configured by setting the corresponding
-   !           HERMIT integral label in prop_auxlab(0:9).
-   type(ptb) :: pert_table(12) = &                        !nc an ba ln qu
-       (/ptb('EXCI', 'Generalized "excitation" field'     , 1, F, F, T, T), &
-         ptb('AUX*', 'Auxiliary integrals on file'        , 1, F, F, T, F), &
-         ptb('EL'  , 'Electric field'                     , 3, F, F, T, F), &
-         ptb('VEL' , 'Velocity'                           , 3, T, F, T, F), &
-         ptb('MAGO', 'Magnetic field w/o. London orbitals', 3, T, F, F, T), &
-         ptb('MAG' , 'Magnetic field with London orbitals', 3, T, T, F, F), &
-         ptb('ELGR', 'Electric field gradient'            , 6, F, F, T, F), &
-         ptb('VIBM', 'Dispacement along vibrational modes', 0, F, T, F, F), &
-         ptb('GEO' , 'Nuclear coordinates'                , 0, F, T, F, F), & !0=uninitialized
-         ptb('NUCM', 'Nuclear magnetic moment'            , 0, F, T, F, T), &
-         ptb('AOCC', 'AO contraction coefficients'        , 0, F, T, F, F), &
-         ptb('AOEX', 'AO exponents'                       , 0, F, T, F, F)/)
+   ! ajt nov09: AUX0..AUX9 are 10 configurable basis-independent 1-electron
+   !            perturbations, configured by setting the corresponding
+   !            HERMIT integral label in prop_auxlab(0:9).
+   ! ajt jan10: EXCI is a ZERO (no) perturbation, and is introduced to
+   !            allow the same code to contract response functions and
+   !            "generalized transition moments".
+   ! ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
+   !            allow the same code to contract response functions and
+   !            frequency-differentiated response functions.
+   type(ptb) :: pert_table(13) = &                         !nc an ba ln qu
+       (/ptb('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
+         ptb('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
+         ptb('AUX*', 'Auxiliary integrals on file'         , 1, F, F, T, F), &
+         ptb('EL'  , 'Electric field'                      , 3, F, F, T, F), &
+         ptb('VEL' , 'Velocity'                            , 3, T, F, T, F), &
+         ptb('MAGO', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
+         ptb('MAG' , 'Magnetic field with London orbitals' , 3, T, T, F, F), &
+         ptb('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
+         ptb('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
+         ptb('GEO' , 'Nuclear coordinates'                 ,-1, F, T, F, F), & !-1:molecule-dependent
+         ptb('NUCM', 'Nuclear magnetic moment'             ,-1, F, T, F, T), &
+         ptb('AOCC', 'AO contraction coefficients'         ,-1, F, T, F, F), &
+         ptb('AOEX', 'AO exponents'                        ,-1, F, T, F, F)/)
 
    character(8) :: prop_auxlab(0:9)
 
@@ -939,7 +944,7 @@ contains
                end do
             end do
          else
-            call quit('prop_energy_reort: GEO, nd > 2 not implemented')
+            call quit('prop_twoave: GEO, nd > 2 not implemented')
          end if
          deallocate(RR)
          if (do_dft()) print* !after all the "...integrated to nn electrons..." prints
@@ -952,7 +957,7 @@ contains
             call twofck('MM', D(1:1), A(1:6))
             ! Kohn-Sham exchange-correlation
             if (do_dft()) then
-               call quit('prop_twoint: MAG MAG not implemented for DFT')
+               call quit('prop_twoave: MAG MAG not implemented for DFT')
             end if
             do k = 0, pd-1
                do j = 0, de(2)-1
@@ -975,7 +980,7 @@ contains
                if (iszero(D(2+k))) cycle
                call twofck('MM', D(2+k), A(:6))
                if (do_dft()) then
-                  call quit('prop_energy_reort: MAG MAG not implemented for DFT')
+                  call quit('prop_twoave: MAG MAG not implemented for DFT')
                end if
                do l = 0, de(4)-1
                   do j = 0, de(2)-1
@@ -991,7 +996,7 @@ contains
                end do
             end do
          else
-            call quit('prop_twoint: MAG MAG and nd > 2 not implemented')
+            call quit('prop_twoave: MAG MAG and nd > 2 not implemented')
          end if
       else if (np==2 .and. all(p==(/'GEO','GEO'/))) then
          allocate(RR((3*natom)*(3*natom)))
@@ -1006,7 +1011,7 @@ contains
             if (nd==0) RR = RR/2 !factor 1/2 for unperturbed Hessian integrals
             ! Kohn-Sham exchange-correlation
             if (do_dft()) then
-               call quit('prop_twoint: GEO GEO, DFT not implemented')
+               call quit('prop_twoave: GEO GEO, DFT not implemented')
             end if
             do j = 0, de(2)-1
                do i = 0, de(1)-1
@@ -1024,7 +1029,7 @@ contains
                   if (iszero(D(2+k))) cycle
                   call twoctr('GG', D(2+k), D(2+de(3)+l), RR)
                   if (do_dft()) then
-                     call quit('prop_energy_reort: GEO GEO, DFT not implemented')
+                     call quit('prop_twoave: GEO GEO, DFT not implemented')
                   end if
                   do j = 0, de(2)-1
                      do i = 0, de(1)-1
@@ -1975,6 +1980,11 @@ contains
 
 #ifndef PRG_DIRAC
 !radovan: is this necessary?
+!ajt: grcont presently needs Da and Db to be consecutive, and
+!     (/Da%elms,Db%elms/) will cause stack overflow, depending
+!     on ulimit and compiler flags; -auto-scalar:fine: -auto:overflow.
+!     A future rewrite of grcont could take a list of pointers
+!     (or just type(matrix)) instead of consecutive real(8) arrays.
       wrk(             1:  Da%nrow**2) = Da%elms !call mat_to_full(D ,1d0,A(:,:,1))
       wrk(Da%nrow**2 + 1:2*Da%nrow**2) = Db%elms !call mat_to_full(DD,1d0,A(:,:,2))
 #endif
