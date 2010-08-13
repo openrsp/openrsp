@@ -91,6 +91,13 @@ module matrix_defop
 
    implicit none
 
+   ! ajt LSDALTON has replaced the (global) quit with lsquit
+   !     with unit (lupri) as extra argument, which doesn't
+   !     exist in DIRAC. For now, this macro gets around that.
+#ifdef LSDALTON_ONLY
+#define quit(msg) lsquit(msg,-1)
+#endif
+
    public matrix
    public init_mat
    public print_mat
@@ -208,7 +215,7 @@ contains
       else if (isdef(A)) then
          nullify(T) !not found, not temporary
       else if (present(errmsg)) then
-         call lsquit(errmsg,-1)
+         call quit(errmsg)
       end if !otherwise, just return null
    end function
 
@@ -224,7 +231,7 @@ contains
       if (top_tmp==max_tmp) then
          print '(a)','error: tmp(1:max_tmp) in linears/matrix_defop.f90 is full'
          print '(a,i2,a)','       increase max_tmp=',max_tmp,' and recompile'
-         call lsquit('matrix new_tmp : tmp(1:max_tmp) is full',-1)
+         call quit('matrix new_tmp : tmp(1:max_tmp) is full')
       end if
       do i=1,top_tmp+1
          if (i==top_tmp) cycle !this i taken
@@ -474,10 +481,10 @@ contains
       if (associated(TC%Z)) then
          if (.not.mat_same(TC%X, TC%Y, 'R',merge('C','R',TC%tx)) .or. &
              .not.mat_same(TC%Z, TC%Y, 'C',merge('R','C',TC%tz)))    &
-            call lsquit('matrix A +/- B : different shapes',-1)
+            call quit('matrix A +/- B : different shapes')
       else
          if (.not.mat_same(TC%X, TC%Y, merge('T','N',TC%tx))) &
-            call lsquit('matrix A +/- B : different shapes',-1)
+            call quit('matrix A +/- B : different shapes')
       end if
       !if either of A and/or B are zero, remove from TC
       if (zeroA.and.zeroB) then
@@ -554,7 +561,7 @@ contains
       end if
       !finally, verify that rows
       if (.not.mat_same(TC%X,TC%Z,merge('R','C',TC%tx),merge('C','R',TC%tz))) &
-         call lsquit('matrix A * B : incompatible shapes',-1)
+         call quit('matrix A * B : incompatible shapes')
       !if either of X or Z are zero, zero C
       if (zeroA.or.zeroB) call zero_tmp(TC)
 
@@ -701,7 +708,7 @@ contains
       end if
       !verify that shapes match
       if (.not.mat_same(A, B, merge('T','N',trps))) &
-         call lsquit('matrix dot/tr(A,B) : different shapes',-1)
+         call quit('matrix dot/tr(A,B) : different shapes')
       !calculate only if prefactor nonzero. "* 2" is due to identical
       if (r/=0) r = r * mat_dot(A, B, trps) * 2 !alpha and beta blocks
       !release any temporary operands
@@ -733,11 +740,11 @@ contains
          if (associated(T%Z)) then
             if ( .not.mat_same(T%X, T%Z, merge('N','T',T%tx.neqv.T%tz), &
                                          merge('C','R',T%tx)) ) &
-               call lsquit('matrix tr(A) : A not square',-1)
+               call quit('matrix tr(A) : A not square')
             r = T%fx * mat_dot(T%X, T%Z, T%tx.neqv.T%tz)
          else
             if (.not.mat_same(T%X,T%X)) &
-               call lsquit('matrix tr(A) : A not square',-1)
+               call quit('matrix tr(A) : A not square')
             r = T%fx * mat_trace_nontmp(T%X)
          end if
          if (associated(T%Y)) &
@@ -763,8 +770,8 @@ contains
       integer,intent(in)         :: zero
       type(matrix)               :: B
       !if (matrix_defop_debug) print *,'mat_eq_zero A=',loc(A),' elms=',loc(A%elms)
-      if (zero/=0) call lsquit('matrix A = z: z must be 0',-1)
-      if (.not.isdef(A)) call lsquit('A = 0: A undefined',-1)
+      if (zero/=0) call quit('matrix A = z: z must be 0')
+      if (.not.isdef(A)) call quit('A = 0: A undefined')
       call init_mat(B, A, alias='FF')
       call init_mat(A, B, zero=.true.)
       call mat_free(B)
@@ -855,9 +862,9 @@ contains
       type(tmp_mat), pointer      :: T
       type(matrix), save, target  :: fixA
       if (.not.isdef(A)) &
-         call lsquit('mat_fix_result(A) : A undefined',-1)
+         call quit('mat_fix_result(A) : A undefined')
       if (isdef(fixA)) &
-         call lsquit('mat_fix_result(A) : another fixed result already exists',-1)
+         call quit('mat_fix_result(A) : another fixed result already exists')
       call init_mat(fixA, A, alias='FF') !diplicate A in fixA
       call init_mat(A, reset=.true.)      !reset/clear/undefine A
       T => new_tmp(A, X=fixA, dx=.true.)   !temporary A = 1*fixA, fixA to be deleted

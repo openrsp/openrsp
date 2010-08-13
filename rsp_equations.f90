@@ -33,12 +33,22 @@ module rsp_equations
    use matrix_defop  !matrix type and operators
    use prop_contribs !integrals and integral contractions
 
+   ! ajt LSDALTON has replaced the (global) quit with lsquit
+   !     with unit (lupri) as extra argument, which doesn't
+   !     exist in DIRAC. For now, this macro gets around that.
+#ifdef LSDALTON_ONLY
+#define quit(msg) lsquit(msg,-1)
+#endif
+
    implicit none
 
    public pert_fock    !contract perturbed Fock-matrices
    public pert_scf_eq  !contract perturbed scf equation residuals
    public pert_dens    !perturbed (or response-) densities and Fock-matrices
    public rsp_equations_debug  !turn debug printing on or off
+
+   ! ajt Freqency derivative hack
+   public solve_scf_eq
 
    ! ajt The following three are public for the moment, but are intended
    !     be accessed through subroutines eventually
@@ -92,17 +102,19 @@ contains
    !> Contract perturbed integrals with (an expansion of) perturbed density
    !> matrices to get the corresponding perturbed Fock matrix.
    !> Optionally, also return the corresponding perturbed overlap integrals
-   subroutine pert_fock(p, dimp, D, F, S, comp, freq)
+   subroutine pert_fock(mol, p, dimp, D, F, S, comp, freq)
+      !> mol/basis/decomp/thresh needed by integrals and solver
+      type(prop_molcfg), intent(in) :: mol
       !> perturbation lables
-      character(*), intent(in)    :: p(:)
+      character(*),      intent(in) :: p(:)
       !> dimension of each p, and thus also of F
-      integer,      intent(in)    :: dimp(:)
+      integer,           intent(in) :: dimp(:)
       !> density matrix expansion for p(:) unperturbed and perturbed
       !> density matrices. size(D) = product(1+dimp)
-      type(matrix), intent(in)    :: D(:)
+      type(matrix),      intent(in) :: D(:)
       !> output, perturbed Fock matrices. Deferred shape (*) to permit
       !> re-ranking. size(F)=product(dimp)
-      type(matrix), intent(inout) :: F(*)
+      type(matrix),   intent(inout) :: F(*)
       !--------------------------------------------------------------------
       !> optionally also output perturbed overlap matrices.
       !> Deferred shape (*) to permit re-ranking
@@ -132,7 +144,7 @@ contains
       end if
       ! fill F with perturbed one-electron integrals, and
       ! optionally S with perturbed overlap integrals
-      call prop_oneint(D(1), p, dimp, F, S, comp=ccomp, freq=ffreq)
+      call prop_oneint(mol, D(1), p, dimp, F, S, comp=ccomp, freq=ffreq)
       ! add p-perturbed Coulomb-exchange+Kohn-Sham contracted against
       call prop_twoint(p, D(1:1), dimp, F, comp=ccomp) !unperturbed D
       ! add unperturbed Coulomb-exchange+Kohn-Sham contribution
@@ -236,24 +248,26 @@ contains
 
    !> Computes the p'th derivative of idempotency relation DSD-D
    !> and SCF equation FDS-SDF, ie. the p-perturbed SCF equations.
-   subroutine pert_scf_eq(S0, p, dimp, Dp, Fp, FDSp, DSDp, comp, freq)
+   subroutine pert_scf_eq(mol, S0, p, dimp, Dp, Fp, FDSp, DSDp, comp, freq)
+      !> mol/basis/decomp/thresh needed by integrals and solver
+      type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix
-      type(matrix),    intent(in) :: S0
+      type(matrix),      intent(in) :: S0
       !> perturbation lables
-      character(*),    intent(in) :: p(:)
+      character(*),      intent(in) :: p(:)
       !> number of components within each p (dimension)
-      integer,         intent(in) :: dimp(:)
+      integer,           intent(in) :: dimp(:)
       !> perturbation expantion of density matrix
-      type(matrix),    intent(in) :: Dp(:)
+      type(matrix),      intent(in) :: Dp(:)
       !> perturbation expantion of Fock matrix
-      type(matrix),    intent(in) :: Fp(:)
+      type(matrix),      intent(in) :: Fp(:)
       !-----------------------------------
       !> resulting perturbed SCF equation (or residual)
       !> Deferred shape (*) to permit any rank. size(FDSp) = product(dimp)
-      type(matrix), intent(inout) :: FDSp(*)
+      type(matrix),   intent(inout) :: FDSp(*)
       !> resulting perturbed idempotency condition
       !> Deferred shape (*) to permit any rank, size(DSDp) = product(dimp)
-      type(matrix), intent(inout) :: DSDp(*)
+      type(matrix),   intent(inout) :: DSDp(*)
       !-------------------------------------
 #ifdef PRG_DIRAC
       type(matrix) :: SDFp(1), X
@@ -308,7 +322,7 @@ contains
          if (presnt) then
             DSp(1) = Dp(1)*S0
             if (bas(1)) FDp(1) = Fp(1)*Dp(1)
-            if (bas(1)) call prop_oneint(S0, p, dimp, S=Sp(2:1+dimp(1)), comp=c)
+            if (bas(1)) call prop_oneint(mol, S0, p, dimp, S=Sp(2:1+dimp(1)), comp=c)
             do i0 = 1, dimp(1)
                i = 1+i0
 #ifdef PRG_DIRAC
@@ -334,7 +348,7 @@ contains
          if (presnt) then
             DSp(1) = Dp(1) * S0
             if (all(bas)) FDp(1) = Fp(1) * Dp(1)
-            if (all(bas))call prop_oneint(S0, p, dimp, S=Sp(2+dimp(1)+dimp(2) : &
+            if (all(bas))call prop_oneint(mol, S0, p, dimp, S=Sp(2+dimp(1)+dimp(2) : &
                                           (dimp(1)+1)*(dimp(2)+1)), comp=c)
             do i0 = 1, dimp(1)*dimp(2)
                i = 1+dimp(1)+dimp(2)+i0
@@ -358,9 +372,9 @@ contains
          presnt = .not.all((/(iszero(Dp(i)), i=2,1+dimp(1))/)) .and. &
                   .not.all((/(iszero(Dp(j)), j=2+dimp(1),1+dimp(1)+dimp(2))/))
          if (presnt) then
-            if (bas(1)) call prop_oneint(S0, p(1:1), dimp(1:1), &
+            if (bas(1)) call prop_oneint(mol, S0, p(1:1), dimp(1:1), &
                                          S=Sp(2:1+dimp(1)), comp=c(1:1))
-            if (bas(2)) call prop_oneint(S0, p(2:2), dimp(2:2), S=Sp(2+dimp(1): &
+            if (bas(2)) call prop_oneint(mol, S0, p(2:2), dimp(2:2), S=Sp(2+dimp(1): &
                                          1+dimp(1)+dimp(2)), comp=c(2:2))
             do j0 = 0, dimp(2)-1
                j = 2+dimp(1)+j0
@@ -475,10 +489,10 @@ contains
 !       b = cc(n+1:n+n) - cc(1:n) + 1
 !       if (size(D) /= product(b+1)) &
 !          call quit('pert_scf_eq: size(D) /= product(b+1)' &
-!                    // ' wrong number of density matrices')
+!                 // ' wrong number of density matrices')
 !       if (size(F) /= product(b+1)) &
 !          call quit('pert_scf_eq: size(F)/=product(b+1)' &
-!                    // ' wrong number of Fock matrices')
+!                 // ' wrong number of Fock matrices')
 !       !ajt fixme: This should be written optimized an for general orders
 !       if (n==1 .and. all( p=='EL' .or. p=='MAGO' )) then
 !          do i = 1, b(1)
@@ -638,10 +652,9 @@ contains
    !> Solve the p-perturbed response equations for Dp and Fp.
    !> If already stored in the cache (solved_eqs), the solution is fetched
    !> from there. Otherwise, the RHSs are computed before calling the solver
-   subroutine pert_dens(decomp, S0, p, dimp, D, F, Dp, Fp, comp, freq)
-      use decompMod, only: DecompItem
-      !> Contains matrices from OAO decomposition of overlap matrix
-      type(decompItem),intent(inout) :: decomp
+   subroutine pert_dens(mol, S0, p, dimp, D, F, Dp, Fp, comp, freq)
+      !> mol/basis/decomp/thresh needed by integrals and solver
+      type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix
       type(matrix), intent(in) :: S0
       !> perturbation lables
@@ -666,7 +679,8 @@ contains
       type(matrix), dimension(product(dimp)) :: DSDp, FDSp, Sp
       type(cached_sol), pointer :: sol
       integer    :: ccomp(size(p)), pd, pd1, sym, nanti, i, j
-      complex(8) :: ffreq(size(p))
+      complex(8) :: ffreq(size(p)), freqdiff
+
       if (size(dimp) /= size(p)) call quit('pert_dens: Differing numbers ' &
                // 'of perturbations and dimensions, size(dimp) /= size(p)')
       pd  = product(dimp)
@@ -706,7 +720,7 @@ contains
             end if
          end do
          ! calculate the corresponding Fock matrix
-         call pert_fock(p, dimp, (/D,Dp(:pd)/), Fp(:pd), &
+         call pert_fock(mol, p, dimp, (/D,Dp(:pd)/), Fp(:pd), &
                         comp=ccomp, freq=ffreq)
          return
       end do
@@ -725,11 +739,11 @@ contains
       if (size(p)==1 .and. p(1)=='FREQ') return
       ! calculate all lower-order contributions to the
       ! minus-right-hand-sides DSDp and FDSp
-      call pert_scf_eq(S0, p, dimp, (/D,Dp(:pd)/), (/F,Fp(:pd)/), FDSp, DSDp, &
+      call pert_scf_eq(mol, S0, p, dimp, (/D,Dp(:pd)/), (/F,Fp(:pd)/), FDSp, DSDp, &
                        comp=ccomp, freq=ffreq)
       ! calculate all lower-order contributions to the p-perturbed Fock
       ! matrices, as well as the p-perturbed overlap matrices
-      call pert_fock(p, dimp, (/D,Dp(:pd)/), Fp(:pd), Sp, &
+      call pert_fock(mol, p, dimp, (/D,Dp(:pd)/), Fp(:pd), Sp, &
                      comp=ccomp, freq=ffreq)
 
       ! top DSDp off with DSpD and FDSp with (F-w/2S)DSp-SpD(F+w/2S)
@@ -747,8 +761,36 @@ contains
       end do
       Sp(:) = 0 !free
       do i = 1, pd
-         call solve_scf_eq(decomp, S0, D(1), F(1), sym, sum(ffreq), 1, &
+         ! KK/AJT quick fix. Avoid solving the same response equation twice for
+         ! second-order response equations (i.e. when the two perturbations are identical).
+         SecondOrderEq: if(size(p) == 2) then
+           freqdiff = ffreq(1) - ffreq(2)
+           ! If the two perturbations are identical
+           CopySolutionAlreadyDone: if(dimp(1) == 3 .and. dimp(2) == 3 &
+                                  & .and. p(1)==p(2) .and. abs(freqdiff) < 1e-9 ) then
+              ! Component 2 equals component 4 (similarly for 3,7 and 6,8)
+              if(i==4) then
+                 Dp(i) = Dp(2)
+                 Fp(i) = Fp(2)
+                 cycle
+              end if
+              if(i==7) then
+                 Dp(i) = Dp(3)
+                 Fp(i) = Fp(3)
+                 cycle
+              end if
+              if(i==8) then
+                 Dp(i) = Dp(6)
+                 Fp(i) = Fp(6)
+                 cycle
+              end if
+           end if CopySolutionAlreadyDone
+        end if SecondOrderEq
+
+         ! If no symmetry can be exploited, calculate response parameter
+         call solve_scf_eq(mol, S0, D(1), F(1), sym, sum(ffreq), 1, &
                            DSDp(i:i), FDSp(i:i), Dp(i:i), Fp(i:i))
+
       end do
       print* !ajt Blank line after prints from solve_scf_eq
    end subroutine
@@ -765,10 +807,9 @@ contains
    !>           solved in one go
    !> ajt feb10 For linsca, added comparison with excitation energies,
    !>           and projection
-   subroutine solve_scf_eq(decomp, S0, D0, F0, sym, freq, neq, DSDp, FDSp, Dp, Fp)
-      !       in:          -----------------------------------------------
-      !       out:                                                         ------
-      use decompMod
+   subroutine solve_scf_eq(mol, S0, D0, F0, sym, freq, neq, DSDp, FDSp, Dp, Fp)
+      !       in:          --------------------------------------------
+      !       out:                                                      ------
 #ifdef PRG_DIRAC
       use dirac_interface
       use aor_cfg
@@ -777,12 +818,13 @@ contains
       use dalton_ifc
 #endif
 #ifdef VAR_LINSCA
-      use RSPsolver, only: rsp_init, rsp_solver
+      use RSPsolver,     only: rsp_init, rsp_solver
       use complexsolver, only: rsp_complex_init, rsp_complex_solver
-      use scf_config, only: cfg_rsp_complex, cfg_rsp_gamma
+      use scf_config,    only: cfg_rsp_complex, cfg_rsp_gamma
+      use decompMod,     only: decompItem
 #endif
-      !> Contains matrices from OAO decomposition of overlap matrix
-      type(decompItem),intent(inout) :: decomp
+      !> mol/basis/decomp/thresh needed by integrals and solver
+      type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix
       type(matrix), intent(in)    :: S0
       !> unperturbed density matrix
@@ -829,6 +871,9 @@ contains
       integer,      allocatable :: iexci(:)     !indices in solved_eqs
       type(matrix), allocatable :: Vexci(:)     !resonant excitation vector(s)
       complex(8),   allocatable :: tsmom(:,:,:) !transition moments
+      ! points to mol%decomp, which in intent(inout) in the solvers
+      type(decompItem), pointer :: decomp
+      decomp => mol%decomp
 #endif /* PRG_DIRAC */
       ! ajt Since we are called from pert_dens only, this check is not really needed...
       if (sym /= -1 .and. sym /= 0 .and. sym /= +1) &
@@ -940,8 +985,9 @@ contains
             call init_mat(reXph(1), Xph(1), alias='RF')
             call init_mat(imXph(1), Xph(1), alias='IF')
             ! solve for the real and imaginary part of the FDSp simlultaneously
-            call rsp_complex_solver(decomp, F0, D0, S0, 1, reFDSp(1:1), freq1, 1, &
-                                    reXph(1:1), imXph(1:1), .true., gdi=imFDSp(1:1))
+            call rsp_complex_solver(decomp, F0, D0, S0, 1, reFDSp(1:1), &
+                                    freq1, 1, reXph(1:1), imXph(1:1),       &
+                                    .true., gdi=imFDSp(1:1))
             !clear re and im aliases of FDSp and Xph
             call init_mat(reFDSp(1), reset=.true.)
             call init_mat(imFDSp(1), reset=.true.)

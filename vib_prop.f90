@@ -843,15 +843,15 @@ contains
       logical      :: exists
       ! verify that frequencies sum to zero
       if (abs(sum(freq)) > 1d-15) &
-         call lsquit('vibhyp_hyp_dipgra_polgra: sum(freq) should be zero!',-1)
+         call quit('vibhyp_hyp_dipgra_polgra: sum(freq) should be zero!')
       ! verify that DALTON.HES exists before doing anything
 #ifdef LSDALTON_ONLY
       call lsquit('Cannot call GPINQ, only new integral code is compiled',-1)
 #else
       call GPINQ('DALTON.HES', 'EXIST', exists)
 #endif
-      if (.not.exists) call lsquit('vibhyp_hyp_dipgra_polgra: Hessian file', &
-                                 ' DALTON.HES not found, but will be needed',-1)
+      if (.not.exists) call quit('vibhyp_hyp_dipgra_polgra: Hessian file', &
+                                 ' DALTON.HES not found, but will be needed')
       ! dipole moment
       dip = 0
       call prop_oneave(mol, S, (/'EL'/), (/D/), (/3/), dip)

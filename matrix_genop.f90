@@ -38,6 +38,13 @@ module matrix_genop
 
    implicit none
 
+   ! ajt LSDALTON has replaced the (global) quit with lsquit
+   !     with unit (lupri) as extra argument, which doesn't
+   !     exist in DIRAC. For now, this macro gets around that.
+#ifdef LSDALTON_ONLY
+#define quit(msg) lsquit(msg,-1)
+#endif
+
    public matrix
    public mat_init
    public mat_free
@@ -86,29 +93,29 @@ contains
       logical :: taa, tbb, zer, res, cplx
       integer :: nrow, ncol
       if (present(ta) .and. .not.present(A)) &
-         call lsquit('mat_init input error: ta cannot be present without A',-1)
+         call quit('mat_init input error: ta cannot be present without A')
       if (present(B) .and. .not.present(ta)) &
-         call lsquit('mat_init input error: B cannot be present without A',-1)
+         call quit('mat_init input error: B cannot be present without A')
       if (present(tb) .and. .not.present(B)) &
-         call lsquit('mat_init input error: tb cannot be present without B',-1)
+         call quit('mat_init input error: tb cannot be present without B')
       if (present(reset) .and. present(A)) &
-         call lsquit('mat_init input error: reset cannot be present with A',-1)
+         call quit('mat_init input error: reset cannot be present with A')
       if (present(zero) .and. .not.present(A)) &
-         call lsquit('mat_init input error: zero cannot be present without A',-1)
+         call quit('mat_init input error: zero cannot be present without A')
       if (present(alias) .and. .not.present(A)) &
-         call lsquit('mat_init input error: alias cannot be present without A',-1)
+         call quit('mat_init input error: alias cannot be present without A')
       if (present(alias) .and. present(ta)) &
-         call lsquit('mat_init input error: alias cannot be present with ta',-1)
+         call quit('mat_init input error: alias cannot be present with ta')
       taa = .false.
       if (present(ta)) then
          if (ta/='N' .and. ta/='T') &
-             call lsquit("mat_init input error: ta is not 'N' or 'T'",-1)
+             call quit("mat_init input error: ta is not 'N' or 'T'")
          taa = (ta=='T')
       end if
       tbb = .false.
       if (present(tb)) then
          if (tb/='N' .and. tb/='T') &
-             call lsquit("mat_init input error: tb is not 'N' or 'T'",-1)
+             call quit("mat_init input error: tb is not 'N' or 'T'")
          tbb = (tb=='T')
       end if
       res = .false.
@@ -147,7 +154,7 @@ contains
             end if
             C%complex = .false.
          else if (alias/='FF') then
-             call lsquit("mat_init input error: alias cannot be '" // alias // "'",-1)
+             call quit("mat_init input error: alias cannot be '" // alias // "'")
          end if
       else
          !print *,'mat_init',loc(C)
@@ -179,7 +186,7 @@ contains
       type(matrix), intent(in) :: A
       logical                  :: mat_iszero
       if (A%nrow==-1 .and. A%ncol==-1) &
-         call lsquit('mat_iszero(A): matrix A undefined',-1)
+         call quit('mat_iszero(A): matrix A undefined')
       mat_iszero = .not.associated(A%elms)
    end function
 
@@ -207,7 +214,7 @@ contains
       else if (taa=='C' .and. tbb=='C') then
          mat_same = (A%ncol==B%ncol)
       else
-         call lsquit('mat_same input error : ta='//taa//' tb='//tbb,-1)
+         call quit('mat_same input error : ta='//taa//' tb='//tbb)
       end if
       if (.not.present(ta) .and. .not.present(tb)) &
          mat_same = mat_same .and. associated(A%elms,B%elms)
@@ -439,7 +446,7 @@ contains
       type(matrix), intent(in) :: A
       real(8)                  :: r
       integer                  :: i
-      if (A%nrow/=A%ncol) call lsquit('mat_trace_nontmp(A) : A not square',-1)
+      if (A%nrow/=A%ncol) call quit('mat_trace_nontmp(A) : A not square')
       r = 0d0
       if (associated(A%elms)) &
          r = sum( (/ ( A%elms(1 + (i-1)*(A%nrow+1) ), i=1,A%nrow ) /) )
@@ -473,7 +480,7 @@ contains
       if (present(braces)) then
          siz = len(braces)
          if (siz<1 .or. siz>4) &
-            call lsquit('matrix_genop.mat_print: Argument braces has wrong length',-1)
+            call quit('matrix_genop.mat_print: Argument braces has wrong length')
          brac = braces
          if (siz==1) brac(2:2) = ','
          if (siz<=2) &
