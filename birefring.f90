@@ -16,7 +16,7 @@ module birefring
 #ifdef LSDALTON_ONLY
 #define quit(msg) lsquit(msg,mol%lupri)
 #endif
-
+ 
    public efgb_Jpri_Bten_Bcal
    public efgb_output
    public cme_jones_eta_apri
