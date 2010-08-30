@@ -72,6 +72,7 @@ module prop_contribs
 
    private
 
+
    !> Type describing a single field in a response function
    !> or response equation. A response equation (or density)
    !> corresponds to an array of prop_field. Similarly
@@ -88,11 +89,21 @@ module prop_contribs
       integer      :: ncomp
    end type
 
+
    !> Molecule configuration type, abstracting data and settings
    !> to be passed to solver and integral routines.
    !> Should eventually be moved to separate program-specific
    !> interface modules
    type prop_molcfg
+      !> basic/prototype zero matrix, such as overlap or diplen
+      !> Must have shape set, but may (should) not be allocated.
+      !> Used to create/initialize other matrices, and thus hide
+      !> program-specific information, like sparse/full,
+      !> 1-comp/2-comp/4-comp, real/complex, etc. from response
+      !> code.
+      type(matrix)              :: zeromat
+      !> number of atoms
+      integer,          pointer :: natoms
       !> unit number for printing output
       integer,          pointer :: lupri
 #ifdef VAR_LINSCA
@@ -105,47 +116,56 @@ module prop_contribs
 #endif
    end type
 
-   type ptb !private: 'perturbation'
-      character(4)  :: code  !four-letter abbreviation
-      character(64) :: name  !long name
-      integer       :: ncomp !number of components (when known, 0 otherwise)
-      logical       :: anti  !anti-symmetric (1,3,5th ord.) perturbed integrals
-      logical       :: bas   !basis dependent (sa. GEO and MAG)
-      logical       :: lin   !one-electron operator linear in field strength (EL)
-      logical       :: quad  !one-electron operator quadratic in field strength (MAGO)
+
+   !> private struct to collect 
+   type prop_field_info
+      !> four-letter abbreviation
+      character(4)  :: code
+      !> long name
+      character(64) :: name
+      !> number of components (when known, 0 otherwise)
+      integer       :: ncomp
+      !> anti-symmetric (1,3,5th ord.) perturbed integrals
+      logical       :: anti
+      !> basis dependent (sa. GEO and MAG)
+      logical       :: bas
+      !> one-electron operator linear in field strength (EL)
+      logical       :: lin
+      !> one-electron operator quadratic in field strength (MAGO)
+      logical       :: quad
    end type
+
 
    ! to compactify the table
    logical, parameter :: T = .true.
    logical, parameter :: F = .false.
 
-   ! ajt nov09: AUX0..AUX9 are 10 configurable basis-independent 1-electron
-   !            perturbations, configured by setting the corresponding
-   !            HERMIT integral label in prop_auxlab(0:9).
-   ! ajt jan10: EXCI is a ZERO (no) perturbation, and is introduced to
-   !            allow the same code to contract response functions and
-   !            "generalized transition moments".
-   ! ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
-   !            allow the same code to contract response functions and
-   !            frequency-differentiated response functions.
-   type(ptb) :: pert_table(13) = &                         !nc an ba ln qu
-       (/ptb('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
-         ptb('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
-         ptb('AUX*', 'Auxiliary integrals on file'         , 1, F, F, T, F), &
-         ptb('EL'  , 'Electric field'                      , 3, F, F, T, F), &
-         ptb('VEL' , 'Velocity'                            , 3, T, F, T, F), &
-         ptb('MAGO', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
-         ptb('MAG' , 'Magnetic field with London orbitals' , 3, T, T, F, F), &
-         ptb('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
-         ptb('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
-         ptb('GEO' , 'Nuclear coordinates'                 ,-1, F, T, F, F), & !-1:molecule-dependent
-         ptb('NUCM', 'Nuclear magnetic moment'             ,-1, F, T, F, T), &
-         ptb('AOCC', 'AO contraction coefficients'         ,-1, F, T, F, F), &
-         ptb('AOEX', 'AO exponents'                        ,-1, F, T, F, F)/)
+
+   !> ajt nov09: AUX0..AUX9 are 10 configurable basis-independent 1-electron
+   !>            perturbations, configured by setting the corresponding
+   !>            HERMIT integral label in prop_auxlab(0:9).
+   !> ajt jan10: EXCI is a ZERO (no) perturbation, and is introduced to
+   !>            allow the same code to contract response functions and
+   !>            "generalized transition moments".
+   !> ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
+   !>            allow the same code to contract response functions and
+   !>            frequency-differentiated response functions.
+   type(prop_field_info) :: field_list(13) = &                         !nc an ba ln qu
+      (/prop_field_info('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
+        prop_field_info('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
+        prop_field_info('AUX*', 'Auxiliary integrals on file'         , 1, F, F, T, F), &
+        prop_field_info('EL'  , 'Electric field'                      , 3, F, F, T, F), &
+        prop_field_info('VEL' , 'Velocity'                            , 3, T, F, T, F), &
+        prop_field_info('MAGO', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
+        prop_field_info('MAG' , 'Magnetic field with London orbitals' , 3, T, T, F, F), &
+        prop_field_info('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
+        prop_field_info('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
+        prop_field_info('GEO' , 'Nuclear coordinates'                 ,-1, F, T, F, F), & !-1=mol-dep
+        prop_field_info('NUCM', 'Nuclear magnetic moment'             ,-1, F, T, F, T), & !-1=mol-dep
+        prop_field_info('AOCC', 'AO contraction coefficients'         ,-1, F, T, F, F), & !-1=mol-dep
+        prop_field_info('AOEX', 'AO exponents'                        ,-1, F, T, F, F)/)  !-1=mol-dep
 
    character(8) :: prop_auxlab(0:9)
-
-   integer :: natom=0 !unitialized
 
    character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
 
@@ -169,54 +189,57 @@ contains
          k = k / 10
       end do
       if (k /= 0) call quit('prefix_zeros error: Argument integer does not fit ' &
-                         // 'in the specified number of ASCII caracters')
+                           // 'in the specified number of ASCII caracters')
    end function
 #endif /* VAR_LINSCA */
 
 
+   !> Contracts the 1-electron integrals perturbed by the perturbations p(:)
+   !> with the perturbed density matrices in D(:) (e.g. D=(/Dxy/) for a 2nd
+   !> order density), and ADDS the result to the property (rsp func) array
+   !> E(:). Front for the private subroutine 'oneave' below, checking the
+   !> arguments' dimensions, and doing permutations
+   !> S0 is passed as argument only as reference to nuclei and basis set
    subroutine prop_oneave(mol, S0, p, D, dime, E, perm, comp, freq, DFD)
-   !--------------------------------------------------------------------------
-   ! Contracts the 1-electron integrals perturbed by the perturbations p(:)
-   ! with the perturbed density matrices in D(:) (e.g. D=(/Dxy/) for a 2nd
-   ! order density), and ADDS the result to the property (rsp func) array
-   ! E(:). Front for the private subroutine 'oneave' below, checking the
-   ! arguments' dimensions, and doing permutations
-   ! S0 is passed as argument only as reference to nuclei and basis set
-   !--------------------------------------------------------------------------
+      !> structure containing integral program settings
       type(prop_molcfg), intent(in) :: mol
-      type(matrix), intent(in) :: S0   !unperturbed overlap matrix
-      character(*), intent(in) :: p(:) !p(np) perturbation lables
-      type(matrix), intent(in) :: D(:) !(un)perturbed density matrices to
-                        !contract perturbed one-electron integrals with.
-                        !If perm present, size(D) = product(dime(perm(np+1:np+nd))),
-                        !if perm not present, size(D) = product(dime(np+1:np+nd))
-      integer,      intent(in) :: dime(:) !dime(np+nd) = shape(E),
-                        !dimensions of property
-      !------------------------------------------------------------------------
-      complex(8), intent(inout) :: E(*) !property contributions,
-                        !works incrementally, thus contributions are
-                        !ADDED to E(*). size(E) = product(dime)
-      !------------------------------------------------------------------------
-      integer,      optional, intent(in) :: perm(:) !perm(np+nd), permutation of indices.
-                        !For each dimension of p and D, the corresponding dimension in E.
-                        !Default 1 2 ... np+nd (no permutation)
-      integer,      optional, intent(in) :: comp(:) !comp(np), starting component index
-                        !for each p. Default 1 1 ... 1
-      complex(8),   optional, intent(in) :: freq(:) !freq(np), complex frequencies
-                        !for each p, default all zero. Multiply the half-derivative
-                        !overlap integrals, thus no contribution if basis independent
-                        !of p
-      type(matrix), optional, intent(in) :: DFD(:) !optional perturbed energy-weighted
-                        !density matrices. Contracted against perturbed overlap integrals
-      !------------------------------------------------------------------------
+      !> unperturbed overlap matrix
+      type(matrix),      intent(in) :: S0
+      !> p(np) perturbation lables
+      character(*),      intent(in) :: p(:)
+      !> (un)perturbed density matrices to
+      !> contract perturbed one-electron integrals with.
+      !> If perm present, size(D) = product(dime(perm(np+1:np+nd))),
+      !> if perm not present, size(D) = product(dime(np+1:np+nd))
+      type(matrix),      intent(in) :: D(:)
+      !> dime(np+nd) = shape(E), dimensions of property
+      integer,           intent(in) :: dime(:)
+      !-------------------------------------------------------------
+      !> property contributions, works incrementally, thus
+      !> contributions are ADDED to E(*). size(E) = product(dime)
+      complex(8),     intent(inout) :: E(*) 
+      !-------------------------------------------------------------
+      !> perm(np+nd), permutation of indices.
+      !> For each dimension of p and D, the corresponding dimension in E.
+      !> Default 1 2 ... np+nd (no permutation)
+      integer,      optional, intent(in) :: perm(:)
+      !> comp(np), starting component index for each p.
+      !> Default 1 1 ... 1
+      integer,      optional, intent(in) :: comp(:)
+      !> freq(np), complex frequencies
+      !> for each p, default all zero. Multiply the half-derivative
+      !> overlap integrals, thus no contribution if basis independent of p
+      complex(8),   optional, intent(in) :: freq(:)
+      !> optional perturbed energy-weighted density matrices.
+      !> Contracted against perturbed overlap integrals
+      type(matrix), optional, intent(in) :: DFD(:) 
+      !-------------------------------------------------------------
       integer      :: idxp(size(p)), pperm(size(dime)), ccomp(size(p)), &
                       stepe(size(dime)), ddime(size(dime)), idxe(size(dime)), &
                       i, j, k, tmpi, nd
       character(4) :: pp(size(p)), tmpp
       complex(8)   :: ffreq(size(p)), Etmp(product(dime)), tmpf
       logical      :: zero, bas
-      ! (re-)initialize the module's data on nuclei and basis
-      call init_this_module(S0)
       ! verify that all perturbation labels exist, find index of each
       idxp = (/(idx(p(i)), i=1,size(p))/)
       ! determine whether these integrals are zero. If there is more than 1
@@ -225,16 +248,16 @@ contains
       j = 0
       k = 0
       do i = 1, size(p)
-         if (.not.pert_table(idxp(i))%lin .and. &
-             .not.pert_table(idxp(i))%quad) cycle
+         if (.not.field_list(idxp(i))%lin .and. &
+             .not.field_list(idxp(i))%quad) cycle
          ! if both linear and quadratic, interpret as ZERO (like EXCI)
-         if (pert_table(idxp(i))%lin .and. &
-             pert_table(idxp(i))%quad) zero = .true.
+         if (field_list(idxp(i))%lin .and. &
+             field_list(idxp(i))%quad) zero = .true.
          if (j /= 0) then !if second lin or quad perturbation
             ! if j was EL, then i is second EL (or first MAGO)
-            if (pert_table(idxp(j))%lin) zero = .true.
+            if (field_list(idxp(j))%lin) zero = .true.
             ! if j was MAGO, and different from i, also zero
-            if (pert_table(idxp(j))%quad .and. &
+            if (field_list(idxp(j))%quad .and. &
                idxp(i) /= idxp(j)) zero = .true. !two different quadratic
             !third linear or quadratic perturbation
             if (k /= 0) zero = .true.
@@ -275,9 +298,9 @@ contains
                     // 'Lowest component indices must be positive, comp <= 0')
          ccomp = comp
       end if
-      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(p))) &
+      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(mol,p))) &
          call quit('prop_oneave argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(p)')
+                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(mol,p)')
       ! check optional argument freq, default to zero
       ffreq = 0
       if (present(freq)) then
@@ -286,10 +309,10 @@ contains
          ffreq = freq
       end if
       ! if unperturbed density and anti-symmetric integral, also zero
-      j = count((/(pert_table(idxp(i))%anti, i=1,size(p))/))
+      j = count((/(field_list(idxp(i))%anti, i=1,size(p))/))
       if (size(p)==size(dime) .and. mod(j,2)==1) then
          ! if not all bas-dep, or all bas-dep and zero frequencies
-         if (.not.all((/(pert_table(idxp(i))%bas,i=1,size(p))/)) &
+         if (.not.all((/(field_list(idxp(i))%bas,i=1,size(p))/)) &
              .or. all(ffreq==0)) zero = .true.
       end if
       ! sort perturbations p so that idxp is descending
@@ -314,7 +337,7 @@ contains
       if (size(D) /= nd) call quit('prop_oneave error: Number of' &
                // 'perturbed densities D does not correspond to dime (and perm)')
       ! verify number of DFD, and that all are defined
-      bas = all((/(pert_table(idxp(i))%bas, i=1,size(p))/))
+      bas = all((/(field_list(idxp(i))%bas, i=1,size(p))/))
       if (present(DFD)) then
          if (size(DFD) /= nd) call quit('prop_oneave error: Number of' &
                // 'perturbed DFD differs from number of perturbed densities D')
@@ -352,30 +375,42 @@ contains
 
 
    subroutine oneave(mol, S0, np, p, c, dp, w, nd, D, E, DFD)
-      type(prop_molcfg), intent(in) :: mol
-      type(matrix),  intent(in)  :: S0      !unperturbed overlap, to know its dimension
-      integer,       intent(in)  :: np      !number of perturbations and order of density
-      character(*),  intent(in)  :: p(np)   !perturbation lables
-      integer,       intent(in)  :: c(np)   !lowest component of each perturbation
-      integer,       intent(in)  :: dp(np)  !dimensions of property integrals
-      complex(8),    intent(in)  :: w(np)   !frequency of each p
-      integer,       intent(in)  :: nd      !dimensions of property integrals
-      type(matrix),  intent(in)  :: D(max(1,nd)) !un-/perturbed density matrices,
-                                            !size(D) = product(1+de(np+1:np+nd))
-      complex(8),    intent(out) :: E(*)    !resulting one-electron property contributions
-                                            !size(E) = product(dp) * nd
+      !> structure containing integral program settings
+      type(prop_molcfg), intent(in)  :: mol
+      !> unperturbed overlap, to know its dimension
+      type(matrix),      intent(in)  :: S0
+      !> number of perturbations and order of density
+      integer,           intent(in)  :: np
+      !> perturbation lables
+      character(*),      intent(in)  :: p(np)
+      !> lowest component of each perturbation
+      integer,           intent(in)  :: c(np)
+      !> dimensions of property integrals
+      integer,           intent(in)  :: dp(np)
+      !> frequency of each p
+      complex(8),        intent(in)  :: w(np)
+      !> dimensions of property integrals
+      integer,           intent(in)  :: nd
+      !> un-/perturbed density matrices,
+      !> size(D) = product(1+de(np+1:np+nd))
+      type(matrix),      intent(in)  :: D(max(1,nd))
+      !-----------------------------------------------------
+      !> resulting one-electron property contributions,
+      !> size(E) = product(dp) * nd
+      complex(8),        intent(out) :: E(*)
       !> un-/perturbed energy-weighted density matrices,
       !> Should have size(DFD) = size(D)
       type(matrix), optional, intent(in) :: DFD(:)
-      !-------------------------------------------
+      !-----------------------------------------------------
       real(8), allocatable :: RR(:) !scratch
       real(8)      :: R(6) !scratch
-      integer      :: i, j, k, l, ii, jj, kk, ll
+      integer      :: i, j, k, l, ii, jj, kk, ll, na
       type(matrix) :: A(6) !scratch matrices
 #ifdef PRG_DIRAC
       !> temporary matrix
       type(matrix) :: T
 #endif
+      na = mol%natoms
       A(:) = (/(0d0*S0, i=1,size(A))/) !scratch matrices
       if (np==0) then
          call quit('prop_oneave error: unperturbed one-electron contribution requested')
@@ -387,18 +422,9 @@ contains
          do j=0, max(0,nd-1)
             E(1+j) = tr(A(1),D(1+j))
          end do
+#ifndef LSDALTON_ONLY
       else if (np==1 .and. p(1)=='EL') then
          ! contract -dipole integrals '?DIPLEN ' with densities
-#ifdef LSDALTON_ONLY
-         ! direct calculation of oneel integrals in LSDALTON
-         !ajt Note: args D(1:1) and R(1:1) currently not used
-         call prop_intifc_1el(mol, p, D(:1), R(:1), A(:3))
-         do i=0, dp(1)-1
-            do j=0, max(0,nd-1)
-               E(1+i+dp(1)*j) = tr(A(c(1)+i),D(1+j))
-            end do
-         end do
-#else
          do i=0, dp(1)-1
                ! load -dipole integral from file
 !> \todo #ifdef GEN1INT_DALTON
@@ -411,22 +437,16 @@ contains
                   E(1+i+dp(1)*j) = tr(A(1),D(j+1)) !*2 for total dens hidden in tr
                end do
          end do
-#endif
          ! no densities means D(1) contains unperturbed density matrix.
          ! Then also add nuclear attraction contribution to -dipole moment
          if (nd==0) then
-#ifdef LSDALTON_ONLY
-            call prop_intifc_nuc(mol, p, R(:3))
-#elif defined(DALTON_AO_RSP)
-            call DIPNUC_ifc(natom, R(:3))
-            R(:3) = -R(:3) !sign change since dE/dEL = -dipole
+#ifdef DALTON_AO_RSP
+            call DIPNUC_ifc(na, R(:3))
 #else
-            call DIPNUC_ifc(natom, R(:3), (/(0d0, i=1,9*natom)/))
-            R(:3) = -R(:3) !sign change since dE/dEL = -dipole
+            call DIPNUC_ifc(na, R(:3), (/(0d0, i=1,9*na)/))
 #endif
-            E(:dp(1)) = E(:dp(1)) + R(c(1):c(1)+dp(1)-1)
+            E(:dp(1)) = E(:dp(1)) + R(c(1):c(1)+dp(1)-1) !sign since dE/dEL = -dipole
          end if
-#ifndef LSDALTON_ONLY
       ! Velocity operator. Since anti-symmetric, no unperturbed (nd==0)
       else if (np==1 .and. p(1)=='VEL' .and. nd /= 0) then
          do i = 0, dp(1)-1
@@ -481,11 +501,7 @@ contains
          end do
          ! if unperturbed density, add nuclear contribution
          if (nd==0) then !to -quadrupole moment
-#ifdef LSDALTON_ONLY
-            call quit('Cannot call QDRNUC_ifc, only new integral code is compiled')
-#else
             call QDRNUC_ifc(R(:6))
-#endif
             E(:dp(1)) = E(:dp(1)) - R(c(1):c(1)+dp(1)-1) !sign change for -theta
          end if
       else if (np==1 .and. p(1)=='GEO') then
@@ -529,12 +545,8 @@ contains
          end do
          ! nuclear repulsion contribution
          if (nd==0) then
-            allocate(RR(3*natom))
-#ifdef LSDALTON_ONLY
-            call quit('Cannot call GRADNN_ifc, only new integral code is compiled')
-#else
-            call GRADNN_ifc(natom, RR(:3*natom))
-#endif
+            allocate(RR(3*na))
+            call GRADNN_ifc(na, RR(:3*na))
             E(:dp(1)) = E(:dp(1)) + RR(c(1):c(1)+dp(1)-1)
             deallocate(RR)
          end if
@@ -651,12 +663,8 @@ contains
          end do
          ! nd==0 has nuclear repulsion contribution to -dipole gradient
          if (nd==0) then
-            allocate(RR(3*(3*natom)))
-#ifdef LSDALTON_ONLY
-            call quit('Cannot call DIPNUC_ifc, only new integral code is compiled')
-#else
-            call DIPNUC_ifc(natom, R(:3), RR(:3*(3*natom)))
-#endif
+            allocate(RR(3*(3*na)))
+            call DIPNUC_ifc(na, R(:3), RR(:3*(3*na)))
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
                   E(1+i+dp(1)*j) = E(1+i+dp(1)*j) &
@@ -700,8 +708,8 @@ contains
             end do
             ! nuclear contribution if unperturbed density (nd==0)
             if (nd == 0) then
-               allocate(RR(3*(3*natom)))
-               call AATNUC_IFC(3*natom, RR)
+               allocate(RR(3*(3*na)))
+               call AATNUC_IFC(3*na, RR)
                do j = 0, dp(2)-1
                   do i = 0, dp(1)-1
                      E(1+i+dp(1)*j) = E(1+i+dp(1)*j) + 2 & !factor 2
@@ -747,32 +755,28 @@ contains
              call quit('prop_oneave: ELGR GEO - nuc.rep. conrib. not implemented')
          end if
       else if (np==2 .and. all(p==(/'GEO','GEO'/))) then
-         allocate(RR((3*natom)*(3*natom)))
+         allocate(RR(3*na*3*na))
          ! one-electron integral contribution
          do k = 0, max(0,nd-1)
             !ajt fixme oneint_ave(GG..) misses frequency dependent -i/2 Tgg contribution
             if (present(DFD)) then
-               call oneint_ave('GG', D(k+1), DFD(k+1), RR)
+               call oneint_ave(mol, 'GG', D(k+1), DFD(k+1), RR)
             endif
             if (.not.present(DFD)) then
-               call oneint_ave('GG', D(k+1), 0d0*S0, RR)
+               call oneint_ave(mol, 'GG', D(k+1), 0d0*S0, RR)
             endif
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
-                  E(1+i+dp(1)*(j+dp(2)*k)) = RR(c(1)+i + 3*natom*(c(2)+j-1))
+                  E(1+i+dp(1)*(j+dp(2)*k)) = RR(c(1)+i + 3*na*(c(2)+j-1))
                end do
             end do
          end do
          ! for zero-order density, add nuclear contribution to Hessian
          if (nd==0) then
-#ifdef LSDALTON_ONLY
-            call quit('Cannot call HESSNN_ifc, only new integral code is compiled',-1)
-#else
-            call HESSNN_ifc(natom, RR)
-#endif
+            call HESSNN_ifc(na, RR)
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
-                  E(1+i+dp(1)*j) = E(1+i+dp(1)*j) + RR(c(1)+i + 3*natom*(c(2)+j-1))
+                  E(1+i+dp(1)*j) = E(1+i+dp(1)*j) + RR(c(1)+i + 3*na*(c(2)+j-1))
                end do
             end do
          end if
@@ -790,7 +794,36 @@ contains
                end do
             end do
          end do
-#endif /*ifndef LSDALTON_ONLY*/
+#else /*LSDALTON_ONLY*/
+      else if (np==1 .and. p(1)=='EL') then
+         ! contract -dipole integrals '?DIPLEN ' with densities
+         ! direct calculation of oneel integrals in LSDALTON
+         !ajt Note: args D(1:1) and R(1:1) currently not used
+         call prop_intifc_1el(mol, p, D(:1), R(:1), A(:3))
+         do i=0, dp(1)-1
+            do j=0, max(0,nd-1)
+               E(1+i+dp(1)*j) = tr(A(c(1)+i),D(1+j))
+            end do
+         end do
+         ! no densities means D(1) contains unperturbed density matrix.
+         ! Then also add nuclear attraction contribution to -dipole moment
+         if (nd==0) then
+            call prop_intifc_nuc(mol, p, R(:3))
+            E(:dp(1)) = E(:dp(1)) + R(c(1):c(1)+dp(1)-1)
+         end if
+      else if (np==1 .and. p(1)=='GEO') then
+         ! one-electron integral contribution
+         allocate(RR(3*na))
+         do j=0, max(0,nd-1)
+            call prop_intifc_1el(mol, p, (/D(1+j),DFD(1+j)/), RR, A(:1))
+            E(1+dp(1)*j:dp(1)*(j+1)) = RR(c(1):c(1)+dp(1)-1)
+         end do
+         ! nuclear repulsion contribution to unperturbed:nd=0 gradient
+         if (nd==0) then
+            call prop_intifc_nuc(mol, p, RR)
+            E(:dp(1)) = E(:dp(1)) + RR(c(1):c(1)+dp(1)-1)
+         end if
+#endif
       else
          print *,'prop_oneave: no integrals for these perturbations: ', &
                  (p(i)//' ', i=1,np)
@@ -800,47 +833,47 @@ contains
    end subroutine
 
 
-   subroutine prop_twoave(p, D, dime, E, perm, comp)
-   !--------------------------------------------------------------------------
-   ! Contracts the 2-electron integrals perturbed by the perturbations p(:)
-   ! with the perturbed density matrix expansion in D(:) (e.g. D=(/D,Dx,Dy,Dxy/)
-   ! for a 2nd order expansion), and ADDS the result to the property (rsp func)
-   ! array E(:). Front for the private subroutine 'twoave' below, checking the
-   ! arguments' dimensions, and doing permutations
-   ! D(1) serves as reference to nuclei, basis and model/functional
-   !--------------------------------------------------------------------------
-      character(*), intent(in) :: p(:) !p(np) perturbation lables
-      type(matrix), intent(in) :: D(:) !(un)perturbed density matrices to
-                        !contract perturbed one-electron integrals with.
-                        !If perm present, size(D) = product(dime(perm(np+1:np+nd))),
-                        !if perm not present, size(D) = product(dime(np+1:np+nd))
-      integer,      intent(in) :: dime(:) !dime(np+nd) = shape(E),
-                        !dimensions of property
+
+   !> Contract the 2-electron integrals perturbed by the perturbations p(:)
+   !> with the perturbed density matrix expansion in D(:) (e.g. D=(/D,Dx,Dy,Dxy/)
+   !> for a 2nd order expansion), and ADDS the result to the property (rsp func)
+   !> array E(:). Front for the private subroutine 'twoave' below, checking the
+   !> arguments' dimensions, and doing permutations
+   !> D(1) serves as reference to nuclei, basis and model/functional
+   subroutine prop_twoave(mol, p, D, dime, E, perm, comp)
+      !> structure containing integral program settings
+      type(prop_molcfg), intent(in) :: mol
+      !> p(np) perturbation lables
+      character(*),      intent(in) :: p(:)
+      !> (un)perturbed density matrices to contract perturbed one-electron
+      !> integrals with. If perm present, size(D) = product(dime(perm(np+1:np+nd))),
+      !> if perm not present, size(D) = product(dime(np+1:np+nd))
+      type(matrix),      intent(in) :: D(:)
+      !> dime(np+nd) = shape(E), dimensions of property
+      integer,           intent(in) :: dime(:)
       !------------------------------------------------------------------------
-      complex(8), intent(inout) :: E(*) !property contributions,
-                        !works incrementally, thus contributions are
-                        !ADDED to E(*). size(E) = product(dime)
+      !> property contributions, works incrementally, thus contributions are
+      !> ADDED to E(*). size(E) = product(dime)
+      complex(8),     intent(inout) :: E(*) !
       !------------------------------------------------------------------------
-      integer,      optional, intent(in) :: perm(:) !perm(np+nd), permutation of indices.
-                        !For each dimension of p and D, the corresponding dimension in E.
-                        !Default 1 2 ... np+nd (no permutation)
-      integer,      optional, intent(in) :: comp(:) !comp(np), starting component index
-                        !for each p. Default 1 1 ... 1
+      !> perm(np+nd), permutation of indices. For each dimension of p and D,
+      !> the corresponding dimension in E. Default 1 2 ... np+nd (no permutation)
+      integer, optional, intent(in) :: perm(:)
+      !> comp(np), starting component index for each p. Default 1 1 ... 1
+      integer, optional, intent(in) :: comp(:)
       !------------------------------------------------------------------------
       integer      :: idxp(size(p)), pperm(size(dime)), ccomp(size(p)), &
-                      stepe(size(dime)), ddime(size(dime)), idxe(size(dime)), &
-                      i, j, k, tmpi, nd
+                      stepe(size(dime)), ddime(size(dime)), &
+                      idxe(size(dime)), i, j, k, tmpi, nd
       character(4) :: pp(size(p)), tmpp
       complex(8)   :: Etmp(product(dime))
       logical      :: zero
-      ! (re-)initialize the module's data on nuclei and basis
-      call init_this_module(D(1))
       ! verify that all perturbation labels exist, find index of each
       idxp = (/(idx(p(i)), i=1,size(p))/)
       ! determine whether these integrals are zero.
-      zero = any((/(pert_table(idxp(i))%lin  .or. &
-                    pert_table(idxp(i))%quad .or. &
-               .not.pert_table(idxp(i))%bas,  i=1,size(p))/))
+      zero = any((/(field_list(idxp(i))%lin  .or. &
+                    field_list(idxp(i))%quad .or. &
+               .not.field_list(idxp(i))%bas,  i=1,size(p))/))
       ! check dimensions argument dime, verify that dimensions are positive
       if (size(dime) < size(p)) call quit('prop_twoave argument error: ' &
                // 'More perturbations than dimensions of property, size(dime) < size(p)')
@@ -874,9 +907,9 @@ contains
                     // 'Lowest component indices must be positive, comp <= 0')
          ccomp = comp
       end if
-      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(p))) &
+      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(mol,p))) &
          call quit('prop_twoave argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(p)')
+                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(mol,p)')
       ! sort perturbations p so that idxp is descending
       pp = p
       do i = 1, size(p)
@@ -906,7 +939,7 @@ contains
       ! everything set up, so call core procedure oneave.
       ! Argument nd=0 is used when averaging over unperturbed density,
       ! in which case also perturbed nuclear attraction should be included
-      call twoave(size(p), size(dime)-size(p), pp, ccomp, ddime, D, Etmp)
+      call twoave(mol, size(p), size(dime)-size(p), pp, ccomp, ddime, D, Etmp)
       ! add oneavg property contribution in temporary array Etmp(:) to
       ! resulting property array E(:), while permuting indices according to pperm
       idxe = 0
@@ -922,19 +955,30 @@ contains
    end subroutine
 
 
-   subroutine twoave(np, nd, p, c, de, D, E)
-      integer,       intent(in) :: np, nd    !number of perturbations and order of density
-      character(*),  intent(in) :: p(np)     !perturbation lables
-      integer,       intent(in) :: c(np)     !lowest component of each perturbation
-      integer,       intent(in) :: de(np+nd) !dimensions of property (E)
-      type(matrix),  intent(in) :: D(*)      !un-/perturbed density matrices (expension),
-                                             !size(D) = product(1+de(np+1:np+nd))
-      complex(8),   intent(out) :: E(*)      !where to ADD property contributions
-                                             !(works incrementally), size(E) = product(de)
+
+   subroutine twoave(mol, np, nd, p, c, de, D, E)
+      !> structure containing integral program settings
+      type(prop_molcfg), intent(in)  :: mol
+      !> number of perturbations and order of density
+      integer,           intent(in)  :: np, nd
+      !> perturbation lables
+      character(*),      intent(in)  :: p(np)
+      !> lowest component of each perturbation
+      integer,           intent(in)  :: c(np)
+      !> dimensions of property (E)
+      integer,           intent(in)  :: de(np+nd)
+      !> un-/perturbed density matrices (expension),
+      !> size(D) = product(1+de(np+1:np+nd))
+      type(matrix),      intent(in)  :: D(*)
+      !> where to ADD property contributions
+      !> (works incrementally), size(E) = product(de)
+      complex(8),        intent(out) :: E(*)
+      !-------------------------------------
       real(8), allocatable :: RR(:) !scratch
       real(8)      :: R(6) !scratch
-      integer      :: i, j, k, l, ii, jj, kk, ll, pd, pd1
+      integer      :: i, j, k, l, ii, jj, kk, ll, pd, pd1, na
       type(matrix) :: A(6) !scratch matrices
+      na = mol%natoms
       A(:) = (/(0d0*D(1), i=1,size(A))/) !scratch matrices
       pd  = product(de(np+1:np+nd))   !product of density dimensions
       pd1 = product(1+de(np+1:np+nd)) !size of D(*)
@@ -1030,7 +1074,7 @@ contains
             call quit('prop_twoave: MAG, nd > 2 not implemented')
          end if
       else if (np==1 .and. p(1)=='GEO') then
-         allocate(RR(3*natom*2))
+         allocate(RR(3*na*2))
          ! highest-order contribution
          do j = 0, pd-1
             if (iszero(D(pd1-pd+1+j))) then
@@ -1038,17 +1082,17 @@ contains
                cycle
             end if
             ! Coulomb-exchange
-            call twoctr('G', D(1), D(pd1-pd+1+j), RR(:3*natom))
+            call twoctr(mol, 'G', D(1), D(pd1-pd+1+j), RR(:3*na))
             ! for molgra (nd==0), factor 1/2 on these integrals
-            if (nd==0) RR(:3*natom) = RR(:3*natom)/2
+            if (nd==0) RR(:3*na) = RR(:3*na)/2
             if (do_dft()) then
                if (nd==0) call di_get_geomDeriv_molgrad_DFT( &
-                                          RR(3*natom+1:3*natom*2), &
-                                          natom, D(1))
+                                          RR(3*na+1:3*na*2), &
+                                          na, D(1))
                if (nd/=0) call di_get_geomDeriv_FxD_DFT(           &
-                                          RR(3*natom+1:3*natom*2), &
-                                          natom, D(1), D(pd1-pd+1+j))
-               RR(:3*natom) = RR(:3*natom) + RR(3*natom+1:3*natom*2)
+                                          RR(3*na+1:3*na*2), &
+                                          na, D(1), D(pd1-pd+1+j))
+               RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
             end if
             E( 1+de(1)*j : de(1)*(j+1) ) = RR(c(1):c(1)+de(1)-1)
          end do
@@ -1059,11 +1103,11 @@ contains
             do k = 0, de(3)-1
                do j = 0, de(2)-1
                   ! Coulomb-exchange
-                  call twoctr('G', D(2+j), D(2+de(2)+k), RR(:3*natom))
+                  call twoctr(mol, 'G', D(2+j), D(2+de(2)+k), RR(:3*na))
                   if (do_dft()) then
-                     call di_get_geomDeriv_GxD_DFT(RR(3*natom+1:3*natom*2), &
-                                                   natom, D(1), D(2+j), D(2+de(2)+k))
-                     RR(:3*natom) = RR(:3*natom) + RR(3*natom+1:3*natom*2)
+                     call di_get_geomDeriv_GxD_DFT(RR(3*na+1:3*na*2), &
+                                                   na, D(1), D(2+j), D(2+de(2)+k))
+                     RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
                   end if
                   E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
                             = E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
@@ -1126,7 +1170,7 @@ contains
             call quit('prop_twoave: MAG MAG and nd > 2 not implemented')
          end if
       else if (np==2 .and. all(p==(/'GEO','GEO'/))) then
-         allocate(RR((3*natom)*(3*natom)))
+         allocate(RR(3*na*3*na))
          ! two-electron integral contribution
          do k = 0, pd-1
             if (iszero(D(pd1-pd+1+k))) then
@@ -1134,7 +1178,7 @@ contains
                cycle
             end if
             ! Coulomb-exchange
-            call twoctr('GG', D(1), D(pd1-pd+1+k), RR)
+            call twoctr(mol, 'GG', D(1), D(pd1-pd+1+k), RR)
             if (nd==0) RR = RR/2 !factor 1/2 for unperturbed Hessian integrals
             ! Kohn-Sham exchange-correlation
             if (do_dft()) then
@@ -1142,7 +1186,7 @@ contains
             end if
             do j = 0, de(2)-1
                do i = 0, de(1)-1
-                  E(1+i+de(1)*(j+de(2)*k)) = RR(c(1)+i + 3*natom*(c(2)+j-1))
+                  E(1+i+de(1)*(j+de(2)*k)) = RR(c(1)+i + 3*na*(c(2)+j-1))
                end do
             end do
          end do
@@ -1154,7 +1198,7 @@ contains
                if (iszero(D(2+de(3)+l))) cycle
                do k = 0, de(3)-1
                   if (iszero(D(2+k))) cycle
-                  call twoctr('GG', D(2+k), D(2+de(3)+l), RR)
+                  call twoctr(mol, 'GG', D(2+k), D(2+de(3)+l), RR)
                   if (do_dft()) then
                      call quit('prop_twoave: GEO GEO, DFT not implemented')
                   end if
@@ -1162,7 +1206,7 @@ contains
                      do i = 0, de(1)-1
                         E(1+i+de(1)*(j+de(2)*(k+de(3)*l))) &
                                      = E(1+i+de(1)*(j+de(2)*(k+de(3)*l))) &
-                                     + RR(c(1)+i + 3*natom*(c(2)+j-1))
+                                     + RR(c(1)+i + 3*na*(c(2)+j-1))
                      end do
                   end do
                end do
@@ -1171,7 +1215,57 @@ contains
             call quit('prop_twoave: GEO GEO, nd > 2 not implemented')
          end if
          deallocate(RR)
-#endif /*ifndef LSDALTON_ONLY*/
+#else /*LSDALTON_ONLY*/
+      else if (np==1 .and. p(1)=='GEO') then
+         allocate(RR(3*na*2))
+         ! highest-order contribution
+         do j = 0, pd-1
+            if (iszero(D(pd1-pd+1+j))) then
+               E( 1+de(1)*j : de(1)*(j+1) ) = 0
+               cycle
+            end if
+            ! Coulomb-exchange
+            if (nd==0) call prop_intifc_2el(mol, p, D(1:1), RR(:3*na), A(1:1))
+            if (nd/=0) call prop_intifc_2el(mol, p, (/D(1), D(pd1-pd+1+j)/), &
+                                            RR(:3*na), A(1:1))
+            ! for molgra (nd==0), factor 1/2 on these integrals
+            if (nd==0) RR(:3*na) = RR(:3*na)/2
+            if (do_dft()) then
+               if (nd==0) call di_get_geomDeriv_molgrad_DFT( &
+                                          RR(3*na+1:3*na*2), &
+                                          na, D(1))
+               if (nd/=0) call di_get_geomDeriv_FxD_DFT(           &
+                                          RR(3*na+1:3*na*2), &
+                                          na, D(1), D(pd1-pd+1+j))
+               RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
+            end if
+            E( 1+de(1)*j : de(1)*(j+1) ) = RR(c(1):c(1)+de(1)-1)
+         end do
+         if (nd==0 .or. nd==1) then
+            ! nothing more
+         else if (nd==2) then
+            ! integrals over products of first order densities
+            do k = 0, de(3)-1
+               do j = 0, de(2)-1
+                  ! Coulomb-exchange
+                  call prop_intifc_2el(mol, p, (/D(2+j), D(2+de(2)+k)/), &
+                                       RR(:3*na), A(1:1))
+                  if (do_dft()) then
+                     call di_get_geomDeriv_GxD_DFT(RR(3*na+1:3*na*2), &
+                                                   na, D(1), D(2+j), D(2+de(2)+k))
+                     RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
+                  end if
+                  E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
+                            = E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
+                            + RR(c(1):c(1)+de(1)-1)
+               end do
+            end do
+         else
+            call quit('prop_twoave: GEO, nd > 2 not implemented')
+         end if
+         deallocate(RR)
+         if (do_dft()) print* !after all the "...integrated to nn electrons..." prints
+#endif
       else
          print *,'prop_twoave: no integrals for these perturbations: ', &
                  (p(i)//' ', i=1,np)
@@ -1181,31 +1275,37 @@ contains
    end subroutine
 
 
+
+   !> Calculates the 1-electron integrals perturbed by the perturbations p(:)
+   !> and ADDS the integrals to the perturbed Fock matrices F(:).
+   !> Front for the private subroutine 'oneint' below, checking the
+   !> arguments' dimensions, and doing permutations
+   !> S0 is passed as argument only as reference to nuclei and basis set
    subroutine prop_oneint(mol, S0, p, dimp, F, S, comp, freq)
-   !--------------------------------------------------------------------------
-   ! Calculates the 1-electron integrals perturbed by the perturbations p(:)
-   ! and ADDS the integrals to the perturbed Fock matrices F(:).
-   ! Front for the private subroutine 'oneint' below, checking the
-   ! arguments' dimensions, and doing permutations
-   ! S0 is passed as argument only as reference to nuclei and basis set
-   !--------------------------------------------------------------------------
-      type(prop_molcfg), intent(in) :: mol !mol/basis data needed by integral program
-      type(matrix), intent(in) :: S0   !unperturbed overlap matrix
-      character(*), intent(in) :: p(:) !perturbation lables
-      integer,      intent(in) :: dimp(:) !shape(F), size(dimp) = size(p)
-                        !dimensions of perturbed Fock matrices F(:)
-      !------------------------------------------------------------------------
-      type(matrix), optional, intent(inout) :: F(*) !perturbed Fock matrices
-                        !to fill with perturbed integrals, size(F) = product(dimp)
-      type(matrix), optional, intent(inout) :: S(*) !optionally return the
-                        !corresponding perturbed overlap matrices
-      integer,      optional, intent(in)    :: comp(:) !comp(np), starting
-                        !component index for each p. Default 1 1 ... 1
-      complex(8),   optional, intent(in)    :: freq(:) !freq(np), complex frequencies
-                        !for each p, default all zero. These multiply the
-                        !half-derivative overlap integrals, thus no contribution
-                        !if basis independent of p
-      !------------------------------------------------------------------------
+      !> mol/basis data needed by integral program
+      type(prop_molcfg), intent(in) :: mol
+      !> unperturbed overlap matrix
+      type(matrix),      intent(in) :: S0
+      !> perturbation lables
+      character(*),      intent(in) :: p(:)
+      !> shape(F), size(dimp) = size(p), dimensions of perturbed
+      !> Fock matrices F(:)
+      integer,           intent(in) :: dimp(:)
+      !-----------------------------------------------------------
+      !> perturbed Fock matrices to fill with perturbed integrals,
+      !> size(F) = product(dimp)
+      type(matrix), optional, intent(inout) :: F(*)
+      !> optionally return the corresponding perturbed overlap matrices
+      type(matrix), optional, intent(inout) :: S(*)
+      !-----------------------------------------------------------
+      !> comp(np), starting component index for each p. Default 1 1 ... 1
+      integer,      optional, intent(in)    :: comp(:)
+      !> freq(np), complex frequencies
+      !> for each p, default all zero. These multiply the
+      !> half-derivative overlap integrals, thus no contribution
+      !> if basis independent of p
+      complex(8),   optional, intent(in)    :: freq(:)
+      !-----------------------------------------------------------
       integer      :: idxp(size(p)), pperm(size(dimp)), ccomp(size(p)), &
                       stepf(size(dimp)), ddimp(size(dimp)), idxf(size(dimp)), &
                       i, j, k, tmpi
@@ -1213,8 +1313,6 @@ contains
       character(4) :: pp(size(p)), tmpp
       complex(8)   :: ffreq(size(p)), tmpf
       logical      :: zero, bas
-      ! (re-)initialize the module's data on nuclei and basis
-      call init_this_module(S0)
       ! verify that all perturbation labels exist, find index of each
       idxp = (/(idx(p(i)), i=1,size(p))/)
       ! determine whether these integrals are zero. If there is more than 1
@@ -1223,16 +1321,16 @@ contains
       j = 0
       k = 0
       do i = 1, size(p)
-         if (.not.pert_table(idxp(i))%lin .and. &
-             .not.pert_table(idxp(i))%quad) cycle
+         if (.not.field_list(idxp(i))%lin .and. &
+             .not.field_list(idxp(i))%quad) cycle
          ! if both linear and quadratic, interpret as ZERO (like EXCI)
-         if (pert_table(idxp(i))%lin .and. &
-             pert_table(idxp(i))%quad) zero = .true.
+         if (field_list(idxp(i))%lin .and. &
+             field_list(idxp(i))%quad) zero = .true.
          if (j /= 0) then !if second lin or quad perturbation
             ! if j was EL, then i is second EL (or first MAGO)
-            if (pert_table(idxp(j))%lin) zero = .true.
+            if (field_list(idxp(j))%lin) zero = .true.
             ! if j was MAGO, and different from i, also zero
-            if (pert_table(idxp(j))%quad .and. &
+            if (field_list(idxp(j))%quad .and. &
                idxp(i) /= idxp(j)) zero = .true. !two different quadratic
             !third linear or quadratic perturbation
             if (k /= 0) zero = .true.
@@ -1259,9 +1357,9 @@ contains
                     // 'Lowest component indices must be positive, but comp <= 0')
          ccomp = comp
       end if
-      if (any(ccomp + dimp - 1 > pert_shape(p))) &
-         call quit('prop_oneave argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dimp > pert_shape(p)')
+      if (any(ccomp + dimp - 1 > pert_shape(mol,p))) &
+         call quit('prop_oneint argument error: Lowest component index plus ' &
+                // 'dimension exceeds dimension of perturbation, comp + dimp - 1 > pert_shape(mol,p)')
       ! check optional argument freq, default to zero
       ffreq = 0
       if (present(freq)) then
@@ -1317,16 +1415,28 @@ contains
    end subroutine
 
 
+
    subroutine oneint(mol, S0, np, p, c, dp, w, F, S)
-      type(prop_molcfg), intent(in) :: mol !mol/basis data needed by integral program
-      type(matrix), intent(in) :: S0      !unperturbed overlap matrix
-      integer,      intent(in) :: np      !number of perturbations
-      character(*), intent(in) :: p(:)    !perturbation lables
-      integer,      intent(in) :: c(np)   !lowest component of each perturbation
-      integer,      intent(in) :: dp(np)  !dimensions of property (F and S)
-      complex(8),   intent(in) :: w(np)   !frequency of each p
-      type(matrix), intent(inout) :: F(*) !perturbed Fock matrices
-      type(matrix), intent(inout) :: S(*) !perturbed overlap matrices
+      !> mol/basis data needed by integral program
+      type(prop_molcfg), intent(in) :: mol
+      !> unperturbed overlap matrix
+      type(matrix),      intent(in) :: S0
+      !> number of perturbations
+      integer,           intent(in) :: np
+      !> perturbation lables
+      character(*),      intent(in) :: p(:)
+      !> lowest component of each perturbation
+      integer,           intent(in) :: c(np)
+      !> dimensions of property (F and S)
+      integer,           intent(in) :: dp(np)
+      !> frequency of each p
+      complex(8),        intent(in) :: w(np)
+      !--------------------------------------------
+      !> perturbed Fock matrices
+      type(matrix),   intent(inout) :: F(*)
+      !> perturbed overlap matrices
+      type(matrix),   intent(inout) :: S(*)
+      !--------------------------------------------
       integer      :: i, j, k, ii, jj, kk
       type(matrix) :: A(6) !scratch matrices
       real(8)      :: R(1) !dummy
@@ -1539,48 +1649,50 @@ contains
    end subroutine
 
 
-   subroutine prop_twoint(p, D, dimf, F, perm, comp)
-   !--------------------------------------------------------------------------
-   ! Contracts the 2-electron and Kohn-Sham integrals perturbed by the
-   ! perturbations p(:) with the perturbed density matrix expansion in D(:)
-   ! (e.g. D=(/D,Dx,Dy,Dxy/) for a 2nd order expansion), and ADD the resulting
-   ! Fock matrix contibution to the array F(:).
-   ! Front for the private subroutine 'twoave' below, checking the arguments'
-   ! dimensions, and doing permutations
-   ! D(1) serves as reference to nuclei, basis and model/functional
-   !--------------------------------------------------------------------------
-      character(*), intent(in) :: p(:) !p(np) perturbation lables
-      type(matrix), intent(in) :: D(:) !(un)perturbed density matrices to
-                        !contract perturbed one-electron integrals with.
-                        !If perm present, size(D) = product(1+dime(perm(np+1:np+nd))),
-                        !if perm not present, size(D) = product(1+dime(np+1:np+nd))
-      integer,      intent(in) :: dimf(:) !dime(np+nd) = shape(F),
-                        !dimensions of perturbed Fock matrices F(:)
-      !------------------------------------------------------------------------
-      type(matrix), intent(inout) :: F(*) !Perturbed Fock matrices,
-                        !works incrementally, thus contributions are
-                        !ADDED to F(*). size(F) = product(dimf)
-      !------------------------------------------------------------------------
-      integer,      optional, intent(in) :: perm(:) !perm(np+nd), permutation of indices.
-                        !For each dimension of p and D, the corresponding dimension of F.
-                        !Default 1 2 ... np+nd (no permutation)
-      integer,      optional, intent(in) :: comp(:) !comp(np), starting component index
-                        !for each p. Default 1 1 ... 1
-      !------------------------------------------------------------------------
+
+   !> Contracts the 2-electron and Kohn-Sham integrals perturbed by the
+   !> perturbations p(:) with the perturbed density matrix expansion in D(:)
+   !> (e.g. D=(/D,Dx,Dy,Dxy/) for a 2nd order expansion), and ADD the resulting
+   !> Fock matrix contibution to the array F(:).
+   !> Front for the private subroutine 'twoave' below, checking the arguments'
+   !> dimensions, and doing permutations
+   !> D(1) serves as reference to nuclei, basis and model/functional
+   subroutine prop_twoint(mol, p, D, dimf, F, perm, comp)
+      !> mol/basis data needed by integral program
+      type(prop_molcfg), intent(in) :: mol
+      !> p(np) perturbation lables
+      character(*),      intent(in) :: p(:)
+      !> (un)perturbed density matrices to contract perturbed
+      !> one-electron integrals with.
+      !> If perm present, size(D) = product(1+dime(perm(np+1:np+nd))),
+      !> if not present, size(D) = product(1+dime(np+1:np+nd))
+      type(matrix),      intent(in) :: D(:)
+      !> dime(np+nd) = shape(F), dimensions of perturbed Fock matrices F(:)
+      integer,           intent(in) :: dimf(:)
+      !---------------------------------------------------------------
+      !> Perturbed Fock matrices, works incrementally,
+      !> thus contributions are ADDED to F(*). size(F) = product(dimf)
+      type(matrix), intent(inout) :: F(*)
+      !---------------------------------------------------------------
+      !> perm(np+nd), permutation of indices.
+      !> For each dimension of p and D, the corresponding dimension of F.
+      !> Default 1 2 ... np+nd (no permutation)
+      integer,      optional, intent(in) :: perm(:)
+      !> comp(np), starting component index for each p. Default 1 1 ... 1
+      integer,      optional, intent(in) :: comp(:)
+      !---------------------------------------------------------------
       integer      :: idxp(size(p)), pperm(size(dimf)), ccomp(size(p)), &
                       stepf(size(dimf)), ddimf(size(dimf)), idxf(size(dimf)), &
                       i, j, k, tmpi, nd
       character(4) :: pp(size(p)), tmpp
       type(matrix) :: Ftmp(product(dimf))
       logical      :: zero
-      ! (re-)initialize the module's data on nuclei and basis
-      call init_this_module(D(1))
       ! verify that all perturbation labels exist, find index of each
       idxp = (/(idx(p(i)), i=1,size(p))/)
       ! determine whether these integrals are zero.
-      zero = any((/(pert_table(idxp(i))%lin  .or. &
-                    pert_table(idxp(i))%quad .or. &
-               .not.pert_table(idxp(i))%bas, i=1,size(p))/))
+      zero = any((/(field_list(idxp(i))%lin  .or. &
+                    field_list(idxp(i))%quad .or. &
+               .not.field_list(idxp(i))%bas, i=1,size(p))/))
       ! check dimensions argument dime, verify that dimensions are positive
       if (size(dimf) < size(p)) call quit('prop_twoint argument error: ' &
                // 'More perturbations than dimensions of F(:), size(dimf) < size(p)')
@@ -1614,9 +1726,9 @@ contains
                     // 'Lowest component indices must be positive, comp <= 0')
          ccomp = comp
       end if
-      if (any(ccomp + ddimf(:size(p)) - 1 > pert_shape(p))) &
+      if (any(ccomp + ddimf(:size(p)) - 1 > pert_shape(mol,p))) &
          call quit('prop_twoint argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dimf > pert_shape(p)')
+                // 'dimension exceeds dimension of perturbation, comp + dimf > pert_shape(mol,p)')
       ! sort perturbations p so that idxp is descending
       pp = p
       do i = 1, size(p)
@@ -1656,7 +1768,7 @@ contains
          end do
       end do
       ! everything set up, so call core procedure twoint
-      call twoint(size(p), size(dimf)-size(p), pp, ccomp, ddimf, D, Ftmp)
+      call twoint(mol, size(p), size(dimf)-size(p), pp, ccomp, ddimf, D, Ftmp)
       ! 'un-permute' perturbed Fock matrices from Ftmp(:) back into F(:)
       idxf = 0
       do j = 1, product(dimf)
@@ -1672,15 +1784,26 @@ contains
    end subroutine
 
 
-   subroutine twoint(np, nd, p, c, df, D, F)
-      integer,       intent(in) :: np, nd    !number of perturbations and order of density
-      character(*),  intent(in) :: p(np)     !perturbation lables
-      integer,       intent(in) :: c(np)     !lowest component of each perturbation
-      integer,       intent(in) :: df(np+nd) !dimensions of perturbed Fock matrix F
-      type(matrix),  intent(in) :: D(*)      !un-/perturbed density matrices (expension),
-                                             !size(D) = product(1+df(np+1:np+nd))
-      type(matrix),  intent(inout) :: F(*)   !where to ADD property contributions
-                                             !(works incrementally), size(F) = product(df)
+
+   subroutine twoint(mol, np, nd, p, c, df, D, F)
+      !> mol/basis data needed by integral program
+      type(prop_molcfg), intent(in) :: mol
+      !> number of perturbations and order of density
+      integer,           intent(in) :: np, nd
+      !> perturbation lables
+      character(*),      intent(in) :: p(np)
+      !> lowest component of each perturbation
+      integer,           intent(in) :: c(np)
+      !> dimensions of perturbed Fock matrix F
+      integer,           intent(in) :: df(np+nd)
+      !> un-/perturbed density matrices (expension),
+      !> size(D) = product(1+df(np+1:np+nd))
+      type(matrix),      intent(in) :: D(*)
+      !--------------------------------------------------
+      !> where to ADD property contributions
+      !> (works incrementally), size(F) = product(df)
+      type(matrix),   intent(inout) :: F(*)
+      !--------------------------------------------------
       integer      :: i, j, k, l, ii, jj, kk, ll, pd, pd1
       type(matrix) :: A(6) !scratch matrices
       A(:) = (/(0d0*D(1), i=1,size(A))/) !scratch matrices
@@ -1793,14 +1916,6 @@ contains
    end subroutine
 
 
-   subroutine init_this_module(SorD)
-   ! Re-initialize the module's data on nuclei, basis and functional,
-   ! which will be passed on to the integral programs
-      type(matrix) :: SorD
-      call get_natoms(natom)
-      pert_table(idx('GEO'))%ncomp = 3*natom
-      !AllPrt(idx('NS'))%rank = depends on which isotopes
-   end subroutine
 
 #ifdef GEN1INT_DALTON
    !> \brief reads one-electron integral matrix from GEN1INT
@@ -1930,7 +2045,7 @@ contains
          end if
          wrk(1:n2) = D%elms !ajt fixme
 #ifdef LSDALTON_ONLY
-         call lsquit('Cannot call GRCONT, only new integral code is compiled',-1)
+         call quit('Cannot call GRCONT, only new integral code is compiled')
 #else
          call GRCONT(wrk( 1+n2+n2*nf : lwrk ), (lwrk-n2-n2*nf),         &
                      wrk( 1+n2 : n2+n2*nf ), n2*nf, (what(1:1) == 'G'), &
@@ -1942,6 +2057,7 @@ contains
          end do
       end subroutine
    end subroutine
+
 
 
    subroutine twofck_ks(n, D, F)
@@ -1957,12 +2073,10 @@ contains
 #ifdef PRG_DIRAC
       integer :: ones(200), nr_dmat, nz, order
 #endif
-
       if (.not. do_dft()) then
 !        we want no xc
          return
       end if
-
 #ifndef PRG_DIRAC
 !radovan: this is not correct for CR and higher
 !         there you can have nonzero integral with one or more
@@ -1972,9 +2086,7 @@ contains
          return
       end if
 #endif
-
       call init_mat(A, D(1))
-
       if (n==0) then
          call quit('prop_contribs/twofck_ks error: Kohn-Sham contribution ' &
                 // 'to unperturbed Fock matrix requested, but not implemented')
@@ -2016,7 +2128,6 @@ contains
       end if
 #else
       else
-
          ones    = 1
          nz      = size(A%elms)/(A%nrow*A%ncol)
          nr_dmat = size(D)
@@ -2025,13 +2136,11 @@ contains
                D(i) = tiny(0.0d0)*D(1)
             end if
          end do
-
          A%elms = 0.0d0
          A%irep = 0
          do i = 2, nr_dmat
             A%irep = ieor(A%irep, D(i)%irep)
          end do
-
 !        that's really ugly here - will make it better later
 !        for the moment i'm just happy that it works
          order = 0
@@ -2056,11 +2165,9 @@ contains
          if (nr_dmat > (1+5+10+10+5+1)) then
             call quit('fix twofck_ks order pascal triangle')
          end if
-         
          if (order < 2) then
             return
          end if
-
 !radovan:
 !        in many situations one could pass F directly
 !        to dftexc but the gga symmetrization can make problems
@@ -2082,140 +2189,135 @@ contains
                      order,                               &
                      .false.,                             &
                      .false.)
-
          F = F + A
-
       end if
 #endif /* ifndef PRG_DIRAC */
-
       A = 0
-
    end subroutine
 
 
-   subroutine twoctr(what, Da, Db, E)
-   !gm=T -> 3*NATOMS geometriske
-   !gm=F -> tre magnetiske
-      character(*), intent(in)    :: what
-      type(matrix), intent(in)    :: Da, Db
-      real(8),      intent(inout) :: E(:)
-      real(8), pointer :: wrk(:)
-      integer          :: lwrk
 
-      if (natom==0) call quit('prop_contribs/twoctr error: Module not initialized')
+#ifndef LSDALTON_ONLY
+   !> what=G : 3*natoms geometric
+   !> what=M : tre magnetic
+   subroutine twoctr(mol, what, Da, Db, E)
+      !> structure containing the integral program settings
+      type(prop_molcfg), intent(in) :: mol
+      character(*),      intent(in) :: what
+      type(matrix),      intent(in) :: Da, Db
+      real(8),        intent(inout) :: E(:)
+      real(8), pointer :: wrk(:)
+      integer          :: lwrk, na, nb
+      na = mol%natoms
+      nb = Da%nrow
       !ajt MagSus contraction doesn't work, so I disabled this. Use twofck instead
       if (what=='M' .or. what=='MM') &
           & call quit("prop_contribs/twoctr: 'M' or 'MM' not yet implemented")
-      if     (what=='G' .and. size(e) == 3*natom) then
-         lwrk = 50*Da%nrow**2 + 10000*Da%nrow + 5000000
+      if (what=='G' .and. size(e) == 3*na) then
+         lwrk = 50*nb**2 + 10000*nb + 5000000
       else if (what=='M' .and. size(e)==3) then
-         lwrk = 50*Da%nrow**2 + 10000*Da%nrow + 5000000
-      else if (what=='GG' .and. size(e) == 3*3*natom**2) then
-         lwrk = 50*Da%nrow**2 + 10000*Da%nrow + 10000000
-      else if (what=='MM' .and. size(e)==3*3) then
-         lwrk = 50*Da%nrow**2 + 10000*Da%nrow + 5000000
+         lwrk = 50*nb**2 + 10000*nb + 5000000
+      else if (what=='GG' .and. size(e) == 3*3*na**2) then
+         lwrk = 50*nb**2 + 10000*nb + 10000000
+      else if (what=='MM' .and. size(e) == 3*3) then
+         lwrk = 50*nb**2 + 10000*nb + 5000000
       else
           call quit('prop_contribs/twoctr: wrong size(E) for what=' // what)
       end if
-
 #ifdef PRG_DIRAC
 !radovan: for DIRAC the above lwrk allocation is too much (and more than needed)
 !         so rather use the whole work array and hope for the best
       lwrk = len_f77_work
 #endif
-
       call di_select_wrk(wrk, lwrk)
-
 #ifndef PRG_DIRAC
 !radovan: is this necessary?
 !ajt: grcont presently needs Da and Db to be consecutive, and
 !     (/Da%elms,Db%elms/) will cause stack overflow, depending
 !     on ulimit and compiler flags; -auto-scalar:fine: -auto:overflow.
-!     A future rewrite of grcont could take a list of pointers
+!     A future rewrite of grcont could take a list of pointers instead
 !     (or just type(matrix)) instead of consecutive real(8) arrays.
-      wrk(             1:  Da%nrow**2) = Da%elms !call mat_to_full(D ,1d0,A(:,:,1))
-      wrk(Da%nrow**2 + 1:2*Da%nrow**2) = Db%elms !call mat_to_full(DD,1d0,A(:,:,2))
+      wrk(      1:  nb**2) = Da%elms !call mat_to_full(D ,1d0,A(:,:,1))
+      wrk(nb**2+1:2*nb**2) = Db%elms !call mat_to_full(DD,1d0,A(:,:,2))
 #endif
-
       E = 0.0d0
-
-#ifdef LSDALTON_ONLY
-         call lsquit('Cannot call GRCONT, only new integral code is compiled',-1)
-#else
 #ifdef PRG_DIRAC
-      call grcont(wrk,                      &
-                  lwrk,                     &
+      call grcont(wrk,                  &
+                  lwrk,                 &
 #else
 !     this does not compile in DIRAC
 !     besides matrices have larger size in DIRAC: 4*Da%nrow**2
-      call grcont(wrk(2*Da%nrow**2 + 1),    &
-                  lwrk - 2*Da%nrow**2,      &
+      call grcont(wrk(2*nb**2 + 1),     &
+                  lwrk - 2*nb**2,       &
 #endif
-                  E,                        &
-                  size(E),                  &
-                  what(1:1) == 'G',         &
-                  what(1:1) == 'M',         &
-                  len(what),                &
-                  0,                        &
-                  .true.,                   &
-                  .false.,                  &
+                  E,                    &
+                  size(E),              &
+                  what(1:1) == 'G',     &
+                  what(1:1) == 'M',     &
+                  len(what),            &
+                  0,                    &
+                  .true.,               &
+                  .false.,              &
 #ifdef PRG_DIRAC
-                  (/Da%elms, Db%elms/),     &
+                  (/Da%elms, Db%elms/), &
 #else
-                  wrk(1),                   &
+                  wrk(1),               &
 #endif
                   2)
-#endif
 #ifdef PRG_DIRAC
 !radovan: there is a factor 8 missing in DIRAC
 !         will fix it later so that it's taken care of inside grcont
       E = 8.0d0*E
 #endif
-
       call di_deselect_wrk(wrk, lwrk)
-
    end subroutine
+#endif /*ifndef LSDALTON_ONLY*/
 
 
-   subroutine oneint_ave(what, D, DFD, R)
-      character(*), intent(in)  :: what
-      type(matrix), intent(in)  :: D, DFD
-      real(8),      intent(out) :: R(:)
+
+   subroutine oneint_ave(mol, what, D, DFD, R)
+      !> structure containing the integral program settings
+      type(prop_molcfg), intent(in)  :: mol
+      character(*),      intent(in)  :: what
+      type(matrix),      intent(in)  :: D, DFD
+      real(8),           intent(out) :: R(:)
 #ifndef LSDALTON_ONLY
 #include <mxcent.h>
 #include <taymol.h>
 #endif
       real(8), pointer :: wrk(:)
-      integer          :: lwrk
+      integer          :: lwrk, na
+      na = mol%natoms
 #ifdef LSDALTON_ONLY
-      call lsquit('Cannot run oneint_ave, only new integral code is compiled',-1)
+      call quit('Cannot run oneint_ave, only new integral code is compiled')
 #else
       call save_D_and_DFD_for_ABACUS(.false., D, DFD)
       lwrk = 50*D%nrow**2+10000*D%nrow+50000000
       call di_select_wrk(wrk, lwrk)
-      HESMOL(:3*natom,:3*natom) = 0
+      HESMOL(:3*na,:3*na) = 0
       ! SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,DIFINT,NODC,
       ! &                  NODV,DIFDIP,HFONLY,NCLONE)
       call ONEDRV(wrk,lwrk,0,.true.,len(what),.true.,.true., &
                   .true.,.false.,.true.,.false.)
       ! HESMOL will contain either HESSKE+HESSNA or HESFS2 or their sum
-      R(1:9*natom**2) = reshape(HESMOL(:3*natom,:3*natom), (/9*natom**2/))
+      R(1:9*na**2) = reshape(HESMOL(:3*na,:3*na), (/9*na**2/))
       call di_deselect_wrk(wrk, lwrk)
 #endif
    end subroutine
 
 
+
    function idx(p)
       character(*) :: p
       integer      :: idx, i, j
-      do idx = 1, size(pert_table)
-          if (pert_table(idx)%code == p) return
+      do idx = 1, size(field_list)
+          if (field_list(idx)%code == p) return
       end do
       if (p(1:min(3,len(p))) == 'AUX') then
          read (p(min(4,len(p)):),'(i1)', iostat=j) i
          if (j /= 0 .or. i < 0 .or. i > 9) &
             call quit('prop_contribs error: ' &
-                   // 'Auxiliary label index should be within 0..9, ' // p)
+                     // 'Auxiliary label index should be within 0..9, ' // p)
          idx = 1
          return
       end if
@@ -2227,14 +2329,28 @@ contains
       character(*), intent(in) :: p(:)
       logical :: pert_antisym(size(p))
       integer :: i
-      pert_antisym = (/(pert_table(idx(p(i)))%anti, i=1,size(p))/)
+      pert_antisym = (/(field_list(idx(p(i)))%anti, i=1,size(p))/)
    end function
 
 
-   function pert_shape(p)
-      character(*), intent(in) :: p(:)
+   !> shape (dimensions) of property p(:)
+   function pert_shape(mol, p)
+      !> structure containing the integral program settings
+      type(prop_molcfg), intent(in) :: mol
+      !> field lables
+      character(*),      intent(in) :: p(:)
       integer :: pert_shape(size(p)), i
-      pert_shape = (/(pert_table(idx(p(i)))%ncomp, i=1,size(p))/)
+      pert_shape = (/(field_list(idx(p(i)))%ncomp, i=1,size(p))/)
+      ! loop through mol-dependent
+      do i=1, size(p)
+         if (pert_shape(i) /= -1) then
+            ! cycle
+         else if (p(i) == 'GEO') then
+            pert_shape(i) = 3 * mol%natoms
+         else
+            call quit('pert_shape error: Number of comp. unknown for ' // p(i))
+         end if
+      end do
    end function
 
 
@@ -2242,7 +2358,7 @@ contains
       character(*), intent(in) :: p(:)
       logical :: pert_basdep(size(p))
       integer :: i
-      pert_basdep = (/(pert_table(idx(p(i)))%bas, i=1,size(p))/)
+      pert_basdep = (/(field_list(idx(p(i)))%bas, i=1,size(p))/)
    end function
 
 
@@ -2278,7 +2394,7 @@ contains
       end if
       ! write fo files
 #ifdef LSDALTON_ONLY
-      call lsquit('Cannot call write_dsofso, only new integral code is compiled',-1)
+      call quit('Cannot call write_dsofso, only new integral code is compiled')
 #else
 #ifdef PRG_DIRAC
       call quit('dirac: implement write_dsofso')
@@ -2287,6 +2403,7 @@ contains
 #endif
 #endif
    end subroutine
+
 
 
 #ifdef LSDALTON_ONLY
@@ -2315,6 +2432,10 @@ contains
       case ('ELGR')
          if (size(pnuc) /= 6) &
             call quit('prop_intifc_nuc: For field ELGR, size(pnuc) must be 6')
+      case ('GEO ')
+         if (size(pnuc) /= 3 * mol%natoms) &
+            call quit('prop_intifc_nuc: For field ELGR, size(pnuc) must be 6')
+         call II_get_nn_gradient(pnuc, mol%setting, mol%lupri, mol%luerr)
       case default
          call quit('prop_intifc_nuc: Unimplemented or unknown field "' // flds(1) &
                 // '". Only EL (-nucdip), ELGR (-qdrnuc) and GEO (gradnn) ' &
@@ -2324,17 +2445,31 @@ contains
 #endif
 
 
+
 #ifdef LSDALTON_ONLY
    !> Call one-electron integral program to calculate some
    !> integrals ints(:) and some averages avgs(:).
-   !> Currently only does integrals (ints), not averages.
-   !> ajt This should be moved to separate module
+   !> ajt This should eventually be moved to separate module
    !>     prop_intifc, together with prop_intifc_2el,
    !>     prop_intifc_ksm and prop_intifc_nuc
    subroutine prop_intifc_1el(mol, flds, dens, avgs, ints)
       use integraloutput_type,   only: initIntegralOutputDims
-      use ls_Integral_Interface, only: ls_getIntegrals
-      use TYPEDEF,               only: retrieve_output
+      use ls_Integral_Interface, only: ls_getIntegrals, &
+                                       ls_attachDmatToSetting, &
+                                       ls_freeDmatFromSetting
+      use TYPEDEF,               only: retrieve_output, LSSETTING
+      type lsint_arg
+         integer       :: idens
+         integer       :: dim1
+         integer       :: dim2
+         integer       :: dim5
+         character(12) :: ao2
+         character(12) :: ao3
+         integer       :: nderiv
+         character(12) :: oper
+         character(12) :: spec
+         integer       :: fac
+      end type
       !> structure containing the integral program settings
       type(prop_molcfg), intent(in) :: mol
       !> field lables, must currently be either (/'EL'/) or (/'ELGR'/)
@@ -2345,54 +2480,132 @@ contains
       real(8),          intent(out) :: avgs(:)
       !> resulting integral matrices
       type(matrix),   intent(inout) :: ints(:)
-      !---------------------------------------
-      type(matrix) :: mats(10) !scratch including lower-order integral matrices
-      integer      :: nlower, nderiv, i
+      !----------------------------------------------
+      type(LSSETTING), pointer :: setting
+      type(lsint_arg) :: run(3)
+      integer         :: nb, na, nrun, nmat, i, j
+      real(8)         :: tmp(3, (size(avgs)+2)/3)
+      type(matrix)    :: mat(10) !scratch including lower-order integral matrices
+      nb = mol%zeromat%nrow
+      na = mol%natoms
+      setting => mol%setting
       if (size(flds) /= 1) &
-         call quit('prop_intifc_1el: size(flds) /= 1, but only EL and ELGR implemented')
-      if (flds(1) /= 'EL' .and. flds(1) /= 'ELGR') &
-         call quit('prop_intifc_1el: Only EL (DIPLEN) and ELGR (SECMOM) integrals ' &
-                // 'implemented, not "' // flds(1) // '"')
-      ! verify label and size
+         call quit('prop_intifc_1el: size(flds) /= 1, but only EL, ELGR and GEO implemented')
+      ! verify field labels flds(:), while configuring run / num_runs
+      nrun = 1  !default
       select case(flds(1))
       case ('EL')
          if (size(ints) /= 3) &
             call quit('prop_intifc_1el: For field EL, size(ints) must be 3')
-         nlower = 1
-         nderiv = 1
+         run(1) = lsint_arg(-1,nb,nb, 4,'Regular','Empty',1,'Carmom','Regular',1)
       case ('ELGR')
          if (size(ints) /= 6) &
             call quit('prop_intifc_1el: For field ELGR, size(ints) must be 6')
-         nlower = 4
-         nderiv = 2
+         run(1) = lsint_arg(-1,nb,nb,10,'Regular','Empty',2,'Carmom','Regular',1)
+      case ('GEO')
+         if (size(dens) /= 2) &
+            call quit('prop_intifc_1el: For field GEO, only size(dens)=2 implemented')
+         if (size(avgs) /= 3*na) &
+            call quit('prop_intifc_1el: For field GEO, size(avgs) must be 3*natoms')
+         run(1) = lsint_arg(1,3,na,1,'Regular','Nuclear',1,'Nucrep', 'Gradient', 2)
+         run(2) = lsint_arg(1,3,na,1,'Empty',  'Regular',2,'Kinetic','Gradient', 2)
+         run(3) = lsint_arg(2,3,na,1,'Regular','Empty',  1,'Overlap','Gradient',-2)
+         nrun = 3
       case default
          call quit('prop_intifc_1el: Unimplemented or unknown field "' // flds(1) &
-                // '". Only EL (DIPLEN) and ELGR (SECMOM) are implemented')
+                // '". Only EL (DIPLEN), ELGR (SECMOM) and GEO are implemented')
       end select
-      ! initialize the integral program
-      call initIntegralOutputDims(mol%setting%output, ints(1)%nrow, &
-                                  ints(1)%ncol, 1, 1, nlower + size(ints))
-      ! run integral program
-      call ls_getIntegrals('Regular', 'Regular', 'Empty', 'Empty', &
-                           nlower+size(ints), nderiv, 'Carmom',    &
-                           'Regular', 'Contracted',                &
-                           mol%setting, mol%lupri, mol%luerr)
-      ! allocate the lower-order matrices mat(:nlower)
-      do i=1, nlower
-         call init_mat(mats(i), ints(1))
+      ! if there are any integral runs, prepare matrices
+      nmat = 0
+      if (any(run(:nrun)%idens == -1)) then
+         ! zero output integral matrices (before accumulating)
+         do i=1, size(ints)
+            ints(i) = 0d0 * mol%zeromat
+         end do
+         ! allocate temporary integral matrices
+         nmat = maxval(run(:nrun)%dim5)
+         do i=1, nmat
+            call init_mat(mat(i), mol%zeromat)
+         end do
+      end if
+      ! loop over calls to integral program LSint
+      do i=1, nrun
+         ! if this is an average run (not an integral run), register density
+         ! matrix to average over, in setting
+         if (run(i)%idens /= -1) &
+            call ls_attachDmatToSetting(dens(run(i)%idens), 1, setting,'LHS', 1, &
+                           merge(2, 3, run(i)%ao2 == 'Regular'), mol%lupri)
+         ! set up dimensions of output
+         call initIntegralOutputDims(setting%output, run(i)%dim1, &
+                                     run(i)%dim2, 1, 1, run(i)%dim5)
+         ! run integral program
+         call ls_getIntegrals('Regular', run(i)%ao2, run(i)%ao3, 'Empty', &
+                              run(i)%dim5, run(i)%nderiv, run(i)%oper,    &
+                              run(i)%spec, 'Contracted', setting,         &
+                              mol%lupri, mol%luerr)
+         ! retrieve averages or integrals
+         if (run(i)%idens /= -1) then
+            ! retrieve and accumulate averages
+            call retrieve_output(mol%lupri, setting, tmp)
+            avgs = avgs + run(i)%fac * (/tmp/)
+            ! unregister averaged density matrix
+            call ls_freeDmatFromSetting(setting)
+         else
+            ! retrieve and accumulate integrals
+            call retrieve_output(mol%lupri, setting, mat(:run(i)%dim5))
+            do j=1, size(ints)
+               ints(j) = ints(j) + mat(j + run(i)%dim5 - size(ints))
+            end do
+         end if
       end do
-      ! alias the output matrices in mat(nlower+1:nlower+size(ints))
-      do i=1, size(ints)
-         ! if zero (and thus not allocated), allocate
-         if (iszero(ints(i))) call init_mat(ints(i), ints(i))
-         call init_mat(mats(nlower+i), ints(i), alias='FF')
-      end do
-      ! get integrals into matrices
-      call retrieve_output(mol%lupri, mol%setting, mats(:nlower+size(ints)))
-      ! free lower order matrices
-      mats(:nlower) = 0
+      ! free temporary matrices
+      mat(:nmat) = 0
    end subroutine
 #endif
+
+
+
+#ifdef LSDALTON_ONLY
+   !> Call 2-electron integral program.
+   !> FIXME Should support several avg / fock contractions at once
+   subroutine prop_intifc_2el(mol, flds, dens, avgs, fock)
+      use TYPEDEF,       only: LSSETTING
+      use matrix_module, only: Matrixp
+      !> structure containing the integral program settings
+      type(prop_molcfg),    intent(in) :: mol
+      !> field lables, must currently be (/'GEO'/)
+      character(4),         intent(in) :: flds(:)
+      !> density matrices to contract integrals with
+      type(matrix), target, intent(in) :: dens(:)
+      !> resulting integral averages
+      real(8),             intent(out) :: avgs(:)
+      !> resulting integral matrices
+      type(matrix),      intent(inout) :: fock(:)
+      !--------------------------------------------
+      type(LSSETTING), pointer :: setting
+      integer :: nb, na
+      nb = mol%zeromat%nrow
+      na = mol%natoms
+      setting => mol%setting
+      if (size(flds) /= 1) &
+         call quit('prop_intifc_2el: size(flds) /= 1, but only GEO implemented')
+      ! verify field labels flds(:), while configuring
+      select case(flds(1))
+      case ('GEO')
+         if (size(dens) /= 1 .and. size(dens) /= 2) &
+            call quit('prop_intifc_1el: For field GEO, only size(dens)=1,2 implemented')
+      case default
+         call quit('prop_intifc_1el: Unimplemented or unknown field "' // flds(1) &
+                // '". Only EL (DIPLEN), ELGR (SECMOM) and GEO are implemented')
+      end select
+      !ajt FIXME Set up and call Coulomb and Exchange directly
+      call II_get_twoElectron_gradient(avgs, Matrixp(dens(1)),          &
+                                       Matrixp(dens(size(dens))), 1, 1, &
+                                       mol%setting, mol%lupri, mol%luerr)
+      ! factor 8, it seems
+      avgs = avgs * 8
+   end subroutine
+#endif /*LSDALTON_ONLY*/
 
 
 end module

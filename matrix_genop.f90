@@ -1,13 +1,20 @@
-! written by Andreas J. Thorvaldsen
-! radovan.bast@uit.no (2009-02-18): generalized for DIRAC
+! Copyright 2009 Andreas J. Thorvaldsen
+! This file is made available under the terms of the
+! GNU Lesser General Public License.
 
-! module contains slightly generalized versions of the
-! operations in matrix_operations (Dalton)
+!> @file
+!> Contains module matrix_defop
 
-! mainly intended as hidden back-end for matrix_defop
-! mat_init is generalized so that another matrix can fill
-! the role of nrow and ncol
-
+!> module matrix_genop contains slightly generalized
+!> versions of the operations in DALTON-linsca-ng's module
+!> matrix_operations (Dalton)
+!>
+!> written by Andreas J. Thorvaldsen
+!> radovan.bast@uit.no (2009-02-18): generalized for DIRAC
+!>
+!> mainly intended as hidden back-end for matrix_defop
+!> mat_init is generalized so that another matrix can fill
+!> the role of nrow and ncol
 module matrix_genop
 
 #ifdef DALTON_AO_RSP
@@ -182,6 +189,7 @@ contains
       mat_isdef = .not.(A%nrow==-1 .and. A%ncol==-1)
    end function
 
+
    function mat_iszero(A)
       type(matrix), intent(in) :: A
       logical                  :: mat_iszero
@@ -189,6 +197,7 @@ contains
          call quit('mat_iszero(A): matrix A undefined')
       mat_iszero = .not.associated(A%elms)
    end function
+
 
    function mat_same(A, B, ta, tb)
       type(matrix),          intent(in) :: A, B
@@ -220,9 +229,10 @@ contains
          mat_same = mat_same .and. associated(A%elms,B%elms)
    end function
 
+
+   !> private 'driving' routine for mat_axtpy
+   !> add/put block ix from X to block iy in Y
    subroutine blk_axtpy(a, ix, X, tx, py, iy, Y)
-   ! private 'driving' routine for mat_axtpy
-   ! add/put block ix from X to block iy in Y
       real(8),      intent(in) :: a      !scale factor for X
       integer,      intent(in) :: ix, iy !block indices
       logical,      intent(in) :: tx, py !transpose X or not, add to Y or overwrite Y
@@ -363,9 +373,9 @@ contains
    end subroutine
 
 
+   !> matrix multiply: C = rc*C + rab * A^ta * B^tb
+   !> assumed initialied and with corresponding shapes
    subroutine mat_gemm(fab, A, ta, B, tb, pc, C)
-   ! matrix multiply: C = rc*C + rab * A^ta * B^tb
-   ! assumed initialied and with corresponding shapes
       complex(8),      intent(in) :: fab
       type(matrix),    intent(in) :: A, B
       logical,         intent(in) :: ta, tb, pc
@@ -399,10 +409,10 @@ contains
    end subroutine
 
 
+   !> matrix dot product: sum_ij Aij^* Bij (ta=F)
+   !>  or  product trace: sum_ij Aji Bij   (ta=F)
+   !> A and B are assumed initialied and with equal/transpose shapes
    function mat_dot(A, B, ta) result(r)
-   ! matrix dot product: sum_ij Aij^* Bij (ta=F)
-   !  or  product trace: sum_ij Aji Bij   (ta=F)
-   ! A and B are assumed initialied and with equal/transpose shapes
       type(matrix), intent(in) :: A, B
       logical,      intent(in) :: ta
       complex(8)               :: r
@@ -441,8 +451,8 @@ contains
    end function
 
 
+   !> matrix sum Aii, for A square and assumed initialied
    function mat_trace_nontmp(A) result(r)
-   ! matrix sum Aii, for A square and assumed initialied
       type(matrix), intent(in) :: A
       real(8)                  :: r
       integer                  :: i
@@ -453,9 +463,9 @@ contains
    end function
 
 
+   !> print matrix A to unit, starting with label, making each column colwidth wide,
+   !> and using braces braces
    subroutine mat_print_nontmp(A, label, unit, colwidth, braces)
-   ! print matrix A to unit, starting with label, making each column colwidth wide,
-   ! and using braces braces
       type(matrix),           intent(in) :: A
       integer,      optional, intent(in) :: unit, colwidth
       character(*), optional, intent(in) :: label, braces
@@ -553,9 +563,9 @@ contains
    end subroutine
 
 
+   !> Reference the real part of another matrix (no copy)
+   !> Should eventually be replaced by more general mat_init(..)
    function mat_real_part(A) result(B)
-   ! Reference the real part of another matrix (no copy)
-   ! Should eventually be replaced by more general mat_init(..)
       type(matrix), intent(in) :: A
       type(matrix)             :: B
       integer :: siz
@@ -568,9 +578,9 @@ contains
    end function
 
 
+   !> Reference the imaginary part of another matrix (no copy)
+   !> Should eventually be replaced by more general mat_init(..)
    function mat_imag_part(A) result(B)
-   ! Reference the imaginary part of another matrix (no copy)
-   ! Should eventually be replaced by more general mat_init(..)
       type(matrix), intent(in) :: A
       type(matrix)             :: B
       integer :: siz

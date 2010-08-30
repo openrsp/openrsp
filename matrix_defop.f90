@@ -178,32 +178,32 @@ module matrix_defop
       module procedure mat_imag_part
    end interface
 
+   !> specification of A = fx*X^tx * Z^tz + Y    gemm
+   !>        or        A = fx*X^tx * Z^tz        gemm
+   !>        or        A = fx*X^tx        + Y    axtpby
+   !>        or        A = fx*X^tx               axt or by
+   !> A points to the matrix where result is to be stored, which is undef.
+   !> Flags dx,dy,dz decides whether arguments whould be deleted after use
    type tmp_mat
-   ! specification of A = fx*X^tx * Z^tz + Y    gemm
-   !        or        A = fx*X^tx * Z^tz        gemm
-   !        or        A = fx*X^tx        + Y    axtpby
-   !        or        A = fx*X^tx               axt or by
-   ! A points to the matrix where result is to be stored, which is undef.
-   ! Flags dx,dy,dz decides whether arguments whould be deleted after use
       type(matrix),pointer :: A,  X,  Z,  Y !associated or not- pointers
       complex(8)           ::    fx         !complex scale factor
       logical              ::    tx, tz     !transpose X or Z ?
       logical              ::    dx, dz, dy !delete X, Y or Z after use ?
    end type
 
-   !tmp(:) contains a 'stack' of temporary matrices
+   !> tmp(:) contains a 'stack' of temporary matrices
    integer,parameter         :: max_tmp = 64
    type(tmp_mat),target,save :: tmp(max_tmp)
    integer                   :: top_tmp = 0 !0 as "before index 1, thus empty"
 
-   !for switching debugging on and off
+   !> for switching debugging on and off
    logical :: matrix_defop_debug = .false.
 
 contains
 
+   !> if A is defined, return null, if A is undefined and A%elms
+   !> points to within tmp(1:max_tmp), return A%elms
    function find_tmp(A,errmsg) result(T)
-   ! if A is defined, return null, if A is undefined and A%elms
-   ! points to within tmp(1:max_tmp), return A%elms
       type(matrix),target,  intent(in) :: A
       character(*),optional,intent(in) :: errmsg
       type(tmp_mat),pointer            :: T
@@ -219,8 +219,8 @@ contains
       end if !otherwise, just return null
    end function
 
+   !> record the temporary, non-zero matrix M in tmp(:)
    function new_tmp(A, fx, X, tx, dx, Z, tz, dz, fy, Y, dy) result(T)
-   !record the temporary, non-zero matrix M in tmp(:)
       type(matrix),        target,intent(inout) ::  A
       type(matrix), target, optional,intent(in) ::  X,  Z,  Y
       complex(8),           optional,intent(in) :: fx,     fy
@@ -256,8 +256,8 @@ contains
       end if
    end function
 
+   !> remove tmp_mat T from within tmp(:), deallocate t%A if needed
    subroutine del_tmp(T)
-   !remove tmp_mat T from within tmp(:), deallocate t%A if needed
       type(tmp_mat),intent(inout) :: T
       nullify(T%A)
       !update last occupied index
@@ -267,9 +267,9 @@ contains
       end do
    end subroutine
 
+   !> initialize T%A to a zero matrix of the correct shape,
+   !> then delete (or not) T%X,T%Z,T%Y, then del_tmp(T)
    subroutine zero_tmp(T)
-   !initialize T%A to a zero matrix of the correct shape,
-   !then delete (or not) T%X,T%Z,T%Y, then del_tmp(T)
       type(tmp_mat),intent(inout) :: T
       !if (matrix_defop_debug) print *,'zero_tmp',loc(T%A),T%A%nrow,T%A%ncol
       if (T%A%nrow==-1 .and. T%A%ncol/=-1) T%A%ncol = -1
@@ -289,9 +289,9 @@ contains
    end subroutine
 
 
+   !> evaluate the expression A = f*X*Z + Y, as specified in the fields in T,
+   !> by executing either an axtpby or a gemm operation. Then remove T from tmp(:)
    subroutine eval_tmp(T)
-   ! evaluate the expression A = f*X*Z + Y, as specified in the fields in T,
-   ! by executing either an axtpby or a gemm operation. Then remove T from tmp(:)
       type(tmp_mat),intent(inout) :: T
       logical             :: Azero, complex, fits
       type(matrix),target :: dupA
@@ -506,24 +506,24 @@ contains
    end subroutine
 
 
+   !> verify that shapes match, check for zeros
    function mat_plus_mat(A, B) result(C)
-   !verify that shapes match, check for zeros
       type(matrix), target, intent(in) :: A, B
       type(matrix), target             :: C
       call gen_mat_plus_mat(A, .true., B, C)
    end function
 
 
+   !> verify that shapes match, check for zeros
    function mat_minus_mat(A, B) result(C)
-   !verify that shapes match, check for zeros
       type(matrix), target, intent(in) :: A, B
       type(matrix), target             :: C
       call gen_mat_plus_mat(A, .false., B, C)
    end function
 
 
+   !> verify that shapes match, check for zeroes
    function mat_times_mat(A, B) result(C)
-   !verify that shapes match, check for zeroes
       type(matrix), target, intent(in) :: A, B
       type(matrix), target             :: C
       type(tmp_mat), pointer           :: TA, TB, TC
@@ -632,10 +632,11 @@ contains
       call gen_complex_times_mat((-1d0,0d0), A, B)
    end function
 
+
+   !> Transpose the matrix A. If A is temporary and A=a*X or A=a*X*Z,
+   !> only swap X and Z, and slip-swap tx and tz.
+   !> Otherwise, evaluate A (if tmp), and create a new temporary for B
    function mat_dagger(A) result(B)
-   ! Transpose the matrix A. If A is temporary and A=a*X or A=a*X*Z,
-   ! only swap X and Z, and slip-swap tx and tz.
-   ! Otherwise, evaluate A (if tmp), and create a new temporary for B
       type(matrix),target,intent(in) :: A
       type(matrix),target            :: B
       type(tmp_mat),pointer          :: TA, TB

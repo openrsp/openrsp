@@ -130,7 +130,7 @@ contains
       ! call print_tensor(shape(Ebff), Ebff, 'E1ebDf'); Ebff=0
       call prop_oneave(mol, S, (/'MAG','EL '/), (/De/), shape(Ebff), Ebff, perm=(/1,3,2/))
       ! call print_tensor(shape(Ebff), Ebff, 'E1fbDe'); Ebff=0
-      call prop_twoave((/'MAG'/), (/D,De,Df,Def/), shape(Ebff), Ebff)
+      call prop_twoave(mol, (/'MAG'/), (/D,De,Df,Def/), shape(Ebff), Ebff)
       do k = 1, 3
          do j = 1, 3
             DFDef(j,k) = D*Fe(j)*Df(k) + De(j)*Ff(k)*D &
@@ -156,7 +156,7 @@ contains
       ! call print_tensor(shape(Ebff), Ebff, 'E1ebDf'); Ebff=0
       call prop_oneave(mol, S, (/'MAG','EL '/), (/De/), shape(Ebff), Ebff, perm=(/1,3,2/))
       ! call print_tensor(shape(Ebff), Ebff, 'E1fbDe'); Ebff=0
-      call prop_twoave((/'MAG'/), (/D,De,Df,(0d0*D,i=1,3*3)/), shape(Ebff), Ebff)
+      call prop_twoave(mol, (/'MAG'/), (/D,De,Df,(0d0*D,i=1,3*3)/), shape(Ebff), Ebff)
       ! call print_tensor(shape(Ebff), Ebff, 'E2bDeDf'); Ebff=0
       ! partial reorth contribution
       call prop_oneint(mol, S, (/'MAG'/), (/3/), S=Sb) !load overlap
@@ -253,7 +253,7 @@ contains
       call print_tensor(shape(Eof),  Eof, 'G-prime-noL = Eof', (/-freq(2),freq(2)/))
       call prop_oneave(mol, S, (/'ELGR'/), (/De/), shape(Eqf), Eqf)
       call print_tensor(shape(Eqf), -Eqf, 'A-tensor = -Eqf', (/-freq(2),freq(2)/))
-      call prop_twoave((/'MAG'/), (/D,De/), shape(Ebf), Ebf)
+      call prop_twoave(mol, (/'MAG'/), (/D,De/), shape(Ebf), Ebf)
       do j = 1, 3
          DFDe(j) = D*(F-freq(2)/2*S)*De(j) + D*Fe(j)*D &
                  + De(j)*(F+freq(2)/2*S)*D
@@ -277,7 +277,7 @@ contains
       call print_tensor(shape(Eqff), -Eqff, 'd/df A-tensor = -Eqff', freq)
       call prop_oneave(mol, S, (/'MAG','EL '/), (/De/), shape(Ebff), Ebff, perm=(/1,3,2/))
       call prop_oneave(mol, S, (/'MAG','EL '/), (/Df/), shape(Ebff), Ebff)
-      call prop_twoave((/'MAG'/), (/D,De,Df,Def/), shape(Ebff), Ebff)
+      call prop_twoave(mol, (/'MAG'/), (/D,De,Df,Def/), shape(Ebff), Ebff)
       do k = 1, 3
          do j = 1, 3
             DFDef(j,k) = D*Fe(j)*Df(k) + De(j)*Ff(k)*D &
@@ -550,7 +550,7 @@ contains
       Ebb = 0
       ! contract London magnetizability
       if (freq(1)==-freq(2)) then
-         call prop_twoave((/'MAG','MAG'/), (/D/), shape(Ebb), Ebb)
+         call prop_twoave(mol, (/'MAG','MAG'/), (/D/), shape(Ebb), Ebb)
          DFD = D*F*D
          call prop_oneave(mol, S, (/'MAG','MAG'/), (/D/), shape(Ebb), Ebb, &
                           freq=(/freq(1),freq(2)/), DFD=(/DFD/))
@@ -559,7 +559,7 @@ contains
             DFDc(j) = Dc(j)*(F+freq(2)/2*S)*D + D*Fc(j)*D &
                         + D*(F-freq(2)/2*S)*Dc(j)
          end do
-         call prop_twoave((/'MAG'/), (/D,Dc/), shape(Ebb), Ebb)
+         call prop_twoave(mol, (/'MAG'/), (/D,Dc/), shape(Ebb), Ebb)
          call prop_oneave(mol, S, (/'MAG'/), (/Dc/), shape(Ebb), Ebb, &
                           freq=(/freq(1)/), DFD=(/DFDc/))
          DFDc = 0
@@ -604,7 +604,7 @@ contains
       if (freq(4)==0) then
          call prop_oneave(mol, S, (/'MAG','MAG','EL '/), (/D/), shape(Ebbf), Ebbf)
          ! call print_tensor(shape(Ebbf), Ebbf, 'E0bce'); Ebbf=0
-         call prop_twoave((/'MAG','MAG'/), (/D,De/), shape(Ebbf), Ebbf)
+         call prop_twoave(mol, (/'MAG','MAG'/), (/D,De/), shape(Ebbf), Ebbf)
          do k = 1, 3
             DFDe(k) = De(k)*(F+freq(3)/2*S)*D + D*Fe(k)*D &
                         + D*(F-freq(3)/2*S)*De(k)
@@ -615,7 +615,7 @@ contains
          ! call print_tensor(shape(Ebbf), Ebbf, 'E1bcDe-i/2TbcDe-SbcWe'); Ebbf=0
          call prop_oneave(mol, S, (/'MAG','EL '/), (/Dc/), shape(Ebbf), Ebbf, perm=(/1,3,2/))
          ! call print_tensor(shape(Ebbf), Ebbf, 'E1ecDb'); Ebbf=0
-         call prop_twoave((/'MAG'/), (/D,Dc,De,Dce/), shape(Ebbf), Ebbf)
+         call prop_twoave(mol, (/'MAG'/), (/D,Dc,De,Dce/), shape(Ebbf), Ebbf)
          do k = 1, 3
             do j = 1, 3
                DFDce(j,k) = Dc(j)*Fe(k)*D + D*(Fc(j)-freq(3)/2*Sb(j))*De(k) &
@@ -646,14 +646,14 @@ contains
       !ajt This should really be a 3rd order perturbed density, which isn't
       !    implemented in prop_contribs. Rather, fake it with a second order density
       !    NB: This is incorrect with DFT
-      call prop_twoave((/'MAG'/), (/D,Dq,Def,(0d0*D,i=1,6*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Dq,Def,(0d0*D,i=1,6*3*3)/), &
                        (/6,3,3*3/), Eqbff, perm=(/2,1,3/))
       ! call print_tensor(shape(Eqbff), Eqbff, 'E2bDqDef', Eqbff); Eqbff=0
       call prop_oneave(mol, S, (/'MAG','MAG','EL '/), (/Df/), shape(Ebbff), Ebbff)
       call prop_oneave(mol, S, (/'MAG','MAG','EL '/), (/De/), shape(Ebbff), Ebbff, &
                        perm=(/1,2,4,3/))
       ! call print_tensor(shape(Ebbff), Ebbff, 'E1bcfDe + E1bceDf'); Ebbff=0
-      call prop_twoave((/'MAG','MAG'/), (/D,De,Df,Def/), shape(Ebbff), Ebbff)
+      call prop_twoave(mol, (/'MAG','MAG'/), (/D,De,Df,Def/), shape(Ebbff), Ebbff)
       do l = 1, 3
          do k = 1, 3
             DFDef(k,l) = De(k)*Ff(l)*D + D*Fe(k)*Df(l) &
@@ -675,19 +675,19 @@ contains
       !    (/D,Db,De,Df,(0d0*D,i=1,2*3*3),Def,(0d0*D,i=1,3*3*3)/), but 3rd order
       !    isn't implemented in prop_contribs. Rather, fake it with a second order
       !    density. NB: Incorrect with DFT, as E^3b Db De Df will be missing
-      call prop_twoave((/'MAG'/), (/D,Db,Def,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Db,Def,(0d0*D,i=1,3*3*3)/), &
                        (/3,3,3*3/), Ebbff, perm=(/2,1,3/))
       !ajt This should really be the 3rd order perturbed density
       !    (/D,Dc,De,Df,Dce,Dcf,Def,(0d0*D,i=1,3*3*3)/), but 3rd order isn't
       !    implemented in prop_contribs. Rather, fake it with three second order
       !    densities. NB: Incorrect with DFT, as E^3b Dc De Df will be missing
-      call prop_twoave((/'MAG'/), (/D,Dc,Def,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Dc,Def,(0d0*D,i=1,3*3*3)/), &
                        (/3,3,3*3/), Ebbff)
       tmp = 0 !need tmp since index e is between c and f
-      call prop_twoave((/'MAG'/), (/D,De,Dcf,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,De,Dcf,(0d0*D,i=1,3*3*3)/), &
                        (/3,3,3*3/), tmp)
       Ebbff = Ebbff + reshape((/((((tmp(i,k,j,l),i=1,3),j=1,3),k=1,3),l=1,3)/),(/3,3,3,3/))
-      call prop_twoave((/'MAG'/), (/D,Df,Dce,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Df,Dce,(0d0*D,i=1,3*3*3)/), &
                        (/3,3*3,3/), Ebbff, perm=(/1,3,2/))
       ! call print_tensor(shape(Ebbff), Ebbff, 'E2cDbDef + E2bDcDef + E2bDeDcf + E2bDfDce'); Ebbff=0
       ! reorthonormalization contribution -tr Sb (DFD)cef

@@ -622,7 +622,7 @@ contains
       ! call print_tensor(Egff, shape(Egff), 'E1geDf'); Egff=0
       call prop_oneave(mol, S, (/'GEO','EL '/), (/De/), shape(Egff), Egff, perm=(/1,3,2/))
       ! call print_tensor(Egff, shape(Egff), 'E1gfDe'); Egff=0
-      call prop_twoave((/'GEO'/), (/D,De,Df,Def/), shape(Egff), Egff)
+      call prop_twoave(mol, (/'GEO'/), (/D,De,Df,Def/), shape(Egff), Egff)
       do k = 1, 3
          do j = 1, 3
             DFDef(j,k) = De(j)*Ff(k)*D + De(j)*(F+freq*S)*Df(k) + D*Fe(j)*Df(k) &
@@ -648,7 +648,7 @@ contains
       ! call print_tensor(Egbf, shape(Egbf), 'E1gbDf'); Egbf=0
       call prop_oneave(mol, S, (/'GEO','EL '/), (/Db/), shape(Egbf), Egbf, perm=(/1,3,2/))
       ! call print_tensor(Egbf, shape(Egbf), 'E1gfDb'); Egbf=0
-      call prop_twoave((/'GEO'/), (/D,Db,Df,Dbf/), shape(Egbf), Egbf)
+      call prop_twoave(mol, (/'GEO'/), (/D,Db,Df,Dbf/), shape(Egbf), Egbf)
       do k = 1, 3
          do j = 1, 3
             DFDbf(j,k) = Db(j)*Ff(k)*D + Db(j)*(F+freq*S)*Df(k) + D*Fb(j)*Df(k) &
@@ -673,7 +673,7 @@ contains
       ! call print_tensor(shape(Egqf), Egqf, 'E1gqDf'); Egqf=0
       call prop_oneave(mol, S, (/'GEO','EL '/), (/Dq/), shape(Egqf), Egqf, perm=(/1,3,2/))
       ! call print_tensor(shape(Egqf), Egqf, 'E1gfDq'); Egqf=0
-      call prop_twoave((/'GEO'/), (/D,Dq,Df,Dqf/), shape(Egqf), Egqf)
+      call prop_twoave(mol, (/'GEO'/), (/D,Dq,Df,Dqf/), shape(Egqf), Egqf)
       do k = 1, 3
          do j = 1, 6
             DFDqf(j,k) = Dq(j)*Ff(k)*D + Dq(j)*(F+freq*S)*Df(k) + D*Fq(j)*Df(k) &
@@ -748,7 +748,7 @@ contains
       ! call print_tensor(Egff, shape(Egff), 'E1geDf'); Egff=0
       call prop_oneave(mol, S, (/'GEO','EL '/), (/De/), shape(Egff), Egff, perm=(/1,3,2/))
       ! call print_tensor(Egff, shape(Egff), 'E1gfDe'); Egff=0
-      call prop_twoave((/'GEO'/), (/D,De,Df,Def/), shape(Egff), Egff)
+      call prop_twoave(mol, (/'GEO'/), (/D,De,Df,Def/), shape(Egff), Egff)
       do k = 1, 3
          do j = 1, 3
             DFDef(j,k) = De(j)*Ff(k)*D + De(j)*(F-freq*S)*Df(k) + D*Fe(j)*Df(k) &
@@ -846,12 +846,12 @@ contains
          call quit('vibhyp_hyp_dipgra_polgra: sum(freq) should be zero!')
       ! verify that DALTON.HES exists before doing anything
 #ifdef LSDALTON_ONLY
-      call lsquit('Cannot call GPINQ, only new integral code is compiled',-1)
+      call quit('Cannot call GPINQ, only new integral code is compiled')
 #else
       call GPINQ('DALTON.HES', 'EXIST', exists)
 #endif
-      if (.not.exists) call quit('vibhyp_hyp_dipgra_polgra: Hessian file', &
-                                 ' DALTON.HES not found, but will be needed')
+      if (.not.exists) call quit('vibhyp_hyp_dipgra_polgra: Hessian file ' &
+                              // 'DALTON.HES not found, but will be needed')
       ! dipole moment
       dip = 0
       call prop_oneave(mol, S, (/'EL'/), (/D/), (/3/), dip)
@@ -908,7 +908,7 @@ contains
          Egf(:,:,n) = 0
          call prop_oneave(mol, S, (/'GEO','EL '/), (/D/), (/ng,3/), Egf(:,:,n))
          ! call print_tensor((/ng,3/), Egf(:,:,n), 'E0gf'); Egf(:,:,n)=0
-         call prop_twoave((/'GEO'/), (/D,Df(:,n)/), (/ng,3/), Egf(:,:,n))
+         call prop_twoave(mol, (/'GEO'/), (/D,Df(:,n)/), (/ng,3/), Egf(:,:,n))
          ! call print_tensor( (/3,ng/), Efg(:,:,n), 'E1gDf'); Efg(:,:,n)=0
          do i = 1, 3
             DFDf(i) = Df(i,n)*(F+freq(n)/2*S)*D + D*Ff(i,n)*D &
@@ -1014,7 +1014,7 @@ contains
          ! call print_tensor((/ng,3,3/), Egff(:,:,:,n), 'E1geDf'); Egff(:,:,:,n)=0
          call prop_oneave(mol, S, (/'GEO','EL '/), (/Df(:,nj)/), (/ng,3,3/), Egff(:,:,:,n), perm=(/1,3,2/))
          ! call print_tensor((/ng,3,3/), Egff(:,:,:,n), 'E1gfDe'); Egff(:,:,:,n)=0
-         call prop_twoave((/'GEO'/), (/D,Df(:,nj),Df(:,nk),Dff(:,:,n)/), &
+         call prop_twoave(mol, (/'GEO'/), (/D,Df(:,nj),Df(:,nk),Dff(:,:,n)/), &
                           (/ng,3,3/), Egff(:,:,:,n))
          do k = 1, 3
             do j = 1, 3

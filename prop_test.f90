@@ -114,7 +114,7 @@ contains
                        DFD = DFDbw)
       DFDbw = 0
       ! call print_tensor(shape(Egbw), Egbw, 'HgDbw - SgDFDbw'); Egbw=0
-      call prop_twoave((/'GEO'/), (/D,Dbw/), shape(Egbw), Egbw)
+      call prop_twoave(mol, (/'GEO'/), (/D,Dbw/), shape(Egbw), Egbw)
       ! call print_tensor(shape(Egbw), Egbw, 'Gg(D)Dbw'); Egbw=0
       ! print, free, return
       call print_tensor(shape(Egbw), Egbw, 'Egbw')
@@ -170,7 +170,7 @@ contains
       Ebfx(:,:,:) = 0
       call prop_oneave(mol, S, (/'MAG','EL '/), (/Dx/), shape(Ebfx), Ebfx)
       ! call print_tensor(shape(Ebfx), Ebfx, 'E1fbDx'); Ebfx=0
-      call prop_twoave((/'MAG'/), (/D,Df,Dx,Dfx/), shape(Ebfx), Ebfx)
+      call prop_twoave(mol, (/'MAG'/), (/D,Df,Dx,Dfx/), shape(Ebfx), Ebfx)
       ! call print_tensor(shape(Ebfx), Ebfx, 'E2bDfDx+E2bD0Dfx'); Ebfx=0
       do k = 1, 2
          do j = 1, 3
@@ -208,7 +208,7 @@ contains
       DFD = D*F*D
       Eg = 0 !zero first, since prop_one/twoave are incremental
       call prop_oneave(mol, S, (/'GEO'/), (/D/), (/ng/), Eg, DFD=(/DFD/))
-      call prop_twoave((/'GEO'/), (/D/), (/ng/), Eg)
+      call prop_twoave(mol, (/'GEO'/), (/D/), (/ng/), Eg)
       ! print
       call print_tensor((/ng/), Eg, 'gradient = Eg = E0g - Sg DFD')
       ! free DFD
@@ -252,7 +252,7 @@ contains
       ! contract Df and DFDf with MAG-perturbed integrals
       call prop_oneave(mol, S, (/'MAG'/), (/Df/), shape(Efb), Efb, &
                        perm=(/2,1/), freq=freq(1:1), DFD=DFDf)
-      call prop_twoave((/'MAG'/), (/D,Df/), shape(Efb), Efb, perm=(/2,1/))
+      call prop_twoave(mol, (/'MAG'/), (/D,Df/), shape(Efb), Efb, perm=(/2,1/))
       ! print
       call print_tensor(shape(Efb), Efb, 'G-prime = Efb = E1b Df - Sb DFDf')
       ! free Df(:), Ff(:), DFDf(:)
@@ -366,7 +366,7 @@ contains
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=freq(3:3))
       !no energy contributions for HF, one for KSDFT
       Efff = 0
-      call prop_twoave(UNP, (/D,De,Df,Dg,(0d0*D,i=1,54)/), (/3,3,3/), Efff)
+      call prop_twoave(mol, UNP, (/D,De,Df,Dg,(0d0*D,i=1,54)/), (/3,3,3/), Efff)
       !gradient Lagrange multiplier contribution -tr (DeSD-) (FDS-)fg
       do i = 1, 3
          DeSD(i) = De(i)*S*D - D*S*De(i)
@@ -467,7 +467,7 @@ contains
                      Dgh, Fgh, freq=(/freq(3),freq(4)/))
       ! one energy contribution
       Effff=0
-      call prop_twoave(UNP, (/D,De,Df,Dg,Dh, &
+      call prop_twoave(mol, UNP, (/D,De,Df,Dg,Dh, &
                               (0d0*D,i=1,18),Dfg,(0d0*D,i=1,9), &
                               Dfh,Dgh,(0d0*D,i=1,189)/), &
                        shape(Effff), Effff)
@@ -683,14 +683,14 @@ contains
       !London diamag
       call pert_dens(mol, S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
       Ebb = 0
-      call prop_twoave((/'MAG','MAG'/), (/D/), (/3,3/), Ebb)
+      call prop_twoave(mol, (/'MAG','MAG'/), (/D/), (/3,3/), Ebb)
       DFD = D*F*D
       call prop_oneave(mol, S, (/'MAG','MAG'/), (/D/), (/3,3/), Ebb, &
                        DFD=(/DFD/), freq=(/-freq,freq/))
       DFD = 0
       !call print_tensor( (/3,3/), Ebb, 'E0bb-i/2TbbD-SbbW'); Ebb=0
       !London paramag
-      call prop_twoave((/'MAG'/), (/D,Db/), (/3,3/), Ebb)
+      call prop_twoave(mol, (/'MAG'/), (/D,Db/), (/3,3/), Ebb)
       do j = 1, 3
          DFDb(j) = Db(j)*(F+(freq/2)*S)*D + D*Fb(j)*D &
                  +     D*(F-(freq/2)*S)*Db(j)
@@ -745,7 +745,7 @@ contains
           call grcont(work, lwork, F, n*n*3, &
                       .false., .true., 1, 0, .false., .true., D(:, :, 1), 1)
 #else
-          call lsquit('Cannot call grcont, only LSDALTON integral code is compiled',-1)
+          call quit('Cannot call grcont, only LSDALTON integral code is compiled')
 #endif
           do j = 1, n
             do i = 1, n
@@ -787,7 +787,7 @@ contains
               call grcont(work, lwork, g, 3*nr_atoms, &
                           .true., .false., 1, 0, .true., .false., D, 2)
 #else
-          call lsquit('Cannot call grcont, only LSDALTON integral code is compiled',-1)
+          call quit('Cannot call grcont, only LSDALTON integral code is compiled')
 #endif
               D(k, l, 1) = 0.0d0
 #ifdef PRG_DIRAC
