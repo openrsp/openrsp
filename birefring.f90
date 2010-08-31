@@ -918,7 +918,7 @@ contains
       Afb=0; do l=1,3; do k=1,3; do j=1,3; do i=1,3
          Afb = Afb + eps(k,j,i) * ApriF0FmwB0Qw(i,k,l,ij(l,j)) &
                    + eps(l,j,k) * ApriF0FmwB0Qw(i,l,k,ij(i,j))
-      end do; end do; end do; end do
+      end do; end do; end do; end do 
       write (uni,'()') !two final newlines
       write (uni,'(6x,a,f14.11)')  'frequency     : ', dreal(freq)
       write (uni,'(6x,a,3g18.11)') 'dipole moment : ', dreal(dip)
