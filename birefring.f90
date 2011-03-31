@@ -16,7 +16,7 @@ module birefring
 #ifdef LSDALTON_ONLY
 #define quit(msg) lsquit(msg,mol%lupri)
 #endif
-
+ 
    public efgb_Jpri_Bten_Bcal
    public efgb_output
    public cme_jones_eta_apri
@@ -27,8 +27,8 @@ module birefring
 
    !wavenumber, velocity of light, and nanometer (in au), pi
    real(8), parameter :: cm1 = 1/219474.631371d0, &
-                         cvl = 137.03599907d0, &
-                         nm  = 10/0.52917706d0, &
+                         cvl = 137.03599907d0,    &
+                         nm  = 10/0.52917706d0,   &
                          pi  = 3.1415926535897931d0
 
    !field component lables for printing
@@ -918,7 +918,7 @@ contains
       Afb=0; do l=1,3; do k=1,3; do j=1,3; do i=1,3
          Afb = Afb + eps(k,j,i) * ApriF0FmwB0Qw(i,k,l,ij(l,j)) &
                    + eps(l,j,k) * ApriF0FmwB0Qw(i,l,k,ij(i,j))
-      end do; end do; end do; end do
+      end do; end do; end do; end do 
       write (uni,'()') !two final newlines
       write (uni,'(6x,a,f14.11)')  'frequency     : ', dreal(freq)
       write (uni,'(6x,a,3g18.11)') 'dipole moment : ', dreal(dip)
