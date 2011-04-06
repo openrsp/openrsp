@@ -10,12 +10,19 @@ module matrix_genop
   public mat_init
   public mat_free
   public mat_same
-  public mat_axtpy
+  public mat_axpy
   public mat_gemm
   public mat_dot
   public mat_print
   public mat_dup
+  public mat_isdup
   public matrix_genop_debug
+  !-- used by matrix_defop --
+  public matf_alias
+  public matf_zero
+  public matf_temp
+  public matf_ta
+  public matf_tb
 
   !----- constants for type(matrix)%flags -----
   !> matrix is closed-shell: dot(A,B) = 2*sum(A%elms*B%elms).
@@ -36,16 +43,14 @@ module matrix_genop
   integer, parameter :: matf_alias = 10
   !> matrix is an unallocated zero matrix, which should
   !> never be passed to numerical routines mat_axpy,
-  !> mat_gemm or mat_dot.
+  !> mat_gemm or mat_dot
   integer, parameter :: matf_zero  = 7
   !> matrix is a temporary, to be deleted after use
   integer, parameter :: matf_temp  = 11
-  !> plus or equals in: Y += fac * X^tx * Z^tz
-  integer, parameter :: matf_plus  = 12
-  !> X transposed in  : Y += fac * X^tx * Z^tz
-  integer, parameter :: matf_tx    = 13
-  !> Y transposed in  : Y += fac * X^tx * Z^tz
-  integer, parameter :: matf_ty    = 14
+  !> A transposed in  : C += fac * A^ta * B^tb
+  integer, parameter :: matf_ta    = 13
+  !> B transposed in  : C += fac * A^ta * B^tb
+  integer, parameter :: matf_tb    = 14
 
   !> matrix structure
   type matrix
@@ -56,12 +61,12 @@ module matrix_genop
      !> flags telling which variant of matrix this is
      integer          :: flags
      !> main block of elements. All non-zero matrices have this
-     real(8), pointer :: elms(:,:) ! elms(nrow,ncol)
-     !> temporary matrices (during defop evaluation) have additional
-     !> contribution: fac * X^tx * Z^tz, where fac, X and Z are here,
-     !> while tx and tz are kept inside %flags
+     real(8), pointer :: elms(:,:) !elms(nrow,ncol)
+     !> during defined operator evaluation (matrix_defop), temporary
+     !> matrices have additional contribution: fac * A^ta * B^tb,
+     !> where fac, X and Z are here, while ta and tb are kept inside %flags
      complex(8)            :: defop_fac
-     type(matrix), pointer :: defop_X, defop_Z
+     type(matrix), pointer :: defop_A, defop_B
   end type
 
   !> for switching debugging on and off
@@ -75,7 +80,7 @@ contains
   !> whether A is defined, according to A%flags
   function mat_isdef(A)
     type(matrix), intent(in) :: A
-    logical :: mat_isdef
+    logical                  :: mat_isdef
     mat_isdef = (iand(A%flags,matf_magic_mask) &
                            == matf_magic_num)
   end function
@@ -96,7 +101,7 @@ contains
     ! deallocate
     if (.not.nodeall .and. .not.associated(A%elms)) then
        call quit('error: matrix mat_free(A), expected A%elms to be deallocated')
-    else if (nodealloc) then
+    else if (.not.nodeall) then
        deallocate(A%elms)
     else
        nullify(A%elms)
@@ -105,8 +110,8 @@ contains
     A%ncol  =  huge(1) !will err if used
     A%flags = 0 !undefined, since doesn't have matf_magic_num
     A%defop_fac = 1
-    nullify(A%defop_X)
-    nullify(A%defop_Z)
+    nullify(A%defop_A)
+    nullify(A%defop_B)
   end subroutine
 
 
@@ -122,8 +127,8 @@ contains
     if (present(tb) .and. .not.present(B)) &
        call quit('error: mat_init(C,A,B,ta,tb), tb present without B')
     ! process optionals
-    taa = .false.; if (present(taa))  taa = ta
-    tbb = .false.; if (present(tbb))  tbb = tb
+    taa = .false.; if (present(ta)) taa = ta
+    tbb = .false.; if (present(tb)) tbb = tb
     zer = .false.; if (present(zero)) zer = zero
     alc = .true.;  if (present(noalloc)) alc = (.not.noalloc)
     ! set nrow and ncol, keeping in mind that A may be C
@@ -134,11 +139,12 @@ contains
     ! inherit flags from A
     C%flags = ior(iand(A%flags,not(matf_magic_mask)), &
                                    matf_magic_num)
-    C%defop_fac = 0
-    nullify(C%defop_X)
-    nullify(C%defop_Z)
+    C%defop_fac = 1
+    nullify(C%defop_A)
+    nullify(C%defop_B)
     if (alc) allocate(C%elms(C%nrow,C%ncol))
     if (alc .and. zer) C%elms = 0
+    if (.not.alc) nullify(C%elms)
   end subroutine
 
 
@@ -174,15 +180,15 @@ contains
        Y%elms = Y%elms + a * transpose(Y%elms)
     else if (tx .and. py) then
        Y%elms = Y%elms + a * transpose(X%elms)
-    else if (tx .and. XisY)
+    else if (tx .and. XisY) then
        Y%elms = a * transpose(Y%elms)
-    else if (tx)
+    else if (tx) then
        Y%elms = a * transpose(X%elms)
-    else if (py .and. XisY)
-       Y%elms = Y*elms + a * Y%elms
-    else if (py)
-       Y%elms = Y*elms + a * X%elms
-    else if (XisY)
+    else if (py .and. XisY) then
+       Y%elms = Y%elms + a * Y%elms
+    else if (py) then
+       Y%elms = Y%elms + a * X%elms
+    else if (XisY) then
        Y%elms = a * Y%elms
     else
        Y%elms = a * X%elms
@@ -204,16 +210,16 @@ contains
     else if (ta .and. tb) then
        C%elms = fac * matmul(transpose(A%elms), &
                              transpose(B%elms))
-    else if (ta .and. pc)
+    else if (ta .and. pc) then
        C%elms = C%elms + fac * matmul(transpose(A%elms), B%elms)
-    else if (ta)
+    else if (ta) then
        C%elms = fac * matmul(transpose(A%elms), B%elms)
-    else if (tb .and. pc)
+    else if (tb .and. pc) then
        C%elms = C%elms + fac * matmul(A%elms, transpose(B%elms))
-    else if (tb)
+    else if (tb) then
        C%elms = fac * matmul(A%elms, transpose(B%elms))
-    else if (pc)
-       C%elms = C%elmx + fac * matmul(A%elms, B%elms)
+    else if (pc) then
+       C%elms = C%elms + fac * matmul(A%elms, B%elms)
     else
        C%elms = fac * matmul(A%elms, B%elms)
     end if
@@ -246,16 +252,16 @@ contains
     type(matrix),           intent(in) :: A
     character(*), optional, intent(in) :: label, braces
     integer,      optional, intent(in) :: unit, width
-    integer                            :: uni, colw, dec, i, j, siz
-    character(8)                       :: fmt
-    character(4)                       :: brac
+    integer      :: uni, colw, dec, i, j, siz
+    character(8) :: fmt
+    character(4) :: brac
     ! process optional argument unit, which defaults to stdout
     uni = 6
     if (present(unit)) uni = unit
     ! set d to the largest number of digits to be printed
     ! before the decimal point (including - signs)
-    dec = max(max(1, ceiling(log10( maxval(A%elms)))), &
-              max(2, ceiling(log10(-minval(A%elms)))+1))
+    dec = ceiling(max(log10(max(1d0, maxval(A%elms)))+1, &
+                      log10(max(1d0,-minval(A%elms)))+2))
     ! process optional width
     colw = 9
     if (present(width)) colw = max(width,dec+2) !max, to avoid stars *****
