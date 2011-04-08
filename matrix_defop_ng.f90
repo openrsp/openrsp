@@ -734,7 +734,7 @@ program test
   ! manually initialize overlap matrix S
   S%nrow  = size(ovl_elms,1)
   S%ncol  = size(ovl_elms,2)
-  S%flags = 0
+  S%flags = 0 !normal matrix
   call mat_init(S, S)
   S%elms = ovl_elms
   ! print in plain format
@@ -765,34 +765,35 @@ contains
        id%elms(i,i) = 1
     end do
 
-    print *
-    print *, 'norm of C^T*S*C - id =', norm(trps(C)*S*C - id)
-    print *
+    ! ...
 
     ! free
     id=0
   end subroutine
 
+
   subroutine calculate_density_D
     ! D = C C^T
+
     ! ...
-    D = C*trps(C)
-    call mat_print(D, label='density matrix')
+
   end subroutine
+
 
   subroutine count_electrons_in_D
     ! rewrite Tr C^T S C in terms of D
-    print *
-    print *, 'nelec = TrSD =', dreal(tr(S*D))
-    print *
+
+    ! ...
+
   end subroutine
+
 
   subroutine check_idempotency_of_D
     ! idempotency relation is D S D = D
-    call mat_print(D*S*D-D, label='DSD-D')
-    print *
-    print *, 'norm(DSD-D) =', norm(D*S*D-D)
-    print *
+
+    ! ...
+
   end subroutine
+
 
 end program
