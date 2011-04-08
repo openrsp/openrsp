@@ -13,6 +13,7 @@ module matrix_genop
   public mat_axpy
   public mat_gemm
   public mat_dot
+  public mat_trace
   public mat_print
   public mat_dup
   public mat_isdup
@@ -23,6 +24,8 @@ module matrix_genop
   public matf_temp
   public matf_ta
   public matf_tb
+  !-- not used by matrix_defop --
+  public matf_clsh
 
   !----- constants for type(matrix)%flags -----
   !> matrix is closed-shell: dot(A,B) = 2*sum(A%elms*B%elms).
@@ -100,8 +103,9 @@ contains
     if (present(nodealloc)) nodeall = nodealloc
     ! deallocate
     if (.not.nodeall .and. .not.associated(A%elms)) then
-       call quit('error: matrix mat_free(A), expected A%elms to be deallocated')
+       call quit('error: matrix mat_free(A), expected A%elms to be allocated')
     else if (.not.nodeall) then
+       !print *, 'deallocate'
        deallocate(A%elms)
     else
        nullify(A%elms)
@@ -139,9 +143,15 @@ contains
     ! inherit flags from A
     C%flags = ior(iand(A%flags,not(matf_magic_mask)), &
                                    matf_magic_num)
+    C%flags = ibclr(C%flags, matf_zero)
+    C%flags = ibclr(C%flags, matf_temp)
+    C%flags = ibclr(C%flags, matf_alias)
+    C%flags = ibclr(C%flags, matf_ta)
+    C%flags = ibclr(C%flags, matf_tb)
     C%defop_fac = 1
     nullify(C%defop_A)
     nullify(C%defop_B)
+    !if (alc) print *, 'allocate'
     if (alc) allocate(C%elms(C%nrow,C%ncol))
     if (alc .and. zer) C%elms = 0
     if (.not.alc) nullify(C%elms)
@@ -213,7 +223,9 @@ contains
     else if (ta .and. pc) then
        C%elms = C%elms + fac * matmul(transpose(A%elms), B%elms)
     else if (ta) then
+print *, 'foer matmul'
        C%elms = fac * matmul(transpose(A%elms), B%elms)
+print *, 'etter matmul'
     else if (tb .and. pc) then
        C%elms = C%elms + fac * matmul(A%elms, transpose(B%elms))
     else if (tb) then
@@ -229,29 +241,41 @@ contains
 
   !> matrix dot product: sum_ij Aij^* Bij (ta=F)
   !>  or  product trace: sum_ij Aji Bij   (ta=F)
-  !> A and B are assumed initialied and with equal/transpose shapes
+  !> A and B are assumed initialized and with equal/transpose shapes
   function mat_dot(A, B, t)
     type(matrix), intent(in) :: A, B
     logical,      intent(in) :: t !transpose
     complex(8)               :: mat_dot
-    if (t) then
-       mat_dot = sum(A%elms * B%elms)
-    else
-       mat_dot = sum(transpose(A%elms) * B%elms)
-    end if
+    if (   t  ) mat_dot = sum(transpose(A%elms) * B%elms)
+    if (.not.t) mat_dot = sum(A%elms * B%elms)
     ! if closed-shell, then additional factor 2
     if (btest(A%flags, matf_clsh) .or. &
         btest(B%flags, matf_clsh)) mat_dot = 2*mat_dot
   end function
 
 
+  !> matrix trace: sum_i Aii, A assumed initialized
+  function mat_trace(A)
+    type(matrix), intent(in) :: A
+    complex(8)               :: mat_trace
+    integer :: i
+    if (A%nrow /= A%ncol) &
+       call quit('error: mat_trace(A) with A non-square')
+    mat_trace = sum((/(A%elms(i,i),i=1,A%nrow)/))
+    ! if closed-shell, then additional factor 2
+    if (btest(A%flags, matf_clsh)) mat_trace = 2*mat_trace
+  end function
+
+
 
   !> print matrix A to optional unit, optionally starting with label, &
-  !> optionally making each column 'width' wide, with optional 'braces'
-  subroutine mat_print(A, label, unit, width, braces)
+  !> optionally making each column 'width' wide, with optional braces
+  !> 'decor' (left brace, column separator, right brace, row separator)
+  subroutine mat_print(A, label, unit, width, decor)
     type(matrix),           intent(in) :: A
-    character(*), optional, intent(in) :: label, braces
+    character(*), optional, intent(in) :: label
     integer,      optional, intent(in) :: unit, width
+    character(4), optional, intent(in) :: decor
     integer      :: uni, colw, dec, i, j, siz
     character(8) :: fmt
     character(4) :: brac
@@ -271,18 +295,7 @@ contains
     if (present(label)) write (uni,'(a)') label
     ! process optional argument braces, defaulting to none
     brac = '    '
-    if (present(braces)) then
-       siz = len(braces)
-       if (siz<1 .or. siz>4) &
-          call quit('matrix_genop.mat_print: Argument braces has wrong length')
-       brac = braces
-       if (siz==1) brac(2:2) = ','
-       if (siz<=2) &
-          brac(3:3) = merge( ')', merge( '}', &
-                      merge(']', brac(1:1), brac(1:1)=='['), &
-                            brac(1:1)=='{' ), brac(1:1)=='(' )
-       if (siz<=3) brac(4:4) = ','
-    end if
+    if (present(decor)) brac = decor
     ! create the format string to be used for each element
     fmt = '(fww.dd)'
     write (fmt(3:7),'(i2,a1,i2)') colw, '.', dec
@@ -298,7 +311,7 @@ contains
       real(8),        intent(in) :: elms(nrow,ncol)
       character(8),   intent(in) :: fmt
       character(4),   intent(in) :: brac
-      character(ncol*(colw+1)+4) :: line
+      character(ncol*(colw+1)+3) :: line
       integer :: i, j, l
       do i = 1, nrow
          line(1:1) = merge(brac(1:1),' ',i==1)

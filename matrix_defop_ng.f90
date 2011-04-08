@@ -49,24 +49,23 @@
 !>     call mat_init(A,reset=.true.)    reset to defaults, nullifying pointers
 !>     call mat_init(A,B,alias='FF')    copy pointers, no new allocation
 !>
-!> Comparison of the shapes (and content) of matrices is done with mat_same
+!> Comparison of the shapes of matrices is done with mat_same
 !>
-!>     if (mat_same(A,B)) ..            if same shape and content (alias)
-!>     if (mat_same(A,B,'N')) ..        if same shapes
-!>     if (mat_same(A,B,'T')) ..        if transposed shapes
-!>     if (mat_same(A,B,'T','R')) ..    if A's rows matches B's columns
-!>     if (mat_same(A,B,'N','C')) ..    if A's columns matches B's columns
+!>     if (mat_same(A,B))               if same shape so that A+B possible
+!>     if (mat_same(A,B,ta=.true.))     A^T + B is possible
+!>     if (mat_same(A,B,mul=.true.))    if A's cols matches B's rows
 !>
-!> For printing matrices, mat_print has been replaced:
+!> For printing matrices:
 !>
-!>     call print_mat(A,label='A',colwidth=7,unit=6,braces='{')
+!>     call mat_print(A)                default, print without dressing
+!>
+!>     call mat_print(A,label='A',width=7,unit=6,decor='{,},')
 !>
 !> The label is printed on the line preceding the matrix. Width specifies the
 !> text width of each column (excluding separator). The number of digits printed
-!> is adjusted so that no columns become overfilled (*****). Braces can either
-!> be one character {, [, (, | etc., or four '{,};', where the comma is column
-!> separator and semicolon row separator. This is convenient for pasting into
-!> python, maple, mathematica, etc.
+!> is adjusted so that no columns become overfilled (*****). Left brace,
+!> column separator, right brace, row separator (decor) can be specified, so the
+!> matrix can be copy-pasted as input to python, maple, mathematica, etc.
 !>
 !> To check the state of matrices: Whether defined: isdef(A),
 !> whether zero: iszero(A)
@@ -84,7 +83,8 @@
 !> temporary, so that it will be deleted once used.
 module matrix_defop
 
-  use matrix_genop, mat_print_nontemp => mat_print
+  use matrix_genop, mat_print_nontemp => mat_print, &
+                    mat_trace_nontemp => mat_trace
 
   implicit none
 
@@ -147,6 +147,7 @@ module matrix_defop
 
   interface tr
      module procedure mat_prod_trace
+     module procedure mat_trace
   end interface
 
   interface norm
@@ -182,15 +183,14 @@ contains
   !> the fields within Y, by executing either an axpy or a gemm operation.
   !> evaluate the matrix C (+)= fac * A^ta * B^tb, where '+' fac A ta B tb
   !> are speficied in C%flags C%defop_fac C%defop_A C%defop_B
-  subroutine eval_temp(C, noplus)
+  subroutine eval_temp(C, overwr)
     type(matrix),      intent(inout) :: C
-    logical, optional, intent(in)    :: noplus
+    logical, optional, intent(in)    :: overwr
     type(matrix), target  :: dupC
     logical :: plus, zeroC, useA
-print *, 'i eval_temp', associated(C%defop_A), associated(C%defop_B)
     ! plus decides whether to add to or overwrite C
     plus = .true.
-    if (present(noplus)) plus = (.not.noplus)
+    if (present(overwr)) plus = (.not.overwr)
     ! whether C is zero, ie. unallocated
     zeroC = btest(C%flags, matf_zero)
     ! whether result should go into A, because C is zero or an alias
@@ -201,13 +201,11 @@ print *, 'i eval_temp', associated(C%defop_A), associated(C%defop_B)
             .and. .not.btest(C%flags, matf_ta))
     if (useA) useA = btest(C%defop_A%flags, matf_temp)
     ! pre-apply any scale factor on A, if result will go there
-print *, 'kaller mat_gemm?', associated(C%defop_A), associated(C%defop_B)
     if (useA .and. C%defop_fac /= 1) then
        call mat_axpy(C%defop_fac, C%defop_A, &
                      .false., .false., C%defop_A)
        C%defop_fac = 1
     end if
-print *, 'kaller mat_gemm?', associated(C%defop_A), associated(C%defop_B), useA, zeroC
     ! swap A and C or reallocate C, if needed
     if (useA .and. zeroC) then
        call mat_dup(C%defop_A, C)
@@ -215,19 +213,28 @@ print *, 'kaller mat_gemm?', associated(C%defop_A), associated(C%defop_B), useA,
        call mat_dup(C, dupC)
        call mat_dup(dupC%defop_A, C)
        C%defop_A => dupC%defop_A
+       nullify(C%defop_B)
        nullify(C%defop_A%defop_A)
        call mat_free(dupC, nodealloc=.true.)
        C%flags = ibset(C%flags, matf_temp)
+       C%defop_A%flags = ibclr(C%defop_A%flags, matf_temp)
     else if (btest(C%flags, matf_alias)) then
        call mat_dup(C, dupC)
        call mat_free(C, nodealloc=.true.)
        call mat_init(C, dupC)
+       C%defop_fac = dupC%defop_fac
+       C%defop_A  => dupC%defop_A
+       C%defop_B  => dupC%defop_B
+       if (btest(dupC%flags, matf_ta)) C%flags = ibset(C%flags, matf_ta)
+       if (btest(dupC%flags, matf_tb)) C%flags = ibset(C%flags, matf_tb)
        call mat_axpy((1d0,0d0), dupC, .false., .false., C)
     else if (zeroC) then
+       dupC%flags     =  C%flags
        dupC%defop_fac =  C%defop_fac
        dupC%defop_A   => C%defop_A
        dupC%defop_B   => C%defop_B
        call mat_init(C, C)
+       C%flags     =  dupC%flags
        C%defop_fac =  dupC%defop_fac
        C%defop_A   => dupC%defop_A
        C%defop_B   => dupC%defop_B
@@ -235,24 +242,20 @@ print *, 'kaller mat_gemm?', associated(C%defop_A), associated(C%defop_B), useA,
        plus = .false.
     end if
     ! execute gemm or axpy, delete temporary A and B
-print *, 'kaller mat_gemm?', associated(C%defop_A), associated(C%defop_B)
     if (associated(C%defop_A) .and. associated(C%defop_B)) then
-print *, 'kaller mat_gemm', C%defop_fac
        call mat_gemm(C%defop_fac, C%defop_A, &
                      btest(C%flags, matf_ta), C%defop_B, &
                      btest(C%flags, matf_tb), plus, C)
        if (btest(C%defop_A%flags, matf_temp)) C%defop_A = 0
        if (btest(C%defop_B%flags, matf_temp)) C%defop_B = 0
-print *, 'etter mat_gemm'
     else if (associated(C%defop_A)) then
-print *, 'kaller axpy'
        call mat_axpy(C%defop_fac, C%defop_A, &
                      btest(C%flags, matf_ta), plus, C)
-print *, 'etter axpy'
        if (btest(C%defop_A%flags, matf_temp)) C%defop_A = 0
     end if
     ! clean-up
     C%flags = ibset(C%flags, matf_temp)
+    C%flags = ibclr(C%flags, matf_zero)
     C%flags = ibclr(C%flags, matf_ta)
     C%flags = ibclr(C%flags, matf_tb)
     C%defop_fac = 1
@@ -266,60 +269,77 @@ print *, 'etter axpy'
   subroutine mat_eq_mat(A, B)
     type(matrix), intent(inout) :: A
     type(matrix)                :: B
-    logical :: defA, evalB, ali, fits, noplus
-    defA = isdef(A)
+    logical :: evalB, haveA, useA, overwr
+    ! verify that B is defined, and check whether it needs to be evaluated
     evalB = must_eval(B, 'error: matrix A=B, B undefined')
-    ! if A not alias, and either of B B%defop_A and B%defop_B is
-    ! an alias of A, make A an alias of that instead
-    if (defA) then
-       ali = mat_isdup(A, B)
-       if (ali) B%flags = ibclr(B%flags, matf_alias)
-       if (.not.ali .and.associated(B%defop_A)) then
-          ali = mat_isdup(A, B%defop_A)
-          if (ali) B%defop_A%flags = ibclr(B%defop_A%flags, matf_alias)
+    ! is A currently allocated
+    haveA = (isdef(A) .and. .not.btest(A%flags, matf_zero) &
+                      .and. .not.btest(A%flags, matf_alias))
+    ! if B is an alias of A, make B the original and A the alias
+    if (haveA .and. btest(B%flags, matf_alias)) then
+       if (mat_isdup(A,B)) then
+          A%flags = ibset(A%flags, matf_alias)
+          B%flags = ibclr(B%flags, matf_alias)
+          haveA = .false.
        end if
-       if (.not.ali .and.associated(B%defop_B)) then
-          ali = mat_isdup(A, B%defop_B)
-          if (ali) B%defop_B%flags = ibclr(B%defop_B%flags, matf_alias)
+    end if
+    ! otherwise, if X is A, make it temporary
+    if (haveA .and. associated(B%defop_A)) then
+       if (mat_isdup(A, B%defop_A)) then
+          if (btest(B%defop_A%flags, matf_alias)) &
+             call quit('mat_eq_mat error: attempt to overwrite aliased matrix')
+          B%defop_A%flags = ibset(B%defop_A%flags, matf_temp)
+          haveA = .false.
        end if
-       if (ali) A%flags = ibset(A%flags, matf_alias)
     end if
-    ! determine whether the current allocation of A is to be used
-    fits = (.not.btest(B%flags, matf_zero) &
-            .and. btest(B%flags, matf_temp) &
-            .and. .not.btest(B%flags, matf_alias))
-    if (.not.fits .and. associated(B%defop_A)) &
-       fits = (.not.associated(B%defop_B) &
-               .and. .not.btest(B%flags, matf_ta) &
-               .and. btest(B%defop_A%flags, matf_temp) &
-               .and.(btest(B%flags, matf_zero) .or. B%defop_fac == 1))
-    if (.not.fits .and. defA) then
-       fits = (.not.btest(A%flags, matf_alias) .and. &
-               .not.btest(A%flags, matf_zero) .and. mat_same(A,B))
-    else
-       fits = .false.
+    ! otherwise, if Y is A, make it temporary
+    if (haveA .and. associated(B%defop_B)) then
+       if (mat_isdup(A, B%defop_B)) then
+          if (btest(B%defop_B%flags, matf_alias)) &
+             call quit('mat_eq_mat error: attempt to overwrite aliased matrix')
+          B%defop_B%flags = ibset(B%defop_B%flags, matf_temp)
+          haveA = .false.
+       end if
     end if
-    ! either put A into B or B into A
-    noplus = .false.
-    if (fits) then
-       noplus = btest(B%flags, matf_zero)
-       if (.not.noplus) &
+    ! determine whether As contents are needed
+    useA = haveA
+    if (useA .and. btest(B%flags, matf_temp)) &
+       useA = .not.(btest(B%flags, matf_temp) .and. &
+                    .not.btest(B%flags, matf_alias))
+    if (useA .and. associated(B%defop_A)) &
+       useA = .not.(btest(B%defop_A%flags, matf_temp) .and. &
+                    .not.btest(B%flags, matf_ta) .and. &
+                    .not.associated(B%defop_B))
+    if (useA) useA = mat_same(A, B)
+    ! A = B=0
+    if (.not.evalB .and. btest(B%flags, matf_zero)) then
+       if (haveA) call mat_free(A)
+       call mat_dup(B, A)
+    ! A = B
+    else if (.not.evalB) then
+       if (haveA .and. .not.useA) call mat_free(A)
+       if (.not.useA) call mat_init(A, B)
+       call mat_axpy((1d0,0d0), B, .false., .false., A)
+    ! A = B + X*Y, fits A, and B (and X without Y) non-temp
+    else if (useA) then
+       overwr = btest(B%flags, matf_zero)
+       if (.not.overwr) &
           call mat_axpy((1d0,0d0), B, .false., .false., A)
        A%defop_fac = B%defop_fac
        A%defop_A  => B%defop_A
        A%defop_B  => B%defop_B
        if (btest(B%flags, matf_ta)) A%flags = ibset(A%flags, matf_ta)
        if (btest(B%flags, matf_tb)) A%flags = ibset(A%flags, matf_tb)
-       call mat_free(B, nodealloc = .true.)
+       call mat_free(B, nodealloc=.true.)
+       call eval_temp(A, overwr)
+    ! A = B + X*Y, either of B or (X without Y and tx) are temporary
     else
-       if (defA) call mat_free(A, nodealloc &
-                             = (btest(A%flags, matf_alias) &
-                           .or. btest(A%flags, matf_zero)))
+       if (haveA) call mat_free(A)
+       call eval_temp(B)
        call mat_dup(B, A)
-       call mat_free(B, nodealloc = .true.)
+       call mat_free(B, nodealloc=.true.)
     end if
-    ! evaluate, make non-temp
-    call eval_temp(A, noplus)
+    ! ensure A is non-temp
     A%flags = ibclr(A%flags, matf_temp)
   end subroutine
 
@@ -332,10 +352,12 @@ print *, 'etter axpy'
     logical :: evalA, evalB, zeroA, zeroB
     evalA = must_eval(A, 'error: matrix A+B, A undefined')
     evalB = must_eval(B, 'error: matrix A+B, B undefined')
-    zeroA = btest(A%flags, matf_zero)
-    zeroB = btest(B%flags, matf_zero)
+    zeroA = (btest(A%flags, matf_zero) .and. .not.evalA)
+    zeroB = (btest(B%flags, matf_zero) .and. .not.evalB)
     if (.not.mat_same(A,B)) &
        call quit('error: matrix A+B, different shapes')
+    if (evalA) call eval_temp(A)
+    if (evalB) call eval_temp(B)
     call mat_dup(A, C)
     C%flags = ibset(C%flags, matf_temp)
     if (.not.zeroA) C%flags = ibset(C%flags, matf_alias)
@@ -343,8 +365,6 @@ print *, 'etter axpy'
        C%defop_fac = merge(1,-1,plus)
        C%defop_A => B
     end if
-    if (zeroA .and. btest(A%flags, matf_temp)) call mat_free(A)
-    if (zeroB .and. btest(B%flags, matf_temp)) call mat_free(B)
   end subroutine
 
 
@@ -377,8 +397,8 @@ print *, 'etter axpy'
     if (.not.mat_same(A, B, mul=.true.)) &
        call quit('error: matrix A*B, but A%ncol and B%nrow do not match')
     call mat_init(C, A, B, noalloc=.true.)
-    C%flags = ibset(C%flags, matf_temp)
     C%flags = ibset(C%flags, matf_zero)
+    C%flags = ibset(C%flags, matf_temp)
     if (evalA) call eval_temp(A)
     if (evalB) call eval_temp(B)
     if (zeroA .or. zeroB) then
@@ -454,12 +474,10 @@ print *, 'etter axpy'
     logical :: eval
     eval = must_eval(A, 'error: matrix transpose trps(A), A undefined')
     call mat_init(B, A, ta=.true., noalloc=.true.)
-    if (btest(A%flags, matf_zero)) then
-       B%flags = ibset(B%flags, matf_zero)
-    else
+    B%flags = ibset(B%flags, matf_zero)
+    if (.not.btest(A%flags, matf_zero)) then
        if (eval) call eval_temp(A)
        B%flags = ibset(B%flags, matf_temp)
-       B%flags = ibset(B%flags, matf_zero)
        B%flags = ibset(B%flags, matf_ta)
        B%defop_A => A
     end if
@@ -474,8 +492,8 @@ print *, 'etter axpy'
     logical      :: trps, zeroA, zeroB, evalA, evalB
     evalA = must_eval(A, 'error: matrix dot/tr(A,B), A undefined')
     evalB = must_eval(B, 'error: matrix dot/tr(A,B), B undefined')
-    zeroA = btest(A%flags, matf_zero)
-    zeroB = btest(B%flags, matf_zero)
+    zeroA = (.not.evalA .and. btest(A%flags, matf_zero))
+    zeroB = (.not.evalB .and. btest(B%flags, matf_zero))
     if (evalA) then
        !ajt FIXME forward A = fac * X^tx
        call eval_temp(A)
@@ -488,8 +506,8 @@ print *, 'etter axpy'
     if (.not.mat_same(A, B, ta=trps)) &
        call quit('error: matrix dot/tr(A,B), A and B have different shapes')
     ! don't calculate if
-    if (      zeroA.or.zeroB)  gen_mat_dot = 0
-    if (.not.(zeroA.or.zeroB)) gen_mat_dot = mat_dot(A, B, trps)
+    if (      zeroA .or. zeroB)  gen_mat_dot = 0
+    if (.not.(zeroA .or. zeroB)) gen_mat_dot = mat_dot(A, B, trps)
     ! delete any temporaries
     if (evalA) call mat_free(A)
     if (evalB) call mat_free(B)
@@ -498,8 +516,8 @@ print *, 'etter axpy'
 
 
   function mat_dot_prod(A, B)
-    type(matrix),target,intent(in) :: A, B
-    complex(8)                     :: mat_dot_prod
+    type(matrix), target, intent(in) :: A, B
+    complex(8)                       :: mat_dot_prod
     mat_dot_prod = gen_mat_dot(A, B, (.false.))
   end function
 
@@ -511,11 +529,31 @@ print *, 'etter axpy'
   end function
 
 
+  function mat_trace(A)
+    type(matrix) :: A
+    complex(8)   :: mat_trace
+    logical :: temp, zero
+    temp = must_eval(A, 'error: tr(A), A undefined')
+    zero = (btest(A%flags, matf_zero) .and. .not.temp)
+    if (temp) call eval_temp(A)
+    if (.not.zero) mat_trace = mat_trace_nontemp(A)
+    if (   zero  ) mat_trace = 0
+    if (temp) call mat_free(A)
+  end function
+
+
   function mat_norm(A)
     type(matrix) :: A
     real(8)      :: mat_norm
     complex(8)   :: norm2
+    logical      :: eval, temp, zero
+    eval = must_eval(A, 'error: norm(A), A undefined')
+    temp = btest(A%flags, matf_temp)
+    zero = (btest(A%flags, matf_zero) .and. .not.eval)
+    if (temp) call eval_temp(A)
+    if (temp) A%flags = ibclr(A%flags, matf_temp)
     norm2 = gen_mat_dot(A, A, (.false.))
+    if (temp) A = 0
     mat_norm = sqrt(dreal(norm2))
   end function
 
@@ -583,17 +621,18 @@ print *, 'etter axpy'
 
   !> wrap matrix_defop's mat_print so that temporary and
   !> zero matrices can be printed
-  subroutine mat_print(A, label, unit, width, braces)
+  subroutine mat_print(A, label, unit, width, decor)
     type(matrix)                       :: A
-    character(*), optional, intent(in) :: label, braces
+    character(*), optional, intent(in) :: label
     integer,      optional, intent(in) :: unit, width
+    character(4), optional, intent(in) :: decor
     logical :: eval, zero, temp
-    eval = must_eval(A, 'error: print_mat(A), A undefined')
+    eval = must_eval(A, 'error: mat_print(A), A undefined')
     temp = btest(A%flags, matf_temp)
-    zero = btest(A%flags, matf_zero)
+    zero = (btest(A%flags, matf_zero) .and. .not.temp)
     if (eval) call eval_temp(A)
     if (zero) call mat_init(A, A, zero=.true.)
-    call mat_print_nontemp(A, label, unit, width, braces)
+    call mat_print_nontemp(A, label, unit, width, decor)
     if (eval .or. temp .or. zero) call mat_free(A)
   end subroutine
 
@@ -608,11 +647,17 @@ subroutine quit(msg)
 end subroutine
 
 
+
 program test
+
   use matrix_defop
+  use matrix_genop, only: matf_clsh !closed-shell
   implicit none
-  type(matrix) :: A, B
-  real(8), target :: cmo_elms(9,12) = reshape((/ &
+
+  !------ hard-code some matrix elements for testing -------
+  ! This is the converged orbital coefficient matrix for H2O2 in STO-3G basis
+  ! with Hartree-Fock (stored transposed)
+  real(8), parameter :: cmo_t_elms(9,12) = reshape((/ &
       0.7029125557d0,-0.7034218990d0,-0.1653576986d0,-0.1717881187d0,-0.0428946404d0, &
      -0.0537205739d0, 0.0461043661d0, 0.0481622768d0,-0.0184913160d0, &
       0.0187240325d0,-0.0155704450d0, 0.5921458033d0, 0.6547115887d0, 0.2330299347d0, &
@@ -637,11 +682,117 @@ program test
      -0.2576428881d0, 0.0000223994d0, 0.2601429825d0,-0.0885684546d0, &
       0.0043805243d0, 0.0044574988d0, 0.1024238890d0,-0.1734654106d0,-0.3425350997d0, &
       0.2576428881d0, 0.0000223994d0,-0.2601429825d0,-0.0885684546d0/), (/9,12/))
-  A%nrow = size(cmo_elms,1)
-  A%ncol = size(cmo_elms,2)
-  call mat_init(A, A)
-  A%elms = cmo_elms
-  call mat_print(A)
-  B = A * trps(A)
-  call mat_print(B)
+  real(8), parameter :: ovl_elms(12,12) = reshape((/ &
+      1.0000000000d0, 0.2367039365d0, 0.0000000000d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0082403834d0, 0.0000000000d0, &
+      0.0156536771d0, 0.0000000000d0, 0.0523613022d0, 0.0061118010d0, &
+      0.2367039365d0, 1.0000000000d0, 0.0000000000d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0082403834d0, 0.1528147927d0, 0.0000000000d0, &
+      0.1977725882d0, 0.0000000000d0, 0.4664441507d0, 0.0904222679d0, &
+      0.0000000000d0, 0.0000000000d0, 1.0000000000d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0000000000d0, 0.0726585685d0, &
+      0.0000000000d0, 0.0000000000d0, 0.1465895707d0,-0.0187884791d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0000000000d0, 1.0000000000d0, &
+      0.0000000000d0,-0.0156536771d0,-0.1977725882d0, 0.0000000000d0, &
+     -0.2247513423d0, 0.0000000000d0, 0.0675432857d0,-0.0852370092d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0000000000d0, 0.0000000000d0, &
+      1.0000000000d0, 0.0000000000d0, 0.0000000000d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0726585685d0, 0.3538985305d0, 0.0453594011d0, &
+      0.0000000000d0, 0.0082403834d0, 0.0000000000d0,-0.0156536771d0, &
+      0.0000000000d0, 1.0000000000d0, 0.2367039365d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0061118010d0, 0.0523613022d0, &
+      0.0082403834d0, 0.1528147927d0, 0.0000000000d0,-0.1977725882d0, &
+      0.0000000000d0, 0.2367039365d0, 1.0000000000d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0904222679d0, 0.4664441507d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0726585685d0, 0.0000000000d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0000000000d0, 1.0000000000d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0187884791d0,-0.1465895707d0, &
+      0.0156536771d0, 0.1977725882d0, 0.0000000000d0,-0.2247513423d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0000000000d0, 0.0000000000d0, &
+      1.0000000000d0, 0.0000000000d0, 0.0852370092d0,-0.0675432857d0, &
+      0.0000000000d0, 0.0000000000d0, 0.0000000000d0, 0.0000000000d0, &
+      0.0726585685d0, 0.0000000000d0, 0.0000000000d0, 0.0000000000d0, &
+      0.0000000000d0, 1.0000000000d0, 0.0453594011d0, 0.3538985305d0, &
+      0.0523613022d0, 0.4664441507d0, 0.1465895707d0, 0.0675432857d0, &
+      0.3538985305d0, 0.0061118010d0, 0.0904222679d0, 0.0187884791d0, &
+      0.0852370092d0, 0.0453594011d0, 1.0000000000d0, 0.1256680400d0, &
+      0.0061118010d0, 0.0904222679d0,-0.0187884791d0,-0.0852370092d0, &
+      0.0453594011d0, 0.0523613022d0, 0.4664441507d0,-0.1465895707d0, &
+     -0.0675432857d0, 0.3538985305d0, 0.1256680400d0, 1.0000000000d0/), (/12,12/))
+  ! matrices
+  type(matrix) :: C, S, D, A, B
+
+  ! manually initialize orbital matrix C
+  C%nrow  = size(cmo_t_elms,2)
+  C%ncol  = size(cmo_t_elms,1)
+  C%flags = ibset(0, matf_clsh) !closed shell
+  call mat_init(C, C)
+  C%elms = transpose(cmo_t_elms)
+  ! print in 'python/C++' format
+  call mat_print(C, label='orbital', decor='[,],')
+
+  ! manually initialize overlap matrix S
+  S%nrow  = size(ovl_elms,1)
+  S%ncol  = size(ovl_elms,2)
+  S%flags = 0
+  call mat_init(S, S)
+  S%elms = ovl_elms
+  ! print in plain format
+  call mat_print(S, label='overlap')
+
+  ! run tests
+  call check_orthonormality_of_C
+  call calculate_density_D
+  call count_electrons_in_D
+  call check_idempotency_of_D
+
+  ! free matrices
+  C=0; S=0; D=0; A=0; B=0
+
+contains
+
+  subroutine check_orthonormality_of_C
+    ! calculate norm of C^T S C minus identity matrix
+    type(matrix) :: id
+    integer      :: i
+    !------- manually initialize identity matrix
+    id%nrow  = size(cmo_t_elms,1)
+    id%ncol  = id%nrow
+    id%flags = 0
+    call mat_init(id,id)
+    id%elms(:,:) = 0
+    do i = 1, id%nrow
+       id%elms(i,i) = 1
+    end do
+
+    print *
+    print *, 'norm of C^T*S*C - id =', norm(trps(C)*S*C - id)
+    print *
+
+    ! free
+    id=0
+  end subroutine
+
+  subroutine calculate_density_D
+    ! D = C C^T
+    ! ...
+    D = C*trps(C)
+    call mat_print(D, label='density matrix')
+  end subroutine
+
+  subroutine count_electrons_in_D
+    ! rewrite Tr C^T S C in terms of D
+    print *
+    print *, 'nelec = TrSD =', dreal(tr(S*D))
+    print *
+  end subroutine
+
+  subroutine check_idempotency_of_D
+    ! idempotency relation is D S D = D
+    call mat_print(D*S*D-D, label='DSD-D')
+    print *
+    print *, 'norm(DSD-D) =', norm(D*S*D-D)
+    print *
+  end subroutine
+
 end program

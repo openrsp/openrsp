@@ -1,0 +1,1 @@
+gfortran -g -frecursive -fbounds-check -ffpe-trap=invalid,zero,overflow -finit-real=nan matrix_genop_ng.f90 matrix_defop_ng.f90
