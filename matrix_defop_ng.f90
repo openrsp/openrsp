@@ -182,7 +182,7 @@ contains
   !> evaluate the expression Y += fac * X^tx * Z^tz, as specified in
   !> the fields within Y, by executing either an axpy or a gemm operation.
   !> evaluate the matrix C (+)= fac * A^ta * B^tb, where '+' fac A ta B tb
-  !> are speficied in C%flags C%defop_fac C%defop_A C%defop_B
+  !> are speficied in C%flags C%temp_fac C%temp_X C%temp_Y
   subroutine eval_temp(C, overwr)
     type(matrix),      intent(inout) :: C
     logical, optional, intent(in)    :: overwr
@@ -195,72 +195,74 @@ contains
     zeroC = btest(C%flags, matf_zero)
     ! whether result should go into A, because C is zero or an alias
     useA = ((zeroC .or. btest(C%flags, matf_alias)) &
-            .and. associated(C%defop_A) &
-            .and. .not.associated(C%defop_B) &
-            .and. (zeroC .or. C%defop_fac == 1) &
-            .and. .not.btest(C%flags, matf_ta))
-    if (useA) useA = btest(C%defop_A%flags, matf_temp)
+            .and. associated(C%temp_X) &
+            .and. .not.associated(C%temp_Y) &
+            .and. (zeroC .or. C%temp_fac == 1) &
+            .and. .not.btest(C%flags, matf_temp_tx))
+    if (useA) useA = btest(C%temp_X%flags, matf_temp)
     ! pre-apply any scale factor on A, if result will go there
-    if (useA .and. C%defop_fac /= 1) then
-       call mat_axpy(C%defop_fac, C%defop_A, &
-                     .false., .false., C%defop_A)
-       C%defop_fac = 1
+    if (useA .and. C%temp_fac /= 1) then
+       call mat_axpy(C%temp_fac, C%temp_X, &
+                     .false., .false., C%temp_X)
+       C%temp_fac = 1
     end if
     ! swap A and C or reallocate C, if needed
     if (useA .and. zeroC) then
-       call mat_dup(C%defop_A, C)
+       call mat_dup(C%temp_X, C)
     else if (useA) then
        call mat_dup(C, dupC)
-       call mat_dup(dupC%defop_A, C)
-       C%defop_A => dupC%defop_A
-       nullify(C%defop_B)
-       nullify(C%defop_A%defop_A)
+       call mat_dup(dupC%temp_X, C)
+       C%temp_X => dupC%temp_X
+       nullify(C%temp_Y)
+       nullify(C%temp_X%temp_X)
        call mat_free(dupC, nodealloc=.true.)
        C%flags = ibset(C%flags, matf_temp)
-       C%defop_A%flags = ibclr(C%defop_A%flags, matf_temp)
+       C%temp_X%flags = ibclr(C%temp_X%flags, matf_temp)
     else if (btest(C%flags, matf_alias)) then
        call mat_dup(C, dupC)
        call mat_free(C, nodealloc=.true.)
        call mat_init(C, dupC)
-       C%defop_fac = dupC%defop_fac
-       C%defop_A  => dupC%defop_A
-       C%defop_B  => dupC%defop_B
-       if (btest(dupC%flags, matf_ta)) C%flags = ibset(C%flags, matf_ta)
-       if (btest(dupC%flags, matf_tb)) C%flags = ibset(C%flags, matf_tb)
+       C%temp_fac = dupC%temp_fac
+       C%temp_X  => dupC%temp_X
+       C%temp_Y  => dupC%temp_Y
+       if (btest(dupC%flags, matf_temp_tx)) &
+          C%flags = ibset(C%flags, matf_temp_tx)
+       if (btest(dupC%flags, matf_temp_ty)) &
+          C%flags = ibset(C%flags, matf_temp_ty)
        call mat_axpy((1d0,0d0), dupC, .false., .false., C)
     else if (zeroC) then
        dupC%flags     =  C%flags
-       dupC%defop_fac =  C%defop_fac
-       dupC%defop_A   => C%defop_A
-       dupC%defop_B   => C%defop_B
+       dupC%temp_fac =  C%temp_fac
+       dupC%temp_X   => C%temp_X
+       dupC%temp_Y   => C%temp_Y
        call mat_init(C, C)
        C%flags     =  dupC%flags
-       C%defop_fac =  dupC%defop_fac
-       C%defop_A   => dupC%defop_A
-       C%defop_B   => dupC%defop_B
+       C%temp_fac =  dupC%temp_fac
+       C%temp_X   => dupC%temp_X
+       C%temp_Y   => dupC%temp_Y
        C%flags = ibclr(C%flags, matf_zero)
        plus = .false.
     end if
     ! execute gemm or axpy, delete temporary A and B
-    if (associated(C%defop_A) .and. associated(C%defop_B)) then
-       call mat_gemm(C%defop_fac, C%defop_A, &
-                     btest(C%flags, matf_ta), C%defop_B, &
-                     btest(C%flags, matf_tb), plus, C)
-       if (btest(C%defop_A%flags, matf_temp)) C%defop_A = 0
-       if (btest(C%defop_B%flags, matf_temp)) C%defop_B = 0
-    else if (associated(C%defop_A)) then
-       call mat_axpy(C%defop_fac, C%defop_A, &
-                     btest(C%flags, matf_ta), plus, C)
-       if (btest(C%defop_A%flags, matf_temp)) C%defop_A = 0
+    if (associated(C%temp_X) .and. associated(C%temp_Y)) then
+       call mat_gemm(C%temp_fac, C%temp_X, &
+                     btest(C%flags, matf_temp_tx), C%temp_Y, &
+                     btest(C%flags, matf_temp_ty), plus, C)
+       if (btest(C%temp_X%flags, matf_temp)) C%temp_X = 0
+       if (btest(C%temp_Y%flags, matf_temp)) C%temp_Y = 0
+    else if (associated(C%temp_X)) then
+       call mat_axpy(C%temp_fac, C%temp_X, &
+                     btest(C%flags, matf_temp_tx), plus, C)
+       if (btest(C%temp_X%flags, matf_temp)) C%temp_X = 0
     end if
     ! clean-up
     C%flags = ibset(C%flags, matf_temp)
     C%flags = ibclr(C%flags, matf_zero)
-    C%flags = ibclr(C%flags, matf_ta)
-    C%flags = ibclr(C%flags, matf_tb)
-    C%defop_fac = 1
-    nullify(C%defop_A)
-    nullify(C%defop_B)
+    C%flags = ibclr(C%flags, matf_temp_tx)
+    C%flags = ibclr(C%flags, matf_temp_ty)
+    C%temp_fac = 1
+    nullify(C%temp_X)
+    nullify(C%temp_Y)
   end subroutine
 
 
@@ -284,20 +286,20 @@ contains
        end if
     end if
     ! otherwise, if X is A, make it temporary
-    if (haveA .and. associated(B%defop_A)) then
-       if (mat_isdup(A, B%defop_A)) then
-          if (btest(B%defop_A%flags, matf_alias)) &
+    if (haveA .and. associated(B%temp_X)) then
+       if (mat_isdup(A, B%temp_X)) then
+          if (btest(B%temp_X%flags, matf_alias)) &
              call quit('mat_eq_mat error: attempt to overwrite aliased matrix')
-          B%defop_A%flags = ibset(B%defop_A%flags, matf_temp)
+          B%temp_X%flags = ibset(B%temp_X%flags, matf_temp)
           haveA = .false.
        end if
     end if
     ! otherwise, if Y is A, make it temporary
-    if (haveA .and. associated(B%defop_B)) then
-       if (mat_isdup(A, B%defop_B)) then
-          if (btest(B%defop_B%flags, matf_alias)) &
+    if (haveA .and. associated(B%temp_Y)) then
+       if (mat_isdup(A, B%temp_Y)) then
+          if (btest(B%temp_Y%flags, matf_alias)) &
              call quit('mat_eq_mat error: attempt to overwrite aliased matrix')
-          B%defop_B%flags = ibset(B%defop_B%flags, matf_temp)
+          B%temp_Y%flags = ibset(B%temp_Y%flags, matf_temp)
           haveA = .false.
        end if
     end if
@@ -306,10 +308,10 @@ contains
     if (useA .and. btest(B%flags, matf_temp)) &
        useA = .not.(btest(B%flags, matf_temp) .and. &
                     .not.btest(B%flags, matf_alias))
-    if (useA .and. associated(B%defop_A)) &
-       useA = .not.(btest(B%defop_A%flags, matf_temp) .and. &
-                    .not.btest(B%flags, matf_ta) .and. &
-                    .not.associated(B%defop_B))
+    if (useA .and. associated(B%temp_X)) &
+       useA = .not.(btest(B%temp_X%flags, matf_temp) .and. &
+                    .not.btest(B%flags, matf_temp_tx) .and. &
+                    .not.associated(B%temp_Y))
     if (useA) useA = mat_same(A, B)
     ! A = B=0
     if (.not.evalB .and. btest(B%flags, matf_zero)) then
@@ -325,11 +327,13 @@ contains
        overwr = btest(B%flags, matf_zero)
        if (.not.overwr) &
           call mat_axpy((1d0,0d0), B, .false., .false., A)
-       A%defop_fac = B%defop_fac
-       A%defop_A  => B%defop_A
-       A%defop_B  => B%defop_B
-       if (btest(B%flags, matf_ta)) A%flags = ibset(A%flags, matf_ta)
-       if (btest(B%flags, matf_tb)) A%flags = ibset(A%flags, matf_tb)
+       A%temp_fac = B%temp_fac
+       A%temp_X  => B%temp_X
+       A%temp_Y  => B%temp_Y
+       if (btest(B%flags, matf_temp_tx)) &
+          A%flags = ibset(A%flags, matf_temp_tx)
+       if (btest(B%flags, matf_temp_ty)) &
+          A%flags = ibset(A%flags, matf_temp_ty)
        call mat_free(B, nodealloc=.true.)
        call eval_temp(A, overwr)
     ! A = B + X*Y, either of B or (X without Y and tx) are temporary
@@ -362,8 +366,8 @@ contains
     C%flags = ibset(C%flags, matf_temp)
     if (.not.zeroA) C%flags = ibset(C%flags, matf_alias)
     if (.not.zeroB) then
-       C%defop_fac = merge(1,-1,plus)
-       C%defop_A => B
+       C%temp_fac = merge(1,-1,plus)
+       C%temp_X => B
     end if
   end subroutine
 
@@ -406,9 +410,9 @@ contains
        if (btest(B%flags, matf_temp)) call mat_free(B)
        C%flags = ibset(C%flags, matf_zero)
     else
-       C%defop_fac =  1
-       C%defop_A   => A
-       C%defop_B   => B
+       C%temp_fac =  1
+       C%temp_X   => A
+       C%temp_Y   => B
     end if
   end function
 
@@ -426,8 +430,8 @@ contains
        B%flags = ibset(B%flags, matf_zero)
     else
        B%flags = ibset(B%flags, matf_temp)
-       B%defop_fac =  r
-       B%defop_A   => A
+       B%temp_fac =  r
+       B%temp_X   => A
     end if
     if (btest(A%flags, matf_temp)) &
        call mat_free(A, nodealloc = (btest(A%flags, matf_temp) &
@@ -478,8 +482,8 @@ contains
     if (.not.btest(A%flags, matf_zero)) then
        if (eval) call eval_temp(A)
        B%flags = ibset(B%flags, matf_temp)
-       B%flags = ibset(B%flags, matf_ta)
-       B%defop_A => A
+       B%flags = ibset(B%flags, matf_temp_tx)
+       B%temp_X => A
     end if
   end function
 
@@ -775,7 +779,7 @@ contains
   subroutine calculate_density_D
     ! D = C C^T
 
-    ! ...
+    D = C * trps(C)! ...
 
   end subroutine
 
@@ -783,7 +787,7 @@ contains
   subroutine count_electrons_in_D
     ! rewrite Tr C^T S C in terms of D
 
-    ! ...
+    print *, 'trSD =', dreal(tr(S,D))! ...
 
   end subroutine
 

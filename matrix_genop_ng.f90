@@ -22,8 +22,8 @@ module matrix_genop
   public matf_alias
   public matf_zero
   public matf_temp
-  public matf_ta
-  public matf_tb
+  public matf_temp_tx
+  public matf_temp_ty
   !-- not used by matrix_defop --
   public matf_clsh
 
@@ -40,6 +40,8 @@ module matrix_genop
   integer, parameter :: matf_magic_num = 1765 * 2**20
 
   !----- flags used by matrix_defop ------
+  !> matrix is a temporary, to be deleted after use
+  integer, parameter :: matf_temp  = 11
   !> matrix is an alias of (a part of) another matrix,
   !> and should not be overwritten but re-allocated,
   !> and not free'ed, just nullified
@@ -48,12 +50,10 @@ module matrix_genop
   !> never be passed to numerical routines mat_axpy,
   !> mat_gemm or mat_dot
   integer, parameter :: matf_zero  = 7
-  !> matrix is a temporary, to be deleted after use
-  integer, parameter :: matf_temp  = 11
   !> A transposed in  : C += fac * A^ta * B^tb
-  integer, parameter :: matf_ta    = 13
+  integer, parameter :: matf_temp_tx = 13
   !> B transposed in  : C += fac * A^ta * B^tb
-  integer, parameter :: matf_tb    = 14
+  integer, parameter :: matf_temp_ty    = 14
 
   !> matrix structure
   type matrix
@@ -68,8 +68,8 @@ module matrix_genop
      !> during defined operator evaluation (matrix_defop), temporary
      !> matrices have additional contribution: fac * A^ta * B^tb,
      !> where fac, X and Z are here, while ta and tb are kept inside %flags
-     complex(8)            :: defop_fac
-     type(matrix), pointer :: defop_A, defop_B
+     complex(8)            :: temp_fac
+     type(matrix), pointer :: temp_X, temp_Y
   end type
 
   !> for switching debugging on and off
@@ -113,9 +113,9 @@ contains
     A%nrow  = -huge(1) !will err if used
     A%ncol  =  huge(1) !will err if used
     A%flags = 0 !undefined, since doesn't have matf_magic_num
-    A%defop_fac = 1
-    nullify(A%defop_A)
-    nullify(A%defop_B)
+    A%temp_fac = 1
+    nullify(A%temp_X)
+    nullify(A%temp_Y)
   end subroutine
 
 
@@ -140,17 +140,20 @@ contains
     if (.not.present(B)) C%ncol = merge(A%nrow, A%ncol, taa)
     if (     present(B)) C%ncol = merge(B%nrow, B%ncol, tbb)
     C%nrow = nrow
-    ! inherit flags from A
-    C%flags = ior(iand(A%flags,not(matf_magic_mask)), &
-                                   matf_magic_num)
+    ! inherit flags from A and B, then insert magic
+    C%flags = A%flags
+    if (present(B)) C%flags = ior(C%flags, B%flags)
+    C%flags = iand(C%flags, not(matf_magic_mask))
+    C%flags =  ior(C%flags, matf_magic_num)
+    ! defop-related flags are not inherited
     C%flags = ibclr(C%flags, matf_zero)
     C%flags = ibclr(C%flags, matf_temp)
     C%flags = ibclr(C%flags, matf_alias)
-    C%flags = ibclr(C%flags, matf_ta)
-    C%flags = ibclr(C%flags, matf_tb)
-    C%defop_fac = 1
-    nullify(C%defop_A)
-    nullify(C%defop_B)
+    C%flags = ibclr(C%flags, matf_temp_tx)
+    C%flags = ibclr(C%flags, matf_temp_ty)
+    C%temp_fac = 1
+    nullify(C%temp_X)
+    nullify(C%temp_Y)
     !if (alc) print *, 'allocate'
     if (alc) allocate(C%elms(C%nrow,C%ncol))
     if (alc .and. zer) C%elms = 0
