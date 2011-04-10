@@ -349,7 +349,7 @@ contains
 
 
 
-  subroutine gen_mat_plus_mat(A, plus, B, C)
+  subroutine mat_plusmin_mat(A, plus, B, C)
     type(matrix), target      :: A, B
     type(matrix), intent(out) :: C
     logical,      intent(in)  :: plus
@@ -363,8 +363,10 @@ contains
     if (evalA) call eval_temp(A)
     if (evalB) call eval_temp(B)
     call mat_dup(A, C)
-    C%flags = ibset(C%flags, matf_temp)
-    if (.not.zeroA) C%flags = ibset(C%flags, matf_alias)
+    if (.not.zeroA .or. .not.zeroB) &
+       C%flags = ibset(C%flags, matf_temp)
+    if (.not.evalA) &
+       C%flags = ibset(C%flags, matf_alias)
     if (.not.zeroB) then
        C%temp_fac = merge(1,-1,plus)
        C%temp_X => B
@@ -376,7 +378,7 @@ contains
   function mat_plus_mat(A, B) result(C)
     type(matrix), target, intent(in) :: A, B
     type(matrix)                     :: C
-    call gen_mat_plus_mat(A, .true., B, C)
+    call mat_plusmin_mat(A, .true., B, C)
   end function
 
 
@@ -384,7 +386,7 @@ contains
   function mat_minus_mat(A, B) result(C)
     type(matrix), target, intent(in) :: A, B
     type(matrix)                     :: C
-    call gen_mat_plus_mat(A, .false., B, C)
+    call mat_plusmin_mat(A, .false., B, C)
   end function
 
 
@@ -768,35 +770,28 @@ contains
     do i = 1, id%nrow
        id%elms(i,i) = 1
     end do
-
-    ! ...
-
-    ! free
+    print *, 'norm(CtSC-1) =', norm(trps(C)*S*C - id) ! ...
+    ! free identity matrix
     id=0
   end subroutine
 
 
   subroutine calculate_density_D
     ! D = C C^T
-
-    D = C * trps(C)! ...
-
+    D = C*trps(C) ! ...
+    call mat_print(D, label='density')
   end subroutine
 
 
   subroutine count_electrons_in_D
     ! rewrite Tr C^T S C in terms of D
-
-    print *, 'trSD =', dreal(tr(S,D))! ...
-
+    print *, 'trSD =', dreal(tr(S,D)) ! ...
   end subroutine
 
 
   subroutine check_idempotency_of_D
     ! idempotency relation is D S D = D
-
-    ! ...
-
+    print *, 'norm(DSD-D) =', norm(D*S*D-D) ! ...
   end subroutine
 
 

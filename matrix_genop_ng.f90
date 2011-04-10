@@ -105,7 +105,7 @@ contains
     if (.not.nodeall .and. .not.associated(A%elms)) then
        call quit('error: matrix mat_free(A), expected A%elms to be allocated')
     else if (.not.nodeall) then
-       !print *, 'deallocate'
+       !print *, 'deallocate', loc(A%elms)
        deallocate(A%elms)
     else
        nullify(A%elms)
@@ -154,8 +154,8 @@ contains
     C%temp_fac = 1
     nullify(C%temp_X)
     nullify(C%temp_Y)
-    !if (alc) print *, 'allocate'
     if (alc) allocate(C%elms(C%nrow,C%ncol))
+    !if (alc) print *, '--allocate', loc(C%elms)
     if (alc .and. zer) C%elms = 0
     if (.not.alc) nullify(C%elms)
   end subroutine
@@ -226,9 +226,7 @@ contains
     else if (ta .and. pc) then
        C%elms = C%elms + fac * matmul(transpose(A%elms), B%elms)
     else if (ta) then
-print *, 'foer matmul'
        C%elms = fac * matmul(transpose(A%elms), B%elms)
-print *, 'etter matmul'
     else if (tb .and. pc) then
        C%elms = C%elms + fac * matmul(A%elms, transpose(B%elms))
     else if (tb) then
