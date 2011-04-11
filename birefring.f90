@@ -31,7 +31,7 @@ module birefring
                          nm  = 10/0.52917706d0,   &
                          pi  = 3.1415926535897931d0
 
-   !field component lables for printing
+   !field component labels for printing
    character(2) :: fc(3) = (/'Fx','Fy','Fz'/)
    character(2) :: bc(3) = (/'Bx','By','Bz'/)
 
