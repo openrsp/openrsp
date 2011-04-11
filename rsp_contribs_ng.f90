@@ -147,7 +147,7 @@ contains
     type(rsp_cfg),   intent(in) :: mol
     !> number of fields
     integer,         intent(in) :: nf
-    !> field lables in std order
+    !> field labels in std order
     character(4),    intent(in) :: f(nf)
     !> field frequencies corresponding to each field
     complex(8),      intent(in) :: w(nf)
@@ -179,7 +179,7 @@ contains
     type(rsp_cfg),   intent(in) :: mol
     !> number of fields
     integer,         intent(in) :: nf
-    !> field lables in std order
+    !> field labels in std order
     character(4),    intent(in) :: f(nf)
     !> field frequencies corresponding to each field
     complex(8),      intent(in) :: w(nf)
@@ -230,7 +230,7 @@ contains
     type(rsp_cfg),   intent(in) :: mol
     !> number of fields
     integer,         intent(in) :: nf
-    !> field lables in std order
+    !> field labels in std order
     character(4),    intent(in) :: f(nf)
     !> first and number of- components in each field
     integer,         intent(in) :: c(nf), nc(nf)
@@ -267,7 +267,7 @@ contains
     type(rsp_cfg),   intent(in) :: mol
     !> number of fields
     integer,         intent(in) :: nf
-    !> field lables in std order
+    !> field labels in std order
     character(4),    intent(in) :: f(nf)
     !> first and number of- components in each field
     integer,         intent(in) :: c(nf), nc(nf)
@@ -309,7 +309,7 @@ contains
     type(rsp_cfg),   intent(in) :: mol
     !> number of fields
     integer,         intent(in) :: nf
-    !> field lables in std order
+    !> field labels in std order
     character(4),    intent(in) :: f(nf)
     !> first and number of- components in each field
     integer,         intent(in) :: c(nf), nc(nf)
@@ -347,7 +347,7 @@ contains
   function rsp_field_dim(mol, f)
     !> structure containing the integral program settings
     type(rsp_cfg), intent(in) :: mol
-    !> field lables
+    !> field labels
     character(4),  intent(in) :: f(:)
     integer :: rsp_field_dim(size(f)), i
     rsp_field_dim = (/(field_list(idx(f(i)))%ncomp, i=1,size(f))/)
