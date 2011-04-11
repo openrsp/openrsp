@@ -164,7 +164,7 @@ contains
     type(prop_molcfg), intent(in) :: mol
     !> unperturbed overlap matrix
     type(matrix),      intent(in) :: S0
-    !> p(np) perturbation lables
+    !> p(np) perturbation labels
     character(*),      intent(in) :: p(:)
     !> (un)perturbed density matrices to
     !> contract perturbed one-electron integrals with.
@@ -340,7 +340,7 @@ contains
     type(matrix),      intent(in)  :: S0
     !> number of perturbations and order of density
     integer,           intent(in)  :: np
-    !> perturbation lables
+    !> perturbation labels
     character(*),      intent(in)  :: p(np)
     !> lowest component of each perturbation
     integer,           intent(in)  :: c(np)
@@ -802,7 +802,7 @@ contains
   subroutine prop_twoave(mol, p, D, dime, E, perm, comp)
     !> structure containing integral program settings
     type(prop_molcfg), intent(in) :: mol
-    !> p(np) perturbation lables
+    !> p(np) perturbation labels
     character(*),      intent(in) :: p(:)
     !> (un)perturbed density matrices to contract perturbed one-electron
     !> integrals with. If perm present, size(D) = product(dime(perm(np+1:np+nd))),
@@ -920,7 +920,7 @@ contains
     type(prop_molcfg), intent(in)  :: mol
     !> number of perturbations and order of density
     integer,           intent(in)  :: np, nd
-    !> perturbation lables
+    !> perturbation labels
     character(*),      intent(in)  :: p(np)
     !> lowest component of each perturbation
     integer,           intent(in)  :: c(np)
@@ -1245,7 +1245,7 @@ contains
     type(prop_molcfg), intent(in) :: mol
     !> unperturbed overlap matrix
     type(matrix),      intent(in) :: S0
-    !> perturbation lables
+    !> perturbation labels
     character(*),      intent(in) :: p(:)
     !> shape(F), size(dimp) = size(p), dimensions of perturbed
     !> Fock matrices F(:)
@@ -1382,7 +1382,7 @@ contains
     type(matrix),      intent(in) :: S0
     !> number of perturbations
     integer,           intent(in) :: np
-    !> perturbation lables
+    !> perturbation labels
     character(*),      intent(in) :: p(:)
     !> lowest component of each perturbation
     integer,           intent(in) :: c(np)
@@ -1619,7 +1619,7 @@ contains
   subroutine prop_twoint(mol, p, D, dimf, F, perm, comp)
     !> mol/basis data needed by integral program
     type(prop_molcfg), intent(in) :: mol
-    !> p(np) perturbation lables
+    !> p(np) perturbation labels
     character(*),      intent(in) :: p(:)
     !> (un)perturbed density matrices to contract perturbed
     !> one-electron integrals with.
@@ -1749,7 +1749,7 @@ contains
     type(prop_molcfg), intent(in) :: mol
     !> number of perturbations and order of density
     integer,           intent(in) :: np, nd
-    !> perturbation lables
+    !> perturbation labels
     character(*),      intent(in) :: p(np)
     !> lowest component of each perturbation
     integer,           intent(in) :: c(np)
@@ -2294,7 +2294,7 @@ contains
   function pert_shape(mol, p)
     !> structure containing the integral program settings
     type(prop_molcfg), intent(in) :: mol
-    !> field lables
+    !> field labels
     character(*),      intent(in) :: p(:)
     integer :: pert_shape(size(p)), i
     pert_shape = (/(field_list(idx(p(i)))%ncomp, i=1,size(p))/)
