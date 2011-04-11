@@ -29,7 +29,7 @@ module vib_prop
                          nm  = 10/0.52917706d0,   & !1 nanometer in au
                          pi  = 3.14159265358979323846D0 !acos(-1d0)
 
-   !field component lables for printing
+   !field component labels for printing
    character(2) :: fc(3) = (/'Fx','Fy','Fz'/)
 
 contains
