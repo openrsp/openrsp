@@ -1,7 +1,7 @@
 !> @file
 !> Contains module matrix_defop
 
-module matrix_genop
+module matrix_genop_ng
 
   implicit none
 

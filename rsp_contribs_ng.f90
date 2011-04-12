@@ -13,15 +13,20 @@ module rsp_contribs_ng
   use matrix_defop_ng
 
 #ifdef BUILD_AORSP
-  use dalton_ifc
-  use basis_set, only: cgto
+  use dalton_ifc_ng, only: di_read_operator_int, &
+                           di_get_gmat, &
+                           GRADNN_ifc
+  use basis_set,  only: cgto
 #endif
 
   implicit none
+  public rsp_nucpot
+  public rsp_ovlave
   public rsp_oneave
   public rsp_twoave
-  public rsp_oneint
-  public rsp_twoint
+  public rsp_ksmave
+  !public rsp_oneint
+  !public rsp_twoint
   public rsp_field
   public rsp_field_bas
   public rsp_field_dim
@@ -61,19 +66,21 @@ module rsp_contribs_ng
      integer      :: lupri
      !> whether energy/response is Kohn-Sham DFT
      logical      :: isdft
+#ifdef BUILD_AORSP
      !> nuclear charges (natom)
      real(8),    pointer :: charge(:)
      !> nuclear coordinates (3,natom)
      real(8),    pointer :: coord(:,:)
      !> basis
      type(cgto), pointer :: basis(:)
+#endif
   end type
 
 
   !> private struct to collect properties of perturbing "fields"
   type fld_info
      !> four-letter abbreviation
-     character(4)  :: code
+     character(4)  :: label
      !> long name
      character(64) :: name
      !> number of components (when known, -1 otherwise)
@@ -103,7 +110,7 @@ module rsp_contribs_ng
   !> ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
   !>            allow the same code to contract response functions and
   !>            frequency-differentiated response functions.
-  type(fld_info) :: field_list(13) = &                         !nc an ba ln qu
+  type(fld_info) :: field_list(12) = &                         !nc an ba ln qu
      (/fld_info('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
        fld_info('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
        fld_info('EL'  , 'Electric field'                      , 3, F, F, T, F), &
@@ -144,17 +151,17 @@ contains
   !> nuclear repulsion and nuclei--field interaction
   subroutine rsp_nucpot(mol, nf, f, w, c, nc, pot)
     !> structure containing integral program settings
-    type(rsp_cfg),   intent(in) :: mol
+    type(rsp_cfg), intent(in)  :: mol
     !> number of fields
-    integer,         intent(in) :: nf
+    integer,       intent(in)  :: nf
     !> field labels in std order
-    character(4),    intent(in) :: f(nf)
+    character(*),  intent(in)  :: f(nf)
     !> field frequencies corresponding to each field
-    complex(8),      intent(in) :: w(nf)
+    complex(8),    intent(in)  :: w(nf)
     !> first and number of- components in each field
-    integer,         intent(in) :: c(nf), nc(nf)
+    integer,       intent(in)  :: c(nf), nc(nf)
     !> output average
-    complex(8),     intent(out) :: pot(product(nc))
+    complex(8),    intent(out) :: pot(product(nc))
     !----------------------------------------------
     real(8) :: tmp(3*mol%natom)
     integer :: i
@@ -176,19 +183,19 @@ contains
   !> and energy-weighted density DFD
   subroutine rsp_ovlave(mol, nf, f, w, c, nc, D, DFD, ave)
     !> structure containing integral program settings
-    type(rsp_cfg),   intent(in) :: mol
+    type(rsp_cfg), intent(in)  :: mol
     !> number of fields
-    integer,         intent(in) :: nf
+    integer,       intent(in)  :: nf
     !> field labels in std order
-    character(4),    intent(in) :: f(nf)
+    character(*),  intent(in)  :: f(nf)
     !> field frequencies corresponding to each field
-    complex(8),      intent(in) :: w(nf)
+    complex(8),    intent(in)  :: w(nf)
     !> first and number of- components in each field
-    integer,         intent(in) :: c(nf), nc(nf)
+    integer,       intent(in)  :: c(nf), nc(nf)
     !> density and energy-weighted density matrix
-    type(matrix),    intent(in) :: D, DFD
+    type(matrix),  intent(in)  :: D, DFD
     !> output average
-    complex(8),     intent(out) :: ave(product(nc))
+    complex(8),    intent(out) :: ave(product(nc))
     !----------------------------------------------
     type(matrix) :: A(2)
     integer      :: i
@@ -196,22 +203,27 @@ contains
        call quit('rsp_ovlave error: unperturbed (nf=0) overlap not implemented')
     else if (nf==1 .and. f(1)=='GEO') then
        ! allocate matrices for integrals
-       if (w(1)/=0) call mat_init(A(1), mol%zeromat)
-       call mat_init(A(2), mol%zeromat)
+       call mat_init(A(1), mol%zeromat)
+print *, 'ovlave1', associated(A(1)%elms)
+       if (w(1)/=0) call mat_init(A(2), mol%zeromat)
        ! loop over nuclear coordinates
        do i = 0, nc(1)-1
           ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
           if (w(1)==0) then !w=0 means no -i/2 Tg contribution
-             call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), A(2))
-             A(2) = -A(2) !1DOVL is really -dS/dg
+print *, 'ovlave2', associated(A(1)%elms)
+             call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), A(1))
+print *, 'ovlave3', associated(A(1)%elms)
+             A(1) = -A(1) !1DOVL is really -dS/dg
+print *, 'ovlave4', associated(A(1)%elms)
           else
-             call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(2))
-             A(2) = -A(2) !SQHDR is really -dS>/dg
-             A(1) = A(1) - w(1)/2 * A(2)
-             A(1) = A(1) + w(1)/2 * dag(A(2))
-             A(2) = A(2) + dag(A(2))
+             call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
+             A(1) = -A(1) !SQHDR is really -dS>/dg
+             A(2) = -w(1)/2 * A(1) + w(1)/2 * trps(A(1))
+             A(1) = A(1) + trps(A(1)) !=1DOVL
           end if
-          ave(1+i) = tr(A(1),D) - tr(A(2),DFD)
+print *, 'ovlave5', associated(A(1)%elms)
+          ave(1+i) = -tr(A(1),DFD)
+          if (w(1)/=0) ave(1+i) = ave(1+i) + tr(A(2),D)
        end do
        A(1:2) = 0 !deallocate
     else
@@ -231,7 +243,7 @@ contains
     !> number of fields
     integer,         intent(in) :: nf
     !> field labels in std order
-    character(4),    intent(in) :: f(nf)
+    character(*),    intent(in) :: f(nf)
     !> first and number of- components in each field
     integer,         intent(in) :: c(nf), nc(nf)
     !> density matrix to average over
@@ -247,7 +259,7 @@ contains
        call mat_init(A(1), mol%zeromat)
        do i = 0, nc(1)-1
           ! perturbed one-electron Hamiltonian integrals
-          call di_read_operator_int('1DHAM' // prefix_zeros(c(1)+i,3), A(1))
+!HERE          call di_read_operator_int('1DHAM' // prefix_zeros(c(1)+i,3), A(1))
           ave(1+i) = tr(A(1),D)
        end do
        A(1) = 0
@@ -268,7 +280,7 @@ contains
     !> number of fields
     integer,         intent(in) :: nf
     !> field labels in std order
-    character(4),    intent(in) :: f(nf)
+    character(*),    intent(in) :: f(nf)
     !> first and number of- components in each field
     integer,         intent(in) :: c(nf), nc(nf)
     !> density matrix to average over
@@ -277,16 +289,16 @@ contains
     complex(8),     intent(out) :: ave(product(nc))
     !----------------------------------------------
     real(8), allocatable :: work(:)
-    real(8)      :: temp(3*mol%natoms) !scratch
+    real(8)      :: temp(3*mol%natom) !scratch
     type(matrix) :: A(1) !scratch matrices
     integer      :: i, n
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
        call mat_init(A(1), mol%zeromat)
-       call di_get_gmat(D2, A(1)) !Coulomb and exchange
+!HERE       call di_get_gmat(D2, A(1)) !Coulomb and exchange
        ave(1) = tr(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO') then
-       n = mol%nbas
+       n = mol%zeromat%nrow
        allocate(work(5*n*n + 20*n + 1000))
        work(:n*n)        = reshape(D1%elms,(/n*n/))
        work(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
@@ -310,7 +322,7 @@ contains
     !> number of fields
     integer,         intent(in) :: nf
     !> field labels in std order
-    character(4),    intent(in) :: f(nf)
+    character(*),    intent(in) :: f(nf)
     !> first and number of- components in each field
     integer,         intent(in) :: c(nf), nc(nf)
     !> number of density matrices
@@ -326,7 +338,7 @@ contains
 
 
   function idx(f)
-    character(4) :: f
+    character(*) :: f
     integer      :: idx
     do idx = 1, size(field_list)
         if (field_list(idx)%label == f) return
@@ -336,7 +348,7 @@ contains
 
 
   function rsp_field_anti(f)
-    character(4), intent(in) :: f(:)
+    character(*), intent(in) :: f(:)
     logical :: rsp_field_anti(size(f))
     integer :: i
     rsp_field_anti = (/(field_list(idx(f(i)))%anti, i=1,size(f))/)
@@ -348,7 +360,7 @@ contains
     !> structure containing the integral program settings
     type(rsp_cfg), intent(in) :: mol
     !> field labels
-    character(4),  intent(in) :: f(:)
+    character(*),  intent(in) :: f(:)
     integer :: rsp_field_dim(size(f)), i
     rsp_field_dim = (/(field_list(idx(f(i)))%ncomp, i=1,size(f))/)
     ! loop through mol-dependent
@@ -356,7 +368,7 @@ contains
        if (rsp_field_dim(i) /= -1) then
           ! cycle
        else if (f(i)=='GEO') then
-          rsp_field_dim(i) = 3 * mol%natoms
+          rsp_field_dim(i) = 3 * mol%natom
        else
           call quit('rsp_field_dim error: Number of comp. unknown for ' // f(i))
        end if
@@ -365,7 +377,7 @@ contains
 
 
   function rsp_field_bas(f)
-    character(4), intent(in) :: f(:)
+    character(*), intent(in) :: f(:)
     logical :: rsp_field_bas(size(f))
     integer :: i
     rsp_field_bas = (/(field_list(idx(f(i)))%bas, i=1,size(f))/)
@@ -375,14 +387,16 @@ contains
   !> Same as set_dsofso in fock-eval.f90, but pertrubed
   !> D and DFD is input instead of unperturbed D and F
   subroutine save_D_and_DFD_for_ABACUS(mol, anti, D, DFD)
+    type(rsp_cfg), intent(in) :: mol
     !> whether the integrals D and DFD are to be contracted with are
     !> symmetric or anti-symmetric
-    logical,      intent(in) :: anti 
-    type(matrix), intent(in) :: D, DFD
+    logical,       intent(in) :: anti
+    !> density and energy-weighted density matrices to average
+    type(matrix),  intent(in) :: D, DFD
        ! perturbed (or un-) density and
        ! 'generalized Fock matrix' (energy-weighted density matrix)
-    real(8) :: Dtri(mol%nbas*(mol%nbas+1)/2), &
-             DFDtri(mol%nbas*(mol%nbas+1)/2)
+    real(8), dimension((mol%zeromat%nrow) &
+                     * (mol%zeromat%nrow+1)/2) :: Dtri, DFDtri
     if (iszero(D)) then
        Dtri = 0
     else

@@ -81,10 +81,10 @@
 !> In order to have type(matrix) as the result of a function, mat_fix_result(X)
 !> should be called before returning from the function. This sets X's status as
 !> temporary, so that it will be deleted once used.
-module matrix_defop
+module matrix_defop_ng
 
-  use matrix_genop, mat_print_nontemp => mat_print, &
-                    mat_trace_nontemp => mat_trace
+  use matrix_genop_ng, mat_print_nontemp => mat_print, &
+                       mat_trace_nontemp => mat_trace
 
   implicit none
 
@@ -336,7 +336,7 @@ contains
           A%flags = ibset(A%flags, matf_temp_ty)
        call mat_free(B, nodealloc=.true.)
        call eval_temp(A, overwr)
-    ! A = B + X*Y, either of B or (X without Y and tx) are temporary
+    ! A = B + X*Y, either of B or (X without Y or tx) are temporary
     else
        if (haveA) call mat_free(A)
        call eval_temp(B)
@@ -427,10 +427,9 @@ contains
     logical :: eval
     eval = must_eval(A, 'error: matrix r*A, A undefined')
     call mat_init(B, A, noalloc=.true.)
+    B%flags = ibset(B%flags, matf_zero)
     if (eval) call eval_temp(A)
-    if (r==0 .or. iszero(A)) then
-       B%flags = ibset(B%flags, matf_zero)
-    else
+    if (r/=0 .and. .not.btest(A%flags, matf_zero)) then
        B%flags = ibset(B%flags, matf_temp)
        B%temp_fac =  r
        B%temp_X   => A
@@ -646,6 +645,7 @@ contains
 end module
 
 
+!#ifdef UNIT_TEST
 subroutine quit(msg)
   character(*), intent(in) :: msg
   print *, msg
@@ -656,8 +656,8 @@ end subroutine
 
 program test
 
-  use matrix_defop
-  use matrix_genop, only: matf_clsh !closed-shell
+  use matrix_defop_ng
+  use matrix_genop_ng, only: matf_clsh !closed-shell
   implicit none
 
   !------ hard-code some matrix elements for testing -------
@@ -726,7 +726,7 @@ program test
       0.0453594011d0, 0.0523613022d0, 0.4664441507d0,-0.1465895707d0, &
      -0.0675432857d0, 0.3538985305d0, 0.1256680400d0, 1.0000000000d0/), (/12,12/))
   ! matrices
-  type(matrix) :: C, S, D, A, B
+  type(matrix) C, S, D, A, B
 
   ! manually initialize orbital matrix C
   C%nrow  = size(cmo_t_elms,2)
@@ -751,6 +751,7 @@ program test
   call calculate_density_D
   call count_electrons_in_D
   call check_idempotency_of_D
+  call test_whether_minus_works
 
   ! free matrices
   C=0; S=0; D=0; A=0; B=0
@@ -759,8 +760,8 @@ contains
 
   subroutine check_orthonormality_of_C
     ! calculate norm of C^T S C minus identity matrix
-    type(matrix) :: id
-    integer      :: i
+    type(matrix) id
+    integer      i
     !------- manually initialize identity matrix
     id%nrow  = size(cmo_t_elms,1)
     id%ncol  = id%nrow
@@ -795,4 +796,11 @@ contains
   end subroutine
 
 
+  subroutine test_whether_minus_works
+    A = -D
+    call mat_print(A, label='minus D', decor='{,},')
+  end subroutine
+
+
 end program
+!#endif
