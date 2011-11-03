@@ -14,83 +14,48 @@
 !>
 !> The operators are as follows:
 !
-!>     equals                       A = B
-!>     plus                         A + B
-!>     minus                        A - B
-!>     matrix product               A * B
-!>     scale by real(8)             r * A
-!>     divide by real(8)            A / r
-!>     (conjugate) transpose        dag(A)
-!>     trace                        tr(A)
-!>     scalar product               dot(A,B)
-!>     product trace                tr(A,B)
-!>     short-hand freeing           A=0, A(:)=0, A(:,:)=0
-!>     norm ie. sqrt(dot(A,A))      norm(A)
-!>     mat_to_full                  A = B(:,:)
-!>     mat_set_from_full            B(:,:) = A, B(:) = A
+!>    equals                       A = B
+!>    plus                         A + B
+!>    minus                        A - B
+!>    matrix multiply              A * B
+!>    scale by integer             n * A
+!>    scale by real(8)             r * A
+!>    scale by complex(8)          z * A
+!>    transpose                    trps(A)
+!>    trace                        tr(A)
+!>    scalar product               dot(A,B)
+!>    product trace                tr(A,B)
+!>    short-hand freeing           A=0, A(:)=0, A(:,:)=0
+!>    norm ie. sqrt(dot(A,A))      norm(A)
 !>
 !> To increase performance and lower memory needs, formulas are not
-!> evaluated by executing the operators immediately, but the operators are
-!> first collected into "batches" of the forms
+!> evaluated immediately as they stand, but the operators are
+!> first collected into 'proxy' matrices of the forms
 !>
-!>     axpby:     Z = a * X(^T) + b * Y   (where Z may be Y)
-!>     gemm:      Y = a * X(^T) * Z(^T) + b * Y
+!>    axpy:      Y (+)= f * X(^T)             (where X may be Y)
+!>    gemm:      C (+)= f * A(^T) * B(^T)
 !>
-!> To create matrices, mat_init (from module matrix_operations) is replaced
-!> by a more general init_mat. This is to hide context-specific information:
-!> closed/open shell, real/complex, 1/2/4-component, full/sparse,
-!> and thus make it possible to write general code:
+!> For printing matrices, mat_print from matrix_genop is provided:
 !>
-!>     call mat_init(A,nrow,ncol)       original version
-!>     call mat_init(A,B)               same shape
-!>     call mat_init(A,B,'T')           transpose shape
-!>     call mat_init(A,B,'T',C,'N')     rows and columns from diff. mats.
-!>     call mat_init(A,B,zero=.true.)   non-allocated zero of same shape
-!>     call mat_init(A,reset=.true.)    reset to defaults, nullifying pointers
-!>     call mat_init(A,B,alias='FF')    copy pointers, no new allocation
-!>
-!> Comparison of the shapes of matrices is done with mat_same
-!>
-!>     if (mat_same(A,B))               if same shape so that A+B possible
-!>     if (mat_same(A,B,ta=.true.))     A^T + B is possible
-!>     if (mat_same(A,B,mul=.true.))    if A's cols matches B's rows
-!>
-!> For printing matrices:
-!>
-!>     call mat_print(A)                default, print without dressing
-!>
-!>     call mat_print(A,label='A',width=7,unit=6,decor='{,},')
+!>    call mat_print(A)         (default print without decor)
+!>    call mat_print(A,label='A',width=7,unit=6,sep='{,},')
 !>
 !> The label is printed on the line preceding the matrix. Width specifies the
 !> text width of each column (excluding separator). The number of digits printed
 !> is adjusted so that no columns become overfilled (*****). Left brace,
-!> column separator, right brace, row separator (decor) can be specified, so the
+!> column separator, right brace, row separator (sep) can be specified, so the
 !> matrix can be copy-pasted as input to python, maple, mathematica, etc.
 !>
 !> To check the state of matrices: Whether defined: isdef(A),
-!> whether zero: iszero(A)
-!>
-!> In order to pass a "formula", such as A+3*dag(B) etc., as argument X to a subroutine,
-!> the subroutine must execute mat_fix_arg(X) before using X inside the subroutine.
-!> At the end of the subroutine mat_unfix_arg(X) should be called in order to free X.
-!> Neither call has any effect on a non-temporary matrix argument.
-!> This is neccessary since the Fortran programmer cannot tell whether the temporary
-!> is used inside its own subruoutine, where it should be deleted after use,
-!> or inside a called subroutine, in which it should be non-temporary.
-!>
-!> In order to have type(matrix) as the result of a function, mat_fix_result(X)
-!> should be called before returning from the function. This sets X's status as
-!> temporary, so that it will be deleted once used.
+!> whether zero: iszero(A) (zero matrices do not allocate memory)
 module matrix_defop_ng
 
-  use matrix_genop_ng, mat_print_nontemp => mat_print, &
-                       mat_trace_nontemp => mat_trace
+  use matrix_genop_ng, mat_print_nonzero => mat_print, &
+                       mat_trace_nonzero => mat_trace
 
   implicit none
 
   public matrix
-  public mat_init
-  public mat_print
   public isdef
   public iszero
   public assignment(=)
@@ -101,11 +66,15 @@ module matrix_defop_ng
   public dot
   public tr
   public norm
+  public mat_print
   public matrix_defop_debug
-  private
+
+  !> for switching debugging on or off
+  logical :: matrix_defop_debug = .false.
 
   interface assignment(=)
      module procedure mat_eq_mat
+     module procedure mat_eq_prx
      module procedure mat_eq_zero
      module procedure mat_eq_zero_1D
      module procedure mat_eq_zero_2D
@@ -113,539 +82,1134 @@ module matrix_defop_ng
      module procedure mat_eq_zero_4D
   end interface
 
-  interface isdef
-     module procedure mat_isdef
-  end interface
-
-  interface iszero
-     module procedure mat_iszero
-  end interface
-
   interface operator(+)
-     module procedure plus_mat
      module procedure mat_plus_mat
+     module procedure mat_plus_prx
+     module procedure prx_plus_mat
+     module procedure prx_plus_prx
+     module procedure plus_mat
+     module procedure plus_prx
   end interface
 
   interface operator(-)
-     module procedure minus_mat
      module procedure mat_minus_mat
+     module procedure mat_minus_prx
+     module procedure prx_minus_mat
+     module procedure prx_minus_prx
+     module procedure minus_mat
+     module procedure minus_prx
   end interface
 
   interface operator(*)
-     module procedure mat_times_mat
      module procedure complex_times_mat
+     module procedure complex_times_prx
      module procedure real_times_mat
+     module procedure real_times_prx
+     module procedure integer_times_mat
+     module procedure integer_times_prx
+     module procedure mat_times_mat
+     module procedure mat_times_prx
+     module procedure prx_times_mat
+     module procedure prx_times_prx
   end interface
 
   interface trps
-     module procedure mat_transpose
+     module procedure transpose_mat
+     module procedure transpose_prx
   end interface
 
   interface dot
-     module procedure mat_dot_prod
+     module procedure mat_dot_mat
+     module procedure mat_dot_prx
+     !ajt No idea why gfortran complains about this
+     ! module procedure prx_dot_mat
+     module procedure prx_dot_prx
   end interface
 
   interface tr
-     module procedure mat_prod_trace
+     module procedure mat_prodtr_mat
+     module procedure mat_prodtr_prx
+     !ajt No idea why gfortran complains about this
+     ! module procedure prx_prodtr_mat
+     module procedure prx_prodtr_prx
      module procedure mat_trace
+     module procedure prx_trace
   end interface
 
   interface norm
      module procedure mat_norm
+     module procedure prx_norm
   end interface
 
+  interface mat_print
+     module procedure print_mat
+     module procedure print_prx
+  end interface
 
-  !> for switching debugging on and off
-  logical :: matrix_defop_debug = .false.
+  !> private type used to contain intermediates during matrix
+  !> algebra evaluation
+  type proxy
+     !> scale factor before A. Have A whenever f!=0
+     complex(8) f
+     !> C= not C+=, A(^T), have B, B(^T)
+     logical zc, ta, hb, tb
+     !> matrices in C+=f*A*B
+     type(matrix) C, A, B
+  end type
+
+  ! dummy matrix at which %self_pointer of all intermediate
+  ! matrices proxy%C/A/B points. This is needed because some compilers
+  ! (eg fortran) move type(proxy) instances around while evaluating
+  type(matrix), target :: intermediate
+
+  private
 
 contains
 
-
-  function mat_iszero(A)
+  function isdef(A)
     type(matrix), intent(in) :: A
-    logical                  :: mat_iszero
-    if (.not.mat_isdef(A)) &
-       call quit('error: matrix isero(A), A undefined')
-    mat_iszero = btest(A%flags, matf_zero)
+    logical                  :: isdef
+    isdef = (A%magic_tag == mat_magic_value .or. &
+             A%magic_tag == mat_magic_setup)
   end function
 
+  subroutine assert_def(A, errmsg)
+    type(matrix), target, intent(in) :: A
+    character(*),         intent(in) :: errmsg
+    if (.not.isdef(A)) call quit(errmsg)
+  end subroutine
 
-  function must_eval(A, msg)
+  function iszero(A)
     type(matrix), intent(in) :: A
-    character(*), intent(in) :: msg
-    logical                  :: must_eval
-    if (.not.mat_isdef(A)) call quit(msg)
-    must_eval = btest(A%flags, matf_temp)
+    logical                  :: iszero
+    iszero = (A%magic_tag == mat_magic_setup)
+    if (.not.iszero .and. A%magic_tag /= mat_magic_value) &
+       call quit('iszero(A) error: called with matrix A undefined')
   end function
 
+  ! private inline. Same as .not.iszero, but without insisting 
+  ! that A is defined
+  function nz(A)
+    type(matrix), intent(in) :: A
+    logical                  :: nz
+    nz = .not.(A%magic_tag == mat_magic_setup)
+  end function
 
-  !> evaluate the expression Y += fac * X^tx * Z^tz, as specified in
-  !> the fields within Y, by executing either an axpy or a gemm operation.
-  !> evaluate the matrix C (+)= fac * A^ta * B^tb, where '+' fac A ta B tb
-  !> are speficied in C%flags C%temp_fac C%temp_X C%temp_Y
-  subroutine eval_temp(C, overwr)
-    type(matrix),      intent(inout) :: C
-    logical, optional, intent(in)    :: overwr
-    type(matrix), target  :: dupC
-    logical :: plus, zeroC, useA
-    ! plus decides whether to add to or overwrite C
-    plus = .true.
-    if (present(overwr)) plus = (.not.overwr)
-    ! whether C is zero, ie. unallocated
-    zeroC = btest(C%flags, matf_zero)
-    ! whether result should go into A, because C is zero or an alias
-    useA = ((zeroC .or. btest(C%flags, matf_alias)) &
-            .and. associated(C%temp_X) &
-            .and. .not.associated(C%temp_Y) &
-            .and. (zeroC .or. C%temp_fac == 1) &
-            .and. .not.btest(C%flags, matf_temp_tx))
-    if (useA) useA = btest(C%temp_X%flags, matf_temp)
-    ! pre-apply any scale factor on A, if result will go there
-    if (useA .and. C%temp_fac /= 1) then
-       call mat_axpy(C%temp_fac, C%temp_X, &
-                     .false., .false., C%temp_X)
-       C%temp_fac = 1
+  ! private inline. Tells whether A is an intermediate
+  function intm(A)
+    type(matrix), intent(in) :: A
+    logical                  :: intm
+    intm = associated(A%self_pointer, intermediate)
+  end function
+
+  ! private inline. Tells whether A is an intermediate
+  function alias(A, B)
+    type(matrix), target, intent(in) :: A, B
+    logical                          :: alias
+    alias = associated(A%self_pointer, B)
+  end function
+
+  ! free A if its an intermediate, nullify it if it's an alias
+  subroutine free_or_nullify(A)
+    type(matrix), target, intent(inout) :: A
+    if (intm(A)) then
+       A%self_pointer => A
+       call mat_free(A)
+    else
+       call mat_nullify(A)
     end if
-    ! swap A and C or reallocate C, if needed
-    if (useA .and. zeroC) then
-       call mat_dup(C%temp_X, C)
-    else if (useA) then
-       call mat_dup(C, dupC)
-       call mat_dup(dupC%temp_X, C)
-       C%temp_X => dupC%temp_X
-       nullify(C%temp_Y)
-       nullify(C%temp_X%temp_X)
-       call mat_free(dupC, nodealloc=.true.)
-       C%flags = ibset(C%flags, matf_temp)
-       C%temp_X%flags = ibclr(C%temp_X%flags, matf_temp)
-    else if (btest(C%flags, matf_alias)) then
-       call mat_dup(C, dupC)
-       call mat_free(C, nodealloc=.true.)
-       call mat_init(C, dupC)
-       C%temp_fac = dupC%temp_fac
-       C%temp_X  => dupC%temp_X
-       C%temp_Y  => dupC%temp_Y
-       if (btest(dupC%flags, matf_temp_tx)) &
-          C%flags = ibset(C%flags, matf_temp_tx)
-       if (btest(dupC%flags, matf_temp_ty)) &
-          C%flags = ibset(C%flags, matf_temp_ty)
-       call mat_axpy((1d0,0d0), dupC, .false., .false., C)
-    else if (zeroC) then
-       dupC%flags     =  C%flags
-       dupC%temp_fac =  C%temp_fac
-       dupC%temp_X   => C%temp_X
-       dupC%temp_Y   => C%temp_Y
-       call mat_init(C, C)
-       C%flags     =  dupC%flags
-       C%temp_fac =  dupC%temp_fac
-       C%temp_X   => dupC%temp_X
-       C%temp_Y   => dupC%temp_Y
-       C%flags = ibclr(C%flags, matf_zero)
-       plus = .false.
-    end if
-    ! execute gemm or axpy, delete temporary A and B
-    if (associated(C%temp_X) .and. associated(C%temp_Y)) then
-       call mat_gemm(C%temp_fac, C%temp_X, &
-                     btest(C%flags, matf_temp_tx), C%temp_Y, &
-                     btest(C%flags, matf_temp_ty), plus, C)
-       if (btest(C%temp_X%flags, matf_temp)) C%temp_X = 0
-       if (btest(C%temp_Y%flags, matf_temp)) C%temp_Y = 0
-    else if (associated(C%temp_X)) then
-       call mat_axpy(C%temp_fac, C%temp_X, &
-                     btest(C%flags, matf_temp_tx), plus, C)
-       if (btest(C%temp_X%flags, matf_temp)) C%temp_X = 0
-    end if
-    ! clean-up
-    C%flags = ibset(C%flags, matf_temp)
-    C%flags = ibclr(C%flags, matf_zero)
-    C%flags = ibclr(C%flags, matf_temp_tx)
-    C%flags = ibclr(C%flags, matf_temp_ty)
-    C%temp_fac = 1
-    nullify(C%temp_X)
-    nullify(C%temp_Y)
   end subroutine
 
 
+  !> evaluate proxy P: C (+)= f * A(^T) {* B(^T)}
+  subroutine eval_proxy(P)
+    type(proxy), target :: P
+    if (.not.intm(P%C) .and. intm(P%A) .and. &
+        .not.P%ta .and. .not.P%hb) then
+       if (P%f/=1) &
+          call mat_axpy(P%f, P%A, .false., .true., P%A)
+       if (nz(P%C)) &
+          call mat_axpy((1d0,0d0), P%C, .false., .false., P%A)
+       call mat_duplicate(P%A, P%C)
+       call mat_nullify(P%A)
+       P%f = 0
+    else if (.not.nz(P%C)) then
+       call mat_alloc(P%C)
+       P%C%self_pointer => intermediate
+       P%zc = .true.
+    else if (.not.intm(P%C)) then
+       call realloc_matrix(.false., P%C)
+    end if
+    if (P%hb) then
+       call mat_gemm(P%f, P%A, P%ta, P%B, P%tb, P%zc, P%C)
+    else if (P%f/=0) then
+       call mat_axpy(P%f, P%A, P%ta, P%zc, P%C)
+    end if
+    ! free A and B
+    if (P%f/=0) call free_or_nullify(P%A)
+    if (P%hb  ) call free_or_nullify(P%B)
+    call clear_proxy(P)
+  end subroutine
 
-  !> transfer B to A
+
+  ! clear fields in proxy. Note that C,A,B are not touched
+  subroutine clear_proxy(P)
+    type(proxy), intent(out) :: P
+    P%f  = 0
+    P%zc = .false.
+    P%ta = .false.
+    P%hb = .false.
+    P%tb = .false.
+  end subroutine
+
+
+  !> reallocate a matrix, and optionally change its sign
+  subroutine realloc_matrix(minus, A)
+    logical,              intent(in)    :: minus
+    type(matrix), target, intent(inout) :: A
+    type(matrix) tmp
+    call mat_duplicate(A, tmp)
+    call mat_nullify(A)
+    call mat_setup(A, tmp)
+    call mat_alloc(A)
+    call mat_axpy(merge(-1,1,minus)*(1d0,0d0), tmp, .false., .true., A)
+    call mat_nullify(tmp)
+    A%self_pointer => intermediate
+  end subroutine
+
+
+  !> private to set C to C, -C, A+C, A-C, C-A or -A-C utilizing
+  !> (if need be) A's current allocation
+  subroutine zerplusmin_mat_plusmin_mat(za, ma, A, mc, C)
+    logical,      intent(in) :: za, ma, mc
+    type(matrix), target     :: C, A
+    logical CisA
+    integer fc, fa
+    CisA = alias(C, A)
+    ! integer factors of C and A
+    fa = merge(0, merge(-1,1,ma), CisA)
+    fc = merge(-1,1,mc) + merge(merge(-1,1,ma), 0, CisA)
+    ! first branch: A=-A A+=C freeC C<=A
+    if (intm(A) .and. (.not.intm(C) .or. (fa==1 .and. fc==-1))) then
+       if (fa==-1) call mat_axpy((-1d0,0d0), A, .false., .true., A)
+       if (fc/= 0) call mat_axpy(fc*(1d0,0d0), C, .false., fa==0, A)
+       if (intm(C)) call mat_free(C)
+       call mat_duplicate(A, C)
+       call mat_nullify(A)
+    else !other branch: reaC C*=-1 C+=A freeA
+       if (intm(A) .and. CisA) then
+          call mat_nullify(A)
+          C%self_pointer => intermediate
+       else if (.not.intm(C)) then
+          call realloc_matrix(fc==-1, C)
+          if (fc==-1) fc = 1
+       end if
+       if (fc/=1) call mat_axpy(fc*(1d0,0d0), C, .false., .true.,  C)
+       if (fa/=0) call mat_axpy(fa*(1d0,0d0), A, .false., .false., C)
+       if (intm(A) .and. .not.CisA) call mat_free(A)
+    end if
+  end subroutine
+
+
+  !> copy B to A. If A is already allocated and co-shape B,
+  !> copy B's elements into A's elements. Otherwise A becomes
+  !> an alias of B
   subroutine mat_eq_mat(A, B)
-    type(matrix), intent(inout) :: A
-    type(matrix)                :: B
-    logical :: evalB, haveA, useA, overwr
-    ! verify that B is defined, and check whether it needs to be evaluated
-    evalB = must_eval(B, 'error: matrix A=B, B undefined')
-    ! is A currently allocated
-    haveA = (isdef(A) .and. .not.btest(A%flags, matf_zero) &
-                      .and. .not.btest(A%flags, matf_alias))
-    ! if B is an alias of A, make B the original and A the alias
-    if (haveA .and. btest(B%flags, matf_alias)) then
-       if (mat_isdup(A,B)) then
-          A%flags = ibset(A%flags, matf_alias)
-          B%flags = ibclr(B%flags, matf_alias)
-          haveA = .false.
-       end if
+    type(matrix), target, intent(inout) :: A
+    type(matrix)                        :: B
+    logical haveA
+    call assert_def(B, 'matrix A=B error: B undefined')
+    haveA = (isdef(A) .and. alias(A, A))
+    if (haveA) then
+       haveA = (nz(B) .and. mat_coshape(A,B))
+       if (.not.haveA) call mat_free(A)
     end if
-    ! otherwise, if X is A, make it temporary
-    if (haveA .and. associated(B%temp_X)) then
-       if (mat_isdup(A, B%temp_X)) then
-          if (btest(B%temp_X%flags, matf_alias)) &
-             call quit('mat_eq_mat error: attempt to overwrite aliased matrix')
-          B%temp_X%flags = ibset(B%temp_X%flags, matf_temp)
-          haveA = .false.
-       end if
-    end if
-    ! otherwise, if Y is A, make it temporary
-    if (haveA .and. associated(B%temp_Y)) then
-       if (mat_isdup(A, B%temp_Y)) then
-          if (btest(B%temp_Y%flags, matf_alias)) &
-             call quit('mat_eq_mat error: attempt to overwrite aliased matrix')
-          B%temp_Y%flags = ibset(B%temp_Y%flags, matf_temp)
-          haveA = .false.
-       end if
-    end if
-    ! determine whether As contents are needed
-    useA = haveA
-    if (useA .and. btest(B%flags, matf_temp)) &
-       useA = .not.(btest(B%flags, matf_temp) .and. &
-                    .not.btest(B%flags, matf_alias))
-    if (useA .and. associated(B%temp_X)) &
-       useA = .not.(btest(B%temp_X%flags, matf_temp) .and. &
-                    .not.btest(B%flags, matf_temp_tx) .and. &
-                    .not.associated(B%temp_Y))
-    if (useA) useA = mat_same(A, B)
-    ! A = B=0
-    if (.not.evalB .and. btest(B%flags, matf_zero)) then
-       if (haveA) call mat_free(A)
-       call mat_dup(B, A)
-    ! A = B
-    else if (.not.evalB) then
-       if (haveA .and. .not.useA) call mat_free(A)
-       if (.not.useA) call mat_init(A, B)
-       call mat_axpy((1d0,0d0), B, .false., .false., A)
-    ! A = B + X*Y, fits A, and B (and X without Y) non-temp
-    else if (useA) then
-       overwr = btest(B%flags, matf_zero)
-       if (.not.overwr) &
-          call mat_axpy((1d0,0d0), B, .false., .false., A)
-       A%temp_fac = B%temp_fac
-       A%temp_X  => B%temp_X
-       A%temp_Y  => B%temp_Y
-       if (btest(B%flags, matf_temp_tx)) &
-          A%flags = ibset(A%flags, matf_temp_tx)
-       if (btest(B%flags, matf_temp_ty)) &
-          A%flags = ibset(A%flags, matf_temp_ty)
-       call mat_free(B, nodealloc=.true.)
-       call eval_temp(A, overwr)
-    ! A = B + X*Y, either of B or (X without Y or tx) are temporary
+    if (haveA) then
+       call mat_axpy((1d0,0d0), B, .false., .true., A)
     else
-       if (haveA) call mat_free(A)
-       call eval_temp(B)
-       call mat_dup(B, A)
-       call mat_free(B, nodealloc=.true.)
-    end if
-    ! ensure A is non-temp
-    A%flags = ibclr(A%flags, matf_temp)
-  end subroutine
-
-
-
-  subroutine mat_plusmin_mat(A, plus, B, C)
-    type(matrix), target      :: A, B
-    type(matrix), intent(out) :: C
-    logical,      intent(in)  :: plus
-    logical :: evalA, evalB, zeroA, zeroB
-    evalA = must_eval(A, 'error: matrix A+B, A undefined')
-    evalB = must_eval(B, 'error: matrix A+B, B undefined')
-    zeroA = (btest(A%flags, matf_zero) .and. .not.evalA)
-    zeroB = (btest(B%flags, matf_zero) .and. .not.evalB)
-    if (.not.mat_same(A,B)) &
-       call quit('error: matrix A+B, different shapes')
-    if (evalA) call eval_temp(A)
-    if (evalB) call eval_temp(B)
-    call mat_dup(A, C)
-    if (.not.zeroA .or. .not.zeroB) &
-       C%flags = ibset(C%flags, matf_temp)
-    if (.not.evalA) &
-       C%flags = ibset(C%flags, matf_alias)
-    if (.not.zeroB) then
-       C%temp_fac = merge(1,-1,plus)
-       C%temp_X => B
+       call mat_duplicate(B,A)
     end if
   end subroutine
 
 
-  !> verify that shapes match, check for zeros
-  function mat_plus_mat(A, B) result(C)
+  !> evaluate matrix proxy P and place the result in A
+  subroutine mat_eq_prx(A, P)
+    type(matrix), target, intent(inout) :: A
+    type(proxy),  target, intent(in)    :: P
+    call mat_eq_prx_subr(A, P)
+  end subroutine
+
+
+  !> evaluate matrix proxy P and place the result in A
+  subroutine mat_eq_prx_subr(M, P)
+    type(matrix), target, intent(inout) :: M
+    type(proxy),  target                :: P
+    logical zeroP, haveM, ABisM, needM, useM
+    zeroP = (.not.nz(P%C) .and. P%f==0)
+    haveM = (isdef(M) .and. alias(M, M))
+    ! if M is among the operands in P=C+f*A*B, make the last occurance
+    if (haveM) then !intermediate, and forget about having M
+       if (P%hb .and. alias(P%B, M)) then
+          P%B%self_pointer => intermediate
+          if (alias(P%A, M)) P%A%self_pointer => P%B
+          if (alias(P%C, M)) P%C%self_pointer => P%B
+          haveM = .false.
+       else if (P%f/=0 .and. alias(P%A, M)) then
+          P%A%self_pointer => intermediate
+          if (alias(P%C, M)) P%C%self_pointer => P%A
+          haveM = .false.
+       else if (alias(P%C, M)) then
+          P%C%self_pointer => intermediate
+          haveM = .false.
+       end if
+    end if
+    ! whether M could find use in the evaluation of P. No use for M
+    ! if C is intermediate, or A is alone, non-transposed and intermediate
+    needM = .not.(zeroP .or. intm(P%C) .or. (P%f/=0 .and. &
+                          .not.P%ta .and. .not.P%hb .and. intm(P%A)))
+    ! lastly, in order to use M, it must be correctly shaped
+    useM = .false.
+    if (haveM .and. needM) useM = mat_coshape(M, P%C)
+    ! either swap M in as C, or free it
+    if (useM .and. .not.nz(P%C)) then
+       call mat_duplicate(M, P%C)
+       P%C%self_pointer => intermediate
+       P%zc = .true. !C is scratch
+    else if (useM) then
+       call zerplusmin_mat_plusmin_mat(.true., .false., M, .false., P%C)
+    else if (haveM) then
+       call mat_free(M)
+    end if
+    ! if nonzero, evaluate
+    if (.not.zeroP) call eval_proxy(P)
+    ! transfer result back from C to M
+    call mat_duplicate(P%C, M)
+    call mat_nullify(P%C)
+    if (.not.zeroP) M%self_pointer => M !make M owner
+  end subroutine
+
+
+
+  !------------------------------------------
+  !   add and subtract operators A+B, A-B
+  !------------------------------------------
+
+  !> A+B: verify that shapes match, check for zeros
+  function mat_plus_mat(A, B) result(P)
     type(matrix), target, intent(in) :: A, B
-    type(matrix)                     :: C
-    call mat_plusmin_mat(A, .true., B, C)
-  end function
-
-
-  !> verify that shapes match, check for zeros
-  function mat_minus_mat(A, B) result(C)
-    type(matrix), target, intent(in) :: A, B
-    type(matrix)                     :: C
-    call mat_plusmin_mat(A, .false., B, C)
-  end function
-
-
-
-  !> verify that shapes match, check for zeroes
-  function mat_times_mat(A, B) result(C)
-    type(matrix), target :: A, B
-    type(matrix)         :: C
-    logical              :: evalA, evalB, zeroA, zeroB
-    evalA = must_eval(A, 'error: matrix A*B, A undefined')
-    evalB = must_eval(B, 'error: matrix A*B, B undefined')
-    zeroA = (btest(A%flags, matf_zero) .and. .not.btest(A%flags, matf_temp))
-    zeroB = (btest(B%flags, matf_zero) .and. .not.btest(B%flags, matf_temp))
-    if (.not.mat_same(A, B, mul=.true.)) &
-       call quit('error: matrix A*B, but A%ncol and B%nrow do not match')
-    call mat_init(C, A, B, noalloc=.true.)
-    C%flags = ibset(C%flags, matf_zero)
-    C%flags = ibset(C%flags, matf_temp)
-    if (evalA) call eval_temp(A)
-    if (evalB) call eval_temp(B)
-    if (zeroA .or. zeroB) then
-       if (btest(A%flags, matf_temp)) call mat_free(A)
-       if (btest(B%flags, matf_temp)) call mat_free(B)
-       C%flags = ibset(C%flags, matf_zero)
+    type(proxy),  target             :: P
+    call assert_def(A, 'matrix A+B error: A undefined')
+    call assert_def(B, 'matrix A+B error: B undefined')
+    if (.not.mat_coshape(A, B, add=.true.)) &
+       call quit('matrix A+B error: different shapes')
+    ! initialize P
+    call clear_proxy(P)
+    call mat_nullify(P%C)
+    if (.not.nz(A) .and. .not.nz(B)) then
+       call mat_setup(P%C, A) !no allocate for zero
+    else if (.not.nz(A)) then
+       call mat_duplicate(B, P%C)
     else
-       C%temp_fac =  1
-       C%temp_X   => A
-       C%temp_Y   => B
+       call mat_duplicate(A, P%C)
+       if (nz(B)) P%f = 1
+       if (nz(B)) call mat_duplicate(B, P%A)
     end if
   end function
 
+  function mat_plus_prx(A, P) result(R)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target, intent(in) :: P
+    type(proxy),  target             :: R
+    call assert_def(A, 'matrix A+(P) error: A undefined')
+    if (.not.mat_coshape(A, P%C, add=.true.)) &
+       call quit('matrix A+(P) error: different shapes')
+    call plusmin_mat_plusmin_prx(.false., A, .false., P, R)
+  end function
+
+  function prx_plus_mat(P, A) result(R)
+    type(proxy),  target, intent(in) :: P
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target             :: R
+    call assert_def(A, 'matrix (P)+A error: A undefined')
+    if (.not.mat_coshape(P%C, A, add=.true.)) &
+       call quit('matrix (P)+A error: different shapes')
+    call plusmin_mat_plusmin_prx(.false., A, .false., P, R)
+  end function
+
+  function prx_plus_prx(P, Q) result(R)
+    type(proxy), target, intent(in) :: P, Q
+    type(proxy), target             :: R
+    if (.not.mat_coshape(P%C, Q%C, add=.true.)) &
+       call quit('matrix (P)+(Q) error: different shapes')
+    call prx_plusminus_prx(P, .false., Q, R)
+  end function
+
+  function mat_minus_mat(A, B) result(P)
+    type(matrix), target, intent(in) :: A, B
+    type(proxy),  target             :: P
+    call assert_def(A, 'matrix A-B error: A undefined')
+    call assert_def(B, 'matrix A-B error: B undefined')
+    if (.not.mat_coshape(A, B, add=.true.)) &
+       call quit('matrix A-B error: different shapes')
+    ! initialize P
+    call clear_proxy(P)
+    call mat_duplicate(A, P%C)
+    if (nz(B)) P%f = -1
+    if (nz(B)) call mat_duplicate(B, P%A)
+  end function  
+
+  function mat_minus_prx(A, P) result(R)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target, intent(in) :: P
+    type(proxy),  target             :: R
+    call assert_def(A, 'matrix A-(P) error: A undefined')
+    if (.not.mat_coshape(A, P%C, add=.true.)) &
+       call quit('matrix A-(P) error: different shapes')
+    call plusmin_mat_plusmin_prx(.false., A, .true., P, R)
+  end function
+
+  function prx_minus_mat(P, A) result(R)
+    type(proxy),  target, intent(in) :: P
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target             :: R
+    call assert_def(A, 'matrix (P)-A error: A undefined')
+    if (.not.mat_coshape(A, P%C, add=.true.)) &
+       call quit('matrix (P)-A error: different shapes')
+    call plusmin_mat_plusmin_prx(.true., A, .false., P, R)
+  end function
+
+  function prx_minus_prx(P, Q) result(R)
+    type(proxy), target, intent(in) :: P, Q
+    type(proxy), target             :: R
+    logical pq, qp, havePA, haveQA
+    if (.not.mat_coshape(P%C, Q%C, add=.true.)) &
+       call quit('matrix (P)-(Q) error: different shapes')
+    call prx_plusminus_prx(P, .true., Q , R)
+  end function
 
 
-  subroutine gen_complex_times_mat(r, A, B)
-    complex(8),   intent(in) :: r
-    type(matrix), target     :: A
-    type(matrix)             :: B
-    logical :: eval
-    eval = must_eval(A, 'error: matrix r*A, A undefined')
-    call mat_init(B, A, noalloc=.true.)
-    B%flags = ibset(B%flags, matf_zero)
-    if (eval) call eval_temp(A)
-    if (r/=0 .and. .not.btest(A%flags, matf_zero)) then
-       B%flags = ibset(B%flags, matf_temp)
-       B%temp_fac =  r
-       B%temp_X   => A
+  !> R=M+P, R=M-P, R=-M+P or R=-M-P. M may well be zero
+  subroutine plusmin_mat_plusmin_prx(mm, M, mp, P, R)
+    logical,              intent(in)  :: mm, mp
+    type(matrix), target              :: M
+    type(proxy),  target              :: P
+    type(proxy),  target, intent(out) :: R
+    logical useM, useC, haveA, useA, neg
+    ! whether A is intermediate, and can keep the result
+    haveA = (P%f/=0 .and. intm(P%A) .and. .not.P%ta .and. .not.P%hb)
+    ! decide which matrix to use for the result: P%C, A or P%A
+    useC = (intm(P%C) .and. .not.mp)
+    useM = (.not.useC .and. intm(M) .and. .not.mm)
+    useA = (.not.useC .and..not.useM .and. haveA .and. P%f == merge(-1,1,mp))
+    if (.not.(useM.or.useC.or.useA)) useC = intm(P%C)
+    if (.not.(useM.or.useC.or.useA)) useM = intm(M)
+    if (.not.(useM.or.useC.or.useA)) useA = haveA
+    ! decide whether we calculate minus the result
+    neg = ((useC .and. mp) .or. (useM .and. mm) &
+           .or. (useA .and. P%f == merge(1,-1,mp)))
+    ! if result goes into A, apply any scale factor other than +-1
+    if (useA .and. P%f/=1 .and. P%f/=-1) then
+       call mat_axpy(merge(-1,1,mp)*P%f, P%A, .false., .true., P%A)
+       P%f = merge(-1,1,mp)
     end if
-    if (btest(A%flags, matf_temp)) &
-       call mat_free(A, nodealloc = (btest(A%flags, matf_temp) &
-                                .or. btest(A%flags, matf_alias)))
+    ! if result goes in A, add it to C
+    if (useA) then
+       call zerplusmin_mat_plusmin_mat(.false., .false., P%A, P%f==-1, P%C)
+       P%f  = 0
+       call mat_nullify(P%A)
+    end if
+    ! add/subtract A to/from C
+    if (nz(M) .and. nz(P%C)) then
+       call zerplusmin_mat_plusmin_mat(.false., mm.neqv.neg, M, mp.neqv.neg, P%C)
+    else if (nz(M)) then
+       call mat_duplicate(M, P%C)
+       if (intm(M)) M%self_pointer => P%C
+       if (mm.neqv.neg) call realloc_matrix(.true., P%C)
+    end if
+    ! either transfer P to R, or set R to -P
+    if (neg) then
+       if (P%f/=0) call eval_proxy(P)
+       call clear_proxy(R)
+       call mat_nullify(R%C)
+       call mat_setup(R%C, P%C) !zero
+       R%f = -1
+       call mat_duplicate(P%C, R%A)
+    else
+       R = P
+       if (mp) R%f = -R%f
+    end if
+    ! clear P
+    call mat_nullify(P%C)
+    if (P%f/=0) call mat_nullify(P%A)
+    if (P%hb  ) call mat_nullify(P%B)
+    call clear_proxy(P)
+  end subroutine
+  
+
+  subroutine prx_plusminus_prx(P, mq, Q, R)
+    type(proxy), target              :: P, Q
+    logical,             intent(in)  :: mq
+    type(proxy), target, intent(out) :: R
+    logical pq, qp, havePA, haveQA
+    ! whether P%A and Q%A are intermatiates and available
+    havePA = (P%f/=0 .and. intm(P%A) .and. .not.P%ta .and. .not.P%hb)
+    haveQA = (Q%f/=0 .and. intm(Q%A) .and. .not.Q%ta .and. .not.Q%hb)
+    ! determine in which order to combine P and Q to R:
+    ! Firstly, pick one which misses A, and thus doesn't need evaluation
+    pq = (P%f==0)
+    qp = (.not.pq .and. Q%f==0)
+    ! then pick P if P%C is intermediate or P%A is with factor 1
+    if (.not.(pq.or.qp)) pq = (intm(P%C) .or. (havePA .and. P%f==1))
+    ! then pick Q if Q%A is intermediate and with net factor 1 (--)
+    if (.not.(pq.or.qp)) qp = (haveQA .and. Q%f == merge(-1,1,mq))
+    ! then pick P if P%A is intermediate with factor -1
+    if (.not.(pq.or.qp)) pq = (havePA .and. P%f==-1)
+    ! then pick Q if Q%C is intermediate, or if Q%A with factor 1
+    if (.not.(pq.or.qp)) qp = (intm(Q%C) .or. (haveQA .and. Q%f == merge(1,-1,mq)))
+    ! then pick P if P%A is intermediate, whatever the factor
+    if (.not.(pq.or.qp)) pq = havePA
+    ! then pick Q if Q%A is intermediate, whatever the factor
+    if (.not.(pq.or.qp)) qp = haveQA
+    ! combine in the decided upon order, defaulting to evaluating P first
+    if (pq .or. .not.qp) then
+       if (P%f/=0) call eval_proxy(P)
+       call plusmin_mat_plusmin_prx(.false., P%C, mq, Q, R)
+       call free_or_nullify(P%C)
+    else
+       if (Q%f/=0) call eval_proxy(Q)
+       call plusmin_mat_plusmin_prx(mq, Q%C, .false., P, R)
+       call free_or_nullify(Q%C)
+    end if
   end subroutine
 
 
-  function complex_times_mat(r, A) result(B)
+  !----------------------------------
+  !   scale operators f*A, +A, -A
+  !----------------------------------
+
+  function complex_times_mat(r, A) result(P)
      complex(8),           intent(in) :: r
      type(matrix), target, intent(in) :: A
-     type(matrix), target             :: B
-     call gen_complex_times_mat(r, A, B)
+     type(proxy),  target             :: P
+     call number_times_mat(r, A, P)
   end function
 
-
-  function real_times_mat(r, A) result(B)
+  function real_times_mat(r, A) result(P)
     real(8),              intent(in) :: r
     type(matrix), target, intent(in) :: A
-    type(matrix), target             :: B
-    call gen_complex_times_mat(r*(1d0,0d0), A, B)
+    type(proxy),  target             :: P
+    call number_times_mat(r*(1d0,0d0), A, P)
   end function
 
-
-  function plus_mat(A) result(B)
+  function integer_times_mat(r, A) result(P)
+    integer,              intent(in) :: r
     type(matrix), target, intent(in) :: A
-    type(matrix), target             :: B
-    call gen_complex_times_mat((1d0,0d0), A, B)
+    type(proxy),  target             :: P
+    call number_times_mat(r*(1d0,0d0), A, P)
   end function
 
-
-  function minus_mat(A) result(B)
+  function plus_mat(A) result(P)
     type(matrix), target, intent(in) :: A
-    type(matrix), target             :: B
-    call gen_complex_times_mat((-1d0,0d0), A, B)
+    type(proxy),  target             :: P
+    call number_times_mat((1d0,0d0), A, P)
+  end function
+
+  function minus_mat(A) result(P)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target             :: P
+    call number_times_mat((-1d0,0d0), A, P)
+  end function
+
+  subroutine number_times_mat(f, A, P)
+    complex(8),           intent(in) :: f
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target             :: P
+    call assert_def(A, 'matrix r*A error: A undefined')
+    call clear_proxy(P)
+    if (f==1 .or. .not.nz(A)) then
+       call mat_duplicate(A, P%C)
+    else
+       call mat_nullify(P%C)
+       call mat_setup(P%C, A) !now C=zero
+       if (f/=0) P%f = f
+       if (f/=0) call mat_duplicate(A, P%A)
+    end if
+  end subroutine
+
+  function complex_times_prx(f, P) result(Q)
+    complex(8),          intent(in) :: f
+    type(proxy), target, intent(in) :: P
+    type(proxy), target             :: Q
+    call number_times_prx(f, P, Q)
+  end function
+
+  function real_times_prx(f, P) result(Q)
+    real(8),             intent(in) :: f
+    type(proxy), target, intent(in) :: P
+    type(proxy), target             :: Q
+    call number_times_prx(f*(1d0,0d0), P, Q)
+  end function
+
+  function integer_times_prx(f, P) result(Q)
+    integer,             intent(in) :: f
+    type(proxy), target, intent(in) :: P
+    type(proxy), target             :: Q
+    call number_times_prx(f*(1d0,0d0), P, Q)
+  end function
+
+  function plus_prx(P) result(Q)
+    type(proxy), target, intent(in) :: P
+    type(proxy), target             :: Q
+    call number_times_prx((1d0,0d0), P, Q)
+  end function
+
+  function minus_prx(P) result(Q)
+    type(proxy), target, intent(in) :: P
+    type(proxy), target             :: Q
+    call number_times_prx((-1d0,0d0), P, Q)
   end function
 
 
-  !> Transpose the matrix A. If A is temporary and A=a*X or A=a*X*Z,
-  !> only swap X and Z, and slip-swap tx and tz.
-  !> Otherwise, evaluate A (if tmp), and create a new temporary for B
-  function mat_transpose(A) result(B)
-    type(matrix), target :: A
-    type(matrix)         :: B
-    logical :: eval
-    eval = must_eval(A, 'error: matrix transpose trps(A), A undefined')
-    call mat_init(B, A, ta=.true., noalloc=.true.)
-    B%flags = ibset(B%flags, matf_zero)
-    if (.not.btest(A%flags, matf_zero)) then
-       if (eval) call eval_temp(A)
-       B%flags = ibset(B%flags, matf_temp)
-       B%flags = ibset(B%flags, matf_temp_tx)
-       B%temp_X => A
+  subroutine number_times_prx(f, P, R)
+    complex(8),          intent(in)  :: f
+    type(proxy), target              :: P
+    type(proxy), target, intent(out) :: R
+    ! if multiplying a non-zero P by zero f, start by cleaning up that
+    if (f==0 .and. P%f/=0) then
+       P%f = 0
+       call free_or_nullify(P%A)
+       if (P%hb) call free_or_nullify(P%B)
+       P%hb = .false.
+    end if
+    if (f==0 .and. nz(P%C)) then
+       call mat_duplicate(P%C, P%A)
+       call free_or_nullify(P%C)
+       call mat_setup(P%C, P%A)
+       call mat_nullify(P%A)
+    end if
+    ! if no actual scaling needed, just copy P to R
+    if (f==1 .or. .not.nz(P%C)) then
+       R = P
+       R%f = R%f * f
+    else
+       ! evaluate unless A is untransposed and without B, and
+       ! will end up with factor +1 after multiplication
+       if (.not.(f * P%f == 1 .and. .not.P%ta .and. .not.P%hb)) &
+          call eval_proxy(P)
+       call clear_proxy(R)
+       if (P%f/=0) call mat_duplicate(P%A, R%C)
+       if (P%f==0) call mat_nullify(R%C)
+       if (P%f==0) call mat_setup(R%C, P%C)
+       if (nz(P%C)) R%f = f
+       if (nz(P%C)) call mat_duplicate(P%C, R%A)
+    end if
+    ! clear P
+    call mat_nullify(P%C)
+    if (P%f/=0) call mat_nullify(P%A)
+    if (P%hb  ) call mat_nullify(P%B)
+    call clear_proxy(P)
+  end subroutine
+
+
+
+  !----------------------------------
+  !   transpose operator trps(A)
+  !----------------------------------
+
+  !> transpose of matrix
+  function transpose_mat(A) result(P)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target             :: P
+    call assert_def(A, 'matrix trps(A) error: A undefined')
+    call clear_proxy(P)
+    call mat_nullify(P%C)
+    call mat_setup(P%C, A, ta=.true.)
+    ! if nonzero, set P%A to A^T
+    if (nz(A)) then
+       P%f  =  1
+       P%ta =  .true.
+       call mat_duplicate(A, P%A)
     end if
   end function
 
 
-
-  !> back-end for mat_dot_prod and mat_prod_trace (dot(A,B) and tr(A,B))
-  function gen_mat_dot(A, B, trps)
-    type(matrix) :: A, B
-    complex(8)   :: gen_mat_dot
-    logical      :: trps, zeroA, zeroB, evalA, evalB
-    evalA = must_eval(A, 'error: matrix dot/tr(A,B), A undefined')
-    evalB = must_eval(B, 'error: matrix dot/tr(A,B), B undefined')
-    zeroA = (.not.evalA .and. btest(A%flags, matf_zero))
-    zeroB = (.not.evalB .and. btest(B%flags, matf_zero))
-    if (evalA) then
-       !ajt FIXME forward A = fac * X^tx
-       call eval_temp(A)
+  !> transpose of matrix proxy
+  function transpose_prx(P) result(R)
+    type(proxy), target :: P
+    type(proxy), target :: R
+    logical swap
+    call clear_proxy(R)
+    ! if P=f*A or P=f*A*B, make R=f*A^T or R=f*B^T*A^T
+    if (.not.nz(P%C) .and. .not.(P%f==1 .and. P%ta .and. .not.P%hb)) then
+       call mat_duplicate(P%C, R%C) !zero
+       R%f = P%f
+       if (P%hb) then
+          R%hb = .true.
+          R%ta = .not.P%tb
+          R%tb = .not.P%ta
+          call mat_duplicate(P%B, R%A)
+          call mat_duplicate(P%A, R%B)
+       else
+          R%ta = .not.P%ta
+          call mat_duplicate(P%A, R%A)
+       end if
+    else
+       ! must evaluate if not P=C+1*A^T
+       if (.not.(P%f==1 .and. P%ta .and. .not.P%hb)) &
+          call eval_proxy(P)
+       if (P%f==0) call mat_nullify(R%C)
+       if (P%f==0) call mat_setup(R%C, P%A, ta=.not.P%ta)
+       if (P%f/=0) call mat_duplicate(P%A, R%C)
+       R%f = merge(0, 1, .not.nz(P%C))
+       if (R%f/=0) call mat_duplicate(P%C, R%A)
     end if
-    if (evalB) then
-       !ajt FIXME forward B = fac * X^tx
-       call eval_temp(B)
-    end if
-    ! verify that shapes match
-    if (.not.mat_same(A, B, ta=trps)) &
-       call quit('error: matrix dot/tr(A,B), A and B have different shapes')
-    ! don't calculate if
-    if (      zeroA .or. zeroB)  gen_mat_dot = 0
-    if (.not.(zeroA .or. zeroB)) gen_mat_dot = mat_dot(A, B, trps)
-    ! delete any temporaries
-    if (evalA) call mat_free(A)
-    if (evalB) call mat_free(B)
+    ! clear P
+    call mat_nullify(P%C)
+    if (P%f/=0) call mat_nullify(P%A)
+    if (P%hb  ) call mat_nullify(P%B)
+    call clear_proxy(P)
   end function
 
 
 
-  function mat_dot_prod(A, B)
+  !-----------------------------------------
+  !   matrix-matrix multiply operator A*B
+  !-----------------------------------------
+
+  !> verify that shapes match, check for zeroes
+  function mat_times_mat(A, B) result(P)
     type(matrix), target, intent(in) :: A, B
-    complex(8)                       :: mat_dot_prod
-    mat_dot_prod = gen_mat_dot(A, B, (.false.))
+    type(proxy),  target             :: P
+    call assert_def(A, 'matrix A*B error: A undefined')
+    call assert_def(B, 'matrix A*B error: B undefined')
+    if (.not.mat_coshape(A, B, mul=.true.)) &
+       call quit('matrix A*B error: incompatible shapes')
+    call clear_proxy(P)
+    call mat_nullify(P%C)
+    call mat_setup(P%C, A, B) !zero
+    if (nz(A) .and. nz(B)) then
+       P%f  = 1
+       P%hb = .true.
+       call mat_duplicate(A, P%A)
+       call mat_duplicate(B, P%B)
+    end if
+  end function
+
+  !> verify that shapes match, call routine below
+  function mat_times_prx(A, P) result(R)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target, intent(in) :: P
+    type(proxy),  target             :: R
+    call assert_def(A, 'matrix A*(P) error: A undefined')
+    if (.not.mat_coshape(A, P%C, mul=.true.)) &
+       call quit('matrix A*(P) error: incompatible shapes')
+    call mat_revtimes_prx(A, .false., .false., P, R)
+  end function
+
+  !> verify that shapes match, call routine below
+  function prx_times_mat(P, A) result(R)
+    type(proxy),  target, intent(in) :: P
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target             :: R
+    call assert_def(A, 'matrix (P)*A error: A undefined')
+    if (.not.mat_coshape(P%C, A, mul=.true.)) &
+       call quit('matrix (P)*A error: incompatible shapes')
+    call mat_revtimes_prx(A, .false., .true., P, R)
+  end function
+
+  !> verify that shapes match, call routine below
+  function prx_times_prx(P, Q) result(R)
+    type(proxy),  target, intent(in) :: P, Q
+    type(proxy),  target             :: R
+    logical pnocb, qnocb
+    if (.not.mat_coshape(P%C, Q%C, mul=.true.)) &
+       call quit('matrix (P)*(Q) error: incompatible shapes')
+    pnocb = (.not.nz(P%C) .and. .not.P%hb)
+    qnocb = (.not.nz(Q%C) .and. .not.Q%hb)
+    if ((pnocb .or. P%f==0) .or. .not.(qnocb .or. Q%f==0)) then
+       call prx_revtimes_prx(P, .false., Q, R)
+    else
+       call prx_revtimes_prx(Q, .true.,  P, R)
+    end if
   end function
 
 
-  function mat_prod_trace(A, B)
-    type(matrix) :: A, B
-    complex(8)   :: mat_prod_trace
-    mat_prod_trace = gen_mat_dot(A, B, (.true.))
+  !> R = A^ta * P or R = P * A^ta (rev=true)
+  subroutine mat_revtimes_prx(A, ta, rev, P, R)
+    logical,              intent(in)  :: ta, rev
+    type(matrix), target              :: A
+    type(proxy),  target              :: P
+    type(proxy),  target, intent(out) :: R
+    logical zer
+    ! initialize R and R%C
+    call clear_proxy(R)
+    call mat_nullify(R%C)
+    if (.not.rev) call mat_setup(R%C, A, P%C, ta=ta) !zero
+    if (     rev) call mat_setup(R%C, P%C, A, tb=ta) !zero
+    ! if multiplying a non-zero P by zero A, start by cleaning up that
+    zer = (.not.nz(A) .or. (.not.nz(P%C) .and. P%f==0))
+    if (zer .and. P%f/=0) then
+       P%f = 0
+       call free_or_nullify(P%A)
+       if (P%hb) call free_or_nullify(P%B)
+       P%hb = .false.
+    end if
+    if (zer .and. nz(P%C)) then
+       call mat_duplicate(P%C, P%A)
+       call free_or_nullify(P%C)
+       call mat_setup(P%C, P%A)
+       call mat_nullify(P%A)
+    end if
+    ! if multiplying non-zero A by zero P, clean that up too
+    if (zer .and. intm(A)) then
+       call mat_duplicate(A, P%A)
+       call free_or_nullify(A)
+       call mat_setup(A, P%A)
+       call mat_nullify(P%A)
+    end if
+    ! evaluate P if it has both C and A, or both A and B
+    if ((nz(P%C) .and. P%f/=0) .or. P%hb) &
+       call eval_proxy(P)
+    ! make it R = A*P%C, f*A*P%A or reverse
+    if (.not.zer) R%f = merge((1d0,0d0), P%f, P%f==0)
+    if (.not.zer) R%hb = .true.
+    if (.not.zer .and. rev) then
+       R%tb = ta
+       call mat_duplicate(A, R%B)
+       if (nz(P%C)) call mat_duplicate(P%C, R%A)
+       if (P%f/=0) R%ta = P%ta
+       if (P%f/=0) call mat_duplicate(P%A, R%A)
+    else if (.not.zer) then
+       R%ta = ta
+       call mat_duplicate(A, R%A)
+       if (nz(P%C)) call mat_duplicate(P%C, R%B)
+       if (P%f/=0) R%tb = P%ta
+       if (P%f/=0) call mat_duplicate(P%A, R%B)
+    end if
+    ! finally clear P
+    call mat_nullify(P%C)
+    if (P%f/=0) call mat_nullify(P%A)
+    if (P%hb  ) call mat_nullify(P%B)
+    call clear_proxy(P)
+  end subroutine
+
+
+  !> evaluate P if needed, then do R = P%C * Q
+  subroutine prx_revtimes_prx(P, rev, Q, R)
+    logical,              intent(in)  :: rev
+    type(proxy),  target              :: P, Q
+    type(proxy),  target, intent(out) :: R
+    ! evaluate P if it has both C and A, or both A and B
+    if ((nz(P%C) .and. P%f/=0) .or. P%hb) &
+       call eval_proxy(P)
+    ! perform multiplication, apply original factor on P%A
+    if (P%f==0) call mat_revtimes_prx(P%C, .false., rev, Q, R)
+    if (P%f/=0) call mat_revtimes_prx(P%A,  P%ta,   rev, Q, R)
+    if (P%f/=0) R%f = R%f * P%f
+    ! finally clear P
+    call mat_nullify(P%C)
+    if (P%f/=0) call mat_nullify(P%A)
+    call clear_proxy(P)
+  end subroutine
+
+
+
+  !--------------------------------------------
+  !   dot(A,B), tr(A,B), tr(A) and norm(A)
+  !--------------------------------------------
+
+  function mat_dot_mat(A, B)
+    type(matrix), target, intent(in) :: A, B
+    complex(8)                       :: mat_dot_mat
+    call assert_def(A, 'matrix dot(A,B) error: A undefined')
+    call assert_def(B, 'matrix dot(A,B) error: B undefined')
+    if (.not.mat_coshape(A, B, add=.true.)) &
+       call quit('matrix dot(A,B) error: different shapes')
+    mat_dot_mat = 0
+    if (nz(A) .and. nz(B)) &
+       mat_dot_mat = mat_dot(A, B, .false.)
   end function
+
+  function mat_prodtr_mat(A, B)
+    type(matrix), target :: A, B
+    complex(8)           :: mat_prodtr_mat
+    call assert_def(A, 'matrix tr(A*B) error: A undefined')
+    call assert_def(B, 'matrix tr(A*B) error: B undefined')
+    if (.not.mat_coshape(A, B, ta=.true., add=.true.)) &
+       call quit('matrix tr(A*B) error: incompatible shapes')
+    mat_prodtr_mat = 0
+    if (nz(A) .and. nz(B)) &
+       mat_prodtr_mat = mat_dot(A, B, .true.)
+  end function
+
+  function mat_dot_prx(A, P)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target, intent(in) :: P
+    complex(8)                       :: mat_dot_prx
+    call assert_def(A, 'matrix dot(A,(P)) error: A undefined')
+    if (.not.mat_coshape(A, P%C, add=.true.)) &
+       call quit('matrix dot(A,(P)) error: different shapes')
+    call mat_dot_prx_subr(A, P, .false., mat_dot_prx)
+  end function
+
+  function mat_prodtr_prx(A, P)
+    type(matrix), target, intent(in) :: A
+    type(proxy),  target, intent(in) :: P
+    complex(8)                       :: mat_prodtr_prx
+    call assert_def(A, 'matrix tr(A*(P)) error: A undefined')
+    if (.not.mat_coshape(A, P%C, ta=.true., add=.true.)) &
+       call quit('matrix tr(A*(P)) error: different shapes')
+    call mat_dot_prx_subr(A, P, .true., mat_prodtr_prx)
+  end function
+
+  function prx_dot_mat(P, A)
+    type(proxy),  target, intent(in) :: P
+    type(matrix), target, intent(in) :: A
+    complex(8)                       :: prx_dot_mat
+    call assert_def(A, 'matrix dot((P),A) error: A undefined')
+    if (.not.mat_coshape(A, P%C, add=.true.)) &
+       call quit('matrix dot((P),A) error: different shapes')
+    call mat_dot_prx_subr(A, P, .false., prx_dot_mat)
+  end function
+
+  function prx_prodtr_mat(P, A)
+    type(proxy),  target, intent(in) :: P
+    type(matrix), target, intent(in) :: A
+    complex(8)                       :: prx_prodtr_mat
+    call assert_def(A, 'matrix tr((P)*A) error: A undefined')
+    if (.not.mat_coshape(A, P%C, ta=.true., add=.true.)) &
+       call quit('matrix tr((P)*A) error: different shapes')
+    call mat_dot_prx_subr(A, P, .true., prx_prodtr_mat)
+  end function
+
+  function prx_dot_prx(P, Q)
+    type(proxy),  target, intent(in) :: P, Q
+    complex(8)                       :: prx_dot_prx
+    if (.not.mat_coshape(P%C, Q%C, add=.true.)) &
+       call quit('matrix dot((P),(Q)) error: different shapes')
+    call prx_dot_prx_subr(Q, P, .false., prx_dot_prx)
+  end function
+
+  function prx_prodtr_prx(P, Q)
+    type(proxy),  target, intent(in) :: P, Q
+    complex(8)                       :: prx_prodtr_prx
+    if (.not.mat_coshape(P%C, Q%C, ta=.true., add=.true.)) &
+       call quit('matrix tr((P)*(Q)) error: incompatible shapes')
+    call prx_dot_prx_subr(P, Q, .true., prx_prodtr_prx)
+  end function
+
+
+  subroutine mat_dot_prx_subr(A, P, t, r)
+    type(matrix), target      :: A
+    type(proxy),  target      :: P
+    logical,      intent(in)  :: t !t=F:dot(A,P), t=T: tr(A*P)
+    complex(8),   intent(out) :: r
+    ! evaluate if P is of form C+f*A*B
+    if (nz(A) .and. P%hb) &
+       call eval_proxy(P)
+    ! calculate only if non-zero
+    r = 0
+    if (nz(A) .and. nz(P%C)) &
+       r = r + mat_dot(A, P%C, t)
+    if (nz(A) .and. P%f/=0) &
+       r = r + mat_dot(A, P%A, t.neqv.P%ta) * P%f
+    ! clean-up P
+    call free_or_nullify(P%C)
+    if (P%f/=0) call free_or_nullify(P%A)
+    call clear_proxy(P)
+  end subroutine
+
+
+  subroutine prx_dot_prx_subr(P, Q, t, r)
+    type(proxy),  target      :: P, Q
+    logical,      intent(in)  :: t !t=F:dot(P,Q), t=T: tr(P*Q)
+    complex(8),   intent(out) :: r
+    logical pq, qp !dot(P,Q) or dot(Q,P)
+    ! firstly prefer to have a second factor of the form C+f*A
+    pq = (nz(Q%C) .and. .not.Q%hb)
+    qp = (.not.pq .and. nz(P%C) .and. .not.P%hb)
+    ! secondly, prefer to have a first factor of the form C or f*A
+    if (.not.(pq.or.qp)) pq = (P%f==0 .or. (.not.nz(P%C) .and. .not.P%hb))
+    if (.not.(pq.or.qp)) qp = (Q%f==0 .or. (.not.nz(Q%C) .and. .not.Q%hb))
+    ! calculate dot(P,Q) or dot(Q,P), defaulting to the former
+    if (pq .or. .not.qp) then
+       call inner(P, Q)
+    else
+       call inner(Q, P)
+    end if
+  contains
+    subroutine inner(P, Q)
+      type(proxy), target :: P, Q
+      ! evaluate P if it involves more than one matrix
+      if (nz(P%C) .and. P%f/=0 .and. &
+          .not.(.not.nz(Q%C) .and. Q%f==0)) call eval_proxy(P)
+      ! now, use mat_dot_prx_subr on either of (P%C,Q) or (P%A,Q)
+      r = 0
+      if (P%f==0) call mat_dot_prx_subr(P%C, Q, t, r)
+      if (P%f/=0) call mat_dot_prx_subr(P%A, Q, P%ta.neqv.t, r)
+      if (P%f/=0) r = r * P%f
+      call free_or_nullify(P%C)
+      if (P%f/=0) call free_or_nullify(P%A)
+      call clear_proxy(P)
+    end subroutine
+  end subroutine
 
 
   function mat_trace(A)
-    type(matrix) :: A
-    complex(8)   :: mat_trace
-    logical :: temp, zero
-    temp = must_eval(A, 'error: tr(A), A undefined')
-    zero = (btest(A%flags, matf_zero) .and. .not.temp)
-    if (temp) call eval_temp(A)
-    if (.not.zero) mat_trace = mat_trace_nontemp(A)
-    if (   zero  ) mat_trace = 0
-    if (temp) call mat_free(A)
+    type(matrix), target :: A
+    complex(8)           :: mat_trace
+    call assert_def(A, 'matrix tr(A) error: A undefined')
+    if (.not.mat_coshape(A, A, ta=.true., mul=.true.)) &
+       call quit('matrix tr(A) error: A not square')
+    mat_trace = 0
+    if (nz(A)) mat_trace = mat_trace_nonzero(A)
+  end function
+
+
+  function prx_trace(P) result(r)
+    type(proxy), target :: P
+    complex(8)          :: r
+    if (.not.mat_coshape(P%C, P%C, ta=.true., mul=.true.)) &
+       call quit('matrix tr(P) error: P not square')
+    r = 0
+    if (nz(P%C)) &
+       r = r + mat_trace_nonzero(P%C)
+    if (P%hb) then
+       r = r + P%f * mat_dot(P%A, P%B, t = P%ta.neqv.P%tb)
+    else if (P%f/=0) then
+       r = r + P%f * mat_trace_nonzero(P%A)
+    end if
+    ! free
+    call free_or_nullify(P%C)
+    if (P%f/=0) call free_or_nullify(P%A)
+    if (P%hb  ) call free_or_nullify(P%B)
+    call clear_proxy(P)
   end function
 
 
   function mat_norm(A)
-    type(matrix) :: A
-    real(8)      :: mat_norm
-    complex(8)   :: norm2
-    logical      :: eval, temp, zero
-    eval = must_eval(A, 'error: norm(A), A undefined')
-    temp = btest(A%flags, matf_temp)
-    zero = (btest(A%flags, matf_zero) .and. .not.eval)
-    if (temp) call eval_temp(A)
-    if (temp) A%flags = ibclr(A%flags, matf_temp)
-    norm2 = gen_mat_dot(A, A, (.false.))
-    if (temp) A = 0
-    mat_norm = sqrt(dreal(norm2))
+    type(matrix), target :: A
+    real(8)              :: mat_norm
+    call assert_def(A, 'matrix norm(A) error: A undefined')
+    mat_norm = 0
+    if (nz(A)) mat_norm = sqrt(real(mat_dot(A, A, .true.)))
   end function
 
 
-  !> Short-hand A=0 frees matrix A if it is defined, otherwise nothing
+  function prx_norm(P) result (r)
+    type(proxy), target :: P
+    real(8)             :: r
+    ! evaluate if more than one matrix in P, ie. P=C+f*A or P=f*A*B
+    if ((nz(P%C) .and. P%f/=0) .or. P%hb) &
+       call eval_proxy(P)
+    ! calculate norm
+    r = 0
+    if (P%f/=0) then
+       r = abs(P%f) * sqrt(real(mat_dot(P%A, P%A, .false.)))
+    else if (nz(P%C)) then
+       r = sqrt(real(mat_dot(P%C, P%C, .false.)))
+    end if
+    ! free
+    call free_or_nullify(P%C)
+    if (P%f/=0) call free_or_nullify(P%A)
+    call clear_proxy(P)
+  end function
+
+
+
+
+  !---------------------------------------------------------------------------
+  !   operators for freeing: A=0, A(:)=0, A(:,:)=0, A(:,:,:)=0, A(:,:,:,:)=0
+  !---------------------------------------------------------------------------
+
+  !> Short-hand A=0 frees matrix A if it is self, otherwise nullifies
   subroutine mat_eq_zero(A, zero)
-    type(matrix), intent(inout) :: A
-    integer,      intent(in)    :: zero
-    if (zero/=0) call quit('error: matrix A = z: z must be 0')
-    if (isdef(A)) call mat_free(A)
+    type(matrix), target, intent(inout) :: A
+    integer,              intent(in)    :: zero
+    if (zero/=0) call quit('matrix A = z error: z must be 0')
+    if (alias(A, A)) then
+       call mat_free(A)
+    else
+       call mat_nullify(A)
+    end if
+  end subroutine
+
+  subroutine mat_eq_zero_1D(A, z)
+    type(matrix), target, intent(inout) :: A(:)
+    integer,              intent(in)    :: z
+    integer i
+    do i=1, size(A); A(i)=z; end do
+  end subroutine
+
+  subroutine mat_eq_zero_2D(A, z)
+    type(matrix), target, intent(inout) :: A(:,:)
+    integer,              intent(in)    :: z
+    integer j
+    do j=1, size(A,2); A(:,j)=z; end do
+  end subroutine
+
+  subroutine mat_eq_zero_3D(A, z)
+    type(matrix), target, intent(inout) :: A(:,:,:)
+    integer,              intent(in)    :: z
+    integer k
+    do k=1, size(A,3); A(:,:,k)=z; end do
+  end subroutine
+
+  subroutine mat_eq_zero_4D(A, z)
+    type(matrix), target, intent(inout) :: A(:,:,:,:)
+    integer,              intent(in)    :: z
+    integer l
+    do l=1, size(A,4); A(:,:,:,l)=z; end do
   end subroutine
 
 
-  subroutine mat_eq_zero_1D(A, zero)
-    type(matrix), intent(inout) :: A(:)
-    integer,      intent(in)    :: zero
-    integer                     :: i
-    do i = 1, size(A)
-       A(i) = 0
-    end do
-  end subroutine
 
+  !------------
+  ! printing
+  !------------
 
-  subroutine mat_eq_zero_2D(A, zero)
-    type(matrix), intent(inout) :: A(:,:)
-    integer,      intent(in)    :: zero
-    integer                     :: i,j
-    do j = 1, size(A,2)
-       do i = 1, size(A,1)
-          A(i,j) = 0
-       end do
-    end do
-  end subroutine
-
-
-  subroutine mat_eq_zero_3D(A, zero)
-    type(matrix), intent(inout) :: A(:,:,:)
-    integer,      intent(in)    :: zero
-    integer                     :: i,j,k
-    do k = 1, size(A,3)
-       do j = 1, size(A,2)
-          do i = 1, size(A,1)
-             A(i,j,k) = 0
-          end do
-       end do
-    end do
-  end subroutine
-
-
-  subroutine mat_eq_zero_4D(A, zero)
-    type(matrix), intent(inout) :: A(:,:,:,:)
-    integer,      intent(in)    :: zero
-    integer                     :: i,j,k,l
-    do l = 1, size(A,4)
-       do k = 1, size(A,3)
-          do j = 1, size(A,2)
-             do i = 1, size(A,1)
-                A(i,j,k,l) = 0
-             end do
-          end do
-       end do
-    end do
-  end subroutine
-
-
-  !> wrap matrix_defop's mat_print so that temporary and
-  !> zero matrices can be printed
-  subroutine mat_print(A, label, unit, width, decor)
-    type(matrix)                       :: A
+  !> wrap matrix_genop's mat_print so that also zero matrix is printed correctly
+  subroutine print_mat(A, label, unit, width, sep)
+    type(matrix), target               :: A
     character(*), optional, intent(in) :: label
     integer,      optional, intent(in) :: unit, width
-    character(4), optional, intent(in) :: decor
-    logical :: eval, zero, temp
-    eval = must_eval(A, 'error: mat_print(A), A undefined')
-    temp = btest(A%flags, matf_temp)
-    zero = (btest(A%flags, matf_zero) .and. .not.temp)
-    if (eval) call eval_temp(A)
-    if (zero) call mat_init(A, A, zero=.true.)
-    call mat_print_nontemp(A, label, unit, width, decor)
-    if (eval .or. temp .or. zero) call mat_free(A)
+    character(4), optional, intent(in) :: sep
+    call assert_def(A, 'matrix mat_print(A) error: A undefined')
+    if (.not.nz(A)) then
+       call print_prx(0*A, label, unit, width, sep)
+    else
+       call mat_print_nonzero(A, label, unit, width, sep)
+    end if
+  end subroutine
+
+  !> print proxy
+  subroutine print_prx(P, label, unit, width, sep)
+    type(proxy),  target               :: P
+    character(*), optional, intent(in) :: label
+    integer,      optional, intent(in) :: unit, width
+    character(4), optional, intent(in) :: sep
+    ! if zero, allocate and fill with zero
+    if (.not.nz(P%C) .and. P%f==0) then
+       call mat_alloc(P%C)
+       P%C%self_pointer => intermediate
+       call mat_axpy((0d0,0d0), P%C, .false., .true., P%C)
+    else if (P%f/=0) then
+       call eval_proxy(P)
+    end if
+    ! print
+    call mat_print_nonzero(P%C, label, unit, width, sep)
+    ! free
+    call free_or_nullify(P%C)
+    if (P%f/=0) call free_or_nullify(P%A)
+    call clear_proxy(P)
   end subroutine
 
 
 end module
 
 
-!#ifdef UNIT_TEST
+#ifdef UNIT_TEST
+
 subroutine quit(msg)
   character(*), intent(in) :: msg
   print *, msg
@@ -656,8 +1220,8 @@ end subroutine
 
 program test
 
-  use matrix_defop_ng
-  use matrix_genop_ng, only: matf_clsh !closed-shell
+  use matrix_defop_ng  !also contains mat_print
+  use matrix_genop_ng, genop_mat_print => mat_print
   implicit none
 
   !------ hard-code some matrix elements for testing -------
@@ -729,22 +1293,31 @@ program test
   type(matrix) C, S, D, A, B
 
   ! manually initialize orbital matrix C
+  call mat_nullify(C)
   C%nrow  = size(cmo_t_elms,2)
   C%ncol  = size(cmo_t_elms,1)
-  C%flags = ibset(0, matf_clsh) !closed shell
-  call mat_init(C, C)
+  C%closed_shell = .true.
+  C%magic_tag = mat_magic_setup !required before alloc
+  call mat_alloc(C)
   C%elms = transpose(cmo_t_elms)
-  ! print in 'python/C++' format
-  call mat_print(C, label='orbital', decor='[,],')
+  ! print
+  !call mat_print(C, label='orbital')
 
   ! manually initialize overlap matrix S
+  call mat_nullify(S)
   S%nrow  = size(ovl_elms,1)
   S%ncol  = size(ovl_elms,2)
-  S%flags = 0 !normal matrix
-  call mat_init(S, S)
+  S%magic_tag = mat_magic_setup !required before alloc
+  call mat_alloc(S)
   S%elms = ovl_elms
   ! print in plain format
-  call mat_print(S, label='overlap')
+  !call mat_print(S, label='overlap')
+
+  call mat_nullify(D)
+  call mat_setup(D, C, C, tb=.true.)
+  call mat_alloc(D)
+  D%elms = matmul(C%elms,transpose(C%elms))
+  !call mat_print(D, label='density')
 
   ! run tests
   call check_orthonormality_of_C
@@ -760,27 +1333,27 @@ contains
 
   subroutine check_orthonormality_of_C
     ! calculate norm of C^T S C minus identity matrix
-    type(matrix) id
-    integer      i
+    type(matrix) I, CtSCmI
+    integer      j
     !------- manually initialize identity matrix
-    id%nrow  = size(cmo_t_elms,1)
-    id%ncol  = id%nrow
-    id%flags = 0
-    call mat_init(id,id)
-    id%elms(:,:) = 0
-    do i = 1, id%nrow
-       id%elms(i,i) = 1
-    end do
-    print *, 'norm(CtSC-1) =', norm(trps(C)*S*C - id) ! ...
+    call mat_nullify(I)
+    call mat_setup(I, C, C, ta=.true.)
+    call mat_alloc(I)
+    I%elms(:,:) = 0
+    do j=1,I%nrow; I%elms(j,j)=1; end do
+    !call mat_print(I, label='I')
+    CtSCmI = trps(C)*S*C - I
+    !call mat_print(CtSCmI, label='CtSC-I')
+    print *, 'norm(CtSC-I) =', norm(trps(C)*S*C - I) ! ...
     ! free identity matrix
-    id=0
+    I=0; CtSCmI=0
   end subroutine
 
 
   subroutine calculate_density_D
     ! D = C C^T
     D = C*trps(C) ! ...
-    call mat_print(D, label='density')
+    !call mat_print(D, label='density')
   end subroutine
 
 
@@ -798,9 +1371,9 @@ contains
 
   subroutine test_whether_minus_works
     A = -D
-    call mat_print(A, label='minus D', decor='{,},')
+    !call mat_print(A, label='minus D')
   end subroutine
 
 
 end program
-!#endif
+#endif

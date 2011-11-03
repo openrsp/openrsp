@@ -1,76 +1,61 @@
 !> @file
-!> Contains module matrix_defop
+!> Contains module matrix_genop
 
 module matrix_genop_ng
 
   implicit none
 
   public matrix
-  public mat_isdef
-  public mat_init
+  public mat_nullify
+  public mat_setup
+  public mat_alloc
   public mat_free
-  public mat_same
+  public mat_coshape
   public mat_axpy
   public mat_gemm
   public mat_dot
   public mat_trace
   public mat_print
-  public mat_dup
-  public mat_isdup
+  public mat_duplicate
+  public mat_magic_value
+  public mat_magic_setup
   public matrix_genop_debug
-  !-- used by matrix_defop --
-  public matf_alias
-  public matf_zero
-  public matf_temp
-  public matf_temp_tx
-  public matf_temp_ty
-  !-- not used by matrix_defop --
-  public matf_clsh
 
-  !----- constants for type(matrix)%flags -----
-  !> matrix is closed-shell: dot(A,B) = 2*sum(A%elms*B%elms).
-  !> True for density and Fock matrices,
-  !> false for overlap and 1e-hamil, etc.
-  integer, parameter :: matf_clsh  = 1
-  !> unused bits in %flags should contain a "magic" number.
-  !> This is used to detect memory corruption and accidental
-  !> (ab)use of undefined matrices, to thereafter fail gracefully,
-  !> while avoiding use of type field defaults (F95 feature).
-  integer, parameter :: matf_magic_mask = not(2**20-1)
-  integer, parameter :: matf_magic_num = 1765 * 2**20
-
-  !----- flags used by matrix_defop ------
-  !> matrix is a temporary, to be deleted after use
-  integer, parameter :: matf_temp  = 11
-  !> matrix is an alias of (a part of) another matrix,
-  !> and should not be overwritten but re-allocated,
-  !> and not free'ed, just nullified
-  integer, parameter :: matf_alias = 10
-  !> matrix is an unallocated zero matrix, which should
-  !> never be passed to numerical routines mat_axpy,
-  !> mat_gemm or mat_dot
-  integer, parameter :: matf_zero  = 7
-  !> A transposed in  : C += fac * A^ta * B^tb
-  integer, parameter :: matf_temp_tx = 13
-  !> B transposed in  : C += fac * A^ta * B^tb
-  integer, parameter :: matf_temp_ty    = 14
 
   !> matrix structure
   type matrix
-     !> number of rows of each block
-     integer          :: nrow
-     !> number of columns of each block
-     integer          :: ncol
-     !> flags telling which variant of matrix this is
-     integer          :: flags
-     !> main block of elements. All non-zero matrices have this
-     real(8), pointer :: elms(:,:) !elms(nrow,ncol)
-     !> during defined operator evaluation (matrix_defop), temporary
-     !> matrices have additional contribution: fac * A^ta * B^tb,
-     !> where fac, X and Z are here, while ta and tb are kept inside %flags
-     complex(8)            :: temp_fac
-     type(matrix), pointer :: temp_X, temp_Y
+     !> number of rows and columns (of each block)
+     integer nrow, ncol
+     !> pointers to blocks of elements (nrow,ncol). elms: main block,
+     !> elms_i: imaginary part, elms_b: beta part, elms_ib: imaginary of beta
+     real(8), pointer :: elms(:,:), elms_i(:,:), &
+                         elms_b(:,:), elms_ib(:,:)
+     !> flags for complex elements elms_i, closed shell (*2 on mat_dot),
+     !> open shell (beta elements elms_b)
+     logical complex, closed_shell, open_shell
+     !> tag used to spot accidental use of uninitialized and memory-corrupted
+     !> matrices, and fail with something other than 'segmentation fault'.
+     !> Set to mat_magic_setup by mat_setup, changed to mat_magic_value
+     !> by mat_alloc, changed back to mat_setup_magic_falue by mat_free, and
+     !> finally zeroed by mat_nullify. Can be checked every time a matrix is used
+     integer magic_tag
+     !> pointer to self, set by init to mark the matrix' correct location.
+     !> Used to distinguish init'ed matrices from copy-in'ed matrices like
+     !> "call subr((/A,B,C/))". Set by mat_alloc and nullified by mat_free
+     !> and mat_nullify
+     type(matrix), pointer :: self_pointer
   end type
+
+  !> Large random number >-2^31, <+2^31 (but also works on 64bit),
+  !> not likely to be found in memory by accident. Mat_alloc sets
+  !> type(matrix)%magic_tag to this value, all matrix operations
+  !> will expect it to be there, and mat_free nullifies it
+  integer, parameter :: mat_magic_value = -1981879812
+
+  !> Alternate value of magic_tag to be used between mat_setup and mat_alloc, 
+  !> and between mat_free and mat_nullify. Set by mat_setup, changed by mat_alloc,
+  !> changed back by mat_free, and nullified by mat_nullify
+  integer, parameter :: mat_magic_setup = 825169837
 
   !> for switching debugging on and off
   logical :: matrix_genop_debug = .false.
@@ -80,168 +65,210 @@ module matrix_genop_ng
 contains
 
 
-  !> whether A is defined, according to A%flags
-  function mat_isdef(A)
-    type(matrix), intent(in) :: A
-    logical                  :: mat_isdef
-    mat_isdef = (iand(A%flags,matf_magic_mask) &
-                           == matf_magic_num)
-  end function
-
-
-  !> free A, and reset it to undefined. If nodealloc=true,
-  !> don't deallocate A%elms, just nullify
-  subroutine mat_free(A, nodealloc)
-    type(matrix),   intent(inout) :: A
-    logical, optional, intent(in) :: nodealloc
-    logical :: nodeall
-    ! err if attempting to free undefined matrix
-    if (.not.mat_isdef(A)) &
-       call quit('error: mat_free(A), a undefined')
-    ! nodealloc defaults to false
-    nodeall = .false.
-    if (present(nodealloc)) nodeall = nodealloc
-    ! deallocate
-    if (.not.nodeall .and. .not.associated(A%elms)) then
-       call quit('error: matrix mat_free(A), expected A%elms to be allocated')
-    else if (.not.nodeall) then
-       !print *, 'deallocate', loc(A%elms)
-       deallocate(A%elms)
-    else
-       nullify(A%elms)
-    end if
-    A%nrow  = -huge(1) !will err if used
-    A%ncol  =  huge(1) !will err if used
-    A%flags = 0 !undefined, since doesn't have matf_magic_num
-    A%temp_fac = 1
-    nullify(A%temp_X)
-    nullify(A%temp_Y)
+  !> nullify all fields in matrix
+  subroutine mat_nullify(A)
+    type(matrix), intent(out) :: A
+    A%nrow = huge(1)
+    A%ncol = huge(1)
+    nullify(A%elms)
+    nullify(A%elms_i)
+    nullify(A%elms_b)
+    nullify(A%elms_ib)
+    A%complex = .false.
+    A%closed_shell = .false.
+    A%open_shell = .false.
+    A%magic_tag = 0
+    nullify(A%self_pointer)
   end subroutine
 
 
-  !> initialize C in the shape of A, A^T, A*B, A^T*B, A*B^T or A^T*B^T.
-  !> Optionally zero the elements or skip allocation
-  subroutine mat_init(C, A, B, ta, tb, zero, noalloc)
-    type(matrix),        intent(inout) :: C
-    type(matrix),           intent(in) :: A
-    type(matrix), optional, intent(in) :: B
-    logical,      optional, intent(in) :: ta, tb, zero, noalloc
-    logical :: taa, tbb, zer, alc
-    integer :: nrow
+  !> setup fields in matrix C so it inherits shape of:
+  !> A, A^T, A*B, A^T*B, A*B^T or A^T*B^T. 
+  !> ajt Note: This is where any point group symmetry would be implemented
+  subroutine mat_setup(C, A, B, ta, tb)
+    type(matrix),           intent(inout) :: C
+    type(matrix),           intent(in)    :: A
+    type(matrix), optional, intent(in)    :: B
+    logical,      optional, intent(in)    :: ta, tb
+    logical taa, tbb
+    integer nrow
     if (present(tb) .and. .not.present(B)) &
-       call quit('error: mat_init(C,A,B,ta,tb), tb present without B')
+       call quit('error: mat_setup(C,A,B,ta,tb), tb present without B')
     ! process optionals
-    taa = .false.; if (present(ta)) taa = ta
-    tbb = .false.; if (present(tb)) tbb = tb
-    zer = .false.; if (present(zero)) zer = zero
-    alc = .true.;  if (present(noalloc)) alc = (.not.noalloc)
-    ! set nrow and ncol, keeping in mind that A may be C
+    taa = .false. !transpose A
+    if (present(ta)) taa = ta
+    tbb = .false. !transpose B
+    if (present(tb)) tbb = tb
+    ! set nrow and ncol, keeping in mind that C may be A
     nrow = merge(A%ncol, A%nrow, taa) !don't overwrite C%nrow yet
-    if (.not.present(B)) C%ncol = merge(A%nrow, A%ncol, taa)
-    if (     present(B)) C%ncol = merge(B%nrow, B%ncol, tbb)
+    if (present(B)) then
+       C%ncol = merge(B%nrow, B%ncol, tbb)
+       C%closed_shell = (A%closed_shell .or. B%closed_shell)
+       C%open_shell = (A%open_shell .or. B%open_shell)
+       C%complex = (A%complex .or. B%complex)
+    else
+       C%ncol = merge(A%nrow, A%ncol, taa)
+       C%closed_shell = A%closed_shell
+       C%open_shell = A%open_shell
+       C%complex = A%complex
+    end if
     C%nrow = nrow
-    ! inherit flags from A and B, then insert magic
-    C%flags = A%flags
-    if (present(B)) C%flags = ior(C%flags, B%flags)
-    C%flags = iand(C%flags, not(matf_magic_mask))
-    C%flags =  ior(C%flags, matf_magic_num)
-    ! defop-related flags are not inherited
-    C%flags = ibclr(C%flags, matf_zero)
-    C%flags = ibclr(C%flags, matf_temp)
-    C%flags = ibclr(C%flags, matf_alias)
-    C%flags = ibclr(C%flags, matf_temp_tx)
-    C%flags = ibclr(C%flags, matf_temp_ty)
-    C%temp_fac = 1
-    nullify(C%temp_X)
-    nullify(C%temp_Y)
-    if (alc) allocate(C%elms(C%nrow,C%ncol))
-    !if (alc) print *, '--allocate', loc(C%elms)
-    if (alc .and. zer) C%elms = 0
-    if (.not.alc) nullify(C%elms)
+    ! cannot be both closed- and open-shell
+    if (C%closed_shell .and. C%open_shell) &
+       C%closed_shell = .false.
+    ! finally, set magic_tag to mat_magic_setup, to indicate C is set up
+    C%magic_tag = mat_magic_setup
   end subroutine
 
 
-  !> whether matrices A and B are of same shape
-  function mat_same(A, B, ta, tb, mul)
+  !> allocate elms of previously set-up matrix
+  subroutine mat_alloc(A)
+    type(matrix), intent(inout), target :: A
+if (matrix_genop_debug) print *, 'alloc'
+    ! err if matrix has not been mat_setup'ed
+    if (A%magic_tag /= mat_magic_setup) &
+       call quit('error: mat_alloc(A), but A is not set up')
+    ! allocate elms*
+    allocate(A%elms(A%nrow,A%ncol))
+    if (A%complex) &
+       allocate(A%elms_i(A%nrow,A%ncol))
+    if (A%open_shell) &
+       allocate(A%elms_b(A%nrow,A%ncol))
+    if (A%complex .and. A%open_shell) &
+       allocate(A%elms_ib(A%nrow,A%ncol))
+    ! set magic_tag
+    A%magic_tag = mat_magic_value
+    ! set self pointer
+    A%self_pointer => A
+  end subroutine
+
+
+  !> free matrix's elements and nullify its fields
+  subroutine mat_free(A)
+    type(matrix), intent(inout), target :: A
+if (matrix_genop_debug) print *, 'free'
+    ! err if attempting to free un-allocated matrix
+    if (A%magic_tag /= mat_magic_value) &
+       call quit('error: mat_free(A), A not allocated')
+    ! err if attempting to free a relocated (copy-in'ed) matrix
+    if (.not.associated(A%self_pointer,A)) &
+       call quit('error: mat_free(A), A has been relocated')
+    ! deallocate
+    deallocate(A%elms)
+    if (A%complex) &
+       deallocate(A%elms_i)
+    if (A%open_shell) &
+       deallocate(A%elms_b)
+    if (A%complex .and. A%open_shell) &
+       deallocate(A%elms_ib)
+    ! nullify
+    call mat_nullify(A)
+  end subroutine
+
+
+  !> Compare shapes of A and B, and see whether one of the following
+  !> are possible: A=B, A=B^T, A+B, A+B^T, A*B, A^T*B, or A*B^T
+  function mat_coshape(A, B, ta, tb, add, mul)
     type(matrix),      intent(in) :: A, B
-    logical, optional, intent(in) :: ta, tb, mul
-    logical :: taa, tbb, mmul, mat_same
-    taa  = .false.; if (present(ta))  taa  = ta
-    tbb  = .false.; if (present(tb))  tbb  = tb
-    mmul = .false.; if (present(mul)) mmul = mul
+    logical, optional, intent(in) :: ta, tb, add, mul
+    logical taa, tbb, aadd, mmul, mat_coshape
+    taa  = .false.
+    if (present(ta))  taa  = ta
+    tbb  = .false.
+    if (present(tb))  tbb  = tb
+    aadd = .false.
+    if (present(add)) aadd = add
+    mmul = .false.
+    if (present(mul)) mmul = mul
+    ! compare shapes
     if (mmul) then
-       mat_same = (merge(A%nrow, A%ncol, taa) &
-                == merge(B%ncol, B%nrow, tbb))
-    else
-       mat_same = (merge(A%ncol, A%nrow, taa) &
-                == merge(B%ncol, B%nrow, tbb) &
-             .and. merge(A%nrow, A%ncol, taa) &
-                == merge(B%nrow, B%ncol, tbb))
+       mat_coshape = (merge(A%nrow, A%ncol, taa) &
+                   == merge(B%ncol, B%nrow, tbb))
+    else !+ or =
+       mat_coshape = (merge(A%ncol, A%nrow, taa) &
+                   == merge(B%ncol, B%nrow, tbb) &
+                .and. merge(A%nrow, A%ncol, taa) &
+                   == merge(B%nrow, B%ncol, tbb))
     end if
+    ! compare data types (=)
+    if (.not.aadd .and. .not.mmul) &
+       mat_coshape = (mat_coshape .and. &
+             (A%complex      .eqv. B%complex) .and. &
+             (A%closed_shell .eqv. B%closed_shell) .and. &
+             (A%open_shell   .eqv. B%open_shell))
   end function
 
 
-  !> Y+=a*X, Y=a*X, Y+=a*X^T or Y=a*X^T
-  subroutine mat_axpy(a, X, tx, py, Y)
+  !> Matrix axpy: Y+=a*X (tx=F zy=F), Y=a*X (tx=F zy=T),
+  !> Y+=a*X^T (tx=T zy=F) or Y=a*X^T (tx=T zy=T)
+  subroutine mat_axpy(a, X, tx, zy, Y)
     complex(8),   intent(in)    :: a
     type(matrix), intent(in)    :: X
-    logical,      intent(in)    :: tx, py
+    logical,      intent(in)    :: tx, zy !transpose X, zero Y
     type(matrix), intent(inout) :: Y
-    logical :: XisY
-    XisY = associated(X%elms,Y%elms)
-    if (tx .and. py .and. XisY) then
-       Y%elms = Y%elms + a * transpose(Y%elms)
-    else if (tx .and. py) then
-       Y%elms = Y%elms + a * transpose(X%elms)
-    else if (tx .and. XisY) then
-       Y%elms = a * transpose(Y%elms)
-    else if (tx) then
+if (matrix_genop_debug) &
+print '(a,x,f4.1,x,l,x,l)', ' axpy a tx zy =', dreal(a), tx, zy
+    if (a==0 .and. zy) then
+       Y%elms = 0 !zeroing
+    else if (a==0) then
+       ! nothing
+    else if (associated(X%elms,Y%elms)) then
+       if (tx .and. zy) then
+          Y%elms = a * transpose(Y%elms)
+       else if (tx) then
+          Y%elms = Y%elms + a * transpose(Y%elms)
+       else if (zy) then
+          Y%elms = a * Y%elms
+       else
+          Y%elms = (1+a) * Y%elms
+       end if
+    else if (tx .and. zy) then
        Y%elms = a * transpose(X%elms)
-    else if (py .and. XisY) then
-       Y%elms = Y%elms + a * Y%elms
-    else if (py) then
-       Y%elms = Y%elms + a * X%elms
-    else if (XisY) then
-       Y%elms = a * Y%elms
-    else
+    else if (tx) then
+       Y%elms = Y%elms + a * transpose(X%elms)
+    else if (zy) then
        Y%elms = a * X%elms
-    end if
-  end subroutine
-
-
-
-  !> matrix multiply: C = rc*C + rab * A^ta * B^tb
-  !> assumed initialied and with corresponding shapes
-  subroutine mat_gemm(fac, A, ta, B, tb, pc, C)
-    complex(8),      intent(in) :: fac
-    type(matrix),    intent(in) :: A, B
-    logical,         intent(in) :: ta, tb, pc
-    type(matrix), intent(inout) :: C
-    if (ta .and. tb .and. pc) then
-       C%elms = C%elms + fac * matmul(transpose(A%elms), &
-                                      transpose(B%elms))
-    else if (ta .and. tb) then
-       C%elms = fac * matmul(transpose(A%elms), &
-                             transpose(B%elms))
-    else if (ta .and. pc) then
-       C%elms = C%elms + fac * matmul(transpose(A%elms), B%elms)
-    else if (ta) then
-       C%elms = fac * matmul(transpose(A%elms), B%elms)
-    else if (tb .and. pc) then
-       C%elms = C%elms + fac * matmul(A%elms, transpose(B%elms))
-    else if (tb) then
-       C%elms = fac * matmul(A%elms, transpose(B%elms))
-    else if (pc) then
-       C%elms = C%elms + fac * matmul(A%elms, B%elms)
     else
-       C%elms = fac * matmul(A%elms, B%elms)
+       Y%elms = Y%elms + a * X%elms
     end if
   end subroutine
 
 
 
-  !> matrix dot product: sum_ij Aij^* Bij (ta=F)
-  !>  or  product trace: sum_ij Aji Bij   (ta=F)
+  !> matrix multiply: C (+)= f * A^ta * B^tb
+  !> assumed initialied and with corresponding shapes
+  subroutine mat_gemm(f, A, ta, B, tb, zc, C)
+    complex(8),   intent(in)    :: f
+    type(matrix), intent(in)    :: A, B
+    logical,      intent(in)    :: ta, tb, zc
+    type(matrix), intent(inout) :: C
+if (matrix_genop_debug) &
+print '(a,x,f4.1,x,l,x,l,x,l)', ' gemm f ta tb zc =', dreal(f), ta, tb, zc
+    if (ta .and. tb .and. zc) then
+       C%elms = f * matmul(transpose(A%elms), &
+                           transpose(B%elms))
+    else if (ta .and. tb) then
+       C%elms = C%elms + f * matmul(transpose(A%elms), &
+                                    transpose(B%elms))
+    else if (ta .and. zc) then
+       C%elms = f * matmul(transpose(A%elms), B%elms)
+    else if (ta) then
+       C%elms = C%elms + f * matmul(transpose(A%elms), B%elms)
+    else if (tb .and. zc) then
+       C%elms = f * matmul(A%elms, transpose(B%elms))
+    else if (tb) then
+       C%elms = C%elms + f * matmul(A%elms, transpose(B%elms))
+    else if (zc) then
+       C%elms = f * matmul(A%elms, B%elms)
+    else
+       C%elms = C%elms + f * matmul(A%elms, B%elms)
+    end if
+  end subroutine
+
+
+
+  !> matrix dot product: sum_ij Aij Bij (t=F)
+  !>  or  product trace: sum_ij Aji Bij (t=T)
   !> A and B are assumed initialized and with equal/transpose shapes
   function mat_dot(A, B, t)
     type(matrix), intent(in) :: A, B
@@ -249,13 +276,13 @@ contains
     complex(8)               :: mat_dot
     if (   t  ) mat_dot = sum(transpose(A%elms) * B%elms)
     if (.not.t) mat_dot = sum(A%elms * B%elms)
-    ! if closed-shell, then additional factor 2
-    if (btest(A%flags, matf_clsh) .or. &
-        btest(B%flags, matf_clsh)) mat_dot = 2*mat_dot
+    ! if either closed-shell, then additional factor 2
+    if (A%closed_shell .or. B%closed_shell) &
+       mat_dot = 2*mat_dot
   end function
 
 
-  !> matrix trace: sum_i Aii, A assumed initialized
+  !> matrix trace: sum_i Aii, A assumed initialized and square
   function mat_trace(A)
     type(matrix), intent(in) :: A
     complex(8)               :: mat_trace
@@ -264,71 +291,112 @@ contains
        call quit('error: mat_trace(A) with A non-square')
     mat_trace = sum((/(A%elms(i,i),i=1,A%nrow)/))
     ! if closed-shell, then additional factor 2
-    if (btest(A%flags, matf_clsh)) mat_trace = 2*mat_trace
+    if (A%closed_shell) mat_trace = 2*mat_trace
   end function
 
 
 
-  !> print matrix A to optional unit, optionally starting with label, &
-  !> optionally making each column 'width' wide, with optional braces
-  !> 'decor' (left brace, column separator, right brace, row separator)
-  subroutine mat_print(A, label, unit, width, decor)
+  !> print matrix A to optional unit, optionally starting with 'label',
+  !> optionally making each column 'width' wide, using optional separators
+  !> 'sep' (left brace, column separator, right brace, row separator)
+  subroutine mat_print(A, label, unit, width, sep)
     type(matrix),           intent(in) :: A
     character(*), optional, intent(in) :: label
     integer,      optional, intent(in) :: unit, width
-    character(4), optional, intent(in) :: decor
-    integer      :: uni, colw, dec, i, j, siz
-    character(8) :: fmt
-    character(4) :: brac
+    character(4), optional, intent(in) :: sep
+    integer      uni, wid, pre, dec, i, j, siz
+    character(8) fmt
+    character(4) spr
     ! process optional argument unit, which defaults to stdout
     uni = 6
     if (present(unit)) uni = unit
-    ! set d to the largest number of digits to be printed
-    ! before the decimal point (including - signs)
-    dec = ceiling(max(log10(max(1d0, maxval(A%elms)))+1, &
-                      log10(max(1d0,-minval(A%elms)))+2))
+    ! set pre to the largest number of digits to be printed
+    ! before the decimal point (including any minus sign)
+    pre = pre_decimals(size(A%elms), A%elms)
+    if (A%complex) &
+       pre = max(pre, pre_decimals(size(A%elms_i), A%elms_i))
+    if (A%open_shell) &
+       pre = max(pre, pre_decimals(size(A%elms_b), A%elms_b))
+    if (A%complex .and. A%open_shell) &
+       pre = max(pre, pre_decimals(size(A%elms_ib), A%elms_ib))
     ! process optional width
-    colw = 9
-    if (present(width)) colw = max(width,dec+2) !max, to avoid stars *****
+    wid = 9
+    if (present(width)) wid = max(width, max(pre,2)+2) !max, to avoid *****
     ! set dec to the number of decimals to be printed
-    dec = colw - dec - 1
+    dec = wid - max(pre,2) - 1
     ! argument label is optional. If present, print that
     if (present(label)) write (uni,'(a)') label
     ! process optional argument braces, defaulting to none
-    brac = '    '
-    if (present(decor)) brac = decor
+    spr = '    '
+    if (present(sep)) spr = sep
     ! create the format string to be used for each element
-    fmt = '(fww.dd)'
-    write (fmt(3:7),'(i2,a1,i2)') colw, '.', dec
+    write (fmt,'(a2,i2,a1,i2,a1)') '(f', wid, '.', dec, ')'
     ! call the printing routine
-    call subr(A%nrow, A%ncol, A%elms, colw, fmt, brac, uni)
-    ! final empty line
-    write (uni,'()')
+    if (A%complex .and. A%open_shell) write (uni,'(a)') '(real alpha part)'
+    if (.not.A%complex .and. A%open_shell) write (uni,'(a)') '(alpha part)'
+    if (A%complex .and. .not.A%open_shell) write (uni,'(a)') '(real part)'
+    call subr(A%nrow, A%ncol, A%elms, wid, spr, fmt, uni)
+    write (uni,'()') !blank line'
+    ! imaginary (alpha) part
+    if (A%complex) then
+       if (.not.A%open_shell) write (uni,'(a)') '(imaginary part)'
+       if (     A%open_shell) write (uni,'(a)') '(imaginary alpha part)'
+       call subr(A%nrow, A%ncol, A%elms_i, wid, spr, fmt, uni)
+       write (uni,'()')
+    end if
+    ! beta part
+    if (A%open_shell) then
+       if (.not.A%complex) write (uni,'(a)') '(beta part)'
+       if (     A%complex) write (uni,'(a)') '(real beta part)'
+       call subr(A%nrow, A%ncol, A%elms_b, wid, spr, fmt, uni)
+       write (uni,'()')
+    end if
+    ! imaginary beta part
+    if (A%complex .and. A%open_shell) then
+       write (uni,'(a)') '(imaginary beta part)'
+       call subr(A%nrow, A%ncol, A%elms_ib, wid, spr, fmt, uni)
+       write (uni,'()')
+    end if
 
   contains
 
-    subroutine subr(nrow, ncol, elms, colw, fmt, brac, unit)
-      integer,        intent(in) :: nrow, ncol, colw, unit
+    ! number of pre-decimals in the printing of number
+    function pre_decimals(n, r)
+      integer, intent(in) :: n
+      real(8), intent(in) :: r(n)
+      integer             :: pre_decimals
+      real(8) maxr, minr
+      maxr = maxval(r)
+      minr = minval(r)
+      pre_decimals = ceiling(log10(max(maxr,-minr)))
+      if (-10*minr > maxr) pre_decimals = pre_decimals + 1
+    end function
+
+    subroutine subr(nrow, ncol, elms, wid, spr, fmt, unit)
+      integer,        intent(in) :: nrow, ncol, wid, unit
       real(8),        intent(in) :: elms(nrow,ncol)
+      character(4),   intent(in) :: spr
       character(8),   intent(in) :: fmt
-      character(4),   intent(in) :: brac
-      character(ncol*(colw+1)+3) :: line
-      integer :: i, j, l
+      character(ncol*(wid+1)+3) line
+      integer i, j, l
       do i = 1, nrow
-         line(1:1) = merge(brac(1:1),' ',i==1)
-         line(2:2) = brac(1:1)
+         line(1:1) = merge(spr(1:1),' ',i==1)
+         line(2:2) = spr(1:1)
          l = 3
          do j = 1, ncol
-            write (line(l:l+colw-1), fmt) elms(i,j)
-            l = l + colw 
-            if (j/=ncol) line(l:l) = brac(2:2)
+            write (line(l:l+wid-1), fmt) elms(i,j)
+            l = l + wid 
+            if (j/=ncol) line(l:l) = spr(2:2)
             if (j/=ncol) l = l+1
          end do
-         line(l:l) = brac(3:3)
-         line(l+1:l+1) = merge(brac(3:3), brac(4:4), i==nrow)
+         line(l:l) = spr(3:3)
+         line(l+1:l+1) = merge(spr(3:3), spr(4:4), i==nrow)
          l = l + 2
-         if (brac=='    ') write (unit,'(a)') line(3:len(line)-2)
-         if (brac/='    ') write (unit,'(a)') line
+         if (present(sep)) then
+            write (unit,'(a)') line
+         else
+            write (unit,'(a)') line(2:len(line)-2)
+         end if
       end do
     end subroutine
 
@@ -336,7 +404,7 @@ contains
 
 
   !> copy all fields of A into B, creating a duplicate
-  subroutine mat_dup(A, B)
+  subroutine mat_duplicate(A, B)
     type(matrix), intent(in)    :: A
     type(matrix), intent(inout) :: B
     B = A

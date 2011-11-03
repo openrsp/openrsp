@@ -781,7 +781,7 @@ contains
       Db=0; Dc=0; De=0; Df=0; Dq=0; Dce=0; Dcf=0; Def=0
       Fb=0; Fc=0; Fe=0; Ff=0; Fq=0; Fce=0; Fcf=0; Fef=0; Sb=0
       !invert signs on a-prime to get properties from quasi-energy derivatives
-      Ef=-Ef; Eq=-Eq; Eff=-Eff; Eqf=-Eqf; Eqoff=-Eqoff; Eqbff=-Eqbff
+      Ef=-Ef; Eq=-Eq; Eff=-Eff; Eqf=-Eqf !ajt WRONG: ; Eqoff=-Eqoff; Eqbff=-Eqbff
    end subroutine
 
 
@@ -930,8 +930,8 @@ contains
             ' average Afb = sum_ijkl e_kji Aikllj + e_ljk Ailkij', &
             dreal(Afb)
       write (uni,'(6x,a/22x,g18.11)') lonnol // &
-            ' temp.-indep. Jones biref. A0 = Gfb + w/2 * 2/3 * Afb', &
-            dreal(Gfb + freq/2 * 2/3 * Afb)
+            ' temp.-indep. Jones biref. A0 = Gfb - w/2 * 2/3 * Afb', &
+            dreal(Gfb - freq/2 * 2/3 * Afb)
       !print temperature-dependent averages and invariant
       write (uni,'(6x,a/22x,3g18.11)') lonnol // &
             ' average Gb_i = sum_j 3 Gjji + 3 Gijj - 2 Gjij', &
@@ -943,7 +943,7 @@ contains
             ' temp.-dep. Jones factors Gb_i + w/2 * 2/3 * Afb_i', &
             dreal(Gb - freq/2 * 2/3 * Ab)
       write (uni,'(6x,a/22x,g18.11)') lonnol // &
-            ' temp.-dep. Jones biref. A1 = mu_i * (Gb_i + w/2 * 2/3 * Afb_i)', &
+            ' temp.-dep. Jones biref. A1 = mu_i * (Gb_i - w/2 * 2/3 * Ab_i)', &
             dreal(sum( dip * (Gb - freq/2 * 2/3 * Ab) ))
       write (uni,'(/)') !two final newlines
    end subroutine
