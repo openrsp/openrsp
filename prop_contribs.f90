@@ -386,11 +386,7 @@ contains
        ! contract -dipole integrals '?DIPLEN ' with densities
        do i=0, dp(1)-1
              ! load -dipole integral from file
-!> \todo #ifdef GEN1INT_DALTON
-!> \todo                call load_gen1int( xyz(c(1)+i) // 'DIPLEN ', A(1) )
-!> \todo #else
              call load_oneint(xyz(c(1)+i) // 'DIPLEN ',A(1))
-!> \todo #endif
              ! loop over density matrices
              do j=0, max(0,nd-1)
                 E(1+i+dp(1)*j) = tr(A(1),D(j+1)) !*2 for total dens hidden in tr
@@ -1417,11 +1413,7 @@ contains
        A(:3) = 0
 #else
        do i = 0, dp(1)-1
-!> \todo #ifdef GEN1INT_DALTON
-!> \todo             call load_gen1int( xyz(c(1)+i) // 'DIPLEN ', F(i+1), S0 )
-!> \todo #else
           call load_oneint(xyz(c(1)+i) // 'DIPLEN ', F(i+1), S0)
-!> \todo #endif
        end do
 #endif
 #ifndef LSDALTON_ONLY
@@ -1875,48 +1867,6 @@ contains
   end subroutine
 
 
-
-#ifdef GEN1INT_DALTON
-  !> \brief reads one-electron integral matrix from GEN1INT
-  !> \author Bin Gao
-  !> \date 2009-12-09
-  !> \param lab contains the 8 characters label of the integral matrix
-  !> \param S0 contains the overlap matrix
-  !> \param centers contains the indices of differentiated centers (max. 4)
-  !> \param orders contains the orders of geometric derivatives on each differentiated center
-  !> \return A contains the integral matrix
-  subroutine load_gen1int( lab, A, S0, centers, orders )
-    use gen1int
-    character*(*),          intent(in)    :: lab
-    type(matrix),           intent(inout) :: A
-    type(matrix), optional, intent(in)    :: S0
-    !> \todo integer, optional, intent(in)         :: num_D
-    !> \todo type(matrix), optional, intent(in)    :: D(*)
-    !> \todo real(8), optional, intent(out)        :: expval(:)
-    integer, optional, intent(in) :: centers(:)
-    integer, optional, intent(in) :: orders(:,:)
-    character*8 lab_g1int
-    integer i, n
-    ! if S0 present, initialize to that
-    if (present(S0) .and. .not.isdef(A)) call init_mat(A, S0)
-    ! if A is zero, get it allocated
-    if (iszero(A)) call init_mat(A, A)
-    !> \todo the following will be changed after we finish the new version of GEN1INT
-    n = len_trim(lab)
-    do i = 1, n
-      if ( lab(i:i) /= ' ' ) then
-        lab_g1int(i:i) = lab(i:i)
-      else
-        lab_g1int(i:i) = '_'
-      end if
-    end do
-    lab_g1int(n+1:8) = '_'
-    call gen1int_integral_fread( label_int1 = lab_g1int, &
-                                 vals_g1int = A%elms,    &
-                                 atoms_gdcent = centers, &
-                                 order_gdcent = orders )
-  end subroutine load_gen1int
-#endif
 
   subroutine load_oneint(lab, A, S0)
     character(*),           intent(in)    :: lab

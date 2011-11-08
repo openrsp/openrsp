@@ -242,17 +242,17 @@ contains
           if (.not.all(w==0)) &
              call quit('rsp_ovlave error: GEO-GEO-GEO with freqencies not implemented')
        end if
-       ! gen1int_driver(prop_name, order_geo, order_mag,
-       !                is_lao, get_int, wrt_int, vals_int,
-       !                do_exp, ndens, ao_dens,
-       !                get_exp, wrt_exp, vals_expect,
-       !                len_work, dal_work, level_print)
-       !ajt FIXME use finite difference intil Gao has committed update
-       !call gen1int_driver('OVERLAP', 3, 0,
-       !                    .false., .false., .false., tmp,
-       !                    .true., 1, D%elms,
-       !                    .true., .false., tmp,
-       !                    size(work), work, 5)
+#ifdef BUILD_GEN1INT
+       ! calculates the third order total geometric derivatives of overlap matrix
+!FIXME: do not touch DFD%nrow, DFD%ncol, DFD%elms
+       tmp = 0.0
+       call gen1int_ifc_main("OVERLAP", .false., 0, 2, 3,          &
+                             .false., .false., .false.,            &
+                             1, tmp(:,:,1), 0, DFD%nrow*DFD%ncol,  &
+                             1, DFD%elms, .true., .true., .false., &
+                             tmp, mol%lupri, 5)
+       tmp = -2.0*tmp
+#else
        do i = 0, nc(3)-1
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
           call ONEDRV_ave_ifc(mol, f(1:2), size(fdi), fdi, DFD=DFD)
@@ -262,6 +262,7 @@ contains
           tmp(:,:,c(3)+i) = tmp(:,:,c(3)+i) - fdi / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
        end do
+#endif
        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
                          c(2):c(2)+nc(2)-1, &
                          c(3):c(3)+nc(3)-1), shape(ave))
@@ -298,6 +299,10 @@ contains
     real(8), parameter :: fdistep = 2d0**(-25)
     real(8) tmpggg(3*mol%natom, 3*mol%natom, 3*mol%natom)
     real(8) fdigg(3*mol%natom, 3*mol%natom)
+#ifdef BUILD_GEN1INT
+    real(8) tmpfg(3,3*mol%natom)
+    real(8) tmpfgg(3,3*mol%natom,3*mol%natom)
+#endif
     real(8) tmpggf(3*mol%natom, 3*mol%natom, 3)
     real(8) fdigf(3*mol%natom, 3)
     integer i, j, k, n, indx
@@ -322,15 +327,23 @@ contains
        end do
        A(1) = 0
     else if (nf==2 .and. all(f==(/'GEO ','EL  '/))) then
-       ! put averages into tmp(:,:3,1)
-       ! gen1int_driver('CARMOM', 1, 0,
-       !                .false., .false., .false., tmp(:1,1,1),
-       !                .true., 1, D%elms,
-       !                .true., .false., tmp(:,:3,1),
-       !                size(work), work, 5)
-       !ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
-       !                  c(2):c(2)+nc(2)-1,1), shape(ave))
-       ! read integrals from AOPROPER until gen1int works
+#ifdef BUILD_GEN1INT
+!FIXME: do not touch D%nrow, D%ncol, D%elms
+       ! calculates the first order total geometric derivatives of dipole length integrals
+       tmpfg = 0.0
+       call gen1int_ifc_main("DIPLEN", .false., 0, 3, 1,           &
+                             .false., .false., .false.,            &
+                             size(tmpfg), tmpfg, 0, D%nrow*D%ncol, &
+                             1, D%elms, .true., .false., .false.,  &
+                             tmpfg, mol%lupri, 5)
+       tmpfg = 2.0*tmpfg
+       do j = 0, nc(2)-1 ! EL
+         do i = 0, nc(1)-1 ! GEO
+           ave(1+i+nc(1)*j) = tmpfg(c(2)+j,c(1)+i)
+         end do
+       end do
+#else
+       ! read integrals from AOPROPER
        A(1) = mol%zeromat
        call mat_alloc(A(1))
        do j = 0, nc(2)-1 ! EL
@@ -341,12 +354,35 @@ contains
           end do
        end do
        A(1) = 0
+#endif
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        call ONEDRV_ave_ifc(mol, f, size(tmpggg(:,:,1)), tmpggg(:,:,1), D=D)
        ave = reshape(tmpggg(c(1):c(1)+nc(1)-1, &
                             c(2):c(2)+nc(2)-1,1), shape(ave))
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','EL  '/))) then
-       !dj FIXME use finite difference until Gao has committed update
+#ifdef BUILD_GEN1INT
+!FIXME: do not touch D%nrow, D%ncol, D%elms
+!FIXME: not so sure if \var(tmpfgg) is correct!! needs to check!!
+       ! calculates the second order total geometric derivatives of dipole length integrals
+       tmpfgg = 0.0
+       call gen1int_ifc_main("DIPLEN", .false., 0, 3, 2,             &
+                             .false., .false., .false.,              &
+                             size(tmpfgg), tmpfgg, 0, D%nrow*D%ncol, &
+                             1, D%elms, .true., .true., .false.,     &
+                             tmpfgg, mol%lupri, 5)
+       tmpfgg = 2.0*tmpfgg
+       indx = 1
+       do k = 1, nc(3)
+         do i = 1, nc(3)
+           do j = k, nc(2), nc(3)
+             ave(indx:indx+nc(1)) = tmpfgg(i,:,j)
+             indx = indx + nc(1)
+           end do
+         end do
+       end do
+#else
+       !dj use finite difference to calculate the second order total geometric
+       !derivatives of dipole length integrals
        fdigf = 0
        do i = 0, nc(1)-1
           call SHELLS_NUCLEI_displace(c(1)+i, fdistep)
@@ -369,21 +405,24 @@ contains
              end do
           end do
        end do
-       !ave = reshape(-2d0*tmpggf(c(1):c(1)+nc(1)-1, &
-       !                          c(2):c(2)+nc(2)-1, &
-       !                          c(3):c(3)+nc(3)-1), shape(ave))
+#endif
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-       ! gen1int_driver(prop_name, order_geo, order_mag,
-       !                is_lao, get_int, wrt_int, vals_int,
-       !                do_exp, ndens, ao_dens,
-       !                get_exp, wrt_exp, vals_expect,
-       !                len_work, dal_work, level_print)
-       !ajt FIXME use finite difference intil Gao has committed update
-       !call gen1int_driver('ONEHAMIL', 3, 0,
-       !                    .false., .false., .false., tmp,
-       !                    .true., 1, D%elms,
-       !                    .true., .false., tmp,
-       !                    size(work), work, 5)
+#ifdef BUILD_GEN1INT
+!FIXME: do not touch D%nrow, D%ncol, D%elms
+       ! calculates the third order total geometric derivatives of one-electron Hamiltonian matrix
+       tmpggg = 0.0
+       call gen1int_ifc_main("KINENERG", .false., 0, 2, 3,           &
+                             .false., .false., .false.,              &
+                             size(tmpggg), tmpggg, 0, D%nrow*D%ncol, &
+                             1, D%elms, .true., .true., .false.,     &
+                             tmpggg, mol%lupri, 5)
+       call gen1int_ifc_main("POTENERG", .false., 0, 3, 3,           &
+                             .false., .false., .false.,              &
+                             size(tmpggg), tmpggg, 0, D%nrow*D%ncol, &
+                             1, D%elms, .true., .true., .false.,     &
+                             tmpggg, mol%lupri, 5)
+       tmpggg = 2.0*tmpggg
+#else
        do i = 0, nc(3)-1
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
           call ONEDRV_ave_ifc(mol, f(1:2), size(fdigg), fdigg, D=D)
@@ -393,6 +432,7 @@ contains
           tmpggg(:,:,c(3)+i) = tmpggg(:,:,c(3)+i) - fdigg / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
        end do
+#endif
        ave = reshape(tmpggg(c(1):c(1)+nc(1)-1, &
                             c(2):c(2)+nc(2)-1, &
                             c(3):c(3)+nc(3)-1), shape(ave))
