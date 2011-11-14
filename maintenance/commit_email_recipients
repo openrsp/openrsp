@@ -1,0 +1,11 @@
+# add your email address (one per line)
+# if you wish to receive git commit notification emails
+# it can take up to 1 day for the change to take effect
+# (crontab updates the list on the server)
+bin.gao@uit.no
+radovan.bast@uit.no
+kenneth.ruud@uit.no
+ajthorva@yahoo.no
+dan.jonsson@uit.no
+magnus.ringholm@uit.no
+michal.repisky@uit.no
