@@ -1,20 +1,25 @@
-! Copyright 2009-2011 Andreas J. Thorvaldsen
+! Copyright 2012 .....
+!      2009-2011 Andreas J. Thorvaldsen
 ! This file is made available under the terms of the
 ! GNU Lesser General Public License.
 
 !> @file
-!> Contains module prop_contribs
+!> Contains module rsp_contribs
 
-!> This module contains routines for calculating contributions
+!> The contribs module contains routines for calculating contributions
 !> to molecular properties (1st order, linear response, etc.),
-!> and perturbed Fock matrices. 
-module rsp_contribs_ng
+!> and perturbed Fock matrices.
+!>
+!> It is also responsible for caching integral contributions and
+!> contractions (not yet implemented)
+module rsp_contribs
 
-  use matrix_defop_ng
-  use matrix_genop_ng, only: mat_alloc
+  use matrix_defop
+  use matrix_genop, only: mat_alloc
+  use rsp_backend
 
 #ifdef BUILD_AORSP
-  use dalton_ifc_ng, only: di_read_operator_int, &
+  use dalton_ifc, only: di_read_operator_int, &
                            di_get_gmat, &
                            GRADNN_ifc, &
                            HESSNN_ifc
@@ -177,7 +182,7 @@ contains
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
   subroutine rsp_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
-    use dalton_ifc_ng, only: SHELLS_NUCLEI_displace
+    use dalton_ifc, only: SHELLS_NUCLEI_displace
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
@@ -278,7 +283,7 @@ contains
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
-    use dalton_ifc_ng, only: SHELLS_NUCLEI_displace, &
+    use dalton_ifc, only: SHELLS_NUCLEI_displace, &
                              work => dal_work
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
@@ -448,7 +453,7 @@ contains
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
   subroutine rsp_twoave(mol, nf, f, c, nc, D1, D2, ave)
-    use dalton_ifc_ng, only: work => dal_work
+    use dalton_ifc, only: work => dal_work
     use cgto_diff_eri, only: geo_eri
     use contract_eri,  only: coul_exch_ave, geo_eri_loop_unopt
     !> structure containing integral program settings
@@ -647,7 +652,7 @@ contains
   !> product of density matrces D1 and D2
   subroutine rsp_twoint(mol, nf, f, c, nc, dens, fock)
     ! work array to be passed to GRCONT
-    use dalton_ifc_ng, only: work => dal_work
+    use dalton_ifc, only: work => dal_work
     !> structure containing integral program settings
     type(rsp_cfg),   intent(in)    :: mol
     !> number of fields
@@ -785,7 +790,7 @@ contains
   !> Same as set_dsofso in fock-eval.f90, but pertrubed
   !> Call ONEDRV in ABACUS
   subroutine ONEDRV_ave_ifc(mol, fld, siz, ave, D, DFD)
-    use dalton_ifc_ng, only: dal_work
+    use dalton_ifc, only: dal_work
     type(rsp_cfg),          intent(in)  :: mol
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
@@ -834,7 +839,7 @@ contains
 
   !> Call GET1IN in ABACUS
   subroutine GET1IN_ave_ifc(mol, fld, siz, ave, D)
-    use dalton_ifc_ng, only: dal_work
+    use dalton_ifc, only: dal_work
     type(rsp_cfg),          intent(in)  :: mol
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
