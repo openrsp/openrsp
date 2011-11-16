@@ -1,0 +1,23 @@
+\chapter{Framework of Open\textsc{Rsp}}
+\label{chap:framework}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[scale=1, style=very thick, auto]
+    \node[module] (input) {input};
+    \node[module, right of=input] (driver) {driver};
+    \node[module, below of=driver, node distance=3cm] (openrsp) {Open\textsc{Rsp}};
+    \node[module, right of=driver] (interface) {interface};
+    \node[module, text width=4cm, right of=interface, node distance=5cm] (integrals) {integrals/potentials};
+    % draw arrows
+    \path[arrow] (input) -- (driver);
+    \path[arrow] ($(driver.south)-(2mm,0)$) -- ($(openrsp.north)-(2mm,0)$);
+    \path[arrow] ($(openrsp.north)+(2mm,0)$) -- ($(driver.south)+(2mm,0)$);
+    \path[arrow] ($(driver.east)+(0,1mm)$) -- ($(interface.west)+(0,1mm)$);
+    \path[arrow] ($(interface.west)-(0,1mm)$) -- ($(driver.east)-(0,1mm)$);
+    \path[arrow] (openrsp) -| node [near start] {} (interface);
+    \path[arrow] ($(interface.east)+(0,1mm)$) -- ($(integrals.west)+(0,1mm)$);
+    \path[arrow] ($(integrals.west)-(0,1mm)$) -- ($(interface.east)-(0,1mm)$);
+  \end{tikzpicture}
+  \caption{Framework of Open\textsc{Rsp}.}
+\end{figure}
