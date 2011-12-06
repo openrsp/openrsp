@@ -14,7 +14,7 @@ Interfaces
 ==========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    interfaces_XCint.rst
 
@@ -23,6 +23,15 @@ Status and challenges
 =====================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    challenges_XCint.rst
+
+
+Programing
+==========
+
+.. toctree::
+   :maxdepth: 1
+
+   coding_standards.rst
