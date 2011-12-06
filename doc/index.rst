@@ -1,4 +1,5 @@
 
+
 Main page
 =========
 
@@ -7,4 +8,21 @@ Main page
 
    copying.rst
    install.rst
-   interfaces.rst
+
+
+Interfaces
+==========
+
+.. toctree::
+   :maxdepth: 2
+
+   interfaces_XCint.rst
+
+
+Status and challenges
+=====================
+
+.. toctree::
+   :maxdepth: 2
+
+   challenges_XCint.rst

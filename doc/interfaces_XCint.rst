@@ -1,7 +1,10 @@
 
 
-Interfacing your code with XCint
-================================
+XCint
+=====
+
+XCint is the library/module that provides XC contributions to (perturbed) KS matrices
+as well as expectation value type XC contributions.
 
 
 Bindings
@@ -14,7 +17,7 @@ XCFun
 -----
 
 XCint obtains XC functional derivatives using the XCFun library of Ulf Ekström
-and coworkers.
+and coworkers. The XCint-XCFun interface is hidden to the OpenRSP library.
 
 
 How to link
@@ -44,8 +47,20 @@ file called "numerical_grid".
 
 File "numerical_grid" contains one or several batches of points. Each point
 fills one line with x-, y-, z-coordinates and the weight. The file closes with
-a negative integer.  Example: test/lda_energy/numerical_grid (3 batches with
-650, 400, 400 points, respectively).
+a negative integer. Example (fantasy grid consisting of 2 batches with 4
+points each, each has weight 1.0)::
+
+  4
+  1.0  1.0  1.0  1.0
+  2.0  2.0  2.0  1.0
+  3.0  3.0  3.0  1.0
+  4.0  4.0  4.0  1.0
+  4
+  5.0  5.0  5.0  1.0
+  6.0  6.0  6.0  1.0
+  7.0  7.0  7.0  1.0
+  8.0  8.0  8.0  1.0
+  -1
 
 
 Basis set and molecular orbital information
@@ -110,7 +125,7 @@ Integration, finally
 
 This is a minimal example to integrate the XC potential matrix::
 
-  call xcint_potential_rks(nr_ao, dmat, fmat)
+  call xcint_potential(nr_ao, dmat, fmat)
 
 The array dmat is the unperturbed AO density matrix with (at least) the
 dimensions (nr_ao*nr_ao) allocated and calculated by your code. Also the array
