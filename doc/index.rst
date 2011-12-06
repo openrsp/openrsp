@@ -8,4 +8,3 @@ Main page
    copying.rst
    install.rst
    interfaces.rst
-   developing_xcint.rst

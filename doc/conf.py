@@ -42,8 +42,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'XCint: The XC integrator'
-copyright = u'Radovan Bast, Trygve Helgaker, Malgorzata Olejniczak, Michal Repisky, Kenneth Ruud, Pawel Salek, Trond Saue'
+project = u'OpenRSP'
+copyright = u'The authors of OpenRSP'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -163,7 +163,7 @@ html_theme_path = ['_theme']
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'XCint'
+htmlhelp_basename = 'OpenRSP'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -177,8 +177,8 @@ htmlhelp_basename = 'XCint'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'xcint_manual.tex', u'XCint Documentation',
-   u'The authors of XCint', 'manual'),
+  ('index', 'openrsp_manual.tex', u'OpenRSP Documentation',
+   u'The authors of OpenRSP', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
