@@ -47,7 +47,7 @@ Densities are evaluated using density matrices and the overlap distribution
 
 The number density is the easiest density but all other densities (gradient,
 current, kinetic energy density, spin density, ...) can be calculated using
-very similar routines. It boils down to combining the corrent matrix sub-blocks
+very similar routines. It boils down to combining the correct matrix sub-blocks
 and using the appropriate AO derivatives.
 
 The challenges in calculating arbitrary-order derivatives of the
@@ -58,7 +58,6 @@ exchange-correlation (XC) energy and the XC potential are:
 * Density derivatives
 * Grid weight derivatives
 * Assembling the partial derivatives to form directional derivatives
-* Assembling the partial derivatives to form geometric derivatives (special case)
 * Integration
 
 In the following we will consider these challenges in detail.
@@ -83,7 +82,7 @@ This is solved. XCFun provides functional derivatives to arbitrary order.
 Density derivatives
 -------------------
 
-Pertubrations that do not modify the overlap are easy. They can be done to
+Perturbations that do not modify the overlap are easy. They can be done to
 arbitrary order. Geometric and magnetic perturbations are tricky.  Presently we
 have code to do n^B, n^BF, n^G, n^GG (almost), n^GF, n^GFF.  We have the
 "blueprints" for higher order routines but need to program them.  It is
@@ -103,9 +102,9 @@ Assembling the partial derivatives to form directional derivatives
 ------------------------------------------------------------------
 
 Once all perturbed densities are known to the necessary order, then they can be
-fed to XCFun as taylor series expansions and XCFun returns either the final
+fed to XCFun as Taylor series expansions and XCFun returns either the final
 "kernel density" which can be easily distributed over the V_xc matrix or
-deliveres the final e_xc density derivative (the latter is not tested but in my
+delivers the final e_xc density derivative (the latter is not tested but in my
 opinion should work).
 
 
