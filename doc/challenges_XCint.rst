@@ -33,7 +33,7 @@ In real life we evaluate derivatives of E_xc and V_xc on a numerical grid:
 
 .. math::
 
-   V_{xc;\kappa\lambda} = \sum_i w_i \sum_i \frac{\partial e_{xc}}{\partial n_i} \frac{\partial n_i}{\partial D_{\kappa\lambda}}
+   V_{xc;\kappa\lambda} = \sum_i w_i \sum_k \frac{\partial e_{xc}}{\partial n_k} \frac{\partial n_k}{\partial D_{\kappa\lambda}}
 
 Here w_i are the integration weights and the sum typically runs over 10000 to
 few million points depending on the size of the molecule.
