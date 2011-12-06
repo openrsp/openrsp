@@ -1,3 +1,4 @@
 *.mod
 matrix_defop_ng.x
-build
+build*/
+doc/_build/
