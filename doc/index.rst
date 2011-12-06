@@ -1,7 +1,7 @@
 
 
-Main page
-=========
+About OpenRSP
+=============
 
 .. toctree::
    :maxdepth: 2
@@ -35,3 +35,12 @@ Programing
    :maxdepth: 1
 
    coding_standards.rst
+
+
+Testing
+=======
+
+.. toctree::
+   :maxdepth: 1
+
+   testing.rst

@@ -66,14 +66,16 @@ on one line increase risk of conflicts during merges.
 Use module-wide implicit none
 -----------------------------
 
-module birefring
+Example::
 
-  use this
-  use that
-
-  implicit none
-
-  ...
+  module birefring
+  
+    use this
+    use that
+  
+    implicit none
+  
+    ...
 
 Never use implicit.h. After you spend a day hunting a bug created
 by using implicit you know why.
