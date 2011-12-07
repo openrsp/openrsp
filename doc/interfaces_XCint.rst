@@ -7,6 +7,22 @@ XCint is the library/module that provides XC contributions to (perturbed) KS mat
 as well as expectation value type XC contributions.
 
 
+The interface in short
+----------------------
+
+XCint needs some information about the molecule and basis on files interface_ao
+and interface_mo. It needs a grid on file numerical_grid.  Via subroutine calls
+one can calculate (perturbed) KS matrices as well as expectation value type XC
+contributions (geometric derivatives).  XCint calculates everything in AO
+basis. XCint always needs the unperturbed density matrix. For the calculation
+of perturbed KS matrices it needs corresponding perturbed density matrices.
+XCint needs some information about the point group symmetry and hermiticity of
+the perturbed density matrices.  It will typically integrate on top of one or
+more matrices (for KS matrices) or array(s) (expectation value type XC
+contribution) which are allocated outside XCint.  It needs to know the order of
+geometric derivatives and London magnetic derivatives.
+
+
 Bindings
 --------
 
