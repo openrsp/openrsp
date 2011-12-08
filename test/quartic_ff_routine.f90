@@ -1,5 +1,13 @@
 
 ! MR: Working on quartic force field in this routine
+! It is not intended for compilation yet
+! The first routines are ajt routines to get the gradient, Hessian
+! and cubic force field. Then comes the new code that is intended to get
+! the quartic force field.
+! For now (12/2011) I will expand the comments a bit and tell what
+! the quartic force field routine needs to work as discussed in the
+! third OpenRSP meeting on Dec. 7 2011.
+! Dec. 8, 2011: The comments have now been expanded a little.
 
   subroutine prop_test_quarticff(mol, ng, S, D, F)
     use dalton_ifc_ng, only: rsp_mosolver_exec
@@ -253,6 +261,8 @@
     close (iounit)
     ! free
     Sg=0; Dg=0; Fg=0
+
+
 ! MR: BEGIN QUARTIC FORCE FIELD
 ! USES 1,2 RULE
 ! NOTE: THIS ROUTINE HAS NOT BEEN TESTED YET (11/2011)
@@ -293,13 +303,25 @@
        call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), Fg(i:i))
     end do
 
+
 ! CALCULATE Sgg
 ! MR: IS THIS CORRECT?
+
+! NEED TO DO: HANDLE THE CASE (/'GEO ', 'GEO '/) IN rsp_ovlint
+
+
+
     call rsp_ovlint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Sgg), Sgg)
 
+
 ! CALCULATE Fgg
-! MR: WHAT ABOUT XC?
+
+
+! NEED TO DO: HANDLE THE CASES (/'GEO '/) and (/'GEO ', 'GEO '/) IN rsp_excint
+
 ! MR: IS THIS CORRECT?
+! MR: LACKS XC CONTRIBUTIONS
+
     call rsp_oneint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), Fgg)
     call rsp_twoint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), D, Fgg)  
     do i = 1, size(Dg)
@@ -317,15 +339,24 @@
 
 ! BEGIN ADDING CONTRIBUTIONS TO QUARTIC FORCE FIELD TENSOR
 
-! A, B, C, D PERTURBATIONS IN SAME BLOCK - NO "OTHER" BLOCKS
+! A, B, C, D PERTURBATIONS IN SAME BLOCK - NO "OTHER" BLOCKS TREATING
+! ONE PERTURBATION SEPARATELY
 
-! NUCPOT BLOCK: DONE: YES
+! NUCLEAR POTENTIAL BLOCK
 
     call rsp_nucpot(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (0d0,0d0)*(/0,0,0,0/), &
                     (/1,1,1,1/), shape(tmp), tmp)
 
     qua = tmp; call print_tensor(shape(tmp), tmp, 'Hnuc_abcd')
-! OVL BLOCK: DONE: YES
+
+
+! OVL BLOCK: THIS IS THE BLOCK CONTAINING ALL PULAY-TYPE (-SW) CONTRIBUTIONS
+
+! NEED TO DO: HANDLE THE (/'GEO ','GEO ','GEO ','GEO '/) CASE IN rsp_ovlave
+
+
+
+
 
     DFD = D*F*D
     call rsp_ovlave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
@@ -419,7 +450,11 @@
 
 
 
-! ONEEL BLOCK: DONE: YES
+! ONEEL BLOCK: THIS IS THE BLOCK CONTAINING ALL "ONE-ELECTRON AVERAGE" CONTRIBUTIONS
+
+! NEED TO DO: HANDLE THE (/'GEO ','GEO ','GEO ','GEO '/) CASE IN rsp_oneave
+
+
 ! E0-TYPE CALLS
     call rsp_oneave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, tmp)
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HabcdD')
@@ -486,7 +521,9 @@
 
 
 
-! TWOEL BLOCK: DONE: YES
+! TWOEL BLOCK: THIS IS THE BLOCK CONTAING ALL THE "TWO-ELECTRON AVERAGE" CONTRIBUTIONS
+
+! NEED TO DO: HANDLE THE (/'GEO ','GEO ','GEO ','GEO '/) CASE IN rsp_twoave
 
 ! E0-TYPE CALLS
 
@@ -684,7 +721,11 @@
 
 
 
-! XC BLOCK: DONE: YES
+! XC BLOCK: THIS IS THE BLOCK CONTAINING ALL THE "XC AVERAGE" CONTRIBUTIONS
+
+! NEED TO DO: HANDLE THE CASES (/'GEO '/), (/'GEO ','GEO '/),
+! (/'GEO ','GEO ','GEO '/), AND (/'GEO ','GEO ','GEO ','GEO '/) IN rsp_excave
+
 
 ! MR: IS THERE ALWAYS A MULTIPLICATION WITH AN UNPERTURBED D FIRST?
 ! MR: ASSUME SO FOR NOW
@@ -1004,7 +1045,8 @@
 	end do
       end do
     end do; FgDS=0;
-! MR: WHY END WITH SEMICOLON ON PREVIOUS LINE?
+! MR: WHY END WITH SEMICOLON ON PREVIOUS LINE? IT WAS ADAPTED FROM THE CORRESPONDING PART
+! OF THE CUBIC FORCE FIELD ROUTINE ABOVE
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-FaDS DSDbcd2p')
 
 ! SELF-CONSISTENCY BLOCK: DONE: YES
@@ -1038,12 +1080,14 @@
           end do; FDSggg2p=0
        end do
     end do; DgSD=0;
+! MR: WHY END WITH SEMICOLON ON PREVIOUS LINE? IT WAS ADAPTED FROM THE CORRESPONDING PART
+! OF THE CUBIC FORCE FIELD ROUTINE ABOVE
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-DaSD FDSbcd2p')
 
 ! ALL CONTRIBUTIONS ARE NOW ADDED TO QUARTIC FORCE FIELD TENSOR
 
 
-! PRINT OUTPUT: DONE: YES
+! PRINT OUTPUT
 
 ! MR: NOTE INDICES OF OUTPUT (EVEN THOUGH THEY DON'T REALLY MATTER A LOT HERE IN Egggg)
     open (unit=iounit, file='quarticff', status='replace', action='write')
