@@ -27,21 +27,27 @@
     ! gradient, first nuclear contribution
     call rsp_nucpot(mol, 1, (/'GEO '/), (/(0d0,0d0)/), (/1/), &
                     shape(tm1), tm1)
-    gra = tm1; call print_tensor(shape(tm1), tm1, 'hnuc_g')
+    gra = tm1
+    call print_tensor(shape(tm1), tm1, 'hnuc_g')
     ! overlap contribution
     DFD = D*F*D
     call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tm1), DFD, &
-                    tm1, (/(0d0,0d0)/), D); DFD=0
-    gra = gra + tm1; call print_tensor(shape(tm1), tm1, '-SgDFD')
+                    tm1, (/(0d0,0d0)/), D)
+    DFD=0
+    gra = gra + tm1
+    call print_tensor(shape(tm1), tm1, '-SgDFD')
     ! 1-electron contribution
     call rsp_oneave(mol, 1, (/'GEO '/), (/1/), shape(tm1), D, tm1)
-    gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'HgD')
+    gra = gra + tm1
+    call print_tensor(shape(tm1), tm1, 'HgD')
     ! 2-electron contribution
     call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tm1), D, D, tm1)
-    gra = gra + tm1/2; call print_tensor(shape(tm1), tm1/2, 'Gg(D)D/2')
+    gra = gra + tm1/2
+    call print_tensor(shape(tm1), tm1/2, 'Gg(D)D/2')
     ! Kohn-Sham exchange correlation average
     call rsp_excave(mol, 1, (/'GEO '/), (/1/), shape(tm1), 1, (/D/), tm1)
-    gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'Exc_g(D)')
+    gra = gra + tm1
+    call print_tensor(shape(tm1), tm1, 'Exc_g(D)')
     ! print
     call print_tensor(shape(gra), gra, 'gradient = Eg')
     ! print formatted to file gradient
@@ -69,45 +75,57 @@
        FDSg(1) = X(1)*D*S
        FDSg(1) = FDSg(1) - S*D*X(1)
        call mat_init(X(1), Dg(i), zero=.true.)
-       call rsp_mosolver_exec(FDSg(1), (/0d0/), X); X(1)=-2d0*X(1); FDSg(1)=0
+       call rsp_mosolver_exec(FDSg(1), (/0d0/), X)
+    X(1)=-2d0*X(1)
+    FDSg(1)=0
        ! ajt FIXME if I put these on the same line, I get something else
        Dg(i) = Dg(i) + X(1)*S*D
-       Dg(i) = Dg(i) - D*S*X(1); X(1)=0
+       Dg(i) = Dg(i) - D*S*X(1)
+    X(1)=0
        call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), Fg(i:i))
     end do
     !------------------------------------
     ! contract Hessian, nuclear repulsion
     call rsp_nucpot(mol, 2, (/'GEO ','GEO '/), (0d0,0d0)*(/0,0/), &
                     (/1,1/), shape(tm2), tm2)
-    hes = tm2; call print_tensor(shape(tm2), tm2, 'hnuc_ab')
+    hes = tm2
+    call print_tensor(shape(tm2), tm2, 'hnuc_ab')
     ! overlap contribution
     DFD = D*F*D
     call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tm2), DFD, &
-                    tm2); DFD=0 !, (0d0,0d0)*(/0,0/), D)
-    hes = hes + tm2; call print_tensor(shape(tm2), tm2, '-SabDFD')
+                    tm2)
+    DFD=0 !, (0d0,0d0)*(/0,0/), D)
+    hes = hes + tm2
+    call print_tensor(shape(tm2), tm2, '-SabDFD')
     !
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
        call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tm2(:,i)), DFDg, &
-                       tm2(:,i)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       tm2(:,i))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    hes = hes + tm2; call print_tensor(shape(tm2), tm2, '-SaDFDb')
+    hes = hes + tm2
+    call print_tensor(shape(tm2), tm2, '-SaDFDb')
     ! 1-electron contribution
     call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tm2), D, tm2)
-    hes = hes + tm2; call print_tensor(shape(tm2), tm2, 'HabD')
+    hes = hes + tm2
+    call print_tensor(shape(tm2), tm2, 'HabD')
     !
     do i = 1, size(Dg)
        call rsp_oneave(mol, 1, (/'GEO '/), (/1/), shape(tm2(:,i)), Dg(i), tm2(:,i))
     end do
-    hes = hes + tm2; call print_tensor(shape(tm2), tm2, 'HaDb')
+    hes = hes + tm2
+    call print_tensor(shape(tm2), tm2, 'HaDb')
     ! 2-electron contribution
     call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tm2), D, D, tm2)
-    hes = hes + tm2/2; call print_tensor(shape(tm2), tm2/2, 'Gab(D)D/2')
+    hes = hes + tm2/2
+    call print_tensor(shape(tm2), tm2/2, 'Gab(D)D/2')
     !
     do i = 1, size(Dg)
        call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tm2(:,i)), D, Dg(i), tm2(:,i))
     end do
-    hes = hes + tm2; call print_tensor(shape(tm2), tm2, 'Ga(D)Db')
+    hes = hes + tm2
+    call print_tensor(shape(tm2), tm2, 'Ga(D)Db')
     ! print
     call print_tensor(shape(hes), hes, 'hessian = Egg')
     ! print formatted to file hessian
@@ -118,66 +136,81 @@
     ! contract cubicff, nuclear repulsion
     call rsp_nucpot(mol, 3, (/'GEO ','GEO ','GEO '/), (0d0,0d0)*(/0,0,0/), &
                     (/1,1,1/), shape(tmp), tmp)
-    cub = tmp; call print_tensor(shape(tmp), tmp, 'Hnuc_abc')
+    cub = tmp
+    call print_tensor(shape(tmp), tmp, 'Hnuc_abc')
     ! overlap contribution
     DFD = D*F*D
     call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
-                    shape(tmp), DFD, tmp); DFD=0 !, (0d0,0d0)*(/0,0/), D)
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-SabcDFD')
+                    shape(tmp), DFD, tmp)
+    DFD=0 !, (0d0,0d0)*(/0,0/), D)
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-SabcDFD')
     !
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
        call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
-                       DFDg, tmp(:,:,i)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(:,:,i))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-SabDFDc')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-SabDFDc')
     !
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
        call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,i,:)), &
-                       DFDg, tmp(:,i,:)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(:,i,:))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-SacDFDb')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-SacDFDb')
     !
     do j = 1, size(Dg)
        do i = 1, size(Dg)
           DFDgg = Dg(j)*Fg(i)*D + Dg(j)*F*Dg(i) + D*Fg(j)*Dg(i) &
                 + Dg(i)*Fg(j)*D + Dg(i)*F*Dg(j) + D*Fg(i)*Dg(j)
           call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
-                          DFDgg, tmp(:,i,j)); DFDgg=0 !, (0d0,0d0)*(/0/), D)
+                          DFDgg, tmp(:,i,j))
+    DFDgg=0 !, (0d0,0d0)*(/0/), D)
        end do
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-SaDFDbc1')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-SaDFDbc1')
     ! 1-electron contribution
     call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), D, tmp)
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'HabcD')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'HabcD')
     !
     do i = 1, size(Dg)
        call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
                        Dg(i), tmp(:,:,i))
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'HabDc')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'HabDc')
     !
     do i = 1, size(Dg)
        call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,i,:)), &
                        Dg(i), tmp(:,i,:))
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'HacDb')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'HacDb')
     ! 2-electron contribution
     call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), D, D, tmp)
-    cub = cub + tmp/2; call print_tensor(shape(tmp), tmp/2, 'Gabc(D)D/2')
+    cub = cub + tmp/2
+    call print_tensor(shape(tmp), tmp/2, 'Gabc(D)D/2')
     !
     do i = 1, size(Dg)
        call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
                        D, Dg(i), tmp(:,:,i))
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'Gab(D)Dc')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'Gab(D)Dc')
     !
     do i = 1, size(Dg)
        call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,i,:)), &
                        D, Dg(i), tmp(:,i,:))
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'Gac(D)Db')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'Gac(D)Db')
     !
     do j = 1, size(Dg)
        do i = 1, size(Dg)
@@ -185,7 +218,8 @@
                           Dg(i), Dg(j), tmp(:,i,j))
        end do
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'Ga(Db)Dc')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'Ga(Db)Dc')
     ! idempotency multiplier contribution
     do i = 1, size(Dg)
        FgDS(i) = Fg(i)*D*S + S*D*Fg(i) - Fg(i) - F*D*Sg(i) - Sg(i)*D*F
@@ -196,10 +230,14 @@
                 + Dg(j)*(Sg(k)*D + S*Dg(k)) + D*Sg(j)*Dg(k)
           do i = 1, size(Dg)
              tmp(i,j,k) = -tr(FgDS(i),DSDgg)
-          end do; DSDgg=0
+          end do
+    DSDgg=0
        end do
-    end do; FgDS=0; 
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-FaDS DSDbc1')
+    end do
+    FgDS=0
+    
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-FaDS DSDbc1')
     ! self-consistency multiplier contribution
     do i = 1, size(Dg)
        DgSD(i) = Dg(i)*S*D - D*S*Dg(i)
@@ -211,29 +249,36 @@
                 + (Fg(j)*D+F*Dg(j))*Sg(k) - (Sg(j)*D+S*Dg(j))*Fg(k)
           do i = 1, size(Dg)
              tmp(i,j,k) = -tr(DgSD(i),FDSgg)
-          end do; FDSgg=0
+          end do
+    FDSgg=0
        end do
-    end do; DgSD=0;
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-DaSD FDSbc1')
+    end do
+    DgSD=0
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-DaSD FDSbc1')
     ! other overlap contribution
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
        call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
-                       DFDg, tmp(i,:,:)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(i,:,:))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, '-SbcDFDa')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, '-SbcDFDa')
     ! other 1-electron contribution
     do i = 1, size(Dg)
        call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
                        Dg(i), tmp(i,:,:))
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'HbcDa')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'HbcDa')
     !
     do i = 1, size(Dg)
        call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
                        D, Dg(i), tmp(i,:,:))
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'Gbc(D)Da')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'Gbc(D)Da')
     !
     do j = 1, size(Dg)
        do i = 1, size(Dg)
@@ -241,7 +286,8 @@
                           Dg(i), Dg(j), tmp(i,:,j))
        end do
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'Gb(Da)Dc')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'Gb(Da)Dc')
     !
     do j = 1, size(Dg)
        do i = 1, size(Dg)
@@ -249,7 +295,8 @@
                           Dg(i), Dg(j), tmp(i,j,:))
        end do
     end do
-    cub = cub + tmp; call print_tensor(shape(tmp), tmp, 'Gc(Da)Db')
+    cub = cub + tmp
+    call print_tensor(shape(tmp), tmp, 'Gc(Da)Db')
     ! print
     call print_tensor(shape(cub), cub, 'cubicff = Eggg')
     ! print formatted to file cubicff
@@ -260,7 +307,9 @@
     end do
     close (iounit)
     ! free
-    Sg=0; Dg=0; Fg=0
+    Sg=0
+    Dg=0
+    Fg=0
 
 
 ! MR: BEGIN QUARTIC FORCE FIELD
@@ -374,7 +423,8 @@
     call rsp_nucpot(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (0d0,0d0)*(/0,0,0,0/), &
                     (/1,1,1,1/), shape(tmp), tmp)
 
-    qua = tmp; call print_tensor(shape(tmp), tmp, 'Hnuc_abcd')
+    qua = tmp
+    call print_tensor(shape(tmp), tmp, 'Hnuc_abcd')
 
 
 ! OVL BLOCK: THIS IS THE BLOCK CONTAINING ALL PULAY-TYPE (-SW) CONTRIBUTIONS
@@ -387,35 +437,45 @@
 
     DFD = D*F*D
     call rsp_ovlave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
-                    shape(tmp), DFD, tmp); DFD=0 !, (0d0,0d0)*(/0,0/), D)
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabcdDFD')
+                    shape(tmp), DFD, tmp)
+    DFD=0 !, (0d0,0d0)*(/0,0/), D)
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SabcdDFD')
 
 ! CONSIDER DOING ALL OF THE NEXT FOUR INSIDE THE SAME LOOP TO SAVE MATRIX MULTIPLICATIONS
 ! S3W1-TYPE CALLS
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i) ! Wd
        call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,:,:,i)), &
-                       DFDg, tmp(:,:,:,i)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(:,:,:,i))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabcDFDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SabcDFDd')
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i) ! Wc
        call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,:,i,:)), &
-                       DFDg, tmp(:,:,i,:)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(:,:,i,:))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabdDFDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SabdDFDc')
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i) ! Wb
        call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,i,:,:)), &
-                       DFDg, tmp(:,i,:,:)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(:,i,:,:))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabdDFDb')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SabdDFDb')
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i) ! Wa
        call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
-                       DFDg, tmp(i,:,:,:)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       DFDg, tmp(i,:,:,:))
+    DFDg=0 !, (0d0,0d0)*(/0,0/), D)
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabdDFDa')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SabdDFDa')
 ! CONSIDER DOING ALL OF THE NEXT THREE INSIDE THE SAME LOOP TO SAVE MATRIX MULTIPLICATIONS
 ! S2W2-TYPE CALLS
     do j = 1, size(Dg)
@@ -424,10 +484,12 @@
                   D*F*Dgg(i,j) + D*Fg(j)*Dg(i) + Dg(j)*F*Dg(i) + &
                   Dg(j)*Fg(i)*D + D*Fgg(i,j)*D + D*Fg(i)*Fg(j) ! Wcd
           call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
-                          DFDgg, tmp(:,:,i,j)); DFDgg=0 !, (0d0,0d0)*(/0/), D)
+                          DFDgg, tmp(:,:,i,j))
+    DFDgg=0 !, (0d0,0d0)*(/0/), D)
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabDFDcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SabDFDcd')
 
     do j = 1, size(Dg)
        do i = 1, size(Dg) ! UNSURE OF DOUBLE INDICES BELOW
@@ -435,10 +497,12 @@
                   D*F*Dgg(i,j) + D*Fg(j)*Dg(i) + Dg(j)*F*Dg(i) + &
                   Dg(j)*Fg(i)*D + D*Fgg(i,j)*D + D*Fg(i)*Fg(j) ! Wbc
           call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,i,:,j)), &
-                          DFDgg, tmp(:,i,:,j)); DFDgg=0 !, (0d0,0d0)*(/0/), D)
+                          DFDgg, tmp(:,i,:,j))
+    DFDgg=0 !, (0d0,0d0)*(/0/), D)
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SacDFDbd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SacDFDbd')
 
 
 
@@ -448,10 +512,12 @@
                   D*F*Dgg(i,j) + D*Fg(j)*Dg(i) + Dg(j)*F*Dg(i) + &
                   Dg(j)*Fg(i)*D + D*Fgg(i,j)*D + D*Fg(i)*Fg(j) ! Wbc
           call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,i,j,:)), &
-                          DFDgg, tmp(:,i,j,:)); DFDgg=0 !, (0d0,0d0)*(/0/), D)
+                          DFDgg, tmp(:,i,j,:))
+    DFDgg=0 !, (0d0,0d0)*(/0/), D)
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SadDFDbc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SadDFDbc')
 
 
 ! W2'-TYPE CALL
@@ -467,11 +533,13 @@
                       Dg(j)*(Fgg(i,k)*D+Fg(k)*Dg(i))+(D*Fgg(i,k)+Dg(i)*Fg(k))*Dg(j) + &
                       Dg(k)*(Fgg(i,j)*D+Fg(i)*Dg(j))+(D*Fgg(i,j)+Dg(j)*Fg(i))*Dg(k)
             call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j,k)), &
-                            DFDggg2p, tmp(:,i,j,k)); DFDggg2p=0 !, (0d0,0d0)*(/0/), D)
+                            DFDggg2p, tmp(:,i,j,k))
+    DFDggg2p=0 !, (0d0,0d0)*(/0/), D)
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SaDFDbcd2p')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-SaDFDbcd2p')
 
 
 
@@ -484,7 +552,8 @@
 
 ! E0-TYPE CALLS
     call rsp_oneave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, tmp)
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HabcdD')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HabcdD')
 
 ! E1-TYPE CALLS
 ! Dg CALLS
@@ -492,25 +561,29 @@
        call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,:,:,i)), &
                        Dg(i), tmp(:,:,:,i))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HabcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HabcDd')
 
     do i = 1, size(Dg)
        call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,:,i,:)), &
                        Dg(i), tmp(:,:,i,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HabdDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HabdDc')
 
     do i = 1, size(Dg)
        call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,i,:,:)), &
                        Dg(i), tmp(:,i,:,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HacdDb')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HacdDb')
 
     do i = 1, size(Dg)
        call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
                        Dg(i), tmp(i,:,:,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HbcdDa')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HbcdDa')
 
 
 ! Dgg CALLS
@@ -522,7 +595,8 @@
 
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HabDcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HabDcd')
 
 
     do i = 1, size(Dg)
@@ -533,7 +607,8 @@
 
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HacDbd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HacDbd')
 
 
     do i = 1, size(Dg)
@@ -544,7 +619,8 @@
 
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'HadDbc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'HadDbc')
 
 
 
@@ -555,7 +631,8 @@
 ! E0-TYPE CALLS
 
     call rsp_twoave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, D, tmp)
-    qua = qua + tmp/2; call print_tensor(shape(tmp), tmp/2, 'Gabcd(D)D/2')
+    qua = qua + tmp/2
+    call print_tensor(shape(tmp), tmp/2, 'Gabcd(D)D/2')
 
 
 ! E1-TYPE CALLS
@@ -564,25 +641,29 @@
        call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,:,:,i)), &
                        D, Dg(i), tmp(:,:,:,i))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gabc(D)Dd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gabc(D)Dd')
 
     do i = 1, size(Dg)
        call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,:,i,:)), &
                        D, Dg(i), tmp(:,:,i,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gabd(D)Dc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gabd(D)Dc')
 
     do i = 1, size(Dg)
        call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(:,i,:,:)), &
                        D, Dg(i), tmp(:,i,:,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gacd(D)Db')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gacd(D)Db')
 
     do i = 1, size(Dg)
        call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
                        D, Dg(i), tmp(i,:,:,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gbcd(D)Da')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gbcd(D)Da')
 
 ! D-Dgg CALLS
     do j = 1, size(Dg)
@@ -591,7 +672,8 @@
                           D, Dgg(i,j), tmp(:,:,i,j))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gab(D)Dcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gab(D)Dcd')
 
 
     do j = 1, size(Dg)
@@ -600,7 +682,8 @@
                           D, Dgg(i,j), tmp(:,i,:,j))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gac(D)Dbd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gac(D)Dbd')
 
 
     do j = 1, size(Dg)
@@ -609,7 +692,8 @@
                           D, Dgg(i,j), tmp(:,i,j,:))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gad(D)Dbc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gad(D)Dbc')
 
 
 ! E2-TYPE CALLS
@@ -621,7 +705,8 @@
                           Dg(i), Dg(j), tmp(:,:,i,j))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gab(Dc)Dd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gab(Dc)Dd')
 
 
     do j = 1, size(Dg)
@@ -630,7 +715,8 @@
                           Dg(i), Dg(j), tmp(:,i,:,j))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gac(Db)Dd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gac(Db)Dd')
 
 
     do j = 1, size(Dg)
@@ -639,7 +725,8 @@
                           Dg(i), Dg(j), tmp(:,i,j,:))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gad(Db)Dc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gad(Db)Dc')
 
 ! MR: SHOULD THIS BE HERE? PROBABLY: MAYBE LOOK AGAIN
     do j = 1, size(Dg)
@@ -648,7 +735,8 @@
                           Dg(i), Dg(j), tmp(i,:,:,j))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gbc(Da)Dd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gbc(Da)Dd')
 
 
     do j = 1, size(Dg)
@@ -657,7 +745,8 @@
                           Dg(i), Dg(j), tmp(i,:,j,:))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gbd(Da)Dc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gbd(Da)Dc')
 
 
     do j = 1, size(Dg)
@@ -666,7 +755,8 @@
                           Dg(i), Dg(j), tmp(i,j,:,:))
        end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gcd(Da)Db')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gcd(Da)Db')
 
 ! Dgg-Dg CALLS
 
@@ -678,7 +768,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Ga(Dbc)Dd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Ga(Dbc)Dd')
 
 
 ! MR: SOME TROUBLE WITH INDICES
@@ -692,7 +783,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Ga(Dbd)Dc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Ga(Dbd)Dc')
 
 ! MR: SOME CONTRIBUTIONS LACKING? WHY NOT Ga(Dcd)Db? SOLVED: Ga(Dcd)Db = Ga(Db)Dcd
 
@@ -712,7 +804,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Ga(Db)Dcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Ga(Db)Dcd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -722,7 +815,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gb(Da)Dcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gb(Da)Dcd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -732,7 +826,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gc(Da)Dbd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gc(Da)Dbd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -742,7 +837,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Gd(Da)Dbc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Gd(Da)Dbc')
 
 
 
@@ -761,7 +857,8 @@
 
     call rsp_excave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
         shape(tmp(:,:,:,:)), 1, (/D/), tmp(:,:,:,:))
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_abcd(D)')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_abcd(D)')
 
 
 ! E1-TYPE CALLS
@@ -771,25 +868,29 @@
       call rsp_excave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
           shape(tmp(:,:,:,i)), 2, (/D, Dg(i)/), tmp(:,:,:,i))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_abc(D)Dd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_abc(D)Dd')
 
     do i = 1, size(Dg)
       call rsp_excave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
           shape(tmp(:,:,i,:)), 2, (/D, Dg(i)/), tmp(:,:,i,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_abd(D)Dc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_abd(D)Dc')
 
     do i = 1, size(Dg)
       call rsp_excave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
           shape(tmp(:,i,:,:)), 2, (/D, Dg(i)/), tmp(:,i,:,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_acd(D)Db')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_acd(D)Db')
 
     do i = 1, size(Dg)
       call rsp_excave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
           shape(tmp(i,:,:,:)), 2, (/D, Dg(i)/), tmp(i,:,:,:))
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_bcd(D)Da')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_bcd(D)Da')
 
 ! D-Dgg CALLS
 
@@ -799,7 +900,8 @@
             shape(tmp(:,:,i,j)), 2, (/D, Dgg(i,j)/), tmp(:,:,i,j))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ab(D)Dcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_ab(D)Dcd')
 
     do j = 1, size(Dg)
       do i = 1, size(Dg)
@@ -807,7 +909,8 @@
             shape(tmp(:,i,:,j)), 2, (/D, Dgg(i,j)/), tmp(:,i,:,j))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ac(D)Dbd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_ac(D)Dbd')
 
     do j = 1, size(Dg)
       do i = 1, size(Dg)
@@ -815,7 +918,8 @@
             shape(tmp(:,i,j,:)), 2, (/D, Dgg(i,j)/), tmp(:,i,j,:))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ad(D)Dbc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_ad(D)Dbc')
 
 
 ! E2-TYPE CALLS
@@ -827,7 +931,8 @@
             shape(tmp(:,:,i,j)), 3, (/D, Dg(i), Dg(j)/), tmp(:,:,i,j))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ab(D)DcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_ab(D)DcDd')
 
 
     do j = 1, size(Dg)
@@ -836,7 +941,8 @@
             shape(tmp(:,i,:,j)), 3, (/D, Dg(i), Dg(j)/), tmp(:,i,:,j))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ac(D)DbDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_ac(D)DbDd')
 
     do j = 1, size(Dg)
       do i = 1, size(Dg)
@@ -844,7 +950,8 @@
             shape(tmp(:,i,j,:)), 3, (/D, Dg(i), Dg(j)/), tmp(:,i,j,:))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ad(D)DbDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_ad(D)DbDc')
 
     do j = 1, size(Dg)
       do i = 1, size(Dg)
@@ -852,7 +959,8 @@
             shape(tmp(i,:,:,j)), 3, (/D, Dg(i), Dg(j)/), tmp(i,:,:,j))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_bc(D)DaDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_bc(D)DaDd')
 
     do j = 1, size(Dg)
       do i = 1, size(Dg)
@@ -860,7 +968,8 @@
             shape(tmp(i,:,j,:)), 3, (/D, Dg(i), Dg(j)/), tmp(i,:,j,:))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_bd(D)DaDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_bd(D)DaDc')
 
     do j = 1, size(Dg)
       do i = 1, size(Dg)
@@ -868,7 +977,8 @@
             shape(tmp(i,j,:,:)), 3, (/D, Dg(i), Dg(j)/), tmp(i,j,:,:))
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_cd(D)DaDb')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_cd(D)DaDb')
 
 
 ! D-Dgg-Dg CALLS
@@ -881,7 +991,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbcDd')
 
 
     do k = 1, size(Dg)
@@ -892,7 +1003,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbdDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbdDc')
 
 
 ! D-Dg-Dgg CALLS
@@ -906,7 +1018,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbDcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbDcd')
 
 
     do k = 1, size(Dg)
@@ -917,7 +1030,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_b(D)DaDcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_b(D)DaDcd')
 
 
     do k = 1, size(Dg)
@@ -928,7 +1042,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_c(D)DaDbd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_c(D)DaDbd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -938,7 +1053,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_d(D)DaDbc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_d(D)DaDbc')
 
 
 ! E3-TYPE CALLS
@@ -953,7 +1069,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbDcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbDcDd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -963,7 +1080,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_b(D)DaDcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_b(D)DaDcDd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -973,7 +1091,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_c(D)DaDbDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_c(D)DaDbDd')
 
     do k = 1, size(Dg)
       do j = 1, size(Dg)
@@ -983,7 +1102,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_d(D)DaDbDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc_d(D)DaDbDc')
 
 ! D-Dg-Dgg-Dg CALLS
 ! MAYBE LOOK AT AGAIN
@@ -1000,7 +1120,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbcDd')
 
 
     do m = 1, size(Dg)
@@ -1013,7 +1134,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbdDc')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbdDc')
 
 ! D-Dg-Dg-Dgg CALLS
 
@@ -1027,7 +1149,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcd')
 
 ! E4-TYPE CALLS
 
@@ -1043,7 +1166,8 @@
         end do
       end do
     end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcDd')
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcDd')
 
 
 ! IDEMPOTENCY BLOCK: DONE: YES
@@ -1067,14 +1191,16 @@
 
             do m = 1, size(Dg)
               tmp(m,i,j,k) = -tr(FgDS(m),DSDggg2p)
-            end do; DSDggg2p=0
+            end do
+    DSDggg2p=0
 
         end do
       end do
-    end do; FgDS=0;
-! MR: WHY END WITH SEMICOLON ON PREVIOUS LINE? IT WAS ADAPTED FROM THE CORRESPONDING PART
-! OF THE CUBIC FORCE FIELD ROUTINE ABOVE
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-FaDS DSDbcd2p')
+    end do
+    FgDS=0
+
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-FaDS DSDbcd2p')
 
 ! SELF-CONSISTENCY BLOCK: DONE: YES
 
@@ -1104,12 +1230,14 @@
                      (Sgg(j,k)*Dg(i)+Sgg(i,k)*Dg(j)+Sgg(i,j)*Dg(k))*F
           do m = 1, size(Dg)
              tmp(m,i,j,k) = -tr(DgSD(m),FDSggg2p)
-          end do; FDSggg2p=0
+          end do
+    FDSggg2p=0
        end do
-    end do; DgSD=0;
-! MR: WHY END WITH SEMICOLON ON PREVIOUS LINE? IT WAS ADAPTED FROM THE CORRESPONDING PART
-! OF THE CUBIC FORCE FIELD ROUTINE ABOVE
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-DaSD FDSbcd2p')
+    end do
+    DgSD=0
+
+    qua = qua + tmp
+    call print_tensor(shape(tmp), tmp, '-DaSD FDSbcd2p')
 
 ! ALL CONTRIBUTIONS ARE NOW ADDED TO QUARTIC FORCE FIELD TENSOR
 
