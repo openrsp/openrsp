@@ -1703,12 +1703,49 @@ module proprty
      ! Should all of the data attributes be pointers too?
      type(perts) :: perturb
      integer :: data
-! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
-!     type(matrix), allocatable, dimension(:) :: data ! Tensor data
+     ! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
+!    type(matrix), allocatable, dimension(:) :: data ! Tensor data
 
   end type
 
+  type propcache
+
+     type(propcache), pointer :: next
+     logical :: last
+     integer :: tlen
+     type(perts), allocatable, dimension(:) :: t_orders
+     complex(8), allocatable, dimension(:) :: data
+     !integer :: s_sep
+     ! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
+!    type(matrix), allocatable, dimension(:) :: data ! Property data    
+
+  end type 
+
+
+
   contains
+
+! function pert_clone(pert)
+! 
+! implicit none
+! 
+! type(perts) :: pert, pert_clone
+! 
+! 
+! pert_clone%npert = pert%npert
+! allocate(pert_clone%pdim(pert%npert))
+! allocate(pert_clone%plab(pert%npert))
+! allocate(pert_clone%pid(pert%npert))
+! allocate(pert_clone%freq(pert%npert))
+! 
+! 
+! pert_clone%pdim = pert%pdim
+! pert_clone%plab= pert%plab
+! pert_clone%pid = pert%pid
+! pert_clone%freq = pert%freq
+! 
+! end function
+
 
   function pert_ext(pert, ext)
 
@@ -1906,6 +1943,1033 @@ allocate(emptypert%freq(0))
 
 end function
 
+! ASSUMES STANDARD ORDERED INPUT
+
+  function pert_lt(p1, p2)
+
+    implicit none
+
+    logical :: pert_lt
+    integer :: i
+    type(perts) :: p1, p2
+
+!      write(*,*) 'comparing perturbations'
+!  write(*,*) 'p2'
+! write(*,*) p2%npert
+! write(*,*) p2%pdim
+! write(*,*) p2%plab
+! write(*,*) p2%freq
+!  write(*,*) 'p1'
+! write(*,*) p1%npert
+! write(*,*) p1%pdim
+! write(*,*) p1%plab
+! write(*,*) p1%freq
+
+! Will this give false negatives?
+
+pert_lt = .FALSE.
+
+    ! Compare number of perturbations
+    ! REMEMBER: DECREASING ORDER OF DIFFERENTIATION
+    if (p1%npert > p2%npert) then
+
+        pert_lt = .TRUE.
+
+
+    elseif (p1%npert == p2%npert) then
+
+
+       do i = 1, p1%npert
+
+
+if (llt(p1%plab(i), p2%plab(i)) .eqv. .TRUE.) then
+
+pert_lt = .TRUE.  
+exit
+
+elseif (p1%plab(i) == p2%plab(i)) then
+
+! IS IT OK TO COMPARE ONLY THE REAL PART LIKE THIS?
+if (real(p1%freq(i)) < real(p2%freq(i))) then
+
+pert_lt = .TRUE.  
+exit
+
+end if
+
+if (pert_lt .eqv. .TRUE.) exit
+
+end if
+
+end do
+
+end if
+
+  end function
+
+
+
+  function pert_standardorder(pert) result(pert_st)
+
+implicit none
+
+
+type(perts) :: pert, pert_st
+integer :: i, j, min_which, nmin
+integer :: tmp_pdim, tmp_pid, t_first, t_last
+character(4) :: tmp_plab, min_curr
+complex(8) :: tmp_freq, min_freq_curr
+
+! write (*,*) 'standard ordering', pert%pid
+
+
+pert_st%npert = pert%npert
+allocate(pert_st%pdim(pert%npert))    
+allocate(pert_st%plab(pert%npert))
+allocate(pert_st%pid(pert%npert))
+allocate(pert_st%freq(pert%npert))
+
+pert_st%pdim = pert%pdim
+pert_st%plab = pert%plab
+pert_st%pid = pert%pid
+pert_st%freq = pert%freq
+
+
+nmin = 1
+
+! if (pert_st%npert > 1) then
+
+do i = nmin, pert_st%npert
+
+min_curr = pert_st%plab(i)
+min_freq_curr = pert_st%freq(i)
+min_which = i
+
+do j = i + 1, pert_st%npert
+
+if (lle(pert_st%plab(j), min_curr) .EQV. .TRUE.) then
+
+if (pert_st%plab(j) == min_curr) then
+
+! MR: COMPARING ABSOLUTE VALUE (SQUARE MODULUS) - IS IT STILL SUFFICIENTLY GENERAL?
+if (abs(pert_st%freq(j)) < abs(min_freq_curr)) then
+
+! write (*,*) 'freq', pert_st%freq(j), 'is less than', min_freq_curr
+
+min_freq_curr = pert_st%freq(j)
+min_which = j
+
+else
+
+! write (*,*) 'freq', pert_st%freq(j), 'not less than', min_freq_curr
+
+
+end if
+
+else
+
+min_curr = pert_st%plab(j)
+min_which = j
+
+end if
+
+end if
+
+end do
+
+tmp_pdim = pert_st%pdim(min_which)
+tmp_plab = pert_st%plab(min_which)
+tmp_pid = pert_st%pid(min_which)
+tmp_freq = pert_st%freq(min_which)
+
+pert_st%pdim(min_which) = pert_st%pdim(i)
+pert_st%plab(min_which) = pert_st%plab(i)
+pert_st%pid(min_which) = pert_st%pid(i)
+pert_st%freq(min_which) = pert_st%freq(i)
+
+pert_st%pdim(i) = tmp_pdim
+pert_st%plab(i) = tmp_plab
+pert_st%pid(i) = tmp_pid
+pert_st%freq(i) = tmp_freq
+
+
+nmin = nmin + 1
+
+end do
+
+
+! DOES THIS WORK?
+
+! write (*,*) 'standard ordered before freq comparison', pert_st%pid
+
+
+t_first = 1
+t_last = 1
+
+
+do while (t_last <= pert_st%npert)
+
+
+
+if (t_last < pert_st%npert) then
+
+do while ((pert_st%plab(t_last) == pert_st%plab(t_first)))
+
+t_last = t_last + 1
+
+if (t_last > pert_st%npert) exit
+
+end do
+
+t_last = t_last - 1
+
+end if
+
+! write (*,*) 'first and last', t_first, t_last
+
+do i = t_first, t_last, 1
+
+min_freq_curr = pert_st%freq(i)
+min_which = i
+
+do j = i + 1, t_last
+
+if (abs(pert_st%freq(j)) < abs(min_freq_curr)) then
+
+! write (*,*) 'freq', pert_st%freq(j), 'is less than', min_freq_curr
+
+min_freq_curr = pert_st%freq(j)
+min_which = j
+
+end if
+
+end do
+
+tmp_pdim = pert_st%pdim(min_which)
+tmp_plab = pert_st%plab(min_which)
+tmp_pid = pert_st%pid(min_which)
+tmp_freq = pert_st%freq(min_which)
+
+pert_st%pdim(min_which) = pert_st%pdim(i)
+pert_st%plab(min_which) = pert_st%plab(i)
+pert_st%pid(min_which) = pert_st%pid(i)
+pert_st%freq(min_which) = pert_st%freq(i)
+
+pert_st%pdim(i) = tmp_pdim
+pert_st%plab(i) = tmp_plab
+pert_st%pid(i) = tmp_pid
+pert_st%freq(i) = tmp_freq
+
+
+
+end do
+
+t_last = t_last + 1
+t_first = t_last
+
+end do
+
+
+
+! write (*,*) 'standard ordered after freq comparison', pert_st%pid
+! else
+
+! ! Do nothing
+
+! end if
+
+end function
+
+
+! Begin propcache linked list manipulation/data retrieval routines
+
+
+
+  ! Initialization routine
+  subroutine propcache_init(new_elem, tlen, perturbs, propsize, data)
+
+    implicit none
+
+    integer :: i, tlen
+    type(propcache) :: new_elem
+    type(perts), dimension(tlen) :: perturbs
+    integer :: propsize
+    complex(8), dimension(propsize) :: data
+! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
+!    type(matrix), dimension(product(pert%pdim)) :: data
+
+
+
+
+
+
+
+
+    new_elem%last = .TRUE.
+
+    new_elem%tlen = tlen
+
+allocate(new_elem%t_orders(tlen))
+
+do i = 1, tlen
+
+    new_elem%t_orders(i)%npert = perturbs(i)%npert
+
+    allocate(new_elem%t_orders(i)%pdim(perturbs(i)%npert))
+    allocate(new_elem%t_orders(i)%plab(perturbs(i)%npert))
+    allocate(new_elem%t_orders(i)%pid(perturbs(i)%npert))
+    allocate(new_elem%t_orders(i)%freq(perturbs(i)%npert))
+    
+    new_elem%t_orders(i)%pdim = perturbs(i)%pdim
+new_elem%t_orders(i)%plab = perturbs(i)%plab
+new_elem%t_orders(i)%pid = perturbs(i)%pid
+new_elem%t_orders(i)%freq = perturbs(i)%freq
+! write(*,*) new_elem%perturb%npert
+
+end do
+
+allocate(new_elem%data(propsize))
+
+    new_elem%data = data
+
+
+  end subroutine
+
+
+  function perts_standardorder(tlen, t_orders) result(perts_st)
+
+implicit none
+
+integer :: tlen
+type(perts), dimension(tlen) :: t_orders, perts_st
+type(perts) :: tmp_pert
+integer :: i, j, k, m_which, nmin, max_order_curr, len_curr
+integer :: tmp_pdim, tmp_pid, t_first, t_last
+character(4) :: tmp_plab
+character(4), dimension(:), allocatable :: min_plab_curr
+complex(8) :: tmp_freq
+complex(8), dimension(:), allocatable :: min_freq_curr
+
+! write(*,*) 'starting perts_standardorder'
+
+do i = 1, tlen
+
+! write(*,*) t_orders(i)%pid
+
+
+perts_st(i)%npert = t_orders(i)%npert
+allocate(perts_st(i)%pdim(t_orders(i)%npert))    
+allocate(perts_st(i)%plab(t_orders(i)%npert))
+allocate(perts_st(i)%pid(t_orders(i)%npert))
+allocate(perts_st(i)%freq(t_orders(i)%npert))
+
+perts_st(i)%pdim = t_orders(i)%pdim
+perts_st(i)%plab = t_orders(i)%plab
+perts_st(i)%pid = t_orders(i)%pid
+perts_st(i)%freq = t_orders(i)%freq
+
+end do
+
+do i = 2, tlen
+
+m_which = i
+
+do j = i + 1, tlen
+
+
+if (pert_lt(pert_standardorder(t_orders(j)), pert_standardorder(t_orders(m_which)))) then
+
+m_which = j
+
+end if
+
+end do
+
+
+! It might be possible to do this assignment in a different way
+
+tmp_pert%npert = perts_st(m_which)%npert
+allocate(tmp_pert%pdim(tmp_pert%npert))
+allocate(tmp_pert%plab(tmp_pert%npert))
+allocate(tmp_pert%pid(tmp_pert%npert))
+allocate(tmp_pert%freq(tmp_pert%npert))
+
+tmp_pert%pdim = perts_st(m_which)%pdim
+tmp_pert%plab = perts_st(m_which)%plab
+tmp_pert%pid = perts_st(m_which)%pid
+tmp_pert%freq = perts_st(m_which)%freq
+
+deallocate(perts_st(m_which)%pdim)
+deallocate(perts_st(m_which)%plab)
+deallocate(perts_st(m_which)%pid)
+deallocate(perts_st(m_which)%freq)
+
+perts_st(m_which)%npert = perts_st(i)%npert
+allocate(perts_st(m_which)%pdim(perts_st(i)%npert))
+allocate(perts_st(m_which)%plab(perts_st(i)%npert))
+allocate(perts_st(m_which)%pid(perts_st(i)%npert))
+allocate(perts_st(m_which)%freq(perts_st(i)%npert))
+
+perts_st(m_which)%pdim = perts_st(i)%pdim
+perts_st(m_which)%plab = perts_st(i)%plab
+perts_st(m_which)%pid = perts_st(i)%pid
+perts_st(m_which)%freq = perts_st(i)%freq
+
+deallocate(perts_st(i)%pdim)
+deallocate(perts_st(i)%plab)
+deallocate(perts_st(i)%pid)
+deallocate(perts_st(i)%freq)
+
+
+perts_st(i)%npert = tmp_pert%npert
+allocate(perts_st(i)%pdim(tmp_pert%npert))
+allocate(perts_st(i)%plab(tmp_pert%npert))
+allocate(perts_st(i)%pid(tmp_pert%npert))
+allocate(perts_st(i)%freq(tmp_pert%npert))
+
+
+perts_st(i)%pdim = tmp_pert%pdim
+perts_st(i)%plab = tmp_pert%plab
+perts_st(i)%pid = tmp_pert%pid
+perts_st(i)%freq = tmp_pert%freq
+
+
+deallocate(tmp_pert%pdim)
+deallocate(tmp_pert%plab)
+deallocate(tmp_pert%pid)
+deallocate(tmp_pert%freq)
+
+end do
+
+
+
+
+
+
+
+
+
+
+
+
+
+! ! Order perts(2:tlen) in decreasing differentiation order
+! 
+! do i = 2, tlen
+! 
+! max_order_curr = t_orders(i)%npert
+! m_which = i
+! 
+! do j = i + 1, tlen
+! 
+! if (t_orders(j)%npert > max_order_curr) then
+! 
+! max_order_curr = t_orders(j)%npert
+! m_which = j
+! 
+! end if
+! 
+! end do
+! 
+! ! It might be possible to do this assignment in a different way
+! 
+! tmp_pert%npert = perts_st(m_which)%npert
+! allocate(tmp_pert%pdim(tmp_pert%npert))
+! allocate(tmp_pert%plab(tmp_pert%npert))
+! allocate(tmp_pert%pid(tmp_pert%npert))
+! allocate(tmp_pert%freq(tmp_pert%npert))
+! 
+! tmp_pert%pdim = perts_st(m_which)%pdim
+! tmp_pert%plab = perts_st(m_which)%plab
+! tmp_pert%pid = perts_st(m_which)%pid
+! tmp_pert%freq = perts_st(m_which)%freq
+! 
+! deallocate(perts_st(m_which)%pdim)
+! deallocate(perts_st(m_which)%plab)
+! deallocate(perts_st(m_which)%pid)
+! deallocate(perts_st(m_which)%freq)
+! 
+! perts_st(m_which)%npert = perts_st(i)%npert
+! allocate(perts_st(m_which)%pdim(perts_st(i)%npert))
+! allocate(perts_st(m_which)%plab(perts_st(i)%npert))
+! allocate(perts_st(m_which)%pid(perts_st(i)%npert))
+! allocate(perts_st(m_which)%freq(perts_st(i)%npert))
+! 
+! perts_st(m_which)%pdim = perts_st(i)%pdim
+! perts_st(m_which)%plab = perts_st(i)%plab
+! perts_st(m_which)%pid = perts_st(i)%pid
+! perts_st(m_which)%freq = perts_st(i)%freq
+! 
+! deallocate(perts_st(i)%pdim)
+! deallocate(perts_st(i)%plab)
+! deallocate(perts_st(i)%pid)
+! deallocate(perts_st(i)%freq)
+! 
+! 
+! perts_st(i)%npert = tmp_pert%npert
+! allocate(perts_st(i)%pdim(tmp_pert%npert))
+! allocate(perts_st(i)%plab(tmp_pert%npert))
+! allocate(perts_st(i)%pid(tmp_pert%npert))
+! allocate(perts_st(i)%freq(tmp_pert%npert))
+! 
+! 
+! perts_st(i)%pdim = tmp_pert%pdim
+! perts_st(i)%plab = tmp_pert%plab
+! perts_st(i)%pid = tmp_pert%pid
+! perts_st(i)%freq = tmp_pert%freq
+! 
+! 
+! deallocate(tmp_pert%pdim)
+! deallocate(tmp_pert%plab)
+! deallocate(tmp_pert%pid)
+! deallocate(tmp_pert%freq)
+! 
+! 
+! end do
+! 
+! 
+! ! Order first element of perts
+! 
+! tmp_pert = pert_standardorder(perts_st(1))
+! 
+! perts_st(1)%pdim = tmp_pert%pdim
+! perts_st(1)%plab = tmp_pert%plab
+! perts_st(1)%pid = tmp_pert%pid
+! perts_st(1)%freq = tmp_pert%freq
+! 
+! deallocate(tmp_pert%pdim)
+! deallocate(tmp_pert%plab)
+! deallocate(tmp_pert%pid)
+! deallocate(tmp_pert%freq)
+! 
+! 
+! ! Also, for the same order of differentiation between two elements of perts(2:tlen):
+! ! Order alphabetically
+! 
+! t_first = 2
+! t_last = 2
+! 
+! do while (t_last <= tlen)
+! 
+! len_curr = perts_st(t_first)%npert
+! 
+! ! DOES THIS WORK PROPERLY?
+! 
+! 
+! if (t_last < tlen) then
+! 
+! do while ((perts_st(t_last)%npert == len_curr))
+! 
+! t_last = t_last + 1
+! 
+! if (t_last > tlen) exit
+! 
+! end do
+! 
+! t_last = t_last - 1
+! 
+! end if
+! ! write (*,*) 'outside tlast loop'
+! 
+! do i = t_first, t_last
+! 
+! tmp_pert = pert_standardorder(perts_st(i))
+! 
+! allocate(min_plab_curr(tmp_pert%npert))
+! min_plab_curr = t_orders(i)%plab
+! m_which = i
+! 
+! deallocate(tmp_pert%pdim)
+! deallocate(tmp_pert%plab)
+! deallocate(tmp_pert%pid)
+! deallocate(tmp_pert%freq)
+! 
+! do j = i + 1, t_last
+! 
+! tmp_pert = pert_standardorder(perts_st(j))
+! 
+! do k = 1, tmp_pert%npert
+! 
+! if (lle(perts_st(j)%plab(k), min_plab_curr(k))) then
+! 
+! min_plab_curr = perts_st(j)%plab
+! m_which = j
+! 
+! end if
+! 
+! ! deallocate(min_plab_curr)
+! 
+! end do
+! 
+! 
+! 
+! 
+! deallocate(tmp_pert%pdim)
+! deallocate(tmp_pert%plab)
+! deallocate(tmp_pert%pid)
+! deallocate(tmp_pert%freq)
+! 
+! 
+! end do
+! 
+! deallocate(min_plab_curr)
+! 
+! ! NOTE: FREQUENCY COMPARISON BETWEEN ELEMENTS OF t_orders IS MISSING
+! 
+! 
+! ! Compare alphabetically
+! ! Compare frequencies
+! 
+! 
+! 
+! ! It might be possible to do this assignment in a different way
+! 
+! tmp_pert%npert = perts_st(m_which)%npert
+! allocate(tmp_pert%pdim(tmp_pert%npert))
+! allocate(tmp_pert%plab(tmp_pert%npert))
+! allocate(tmp_pert%pid(tmp_pert%npert))
+! allocate(tmp_pert%freq(tmp_pert%npert))
+! 
+! tmp_pert%pdim = perts_st(m_which)%pdim
+! tmp_pert%plab = perts_st(m_which)%plab
+! tmp_pert%pid = perts_st(m_which)%pid
+! tmp_pert%freq = perts_st(m_which)%freq
+! 
+! deallocate(perts_st(m_which)%pdim)
+! deallocate(perts_st(m_which)%plab)
+! deallocate(perts_st(m_which)%pid)
+! deallocate(perts_st(m_which)%freq)
+! 
+! perts_st(m_which)%npert = perts_st(i)%npert
+! allocate(perts_st(m_which)%pdim(perts_st(i)%npert))
+! allocate(perts_st(m_which)%plab(perts_st(i)%npert))
+! allocate(perts_st(m_which)%pid(perts_st(i)%npert))
+! allocate(perts_st(m_which)%freq(perts_st(i)%npert))
+! 
+! perts_st(m_which)%pdim = perts_st(i)%pdim
+! perts_st(m_which)%plab = perts_st(i)%plab
+! perts_st(m_which)%pid = perts_st(i)%pid
+! perts_st(m_which)%freq = perts_st(i)%freq
+! 
+! deallocate(perts_st(i)%pdim)
+! deallocate(perts_st(i)%plab)
+! deallocate(perts_st(i)%pid)
+! deallocate(perts_st(i)%freq)
+! 
+! 
+! perts_st(i)%npert = tmp_pert%npert
+! allocate(perts_st(i)%pdim(tmp_pert%npert))
+! allocate(perts_st(i)%plab(tmp_pert%npert))
+! allocate(perts_st(i)%pid(tmp_pert%npert))
+! allocate(perts_st(i)%freq(tmp_pert%npert))
+! 
+! 
+! perts_st(i)%pdim = tmp_pert%pdim
+! perts_st(i)%plab = tmp_pert%plab
+! perts_st(i)%pid = tmp_pert%pid
+! perts_st(i)%freq = tmp_pert%freq
+! 
+! 
+! deallocate(tmp_pert%pdim)
+! deallocate(tmp_pert%plab)
+! deallocate(tmp_pert%pid)
+! deallocate(tmp_pert%freq)
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! end do
+! 
+! t_last = t_last + 1
+! t_first = t_last
+! 
+! end do
+! 
+! 
+!   write(*,*) 'finished perts_standardorder'
+! 
+!   do i = 1, tlen
+! 
+! perts_st(i) = pert_standardorder(perts_st(i))
+! 
+!   write(*,*) perts_st(i)%pid
+! 
+!   end do
+
+
+
+
+! nmin = 1
+! 
+! 
+! 
+! ! if (pert%npert > 1) then
+! 
+! do i = nmin, pert%npert
+! 
+! min_curr = pert%plab(i)
+! min_which = i
+! 
+! do j = i + 1, pert%npert
+! 
+! if (llt(pert%plab(j), min_curr) .EQV. .TRUE.) then
+! 
+! min_curr = pert%plab(j)
+! min_which = j
+! 
+! end if
+! 
+! end do
+! 
+! tmp_pdim = pert%pdim(min_which)
+! tmp_plab = pert%plab(min_which)
+! tmp_pid = pert%pid(min_which)
+! tmp_freq = pert%freq(min_which)
+! 
+! pert%pdim(min_which) = pert%pdim(i)
+! pert%plab(min_which) = pert%plab(i)
+! pert%pid(min_which) = pert%pid(i)
+! pert%freq(min_which) = pert%freq(i)
+! 
+! pert%pdim(i) = tmp_pdim
+! pert%plab(i) = tmp_plab
+! pert%pid(i) = tmp_pid
+! pert%freq(i) = tmp_freq
+! 
+! 
+! nmin = nmin + 1
+! 
+! end do
+
+
+end function
+
+
+  ! Get next element function
+  function propcache_next(inst)
+
+    implicit none
+
+    type(propcache) :: inst, propcache_next
+
+    ! Return pointer to next element
+    propcache_next = inst%next
+
+  end function
+
+function propcache_getnext(inst) result(nxt)
+
+implicit none
+
+type(propcache), target :: inst
+type(propcache), pointer :: nxt
+
+nxt => inst%next
+
+
+end function
+
+
+
+function perts_compare(tlen, t_orders, perts_st_order)
+
+logical :: perts_compare, acc_compare
+integer ::  tlen, i
+type(perts), dimension(tlen) :: t_orders, perts_st_order
+type(perts) :: ptest
+
+perts_compare = .FALSE.
+acc_compare = .TRUE.
+
+
+do i = 1, tlen
+
+
+ptest = pert_standardorder(t_orders(i))
+
+
+!  write(*,*) ptest%pid
+
+
+
+! write(*,*) perts_st_order(i)%pid
+
+ptest = pert_standardorder(perts_st_order(i))
+
+
+
+! write(*,*) ptest%pid
+
+acc_compare = acc_compare .AND. pert_compare(pert_standardorder(t_orders(i)), &
+                                pert_standardorder(perts_st_order(i)))
+
+!  write(*,*) pert_compare(pert_standardorder(t_orders(i)), &
+!                                 pert_standardorder(perts_st_order(i)))
+
+end do
+
+if (acc_compare .eqv. .TRUE.) then
+
+perts_compare = .TRUE.
+
+end if
+
+end function
+
+
+
+  ! Add element routine
+
+  subroutine propcache_add(inst, tlen, perturbs, propsize, data) 
+
+    implicit none
+
+    integer :: tlen, propsize
+    type(propcache), target :: inst
+    type(propcache), pointer :: new_elem
+    type(propcache), pointer :: new_elem_ptr
+    type(propcache), pointer :: nxt
+    type(perts), dimension(tlen) :: perturbs
+    complex(8), dimension(propsize) :: data
+
+nxt => inst
+
+!  write(*,*) 'In sdf_add'
+
+    ! Make new instance with pert and data
+    ! That instance%last = .TRUE.
+  allocate(new_elem)
+
+    call propcache_init(new_elem, tlen, perturbs, propsize, data)
+
+new_elem_ptr => new_elem
+
+!  write(*,*) 'got back from sdf_init'
+
+    ! Potentially non-terminating
+    ! Could this be done in another way?
+    ! Traverse list until last element
+    do while (nxt%last .eqv. .FALSE.)
+!        write(*,*) 'skipped one ahead'
+       nxt => propcache_getnext(nxt)
+    end do
+
+!  write(*,*) 'nexted to last'
+
+    ! Set that element%last = 0
+    nxt%last = .FALSE.
+
+!  write(*,*) 'removed that last'
+
+    ! Point from the new element to the next of the former last element 
+    new_elem%next => nxt%next
+
+!  write(*,*) 'Assigned new element next'
+    ! Point from the former last element to the new last element
+    nxt%next => new_elem
+
+!  write(*,*) 'Attached new element to list'
+!  write(*,*) inst%next%perturb%npert
+! write(*,*) inst%next%perturb%plab
+! write(*,*) ' is it last'
+! write(*,*) inst%next%last
+! write(*,*) ' is it last done'
+! write(*,*) inst%next%next%perturb%npert
+! write(*,*) inst%next%next%perturb%plab
+! write(*,*) inst%next%next%last
+! write(*,*) inst%next%next%next%perturb%npert
+! write(*,*) inst%next%next%next%perturb%plab
+! write(*,*) inst%next%next%next%last
+
+
+
+  end subroutine
+
+
+
+
+
+  ! Is that element already calculated?
+  function propcache_already(inst, tlen, perturbs)
+
+    implicit none
+
+    logical :: propcache_already
+    integer :: passedlast, tlen
+    type(propcache), target :: inst
+    type(propcache), pointer :: nxt
+    type(perts), dimension(tlen) :: perturbs, perts_st_order
+    
+
+    nxt => inst
+
+    passedlast = 0
+
+! write(*,*) 'doing standard order'
+    
+    perts_st_order = perts_standardorder(tlen, perturbs)
+
+! write(*,*) 'returned from standard order'
+
+    propcache_already = .FALSE.
+
+!     write(*,*) 'got to propcache_already'
+
+    ! Potentially non-terminating
+    ! Could this be done in another way?
+    do while ((passedlast < 2) .AND. (propcache_already .eqv. .FALSE.))
+
+!        write(*,*) 'getting next'
+! write(*,*) 'prev npert', nxt%perturb%npert
+
+! write(*,*) 'pointing to next'
+
+       nxt => propcache_getnext(nxt)
+
+! write(*,*) 'pointed to next'
+
+! write(*,*) 'new npert', nxt%perturb%npert
+
+if (nxt%tlen == tlen) then
+
+!  write(*,*) 'comparing perts'
+
+       propcache_already = perts_compare(tlen, perts_standardorder(nxt%tlen, &
+                          nxt%t_orders), perts_st_order)
+
+!  write(*,*) 'compared perts', propcache_already
+
+
+end if
+
+!  write(*,*) 'compared perts'
+
+       if (nxt%last .eqv. .TRUE.) then
+          passedlast = passedlast + 1
+       end if
+
+    end do
+
+    if (propcache_already .EQV. .TRUE.) then
+
+        write(*,*) 'propcache_already: Found element in cache'
+
+    else
+        write(*,*) 'propcache_already: Element not in cache'
+
+    end if
+
+  end function
+
+
+
+  ! Find property contribution corresponding to perts and return data or fail
+  ! Returns ONE matrix
+  function propcache_getdata(inst, tlen, perturbs, propsize)
+
+    implicit none
+
+    logical :: found
+    integer :: i, first, last, passedlast, tlen, propsize
+    type(propcache), target :: inst
+    type(propcache), pointer :: nxt
+    type(perts), dimension(tlen) :: perturbs
+    complex(8), dimension(propsize) :: propcache_getdata
+    
+
+!     ! Skip through elements to find first and last element to return
+!     ! Does Fortran store elements in a different way and, if so, does that apply here?
+! 
+!     nxt => inst
+! 
+!     first = 1
+! 
+!     do i = 1, pert%npert
+!        first = first + product(pert%pdim(i:pert%npert))*ind(i)
+!  
+!        if (i == pert%npert) then
+!           last = first + ind(i)
+!        end if
+! 
+!     end do
+! 
+! !     allocate(sdf_getdata(last - first + 1))
+! 
+!     ! Find the correct element or fail
+! 
+!     passedlast = 0
+! 
+!     ! Potentially non-terminating
+!     ! Could this be done in another way?
+    do while ((passedlast < 2) .OR. (propcache_already(nxt, tlen, perturbs) .eqv. .FALSE.))
+
+
+         nxt => inst%next
+!        inst = inst%next
+
+       found = perts_compare(tlen, nxt%t_orders, perturbs)
+
+       if (nxt%last .eqv. .TRUE.) then
+          passedlast = passedlast +1
+       end if
+
+    end do
+
+    ! Returns the data in the found instance or quits
+! 
+    if (found .eqv. .TRUE.) then
+
+     write(*,*) 'Getting propcache data' 
+! Uncomment next line when more functionality is added
+     !  propcache_getdata = inst%data(last)
+
+    else
+
+       write(*,*) 'Failed to retrieve data in propcache_getdata: Element not found'
+
+    end if
+
+  end function
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+! End propcache linked list manipulation/data retrieval routines
+
 
 ! Public block
 
@@ -1926,11 +2990,91 @@ integer :: data
 ! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
 !    type(matrix), dimension(product(pert%pdim)) :: data
 
+
+
+
     new_elem%last = .TRUE.
-    new_elem%perturb = pert
+    new_elem%perturb%npert = pert%npert
+
+    allocate(new_elem%perturb%pdim(pert%npert))
+    allocate(new_elem%perturb%plab(pert%npert))
+    allocate(new_elem%perturb%pid(pert%npert))
+    allocate(new_elem%perturb%freq(pert%npert))
+    
+    new_elem%perturb%pdim = pert%pdim
+new_elem%perturb%plab = pert%plab
+new_elem%perturb%pid = pert%pid
+new_elem%perturb%freq = pert%freq
+! write(*,*) new_elem%perturb%npert
     new_elem%data = data
 
   end subroutine
+
+
+  subroutine sdf_standardorder(pert, f_data, d_data, s_data)
+
+implicit none
+
+
+type(perts) :: pert
+integer :: f_data, d_data, s_data
+integer :: i, j,  min_which, nmin
+integer :: tmp_pdim, tmp_pid
+character(4) :: tmp_plab, min_curr
+complex(8) :: tmp_freq
+! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
+!type(matrix), dimension(product(pert%pdim))  :: f_data, d_data, s_data
+
+nmin = 1
+
+
+
+! if (pert%npert > 1) then
+
+do i = nmin, pert%npert
+
+min_curr = pert%plab(i)
+min_which = i
+
+do j = i + 1, pert%npert
+
+if (llt(pert%plab(j), min_curr) .EQV. .TRUE.) then
+
+min_curr = pert%plab(j)
+min_which = j
+
+end if
+
+end do
+
+tmp_pdim = pert%pdim(min_which)
+tmp_plab = pert%plab(min_which)
+tmp_pid = pert%pid(min_which)
+tmp_freq = pert%freq(min_which)
+
+pert%pdim(min_which) = pert%pdim(i)
+pert%plab(min_which) = pert%plab(i)
+pert%pid(min_which) = pert%pid(i)
+pert%freq(min_which) = pert%freq(i)
+
+pert%pdim(i) = tmp_pdim
+pert%plab(i) = tmp_plab
+pert%pid(i) = tmp_pid
+pert%freq(i) = tmp_freq
+
+
+nmin = nmin + 1
+
+end do
+
+
+! else
+
+! ! Do nothing
+
+! end if
+
+end subroutine
 
 
   ! Get next element function
@@ -1945,36 +3089,86 @@ integer :: data
 
   end function
 
+function sdf_getnext(inst) result(nxt)
+
+implicit none
+
+type(SDF), target :: inst
+type(SDF), pointer :: nxt
+
+nxt => inst%next
+
+
+end function
+
 
   ! Add element routine
+  ! This routine assumes that the pert and data is already in standard order
+
   subroutine sdf_add(inst, pert, data) 
 
     implicit none
 
-    type(SDF) :: inst, new_elem
+    type(SDF), target :: inst
+    type(SDF), pointer :: new_elem
+!     type(SDF), target :: new_new_elem
+    type(SDF), pointer :: new_elem_ptr
+    type(SDF), pointer :: nxt
     type(perts) :: pert
 integer :: data
 ! UNCOMMENT NEXT LINE WHEN MORE FUNCTIONALITY IS ADDED
  !   type(matrix), dimension(product(pert%pdim)) :: data
 
+nxt => inst
+
+!  write(*,*) 'In sdf_add'
+
     ! Make new instance with pert and data
-    ! That instance%last = 1
+    ! That instance%last = .TRUE.
+  allocate(new_elem)
+
     call sdf_init(new_elem, pert, data)
+
+new_elem_ptr => new_elem
+
+!  write(*,*) 'got back from sdf_init'
 
     ! Potentially non-terminating
     ! Could this be done in another way?
     ! Traverse list until last element
-    do while (inst%last .eqv. .FALSE.)
-       inst = sdf_next(inst)
+    do while (nxt%last .eqv. .FALSE.)
+!        write(*,*) 'skipped one ahead'
+       nxt => sdf_getnext(nxt)
     end do
 
+!  write(*,*) 'nexted to last'
+
     ! Set that element%last = 0
-    inst%last = .FALSE.
+    nxt%last = .FALSE.
+
+!  write(*,*) 'removed that last'
 
     ! Point from the new element to the next of the former last element 
-    new_elem%next = inst%next
+    new_elem%next => nxt%next
+
+!  write(*,*) 'Assigned new element next'
     ! Point from the former last element to the new last element
-    inst%next = new_elem
+    nxt%next => new_elem
+
+!  write(*,*) 'Attached new element to list'
+!  write(*,*) inst%next%perturb%npert
+! write(*,*) inst%next%perturb%plab
+! write(*,*) ' is it last'
+! write(*,*) inst%next%last
+! write(*,*) ' is it last done'
+! write(*,*) inst%next%next%perturb%npert
+! write(*,*) inst%next%next%perturb%plab
+! write(*,*) inst%next%next%last
+! write(*,*) inst%next%next%next%perturb%npert
+! write(*,*) inst%next%next%next%perturb%plab
+! write(*,*) inst%next%next%next%last
+
+
 
   end subroutine
 
@@ -1987,9 +3181,13 @@ integer :: data
     integer :: npert, i, j
     character(4) :: plab1(npert), plab2(npert)
 
+! write(*,*) 'in plab_comp'
+
     plab_comp = .TRUE.
 
     do i = 1, npert
+! write(*,*) 'i is', i
+
        if (.NOT.(plab1(i) == plab2(i))) then
           plab_comp = .FALSE.
        end if
@@ -2009,7 +3207,7 @@ integer :: data
 
     do i = 1, n
 
-       if (.NOT.(p1(i) == p2(i))) then
+       if ((p1(i) == p2(i)) .EQV. .FALSE.) then
 
           pfreq_comp = .FALSE.
 
@@ -2021,6 +3219,19 @@ integer :: data
 
   end function
 
+
+
+
+
+
+
+
+
+
+
+
+
+
   function pert_compare(p1, p2)
 
     implicit none
@@ -2028,15 +3239,32 @@ integer :: data
     logical :: pert_compare
     type(perts) :: p1, p2
 
-!     write(*,*) 'comparing perturbations'
+!      write(*,*) 'comparing perturbations'
+!  write(*,*) 'p2'
+! write(*,*) p2%npert
+! write(*,*) p2%pdim
+! write(*,*) p2%plab
+! write(*,*) p2%freq
+!  write(*,*) 'p1'
+! write(*,*) p1%npert
+! write(*,*) p1%pdim
+! write(*,*) p1%plab
+! write(*,*) p1%freq
+
 
     ! Compare number of perturbations
     if (p1%npert == p2%npert) then
+
+! write(*,*) 'npert was equal'
        ! Compare perturbation labels
        if (plab_comp(p1%npert, p1%plab, p2%plab) .eqv. .TRUE.) then
+!  write(*,*) 'plab was equal'
+
           ! Compare perturbation frequencies
           ! Must compare element-wise or is this OK?
           if (pfreq_comp(p1%npert, p1%freq, p2%freq) .eqv. .TRUE.) then
+! write(*,*) 'pfreq was equal'
+
              ! Pseudo for comparing other perturbation info
              ! if (p1%other == p2%other) then
              pert_compare = .TRUE.
@@ -2045,16 +3273,25 @@ integer :: data
              ! end if
 
           else 
+!              write(*,*) 'freq false', p1%freq, p2%freq
+
              pert_compare = .FALSE.
           end if
        else 
+
+!        write(*,*) 'plab false', p1%plab, p2%plab
           pert_compare = .FALSE.
        end if
     else 
+
+!        write(*,*) 'npert false', p1%npert, p2%npert
        pert_compare = .FALSE.
     end if
 
   end function
+
+
+
 
 
   ! Is that element already calculated?
@@ -2063,25 +3300,37 @@ integer :: data
     implicit none
 
     logical :: sdf_already
-    type(SDF) :: inst
-    type(perts) :: pert
+    type(SDF), target :: inst
+    type(SDF), pointer :: nxt
+    type(perts) :: pert, pert_st_order
     integer :: passedlast
 
+    nxt => inst
+
     passedlast = 0
+    
+    pert_st_order = pert_standardorder(pert)
 
     sdf_already = .FALSE.
+
+!     write(*,*) 'got to sdf_already'
 
     ! Potentially non-terminating
     ! Could this be done in another way?
     do while ((passedlast < 2) .AND. (sdf_already .eqv. .FALSE.))
 
-!        write(*,*) 'got to sdf_already'
+!        write(*,*) 'getting next'
+! write(*,*) 'prev npert', nxt%perturb%npert
 
-       inst = inst%next
+       nxt => sdf_getnext(nxt)
 
-       sdf_already = pert_compare(inst%perturb, pert)
+! write(*,*) 'new npert', nxt%perturb%npert
 
-       if (inst%last .eqv. .TRUE.) then
+       sdf_already = pert_compare(nxt%perturb, pert_st_order)
+
+! write(*,*) 'compared perts'
+
+       if (nxt%last .eqv. .TRUE.) then
           passedlast = passedlast + 1
        end if
 
@@ -2089,10 +3338,10 @@ integer :: data
 
     if (sdf_already .EQV. .TRUE.) then
 
-       write(*,*) 'sdf_already: Found element in cache'
+!        write(*,*) 'sdf_already: Found element in cache'
 
     else
-       write(*,*) 'sdf_already: Element not in cache'
+!        write(*,*) 'sdf_already: Element not in cache'
 
     end if
 
@@ -2105,7 +3354,8 @@ integer :: data
     implicit none
 
     logical :: found
-    type(SDF) :: inst
+    type(SDF), target :: inst
+    type(SDF), pointer :: nxt
     type(perts) :: pert
     type(matrix) :: sdf_getdata
     integer, dimension(pert%npert) :: ind
@@ -2113,6 +3363,8 @@ integer :: data
 
     ! Skip through elements to find first and last element to return
     ! Does Fortran store elements in a different way and, if so, does that apply here?
+
+    nxt => inst
 
     first = 1
 
@@ -2133,13 +3385,15 @@ integer :: data
 
     ! Potentially non-terminating
     ! Could this be done in another way?
-    do while ((passedlast < 2) .OR. (sdf_already(inst, pert) .eqv. .FALSE.))
+    do while ((passedlast < 2) .OR. (sdf_already(nxt, pert) .eqv. .FALSE.))
 
-       inst = inst%next
 
-       found = pert_compare(inst%perturb, pert)
+         nxt => inst%next
+!        inst = inst%next
 
-       if (inst%last .eqv. .TRUE.) then
+       found = pert_compare(nxt%perturb, pert)
+
+       if (nxt%last .eqv. .TRUE.) then
           passedlast = passedlast +1
        end if
 
@@ -2597,13 +3851,15 @@ integer :: data
 ! is differentiated), but offset by some particular outer indices in the
 ! outermost loop.
 
-  subroutine get_energy(mol, tlen, totpert, t_orders, d_order, D, propsize, prop)
+  subroutine get_energy(mol, tlen, totpert, t_orders, d_order, D, propsize, &
+                        energy_cache, prop)
 
     implicit none
 
     type(rsp_cfg) :: mol
     type(perts), dimension(tlen) :: t_orders
     type(SDF) :: D
+    type(propcache) :: energy_cache
     integer :: i, j, tlen, totpert, d_order, propsize
     integer, dimension(totpert) :: ncarray, ncouter, ncinner, pidouter
     integer, allocatable, dimension(:) :: o_whichpert, o_whichpertbig
@@ -2611,6 +3867,7 @@ integer :: data
     integer, allocatable, dimension(:,:) :: outer_indices
     complex(8), allocatable, dimension(:) :: tmp
     complex(8), dimension(propsize) :: prop
+    complex(8), dimension(propsize) :: prop_forcache
 
     ncarray = get_ncarray(totpert, tlen, t_orders)
     ncouter = nc_only(totpert, totpert - t_orders(1)%npert, tlen - 1, &
@@ -2741,6 +3998,7 @@ integer :: data
           do j = 1, size(inner_offsets)
 
              prop(inner_offsets(j)) = prop(inner_offsets(j)) + tmp(j)
+             prop_forcache (inner_offsets(j)) = prop_forcache(inner_offsets(j)) + tmp(j)
 
           end do
 
@@ -2752,6 +4010,9 @@ integer :: data
        write(*,*) 'all indices inner'
 
     end if
+
+    call propcache_add(energy_cache, tlen, t_orders, propsize, prop_forcache)    
+
 
     deallocate(ncoutersmall)
     deallocate(pidoutersmall)
@@ -2766,7 +4027,7 @@ integer :: data
   ! Calculate and add all the energy contributions
 
   recursive subroutine rsp_ener(mol, pert, totpert, kn, tlen, t_orders, &
-                       t_cache, d_order, D, propsize, prop)
+                       d_order, D, propsize, energy_cache, prop)
 
     implicit none
 
@@ -2774,9 +4035,10 @@ integer :: data
     type(rsp_cfg) :: mol
     type(perts) :: pert
     integer, dimension(2) :: kn
-    integer :: tlen, t_cache, d_order, i, j, totpert, propsize
+    integer :: tlen, d_order, i, j, totpert, propsize
     type(perts), dimension(tlen) :: t_orders, t_new
     type(SDF) :: D
+    type(propcache) :: energy_cache
     complex(8), dimension(propsize) :: prop
 
     if (pert%npert >= 1) then
@@ -2788,26 +4050,18 @@ integer :: data
 
        call rsp_ener(mol, pert_rf(pert), totpert, kn, tlen, &
        (/pert_getone(pert,1), t_orders(2:size(t_orders))/), &
-       t_cache, d_order, D, propsize, prop)
+       d_order, D, propsize, energy_cache, prop)
 
     else
 
 
        call rsp_ener(mol, pert_rf(pert), totpert, kn, tlen, &
        (/pert_ext(t_orders(1), pert_getone(pert,1)), t_orders(2:size(t_orders))/), &
-       t_cache, d_order, D, propsize, prop)
+       d_order, D, propsize, energy_cache, prop)
 
     end if
     
-       ! 2. Chain rule differentiate the energy w.r.t. the density (giving 
-       ! a(nother) pert D contraction)
-
-       call rsp_ener(mol, pert_rf(pert), totpert, kn, tlen + 1, &
-       (/t_orders(:), pert_getone(pert, 1)/), &
-       t_cache, d_order + 1, D, propsize, prop)
-
-
-       ! 3. Differentiate all of the contraction densities in turn
+       ! 2. Differentiate all of the contraction densities in turn
 
        ! Find the number of terms
 
@@ -2826,9 +4080,20 @@ integer :: data
           end if
 
           call rsp_ener(mol, pert_rf(pert), totpert, kn, tlen, &
-          t_new, t_cache, d_order + 1, D, propsize, prop)
+          t_new, d_order + 1, D, propsize, energy_cache, prop)
 
        end do
+
+
+       ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
+       ! a(nother) pert D contraction)
+
+       call rsp_ener(mol, pert_rf(pert), totpert, kn, tlen + 1, &
+       (/t_orders(:), pert_getone(pert, 1)/), &
+       d_order + 1, D, propsize, energy_cache, prop)
+
+
+
 
 
 ! Then (at the lowest recursion level): Call another subroutine 
@@ -2844,21 +4109,10 @@ integer :: data
 
     e_knskip = .FALSE.
 
-       ! Uncomment when the appropriate functions are written
-
-       ! Modify skip routine to handle each density matrix
-       !        if (check_edknskip(t_orders, kn) == .FALSE.) then
-       ! NOTE THAT THIS CACHE CHECK COULD MAYBE BE TAKEN INSIDE GET_ENERGY
-       !        if (e_already(t_orders, t_cache == .TRUE.)) then
-
-       !        call addprop_eterm(mol, t_orders, t_cache, prop)
-
-       !           else
-
-
-       ! Write a proper caching routine
 
        write(*,*) 'getting energy contrib'
+
+
 
        do i = 1, tlen
  
@@ -2879,10 +4133,34 @@ integer :: data
 
        if (e_knskip .EQV. .FALSE.) then
 
-          call get_energy(mol, tlen, totpert, t_orders, d_order, D, propsize, prop)
+open(unit=257, file='totterms', status='old', action='write', position='append') 
 
-          write(*,*) 'got energy contrib'
+write(257,*) 'T'
+
+close(257)
+
+write(*,*) 'Evaluating propcache_already'
+
+if (propcache_already(energy_cache, tlen, t_orders) .EQV. .TRUE.) then
+
+open(unit=257, file='cachehit', status='old', action='write', position='append') 
+
+write(257,*) 'T'
+
+close(257)
+
+write(*,*) 'Getting values from cache'
+write(*,*) ' '
+       
+else
+
+          call get_energy(mol, tlen, totpert, t_orders, d_order, D, propsize, energy_cache, prop)
+
+          write(*,*) 'Calculated energy contribution'
           write(*,*) ' '
+
+
+end if
 
        else
 
@@ -2892,14 +4170,13 @@ integer :: data
        end if
 
 
-       ! These two 'end if' lines are related to the commented 'if lines' appx. 30 lines above
-
-       !           end if
-       !        end if
 
     end if
 
+
   end subroutine
+
+
 
 
   recursive function d_superstr_dry(mol, pert, kn, primed, d_curr) result(d_size)
@@ -3422,7 +4699,7 @@ end function
 
 
 
-  subroutine get_pulay_kn(mol, p12, kn, F, D, S, propsize, prop)
+  subroutine get_pulay_kn(mol, p12, kn, F, D, S, propsize, cache, prop)
 
     implicit none
 
@@ -3431,6 +4708,7 @@ end function
     type(perts), dimension(2) :: p12
     type(perts), dimension(:,:), allocatable :: d_ordb
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     type(matrix) :: W
     integer :: i, j, sstr_incr
     integer :: propsize, d_supsize
@@ -3439,6 +4717,7 @@ end function
     integer, allocatable, dimension(:,:) :: outer_indices
     complex(8), allocatable, dimension(:) :: tmp
     complex(8), dimension(propsize) :: prop
+    complex(8), dimension(propsize) :: prop_forcache
 
 ! write(*,*) 'getting supsize'
 
@@ -3535,10 +4814,14 @@ call get_prop_offsets(size(ncarray), 2, p12(2)%npert, &
 do j = 1, size(inner_offsets)
 
 prop(inner_offsets(j)) = prop(inner_offsets(j)) + tmp(j)
+prop_forcache(inner_offsets(j)) = prop_forcache(inner_offsets(j)) + tmp(j)
 
 end do
 
 end do
+
+
+call propcache_add(cache, 2, p12, propsize, prop_forcache)    
 
 
 deallocate(d_ordb)
@@ -3559,7 +4842,7 @@ end subroutine
   ! Should maybe have a recursive W routine give all W before calling this routine
   ! No, it can be handled with other existing functions
 
-  recursive subroutine rsp_pulay_kn(mol, pert, kn, p12, S, D, F, propsize, prop)
+  recursive subroutine rsp_pulay_kn(mol, pert, kn, p12, S, D, F, propsize, cache, prop)
 
     implicit none
 
@@ -3567,6 +4850,7 @@ end subroutine
     type(perts) :: pert, pdb
     type(perts), dimension(2) :: p12
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     integer :: propsize, i
     integer, dimension(2) :: kn
     complex(8), dimension(propsize) :: prop
@@ -3589,12 +4873,14 @@ pdb = pert_getone(pert, 1)
 ! write(*,*) p12(2)%freq
 
        call rsp_pulay_kn(mol, pert_rf(pert), kn, &
-       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, prop)
+       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, &
+       cache, prop)
 
 ! write(*,*) 'Making recursion 2'
 
        call rsp_pulay_kn(mol, pert_rf(pert), kn, &
-       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, prop)
+       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, &
+       cache, prop)
 
 ! write(*,*) 'Made both recursions'
 
@@ -3603,15 +4889,39 @@ pdb = pert_getone(pert, 1)
        if (kn_skip(p12(2)%npert, p12(2)%pid, kn) .EQV. .FALSE.) then
 
 
-        write(*,*) 'getting pulay_kn'
+        write(*,*) 'Getting pulay_kn'
         write(*,*) 'p1', p12(1)%pid
         write(*,*) 'p2', p12(2)%pid
 
-       ! At lowest level:
-        call get_pulay_kn(mol, p12, kn, F, D, S, propsize, prop)
+open(unit=257, file='totterms', status='old', action='write', position='append') 
 
-        write(*,*) 'got pulay_kn'
+write(257,*) 'T'
+
+close(257)
+
+
+if (propcache_already(cache, 2, p12) .EQV. .TRUE.) then
+
+write(*,*) 'Getting values from cache'
+write(*,*) ' '
+
+open(unit=257, file='cachehit', status='old', action='write', position='append') 
+
+write(257,*) 'T'
+
+close(257)
+
+       
+else
+
+
+       ! At lowest level:
+        call get_pulay_kn(mol, p12, kn, F, D, S, propsize, cache, prop)
+
+        write(*,*) 'Calculated pulay_kn'
         write(*,*) ' '
+
+end if
 
        else
 
@@ -3633,7 +4943,7 @@ write(*,*) ' '
 
 
 
-  subroutine get_pulaylag(mol, p12, kn, F, D, S, propsize, prop)
+  subroutine get_pulaylag(mol, p12, kn, F, D, S, propsize, cache, prop)
 
     implicit none
 
@@ -3642,6 +4952,7 @@ write(*,*) ' '
     type(perts), dimension(2) :: p12
     type(perts), dimension(:,:), allocatable :: d_ordb
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     type(matrix) :: W
     integer :: i, j, k ,m, incr
     integer :: propsize, d_supsize
@@ -3651,6 +4962,7 @@ write(*,*) ' '
     integer, allocatable, dimension(:,:) :: outer_indices
     complex(8), allocatable, dimension(:) :: tmp
     complex(8), dimension(propsize) :: prop
+    complex(8), dimension(propsize) :: prop_forcache
 
 !     write(*,*) 'inside pulay lag'
 !     write(*,*) 'p 1', p12(1)%pid
@@ -3745,10 +5057,13 @@ call get_prop_offsets(size(ncarray), 2, p12(2)%npert, &
 do j = 1, size(inner_offsets)
 
 prop(inner_offsets(j)) = prop(inner_offsets(j)) + tmp(j)
+prop_forcache(inner_offsets(j)) = prop_forcache(inner_offsets(j)) + tmp(j)
 
 end do
 
 end do
+
+call propcache_add(cache, 2, p12, propsize, prop_forcache)
 
 
 deallocate(d_ordb)
@@ -3772,7 +5087,7 @@ end subroutine
   ! Should maybe have a recursive W routine give all W before calling this routine
   ! No, it can be handled with other existing functions
 
-  recursive subroutine rsp_pulay_lag(mol, pert, kn, p12, S, D, F, propsize, prop)
+  recursive subroutine rsp_pulay_lag(mol, pert, kn, p12, S, D, F, propsize, cache, prop)
 
     implicit none
 
@@ -3780,6 +5095,7 @@ end subroutine
     type(perts) :: pert
     type(perts), dimension(2) :: p12
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     integer :: propsize, i
     integer, dimension(2) :: kn
     complex(8), dimension(propsize) :: prop
@@ -3787,23 +5103,49 @@ end subroutine
     if (pert%npert > 0) then
 
        call rsp_pulay_lag(mol, pert_rf(pert), kn, &
-       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, prop)
+       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, &
+       cache, prop)
        call rsp_pulay_lag(mol, pert_rf(pert), kn, &
-       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, prop)
+       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, &
+       cache, prop)
 
     else
 
        ! At lowest level:
        if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
 
-       write(*,*) 'getting pulay lagrange contribution'
+
+
+       write(*,*) 'Getting pulay lagrange contribution'
        write(*,*) 'p1', p12(1)%pid
        write(*,*) 'p2', p12(2)%pid
 
-       call get_pulaylag(mol, p12, kn, F, D, S, propsize, prop)
+open(unit=257, file='totterms', status='old', action='write', position='append') 
+
+write(257,*) 'T'
+
+close(257)
+
+if (propcache_already(cache, 2, p12) .EQV. .TRUE.) then
+
+write(*,*) 'Getting values from cache'
+write(*,*) ' '
+       
+open(unit=257, file='cachehit', status='old', action='write', position='append') 
+
+write(257,*) 'T'
+
+close(257)
+
+else
+
+
+       call get_pulaylag(mol, p12, kn, F, D, S, propsize, cache, prop)
 
        write(*,*) 'got pulay lagrange contribution'
        write(*,*) ' '
+
+end if
 
        else
 
@@ -3837,7 +5179,7 @@ end if
 
 
 
-  subroutine get_idem_lag(mol, p12, kn, F, D, S, propsize, prop)
+  subroutine get_idem_lag(mol, p12, kn, F, D, S, propsize, cache, prop)
 
     implicit none
 
@@ -3846,6 +5188,7 @@ end if
     type(perts), dimension(2) :: p12
     type(perts), dimension(:,:), allocatable :: d_orda, d_ordb
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     type(matrix) :: C, Z
     integer :: i, j, k, m, n, p, incr1, incr2
     integer :: propsize, offset
@@ -3855,6 +5198,7 @@ end if
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
 !     complex(8), allocatable, dimension(:) :: tmp
     complex(8), dimension(propsize) :: prop
+    complex(8), dimension(propsize) :: prop_forcache
 
 !     write(*,*) 'inside idem lag'
 !     write(*,*) 'p 1', p12(1)%pid
@@ -4000,6 +5344,8 @@ offset = offset + 1
 
 ! UNCOMMENT NEXT LINE WHEN MATRIX FUNCTIONALITY IS INTRODUCED
 ! prop(offset) = -tr(C, Z)
+! USE PROPER VALUES ON NEXT LINE WHEN MATRIX FUNCTIONALITY IS INTRODUCED
+! prop_forcache(offset) = prop_forcache(offset) -tr(C, Z)
 
 
 
@@ -4009,45 +5355,7 @@ end do
 
 end do
 
-! THE FOLLOWING LINES ARE PROBABLY OLD CODE AND SHOULD LIKELY BE COMMENTED OUT OR DELETED
-! 
-! ! Make some lines that create the correct offset by running through the indices
-! 
-! ! Make ncprod
-! ! Make the sum of "two outerprods", one for p12(1) and the other for p12(2)
-! ! This will be the correct offset
-! ! Simply call this 'offset'
-! 
-! 
-! 
-! 
-! 
-! do j = 1, size(d_ordb, 1)
-! 
-! ! NOTE THAT THE RSP_GETW FUNCTIONS SHOULD RETURN MATRIX TYPES OR ELSE
-! ! THE ASSIGNMENT TO W MUST BE WRT %ELMS
-! 
-! W = W + rsp_getw(mol, d_ordb(j,:), outer_indices(i,:), F, D, S)
-!             
-! end do
-! 
-! ! MAKE SURE THAT THE SIGN OF THE BELOW EXPRESSION IS OK
-! 
-! call rsp_ovlave(mol, p12(1)%npert, p12(1)%plab, (/j/j, j = 1, p12(1)%npert/), &
-!      ncinner, W, tmp)
-! 
-! ! THE SECOND NCARRAY ARGUMENT (THE SECOND LAST ARGUMENT IN TOTAL) IS DUMMY
-! call get_prop_offsets(size(ncarray), 2, p12(2)%npert, &
-!      ncarray, ncinner, p12, outer_indices(i,:), &
-!      ncarray, inner_offsets)
-! 
-! do j = 1, size(inner_offsets)
-! 
-! prop(inner_offsets(j)) = prop(inner_offsets(j)) + tmp(j)
-! 
-! end do
-! 
-! end do
+call propcache_add(cache, 2, p12, propsize, prop_forcache) 
 
 
 deallocate(d_orda)
@@ -4073,7 +5381,7 @@ end subroutine
   ! Should maybe have a recursive W routine give all W before calling this routine
   ! No, it can be handled with other existing functions
 
-  recursive subroutine rsp_idem_lag(mol, pert, kn, p12, S, D, F, propsize, prop)
+  recursive subroutine rsp_idem_lag(mol, pert, kn, p12, S, D, F, propsize, cache, prop)
 
     implicit none
 
@@ -4081,6 +5389,7 @@ end subroutine
     type(perts) :: pert
     type(perts), dimension(2) :: p12
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     integer :: propsize, i
     integer, dimension(2) :: kn
     complex(8), dimension(propsize) :: prop
@@ -4088,23 +5397,49 @@ end subroutine
     if (pert%npert > 0) then
 
        call rsp_idem_lag(mol, pert_rf(pert), kn, &
-       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, prop)
+       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, &
+       cache, prop)
        call rsp_idem_lag(mol, pert_rf(pert), kn, &
-       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, prop)
+       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, &
+       cache, prop)
 
     else
 
        if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
 
-       write(*,*) 'getting idempotency lagrange contribution'
+       write(*,*) 'Getting idempotency lagrange contribution'
        write(*,*) 'p1', p12(1)%pid
        write(*,*) 'p2', p12(2)%pid
 
-       ! At lowest level:
-       call get_idem_lag(mol, p12, kn, F, D, S, propsize, prop)
+open(unit=257, file='totterms', status='old', action='write', position='append') 
 
-        write(*,*) 'got idempotency lagrange contribution'
+write(257,*) 'T'
+
+close(257)
+
+if (propcache_already(cache, 2, p12) .EQV. .TRUE.) then
+
+write(*,*) 'Getting values from cache'
+write(*,*) ' '
+
+open(unit=257, file='cachehit', status='old', action='write', position='append') 
+
+write(257,*) 'T'
+
+close(257)
+      
+else
+
+
+
+       ! At lowest level:
+       call get_idem_lag(mol, p12, kn, F, D, S, propsize, cache, prop)
+
+        write(*,*) 'Calculated idempotency lagrange contribution'
         write(*,*) ' '
+
+end if
+
 
        else
 
@@ -4154,7 +5489,7 @@ end if
 
 
 
-  subroutine get_scfe_lag(mol, p12, kn, F, D, S, propsize, prop)
+  subroutine get_scfe_lag(mol, p12, kn, F, D, S, propsize, cache, prop)
 
     implicit none
 
@@ -4163,6 +5498,7 @@ end if
     type(perts), dimension(2) :: p12
     type(perts), dimension(:,:), allocatable :: d_orda, d_ordb
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     type(matrix) :: L, Y
     integer :: i, j, k, m, n, p, incr1, incr2
     integer :: propsize, offset
@@ -4172,6 +5508,7 @@ end if
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
 !     complex(8), allocatable, dimension(:) :: tmp
     complex(8), dimension(propsize) :: prop
+    complex(8), dimension(propsize) :: prop_forcache
 
 
 d_supsize = 0
@@ -4305,8 +5642,9 @@ offset = offset + 1
 ! THE REASON COULD MAYBE BE THAT TIME IS SAVED OVER DOING THE ENTIRE MATRIX MULTIPLICATION
 
 ! UNCOMMENT NEXT LINE WHEN MATRIX FUNCTIONALITY IS INTRODUCED
-! prop(offset) = -tr(L, Y)
-
+! prop(offset) = prop(offset) - tr(L, Y)
+! USE PROPER VALUES ON NEXT LINE WHEN MATRIX FUNCTIONALITY IS INTRODUCED
+! prop_forcache(offset) = prop_forcache(offset) - tr(L, Y)
 
 
 offset = 0
@@ -4315,45 +5653,7 @@ end do
 
 end do
 
-! THE FOLLOWING LINES ARE PROBABLY OLD CODE AND SHOULD LIKELY BE COMMENTED OUT OR DELETED
-! 
-! ! Make some lines that create the correct offset by running through the indices
-! 
-! ! Make ncprod
-! ! Make the sum of "two outerprods", one for p12(1) and the other for p12(2)
-! ! This will be the correct offset
-! ! Simply call this 'offset'
-! 
-! 
-! 
-! 
-! 
-! do j = 1, size(d_ordb, 1)
-! 
-! ! NOTE THAT THE RSP_GETW FUNCTIONS SHOULD RETURN MATRIX TYPES OR ELSE
-! ! THE ASSIGNMENT TO W MUST BE WRT %ELMS
-! 
-! W = W + rsp_getw(mol, d_ordb(j,:), outer_indices(i,:), F, D, S)
-!             
-! end do
-! 
-! ! MAKE SURE THAT THE SIGN OF THE BELOW EXPRESSION IS OK
-! 
-! call rsp_ovlave(mol, p12(1)%npert, p12(1)%plab, (/j/j, j = 1, p12(1)%npert/), &
-!      ncinner, W, tmp)
-! 
-! ! THE SECOND NCARRAY ARGUMENT (THE SECOND LAST ARGUMENT IN TOTAL) IS DUMMY
-! call get_prop_offsets(size(ncarray), 2, p12(2)%npert, &
-!      ncarray, ncinner, p12, outer_indices(i,:), &
-!      ncarray, inner_offsets)
-! 
-! do j = 1, size(inner_offsets)
-! 
-! prop(inner_offsets(j)) = prop(inner_offsets(j)) + tmp(j)
-! 
-! end do
-! 
-! end do
+call propcache_add(cache, 2, p12, propsize, prop_forcache)
 
 
 deallocate(d_orda)
@@ -4378,7 +5678,7 @@ end subroutine
   ! Should maybe have a recursive W routine give all W before calling this routine
   ! No, it can be handled with other existing functions
 
-  recursive subroutine rsp_scfe_lag(mol, pert, kn, p12, S, D, F, propsize, prop)
+  recursive subroutine rsp_scfe_lag(mol, pert, kn, p12, S, D, F, propsize, cache, prop)
 
     implicit none
 
@@ -4386,6 +5686,7 @@ end subroutine
     type(perts) :: pert
     type(perts), dimension(2) :: p12
     type(SDF) :: S, D, F
+    type(propcache) :: cache
     integer :: propsize, i
     integer, dimension(2) :: kn
     complex(8), dimension(propsize) :: prop
@@ -4393,23 +5694,48 @@ end subroutine
     if (pert%npert > 0) then
 
        call rsp_scfe_lag(mol, pert_rf(pert), kn, &
-       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, prop)
+       (/pert_ext(p12(1), pert_getone(pert, 1)), p12(2)/), S, D, F, propsize, &
+       cache, prop)
        call rsp_scfe_lag(mol, pert_rf(pert), kn, &
-       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, prop)
+       (/p12(1), pert_ext(p12(2), pert_getone(pert, 1))/), S, D, F, propsize, &
+       cache, prop)
 
     else
 
        if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
 
-       write(*,*) 'getting scfe lagrange contribution'
+       write(*,*) 'Getting scfe lagrange contribution'
        write(*,*) 'p1', p12(1)%pid
        write(*,*) 'p2', p12(2)%pid
 
-       ! At lowest level:
-       call get_scfe_lag(mol, p12, kn, F, D, S, propsize, prop)
+open(unit=257, file='totterms', status='old', action='write', position='append') 
 
-        write(*,*) 'got scfe lagrange contribution'
+write(257,*) 'T'
+
+close(257)
+
+if (propcache_already(cache, 2, p12) .EQV. .TRUE.) then
+
+
+open(unit=257, file='cachehit', status='old', action='write', position='append') 
+
+write(257,*) 'T'
+
+close(257)
+
+write(*,*) 'Getting values from cache'
+write(*,*) ' '
+       
+else
+
+
+       ! At lowest level:
+       call get_scfe_lag(mol, p12, kn, F, D, S, propsize, cache, prop)
+
+        write(*,*) 'Calculated scfe lagrange contribution'
         write(*,*) ' '
+end if
+
 
        else
 
@@ -4417,6 +5743,8 @@ write(*,*) 'scfe lagrange contribution was k-n skipped:'
          write(*,*) 'p1 ', p12(1)%pid 
 write(*,*) 'p2 ', p12(2)%pid 
 write(*,*) ' '
+
+
 
 end if
 
@@ -4492,6 +5820,40 @@ end if
   
   end subroutine
 
+subroutine getfds_dummy(pert, F, D, S)
+
+integer :: data_f, data_d, data_s
+type(perts) :: pert
+type(SDF) :: F, D, S
+
+! Get the appropriate Fock/density/overlap matrix
+! Rearrange pert and data in predetermined order
+
+! write(*,*) 'inside getfds_dummy'
+
+call sdf_standardorder(pert, data_f, data_d, data_s)
+
+! write(*,*) 'got sdf in standard order'
+
+data_f = 1
+data_d = 1
+data_s = 1
+
+! Add to cache
+call sdf_add(F, pert, data_f)
+!  write(*,*) 'added F to cache', F%perturb%npert, F%next%perturb%npert
+call sdf_add(D, pert, data_d)
+!  write(*,*) 'added D to cache', D%perturb%npert, D%next%perturb%npert
+call sdf_add(S, pert, data_s)
+!  write(*,*) 'added S to cache', S%perturb%npert, S%next%perturb%npert
+
+
+end subroutine
+
+
+
+
+
 
     ! Assume there is a pert_dens routine or equivalent one-line call for all of F, D, S
     ! Could write the logic with pseudo for such a routine/routines for now
@@ -4548,6 +5910,7 @@ end if
                  write(*,*) 'Calling ovlint/fock/density with perts ', pert%plab, &
                             'and pertid ', pert%pid
                  
+                 call getfds_dummy(pert, F, D, S)
 
        else
 
@@ -4559,27 +5922,8 @@ end if
 
     else
 
-       ! Concatenate relevant S (Make array of pointers)
-
-!        write(*,*) 'Calling ovlint with perts ', pert%plab
-
-       !call rsp_ovlint(mol, pert%npert, pert%plab, first, pert%pdim, S(relevant))
-
-       if (kn_skip(pert%npert, pert%pid, kn) .eqv. .FALSE.) then
-
-          ! Concatenate relevant F, D (Make array of pointers)
-
-                 write(*,*) 'Getting FDS from cache with perts ', pert%plab, &
-                            'and pertid ', pert%pid
-                 
-
-       else
-
-                 write(*,*) 'Would have gotten FDS from cache with perts ', &
-                            pert%plab, &
-                            'and pertid ', pert%pid, ' but it was k-n forbidden'
-
-       end if
+       write(*,*) 'FDS for perts ', pert%plab, &
+                            'and pertid ', pert%pid, ' was found in cache'
 
     end if
 
@@ -4707,6 +6051,34 @@ end function
   end function
 
 
+subroutine propcache_allocate(inst)
+
+type(propcache), pointer :: inst
+
+allocate(inst)
+
+inst%next => inst
+inst%last = .TRUE.
+inst%tlen = 0
+
+allocate(inst%t_orders(1))
+allocate(inst%t_orders(1)%pdim(1))
+allocate(inst%t_orders(1)%plab(1))
+allocate(inst%t_orders(1)%pid(1))
+allocate(inst%t_orders(1)%freq(1))
+
+inst%t_orders(1)%pdim = (/0/)
+inst%t_orders(1)%plab = (/'NUTN'/)
+inst%t_orders(1)%pid = (/0/)
+inst%t_orders(1)%freq = (/0.0/)
+
+
+allocate(inst%data(1))
+
+end subroutine
+
+
+
   subroutine get_prop(mol, pert, kn, prop, F, D, S)
 
     type(SDF) :: F, D, S
@@ -4715,6 +6087,8 @@ end function
     type(perts), dimension(2) :: emptyperts
     integer, dimension(2) :: kn
     complex(8), dimension(product(pert%pdim)) :: prop
+    type(propcache), pointer :: energy_cache, pulay_kn_cache, &
+                       pulay_lag_cache, idem_cache, scfe_cache
 
 emptypert%npert = 0
 allocate(emptypert%pdim(0))    
@@ -4730,64 +6104,68 @@ emptyperts = (/emptypert, emptypert/)
 
     call rsp_fds(mol, pert, kn, F, D, S)
 
+  ! Allocate the energy contribution property cache
+
+  
+
+call propcache_allocate(energy_cache)
+
   ! Calculate and add all the energy contributions
  write(*,*) 'rsp fds call finished'
 
-    call rsp_ener(mol, pert, pert%npert, kn, 1, (/emptypert/), 0, 0, D, &
-         product(pert%pdim), prop)
+    call rsp_ener(mol, pert, pert%npert, kn, 1, (/emptypert/), 0, D, &
+         product(pert%pdim), energy_cache, prop)
 
  write(*,*) 'rsp ener call finished'
+
+deallocate(energy_cache)
+
  
-! 
-!   ! Get all necessary W derivatives as dictated by number
-!   ! of perturbations and kn
-! 
+call propcache_allocate(pulay_kn_cache)
+ 
 !   ! Calculate and add all the kn-type Pulay-type ((-SW)_(k,n)_W) contributions
-! 
+ 
     call rsp_pulay_kn(mol, pert, kn, (/emptypert, emptypert/), S, D, F, &
-        product(pert%pdim), prop)
+        product(pert%pdim), pulay_kn_cache, prop)
 
 
  write(*,*) 'rsp pulay_kn call finished'
 
-! 
-! !   ! Get 3-term derivative superstructure list
-! !   
-! !   call d_superstr(mol, pert, kn, 3, d_str)
-! 
-! 
-!   ! Get derivatives for Lagrange multiplier-type contributions
-!   ! Use C for zeta for now
-! 
-!   call rsp_lag(mol, pert, kn, W, Y, Z, L, C)
-! 
+deallocate(pulay_kn_cache)
 
+call propcache_allocate(pulay_lag_cache)
 
-! 
-! 
 !   ! Calculate and add all the Lagrange multiplier Pulay-type contributions
 
     call rsp_pulay_lag(mol, pert_rf(pert), kn, (/pert_getone(pert,1), emptypert/), &
-         S, D, F, product(pert%pdim), prop)
+         S, D, F, product(pert%pdim), pulay_lag_cache, prop)
 
  write(*,*) 'rsp pulay_lag call finished' 
 
+deallocate(pulay_lag_cache)
+
+call propcache_allocate(idem_cache)
+
 !   ! Calculate and add all the idempotency-type contributions
-! 
+ 
     call rsp_idem_lag(mol, pert_rf(pert), kn, (/pert_getone(pert,1), emptypert/), &
-         S, D, F, product(pert%pdim), prop)
+         S, D, F, product(pert%pdim), idem_cache, prop)
 
  write(*,*) 'rsp idem_lag call finished'
 
-! 
+deallocate(idem_cache)
+
+call propcache_allocate(scfe_cache)
+ 
 !   ! Calculate and add all the SCF-type contributions
-! 
+ 
     call rsp_scfe_lag(mol, pert_rf(pert), kn, (/pert_getone(pert,1), emptypert/), &
-         S, D, F, product(pert%pdim), prop)
+         S, D, F, product(pert%pdim), scfe_cache, prop)
 
  write(*,*) 'rsp scfe_lag call finished'
 
-! 
+deallocate(scfe_cache)
+
 
   end subroutine
 
@@ -4805,6 +6183,7 @@ type(rsp_cfg) :: mol
 type(perts) :: pert
 integer, dimension(2) :: kn
 complex(8), dimension (:), allocatable :: prop
+
 
 ! VARIOUS PERTURBATION TUPLE SETUPS
 ! COMMENT/UNCOMMENT FOR TESTING
@@ -4831,35 +6210,35 @@ complex(8), dimension (:), allocatable :: prop
 ! allocate(pert%freq(pert%npert))
 ! 
 ! pert%pdim = (/12, 12, 12/)
-! pert%plab = (/'GEO ', 'GEO '/)
+! pert%plab = (/'GEO ', 'GEO ', 'GEO '/)
 ! pert%pid = (/1, 2, 3/)
 ! pert%freq = (/0.0, 0.0, 0.0/)
 !
 ! Quartic force field
 !
-pert%npert = 4
-allocate(pert%pdim(pert%npert))
-allocate(pert%plab(pert%npert))
-allocate(pert%pid(pert%npert))
-allocate(pert%freq(pert%npert))
-
-pert%pdim = (/12, 12, 12, 12/)
-pert%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
-pert%pid = (/1, 2, 3, 4/)
-pert%freq = (/0.0, 0.0, 0.0, 0.0/)
-!
-! Hessian of first hyperpolarizability
-!
-! pert%npert = 5
+! pert%npert = 4
 ! allocate(pert%pdim(pert%npert))
 ! allocate(pert%plab(pert%npert))
 ! allocate(pert%pid(pert%npert))
 ! allocate(pert%freq(pert%npert))
 ! 
-! pert%pdim = (/12, 12, 3, 3, 3/)
-! pert%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
-! pert%pid = (/1, 2, 3, 4, 5/)
-! pert%freq = (/0.0, 0.0, 0.1, 0.02, 0.01/)
+! pert%pdim = (/12, 12, 12, 12/)
+! pert%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+! pert%pid = (/1, 2, 3, 4/)
+! pert%freq = (/0.0, 0.0, 0.0, 0.0/)
+!
+! Hessian of first hyperpolarizability
+!
+pert%npert = 5
+allocate(pert%pdim(pert%npert))
+allocate(pert%plab(pert%npert))
+allocate(pert%pid(pert%npert))
+allocate(pert%freq(pert%npert))
+
+pert%pdim = (/12, 12, 3, 3, 3/)
+pert%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+pert%pid = (/1, 2, 3, 4, 5/)
+pert%freq = (/0.0, 0.0, 0.01, 0.02, 0.01/)
 ! 
 ! Cubic force field of first hyperpolarizability 
 !
@@ -4872,7 +6251,19 @@ pert%freq = (/0.0, 0.0, 0.0, 0.0/)
 ! pert%pdim = (/6, 6, 6, 3, 3, 3/)
 ! pert%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
 ! pert%pid = (/1, 2, 3, 4, 5, 6/)
-! pert%freq = (/0.0, 0.0, 0.0, 0.1, 0.02, 0.01/)
+! pert%freq = (/0.0, 0.0, 0.0, 0.01, 0.02, 0.01/)
+
+open(unit=257, file='totterms', status='replace', action='write') 
+
+write(257,*) 'START'
+
+close(257)
+
+open(unit=257, file='cachehit', status='replace', action='write') 
+
+write(257,*) 'START'
+
+close(257)
 
 kn = get_bestkn(pert)
 write(*,*) 'Best k, n was found to be ', kn(1), ' and ', kn(2)
@@ -4931,6 +6322,16 @@ allocate(prop(product(pert%pdim)))
 
 call get_prop(mol, pert, kn, prop, F, D, S)
 
+open(unit=257, file='totterms', status='old', action='write', position='append') 
 
+write(257,*) 'END'
+
+close(257)
+
+open(unit=257, file='cachehit', status='old', action='write', position='append') 
+
+write(257,*) 'END'
+
+close(257)
 
 end program
