@@ -1,0 +1,72 @@
+!! Give future long- and short-term developments
+
+* JONES
+
+Calculation of 2nd magnetic derivative of overlap matrix, bra part
+         LABINT(1) = '<<S/B2XX'
+         LABINT(2) = '<<S/B2XY'
+         LABINT(3) = '<<S/B2XZ'
+         LABINT(4) = '<<S/B2YY'
+         LABINT(5) = '<<S/B2YZ'
+         LABINT(6) = '<<S/B2ZZ'
+
+Calculation of 2nd magnetic derivative of overlap matrix, ket part
+         CALL SETATM(WORK(KATOM),NATOM,INTTYP)
+         LABINT(1) = '>>S/B2XX'
+         LABINT(2) = '>>S/B2XY'
+         LABINT(3) = '>>S/B2XZ'
+         LABINT(4) = '>>S/B2YY'
+         LABINT(5) = '>>S/B2YZ'
+         LABINT(6) = '>>S/B2ZZ'
+
+Calculation of 2nd magnetic derivative of overlap matrix, mixed bra-ket part
+         LABINT(1) = '<>S/B2XX'
+         LABINT(2) = '<>S/B2XY'
+         LABINT(3) = '<>S/B2XZ'
+         LABINT(4) = '<>S/B2YX'
+         LABINT(5) = '<>S/B2YY'
+         LABINT(6) = '<>S/B2YZ'
+         LABINT(7) = '<>S/B2ZX'
+         LABINT(8) = '<>S/B2ZY'
+         LABINT(9) = '<>S/B2ZZ'
+
+       .S2MKET: <x|d2 x/dB2>
+       .S2MBRA: <d2 x/dB2|x>
+       .S2MMIX: <d2 x/dB2|x> + <x|d2 x/dB2>?
+
+* parallel calculations
+  (1) This error stopped with "Segmentation fault" when doing SCF. More exactly, it
+      stopped when (in subroutine HRFCK1, abacus/herdirect.F) making reduced density
+      matrix for screening:
+
+      CALL MKDRAO(DMAT,WORK(KDRAO),NDMAT,
+     &            WORK(KFREE),LFREE,IPRINT)
+
+      For Intel compiler ifort, this error could be fixed by adding option
+      -heap-arrays during compilation. Explanation from Forums of Intel:
+
+      "All Fortran compilers sometimes need to make temporary copies of arrays during runtime.
+       Some compilers put those temporary data elements on the heap, some put it on the stack.
+       Intel Fortran uses stack by default for array temporaries for performance reasons.
+       Other compilers, like gfortran, use heap. It's just a simple matter of choice where
+       you put them. Intel tries to default to the most efficient and fastest place to put
+       them, which is stack."
+
+      As regards gfortran, ??
+
+* PCM calculations
+* more spectroscopies
+* two-electron code
+* DFT calculations
+* unrestricted calculations
+
+* considering symmetry
+
+* may change to call RSPCTL to solve linear set of response equations
+
+* the code may only work for double precision
+
+* matrix
+* dalton subroutines
+* minimum functionality
+

@@ -1,0 +1,49 @@
+!! some really basic and consensual rules for good maintenance
+!! modified from "ETSF Training Material"
+
+ The main reason the these rules is to keep the code readable,
+ and easy for maintenance, extension and adaptation!
+
+ 0. Object-Oriented Programming (OOP)
+    * The Open Closed Principle (OCP)
+      A module should be open for extension but closed for modification.
+    * The Liskov Substitution Principle (LSP)
+      Subclasses should be substitutable for their base classes.
+    * The Dependency Inversion Principle (DIP)
+      Depend upon abstractions. Do not depend upon concretions.
+    * The Interface Segregation Principle (ISP)
+      Many client specific interfaces are better than one general purpose interface.
+    * In other words: low coupling, high cohesion, open for extension,
+      and closed for changes ("Developing Chemical Information Systems:
+      An Object-Oriented Approach Using Enterprise Java", Fan Li)
+
+ Do your best to avoid global variables (even parameters)
+
+ 1. Documentation
+    * Choose carefully the names (please try to use descriptive names for
+      your classes and methods)
+    * Write comments (in english, one line for each 10-20 line of codes at least)!
+      Please consider using Doxygen, thank you ;-)
+    * Describe the purpose, options and arguments of routines and functions
+    * Keep notes
+    * Do not try to produce clever coding, unless it is very well documented
+
+ 2. Try to re-use code, try to use libraries!
+
+ 3. Use a versioning tool
+
+ 4. Size range 100-200 lines of code!
+
+ 5. Interface as small as possible!
+
+ 6. Verifiable with minimal assumptions about environment
+
+ 7. Do not call small functions in inner loops, write the code explicitly.
+    What is a small function? This is relative but usually less than 50 operations.
+
+ 8. Always use "implicit none"! Thank you! ;-)
+
+ 9. Please use fixme or FIXME to identify the codes need to be modified or fixed later.
+
+10. Maybe more ...
+
