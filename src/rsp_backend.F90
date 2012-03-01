@@ -201,14 +201,15 @@ contains
 
   function get_lupri()
     implicit integer (i,m-n)
-    integer get_lupri
 #ifdef OPENRSP_STANDALONE
+    integer get_lupri
     get_lupri = 0
     print *, 'error: not part of standalone'
     stop 1
 #else /* OPENRSP_STANDALONE */
 #include <implicit.h>
 #include <priunit.h>
+    integer get_lupri
     get_lupri = LUPRI
 #endif /* OPENRSP_STANDALONE */
   end function
@@ -216,8 +217,8 @@ contains
   
   function get_natom()
     implicit integer (i,m-n)
-    integer get_natom
 #ifdef OPENRSP_STANDALONE
+    integer get_natom
     get_natom = 0
     print *, 'error: not part of standalone'
     stop 1
@@ -225,6 +226,7 @@ contains
 #include <implicit.h>
 #include <mxcent.h>
 #include <nuclei.h>
+    integer get_natom
     integer get_lupri
     get_natom = NATOMS
 #endif /* OPENRSP_STANDALONE */
