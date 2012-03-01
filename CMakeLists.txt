@@ -7,6 +7,10 @@ set(CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
     )
 
+set(CMAKE_Fortran_MODULE_DIRECTORY
+    ${PROJECT_BINARY_DIR}/modules
+    )
+
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE
         Debug
