@@ -919,7 +919,9 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
       use openrsp_cfg
       use openrsp_interface_response
 #elif defined(BUILD_OPENRSP)
+#ifndef OPENRSP_STANDALONE
       use dalton_ifc
+#endif /* OPENRSP_STANDALONE */
 #elif defined(VAR_LINSCA)
       use RSPsolver,     only: rsp_init, rsp_solver
       use complexsolver, only: rsp_complex_init, rsp_complex_solver

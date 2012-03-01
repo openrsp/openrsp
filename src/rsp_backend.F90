@@ -7,10 +7,13 @@
 
 module rsp_backend
 
+#ifndef OPENRSP_STANDALONE
   ! this file should eventually overtake dalton_ifc's function
   use dalton_ifc, only: DIPNUC_ifc, &
                         GRADNN_ifc, &
                         HESSNN_ifc
+#endif /* OPENRSP_STANDALONE */
+
   implicit none
 
   public rsp_backend_setup
@@ -174,6 +177,10 @@ contains
   !> fetch whatever needed from COMMON blocks, etc.
   subroutine rsp_backend_setup()
     implicit integer (i,m-n)
+#ifdef OPENRSP_STANDALONE
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
 #include <implicit.h>
 #include <mxcent.h>
 #include <nuclei.h>
@@ -182,6 +189,7 @@ contains
     nuc_charges = CHARGE(:na)
     allocate(nuc_coords(3,na))
     nuc_coords = CORD(:,:na)
+#endif /* OPENRSP_STANDALONE */
   end subroutine
 
 
@@ -193,30 +201,48 @@ contains
 
   function get_lupri()
     implicit integer (i,m-n)
+    integer get_lupri
+#ifdef OPENRSP_STANDALONE
+    get_lupri = 0
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
 #include <implicit.h>
 #include <priunit.h>
-    integer get_lupri
     get_lupri = LUPRI
+#endif /* OPENRSP_STANDALONE */
   end function
 
   
   function get_natom()
     implicit integer (i,m-n)
+    integer get_natom
+#ifdef OPENRSP_STANDALONE
+    get_natom = 0
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
 #include <implicit.h>
 #include <mxcent.h>
 #include <nuclei.h>
     integer get_lupri
-    integer get_natom
     get_natom = NATOMS
+#endif /* OPENRSP_STANDALONE */
   end function
 
   function is_ks_calculation()
      logical :: is_ks_calculation
+#ifdef OPENRSP_STANDALONE
+     is_ks_calculation = .false.
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
 #include "maxorb.h"
 #include "priunit.h"
 #include "mxcent.h"
 #include "infinp.h"
      is_ks_calculation = dodft
+#endif /* OPENRSP_STANDALONE */
   end function
   
 end module

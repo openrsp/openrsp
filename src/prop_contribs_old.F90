@@ -22,8 +22,10 @@ module prop_contribs_old
    use memory_allocator
 #endif
 #ifdef BUILD_OPENRSP
+#ifndef OPENRSP_STANDALONE
    use dalton_ifc,    &
      di_GET_GbDs => di_get_gmat
+#endif /* OPENRSP_STANDALONE */
 #endif
 
    ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
@@ -2365,11 +2367,14 @@ contains
       character(*),      intent(in)  :: what
       type(matrix),      intent(in)  :: D, DFD
       real(8),           intent(out) :: R(:)
+#ifdef OPENRSP_STANDALONE
+      R = 0.0d0
+      print *, 'error: not available in standalone'
+      stop 1
+#else /* OPENRSP_STANDALONE */
 #ifndef LSDALTON_ONLY
-#ifndef OPENRSP_STANDALONE
 #include <mxcent.h>
 #include <taymol.h>
-#endif /* OPENRSP_STANDALONE */
 #endif
       real(8), pointer :: wrk(:)
       integer          :: lwrk, na
@@ -2389,6 +2394,7 @@ contains
       R(1:9*na**2) = reshape(HESMOL(:3*na,:3*na), (/9*na**2/))
       call di_deselect_wrk(wrk, lwrk)
 #endif
+#endif /* OPENRSP_STANDALONE */
    end subroutine
 
 
@@ -2485,20 +2491,5 @@ contains
 #endif
 #endif
    end subroutine
-
-  function prefix_zeros(n, l)
-    integer, intent(in) :: n, l !number, length
-    character(l)        :: prefix_zeros !resulting n in ascii
-    character(1), parameter :: char0to9(0:9) &
-          = (/'0','1','2','3','4','5','6','7','8','9'/)
-    integer :: i, k
-    k = n
-    do i = l, 1, -1
-       prefix_zeros(i:i) = char0to9(mod(k,10))
-       k = k / 10
-    end do
-    if (k /= 0) call quit('prefix_zeros error: Argument integer does not fit ' &
-                       // 'in the specified number of ASCII caracters')
-  end function
 
 end module
