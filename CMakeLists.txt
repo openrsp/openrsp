@@ -35,7 +35,7 @@ include(ConfigExternal)
 add_definitions(-DOPENRSP_STANDALONE)
 add_definitions(-DBUILD_OPENRSP)
 
-include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR})
 
 set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/basis_set.f90
