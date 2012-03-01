@@ -1,0 +1,8 @@
+$ERROR 1.E-6
+Nlines 2:dipmom = -Ef
+$ERROR 1.E-6
+Nlines 4:Alpha = -Eff w:-0.072 0.072
+$ERROR 1.E-6
+Nlines 10:d/dg Alpha = -Egff w: 0.000-0.072 0.072
+$ERROR 1.E-5
+Nlines 28:Gamma = -Effff w:-0.072 0.072-0.072 0.072

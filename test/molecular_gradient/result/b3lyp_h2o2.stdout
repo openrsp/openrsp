@@ -1,0 +1,52 @@
+
+   ***************************************** 
+   **** OUTPUT FROM DALTON SHELL SCRIPT **** 
+   ***************************************** 
+
+   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+
+   Invocation: /home/bast/dalton/gaobin/openrsp/../build/dalton -d -nobackup -noarch b3lyp.dal h2o2.mol
+
+   Thu Feb  9 18:09:04 CET 2012
+
+   Calculation: b3lyp_h2o2  (input files: b3lyp.dal and h2o2.mol)
+   PID        : 5726
+   Input dir  : /home/bast/dalton/gaobin/openrsp/test/molecular_gradient
+   Scratch dir: /scratch/DALTON_scratch/bast/b3lyp_h2o2
+
+* Using the automatic differentiation xc functional:
+   (weight: functional)
+
+ nr elec, xc energy   17.999580438597921       -14.455936140692149     
+nucpot
+  0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
+
+ovlave
+  0.072130273589 -0.182473108532  0.156052495381 -0.072130273588  0.182473108532  0.156052495381 -0.063341664861 -0.016889364790 -0.156052495381  0.063341664861  0.016889364790 -0.156052495381
+
+oneave
+  -1.67462280097  17.71824149200  -4.99277635006   1.67462280097 -17.71824149201  -4.99277635006   2.03543565544   1.79109983222   4.99277635006  -2.03543565544  -1.79109983222   4.99277635006
+
+twoave
+  0.926434427067 -9.461965465365  2.629219162200 -0.926434427067  9.461965465366  2.629219162201 -1.033717921443 -0.811065788534 -2.629219162201  1.033717921443  0.811065788533 -2.629219162201
+
+ nr elec, xc energy   17.999580438597921        292.19671993691838     
+xcave
+ -0.068162977695  0.146968811750 -0.169835343957  0.068162977695 -0.146968811750 -0.169835343957  0.067313864827  0.032326295972  0.170722678304 -0.067313864827 -0.032326295972  0.170722678304
+
+gradient = Eg
+  0.036394993464  0.031764250640  0.071155018444 -0.036394993464 -0.031764250640  0.071155018443 -0.035441961731 -0.015163845770 -0.070267684097  0.035441961731  0.015163845770 -0.070267684097
+
+b3lyp_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/gaobin/openrsp/test/molecular_gradient
+----------------------------------------------------------
+WARNING for ERROR  (Dalton program stopped with exit code 0)
+- THEREFORE scratch directory /scratch/DALTON_scratch/bast/b3lyp_h2o2 is not deleted
+  by this script so you may restart the calculation, if possible
+  ( /scratch/DALTON_scratch/bast/b3lyp_h2o2 may be deleted by your queueing system )
+- REMEMBER to delete /scratch/DALTON_scratch/bast/b3lyp_h2o2 yourself !!!
+
+Output from 'grep -n ERROR' :
+121:.MAX ERROR                                        
+
+   Thu Feb  9 18:09:05 CET 2012
+   ***************************************** 

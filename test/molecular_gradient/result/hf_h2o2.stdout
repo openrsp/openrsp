@@ -1,0 +1,47 @@
+
+   ***************************************** 
+   **** OUTPUT FROM DALTON SHELL SCRIPT **** 
+   ***************************************** 
+
+   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+
+   Invocation: /home/bast/dalton/openrsp-xc/openrsp/../build/dalton -d -nobackup -noarch gradient.dal h2o2.mol
+
+   Mon Jan 16 16:02:10 CET 2012
+
+   Calculation: gradient_h2o2  (input files: gradient.dal and h2o2.mol)
+   PID        : 30095
+   Input dir  : /home/bast/dalton/openrsp-xc/openrsp/test/molecular_gradient
+   Scratch dir: /scratch/DALTON_scratch/bast/gradient_h2o2
+
+nucpot
+  0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
+
+ovlave
+  0.094933333046 -0.230667749161  0.211239129794 -0.094933333046  0.230667749161  0.211239129794 -0.084665374261 -0.027080093011 -0.211239129794  0.084665374261  0.027080093011 -0.211239129794
+
+oneave
+  -1.77743576769  17.99567703279  -5.16494396188   1.77743576769 -17.99567703279  -5.16494396188   2.11321738380   1.78577610134   5.16494396188  -2.11321738380  -1.78577610134   5.16494396188
+
+twoave
+  0.922527889454 -9.472831639789  2.542480570547 -0.922527889454  9.472831639789  2.542480570547 -1.009023338634 -0.759975082028 -2.542480570547  1.009023338634  0.759975082028 -2.542480570547
+
+xcave
+  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000  0.000000000000
+
+gradient = Eg
+  0.020641526285  0.103170164626  0.037270793344 -0.020641526285 -0.103170164626  0.037270793344 -0.021603224794 -0.011913894335 -0.037270793344  0.021603224794  0.011913894335 -0.037270793344
+
+gradient_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp-xc/openrsp/test/molecular_gradient
+----------------------------------------------------------
+WARNING for ERROR  (Dalton program stopped with exit code 0)
+- THEREFORE scratch directory /scratch/DALTON_scratch/bast/gradient_h2o2 is not deleted
+  by this script so you may restart the calculation, if possible
+  ( /scratch/DALTON_scratch/bast/gradient_h2o2 may be deleted by your queueing system )
+- REMEMBER to delete /scratch/DALTON_scratch/bast/gradient_h2o2 yourself !!!
+
+Output from 'grep -n ERROR' :
+150:.MAX ERROR                                        
+
+   Mon Jan 16 16:02:10 CET 2012
+   ***************************************** 

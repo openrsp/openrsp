@@ -1,0 +1,4 @@
+$ERROR 1.E-6
+Nlines 2:gradient = Eg
+$ERROR 1.E-6
+Nlines 13:hessian = Egg

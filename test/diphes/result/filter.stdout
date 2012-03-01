@@ -1,0 +1,10 @@
+$ERROR 1.E-6
+Nlines 2:gradient = Eg
+$ERROR 1.E-6
+Nlines 13:hessian = Egg
+$ERROR 1.E-6
+Nlines 37:diphes = Eggf
+$ERROR 1.E-6
+Nlines 4:dpgave form rsp_oneave
+$ERROR 1.E-6
+Nlines 4:polarizability

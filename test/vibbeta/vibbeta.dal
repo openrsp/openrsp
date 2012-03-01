@@ -1,0 +1,41 @@
+**DALTON INPUT
+.RUN WAVE
+.DIRECT
+#.PARALLEL
+#.RUN RESPONSE
+**INTEGRALS
+.NOSUP
+.DIPLEN
+.DEROVL
+.SQHDOR
+.DERHAM
+.DIPGRA
+**WAVE FUNCTIONS
+.HF
+.INTERFACE
+#.DFT
+# LDA
+*SCF INPUT
+.MAX ERROR
+10
+.NOQCSCF
+#*LINSCA
+#.RH
+#.DIIS
+#.NVEC
+#8
+#.CONVTHR
+#1.D-7
+*END OF INPUT
+$RESPONS
+#.NEW
+#ajt beta(-freq(1)-freq(2), freq(1), freq(2))
+.FREQ
+26  0.00  0.00  0.02  0.00  0.04  0.00  0.06  0.00  0.08  0.00  0.10  0.00  0.12  0.00
+    0.02  0.02  0.04  0.04  0.06  0.06  0.08  0.08  0.10  0.10  0.12  0.12
+#ajt For some strange reason it fails without IMFREQ
+.IMFREQ
+2  0.0  0.0
+.VIBBETA
+$END RESPONS
+*END OF INPUT

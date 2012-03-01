@@ -1,0 +1,13 @@
+sh cp DALTON.HES.methane DALTON.HES
+vibbeta.dal methane.mol -put DALTON.HES
+
+sh cp DALTON.HES.methanol DALTON.HES
+vibbeta.dal methanol.mol -put DALTON.HES
+
+sh cp DALTON.HES.tetrachloromethane DALTON.HES
+vibbeta.dal tetrachloromethane.mol -put DALTON.HES
+
+sh cp DALTON.HES.tetrafluoromethane DALTON.HES
+vibbeta.dal tetrafluoromethane.mol -put DALTON.HES
+
+sh rm DALTON.HES

@@ -1,0 +1,16 @@
+$ERROR 1.E-6
+Nlines 4:d/dg dipmom = -Egf w:-0.000 0.000
+$ERROR 1.E-6
+Nlines 10:d/dg Alpha = -Egff w: 0.144 0.000-0.144
+$ERROR 1.E-6
+Nlines 10:d/dg Alpha = -Egff w:-0.072 0.000 0.072
+$ERROR 1.E-6
+Nlines 10:d/dg Alpha = -Egff w: 0.072-0.144 0.072
+$ERROR 1.E-6
+Nlines 10:d/dg Alpha = -Egff w:-0.144 0.072 0.072
+$ERROR 1.E-6
+Nlines 28:d/dg Beta = -Egfff w: 0.072 0.000-0.144 0.072
+$ERROR 1.E-6
+Nlines 28:d/dg Beta = -Egfff w:-0.144 0.000 0.072 0.072
+$ERROR 1.E-6
+Nlines 28:d/dg Beta = -Egfff w: 0.000-0.144 0.072 0.072

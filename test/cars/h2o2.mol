@@ -1,0 +1,10 @@
+ATOMBASIS
+Energy calculation without symmetry
+Basis set specified with ATOMBASIS
+    2    0
+        8.    2      Basis=6-31G*
+O1    -0.00000000  1.40784586 -0.09885600
+O2     0.00000000 -1.40784586 -0.09885600
+        1.    2      Basis=6-31G*
+H1     0.69081489  1.72614891  1.56891868
+H2    -0.69081489 -1.72614891  1.56891868
