@@ -1,0 +1,3 @@
+[submodule "external/matrix-defop"]
+	path = external/matrix-defop
+	url = git@repo.ctcc.no:matrix-defop.git

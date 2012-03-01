@@ -2,3 +2,7 @@
 matrix_defop_ng.x
 build*/
 doc/_build/
+external/lib/
+external/matrix-defop-build/
+external/src/
+external/tmp/

@@ -2366,8 +2366,10 @@ contains
       type(matrix),      intent(in)  :: D, DFD
       real(8),           intent(out) :: R(:)
 #ifndef LSDALTON_ONLY
+#ifndef OPENRSP_STANDALONE
 #include <mxcent.h>
 #include <taymol.h>
+#endif /* OPENRSP_STANDALONE */
 #endif
       real(8), pointer :: wrk(:)
       integer          :: lwrk, na
