@@ -2,21 +2,25 @@
 !> Contains module prop_test
 
 !> ajt/radovan: Response-related testing routines and some calculations 
-module prop_test
+module prop_test_old
 
    use matrix_defop
-   use prop_contribs
-   use rsp_equations
+   use prop_contribs_old
+   use rsp_equations_old
 #ifdef PRG_DIRAC
    use dirac_interface
-   use aoresponse_output
+   use openrsp_interface_2el
+   use openrsp_output
 #endif
 
-   ! ajt LSDALTON has replaced the (global) quit with lsquit
-   !     with unit (lupri) as extra argument, which doesn't
-   !     exist in DIRAC. For now, this macro gets around that.
+   ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
+   !     which doesn't exist in DIRAC. For now, this macro gets around that.
+   !     Ideally, we would prefer to use a macro quit(msg) => lsquit(msg,-1),
+   !     but some CPPs don't process line continuation (of msg) correctly.
+   !     So we just use quit(msg,unit) in the code, and replace quit with lsquit.
+   !     DIRAC's quit will ignore the extra argument.
 #ifdef LSDALTON_ONLY
-#define quit(msg) lsquit(msg,-1)
+#define quit lsquit
 #endif
 
    implicit none
@@ -51,11 +55,6 @@ module prop_test
    !field component lables for printing
    character*2:: fc(3) = (/'Fx','Fy','Fz'/), &
                  bc(3) = (/'Bx','By','Bz'/)
-
-#ifndef VAR_LINSCA
-! DALTON_AO_RSP and PRG_DIRAC take lupri from common block
-#include "priunit.h"
-#endif
 
 contains
 
@@ -210,7 +209,9 @@ contains
       call prop_oneave(mol, S, (/'GEO'/), (/D/), (/ng/), Eg, DFD=(/DFD/))
       call prop_twoave(mol, (/'GEO'/), (/D/), (/ng/), Eg)
       ! print
+#ifndef PRG_DIRAC
       call print_tensor((/ng/), Eg, 'gradient = Eg = E0g - Sg DFD')
+#endif
       ! free DFD
       DFD = 0
 
@@ -288,8 +289,8 @@ contains
       complex(8),        intent(out) :: Ef(3)
       Ef = 0
       call prop_oneave(mol, S, (/'EL'/), (/D/), (/3/), Ef)
-      call print_tensor((/3/), -Ef, 'mu = -Ef')
       call print_tensor((/3/), -Ef, 'mu = -Ef', unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3/), -Ef, 'mu = -Ef')
    end subroutine
 
 
@@ -312,8 +313,8 @@ contains
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq/))
       Eff = 0 !zero, as prop_oneave works incrementally
       call prop_oneave(mol, S, (/'EL'/), (/Df/), (/3,3/), Eff)
-      call print_tensor((/3,3/), -Eff, 'alpha = -Eff')
       call print_tensor((/3,3/), -Eff, 'alpha = -Eff', unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3,3/), -Eff, 'alpha = -Eff')
       !delete response matrices
       Df = 0; Ff = 0
       !change sign, since polarizability is minus quasi-energy derivative
@@ -330,7 +331,7 @@ contains
       type(matrix) :: Ff(3), Fe(3), Ffe(3,3)
       integer      :: i, j
       if (abs(sum(freq)) > 1d-15) &
-         call quit('prop_test/elec_hypolar: sum(freq) should be zero!')
+         call quit('prop_test/elec_hypolar: sum(freq) should be zero!',-1)
       !solve equations
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=freq(2:2))
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=freq(3:3))
@@ -340,8 +341,8 @@ contains
       Efff=0
       call prop_oneave(mol, S, (/'EL'/), (/Dfe/), (/3,3,3/), Efff)
       !print
-      call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
       call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq, unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
       !free
       Df=0; Ff=0; De=0; Fe=0; Dfe=0; Ffe=0
       !change sign to get beta
@@ -355,18 +356,19 @@ contains
       complex(8),        intent(in)  :: freq(3)
       complex(8),        intent(out) :: Efff(3,3,3)
       type(matrix) :: De(3), Df(3), Dg(3), DeSD(3), FDSfg
-      type(matrix) :: Fe(3), Ff(3), Fg(3), FeDS(3), DSDfg
+      type(matrix) :: Fe(3), Ff(3), Fg(3), FeDS(3), DSDfg, zm
       character(4) :: UNP(0)
       integer      :: i, j, k
       if (abs(sum(freq)) > 1d-15) &
-         call quit('prop_test/alt_elec_hypol: sum(w) should be zero!')
+         call quit('prop_test/alt_elec_hypol: sum(w) should be zero!',-1)
       !solve equations
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=freq(1:1))
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=freq(2:2))
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=freq(3:3))
       !no energy contributions for HF, one for KSDFT
       Efff = 0
-      call prop_twoave(mol, UNP, (/D,De,Df,Dg,(0d0*D,i=1,54)/), (/3,3,3/), Efff)
+      zm = 0*D
+      call prop_twoave(mol, UNP, (/D,De,Df,Dg,(zm,i=1,54)/), (/3,3,3/), Efff)
       !gradient Lagrange multiplier contribution -tr (DeSD-) (FDS-)fg
       do i = 1, 3
          DeSD(i) = De(i)*S*D - D*S*De(i)
@@ -393,8 +395,8 @@ contains
          end do
       end do; FeDS=0
       !print
-      call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
       call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq, unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
       !free
       De=0; Fe=0; Df=0; Ff=0; Dg=0; Fg=0
       !change sign for beta
@@ -412,7 +414,7 @@ contains
                       Deg(3,3), Dfg(3,3), Defg(3,3,3), &
                       Feg(3,3), Ffg(3,3), Fefg(3,3,3)
       if (abs(sum(freq)) > 1d-15) &
-         call quit('prop_test/elec_sechyp: sum(freq) should be zero!')
+         call quit('prop_test/elec_sechyp: sum(freq) should be zero!',-1)
       !solve equations
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(2)/))
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(3)/))
@@ -431,8 +433,8 @@ contains
       Effff=0
       call prop_oneave(mol, S, (/'EL'/), (/Defg/), (/3,3,3,3/), Effff)
       !print
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !free
       De=0; Df=0; Dg=0; Def=0; Deg=0; Dfg=0; Defg=0
       Fe=0; Ff=0; Fg=0; Fef=0; Feg=0; Ffg=0; Fefg=0
@@ -449,11 +451,11 @@ contains
       type(matrix) :: De(3), Df(3), Dg(3), Dh(3), DeSD(3), &
                       Dfg(3,3), Dfh(3,3), Dgh(3,3), FDSfgh, &
                       Fe(3), Ff(3), Fg(3), Fh(3), FeDS(3), &
-                      Ffg(3,3), Ffh(3,3), Fgh(3,3), DSDfgh
+                      Ffg(3,3), Ffh(3,3), Fgh(3,3), DSDfgh, zm
       character(4) :: UNP(0)
       integer      :: i, j, k, l
       if (abs(sum(freq)) > 1d-15) &
-         call quit('prop_test/alt_elec_sechyp: sum(w) should be zero!')
+         call quit('prop_test/alt_elec_sechyp: sum(w) should be zero!',-1)
       !solve equations
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(1)/))
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(2)/))
@@ -467,9 +469,10 @@ contains
                      Dgh, Fgh, freq=(/freq(3),freq(4)/))
       ! one energy contribution
       Effff=0
+      zm = 0*D
       call prop_twoave(mol, UNP, (/D,De,Df,Dg,Dh, &
-                              (0d0*D,i=1,18),Dfg,(0d0*D,i=1,9), &
-                              Dfh,Dgh,(0d0*D,i=1,189)/), &
+                              (zm,i=1,18),Dfg,(zm,i=1,9), &
+                              Dfh,Dgh,(zm,i=1,189)/), &
                        shape(Effff), Effff)
       ! gradient Lagrange multiplier contribution -tr (DeSD-) (FDS-)fgh
       do i = 1, 3
@@ -507,8 +510,8 @@ contains
          end do
       end do; FeDS=0
       ! print
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !free
       De=0; Df=0; Dg=0; Dh=0; Dfg=0; Dfh=0; Dgh=0
       Fe=0; Ff=0; Fg=0; Fh=0; Ffg=0; Ffh=0; Fgh=0
@@ -531,7 +534,7 @@ contains
                       DeSDh(3,3), FDSfg, FeDSh(3,3), DSDfg
       integer      :: i, j, k, l
       if (abs(sum(freq)) > 1d-15) &
-         call quit('prop_test/alt_elec_sechyp: sum(freq) should be zero!')
+         call quit('prop_test/alt_elec_sechyp: sum(freq) should be zero!',-1)
       !solve equations
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(1)/))
       call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(2)/))
@@ -563,7 +566,6 @@ contains
             end do; FDSgh=0
          end do
       end do; DeSDf=0
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !idempotency Lagrange multiplier contribution -tr (FeDS+)f (DSD)gh
       do j = 1, 3
          do i = 1, 3
@@ -652,8 +654,8 @@ contains
          end do
       end do; FeDSh=0
       !print
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=mol%lupri)
+      if (mol%lupri /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !free
       De=0; Df=0; Dg=0; Dh=0; Def=0; Deg=0; Deh=0
       Fe=0; Ff=0; Fg=0; Dh=0; Fef=0; Feg=0; Feh=0
@@ -679,7 +681,6 @@ contains
       !call print_tensor( (/3,3/), Eoo, 'E1oDo'); Eoo=0
       call print_tensor((/3,3/), Eoo, 'no-London Magnetizability = Eoo', (/-freq,freq/))
       Db=0; Fb=0
-#ifndef PRG_DIRAC
       !London diamag
       call pert_dens(mol, S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
       Ebb = 0
@@ -700,7 +701,6 @@ contains
       Db=0; Fb=0; DFDb=0
       !call print_tensor( (/3,3/), Ebb, 'E1bDb-i/2TbDb-SbDFDb'); Ebb=0
       call print_tensor((/3,3/), Ebb, 'London Magnetizability = Ebb', (/-freq,freq/))
-#endif /* ifndef PRG_DIRAC */
    end subroutine
 
 
@@ -745,7 +745,7 @@ contains
           call grcont(work, lwork, F, n*n*3, &
                       .false., .true., 1, 0, .false., .true., D(:, :, 1), 1)
 #else
-          call quit('Cannot call grcont, only LSDALTON integral code is compiled')
+          call quit('Cannot call grcont, only LSDALTON integral code is compiled',-1)
 #endif
           do j = 1, n
             do i = 1, n
@@ -787,7 +787,7 @@ contains
               call grcont(work, lwork, g, 3*nr_atoms, &
                           .true., .false., 1, 0, .true., .false., D, 2)
 #else
-          call quit('Cannot call grcont, only LSDALTON integral code is compiled')
+          call quit('Cannot call grcont, only LSDALTON integral code is compiled',-1)
 #endif
               D(k, l, 1) = 0.0d0
 #ifdef PRG_DIRAC
@@ -897,9 +897,10 @@ contains
 
 
 #ifdef PRG_DIRAC
-  function gamma_element(S, D, F, w, h, i, j, k)
+  function gamma_element(mol, S, D, F, w, h, i, j, k)
 
 !   ----------------------------------------------------------------------------
+      type(prop_molcfg), intent(in) :: mol
     real(8)                     :: gamma_element
     type(matrix), intent(inout) :: S, D, F
     integer,      intent(in)    :: h, i, j, k
@@ -921,7 +922,6 @@ contains
     type(matrix)                :: F_ijk(3, 3, 3)
     complex(8)                  :: e(3, 3, 3, 3)
     integer                     :: c1, c2, c3
-    type(decompitem)            :: decomp
 !   ----------------------------------------------------------------------------
 
     S = 1.0d0*S
@@ -1068,9 +1068,10 @@ contains
 
   end function
 
-  function delta_element(S, D, F, w, h, i, j, k, l)
+  function delta_element(mol,S, D, F, w, h, i, j, k, l)
 
 !   ----------------------------------------------------------------------------
+      type(prop_molcfg), intent(in) :: mol
     real(8)                     :: delta_element
     type(matrix), intent(inout) :: S, D, F
     integer,      intent(in)    :: h, i, j, k, l
@@ -1120,7 +1121,6 @@ contains
     complex(8)                  :: e5(3, 3, 3, 3, 3)
 
     integer                     :: c1, c2, c3, c4
-    type(decompitem)            :: decomp
 !   ----------------------------------------------------------------------------
 
     S = 1.0d0*S

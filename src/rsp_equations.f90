@@ -1,11 +1,13 @@
-! Copyright 2012 ...
-!      2009-2011 Andreas J. Thorvaldsen
+! Copyright 2012      Magnus Ringholm
+!           2012      Dan Jonsson
+!           2009-2011 Andreas J. Thorvaldsen
 ! This file is made available under the terms of the
-! GNU Lesser General Public License.
+! GNU Lesser General Public License version 3.
 
-!> @file
-!> Contains module rsp_equations
+!> @file Contains module rsp_equations
 
+! ajt fixme Add detailed description of contents here
+!
 ! ajt jan10 Added place to store (cache) solutions of response
 !           equations, solved_eqs(100), and avoid re-solving the same
 !           equations later. Solved_eqs can also hold excitation densities,
@@ -26,13 +28,7 @@
 !  2010-04-21 identical (shared) files: dalton/branches/linsca-ng revision  7878
 !                                       dirac/trunk               revision 10659
 
-!> The equations module contracts right-hand-sides, passes them to the solver,
-!> constructs the resulting perturbed density and Fock matrices, which are then
-!> stored in rsp_sol_cache.
-!>
-!> The module is also responsible for computing energy-weighted-density-, idempotency
-!> multiplier-, self-consistency multiplier-, idempotency residual-, and
-!> self-consistency residual matrices
+
 module rsp_equations
 
   use matrix_defop !matrix type and operators
@@ -45,37 +41,39 @@ module rsp_equations
   public rsp_dens     !perturbed (or response-) densities and Fock-matrices
   public rsp_equations_debug  !turn debug printing on or off
 
-  ! ajt These two are public for the moment, but are intended
-  !     to be accessed through accessor functions eventually
-  public rsp_eq_sol, rsp_sol_cache
+  ! ajt The following three are public for the moment, but are intended
+  !     be accessed through subroutines eventually
+  public rsp_sol, rsp_cached_sols
 
   !> turn on or off debugging in this module
-  logical rsp_equations_debug = .false.
+  logical :: rsp_equations_debug = .false.
 
-  !> maximum order of equation. Just to avoid having to allocate
-  integer, parameter :: max_order = 7 !rsp_eq_sol%fields
+  !> Maximum order of equation solution which can be cached.
+  !> Defines the size of the fields in type cached_sol.
+  !> ajt fixme Should be removed once pert_dens can do arbitrary-order
+  !> equations.
+  integer, parameter :: max_order = 3
 
-  !> (link-) Type for saving/caching solutions of response equations,
-  !> to avoid re-solving the same equations later in the program.
-  type rsp_eq_sol
-     !> the order of the equation, and size of fields
-     integer         :: order
-     !> field labels, components and frequencies for the equation
-     type(rsp_field) :: fields(max_order)
-     !> perturbed density, overlap and Fock solving the equation
-     type(matrix)    :: D, S, F !SD, FD, DFD, FfDS+, DfSD-
-     !> pointer to next in linked list, null if end-of-list
-     type(rsp_eq_sol), pointer :: next
+
+  !> Type for saving (caching) solutions of response equations,
+  !> and avoid re-solving the same equations later in the program.
+  type rsp_sol
+     !> fields, components and frequencies for the eq
+     type(rsp_field), pointer :: fld(:)
+     !> perturbed overlap, density and Fock for this equation
+     type(matrix)             :: S, D, F
+     !> pointer to next in linked list
+     type(rsp_sol),   pointer :: next
   end type
 
 
   !> To keep collection of saved response equation solutions.
   !> ajt fixme Currently hard-coded size 100
-  type(rsp_eq_sol), pointer :: rsp_sol_cache
+  type(rsp_sol), pointer :: rsp_cached_sols
 
-  ! ajt For some reason, if I put this 'private' above type rsp_eq_sol,
+  ! ajt For some reason, if I put this 'private' above type rsp_sol,
   !     Doxygen does not document the fields inside the type, dispite
-  private !it being declared public at the top. May be a bug in Doxygen.
+  private !it being declared public at the top. Maybe a bug in Doxygen.
 
 contains
 
@@ -99,7 +97,7 @@ contains
     ! insist that each fld has only one component (thus also F)
     if (any(fld%ncomp /= 1)) &
        call quit('error: rsp_fock expected fld%ncomp = 1')
-    ! look through rsp_sol_cache for cached F
+    ! look through rsp_cached_sols for cached F
     if (.not.iszero(D(size(D))) .and. .not.present(S)) then
        if (isdef(F)) F = 0
        call rsp_sol_lookup(mol, fld, dumD, F)
@@ -156,7 +154,7 @@ contains
 
 
   !> Solve fld-perturbed response equation for perturbed density D.
-  !> If already stored in the cache (rsp_sol_cache), the solution is fetched
+  !> If already stored in the cache (rsp_cached_sols), the solution is fetched
   !> from there. Otherwise, the RHSs are computed before calling the solver
   subroutine rsp_dens(mol, fld, D)
     !> mol/basis/decomp/thresh needed by integrals and solver
@@ -205,18 +203,18 @@ contains
 
 
 
-  !> search through rsp_sol_cache, looking for a kept solution
+  !> search through rsp_cached_sols, looking for a kept solution
   subroutine rsp_sol_lookup(mol, fld, D, F, S)
     type(rsp_cfg),   intent(in) :: mol
     type(rsp_field), intent(in) :: fld(:)
     type(matrix), intent(inout) :: D
     type(matrix), optional, intent(inout) :: F, S
     !--------------------------------------------
-    type(rsp_eq_sol), pointer :: sol
+    type(rsp_sol), pointer :: sol
     type(matrix) :: dumS
     integer      :: nanti
     nanti = count(rsp_field_anti(fld%label))
-    sol => rsp_sol_cache
+    sol => rsp_cached_sols
     do while (associated(sol))
        if (size(sol%fld) == size(fld)) then
           if (      all(sol%fld%label ==  fld%label) &
@@ -292,9 +290,9 @@ contains
     SD0 = S0*D0
     call scf_eq_prep_rhs(mol, D0, SD0, sym, neq, FDS, DSD, F, D)
     ! call solver
-#ifdef PRG_DIRAC
-    !ajt FIXME momentarily removed
-#elif defined(BUILD_AORSP)
+!#ifdef PRG_DIRAC
+!    !ajt FIXME momentarily removed
+!#elif defined(BUILD_OPENRSP)
     do i=1, neq
        norm_rhs = norm(FDS(i))
        print *, 'before response solver: norm(RHS) = ', norm_rhs
@@ -305,7 +303,6 @@ contains
        else
           freq1(1) = dreal(freq)
           ! call init_mat(Xph(1), Dp(i))
-          !ajt FIXME this call should go to rsp_solver in rsp_backend
           call rsp_mosolver_exec(FDS(i:i), freq1(1:1), D(i:i)) !Xph(1))
        end if
        ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),
@@ -319,7 +316,7 @@ contains
        !Xph(1) = 0
        FDS(i) = 0
     end do
-#endif
+!#endif
     SD0 = 0
     ! add last contribution G(Dp) to Fp
     ! call rsp_twoint(mol, UNP, (/D0, Dp/), (/neq/), Fp)

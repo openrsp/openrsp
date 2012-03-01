@@ -3,11 +3,11 @@
 
 !> Calculation and outputting of optical birefringences
 !> This file is currently common to Dalton and Dirac
-module birefring
+module birefring_old
 
-   use matrix_defop      !matrix type and operators
-   use prop_contribs     !property contractions and integrals
-   use rsp_equations     !response equation contractor/solver
+   use matrix_defop          !matrix type and operators
+   use prop_contribs_old     !property contractions and integrals
+   use rsp_equations_old     !response equation contractor/solver
    implicit none
 
    ! ajt LSDALTON has replaced the (global) quit with lsquit
@@ -16,7 +16,7 @@ module birefring
 #ifdef LSDALTON_ONLY
 #define quit(msg) lsquit(msg,mol%lupri)
 #endif
- 
+
    public efgb_Jpri_Bten_Bcal
    public efgb_output
    public cme_jones_eta_apri
@@ -27,11 +27,11 @@ module birefring
 
    !wavenumber, velocity of light, and nanometer (in au), pi
    real(8), parameter :: cm1 = 1/219474.631371d0, &
-                         cvl = 137.03599907d0,    &
-                         nm  = 10/0.52917706d0,   &
+                         cvl = 137.03599907d0, &
+                         nm  = 10/0.52917706d0, &
                          pi  = 3.1415926535897931d0
 
-   !field component labels for printing
+   !field component lables for printing
    character(2) :: fc(3) = (/'Fx','Fy','Fz'/)
    character(2) :: bc(3) = (/'Bx','By','Bz'/)
 
@@ -45,8 +45,8 @@ contains
       character(*), optional, intent(in) :: title
       integer,      optional, intent(in) :: colwidth, unit
       complex(8),   optional, intent(in) :: freqs(:)
-      integer     :: uni, siz, dec, cwid, i
-      character*9 :: fmt
+      integer      uni, siz, dec, cwid, i
+      character(9) fmt
       uni = 6
       if (present(unit)) uni = unit
       if (present(title)) then
@@ -100,7 +100,7 @@ contains
       complex(8),   intent(out) :: Eoff(3,3,3), Ebff(3,3,3)
       type(matrix) :: Db(3), De(3), Df(3), Def(3,3), FbDS(3), &
                       Fb(3), Fe(3), Ff(3), Fef(3,3), DbSD(3), &
-                      Sb(3), DFDef(3,3), FDSef, DSDef
+                      Sb(3), DFDef(3,3), FDSef, DSDef, zm
       integer      :: i, j, k
       integer, parameter :: eps(3,3,3) =       &
           reshape((/0, 0, 0, 0, 0,-1, 0,+1, 0, &
@@ -156,7 +156,8 @@ contains
       ! call print_tensor(shape(Ebff), Ebff, 'E1ebDf'); Ebff=0
       call prop_oneave(mol, S, (/'MAG','EL '/), (/De/), shape(Ebff), Ebff, perm=(/1,3,2/))
       ! call print_tensor(shape(Ebff), Ebff, 'E1fbDe'); Ebff=0
-      call prop_twoave(mol, (/'MAG'/), (/D,De,Df,(0d0*D,i=1,3*3)/), shape(Ebff), Ebff)
+      zm = 0*D
+      call prop_twoave(mol, (/'MAG'/), (/D,De,Df,(zm,i=1,3*3)/), shape(Ebff), Ebff)
       ! call print_tensor(shape(Ebff), Ebff, 'E2bDeDf'); Ebff=0
       ! partial reorth contribution
       call prop_oneint(mol, S, (/'MAG'/), (/3/), S=Sb) !load overlap
@@ -300,16 +301,16 @@ contains
          do j = 1, 3
             if (freq(1)==freq(2)) Dt(j) = De(j)
             if (freq(1)==freq(2)) Ft(j) = Fe(j)
-            if (freq(1)/=freq(2)) Dt(j) = dag(De(j))
-            if (freq(1)/=freq(2)) Ft(j) = dag(Fe(j))
+            if (freq(1)/=freq(2)) Dt(j) = trps(De(j))
+            if (freq(1)/=freq(2)) Ft(j) = trps(Fe(j))
             call pert_dens(mol, S, (/'EL','EL'/), (/j,1/), (/D,Dt(:j),De(j)/), &
                            (/F,Ft(:j),Fe(j)/), Dte(:j,j), Fte(:j,j), &
                            freq=(/freq(1),freq(2)/), comp=(/1,j/))
             do i = 1, j-1
                if (freq(1)==freq(2)) Dte(j,i) = Dte(i,j)
                if (freq(1)==freq(2)) Fte(j,i) = Fte(i,j)
-               if (freq(1)/=freq(2)) Dte(j,i) = dag(Dte(i,j))
-               if (freq(1)/=freq(2)) Fte(j,i) = dag(Fte(i,j))
+               if (freq(1)/=freq(2)) Dte(j,i) = trps(Dte(i,j))
+               if (freq(1)/=freq(2)) Fte(j,i) = trps(Fte(i,j))
             end do
          end do
       else
@@ -389,7 +390,7 @@ contains
       type(matrix) :: Db(3), Dc(3), De(3), Df(3), Dq(6), Dce(3,3), Dcf(3,3), Def(3,3), &
                       Fb(3), Fc(3), Fe(3), Ff(3), Fq(6), Fce(3,3), Fcf(3,3), Fef(3,3), &
                       DFD, Sb(3), DFDc(3), DFDcef, DbSD(3), DqSD(6), FDScef, &
-                      FbDS(3), FqDS(6), DSDcef, DFDe(3), DFDce(3,3), DFDef(3,3)
+                      FbDS(3), FqDS(6), DSDcef, DFDe(3), DFDce(3,3), DFDef(3,3), zm
       integer      :: i, j, k, l
       complex(8)   :: tmp(3,3,3,3)
       if (abs(sum(freq)) > 1d-15) &
@@ -418,16 +419,16 @@ contains
          do l = 1, 3
             if (freq(3)==freq(4)) De(l) = Df(l)
             if (freq(3)==freq(4)) Fe(l) = Ff(l)
-            if (freq(3)/=freq(4)) De(l) = dag(Df(l))
-            if (freq(3)/=freq(4)) Fe(l) = dag(Ff(l))
+            if (freq(3)/=freq(4)) De(l) = trps(Df(l))
+            if (freq(3)/=freq(4)) Fe(l) = trps(Ff(l))
             call pert_dens(mol, S, (/'EL','EL'/), (/l,1/), (/D,De(:l),Df(l)/), &
                            (/F,Fe(:l),Ff(l)/), Def(:l,l), Fef(:l,l), &
                            freq=(/freq(3),freq(4)/), comp=(/1,l/))
             do k = 1, l-1
                if (freq(3)==freq(4)) Def(l,k) = Def(k,l)
                if (freq(3)==freq(4)) Fef(l,k) = Fef(k,l)
-               if (freq(3)/=freq(4)) Def(l,k) = dag(Def(k,l))
-               if (freq(3)/=freq(4)) Fef(l,k) = dag(Fef(k,l))
+               if (freq(3)/=freq(4)) Def(l,k) = trps(Def(k,l))
+               if (freq(3)/=freq(4)) Fef(l,k) = trps(Fef(k,l))
             end do
          end do
       else
@@ -450,8 +451,8 @@ contains
          do j = 1, 3
             if (freq(1)==freq(2)) Db(j) = Dc(j)
             if (freq(1)==freq(2)) Fb(j) = Fc(j)
-            if (freq(1)/=freq(2)) Db(j) = -dag(Dc(j))
-            if (freq(1)/=freq(2)) Fb(j) = -dag(Fc(j))
+            if (freq(1)/=freq(2)) Db(j) = -trps(Dc(j))
+            if (freq(1)/=freq(2)) Fb(j) = -trps(Fc(j))
          end do
       else
          call pert_dens(mol, S, (/'MAGO'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq(1)/))
@@ -468,8 +469,8 @@ contains
             do j = 1, 3
                if (freq(3)==freq(4)) Dce(j,l) = Dcf(j,l)
                if (freq(3)==freq(4)) Fce(j,l) = Fcf(j,l)
-               if (freq(3)/=freq(4)) Dce(j,l) = -dag(Dcf(j,l))
-               if (freq(3)/=freq(4)) Fce(j,l) = -dag(Fcf(j,l))
+               if (freq(3)/=freq(4)) Dce(j,l) = -trps(Dcf(j,l))
+               if (freq(3)/=freq(4)) Fce(j,l) = -trps(Fcf(j,l))
             end do
          end do
       else
@@ -569,8 +570,8 @@ contains
          do j = 1, 3
             if (freq(1)==freq(2)) Db(j) = Dc(j)
             if (freq(1)==freq(2)) Fb(j) = Fc(j)
-            if (freq(1)/=freq(2)) Db(j) = -dag(Dc(j))
-            if (freq(1)/=freq(2)) Fb(j) = -dag(Fc(j))
+            if (freq(1)/=freq(2)) Db(j) = -trps(Dc(j))
+            if (freq(1)/=freq(2)) Fb(j) = -trps(Fc(j))
          end do
       else
          call pert_dens(mol, S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq(1)/))
@@ -587,8 +588,8 @@ contains
             do j = 1, 3
                if (freq(3)==freq(4)) Dce(j,l) = Dcf(j,l)
                if (freq(3)==freq(4)) Fce(j,l) = Fcf(j,l)
-               if (freq(3)/=freq(4)) Dce(j,l) = -dag(Dcf(j,l))
-               if (freq(3)/=freq(4)) Fce(j,l) = -dag(Fcf(j,l))
+               if (freq(3)/=freq(4)) Dce(j,l) = -trps(Dcf(j,l))
+               if (freq(3)/=freq(4)) Fce(j,l) = -trps(Fcf(j,l))
             end do
          end do
       else
@@ -646,7 +647,7 @@ contains
       !ajt This should really be a 3rd order perturbed density, which isn't
       !    implemented in prop_contribs. Rather, fake it with a second order density
       !    NB: This is incorrect with DFT
-      call prop_twoave(mol, (/'MAG'/), (/D,Dq,Def,(0d0*D,i=1,6*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Dq,Def,(zm,i=1,6*3*3)/), &
                        (/6,3,3*3/), Eqbff, perm=(/2,1,3/))
       ! call print_tensor(shape(Eqbff), Eqbff, 'E2bDqDef', Eqbff); Eqbff=0
       call prop_oneave(mol, S, (/'MAG','MAG','EL '/), (/Df/), shape(Ebbff), Ebbff)
@@ -672,22 +673,22 @@ contains
       call prop_oneave(mol, S, (/'MAG','EL '/), (/Dce/), shape(Ebbff), Ebbff, perm=(/1,4,2,3/))
       ! call print_tensor(shape(Ebbff), Ebbff, 'E1beDcf + E1bfDce'); Ebbff=0
       !ajt This should really be the 3rd order perturbed density
-      !    (/D,Db,De,Df,(0d0*D,i=1,2*3*3),Def,(0d0*D,i=1,3*3*3)/), but 3rd order
+      !    (/D,Db,De,Df,(zm,i=1,2*3*3),Def,(zm,i=1,3*3*3)/), but 3rd order
       !    isn't implemented in prop_contribs. Rather, fake it with a second order
       !    density. NB: Incorrect with DFT, as E^3b Db De Df will be missing
-      call prop_twoave(mol, (/'MAG'/), (/D,Db,Def,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Db,Def,(zm,i=1,3*3*3)/), &
                        (/3,3,3*3/), Ebbff, perm=(/2,1,3/))
       !ajt This should really be the 3rd order perturbed density
-      !    (/D,Dc,De,Df,Dce,Dcf,Def,(0d0*D,i=1,3*3*3)/), but 3rd order isn't
+      !    (/D,Dc,De,Df,Dce,Dcf,Def,(zm,i=1,3*3*3)/), but 3rd order isn't
       !    implemented in prop_contribs. Rather, fake it with three second order
       !    densities. NB: Incorrect with DFT, as E^3b Dc De Df will be missing
-      call prop_twoave(mol, (/'MAG'/), (/D,Dc,Def,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Dc,Def,(zm,i=1,3*3*3)/), &
                        (/3,3,3*3/), Ebbff)
       tmp = 0 !need tmp since index e is between c and f
-      call prop_twoave(mol, (/'MAG'/), (/D,De,Dcf,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,De,Dcf,(zm,i=1,3*3*3)/), &
                        (/3,3,3*3/), tmp)
       Ebbff = Ebbff + reshape((/((((tmp(i,k,j,l),i=1,3),j=1,3),k=1,3),l=1,3)/),(/3,3,3,3/))
-      call prop_twoave(mol, (/'MAG'/), (/D,Df,Dce,(0d0*D,i=1,3*3*3)/), &
+      call prop_twoave(mol, (/'MAG'/), (/D,Df,Dce,(zm,i=1,3*3*3)/), &
                        (/3,3*3,3/), Ebbff, perm=(/1,3,2/))
       ! call print_tensor(shape(Ebbff), Ebbff, 'E2cDbDef + E2bDcDef + E2bDeDcf + E2bDfDce'); Ebbff=0
       ! reorthonormalization contribution -tr Sb (DFD)cef
@@ -781,7 +782,7 @@ contains
       Db=0; Dc=0; De=0; Df=0; Dq=0; Dce=0; Dcf=0; Def=0
       Fb=0; Fc=0; Fe=0; Ff=0; Fq=0; Fce=0; Fcf=0; Fef=0; Sb=0
       !invert signs on a-prime to get properties from quasi-energy derivatives
-      Ef=-Ef; Eq=-Eq; Eff=-Eff; Eqf=-Eqf !ajt WRONG: ; Eqoff=-Eqoff; Eqbff=-Eqbff
+      Ef=-Ef; Eq=-Eq; Eff=-Eff; Eqf=-Eqf; Eqoff=-Eqoff; Eqbff=-Eqbff
    end subroutine
 
 
@@ -918,7 +919,7 @@ contains
       Afb=0; do l=1,3; do k=1,3; do j=1,3; do i=1,3
          Afb = Afb + eps(k,j,i) * ApriF0FmwB0Qw(i,k,l,ij(l,j)) &
                    + eps(l,j,k) * ApriF0FmwB0Qw(i,l,k,ij(i,j))
-      end do; end do; end do; end do 
+      end do; end do; end do; end do
       write (uni,'()') !two final newlines
       write (uni,'(6x,a,f14.11)')  'frequency     : ', dreal(freq)
       write (uni,'(6x,a,3g18.11)') 'dipole moment : ', dreal(dip)
@@ -930,8 +931,8 @@ contains
             ' average Afb = sum_ijkl e_kji Aikllj + e_ljk Ailkij', &
             dreal(Afb)
       write (uni,'(6x,a/22x,g18.11)') lonnol // &
-            ' temp.-indep. Jones biref. A0 = Gfb - w/2 * 2/3 * Afb', &
-            dreal(Gfb - freq/2 * 2/3 * Afb)
+            ' temp.-indep. Jones biref. A0 = Gfb + w/2 * 2/3 * Afb', &
+            dreal(Gfb + freq/2 * 2/3 * Afb)
       !print temperature-dependent averages and invariant
       write (uni,'(6x,a/22x,3g18.11)') lonnol // &
             ' average Gb_i = sum_j 3 Gjji + 3 Gijj - 2 Gjij', &
@@ -943,7 +944,7 @@ contains
             ' temp.-dep. Jones factors Gb_i + w/2 * 2/3 * Afb_i', &
             dreal(Gb - freq/2 * 2/3 * Ab)
       write (uni,'(6x,a/22x,g18.11)') lonnol // &
-            ' temp.-dep. Jones biref. A1 = mu_i * (Gb_i - w/2 * 2/3 * Ab_i)', &
+            ' temp.-dep. Jones biref. A1 = mu_i * (Gb_i + w/2 * 2/3 * Afb_i)', &
             dreal(sum( dip * (Gb - freq/2 * 2/3 * Ab) ))
       write (uni,'(/)') !two final newlines
    end subroutine
