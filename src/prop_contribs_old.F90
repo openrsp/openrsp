@@ -12,6 +12,7 @@ module prop_contribs_old
 
    use matrix_defop
    use matrix_backend, only: mat_nullify, mat_alloc, mat_free
+   use dalton_ifc
 
 #ifdef PRG_DIRAC
    use dirac_interface
@@ -20,10 +21,6 @@ module prop_contribs_old
    use character_processing
    use xc_driver
    use memory_allocator
-#endif
-#ifdef BUILD_OPENRSP
-   use dalton_ifc,    &
-     di_GET_GbDs => di_get_gmat
 #endif
 
    ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
@@ -1911,7 +1908,7 @@ contains
       if (np==0) then
          if (nd==0) call quit('prop_twoint error: Unperturbed ' &
                            // 'two-electron Fock matrix requested',-1)
-         ! di_GET_GbDs and di_get_sigma expects A initialized (allocated)
+         ! di_get_gmat and di_get_sigma expects A initialized (allocated)
          if (iszero(A(1))) call mat_alloc(A(1))
          do i = 0, pd-1
             if (iszero(D(pd1-pd+1+i))) cycle
@@ -2087,7 +2084,7 @@ contains
       end if
       !call integral program
       if (what=='  ') then
-         call di_GET_GbDs(D(1), F(1))
+         call di_get_gmat(D(1), F(1))
       else
          wrk(1:n2) = reshape(D(1)%elms, (/n2/)) !ajt fixme
 #ifdef LSDALTON_ONLY
