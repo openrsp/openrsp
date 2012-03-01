@@ -53,10 +53,12 @@ module openrsp_old
   use birefring_old
 
 ! xcint
+#ifndef OPENRSP_STANDALONE
   use num_grid
   use interface_ao_specific
   use xcint_main
   use rsp_backend, only: is_ks_calculation
+#endif /* OPENRSP_STANDALONE */
 
   implicit none
 
@@ -332,7 +334,9 @@ module openrsp_old
     !> \todo
     !> \todo type(molecule_t), intent(in) :: this_mol
     use prop_contribs_old, only: prop_molcfg
+#ifndef OPENRSP_STANDALONE
     use dalton_ifc
+#endif /* OPENRSP_STANDALONE */
     type(prop_molcfg), intent(in) :: molcfg
     type(matrix), intent(in) :: S
     type(matrix), intent(in) :: D
@@ -365,6 +369,10 @@ module openrsp_old
     call xsub_enter('openrsp_prop_calc')
 #endif
 
+#ifdef OPENRSP_STANDALONE
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
     if (is_ks_calculation()) then
        ! write xcint interface files and generate grid
        kfree = 1
@@ -374,6 +382,7 @@ module openrsp_old
        deallocate(work)
        call interface_ao_write()
     end if
+#endif /* OPENRSP_STANDALONE */
 
     ! calculates electric-field-gradient-induced (Buckingham) birefringence
     if ( this_info%openrsp_efgb ) then

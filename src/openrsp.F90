@@ -41,15 +41,19 @@
 module openrsp
 
   use matrix_backend
+#ifndef OPENRSP_STANDALONE
   use dalton_ifc
+#endif /* OPENRSP_STANDALONE */
   use rsp_functions
   use rsp_backend
   use rsp_contribs, only: rsp_cfg
 
+#ifndef OPENRSP_STANDALONE
 ! xcint
   use num_grid
   use interface_ao_specific
   use xcint_main
+#endif /* OPENRSP_STANDALONE */
 
   implicit none
 
@@ -168,8 +172,13 @@ contains
        call write_num_grid_to_file(D%elms, work, kfree, lwork)
        call interface_ao_write()
 
+#ifdef OPENRSP_STANDALONE
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
        ! add xc contribution to the fock matrix
        call integrate_xc(D=(/D/), F=(/F/))
+#endif /* OPENRSP_STANDALONE */
     end if
 
     ! setup response config structure
@@ -352,14 +361,21 @@ subroutine OPENRSP_DRIVER(WORK, LWORK, WAVPCM)
   integer, intent(in)    :: LWORK
   real(8), intent(inout) :: WORK(LWORK)
   logical, intent(in)    :: WAVPCM
+#ifndef OPENRSP_STANDALONE
   ! uses LUPRI, LUCMD which are the pre-defined unit numbers
 #include <priunit.h>
   ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include <inforb.h>
   ! first setup, then calc, then finalize
+#endif /* OPENRSP_STANDALONE */
+#ifdef OPENRSP_STANDALONE
+    print *, 'error: not part of standalone'
+    stop 1
+#else /* OPENRSP_STANDALONE */
   call QENTER('OpenRSP ')
   call openrsp_setup(NBAST, WAVPCM, LUCMD, LUPRI, LWORK, WORK)
   call openrsp_calc(LUCMD, .false.) !2nd arg: dryrun = .false.
   call openrsp_finalize
   call QEXIT('OpenRSP ')
+#endif /* OPENRSP_STANDALONE */
 end subroutine

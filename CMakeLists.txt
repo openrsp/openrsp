@@ -35,11 +35,17 @@ include(ConfigExternal)
 add_definitions(-DOPENRSP_STANDALONE)
 add_definitions(-DBUILD_OPENRSP)
 
+include_directories(${PROJECT_SOURCE_DIR}/src)
+
 set(SOURCES
+    ${PROJECT_SOURCE_DIR}/src/basis_set.f90
+    ${PROJECT_SOURCE_DIR}/src/birefring_old.F90
     ${PROJECT_SOURCE_DIR}/src/cgto_diff_eri.F90
     ${PROJECT_SOURCE_DIR}/src/eri_basis_loops.f90
     ${PROJECT_SOURCE_DIR}/src/eri_contractions.f90
-    ${PROJECT_SOURCE_DIR}/src/basis_set.f90
+    ${PROJECT_SOURCE_DIR}/src/openrsp.F90
+    ${PROJECT_SOURCE_DIR}/src/openrsp_daldrv_old.F90
+    ${PROJECT_SOURCE_DIR}/src/openrsp_old.F90
     ${PROJECT_SOURCE_DIR}/src/prop_contribs_old.F90
     ${PROJECT_SOURCE_DIR}/src/prop_test_old.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_backend.F90
@@ -47,6 +53,9 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_equations.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_functions.F90
+    ${PROJECT_SOURCE_DIR}/src/vib_prop_old.F90
+    ${PROJECT_SOURCE_DIR}/src/xprecision.F90
+    ${PROJECT_SOURCE_DIR}/src/xtrack.F90
     )
 
 add_library(
