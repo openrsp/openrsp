@@ -2486,4 +2486,19 @@ contains
 #endif
    end subroutine
 
+  function prefix_zeros(n, l)
+    integer, intent(in) :: n, l !number, length
+    character(l)        :: prefix_zeros !resulting n in ascii
+    character(1), parameter :: char0to9(0:9) &
+          = (/'0','1','2','3','4','5','6','7','8','9'/)
+    integer :: i, k
+    k = n
+    do i = l, 1, -1
+       prefix_zeros(i:i) = char0to9(mod(k,10))
+       k = k / 10
+    end do
+    if (k /= 0) call quit('prefix_zeros error: Argument integer does not fit ' &
+                       // 'in the specified number of ASCII caracters')
+  end function
+
 end module
