@@ -1,0 +1,2 @@
+C     PARAMETER ( THRLDP = THRZER ** 2 )
+      PARAMETER ( THRLDP = 1.0D-28 )

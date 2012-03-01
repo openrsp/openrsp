@@ -1,0 +1,2 @@
+C     Common block for NEVPT2 *Cele*
+      COMMON /INFNEVPT2/ NFRNEVPT2(8), THRNEVPT, ISTNEVCI

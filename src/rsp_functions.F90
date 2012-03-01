@@ -80,9 +80,7 @@ contains
   subroutine get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
 
     use matrix_backend, only: mat_alloc
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,     only: rsp_mosolver_exec
-#endif /* OPENRSP_STANDALONE */
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in)    :: mol
     integer,       intent(in)    :: ng
@@ -123,9 +121,7 @@ contains
   subroutine contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
 
     use matrix_backend, only: mat_alloc
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,     only: rsp_mosolver_exec
-#endif /* OPENRSP_STANDALONE */
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
@@ -212,9 +208,7 @@ contains
   subroutine contract_cubicff(mol, ng, S, D, F, Sg, Dg, Fg)
 
     use matrix_backend, only: mat_alloc
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,     only: rsp_mosolver_exec
-#endif /* OPENRSP_STANDALONE */
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
@@ -479,9 +473,7 @@ contains
 
   subroutine print_nuclear_masses(ng)
 
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc, only: nuclei_ifc
-#endif /* OPENRSP_STANDALONE */
 
     integer, intent(in) :: ng
 
@@ -506,9 +498,7 @@ contains
 ! the quartic force field.
 
   subroutine prop_test_quarticff(mol, ng, S, D, F)
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,     only: rsp_mosolver_exec
-#endif /* OPENRSP_STANDALONE */
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
@@ -1203,9 +1193,7 @@ contains
 
   subroutine prop_test_diphes(mol, ng, S, D, F)
     use matrix_backend, only: mat_alloc
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,     only: rsp_mosolver_exec
-#endif /* OPENRSP_STANDALONE */
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F

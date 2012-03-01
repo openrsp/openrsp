@@ -1,0 +1,1 @@
+      COMMON /HERTOP/ JTOP, NRTOP

@@ -1,0 +1,3 @@
+      COMMON /DFTACB/ DFTIPT, DFTHMO, DFTBR1, DFTBR2, EHOMO,
+     &                DFTCH0(MXCENT), DFTCH1(MXCENT), DFTDST(MXCENT),
+     &                IDFTAT(MXCENT)

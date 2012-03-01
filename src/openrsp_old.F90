@@ -334,9 +334,7 @@ module openrsp_old
     !> \todo
     !> \todo type(molecule_t), intent(in) :: this_mol
     use prop_contribs_old, only: prop_molcfg
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc
-#endif /* OPENRSP_STANDALONE */
     type(prop_molcfg), intent(in) :: molcfg
     type(matrix), intent(in) :: S
     type(matrix), intent(in) :: D

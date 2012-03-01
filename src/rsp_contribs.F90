@@ -14,10 +14,8 @@ module rsp_contribs
   use matrix_defop
   use matrix_backend, only: mat_alloc
   use rsp_backend
-#ifndef OPENRSP_STANDALONE
   use dalton_ifc, only: di_read_operator_int, &
                         di_get_gmat
-#endif /* OPENRSP_STANDALONE */
   use basis_set,  only: cgto
 
   implicit none
@@ -183,9 +181,7 @@ contains
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
   subroutine rsp_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc, only: SHELLS_NUCLEI_displace
-#endif /* OPENRSP_STANDALONE */
 #ifdef BUILD_GEN1INT
     ! Gen1Int interface in Dalton
     use gen1int_interface
@@ -366,9 +362,7 @@ contains
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc, only: SHELLS_NUCLEI_displace, dal_work
-#endif /* OPENRSP_STANDALONE */
 #ifdef BUILD_GEN1INT
     ! Gen1Int interface in Dalton
     use gen1int_interface
@@ -584,9 +578,7 @@ contains
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
   subroutine rsp_twoave(mol, nf, f, c, nc, D1, D2, ave)
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,       only: dal_work
-#endif /* OPENRSP_STANDALONE */
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
     !> structure containing integral program settings
@@ -607,10 +599,6 @@ contains
     type(ctr_arg) arg(1)
     real(8)       r
     integer       i, j, k, l, n, ncor
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: needs dal_work'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
        A(1) = mol%zeromat
@@ -706,7 +694,6 @@ contains
                 (' ' // f(i), i=1,nf)
        call quit('rsp_twoave error: not implented or in wrong order')
     end if
-#endif /* OPENRSP_STANDALONE */
   end subroutine
 
 
@@ -1003,9 +990,7 @@ contains
   !> product of density matrces D1 and D2
   subroutine rsp_twoint(mol, nf, f, c, nc, dens, fock)
     ! work array to be passed to GRCONT
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc,       only: dal_work
-#endif /* OPENRSP_STANDALONE */
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
     !> structure containing integral program settings
@@ -1025,10 +1010,6 @@ contains
     integer       i, j, n, ij, ncor
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: needs dal_work'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     if (nf==0) then
        A = 0*dens
        call mat_alloc(A)
@@ -1072,7 +1053,6 @@ contains
                 (' ' // f(i), i=1,nf)
        call quit('error in rsp_oneave: not implented or in wrong order')
     end if
-#endif /* OPENRSP_STANDALONE */
   end subroutine
 
 
@@ -1196,27 +1176,19 @@ contains
   !> Same as set_dsofso in fock-eval.f90, but pertrubed
   !> Call ONEDRV in ABACUS
   subroutine ONEDRV_ave_ifc(mol, fld, siz, ave, D, DFD)
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc, only: dal_work
-#endif /* OPENRSP_STANDALONE */
     type(rsp_cfg),          intent(in)  :: mol
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
     real(8),                intent(out) :: ave(siz)
     type(matrix), optional, intent(in)  :: D, DFD
     !--------------------------------------------
-#ifndef OPENRSP_STANDALONE
 #include <mxcent.h>
 #include <taymol.h>
-#endif /* OPENRSP_STANDALONE */
     real(8) Dtri(  (mol%zeromat%nrow)*(mol%zeromat%nrow+1)/2)
     real(8) DFDtri((mol%zeromat%nrow)*(mol%zeromat%nrow+1)/2)
     logical anti
     integer nc
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: not part of standalone'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     ! create triangularly packed matrices from D, DFD
     anti = (mod(count(fld=='MAG '),2) == 1)
     if (.not.present(D)) then
@@ -1248,33 +1220,24 @@ contains
        call quit('error in ONEDRV_ave_ifc: not implemented')
     if (size(fld)==2) &
        ave = reshape(2*HESMOL(:nc,:nc), (/nc*nc/)) !factor 2 for total dens
-#endif /* OPENRSP_STANDALONE */
   end subroutine
 
 
   !> Call GET1IN in ABACUS
   subroutine GET1IN_ave_ifc(mol, fld, siz, ave, D)
-#ifndef OPENRSP_STANDALONE
     use dalton_ifc, only: dal_work
-#endif /* OPENRSP_STANDALONE */
     type(rsp_cfg),          intent(in)  :: mol
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
     real(8),                intent(out) :: ave(siz)
     type(matrix),           intent(in)  :: D
     !--------------------------------------------
-#ifndef OPENRSP_STANDALONE
 #include <dummy.h>
 #include <mxcent.h>
     real(8) Dtri(  (mol%zeromat%nrow)*(mol%zeromat%nrow+1)/2)
     character(8), dimension(9*MXCENT) :: labint
     integer, dimension(9*MXCENT) :: intrep, intadr
     integer ncomp
-#endif /* OPENRSP_STANDALONE */
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: not part of standalone'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     !ajt Dzero is dangerous! Should have been izero. =0 safe
     intrep = 0 !call dzero(intrep,9*MXCENT)
     intadr = 0 !call dzero(intadr,9*MXCENT)
@@ -1287,7 +1250,6 @@ contains
     call GET1IN(dummy,'DPLGRA ',ncomp,dal_work,size(dal_work),labint,intrep, &
                        intadr,0,.false.,0,.false.,ave, &
                        .true.,Dtri,0)
-#endif /* OPENRSP_STANDALONE */
   end subroutine
 
 

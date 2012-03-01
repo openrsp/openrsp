@@ -45,10 +45,8 @@
     use xprecision
     ! matrix
     use matrix_backend
-#ifndef OPENRSP_STANDALONE
     ! interface of DALTON
     use dalton_ifc
-#endif /* OPENRSP_STANDALONE */
     ! main module of openrsp
     use openrsp_old
     ! keeps molecule, energy, integral and solver config
@@ -59,12 +57,10 @@
     integer LWORK
     real(xp) WORK( LWORK )
     logical WAVPCM
-#ifndef OPENRSP_STANDALONE
     ! uses LUPRI, LUCMD which are the pre-defined unit numbers
 #include <priunit.h>
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include <inforb.h>
-#endif /* OPENRSP_STANDALONE */
 
     ! control information of openrsp
     type(rspinfo_t) openrsp_info
@@ -151,10 +147,6 @@
 
 real(xp), allocatable :: eigval(:)
 
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: not part of standalone'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     call QENTER( 'OpenRSP ' )
 
     ! prints the header and license information
@@ -409,6 +401,4 @@ real(xp), allocatable :: eigval(:)
 110  format(80A)
 1010  format(1X,'>> ',A,4E12.6)
 1020  format(1X,'>> ',A,4F10.6)
-#endif /* OPENRSP_STANDALONE */
-  end subroutine openrsp_daldrv_old
-
+  end subroutine

@@ -1,0 +1,22 @@
+!
+! FILE: gtensor.h (used in rsp/ and abacus/ modules)
+!
+      DOUBLE PRECISION REFSPIN, GRELMC
+      DOUBLE PRECISION GTENSOR(3,3), GC1(3,3), GC2(3,3), 
+     &                 GOZSO(3,3,3), ECCORG(3)
+      INTEGER  NSO
+      LOGICAL  DOALL, DORMC, DOGC1, DOGC2, DOOZSO1, DOOZSO2, DOOZSO
+      LOGICAL  GCALC, G_ALL, ECC, MNFSO, TEST_AMFI, ADDSO
+      LOGICAL  SCALED_CHARGES, SPLITSO2
+      COMMON /GMODULE/
+     &       REFSPIN, GRELMC,
+     &       GTENSOR, GC1, GC2, GOZSO, ECCORG,
+     &       NSO,
+     &       DOALL, DORMC, DOGC1, DOGC2, DOOZSO1, DOOZSO2, DOOZSO,
+     &       GCALC, G_ALL, ECC, MNFSO, TEST_AMFI, ADDSO,
+     &       SCALED_CHARGES, SPLITSO2
+      CHARACTER*80 G_LINE
+      CHARACTER*8  ANGLBL(3), SOLBL(3,3)
+      COMMON /GMODULE_C/
+     &       G_LINE, ANGLBL, SOLBL
+! -- end of gtensor.h --

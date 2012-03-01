@@ -13,9 +13,7 @@
 !>
 module cgto_diff_eri
 
-#ifndef OPENRSP_STANDALONE
   use dalton_ifc, only: boys_function
-#endif /* OPENRSP_STANDALONE */
   use basis_set
   use eri_contractions
   ! use cgto_diff_eri_print
@@ -732,12 +730,7 @@ contains
     real(8) :: er2, emer2, tmp
     er2 = expo * sum(cent**2)
     emer2 = exp(-er2)
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: not part of standalone'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     erint(1) = 2*pi / expo * boys_function(mom, er2, emer2)
-#endif /* OPENRSP_STANDALONE */
     emer2    = 2*pi / expo * emer2
     if (present(prefac)) emer2    = emer2 * prefac
     if (present(prefac)) erint(1) = erint(1) * prefac

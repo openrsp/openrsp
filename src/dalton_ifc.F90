@@ -52,7 +52,6 @@
 !> \date 2009-12-08
 module dalton_ifc
 
-#ifndef OPENRSP_STANDALONE
   ! ajt I think precision should rather be specified with compiler flags:
   !     "gfortran -fdefault-real-8", "ifort -real-size 64", or "pgf -r8",
   !     and then remove (8) from every real declaration. This is far simpler,
@@ -146,11 +145,8 @@ module dalton_ifc
   type(matrix), private, save :: solver_CMO_VIR
   !> active part of one-electron density matrix (MO)
   real(xp), allocatable, save :: solver_DV(:)
-#endif /* OPENRSP_STANDALONE */
 
   contains
-
-#ifndef OPENRSP_STANDALONE
 
   !> \brief initializes the interface of DALTON
   !> \author Bin Gao
@@ -1474,10 +1470,5 @@ module dalton_ifc
     call GAMFUN()
     boys_function = FJW(n)
   end function
-
-#else /* OPENRSP_STANDALONE */
-   subroutine raboof()
-   end subroutine
-#endif /* OPENRSP_STANDALONE */
 
 end module

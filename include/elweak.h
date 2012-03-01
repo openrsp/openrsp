@@ -1,0 +1,10 @@
+C
+C     Constants for electroweak interaction
+C
+      LOGICAL BGWEIL, PVFINL, ELWEAK, PVPSO, PVSO , PVSO2
+      PARAMETER (WEINBG = 1D0 - 4D0 * 0.2319D0)
+      PARAMETER (GFERMI = 5.73416D-17)
+      COMMON /COMEPV/ PVFINN, BGWEIN, BGWEIL, PVFINL, 
+     &                ELWEAK, PVPSO,  PVSO , PVSO2
+
+

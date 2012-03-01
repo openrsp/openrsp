@@ -1,0 +1,4 @@
+C
+      LOGICAL DIATOM 
+C
+      COMMON /DENFIT/ DIATOM

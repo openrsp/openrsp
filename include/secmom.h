@@ -1,0 +1,6 @@
+      COMMON /SECNDM/ SCMNUC(3,3), SCMEL(3,3), SCMTOT(3,3),
+     *                SCMEL2(3,3), SCMEL3(3,3)
+CSPAS:15/11-2009: AO-SOPPA included
+      COMMON/SECMOM/SECGR(3),
+     &              SECOMO(3,MAXOCC,8),SECVMO(3,MXCORB-MAXOCC,8)
+CKeinSPASmehr

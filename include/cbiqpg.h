@@ -1,0 +1,3 @@
+C cbiqpg.h defined in abaqpg.F module
+      LOGICAL QSKIP, QNODC, QNODV, QTEST, QCUT
+      COMMON /CBIQPG/ IPRINT, QSKIP, QNODC, QNODV, QTEST, QCUT

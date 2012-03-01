@@ -1,0 +1,17 @@
+      INTEGER MXLRSO, MXLRSST
+      PARAMETER ( MXLRSO = 60,MXLRSST = 60)
+
+      INTEGER NLRSOP, NXLRSST, NSELRS
+
+      INTEGER ILRSOP, ILRSST, ISELRSYM, ISELRSTA
+
+      LOGICAL LRS2N1, SELLRS
+
+      COMMON /INFOPA/ ILRSST(MXLRSST),
+     *                ISELRSYM(MXLRSST),
+     *                ISELRSTA(MXLRSST),
+     *                ILRSOP(MXLRSO),
+     *                NLRSOP,NSELRS,NXLRSST,
+     *                LRS2N1,SELLRS
+
+

@@ -1,0 +1,22 @@
+      INTEGER MXEXLROP, MXEXLRFR, MXEXLRST
+      PARAMETER ( MXEXLROP = 125 , MXEXLRFR = 20, MXEXLRST = 50 )
+
+      LOGICAL ALLSTATES, HALFFR, USE_EL1, USE_O2, NOPROJ
+      INTEGER IPREXLR, NEXLRFREQ, NEXLROPER, NEXLRST
+
+      INTEGER IELRSYM(MXEXLRST,2)  ! excited state symmetries
+      INTEGER IELRSTA(MXEXLRST,2)  ! excited state indeces
+      INTEGER IAEXLROP(MXEXLROP)   ! response operator A
+      INTEGER IBEXLROP(MXEXLROP)   ! response operator B
+
+#if defined (SYS_CRAY)
+      REAL BEXLRFR(MXEXLRFR) 
+#else
+      DOUBLE PRECISION BEXLRFR(MXEXLRFR)
+#endif
+      COMMON /INFEXLRCC/ BEXLRFR, IAEXLROP, IBEXLROP, 
+     *                   IELRSYM,  IELRSTA, NEXLRST,
+     *                   NEXLRFREQ, IPREXLR, NEXLROPER, 
+     *                   ALLSTATES, HALFFR, USE_EL1,
+     *                   USE_O2, NOPROJ
+

@@ -101,9 +101,7 @@ contains
 #define GPOPEN  LSOPEN
 #define GPCLOSE LSCLOSE
 #elif defined(BUILD_OPENRSP)
-#ifndef OPENRSP_STANDALONE
       use dalton_ifc
-#endif /* OPENRSP_STANDALONE */
 #endif
       !> reference to molecule, geometry, etc.
       type(prop_molcfg), intent(in)  :: mol

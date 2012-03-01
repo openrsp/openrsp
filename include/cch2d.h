@@ -1,0 +1,7 @@
+      INTEGER IPRNTA, IPRNTB, IPRNTC, IPRNTD
+      LOGICAL TKTIME, RETUR, NODV, NOPV, NOCONT
+      COMMON /CCH2D/ IPRNTA, IPRNTB, IPRNTC, IPRNTD,
+     &               NODV,    NOPV,    NOCONT,
+     &               TKTIME,  RETUR
+
+

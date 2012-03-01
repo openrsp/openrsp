@@ -22,10 +22,8 @@ module prop_contribs_old
    use memory_allocator
 #endif
 #ifdef BUILD_OPENRSP
-#ifndef OPENRSP_STANDALONE
    use dalton_ifc,    &
      di_GET_GbDs => di_get_gmat
-#endif /* OPENRSP_STANDALONE */
 #endif
 
    ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
@@ -2367,11 +2365,6 @@ contains
       character(*),      intent(in)  :: what
       type(matrix),      intent(in)  :: D, DFD
       real(8),           intent(out) :: R(:)
-#ifdef OPENRSP_STANDALONE
-      R = 0.0d0
-      print *, 'error: not available in standalone'
-      stop 1
-#else /* OPENRSP_STANDALONE */
 #ifndef LSDALTON_ONLY
 #include <mxcent.h>
 #include <taymol.h>
@@ -2394,7 +2387,6 @@ contains
       R(1:9*na**2) = reshape(HESMOL(:3*na,:3*na), (/9*na**2/))
       call di_deselect_wrk(wrk, lwrk)
 #endif
-#endif /* OPENRSP_STANDALONE */
    end subroutine
 
 
