@@ -22,6 +22,9 @@ if(NOT "${PARENT_DEFINITIONS}" STREQUAL "")
     foreach (_definition ${PARENT_DEFINITIONS})
         add_definitions(${_definition})
     endforeach()
+else()
+    add_definitions(-DOPENRSP_STANDALONE)
+    add_definitions(-DBUILD_OPENRSP)
 endif()
 if(NOT "${PARENT_INCLUDE_DIRS}" STREQUAL "")
     foreach (_include ${PARENT_DEFINITIONS})
@@ -31,9 +34,6 @@ endif()
 
 set(LIBS)
 include(ConfigExternal)
-
-add_definitions(-DOPENRSP_STANDALONE)
-add_definitions(-DBUILD_OPENRSP)
 
 include_directories(${PROJECT_SOURCE_DIR})
 
