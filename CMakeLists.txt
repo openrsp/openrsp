@@ -36,16 +36,6 @@ if(NOT "${PARENT_INCLUDE_DIRS}" STREQUAL "")
         include_directories(${_include})
     endforeach()
 endif()
-if(NOT "${PARENT_MODULE_DIRS}" STREQUAL "")
-    foreach (_dir ${PARENT_MODULE_DIRS})
-        set(CMAKE_Fortran_MODULE_DIRECTORY
-            ${CMAKE_Fortran_MODULE_DIRECTORY}
-            ${_dir}
-            )
-    endforeach()
-endif()
-message("raboof in openrsp: ${CMAKE_Fortran_MODULE_DIRECTORY}")
-include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
 
 set(LIBS)
 include(ConfigExternal)
