@@ -10,6 +10,7 @@ set(CMAKE_MODULE_PATH
 set(CMAKE_Fortran_MODULE_DIRECTORY
     ${PROJECT_BINARY_DIR}/modules
     )
+include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE
