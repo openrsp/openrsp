@@ -1,1 +1,0 @@
-      COMMON /ERITHR/ THRSH

@@ -1,8 +1,0 @@
-      PARAMETER ( MXLRCR = MAXLBL , MXEXCR = MAXLBL )
-      CHARACTER*8 CRLBL,CRLB2
-      COMMON /INDCR/ JEXCR(MXEXCR),ISEXCR(MXEXCR),IEXCR(8),
-     *               EXCIT2(8,MXEXCR),ILRCR(8),NLRCR(8),
-     *               CRFREQ(MXLRCR),CRFRQ2(MXLRCR,2),
-     *               ISYMCR(MXLRCR),ISMCR2(MXLRCR,3),
-     *               CRLBL(MXLRCR),CRLB2(MXLRCR,2),
-     *               NLRLB2,NEXCR(8)

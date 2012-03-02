@@ -1,3 +1,0 @@
-      LOGICAL ZFSCAL
-      REAL*8 ZFS(3,3)
-      COMMON /ZFSCOM/ ZFS, ZFSCAL

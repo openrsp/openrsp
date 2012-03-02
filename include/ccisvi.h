@@ -1,2 +1,0 @@
-      COMMON /CCISVI/ ISVI(MXCORB)
-

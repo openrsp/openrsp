@@ -1,1 +1,0 @@
-      COMMON /INFDEN/ INFDEN(4)

@@ -1,7 +1,0 @@
-#if defined (SYS_CRAY) 
-      REAL UCNNQC, ELNQC, DIANQC
-#else
-      DOUBLE PRECISION UCNNQC, ELNQC, DIANQC
-#endif
-      COMMON /NQCC/ UCNNQC(3,3,MXCENT), ELNQC(3,3,MXCENT), 
-     &              DIANQC(3,MXCENT)

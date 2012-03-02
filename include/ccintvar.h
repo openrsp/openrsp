@@ -1,1 +1,0 @@
-      INTEGER P1,R1,P,Q,R,S,A,B,C,D

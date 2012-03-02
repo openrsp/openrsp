@@ -1,3 +1,0 @@
-      COMMON/TRINP/  MBAS(8),MORB(8),MFRO(8),MISH(8),MASH(8),
-     &               MORBT,MMASHX,MMORBX,LCMO,
-     &               MSYM,INTSYM,IRDAO,ITUSYM

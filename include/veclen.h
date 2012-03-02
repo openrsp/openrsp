@@ -1,1 +1,0 @@
-      COMMON /VECLEN/ IVECLN, NODD

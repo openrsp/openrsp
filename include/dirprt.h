@@ -1,3 +1,0 @@
-      LOGICAL TRANS
-      COMMON /DIRPRT/ SIGNDR(4,3), TRANS, NOATMS, IATOMS(4), ISOPDR(4),
-     &                NCNTDR(4), ICNTDR(4)

@@ -1,4 +1,0 @@
-      COMMON /SIGMA/  SIGFC1(3,MXCOOR), SIGFC2(3,MXCOOR),
-     &                SIGSD1(3,MXCOOR), SIGSD2(3,MXCOOR),
-     &                SIGFS1(3,MXCOOR), SIGFS2(3,MXCOOR),
-     &                SIGFC(3,MXCOOR), SIGSD(3,MXCOOR), SIGFS(3,MXCOOR)

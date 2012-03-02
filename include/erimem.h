@@ -1,3 +1,0 @@
-C erimem.h
-      LOGICAL MEMOK
-      COMMON /ERIMEM/ MEMADD, MODAB, MODCD, MEMOK

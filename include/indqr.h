@@ -1,9 +1,0 @@
-      PARAMETER ( MXEXQR = MAXLBL , MXLRQR = MAXLBL )
-      CHARACTER*8 QRLBL ,TRLBL
-      COMMON /INDQR/ JEXQR(MXEXQR),ISEXQR(MXEXQR),
-     *               ILRQR(8),NLRQR(8),ITRQR(8),NTRQR(8),IEXQR(8),
-     *               NEXQR(8),ISYMTR(MXLRQR),
-     *               TRFREQ(MXLRQR),QRFREQ(MXLRQR),
-     *               ISYMQR(MXLRQR),EXCITA(8,MXEXQR,2),
-     *               NEXLBL,NEXLB2,NLRLBL,NTRLBL,
-     *               TRLBL(MXLRQR),QRLBL(MXLRQR)

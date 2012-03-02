@@ -1,1 +1,0 @@
-      COMMON /PRKOOR/ NPRREP(0:7)

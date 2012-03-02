@@ -1,1 +1,0 @@
-      PARAMETER (I2GB = 500000000)

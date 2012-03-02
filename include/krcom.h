@@ -1,1 +1,0 @@
-      COMMON /KRCOM/ ISYMD

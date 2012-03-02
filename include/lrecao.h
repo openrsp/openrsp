@@ -1,1 +1,0 @@
-      PARAMETER (LRECAO = 28*1024)

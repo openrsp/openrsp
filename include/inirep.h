@@ -1,1 +1,0 @@
-      COMMON /INIREP/ NREPPI(3), IREPPI(3,3)
