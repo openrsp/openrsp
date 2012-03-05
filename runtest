@@ -540,7 +540,7 @@ class run:
              if options.launcher:
                  launcher = options.launcher
              else:
-                 launcher = os.path.join(root_directory, '../build/dalton')
+                 launcher = os.path.join(root_directory, '../../build/dalton')
              # verify that launcher really exists
              if not os.path.isfile(launcher):
                  error_message = 'error: launcher not found in %s' % launcher
