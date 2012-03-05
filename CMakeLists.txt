@@ -5,6 +5,7 @@ project(OpenRSP Fortran C)
 set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compilers
     )
 
 set(CMAKE_Fortran_MODULE_DIRECTORY
@@ -64,6 +65,8 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/xprecision.F90
     ${PROJECT_SOURCE_DIR}/src/xtrack.F90
     )
+
+include(ConfigCompilerFlags)
 
 add_library(
     openrsp
