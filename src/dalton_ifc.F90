@@ -96,7 +96,6 @@ module dalton_ifc
   public di_get_geomDeriv_GxD_DFT
   public di_get_geomDeriv_molgrad_DFT
   public di_get_T_xc_cont
-  public di_get_sigma_xc_cont
   public boys_function
 
   !> length of the work array
@@ -1264,15 +1263,6 @@ module dalton_ifc
     type(matrix), intent(inout) :: OUTPUT
     call QUIT( 'di_get_T_xc_cont is not implemented!' )
   end subroutine di_get_T_xc_cont
-
-
-  subroutine di_get_sigma_xc_cont( b, D, S, sigma_xc_cont )
-    type(matrix), intent(in) :: b
-    type(matrix), intent(in) :: D
-    type(matrix), intent(in) :: S
-    type(matrix), intent(inout) :: sigma_xc_cont
-    call QUIT( 'di_get_sigma_xc_cont is not implemented!' )
-  end subroutine di_get_sigma_xc_cont
 
 
   !> \brief Return pointer to CHARGE vector in common block nuclei

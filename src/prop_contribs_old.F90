@@ -2159,8 +2159,7 @@ contains
                 // 'to unperturbed Fock matrix requested, but not implemented',-1)
 #ifndef PRG_DIRAC
       else if (n==1) then
-         call di_get_sigma_xc_cont(D(2), D(1), D(1), A)
-         F = F + A
+!        do nothing
       else if (n==2) then
          call di_get_T_xc_cont(D(1), D(2), D(3), A)
          F = F + A
