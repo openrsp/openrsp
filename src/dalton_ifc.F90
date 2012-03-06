@@ -95,7 +95,6 @@ module dalton_ifc
   public di_get_geomDeriv_FxD_DFT
   public di_get_geomDeriv_GxD_DFT
   public di_get_geomDeriv_molgrad_DFT
-  public di_get_T_xc_cont
   public boys_function
 
   !> length of the work array
@@ -1254,16 +1253,6 @@ module dalton_ifc
     integer, intent(in) :: natoms
     call QUIT( 'di_get_geomDeriv_molgrad_DFT is not implemented!' )
   end subroutine di_get_geomDeriv_molgrad_DFT
-
-
-  subroutine di_get_T_xc_cont( D, VecB, VecC, OUTPUT )
-    type(matrix), intent(in) :: D
-    type(matrix), intent(in) :: VecB
-    type(matrix), intent(in) :: VecC
-    type(matrix), intent(inout) :: OUTPUT
-    call QUIT( 'di_get_T_xc_cont is not implemented!' )
-  end subroutine di_get_T_xc_cont
-
 
   !> \brief Return pointer to CHARGE vector in common block nuclei
   !> \date 2011-05-10

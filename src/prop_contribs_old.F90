@@ -2161,8 +2161,10 @@ contains
       else if (n==1) then
 !        do nothing
       else if (n==2) then
-         call di_get_T_xc_cont(D(1), D(2), D(3), A)
-         F = F + A
+         print *, 'error: implement XC QR contribution'
+         stop 1
+!        call di_get_T_xc_cont(D(1), D(2), D(3), A)
+!        F = F + A
       else
          call quit('prop_contribs/twofck_ks error: n > 2 not implemented',-1)
       end if
