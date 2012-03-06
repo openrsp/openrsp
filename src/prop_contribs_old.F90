@@ -2118,27 +2118,16 @@ contains
 
    subroutine twofck_ks(n, D, F)
       integer,      intent(in)    :: n
-#ifdef PRG_DIRAC
       type(matrix)                :: D(n+1)
-#else
-      type(matrix), intent(in)    :: D(n+1)
-#endif
       type(matrix), intent(inout) :: F
       type(matrix) :: A
       integer      :: i
-#ifdef PRG_DIRAC
-      type(matrix) :: R
-      real(8)              :: sum_norm
-      real(8), allocatable :: container(:, :, :, :)
-      integer              :: ones(200), nr_dmat, nz, order
-#endif
 
       if (.not. do_dft()) then
 !        we want no xc
          return
       end if
 
-#ifndef PRG_DIRAC
       !radovan: this is not correct for CR and higher
       !         there you can have nonzero integral with one or more
       !         density matrices zero
@@ -2149,7 +2138,6 @@ contains
          ! at least one of the density matrices is zero
          return
       end if
-#endif
 
       A = 0*D(1)
       call mat_alloc(A)
@@ -2157,7 +2145,6 @@ contains
       if (n==0) then
          call quit('prop_contribs/twofck_ks error: Kohn-Sham contribution ' &
                 // 'to unperturbed Fock matrix requested, but not implemented',-1)
-#ifndef PRG_DIRAC
       else if (n==1) then
 !        do nothing
       else if (n==2) then
@@ -2168,95 +2155,6 @@ contains
       else
          call quit('prop_contribs/twofck_ks error: n > 2 not implemented',-1)
       end if
-#else
-      else
-
-         ones    = 1
-         nz      = size(A%elms)/(A%nrow*A%ncol)
-         nr_dmat = size(D)
-         sum_norm = 0.0d0
-         do i = 2, nr_dmat
-            if (iszero(D(i))) then
-               D(i) = tiny(0.0d0)*D(1)
-            end if
-            R = (D(i) + trps(D(i)))
-            sum_norm = sum_norm + norm(R)
-         end do
-         R = 0
-         if (sum_norm > tiny(0.0d0)) then
-
-            A%elms = 0.0d0
-            A%irep = 0
-            do i = 2, nr_dmat
-               A%irep = ieor(A%irep, D(i)%irep)
-            end do
-            
-!           that's really ugly here - will make it better later
-!           for the moment i'm just happy that it works
-            order = 0
-            if (nr_dmat > (0)) then
-               order = 1
-            end if
-            if (nr_dmat > (1)) then
-               order = 2
-            end if
-            if (nr_dmat > (1+1)) then
-               order = 3
-            end if
-            if (nr_dmat > (1+2+1)) then
-               order = 4
-            end if
-            if (nr_dmat > (1+3+3+1)) then
-               order = 5
-            end if
-            if (nr_dmat > (1+4+6+4+1)) then
-               order = 6
-            end if
-            if (nr_dmat > (1+5+10+10+5+1)) then
-               call lsquit('fix twofck_ks order pascal triangle',-1)
-            end if
-            
-            if (order < 2) then
-               return
-            end if
-
-!           this is done because pointers do not have to be consecutive in memory
-            call alloc(container, A%nrow, A%nrow, nz, nr_dmat - 1)
-            do i = 2, nr_dmat
-               call dcopy(A%nrow*A%nrow*nz, D(i)%elms, 1, container(1, 1, 1, i - 1), 1)
-            end do
-
-!radovan:
-!           in many situations one could pass F directly
-!           to xc_integrator but the gga symmetrization can make problems
-!           with hybrid functionals and anti-hermitian contributions (nonzero frequencies)
-!           so in other words while A is always symmetric, F is non necessarily so
-!           and it would get symmetrized inside xc_integrator
-            
-!           note to myself:
-!           geometric derivatives of 2nd order properties
-!           are incorrect with conventional derivatives, correct with xcfun
-!           (this is due to handling of options inside xc_driver)
-            
-            call xc_mpi_wake_up_coworkers()
-            call xc_integrator(xc_mat_dim      = A%nrow,                              &
-                               xc_nz           = nz,                                  &
-                               xc_dmat_0       = D(1)%elms,                           &
-                               xc_nr_dmat      = nr_dmat - 1,                         &
-                               xc_nr_fmat      = 1,                                   &
-                               xc_dmat         = container,                           &
-                               xc_fmat         = A%elms,                              &
-                               xc_dmat_pg_sym  = (/(D(i)%irep + 1, i = 2, nr_dmat)/), &
-                               xc_fmat_pg_sym  = (/A%irep + 1/),                      &
-                               xc_response_order_ao = order)
-            call xc_mpi_release_coworkers()
-            
-            F = F + A
-            call dealloc(container)
-         end if
-
-      end if
-#endif /* ifndef PRG_DIRAC */
 
       A = 0
 
