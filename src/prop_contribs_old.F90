@@ -2117,6 +2117,9 @@ contains
 
 
    subroutine twofck_ks(n, D, F)
+
+      use xcint_main
+
       integer,      intent(in)    :: n
       type(matrix)                :: D(n+1)
       type(matrix), intent(inout) :: F
@@ -2139,22 +2142,23 @@ contains
          return
       end if
 
-      A = 0*D(1)
-      call mat_alloc(A)
+      A = tiny(0.0d0)*D(1)
 
-      if (n==0) then
-         call quit('prop_contribs/twofck_ks error: Kohn-Sham contribution ' &
-                // 'to unperturbed Fock matrix requested, but not implemented',-1)
-      else if (n==1) then
-!        do nothing
-      else if (n==2) then
-         print *, 'error: implement XC QR contribution'
-         stop 1
-!        call di_get_T_xc_cont(D(1), D(2), D(3), A)
-!        F = F + A
-      else
-         call quit('prop_contribs/twofck_ks error: n > 2 not implemented',-1)
-      end if
+      select case (n)
+         case (0)
+            call quit('prop_contribs/twofck_ks error: Kohn-Sham contribution ' &
+                   // 'to unperturbed Fock matrix requested, but not implemented',-1)
+         case (1)
+            ! nothing to be done
+         case (2)
+!           call integrate_xc(D=(/D(1)/), F=(/A/))
+!           print *, 'error: implement XC QR contribution'
+!           stop 1
+!           call di_get_T_xc_cont(D(1), D(2), D(3), A)
+!           F = F + A
+         case default
+            call quit('prop_contribs/twofck_ks error: n > 2 not implemented',-1)
+      end select
 
       A = 0
 
