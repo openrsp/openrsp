@@ -48,9 +48,9 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/dalton_ifc.F90
     ${PROJECT_SOURCE_DIR}/src/basis_set.f90
     ${PROJECT_SOURCE_DIR}/src/birefring_old.F90
-    ${PROJECT_SOURCE_DIR}/src/cgto_diff_eri.F90
-    ${PROJECT_SOURCE_DIR}/src/eri_basis_loops.f90
-    ${PROJECT_SOURCE_DIR}/src/eri_contractions.f90
+#   ${PROJECT_SOURCE_DIR}/src/cgto_diff_eri.F90
+#   ${PROJECT_SOURCE_DIR}/src/eri_basis_loops.f90
+#   ${PROJECT_SOURCE_DIR}/src/eri_contractions.f90
     ${PROJECT_SOURCE_DIR}/src/openrsp.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp_daldrv_old.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp_old.F90
