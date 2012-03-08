@@ -95,7 +95,6 @@ module dalton_ifc
   public di_get_geomDeriv_FxD_DFT
   public di_get_geomDeriv_GxD_DFT
   public di_get_geomDeriv_molgrad_DFT
-  public boys_function
 
   !> length of the work array
   integer, private, save :: total_f77_work = 0
@@ -1425,29 +1424,5 @@ module dalton_ifc
           CENT(i,r,:) = CENT(i,r,:) + dc
     end do
   end subroutine
-
-
-  !ajt: Don't know what emx=exp(-x) should eventually do. Perhaps
-  !     to optimize the evaluation of boys(n,x)
-  function boys_function(n, x, emx)
-  ! ajt the purest of evils: implicit
-    implicit integer (i,m-n)
-#include <implicit.h>
-    integer,           intent(in) :: n
-    real(8),           intent(in) :: x
-    real(8), optional, intent(in) :: emx
-    real(8)                       :: boys_function
-#include <maxaqn.h>
-#include <pi.h>
-    integer MAXJ, JMAX0
-#include <gamcom.h>
-    logical, save :: ready = .false.
-    if (.not.ready) call GAMTAB(MAXJ)
-    ready = .true.
-    JMAX0 = n
-    WVAL = x
-    call GAMFUN()
-    boys_function = FJW(n)
-  end function
 
 end module
