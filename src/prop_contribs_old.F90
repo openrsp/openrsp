@@ -2145,19 +2145,13 @@ contains
       A = tiny(0.0d0)*D(1)
 
       select case (n)
-         case (0)
-            call quit('prop_contribs/twofck_ks error: Kohn-Sham contribution ' &
-                   // 'to unperturbed Fock matrix requested, but not implemented',-1)
          case (1)
             ! nothing to be done
          case (2)
-!           call integrate_xc(D=(/D(1)/), F=(/A/))
-!           print *, 'error: implement XC QR contribution'
-!           stop 1
-!           call di_get_T_xc_cont(D(1), D(2), D(3), A)
-!           F = F + A
+            call integrate_xc(D=D, size_D=3, F=(/A/))
+            F = F + A
          case default
-            call quit('prop_contribs/twofck_ks error: n > 2 not implemented',-1)
+            call quit('prop_contribs_old/twofck_ks error: contrib not implemented',-1)
       end select
 
       A = 0
