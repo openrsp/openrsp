@@ -2148,7 +2148,7 @@ contains
          case (1)
             ! nothing to be done
          case (2)
-            call integrate_xc(D=D, size_D=3, F=(/A/))
+            call xc_integrate(D=D, size_D=3, F=(/A/))
             F = F + A
          case default
             call quit('prop_contribs_old/twofck_ks error: contrib not implemented',-1)

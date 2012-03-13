@@ -736,11 +736,11 @@ contains
     print *, 'error: needs xcint'
     stop 1
 #else /* OPENRSP_STANDALONE */
-    call integrate_xc(D=D,             &
+    call xc_integrate(D=D,             &
                       size_D=nd,       &
-                      ave=ave_real,    &
+                      xc_ave=ave_real, &
                       xc_geo_order=nf, &
-                      nr_atoms=get_natom())
+                      xc_nr_atoms=get_natom())
 #endif /* OPENRSP_STANDALONE */
 
     do i = 1, product(nc)
@@ -1094,17 +1094,17 @@ contains
     if (nd == 1) then
        do icenter = 1, get_natom()
           ioff = (icenter-1)*3
-          call integrate_xc(D=D,                                   &
+          call xc_integrate(D=D,                                   &
                             F=(/F(ioff+1), F(ioff+2), F(ioff+3)/), &
                             size_F=3,                              &
                             xc_geo_order=1,                        &
-                            icenter=icenter,                       &
-                            nr_atoms=get_natom())
+                            xc_cent=(/icenter/),                   &
+                            xc_nr_atoms=get_natom())
        end do
     end if
 
     if (nd == 2) then
-       call integrate_xc(D=D, size_D=2, F=F, xc_geo_order=1)
+       call xc_integrate(D=D, size_D=2, F=F, xc_geo_order=1)
     end if
 #endif /* OPENRSP_STANDALONE */
 

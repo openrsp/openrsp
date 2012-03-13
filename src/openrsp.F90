@@ -175,7 +175,7 @@ contains
     stop 1
 #else /* OPENRSP_STANDALONE */
        ! add xc contribution to the fock matrix
-       call integrate_xc(D=(/D/), F=(/F/))
+       call xc_integrate(D=(/D/), F=(/F/))
 #endif /* OPENRSP_STANDALONE */
     end if
 
