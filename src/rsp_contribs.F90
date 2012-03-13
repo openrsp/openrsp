@@ -1080,6 +1080,7 @@ contains
     !> output average
     type(matrix),   intent(inout) :: F(product(nc))
     !----------------------------------------------
+    type(matrix)                  :: X(3)
     integer                       :: icenter, ixyz, ioff
 
     if (.not. is_ks_calculation()) then
@@ -1094,17 +1095,29 @@ contains
     if (nd == 1) then
        do icenter = 1, get_natom()
           ioff = (icenter-1)*3
-          call xc_integrate(D=D,                                   &
-                            F=(/F(ioff+1), F(ioff+2), F(ioff+3)/), &
-                            size_F=3,                              &
-                            xc_geo_order=1,                        &
-                            xc_cent=(/icenter/),                   &
+          X(1) = tiny(0.0d0)*F(1)
+          X(2) = tiny(0.0d0)*F(1)
+          X(3) = tiny(0.0d0)*F(1)
+          call xc_integrate(D=D,                 &
+                            F=X,                 &
+                            size_F=3,            &
+                            xc_geo_order=1,      &
+                            xc_cent=(/icenter/), &
                             xc_nr_atoms=get_natom())
+          F(ioff+1) = F(ioff+1) + X(1)
+          F(ioff+2) = F(ioff+2) + X(2)
+          F(ioff+3) = F(ioff+3) + X(3)
+          X(1) = 0
+          X(2) = 0
+          X(3) = 0
        end do
     end if
 
     if (nd == 2) then
-       call xc_integrate(D=D, size_D=2, F=F, xc_geo_order=1)
+       X(1) = tiny(0.0d0)*F(1)
+       call xc_integrate(D=D, size_D=2, F=X, xc_geo_order=1)
+       F(1) = F(1) + X(1)
+       X(1) = 0
     end if
 #endif /* OPENRSP_STANDALONE */
 

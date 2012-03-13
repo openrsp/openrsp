@@ -115,6 +115,7 @@ contains
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
     integer                :: kfree
+    type(matrix)           :: X(1) !XC contribution to fock matrix
     
     ! prints the header and license information
     call TITLER('OpenRSP: Response functions computed using AO basis', '*', -1)
@@ -175,7 +176,10 @@ contains
     stop 1
 #else /* OPENRSP_STANDALONE */
        ! add xc contribution to the fock matrix
-       call xc_integrate(D=(/D/), F=(/F/))
+       X(1) = tiny(0.0d0)*F
+       call xc_integrate(D=(/D/), F=X)
+       F = F + X(1)
+       X(1) = 0
 #endif /* OPENRSP_STANDALONE */
     end if
 
