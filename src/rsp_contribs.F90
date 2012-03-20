@@ -273,14 +273,14 @@ contains
       ! calculates the expectaion values of derivatives of overlap matrix
 !FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
       val_expt = 0.0
-      call gen1int_ifc_main(one_prop=overlap,              &
-                            order_geo_total=order_geo,     &
-                            max_num_cent=min(2,order_geo), &
-                            num_ints=num_expectations,     &
-                            num_dens=1, ao_dens=(/DFD/),   &
-                            val_expt=val_expt,             &
-                            redunt_expt=order_geo>1,       &
-                            io_viewer=get_lupri(),         &
+      call gen1int_ifc_main(one_prop=overlap,                          &
+                            order_geo_total=order_geo,                 &
+                            max_num_cent=min(2,order_geo,get_natom()), &
+                            num_ints=num_expectations,                 &
+                            num_dens=1, ao_dens=(/DFD/),               &
+                            val_expt=val_expt,                         &
+                            redunt_expt=order_geo>1,                   &
+                            io_viewer=get_lupri(),                     &
                             level_print=5)
       val_expt = -val_expt
       ! assigns the output average
@@ -424,14 +424,14 @@ contains
     ! calculates the expectaion values of derivatives of one-electron Hamiltonian
 !FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
     val_expt = 0.0
-    call gen1int_ifc_main(one_prop=one_hamil,            &
-                          order_geo_total=order_geo,     &
-                          max_num_cent=min(3,order_geo), &
-                          num_ints=num_expectations,     &
-                          num_dens=1, ao_dens=(/D/),     &
-                          val_expt=val_expt,             &
-                          redunt_expt=order_geo>1,       &
-                          io_viewer=get_lupri(),         &
+    call gen1int_ifc_main(one_prop=one_hamil,                        &
+                          order_geo_total=order_geo,                 &
+                          max_num_cent=min(3,order_geo,get_natom()), &
+                          num_ints=num_expectations,                 &
+                          num_dens=1, ao_dens=(/D/),                 &
+                          val_expt=val_expt,                         &
+                          redunt_expt=order_geo>1,                   &
+                          io_viewer=get_lupri(),                     &
                           level_print=5)
     ! assigns the output average
     call rsp_set_geom(mol, nf, c, nc, val_expt, ave)
@@ -841,14 +841,14 @@ contains
       end do
       ! calculates the geometric derivatives of overlap matrix
 !FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
-      call gen1int_ifc_main(one_prop=overlap,              &
-                            order_geo_total=order_geo,     &
-                            max_num_cent=min(2,order_geo), &
-                            num_ints=dim_redunt_geo,       &
-                            val_ints=ovl,                  &
-                            redunt_ints=order_geo>1,       &
-                            num_dens=1,                    &
-                            io_viewer=get_lupri(),         &
+      call gen1int_ifc_main(one_prop=overlap,                          &
+                            order_geo_total=order_geo,                 &
+                            max_num_cent=min(2,order_geo,get_natom()), &
+                            num_ints=dim_redunt_geo,                   &
+                            val_ints=ovl,                              &
+                            redunt_ints=order_geo>1,                   &
+                            num_dens=1,                                &
+                            io_viewer=get_lupri(),                     &
                             level_print=5)
     end if
     ! frees space
@@ -941,14 +941,14 @@ contains
     end do
     ! calculates the geometric derivatives of one-electron Hamiltonian
 !FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
-    call gen1int_ifc_main(one_prop=one_hamil,            &
-                          order_geo_total=order_geo,     &
-                          max_num_cent=min(3,order_geo), &
-                          num_ints=dim_redunt_geo,       &
-                          val_ints=oneint,               &
-                          redunt_ints=order_geo>1,       &
-                          num_dens=1,                    &
-                          io_viewer=get_lupri(),         &
+    call gen1int_ifc_main(one_prop=one_hamil,                        &
+                          order_geo_total=order_geo,                 &
+                          max_num_cent=min(3,order_geo,get_natom()), &
+                          num_ints=dim_redunt_geo,                   &
+                          val_ints=oneint,                           &
+                          redunt_ints=order_geo>1,                   &
+                          num_dens=1,                                &
+                          io_viewer=get_lupri(),                     &
                           level_print=5)
     ! frees space
     call OnePropDestroy(one_prop=one_hamil)
