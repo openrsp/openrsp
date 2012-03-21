@@ -1,1 +1,3 @@
-hf.dal fh.mol
+hf.dal  fh.mol
+lda.dal fh.mol
+pbe.dal fh.mol
