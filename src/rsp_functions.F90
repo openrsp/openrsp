@@ -382,6 +382,11 @@ contains
     call print_tensor(shape(xc_gff), xc_gff, 'xc_gff')
     call print_tensor(shape(xc_fff), xc_fff, 'xc_fff')
 
+    cub = cub + xc_ggg
+    cub = cub + xc_ggf
+    cub = cub + xc_gff
+    cub = cub + xc_fff
+
 
 !   idempotency multiplier contribution
 !   ===================================
