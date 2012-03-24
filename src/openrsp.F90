@@ -117,6 +117,7 @@ contains
     type(matrix)           :: H1 !one electron Hamiltonian
     integer                :: kfree
     type(matrix)           :: X(1) !XC contribution to fock matrix
+    logical                :: grid_file_exists
     
     ! prints the header and license information
     call TITLER('OpenRSP: Response functions computed using AO basis', '*', -1)
@@ -169,7 +170,10 @@ contains
     if (is_ks_calculation()) then
        ! write xcint interface files
        kfree = 1
-       call write_num_grid_to_file(D%elms, work, kfree, lwork)
+       inquire(file = 'numerical_grid', exist = grid_file_exists)
+       if (.not. grid_file_exists) then
+          call write_num_grid_to_file(D%elms, work, kfree, lwork)
+       end if
        call interface_ao_write()
 
 #ifdef OPENRSP_STANDALONE
