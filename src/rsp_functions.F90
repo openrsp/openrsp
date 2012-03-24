@@ -70,6 +70,9 @@ contains
 
     ! print to screen
     call print_tensor(shape(gra), gra, 'gradient = Eg')
+
+    print *, 'sum of gradient elements = ', sum(gra)
+
     ! print to file
     open(unit=iounit, file='gradient', status='replace', action='write')
     call print_tensor(shape(gra), gra, unit=iounit)
