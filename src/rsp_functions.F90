@@ -130,7 +130,7 @@ contains
 !   ----------------------------------------------------------------------------
     type(rsp_field)           :: geo3(3)
     type(matrix)              :: DFD, DFDg
-    complex(8)                :: hes(ng, ng), temp(ng, ng)
+    complex(8)                :: hes(ng, ng), temp(ng, ng), xc_hes(ng, ng)
     integer                   :: i, j
     real(8)                   :: t
 !   ----------------------------------------------------------------------------
@@ -169,13 +169,17 @@ contains
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Ga(D)Db')
 
+    xc_hes = 0.0d0
     ! Exchange/correlation contribution
     call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(temp), 1, (/D/), temp)
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(ab)')
+    xc_hes = xc_hes + temp
     do i = 1, size(Dg)
        call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(temp(:,i)), 2, (/D, Dg(i)/), temp(:,i))
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(a)Db')
+    xc_hes = xc_hes + temp
+    call print_tensor(shape(xc_hes), xc_hes, 'xc_hes')
 
 !   cheat: only symmetry unique elements are correctly calculated with xc
 !          here copy to symmetry dependent to get correct, symmetric hessian
@@ -219,6 +223,7 @@ contains
     type(matrix)              :: DFD, DFDg, DFDgg, DSDgg, FDSgg
     type(matrix)              :: FgDS(ng), DgSD(ng)
     complex(8)                :: cub(ng, ng, ng), tmp(ng, ng, ng)
+    complex(8)                :: xc_cub(ng, ng, ng)
     complex(8)                :: xc_ggg(ng, ng, ng)
     complex(8)                :: xc_ggf(ng, ng, ng)
     complex(8)                :: xc_gff(ng, ng, ng)
@@ -335,6 +340,7 @@ contains
 !   xc contribution
 !   ===============
 
+    xc_cub = 0.0d0
     xc_ggg = 0.0d0
     xc_ggf = 0.0d0
     xc_gff = 0.0d0
@@ -382,10 +388,13 @@ contains
     call print_tensor(shape(xc_gff), xc_gff, 'xc_gff')
     call print_tensor(shape(xc_fff), xc_fff, 'xc_fff')
 
-    cub = cub + xc_ggg
-    cub = cub + xc_ggf
-    cub = cub + xc_gff
-    cub = cub + xc_fff
+    xc_cub = xc_cub + xc_ggg
+    xc_cub = xc_cub + xc_ggf
+    xc_cub = xc_cub + xc_gff
+    xc_cub = xc_cub + xc_fff
+
+    call print_tensor(shape(xc_cub), xc_cub, 'xc_cub')
+    cub = cub + xc_cub
 
 
 !   idempotency multiplier contribution
