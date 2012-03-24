@@ -4,6 +4,7 @@ GRID_FILES="grid_-005 grid_-004 grid_-003 grid_-002 grid_-001 grid_+000 grid_+00
 
 POLYNOMIAL_ORDER=8
 
+./num-weight-derv.py -p $POLYNOMIAL_ORDER -d 0 --grids="$GRID_FILES" > numerical_grid
 ./num-weight-derv.py -p $POLYNOMIAL_ORDER -d 1 --grids="$GRID_FILES" > numerical_grid_001x
 ./num-weight-derv.py -p $POLYNOMIAL_ORDER -d 2 --grids="$GRID_FILES" > numerical_grid_001x_001x
 ./num-weight-derv.py -p $POLYNOMIAL_ORDER -d 3 --grids="$GRID_FILES" > numerical_grid_001x_001x_001x
