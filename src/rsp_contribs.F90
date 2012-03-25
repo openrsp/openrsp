@@ -722,9 +722,8 @@ contains
     !----------------------------------------------
     integer                     :: i
     real(8),        allocatable :: ave_real(:)
-    integer                     :: mat_dim, imat, nr_dmat
+    integer                     :: mat_dim, imat, nr_dmat, nr_atoms
     real(8),        allocatable :: xc_dmat(:)
-    real(8)                     :: x(10)
     !----------------------------------------------
 
     if (.not. is_ks_calculation()) then
@@ -732,7 +731,9 @@ contains
        return
     end if
 
-    allocate(ave_real(product(nc)))
+    nr_atoms = get_natom()
+
+    allocate(ave_real((nr_atoms*3)**nf))
     ave_real = 0.0d0
 
 #ifdef OPENRSP_STANDALONE
@@ -746,14 +747,15 @@ contains
     do imat = 1, nr_dmat
        call daxpy(mat_dim*mat_dim, 2.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
     end do
-    x = 0.0d0
-    call xc_integrate(xc_mat_dim=D(1)%nrow, &
+    call xc_integrate(                      &
+                      xc_mat_dim=mat_dim,   &
                       xc_dmat=xc_dmat,      &
+                      xc_res=ave_real,      &
                       xc_nr_dmat=nr_dmat,   &
-                      xc_res=x,             &
-                      xc_ave=ave_real,      &
+                      xc_get_ave=.true.,    &
                       xc_geo_order=nf,      &
-                      xc_nr_atoms=get_natom())
+                      xc_nr_atoms=nr_atoms  &
+                     )
     deallocate(xc_dmat)
 #endif /* OPENRSP_STANDALONE */
 
@@ -1123,14 +1125,16 @@ contains
           allocate(xc_res(mat_dim*mat_dim*nr_fmat))
           xc_res = 0.0d0
 
-          call xc_integrate(xc_mat_dim=mat_dim,  &
-                            xc_dmat=xc_dmat,     &
-                            xc_nr_dmat=nr_dmat,  &
-                            xc_res=xc_res,       &
-                            xc_nr_fmat=nr_fmat,  &
-                            xc_geo_order=1,      &
-                            xc_cent=(/icenter/), &
-                            xc_nr_atoms=get_natom())
+          call xc_integrate(                         &
+                            xc_mat_dim=mat_dim,      &
+                            xc_dmat=xc_dmat,         &
+                            xc_res=xc_res,           &
+                            xc_nr_dmat=nr_dmat,      &
+                            xc_nr_fmat=nr_fmat,      &
+                            xc_geo_order=1,          &
+                            xc_nr_atoms=get_natom(), &
+                            xc_cent=icenter          &
+                           )
 
           ioff = (icenter-1)*3
           do imat = 1, nr_fmat
@@ -1145,12 +1149,14 @@ contains
        allocate(xc_res(mat_dim*mat_dim*nr_fmat))
        xc_res = 0.0d0
 
-       call xc_integrate(xc_mat_dim=mat_dim, &
+       call xc_integrate(                    &
+                         xc_mat_dim=mat_dim, &
                          xc_dmat=xc_dmat,    &
+                         xc_res=xc_res,      &
                          xc_nr_dmat=nr_dmat, &
                          xc_nr_fmat=nr_fmat, &
-                         xc_res=xc_res,      &
-                         xc_geo_order=1)
+                         xc_geo_order=1      &
+                        )
 
        do imat = 1, nr_fmat
           call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, F(imat)%elms, 1)
