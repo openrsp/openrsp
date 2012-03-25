@@ -722,6 +722,9 @@ contains
     !----------------------------------------------
     integer                     :: i
     real(8),        allocatable :: ave_real(:)
+    integer                     :: mat_dim, imat, nr_dmat
+    real(8),        allocatable :: xc_dmat(:)
+    real(8)                     :: x(10)
     !----------------------------------------------
 
     if (.not. is_ks_calculation()) then
@@ -736,11 +739,22 @@ contains
     print *, 'error: needs xcint'
     stop 1
 #else /* OPENRSP_STANDALONE */
-    call xc_integrate(D=D,             &
-                      size_D=nd,       &
-                      xc_ave=ave_real, &
-                      xc_geo_order=nf, &
+    mat_dim = D(1)%nrow
+    nr_dmat = nd
+    allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+    xc_dmat = 0.0d0
+    do imat = 1, nr_dmat
+       call daxpy(mat_dim*mat_dim, 2.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
+    end do
+    x = 0.0d0
+    call xc_integrate(xc_mat_dim=D(1)%nrow, &
+                      xc_dmat=xc_dmat,      &
+                      xc_nr_dmat=nr_dmat,   &
+                      xc_res=x,             &
+                      xc_ave=ave_real,      &
+                      xc_geo_order=nf,      &
                       xc_nr_atoms=get_natom())
+    deallocate(xc_dmat)
 #endif /* OPENRSP_STANDALONE */
 
     do i = 1, product(nc)
@@ -1080,8 +1094,10 @@ contains
     !> output average
     type(matrix),   intent(inout) :: F(product(nc))
     !----------------------------------------------
-    type(matrix)                  :: X(3)
     integer                       :: icenter, ixyz, ioff
+    integer                       :: mat_dim, imat, nr_dmat, nr_fmat
+    real(8),          allocatable :: xc_dmat(:)
+    real(8),          allocatable :: xc_res(:)
 
     if (.not. is_ks_calculation()) then
        return
@@ -1092,33 +1108,57 @@ contains
     stop 1
 #else /* OPENRSP_STANDALONE */
 
+    mat_dim = D(1)%nrow
+    nr_dmat = nd
+    allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+    xc_dmat = 0.0d0
+    do imat = 1, nr_dmat
+       call daxpy(mat_dim*mat_dim, 2.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
+    end do
+
     if (nd == 1) then
        do icenter = 1, get_natom()
-          ioff = (icenter-1)*3
-          X(1) = tiny(0.0d0)*F(1)
-          X(2) = tiny(0.0d0)*F(1)
-          X(3) = tiny(0.0d0)*F(1)
-          call xc_integrate(D=D,                 &
-                            F=X,                 &
-                            size_F=3,            &
+
+          nr_fmat = 3
+          allocate(xc_res(mat_dim*mat_dim*nr_fmat))
+          xc_res = 0.0d0
+
+          call xc_integrate(xc_mat_dim=mat_dim,  &
+                            xc_dmat=xc_dmat,     &
+                            xc_nr_dmat=nr_dmat,  &
+                            xc_res=xc_res,       &
+                            xc_nr_fmat=nr_fmat,  &
                             xc_geo_order=1,      &
                             xc_cent=(/icenter/), &
                             xc_nr_atoms=get_natom())
-          F(ioff+1) = F(ioff+1) + X(1)
-          F(ioff+2) = F(ioff+2) + X(2)
-          F(ioff+3) = F(ioff+3) + X(3)
-          X(1) = 0
-          X(2) = 0
-          X(3) = 0
+
+          ioff = (icenter-1)*3
+          do imat = 1, nr_fmat
+             call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, F(ioff+imat)%elms, 1)
+          end do
+          deallocate(xc_res)
        end do
     end if
 
     if (nd == 2) then
-       X(1) = tiny(0.0d0)*F(1)
-       call xc_integrate(D=D, size_D=2, F=X, xc_geo_order=1)
-       F(1) = F(1) + X(1)
-       X(1) = 0
+       nr_fmat = 1
+       allocate(xc_res(mat_dim*mat_dim*nr_fmat))
+       xc_res = 0.0d0
+
+       call xc_integrate(xc_mat_dim=mat_dim, &
+                         xc_dmat=xc_dmat,    &
+                         xc_nr_dmat=nr_dmat, &
+                         xc_nr_fmat=nr_fmat, &
+                         xc_res=xc_res,      &
+                         xc_geo_order=1)
+
+       do imat = 1, nr_fmat
+          call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, F(imat)%elms, 1)
+       end do
+       deallocate(xc_res)
     end if
+
+    deallocate(xc_dmat)
 #endif /* OPENRSP_STANDALONE */
 
   end subroutine

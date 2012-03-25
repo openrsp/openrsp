@@ -2148,8 +2148,8 @@ contains
          case (1)
             ! nothing to be done
          case (2)
-            call xc_integrate(D=D, size_D=3, F=(/A/))
-            F = F + A
+!           call xc_integrate(xc_mat_dim=D(1)%nrow, D=D, xc_nr_dmat=3, F=(/A/))
+!           F = F + A
          case default
             call quit('prop_contribs_old/twofck_ks error: contrib not implemented',-1)
       end select
