@@ -146,13 +146,13 @@ contains
     ! overlap contribution
     DFD = D*F*D
     call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(temp), DFD, &
-                    temp); DFD=0 !, (0d0,0d0)*(/0,0/), D)
+                    temp); DFD=0
     hes = hes + temp; call print_tensor(shape(temp), temp, '-SabDFD')
     !
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
        call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(temp(:,i)), DFDg, &
-                       temp(:,i)); DFDg=0 !, (0d0,0d0)*(/0,0/), D)
+                       temp(:,i)); DFDg=0
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, '-SaDFDb')
     ! 1-electron contribution
@@ -630,7 +630,7 @@ contains
 
     DFD = D*F*D
     call rsp_ovlave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
-                    shape(tmp), DFD, tmp); DFD=0 !, (0d0,0d0)*(/0,0/), D)
+                    shape(tmp), DFD, tmp); DFD=0
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabcdDFD')
 
 
@@ -666,7 +666,7 @@ contains
                   D*F*Dgg(i,j) + D*Fg(j)*Dg(i) + Dg(j)*F*Dg(i) + &
                   Dg(j)*Fg(i)*D + D*Fgg(i,j)*D + D*Fg(i)*Dg(j) ! Wcd
           call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
-                          DFDgg, tmp(:,:,i,j)); DFDgg=0 !, (0d0,0d0)*(/0/), D)
+                          DFDgg, tmp(:,:,i,j)); DFDgg=0
           do k = 1, size(Dg)
              do l = 1, size(Dg)
                 qua(k, l, i, j) = qua(k, l, i, j) + tmp(k, l, i, j)
@@ -693,7 +693,7 @@ contains
                       Dg(j)*(Fgg(i,k)*D+Fg(k)*Dg(i))+(D*Fgg(i,k)+Dg(i)*Fg(k))*Dg(j) + &
                       Dg(k)*(Fgg(i,j)*D+Fg(i)*Dg(j))+(D*Fgg(i,j)+Dg(j)*Fg(i))*Dg(k)
             call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j,k)), &
-                            DFDggg2p, tmp(:,i,j,k)); DFDggg2p=0 !, (0d0,0d0)*(/0/), D)
+                            DFDggg2p, tmp(:,i,j,k)); DFDggg2p=0
         end do
       end do
     end do
@@ -1129,7 +1129,7 @@ contains
     end do
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcDd')
 
-! IDEMPOTENCY BLOCK: DONE: YES
+! IDEMPOTENCY BLOCK
     ! 'Zeta g'
     do i = 1, size(Dg)
        FgDS(i) = Fg(i)*D*S + S*D*Fg(i) - Fg(i) - F*D*Sg(i) - Sg(i)*D*F
@@ -1157,7 +1157,7 @@ contains
 
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-FaDS DSDbcd2p')
 
-! SELF-CONSISTENCY BLOCK: DONE: YES
+! SELF-CONSISTENCY BLOCK
     ! 'Lambda g'
     do i = 1, size(Dg)
        DgSD(i) = Dg(i)*S*D - D*S*Dg(i)
@@ -1191,9 +1191,6 @@ contains
 
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-DaSD FDSbcd2p')
 
-! ALL CONTRIBUTIONS ARE NOW ADDED TO QUARTIC FORCE FIELD TENSOR
-
-! PRINT OUTPUT
     call print_tensor(shape(qua), qua, 'quarticff = Egggg')
 
 ! MR: NOTE INDICES OF OUTPUT (EVEN THOUGH THEY DON'T REALLY MATTER A LOT HERE IN Egggg)
@@ -1296,7 +1293,7 @@ contains
        DFDf = Df(i)*F*D + D*Ff(i)*D + D*F*Df(i)
        call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
                        DFDf, tmp(:,:,i))
-       DFDf=0   !, (0d0,0d0)*(/0,0/), D)
+       DFDf=0
     end do
     Eggf = tmp; call print_tensor(shape(tmp), tmp, '-SabDFDf')
     !
@@ -1306,7 +1303,7 @@ contains
                 + Dg(i)*Ff(j)*D + Dg(i)*F*Df(j) + D*Fg(i)*Df(j)
           call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
                           DFDgf, tmp(:,i,j))
-          DFDgf=0 !, (0d0,0d0)*(/0/), D)
+          DFDgf=0
        end do
     end do
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, '-SaDFDbf1')
