@@ -64,7 +64,10 @@ contains
     gra = gra + tmp/2
     call print_tensor(shape(tmp), tmp/2, 'twoave')
     ! Kohn-Sham exchange correlation average
-    call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(tmp), 1, (/D/), tmp)
+    call rsp_xcave(geo_order=1, &
+                   nr_dmat=1,   &
+                   D=(/D/),     &
+                   ave=tmp)
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'xcave')
 
@@ -174,11 +177,17 @@ contains
 
     xc_hes = 0.0d0
     ! Exchange/correlation contribution
-    call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(temp), 1, (/D/), temp)
+    call rsp_xcave(geo_order=2, &
+                   nr_dmat=1,   &
+                   D=(/D/),     &
+                   ave=temp)
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(ab)')
     xc_hes = xc_hes + temp
     do i = 1, size(Dg)
-       call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(temp(:,i)), 2, (/D, Dg(i)/), temp(:,i))
+       call rsp_xcave(geo_order=1,    &
+                      nr_dmat=2,      &
+                      D=(/D, Dg(i)/), &
+                      ave=temp(:, i))
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(a)Db')
     xc_hes = xc_hes + temp
@@ -350,12 +359,17 @@ contains
     xc_fff = 0.0d0
 
     tmp = 0.0d0
-    call rsp_xcave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), 1, (/D/), tmp)
+    call rsp_xcave(geo_order=3, &
+                   nr_dmat=1,   &
+                   D=(/D/),     &
+                   ave=tmp)
     xc_ggg = xc_ggg + tmp
     do i = 1, size(Dg)
        tmp = 0.0d0
-       call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
-                       2, (/D, Dg(i)/), tmp(i,:,:))
+       call rsp_xcave(geo_order=2,    &
+                      nr_dmat=2,      &
+                      D=(/D, Dg(i)/), &
+                      ave=tmp(i, :, :))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
              xc_ggf(i, j, k) = xc_ggf(i, j, k) + tmp(i, j, k)
@@ -365,8 +379,10 @@ contains
        end do
        do j = 1, i
           tmp = 0.0d0
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(tmp(i,j,:)), &
-                           3, (/D, Dg(i), Dg(j)/), tmp(i,j,:))
+          call rsp_xcave(geo_order=1,           &
+                         nr_dmat=3,             &
+                         D=(/D, Dg(i), Dg(j)/), &
+                         ave=tmp(i, j, :))
           do k = 1, size(Dg)
              xc_gff(i, j, k) = xc_gff(i, j, k) + tmp(i, j, k)
              xc_gff(i, k, j) = xc_gff(i, k, j) + tmp(i, j, k)
@@ -379,8 +395,10 @@ contains
           end do
           do k = 1, j
              tmp = 0.0d0
-             call rsp_xcave(mol, 0, (nof), (noc), shape(tmp(i,j,k)), &
-                              4, (/D, Dg(i), Dg(j), Dg(k)/), tmp(i,j,k))
+             call rsp_xcave(geo_order=0,                  &
+                            nr_dmat=4,                    &
+                            D=(/D, Dg(i), Dg(j), Dg(k)/), &
+                            ave=tmp(i, j, k))
              xc_fff = xc_fff + tmp
           end do
        end do
@@ -852,7 +870,7 @@ contains
       end do
     end do
 
-
+#ifdef DEBUG_XC
 ! XC BLOCK: THIS IS THE BLOCK CONTAINING ALL THE "XC AVERAGE" CONTRIBUTIONS
 
 ! NEED TO DO: HANDLE THE CASES (/'GEO '/), (/'GEO ','GEO '/),
@@ -1128,6 +1146,8 @@ contains
       end do
     end do
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcDd')
+#endif /* ifdef DEBUG_XC */
+
 
 ! IDEMPOTENCY BLOCK
     ! 'Zeta g'
@@ -1243,7 +1263,7 @@ contains
     call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tm1), D, D, tm1)
     gra = gra + tm1/2; call print_tensor(shape(tm1), tm1/2, 'Gg(D)D/2')
     ! Kohn-Sham exchange correlation average
-    call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(tm1), 1, (/D/), tm1)
+!   call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(tm1), 1, (/D/), tm1)
     gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'Exc_g(D)')
     ! print
     call print_tensor(shape(gra), gra, 'gradient = Eg')
