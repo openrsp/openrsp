@@ -1089,54 +1089,49 @@ contains
      do imat = 1, nr_dmat
         call daxpy(mat_dim*mat_dim, 2.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
      end do
-     
-     if (nr_dmat == 1) then
-        do icenter = 1, get_natom()
-     
-           nr_fmat = 3
-           allocate(xc_res(mat_dim*mat_dim*nr_fmat))
-           xc_res = 0.0d0
-     
-           call xc_integrate(                         &
-                             xc_mat_dim=mat_dim,      &
-                             xc_dmat=xc_dmat,         &
-                             xc_res=xc_res,           &
-                             xc_nr_dmat=nr_dmat,      &
-                             xc_nr_fmat=nr_fmat,      &
-                             xc_geo_order=1,          &
-                             xc_nr_atoms=get_natom(), &
-                             xc_cent=icenter          &
+
+     nr_fmat = 3**geo_order
+     allocate(xc_res(mat_dim*mat_dim*nr_fmat))
+
+     select case (geo_order)
+        case (0)
+           call xc_integrate(                       &
+                             xc_mat_dim=mat_dim,    &
+                             xc_dmat=xc_dmat,       &
+                             xc_res=xc_res,         &
+                             xc_nr_dmat=nr_dmat,    &
+                             xc_nr_fmat=nr_fmat,    &
+                             xc_geo_order=geo_order &
                             )
-     
-           ioff = (icenter-1)*3
+           
            do imat = 1, nr_fmat
-              call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, res(ioff+imat)%elms, 1)
+              call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, res(imat)%elms, 1)
            end do
-           deallocate(xc_res)
-        end do
-     end if
-     
-     if (nr_dmat == 2) then
-        nr_fmat = 1
-        allocate(xc_res(mat_dim*mat_dim*nr_fmat))
-        xc_res = 0.0d0
-     
-        call xc_integrate(                    &
-                          xc_mat_dim=mat_dim, &
-                          xc_dmat=xc_dmat,    &
-                          xc_res=xc_res,      &
-                          xc_nr_dmat=nr_dmat, &
-                          xc_nr_fmat=nr_fmat, &
-                          xc_geo_order=1      &
-                         )
-     
-        do imat = 1, nr_fmat
-           call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, res(imat)%elms, 1)
-        end do
-        deallocate(xc_res)
-     end if
+        case (1)
+           do icenter = 1, get_natom()
+              call xc_integrate(                         &
+                                xc_mat_dim=mat_dim,      &
+                                xc_dmat=xc_dmat,         &
+                                xc_res=xc_res,           &
+                                xc_nr_dmat=nr_dmat,      &
+                                xc_nr_fmat=nr_fmat,      &
+                                xc_geo_order=geo_order,  &
+                                xc_nr_atoms=get_natom(), &
+                                xc_cent=icenter          &
+                               )
+           
+              ioff = (icenter-1)*3
+              do imat = 1, nr_fmat
+                 call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, res(ioff+imat)%elms, 1)
+              end do
+           end do
+        case default
+           print *, 'error: order not implemented in rsp_xcint'
+           stop 1
+     end select
      
      deallocate(xc_dmat)
+     deallocate(xc_res)
 
   end subroutine
 

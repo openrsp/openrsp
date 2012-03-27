@@ -190,15 +190,12 @@ contains
        call daxpy(mat_dim*mat_dim, 2.0d0, D%elms, 1, xc_dmat, 1)
 
        allocate(xc_res(mat_dim*mat_dim))
-       xc_res = 0.0d0
-
        call xc_integrate(                    &
                          xc_mat_dim=mat_dim, &
                          xc_dmat=xc_dmat,    &
                          xc_res=xc_res,      &
                          xc_nr_fmat=1        &
                         )
-
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_res, 1, F%elms, 1)
 
        deallocate(xc_dmat)
