@@ -24,6 +24,7 @@ module rsp_contribs
   public rsp_oneave
   public rsp_twoave
   public rsp_xcave
+  public rsp_xcave_new
   public rsp_ovlint
   public rsp_oneint
   public rsp_twoint
@@ -729,7 +730,7 @@ contains
      allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
      xc_dmat = 0.0d0
      do imat = 1, nr_dmat
-        call daxpy(mat_dim*mat_dim, 2.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
+        call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
      end do
      call xc_integrate(                        &
                        xc_mat_dim=mat_dim,     &
@@ -749,6 +750,52 @@ contains
 
   end subroutine
 
+  !> Exchange-correlation perturbed by fields f, averaged over densities D
+  subroutine rsp_xcave_new(geo_order, nr_dmat, D, res)
+
+     use xcint_main
+     
+!    ---------------------------------------------------------------------------
+     integer,      intent(in)  :: geo_order
+     integer,      intent(in)  :: nr_dmat
+     type(matrix), intent(in)  :: D(*)
+     complex(8),   intent(out) :: res(*)
+!    ---------------------------------------------------------------------------
+     integer                   :: i, j, k, l
+     integer                   :: imat
+     integer                   :: mat_dim
+     integer                   :: nr_atoms
+     real(8)                   :: res_real(1) !fixme
+!    ---------------------------------------------------------------------------
+    
+     nr_atoms = get_natom()
+ 
+     if (.not. is_ks_calculation()) then
+        res(1:(nr_atoms*3)**geo_order) = 0.0d0
+        return
+     end if
+    
+     mat_dim = D(1)%nrow
+
+     select case (geo_order)
+        case (1)
+           do i = 1, nr_atoms*3
+              call xc_integrate(                       &
+                                xc_mat_dim=mat_dim,    &
+                                xc_nr_dmat=1,          &
+                                xc_dmat=(/D(1)%elms/), &
+                                xc_res=res_real,       &
+                                xc_get_ave=.true.,     &
+                                xc_geo_coor=(/i/)      &
+                               )
+              res(i) = cmplx(res_real(1), 0.0d0)
+           end do
+        case default
+           print *, 'error: order too hight in xcave_new'
+           stop 1
+     end select
+
+  end subroutine
 
 
   !> Compute differentiated overlap matrices, and optionally
@@ -1087,7 +1134,7 @@ contains
      allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
      xc_dmat = 0.0d0
      do imat = 1, nr_dmat
-        call daxpy(mat_dim*mat_dim, 2.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
+        call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
      end do
 
      nr_fmat = 3**geo_order

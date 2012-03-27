@@ -64,10 +64,10 @@ contains
     gra = gra + tmp/2
     call print_tensor(shape(tmp), tmp/2, 'twoave')
     ! Kohn-Sham exchange correlation average
-    call rsp_xcave(geo_order=1, &
-                   nr_dmat=1,   &
-                   D=(/D/),     &
-                   res=tmp)
+    call rsp_xcave_new(geo_order=1, &
+                       nr_dmat=1,   &
+                       D=(/D/),     &
+                       res=tmp)
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'xcave')
 

@@ -187,7 +187,7 @@ contains
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 2.0d0, D%elms, 1, xc_dmat, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
 
        allocate(xc_res(mat_dim*mat_dim))
        call xc_integrate(                    &
