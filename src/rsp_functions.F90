@@ -67,7 +67,7 @@ contains
     call rsp_xcave(geo_order=1, &
                    nr_dmat=1,   &
                    D=(/D/),     &
-                   ave=tmp)
+                   res=tmp)
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'xcave')
 
@@ -103,7 +103,10 @@ contains
     call rsp_ovlint(mol, 1, (/'GEO '/), (/1/), shape(Sg), Sg)
     call rsp_oneint(mol, 1, (/'GEO '/), (/1/), shape(Fg), Fg)
     call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fg), D, Fg)
-    call rsp_xcint(mol, 1, (/'GEO '/), (/1/), shape(Fg), 1, (/D/), Fg)
+    call rsp_xcint(geo_order=1, &
+                   nr_dmat=1,   &
+                   D=(/D/),     &
+                   res=Fg)
 
 !   solve equations
     do i = 1, size(Dg)
@@ -111,7 +114,10 @@ contains
        Dg(i) = -D*Sg(i)*D
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1) + Fg(i)
        call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), FDSg(1:1))
-       call rsp_xcint(mol, 0, nof, noc, noc, 2, (/D, Dg(i)/), FDSg(1:1))
+       call rsp_xcint(geo_order=0,    &
+                      nr_dmat=2,      &
+                      D=(/D, Dg(i)/), &
+                      res=FDSg(1:1))
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1)
        X(1) = 0*FDSg(1)
        call mat_alloc(X(1))
@@ -119,7 +125,10 @@ contains
        X(1)=-2*X(1); FDSg(1)=0
        Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1); X(1)=0
        call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), Fg(i:i))
-       call rsp_xcint(mol, 0, nof, noc, noc, 2, (/D, Dg(i)/), Fg(i:i))
+       call rsp_xcint(geo_order=0,    &
+                      nr_dmat=2,      &
+                      D=(/D, Dg(i)/), &
+                      res=Fg(i:i))
     end do
 
   end subroutine
@@ -180,14 +189,14 @@ contains
     call rsp_xcave(geo_order=2, &
                    nr_dmat=1,   &
                    D=(/D/),     &
-                   ave=temp)
+                   res=temp)
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(ab)')
     xc_hes = xc_hes + temp
     do i = 1, size(Dg)
        call rsp_xcave(geo_order=1,    &
                       nr_dmat=2,      &
                       D=(/D, Dg(i)/), &
-                      ave=temp(:, i))
+                      res=temp(:, i))
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(a)Db')
     xc_hes = xc_hes + temp
@@ -362,14 +371,14 @@ contains
     call rsp_xcave(geo_order=3, &
                    nr_dmat=1,   &
                    D=(/D/),     &
-                   ave=tmp)
+                   res=tmp)
     xc_ggg = xc_ggg + tmp
     do i = 1, size(Dg)
        tmp = 0.0d0
        call rsp_xcave(geo_order=2,    &
                       nr_dmat=2,      &
                       D=(/D, Dg(i)/), &
-                      ave=tmp(i, :, :))
+                      res=tmp(i, :, :))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
              xc_ggf(i, j, k) = xc_ggf(i, j, k) + tmp(i, j, k)
@@ -382,7 +391,7 @@ contains
           call rsp_xcave(geo_order=1,           &
                          nr_dmat=3,             &
                          D=(/D, Dg(i), Dg(j)/), &
-                         ave=tmp(i, j, :))
+                         res=tmp(i, j, :))
           do k = 1, size(Dg)
              xc_gff(i, j, k) = xc_gff(i, j, k) + tmp(i, j, k)
              xc_gff(i, k, j) = xc_gff(i, k, j) + tmp(i, j, k)
@@ -398,7 +407,7 @@ contains
              call rsp_xcave(geo_order=0,                  &
                             nr_dmat=4,                    &
                             D=(/D, Dg(i), Dg(j), Dg(k)/), &
-                            ave=tmp(i, j, k))
+                            res=tmp(i, j, k))
              xc_fff = xc_fff + tmp
           end do
        end do
