@@ -713,40 +713,13 @@ contains
      integer                   :: mat_dim
      integer                   :: nr_atoms
      real(8),      allocatable :: xc_dmat(:)
-     real(8),      allocatable :: res_real(:)
+     real(8)                   :: xc_energy
 !    ---------------------------------------------------------------------------
     
      nr_atoms = get_natom()
  
-     if (.not. is_ks_calculation()) then
-        res(1:(nr_atoms*3)**geo_order) = 0.0d0
-        return
-     end if
-     
-     allocate(res_real((nr_atoms*3)**geo_order))
-     res_real = 0.0d0
-     
-     mat_dim = D(1)%nrow
-     allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
-     xc_dmat = 0.0d0
-     do imat = 1, nr_dmat
-        call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
-     end do
-     call xc_integrate(                        &
-                       xc_mat_dim=mat_dim,     &
-                       xc_dmat=xc_dmat,        &
-                       xc_res=res_real,        &
-                       xc_nr_dmat=nr_dmat,     &
-                       xc_nr_fmat=0,           &
-                       xc_get_ave=.true.,      &
-                       xc_geo_order=geo_order  &
-                      )
-     deallocate(xc_dmat)
-     
-     do i = 1, size(res_real)
-        res(i) = cmplx(res_real(i), 0.0d0)
-     end do
-     deallocate(res_real)
+     res(1:(nr_atoms*3)**geo_order) = 0.0d0
+     return
 
   end subroutine
 
@@ -765,7 +738,7 @@ contains
      integer                   :: imat
      integer                   :: mat_dim
      integer                   :: nr_atoms
-     real(8)                   :: res_real(1) !fixme
+     real(8)                   :: xc_energy
 !    ---------------------------------------------------------------------------
     
      nr_atoms = get_natom()
@@ -783,13 +756,11 @@ contains
               call xc_integrate(             &
                       xc_mat_dim=mat_dim,    &
                       xc_nr_dmat=1,          &
-                      xc_nr_fmat=0,          &
                       xc_dmat=(/D(1)%elms/), &
-                      xc_res=res_real,       &
-                      xc_get_ave=.true.,     &
+                      xc_energy=xc_energy,   &
                       xc_geo_coor=(/i/)      &
                    )
-              res(i) = cmplx(res_real(1), 0.0d0)
+              res(i) = cmplx(xc_energy, 0.0d0)
            end do
         case (2)
            do i = 1, nr_atoms*3
@@ -797,13 +768,11 @@ contains
                  call xc_integrate(                                       &
                          xc_mat_dim=mat_dim,                              &
                          xc_nr_dmat=3,                                    &
-                         xc_nr_fmat=0,                                    &
                          xc_dmat=(/D(1)%elms, D(1+i)%elms, D(1+j)%elms/), &
-                         xc_res=res_real,                                 &
-                         xc_get_ave=.true.,                               &
+                         xc_energy=xc_energy,                             &
                          xc_geo_coor=(/i, j/)                             &
                       )
-                 res((j-1)*nr_atoms*3 + i) = cmplx(res_real(1), 0.0d0)
+                 res((j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
               end do
            end do
         case default
@@ -1137,9 +1106,9 @@ contains
      integer                     :: imat, i
      integer                     :: mat_dim
      integer                     :: nr_atoms
-     integer                     :: nr_fmat
      real(8),      allocatable   :: xc_dmat(:)
-     real(8),      allocatable   :: xc_res(:)
+     real(8),      allocatable   :: xc_fmat(:)
+     real(8)                     :: xc_energy
 !    ---------------------------------------------------------------------------
      
      if (.not. is_ks_calculation()) then
@@ -1155,32 +1124,29 @@ contains
         call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
      end do
 
-     nr_fmat = 3**geo_order
-     allocate(xc_res(mat_dim*mat_dim*nr_fmat))
+     allocate(xc_fmat(mat_dim*mat_dim))
 
      select case (geo_order)
         case (0)
-           call xc_integrate(                       &
-                             xc_mat_dim=mat_dim,    &
-                             xc_dmat=xc_dmat,       &
-                             xc_res=xc_res,         &
-                             xc_nr_dmat=nr_dmat,    &
-                             xc_nr_fmat=nr_fmat,    &
-                             xc_geo_order=geo_order &
+           call xc_integrate(                     &
+                             xc_mat_dim=mat_dim,  &
+                             xc_nr_dmat=nr_dmat,  &
+                             xc_dmat=xc_dmat,     &
+                             xc_energy=xc_energy, &
+                             xc_fmat=xc_fmat      &
                             )
-           call daxpy(mat_dim*mat_dim, 1.0d0, xc_res, 1, res(1)%elms, 1)
+           call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(1)%elms, 1)
         case (1)
            do i = 1, nr_atoms*3
-              call xc_integrate(                        &
-                                xc_mat_dim=mat_dim,     &
-                                xc_dmat=xc_dmat,        &
-                                xc_res=xc_res,          &
-                                xc_nr_dmat=nr_dmat,     &
-                                xc_nr_fmat=nr_fmat,     &
-                                xc_geo_order=geo_order, &
-                                xc_geo_coor=(/i/)       &
+              call xc_integrate(                     &
+                                xc_mat_dim=mat_dim,  &
+                                xc_nr_dmat=nr_dmat,  &
+                                xc_dmat=xc_dmat,     &
+                                xc_energy=xc_energy, &
+                                xc_fmat=xc_fmat,     &
+                                xc_geo_coor=(/i/)    &
                                )
-              call daxpy(mat_dim*mat_dim, 1.0d0, xc_res, 1, res(i)%elms, 1)
+              call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(i)%elms, 1)
            end do
         case default
            print *, 'error: order not implemented in rsp_xcint'
@@ -1188,7 +1154,7 @@ contains
      end select
      
      deallocate(xc_dmat)
-     deallocate(xc_res)
+     deallocate(xc_fmat)
 
   end subroutine
 

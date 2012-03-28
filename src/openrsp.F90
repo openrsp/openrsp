@@ -118,8 +118,9 @@ contains
     integer                :: kfree
     logical                :: grid_file_exists
     real(8), allocatable   :: xc_dmat(:)
-    real(8), allocatable   :: xc_res(:)
+    real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
+    real(8)                :: xc_energy
     
     ! prints the header and license information
     call TITLER('OpenRSP: Response functions computed using AO basis', '*', -1)
@@ -183,23 +184,21 @@ contains
     stop 1
 #else /* OPENRSP_STANDALONE */
        ! add xc contribution to the fock matrix
-
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
-
-       allocate(xc_res(mat_dim*mat_dim))
-       call xc_integrate(                    &
-                         xc_mat_dim=mat_dim, &
-                         xc_dmat=xc_dmat,    &
-                         xc_res=xc_res,      &
-                         xc_nr_fmat=1        &
+       allocate(xc_fmat(mat_dim*mat_dim))
+       call xc_integrate(                     &
+                         xc_mat_dim=mat_dim,  &
+                         xc_nr_dmat=1,        &
+                         xc_dmat=xc_dmat,     &
+                         xc_energy=xc_energy, &
+                         xc_fmat=xc_fmat      &
                         )
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_res, 1, F%elms, 1)
-
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
        deallocate(xc_dmat)
-       deallocate(xc_res)
+       deallocate(xc_fmat)
 #endif /* OPENRSP_STANDALONE */
     end if
 
