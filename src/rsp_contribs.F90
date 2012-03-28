@@ -765,14 +765,35 @@ contains
         case (2)
            do i = 1, nr_atoms*3
               do j = 1, i
-                 call xc_integrate(                                       &
-                         xc_mat_dim=mat_dim,                              &
-                         xc_nr_dmat=3,                                    &
-                         xc_dmat=(/D(1)%elms, D(1+i)%elms, D(1+j)%elms/), &
-                         xc_energy=xc_energy,                             &
-                         xc_geo_coor=(/i, j/)                             &
+                 call xc_integrate(               &
+                         xc_mat_dim=mat_dim,      &
+                         xc_nr_dmat=3,            &
+                         xc_dmat=(/D(1)%elms,     &
+                                   D(1+i)%elms,   &
+                                   D(1+j)%elms/), &
+                         xc_energy=xc_energy,     &
+                         xc_geo_coor=(/i, j/)     &
                       )
                  res((j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
+              end do
+           end do
+        case (3)
+          !do i = 1, nr_atoms*3    fixme
+           do i = 1, 1
+              do j = 1, i
+                 do k = 1, j
+                    call xc_integrate(               &
+                            xc_mat_dim=mat_dim,      &
+                            xc_nr_dmat=4,            &
+                            xc_dmat=(/D(1)%elms,     &
+                                      D(1+i)%elms,   &
+                                      D(1+j)%elms,   &
+                                      D(1+k)%elms/), &
+                            xc_energy=xc_energy,     &
+                            xc_geo_coor=(/i, j, k/)  &
+                         )
+                    res((k-1)*nr_atoms*3*nr_atoms*3 + (j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
+                 end do
               end do
            end do
         case default

@@ -236,10 +236,6 @@ contains
     type(matrix)              :: FgDS(ng), DgSD(ng)
     complex(8)                :: cub(ng, ng, ng), tmp(ng, ng, ng)
     complex(8)                :: xc_cub(ng, ng, ng)
-    complex(8)                :: xc_ggg(ng, ng, ng)
-    complex(8)                :: xc_ggf(ng, ng, ng)
-    complex(8)                :: xc_gff(ng, ng, ng)
-    complex(8)                :: xc_fff(ng, ng, ng)
     integer                   :: i, j, k
     character(4)              :: nof(0)
     integer                   :: noc(0)
@@ -353,67 +349,10 @@ contains
 !   ===============
 
     xc_cub = 0.0d0
-    xc_ggg = 0.0d0
-    xc_ggf = 0.0d0
-    xc_gff = 0.0d0
-    xc_fff = 0.0d0
-
-    tmp = 0.0d0
-    call rsp_xcave(geo_order=3, &
-                   nr_dmat=1,   &
-                   D=(/D/),     &
-                   res=tmp)
-    xc_ggg = xc_ggg + tmp
-    do i = 1, size(Dg)
-       tmp = 0.0d0
-       call rsp_xcave(geo_order=2,    &
-                      nr_dmat=2,      &
-                      D=(/D, Dg(i)/), &
-                      res=tmp(i, :, :))
-       do j = 1, size(Dg)
-          do k = 1, size(Dg)
-             xc_ggf(i, j, k) = xc_ggf(i, j, k) + tmp(i, j, k)
-             xc_ggf(j, i, k) = xc_ggf(j, i, k) + tmp(i, j, k)
-             xc_ggf(j, k, i) = xc_ggf(j, k, i) + tmp(i, j, k)
-          end do
-       end do
-       do j = 1, i
-          tmp = 0.0d0
-          call rsp_xcave(geo_order=1,           &
-                         nr_dmat=3,             &
-                         D=(/D, Dg(i), Dg(j)/), &
-                         res=tmp(i, j, :))
-          do k = 1, size(Dg)
-             xc_gff(i, j, k) = xc_gff(i, j, k) + tmp(i, j, k)
-             xc_gff(i, k, j) = xc_gff(i, k, j) + tmp(i, j, k)
-             xc_gff(k, i, j) = xc_gff(k, i, j) + tmp(i, j, k)
-             if (i /= j) then
-                xc_gff(j, i, k) = xc_gff(j, i, k) + tmp(i, j, k)
-                xc_gff(j, k, i) = xc_gff(j, k, i) + tmp(i, j, k)
-                xc_gff(k, j, i) = xc_gff(k, j, i) + tmp(i, j, k)
-             end if
-          end do
-          do k = 1, j
-             tmp = 0.0d0
-             call rsp_xcave(geo_order=0,                  &
-                            nr_dmat=4,                    &
-                            D=(/D, Dg(i), Dg(j), Dg(k)/), &
-                            res=tmp(i, j, k))
-             xc_fff = xc_fff + tmp
-          end do
-       end do
-    end do
-
-    call print_tensor(shape(xc_ggg), xc_ggg, 'xc_ggg')
-    call print_tensor(shape(xc_ggf), xc_ggf, 'xc_ggf')
-    call print_tensor(shape(xc_gff), xc_gff, 'xc_gff')
-    call print_tensor(shape(xc_fff), xc_fff, 'xc_fff')
-
-    xc_cub = xc_cub + xc_ggg
-    xc_cub = xc_cub + xc_ggf
-    xc_cub = xc_cub + xc_gff
-    xc_cub = xc_cub + xc_fff
-
+    call rsp_xcave_new(geo_order=3,             &
+                       nr_dmat=3,               &
+                       D=(/D, Dg(1:size(Dg))/), &
+                       res=xc_cub)
     call print_tensor(shape(xc_cub), xc_cub, 'xc_cub')
     cub = cub + xc_cub
 
