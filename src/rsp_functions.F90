@@ -186,19 +186,11 @@ contains
 
     xc_hes = 0.0d0
     ! Exchange/correlation contribution
-    call rsp_xcave(geo_order=2, &
-                   nr_dmat=1,   &
-                   D=(/D/),     &
-                   res=temp)
-    hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(ab)')
-    xc_hes = xc_hes + temp
-    do i = 1, size(Dg)
-       call rsp_xcave(geo_order=1,    &
-                      nr_dmat=2,      &
-                      D=(/D, Dg(i)/), &
-                      res=temp(:, i))
-    end do
-    hes = hes + temp; call print_tensor(shape(temp), temp, 'Exc(a)Db')
+    call rsp_xcave_new(geo_order=2,             &
+                       nr_dmat=2,               &
+                       D=(/D, Dg(1:size(Dg))/), &
+                       res=xc_hes)
+    hes = hes + xc_hes
     xc_hes = xc_hes + temp
     call print_tensor(shape(xc_hes), xc_hes, 'xc_hes')
 

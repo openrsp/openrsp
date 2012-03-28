@@ -738,8 +738,7 @@ contains
                        xc_res=res_real,        &
                        xc_nr_dmat=nr_dmat,     &
                        xc_get_ave=.true.,      &
-                       xc_geo_order=geo_order, &
-                       xc_nr_atoms=nr_atoms    &
+                       xc_geo_order=geo_order  &
                       )
      deallocate(xc_dmat)
      
@@ -780,15 +779,29 @@ contains
      select case (geo_order)
         case (1)
            do i = 1, nr_atoms*3
-              call xc_integrate(                       &
-                                xc_mat_dim=mat_dim,    &
-                                xc_nr_dmat=1,          &
-                                xc_dmat=(/D(1)%elms/), &
-                                xc_res=res_real,       &
-                                xc_get_ave=.true.,     &
-                                xc_geo_coor=(/i/)      &
-                               )
+              call xc_integrate(             &
+                      xc_mat_dim=mat_dim,    &
+                      xc_nr_dmat=1,          &
+                      xc_dmat=(/D(1)%elms/), &
+                      xc_res=res_real,       &
+                      xc_get_ave=.true.,     &
+                      xc_geo_coor=(/i/)      &
+                   )
               res(i) = cmplx(res_real(1), 0.0d0)
+           end do
+        case (2)
+           do i = 1, 1 !fixme
+              do j = 1, i
+                 call xc_integrate(                                       &
+                         xc_mat_dim=mat_dim,                              &
+                         xc_nr_dmat=3,                                    &
+                         xc_dmat=(/D(1)%elms, D(1+i)%elms, D(1+j)%elms/), &
+                         xc_res=res_real,                                 &
+                         xc_get_ave=.true.,                               &
+                         xc_geo_coor=(/i, j/)                             &
+                      )
+                 res(i) = cmplx(res_real(1), 0.0d0)
+              end do
            end do
         case default
            print *, 'error: order too hight in xcave_new'
@@ -1118,7 +1131,7 @@ contains
      integer                     :: icenter
      integer                     :: ixyz
      integer                     :: ioff
-     integer                     :: imat
+     integer                     :: imat, i
      integer                     :: mat_dim
      integer                     :: nr_atoms
      integer                     :: nr_fmat
@@ -1150,27 +1163,19 @@ contains
                              xc_nr_fmat=nr_fmat,    &
                              xc_geo_order=geo_order &
                             )
-           
-           do imat = 1, nr_fmat
-              call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, res(imat)%elms, 1)
-           end do
+           call daxpy(mat_dim*mat_dim, 1.0d0, xc_res, 1, res(1)%elms, 1)
         case (1)
-           do icenter = 1, get_natom()
-              call xc_integrate(                         &
-                                xc_mat_dim=mat_dim,      &
-                                xc_dmat=xc_dmat,         &
-                                xc_res=xc_res,           &
-                                xc_nr_dmat=nr_dmat,      &
-                                xc_nr_fmat=nr_fmat,      &
-                                xc_geo_order=geo_order,  &
-                                xc_nr_atoms=get_natom(), &
-                                xc_cent=icenter          &
+           do i = 1, nr_atoms*3
+              call xc_integrate(                        &
+                                xc_mat_dim=mat_dim,     &
+                                xc_dmat=xc_dmat,        &
+                                xc_res=xc_res,          &
+                                xc_nr_dmat=nr_dmat,     &
+                                xc_nr_fmat=nr_fmat,     &
+                                xc_geo_order=geo_order, &
+                                xc_geo_coor=(/i/)       &
                                )
-           
-              ioff = (icenter-1)*3
-              do imat = 1, nr_fmat
-                 call daxpy(mat_dim*mat_dim, 1.0d0, xc_res((imat-1)*mat_dim*mat_dim + 1), 1, res(ioff+imat)%elms, 1)
-              end do
+              call daxpy(mat_dim*mat_dim, 1.0d0, xc_res, 1, res(i)%elms, 1)
            end do
         case default
            print *, 'error: order not implemented in rsp_xcint'
