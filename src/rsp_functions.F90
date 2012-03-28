@@ -190,9 +190,8 @@ contains
                        nr_dmat=2,               &
                        D=(/D, Dg(1:size(Dg))/), &
                        res=xc_hes)
-    hes = hes + xc_hes
-    xc_hes = xc_hes + temp
     call print_tensor(shape(xc_hes), xc_hes, 'xc_hes')
+    hes = hes + xc_hes
 
 !   cheat: only symmetry unique elements are correctly calculated with xc
 !          here copy to symmetry dependent to get correct, symmetric hessian

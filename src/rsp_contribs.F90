@@ -737,6 +737,7 @@ contains
                        xc_dmat=xc_dmat,        &
                        xc_res=res_real,        &
                        xc_nr_dmat=nr_dmat,     &
+                       xc_nr_fmat=0,           &
                        xc_get_ave=.true.,      &
                        xc_geo_order=geo_order  &
                       )
@@ -782,6 +783,7 @@ contains
               call xc_integrate(             &
                       xc_mat_dim=mat_dim,    &
                       xc_nr_dmat=1,          &
+                      xc_nr_fmat=0,          &
                       xc_dmat=(/D(1)%elms/), &
                       xc_res=res_real,       &
                       xc_get_ave=.true.,     &
@@ -790,17 +792,18 @@ contains
               res(i) = cmplx(res_real(1), 0.0d0)
            end do
         case (2)
-           do i = 1, 1 !fixme
+           do i = 1, nr_atoms*3
               do j = 1, i
                  call xc_integrate(                                       &
                          xc_mat_dim=mat_dim,                              &
                          xc_nr_dmat=3,                                    &
+                         xc_nr_fmat=0,                                    &
                          xc_dmat=(/D(1)%elms, D(1+i)%elms, D(1+j)%elms/), &
                          xc_res=res_real,                                 &
                          xc_get_ave=.true.,                               &
                          xc_geo_coor=(/i, j/)                             &
                       )
-                 res(i) = cmplx(res_real(1), 0.0d0)
+                 res((j-1)*nr_atoms*3 + i) = cmplx(res_real(1), 0.0d0)
               end do
            end do
         case default
@@ -1142,6 +1145,8 @@ contains
      if (.not. is_ks_calculation()) then
         return
      end if
+
+     nr_atoms = get_natom()
      
      mat_dim = D(1)%nrow
      allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
