@@ -1124,7 +1124,7 @@ contains
      integer                     :: icenter
      integer                     :: ixyz
      integer                     :: ioff
-     integer                     :: imat, i
+     integer                     :: imat, i, j
      integer                     :: mat_dim
      integer                     :: nr_atoms
      real(8),      allocatable   :: xc_dmat(:)
@@ -1168,6 +1168,20 @@ contains
                                 xc_geo_coor=(/i/)    &
                                )
               call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(i)%elms, 1)
+           end do
+        case (2)
+           do i = 1, nr_atoms*3
+              do j = 1, i
+                 call xc_integrate(                     &
+                                   xc_mat_dim=mat_dim,  &
+                                   xc_nr_dmat=nr_dmat,  &
+                                   xc_dmat=xc_dmat,     &
+                                   xc_energy=xc_energy, &
+                                   xc_fmat=xc_fmat,     &
+                                   xc_geo_coor=(/i, j/) &
+                                  )
+                 call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res((j-1)*nr_atoms*3 + i)%elms, 1)
+              end do
            end do
         case default
            print *, 'error: order not implemented in rsp_xcint'
