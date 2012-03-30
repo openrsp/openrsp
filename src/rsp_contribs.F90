@@ -24,7 +24,6 @@ module rsp_contribs
   public rsp_oneave
   public rsp_twoave
   public rsp_xcave
-  public rsp_xcave_new
   public rsp_ovlint
   public rsp_oneint
   public rsp_twoint
@@ -698,39 +697,12 @@ contains
   end subroutine
 
   !> Exchange-correlation perturbed by fields f, averaged over densities D
-  subroutine rsp_xcave(geo_order, nr_dmat, D, res)
+  subroutine rsp_xcave(geo_order, D, res)
 
      use xcint_main
      
 !    ---------------------------------------------------------------------------
      integer,      intent(in)  :: geo_order
-     integer,      intent(in)  :: nr_dmat
-     type(matrix), intent(in)  :: D(*)
-     complex(8),   intent(out) :: res(*)
-!    ---------------------------------------------------------------------------
-     integer                   :: i
-     integer                   :: imat
-     integer                   :: mat_dim
-     integer                   :: nr_atoms
-     real(8),      allocatable :: xc_dmat(:)
-     real(8)                   :: xc_energy
-!    ---------------------------------------------------------------------------
-    
-     nr_atoms = get_natom()
- 
-     res(1:(nr_atoms*3)**geo_order) = 0.0d0
-     return
-
-  end subroutine
-
-  !> Exchange-correlation perturbed by fields f, averaged over densities D
-  subroutine rsp_xcave_new(geo_order, nr_dmat, D, res)
-
-     use xcint_main
-     
-!    ---------------------------------------------------------------------------
-     integer,      intent(in)  :: geo_order
-     integer,      intent(in)  :: nr_dmat
      type(matrix), intent(in)  :: D(*)
      complex(8),   intent(out) :: res(*)
 !    ---------------------------------------------------------------------------

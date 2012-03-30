@@ -64,10 +64,7 @@ contains
     gra = gra + tmp/2
     call print_tensor(shape(tmp), tmp/2, 'twoave')
     ! Kohn-Sham exchange correlation average
-    call rsp_xcave_new(geo_order=1, &
-                       nr_dmat=1,   &
-                       D=(/D/),     &
-                       res=tmp)
+    call rsp_xcave(geo_order=1, D=(/D/), res=tmp)
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'xcave')
 
@@ -186,10 +183,7 @@ contains
 
     xc_hes = 0.0d0
     ! Exchange/correlation contribution
-    call rsp_xcave_new(geo_order=2,             &
-                       nr_dmat=2,               &
-                       D=(/D, Dg(1:size(Dg))/), &
-                       res=xc_hes)
+    call rsp_xcave(geo_order=2, D=(/D, Dg(:)/), res=xc_hes)
     call print_tensor(shape(xc_hes), xc_hes, 'xc_hes')
     hes = hes + xc_hes
 
@@ -349,10 +343,7 @@ contains
 !   ===============
 
     xc_cub = 0.0d0
-    call rsp_xcave_new(geo_order=3,             &
-                       nr_dmat=3,               &
-                       D=(/D, Dg(1:size(Dg))/), &
-                       res=xc_cub)
+    call rsp_xcave(geo_order=3, D=(/D, Dg(:)/), res=xc_cub)
     call print_tensor(shape(xc_cub), xc_cub, 'xc_cub')
     cub = cub + xc_cub
 
@@ -484,6 +475,7 @@ contains
     complex(8)   gra(ng), tm1(ng), hes(ng,ng), tm2(ng,ng)
     complex(8)   cub(ng,ng,ng), tm3(ng,ng,ng) 
     complex(8)   qua(ng,ng,ng,ng), tmp(ng,ng,ng,ng) 
+    complex(8)   xc_qua(ng,ng,ng,ng)
     character(4) nof(0) !no-field
     integer      i, j, k, l, m, noc(0) !no-comp
 
@@ -826,284 +818,10 @@ contains
       end do
     end do
 
-#ifdef DEBUG_XC
-! XC BLOCK: THIS IS THE BLOCK CONTAINING ALL THE "XC AVERAGE" CONTRIBUTIONS
-
-! NEED TO DO: HANDLE THE CASES (/'GEO '/), (/'GEO ','GEO '/),
-! (/'GEO ','GEO ','GEO '/), AND (/'GEO ','GEO ','GEO ','GEO '/) IN rsp_xcave
-
-! MR: IS THERE ALWAYS A MULTIPLICATION WITH AN UNPERTURBED D FIRST?
-! MR: ASSUME SO FOR NOW
-
-! E0-TYPE CALLS
-    call rsp_xcave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
-        shape(tmp(:,:,:,:)), 1, (/D/), tmp(:,:,:,:))
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_abcd(D)')
-
-! E1-TYPE CALLS
-! D-Dg CALLS
-    do i = 1, size(Dg)
-      call rsp_xcave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
-          shape(tmp(:,:,:,i)), 2, (/D, Dg(i)/), tmp(:,:,:,i))
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_abc(D)Dd')
-
-    do i = 1, size(Dg)
-      call rsp_xcave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
-          shape(tmp(:,:,i,:)), 2, (/D, Dg(i)/), tmp(:,:,i,:))
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_abd(D)Dc')
-
-    do i = 1, size(Dg)
-      call rsp_xcave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
-          shape(tmp(:,i,:,:)), 2, (/D, Dg(i)/), tmp(:,i,:,:))
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_acd(D)Db')
-
-    do i = 1, size(Dg)
-      call rsp_xcave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
-          shape(tmp(i,:,:,:)), 2, (/D, Dg(i)/), tmp(i,:,:,:))
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_bcd(D)Da')
-
-! D-Dgg CALLS
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(:,:,i,j)), 2, (/D, Dgg(i,j)/), tmp(:,:,i,j))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ab(D)Dcd')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(:,i,:,j)), 2, (/D, Dgg(i,j)/), tmp(:,i,:,j))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ac(D)Dbd')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(:,i,j,:)), 2, (/D, Dgg(i,j)/), tmp(:,i,j,:))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ad(D)Dbc')
-
-! E2-TYPE CALLS
-! D-Dg-Dg CALLS
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(:,:,i,j)), 3, (/D, Dg(i), Dg(j)/), tmp(:,:,i,j))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ab(D)DcDd')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(:,i,:,j)), 3, (/D, Dg(i), Dg(j)/), tmp(:,i,:,j))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ac(D)DbDd')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(:,i,j,:)), 3, (/D, Dg(i), Dg(j)/), tmp(:,i,j,:))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_ad(D)DbDc')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(i,:,:,j)), 3, (/D, Dg(i), Dg(j)/), tmp(i,:,:,j))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_bc(D)DaDd')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(i,:,j,:)), 3, (/D, Dg(i), Dg(j)/), tmp(i,:,j,:))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_bd(D)DaDc')
-
-    do j = 1, size(Dg)
-      do i = 1, size(Dg)
-        call rsp_xcave(mol, 2, (/'GEO ','GEO '/), (/1,1/), &
-            shape(tmp(i,j,:,:)), 3, (/D, Dg(i), Dg(j)/), tmp(i,j,:,:))
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_cd(D)DaDb')
-
-
-! D-Dgg-Dg CALLS
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(:,i,j,k)), 3, (/D, Dgg(i,j), Dg(k)/), tmp(:,i,j,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbcDd')
-
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(:,i,k,j)), 3, (/D, Dgg(i,j), Dg(k)/), tmp(:,i,k,j))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbdDc')
-
-
-! D-Dg-Dgg CALLS
-! MAYBE LOOK AT AGAIN
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(:,i,j,k)), 3, (/D, Dg(i), Dgg(j,k)/), tmp(:,i,j,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbDcd')
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(i,:,j,k)), 3, (/D, Dg(i), Dgg(j,k)/), tmp(i,:,j,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_b(D)DaDcd')
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(i,j,:,k)), 3, (/D, Dg(i), Dgg(j,k)/), tmp(i,j,:,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_c(D)DaDbd')
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(i,j,k,:)), 3, (/D, Dg(i), Dgg(j,k)/), tmp(i,j,k,:))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_d(D)DaDbc')
-
-! E3-TYPE CALLS
-! D-Dg-Dg-Dg CALLS
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(:,i,j,k)), 4, (/D, Dg(i), Dg(j), Dg(k)/), tmp(:,i,j,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_a(D)DbDcDd')
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(i,:,j,k)), 4, (/D, Dg(i), Dg(j), Dg(k)/), tmp(i,:,j,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_b(D)DaDcDd')
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(i,j,:,k)), 4, (/D, Dg(i), Dg(j), Dg(k)/), tmp(i,j,:,k))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_c(D)DaDbDd')
-
-    do k = 1, size(Dg)
-      do j = 1, size(Dg)
-        do i = 1, size(Dg)
-          call rsp_xcave(mol, 1, (/'GEO '/), (/1/), &
-              shape(tmp(i,j,k,:)), 4, (/D, Dg(i), Dg(j), Dg(k)/), tmp(i,j,k,:))
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc_d(D)DaDbDc')
-
-! D-Dg-Dgg-Dg CALLS
-! MAYBE LOOK AT AGAIN
-! WILL THE EMPTY ARRAYS IN THE rsp_xcave CALLS CAUSE PROBLEMS?
-    do m = 1, size(Dg)
-      do k = 1, size(Dg)
-        do j = 1, size(Dg)
-          do i = 1, size(Dg)
-            call rsp_xcave(mol, 0, (nof), (noc), &
-                shape(tmp(i,j,k,m)), 4, (/D, Dg(i), Dgg(j,k), Dg(m)/), tmp(i,j,k,m))
-          end do
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbcDd')
-
-    do m = 1, size(Dg)
-      do k = 1, size(Dg)
-        do j = 1, size(Dg)
-          do i = 1, size(Dg)
-            call rsp_xcave(mol, 0, (nof), (noc), &
-                shape(tmp(i,j,m,k)), 4, (/D, Dg(i), Dgg(j,k), Dg(m)/), tmp(i,j,m,k))
-          end do
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbdDc')
-
-! D-Dg-Dg-Dgg CALLS
-    do m = 1, size(Dg)
-      do k = 1, size(Dg)
-        do j = 1, size(Dg)
-          do i = 1, size(Dg)
-            call rsp_xcave(mol, 0, (nof), (noc), &
-                shape(tmp(i,j,k,m)), 4, (/D, Dg(i), Dg(j), Dgg(k,m)/), tmp(i,j,k,m))
-          end do
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcd')
-
-! E4-TYPE CALLS
-! D-Dg-Dg-Dg-Dg CALLS
-    do m = 1, size(Dg)
-      do k = 1, size(Dg)
-        do j = 1, size(Dg)
-          do i = 1, size(Dg)
-            call rsp_xcave(mol, 0, (nof), (noc), &
-                shape(tmp(i,j,k,m)), 5, (/D, Dg(i), Dg(j), Dg(k), Dg(m)/), tmp(i,j,k,m))
-          end do
-        end do
-      end do
-    end do
-    qua = qua + tmp; call print_tensor(shape(tmp), tmp, 'Exc(D)DaDbDcDd')
-#endif /* ifdef DEBUG_XC */
-
+    xc_qua = 0.0d0
+    call rsp_xcave(geo_order=4, D=(/D, Dg(:), Dgg(:, :)/), res=xc_qua)
+    call print_tensor(shape(xc_qua), xc_qua, 'xc_qua')
+    qua = qua + xc_qua
 
 ! IDEMPOTENCY BLOCK
     ! 'Zeta g'
