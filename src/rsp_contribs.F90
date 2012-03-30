@@ -768,7 +768,7 @@ contains
               end do
            end do
         case default
-           print *, 'error: order too hight in xcave_new'
+           print *, 'error: order too hight in xcave'
            stop 1
      end select
 
