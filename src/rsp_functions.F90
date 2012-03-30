@@ -818,10 +818,15 @@ contains
       end do
     end do
 
+
+!   xc contribution to the energy derivative
+!   ========================================
+
     xc_qua = 0.0d0
     call rsp_xcave(geo_order=4, D=(/D, Dg(:), Dgg(:, :)/), res=xc_qua)
     call print_tensor(shape(xc_qua), xc_qua, 'xc_qua')
     qua = qua + xc_qua
+
 
 ! IDEMPOTENCY BLOCK
     ! 'Zeta g'
