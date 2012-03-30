@@ -697,20 +697,22 @@ contains
   end subroutine
 
   !> Exchange-correlation perturbed by fields f, averaged over densities D
-  subroutine rsp_xcave(geo_order, D, res)
+  subroutine rsp_xcave(geo_order, res, D, Dg, Dgg)
 
      use xcint_main
      
 !    ---------------------------------------------------------------------------
-     integer,      intent(in)  :: geo_order
-     type(matrix), intent(in)  :: D(*)
-     complex(8),   intent(out) :: res(*)
+     integer,      intent(in)           :: geo_order
+     complex(8),   intent(out)          :: res(*)
+     type(matrix), intent(in)           :: D
+     type(matrix), intent(in), optional :: Dg(:)
+     type(matrix), intent(in), optional :: Dgg(:, :)
 !    ---------------------------------------------------------------------------
-     integer                   :: i, j, k, l
-     integer                   :: imat
-     integer                   :: mat_dim
-     integer                   :: nr_atoms
-     real(8)                   :: xc_energy
+     integer                            :: i, j, k, l
+     integer                            :: element
+     integer                            :: mat_dim
+     integer                            :: nr_atoms
+     real(8)                            :: xc_energy
 !    ---------------------------------------------------------------------------
     
      nr_atoms = get_natom()
@@ -720,50 +722,87 @@ contains
         return
      end if
     
-     mat_dim = D(1)%nrow
+     mat_dim = D%nrow
 
      select case (geo_order)
         case (1)
            do i = 1, nr_atoms*3
-              call xc_integrate(             &
-                      xc_mat_dim=mat_dim,    &
-                      xc_nr_dmat=1,          &
-                      xc_dmat=(/D(1)%elms/), &
-                      xc_energy=xc_energy,   &
-                      xc_geo_coor=(/i/)      &
+              element = i
+              call xc_integrate(           &
+                      xc_mat_dim=mat_dim,  &
+                      xc_nr_dmat=1,        &
+                      xc_dmat=(/D%elms/),  &
+                      xc_energy=xc_energy, &
+                      xc_geo_coor=(/i/)    &
                    )
-              res(i) = cmplx(xc_energy, 0.0d0)
+              res(element) = cmplx(xc_energy, 0.0d0)
            end do
         case (2)
            do i = 1, nr_atoms*3
               do j = 1, i
+                 element = i &
+                         + (j-1)*nr_atoms*3
                  call xc_integrate(               &
                          xc_mat_dim=mat_dim,      &
                          xc_nr_dmat=3,            &
-                         xc_dmat=(/D(1)%elms,     &
-                                   D(1+i)%elms,   &
-                                   D(1+j)%elms/), &
+                         xc_dmat=(/D%elms,        &
+                                   Dg(i)%elms,    &
+                                   Dg(j)%elms/),  &
                          xc_energy=xc_energy,     &
                          xc_geo_coor=(/i, j/)     &
                       )
-                 res((j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
+                 res(element) = cmplx(xc_energy, 0.0d0)
               end do
            end do
         case (3)
            do i = 1, nr_atoms*3
               do j = 1, i
                  do k = 1, j
+                    element = i                &
+                            + (j-1)*nr_atoms*3 &
+                            + (k-1)*(nr_atoms*3)**2
                     call xc_integrate(               &
                             xc_mat_dim=mat_dim,      &
                             xc_nr_dmat=4,            &
-                            xc_dmat=(/D(1)%elms,     &
-                                      D(1+i)%elms,   &
-                                      D(1+j)%elms,   &
-                                      D(1+k)%elms/), &
+                            xc_dmat=(/D%elms,        &
+                                      Dg(i)%elms,    &
+                                      Dg(j)%elms,    &
+                                      Dg(k)%elms/),  &
                             xc_energy=xc_energy,     &
                             xc_geo_coor=(/i, j, k/)  &
                          )
-                    res((k-1)*(nr_atoms*3)**2 + (j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
+                    res(element) = cmplx(xc_energy, 0.0d0)
+                 end do
+              end do
+           end do
+        case (4)
+           do i = 1, nr_atoms*3
+              do j = 1, i
+                 do k = 1, j
+                    do l = 1, k
+                       element = i                     &
+                               + (j-1)*nr_atoms*3      &
+                               + (k-1)*(nr_atoms*3)**2 &
+                               + (l-1)*(nr_atoms*3)**3
+                       call xc_integrate(                  &
+                               xc_mat_dim=mat_dim,         &
+                               xc_nr_dmat=11,              &
+                               xc_dmat=(/D%elms,           &
+                                         Dg(i)%elms,       &
+                                         Dg(j)%elms,       &
+                                         Dg(k)%elms,       &
+                                         Dg(l)%elms,       &
+                                         Dgg(i, j)%elms,   &
+                                         Dgg(i, k)%elms,   &
+                                         Dgg(i, l)%elms,   &
+                                         Dgg(j, k)%elms,   &
+                                         Dgg(j, l)%elms,   &
+                                         Dgg(k, l)%elms/), &
+                               xc_energy=xc_energy,        &
+                               xc_geo_coor=(/i, j, k, l/)  &
+                            )
+                       res(element) = cmplx(xc_energy, 0.0d0)
+                    end do
                  end do
               end do
            end do
