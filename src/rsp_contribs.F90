@@ -778,8 +778,7 @@ contains
               end do
            end do
         case (3)
-          !do i = 1, nr_atoms*3    fixme
-           do i = 1, 1
+           do i = 1, nr_atoms*3
               do j = 1, i
                  do k = 1, j
                     call xc_integrate(               &
@@ -792,7 +791,7 @@ contains
                             xc_energy=xc_energy,     &
                             xc_geo_coor=(/i, j, k/)  &
                          )
-                    res((k-1)*nr_atoms*3*nr_atoms*3 + (j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
+                    res((k-1)*(nr_atoms*3)**2 + (j-1)*nr_atoms*3 + i) = cmplx(xc_energy, 0.0d0)
                  end do
               end do
            end do
