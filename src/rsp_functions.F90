@@ -100,10 +100,7 @@ contains
     call rsp_ovlint(mol, 1, (/'GEO '/), (/1/), shape(Sg), Sg)
     call rsp_oneint(mol, 1, (/'GEO '/), (/1/), shape(Fg), Fg)
     call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fg), D, Fg)
-    call rsp_xcint(geo_order=1, &
-                   nr_dmat=1,   &
-                   D=(/D/),     &
-                   res=Fg)
+    call rsp_xcint(nr_dmat=1, D=(/D/), Fg=Fg)
 
 !   solve equations
     do i = 1, size(Dg)
@@ -111,10 +108,7 @@ contains
        Dg(i) = -D*Sg(i)*D
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1) + Fg(i)
        call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), FDSg(1:1))
-       call rsp_xcint(geo_order=0,    &
-                      nr_dmat=2,      &
-                      D=(/D, Dg(i)/), &
-                      res=FDSg(1:1))
+       call rsp_xcint(nr_dmat=2, D=(/D, Dg(i)/), F=FDSg(1))
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1)
        X(1) = 0*FDSg(1)
        call mat_alloc(X(1))
@@ -122,10 +116,7 @@ contains
        X(1)=-2*X(1); FDSg(1)=0
        Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1); X(1)=0
        call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), Fg(i:i))
-       call rsp_xcint(geo_order=0,    &
-                      nr_dmat=2,      &
-                      D=(/D, Dg(i)/), &
-                      res=Fg(i:i))
+       call rsp_xcint(nr_dmat=2, D=(/D, Dg(i)/), F=Fg(i))
     end do
 
   end subroutine
@@ -511,26 +502,14 @@ contains
 
     call rsp_oneint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), Fgg)
     call rsp_twoint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), D, Fgg)
-    call rsp_xcint(geo_order=2, &
-                   nr_dmat=1,   &
-                   D=(/D/),     &
-                   res=Fgg)
+    call rsp_xcint(nr_dmat=1, D=(/D/), Fgg=Fgg)
     do i = 1, size(Dg)
        call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fgg(:,i)), Dg(i), Fgg(:,i))
        call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fgg(i,:)), Dg(i), Fgg(i,:)) !fixme twice the same thing
-       call rsp_xcint(geo_order=1,    &
-                      nr_dmat=2,      &
-                      D=(/D, Dg(i)/), &
-                      res=Fgg(:, i))
-       call rsp_xcint(geo_order=1,    &
-                      nr_dmat=2,      &
-                      D=(/D, Dg(i)/), &
-                      res=Fgg(i, :))         !fixme twice the same thing
+       call rsp_xcint(nr_dmat=2, D=(/D, Dg(i)/), Fg=Fgg(:, i))
+       call rsp_xcint(nr_dmat=2, D=(/D, Dg(i)/), Fg=Fgg(i, :)) !fixme twice the same thing
        do j = 1, size(Dg)
-          call rsp_xcint(geo_order=0,           &
-                         nr_dmat=3,             &
-                         D=(/D, Dg(i), Dg(j)/), &
-                         res=Fgg(i, j))
+          call rsp_xcint(nr_dmat=3, D=(/D, Dg(i), Dg(j)/), F=Fgg(i, j))
        end do
     end do
 
@@ -544,10 +523,7 @@ contains
                Dg(i)*S*Dg(j) + Dg(i)*Sg(j)*D + Dg(j)*S*Dg(i) + Dg(j)*Sg(i)*D
           Dgg(i,j) = Dgg(i,j) - D*S*Dgg(i,j) - Dgg(i,j)*S*D
           call rsp_twoint(mol, 0, (nof), (noc), shape(Fgg(i,j)), Dgg(i,j), Fgg(i,j))
-          call rsp_xcint(geo_order=0,        &
-                         nr_dmat=2,          &
-                         D=(/D, Dgg(i, j)/), &
-                         res=Fgg(i, j))
+          call rsp_xcint(nr_dmat=2, D=(/D, Dgg(i, j)/), F=Fgg(i, j))
           RHS(1) = F*D*Sgg(i,j) + F*Dg(i)*Sg(j) + F*Dgg(i,j)*S + F*Dg(j)*Sg(i)  &
                  + Fg(i)*D*Sg(j) + Fg(i)*Dg(j)*S + Fgg(i,j)*D*S + Fg(j)*D*Sg(i) &
                  + Fg(j)*Dg(i)*S - S*D*Fgg(i,j) - S*Dg(i)*Fg(j) - S*Dgg(i,j)*F  &
@@ -562,10 +538,7 @@ contains
           X(1)=0
           Dgg(i,j) = Dgg(i,j) + Dh
           call rsp_twoint(mol, 0, (nof), (noc), shape(Fgg(i,j)), Dh, Fgg(i,j))
-          call rsp_xcint(geo_order=0, &
-                         nr_dmat=2,   &
-                         D=(/D, Dh/), &
-                         res=Fgg(i, j))
+          call rsp_xcint(nr_dmat=2, D=(/D, Dh/), F=Fgg(i, j))
        end do
     end do
 ! Symmetrize

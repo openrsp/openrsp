@@ -1121,15 +1121,16 @@ contains
 
   !> Exchange-correlation perturbed by fields 'field', contracted over
   !> densities 'D', added to Fock matrices 'F'
-  subroutine rsp_xcint(geo_order, nr_dmat, D, res)
+  subroutine rsp_xcint(nr_dmat, D, F, Fg, Fgg)
 
      use xcint_main
      
 !    ---------------------------------------------------------------------------
-     integer,      intent(in)    :: geo_order
      integer,      intent(in)    :: nr_dmat
      type(matrix), intent(in)    :: D(*)
-     type(matrix), intent(inout) :: res(*)
+     type(matrix), intent(inout), optional :: F
+     type(matrix), intent(inout), optional :: Fg(:)
+     type(matrix), intent(inout), optional :: Fgg(:, :)
 !    ---------------------------------------------------------------------------
      integer                     :: icenter
      integer                     :: ixyz
@@ -1157,47 +1158,47 @@ contains
 
      allocate(xc_fmat(mat_dim*mat_dim))
 
-     select case (geo_order)
-        case (0)
+     if (present(F)) then
+        call xc_integrate(                     &
+                          xc_mat_dim=mat_dim,  &
+                          xc_nr_dmat=nr_dmat,  &
+                          xc_dmat=xc_dmat,     &
+                          xc_energy=xc_energy, &
+                          xc_fmat=xc_fmat      &
+                         )
+        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+     end if
+
+     if (present(Fg)) then
+        do i = 1, nr_atoms*3
            call xc_integrate(                     &
                              xc_mat_dim=mat_dim,  &
                              xc_nr_dmat=nr_dmat,  &
                              xc_dmat=xc_dmat,     &
                              xc_energy=xc_energy, &
-                             xc_fmat=xc_fmat      &
+                             xc_fmat=xc_fmat,     &
+                             xc_geo_coor=(/i/)    &
                             )
-           call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(1)%elms, 1)
-        case (1)
-           do i = 1, nr_atoms*3
+           call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
+        end do
+     end if
+
+     if (present(Fgg)) then
+        do i = 1, nr_atoms*3
+           do j = 1, i
               call xc_integrate(                     &
                                 xc_mat_dim=mat_dim,  &
                                 xc_nr_dmat=nr_dmat,  &
                                 xc_dmat=xc_dmat,     &
                                 xc_energy=xc_energy, &
                                 xc_fmat=xc_fmat,     &
-                                xc_geo_coor=(/i/)    &
+                                xc_geo_coor=(/i, j/) &
                                )
-              call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(i)%elms, 1)
+              call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
            end do
-        case (2)
-           do i = 1, nr_atoms*3
-              do j = 1, i
-                 call xc_integrate(                     &
-                                   xc_mat_dim=mat_dim,  &
-                                   xc_nr_dmat=nr_dmat,  &
-                                   xc_dmat=xc_dmat,     &
-                                   xc_energy=xc_energy, &
-                                   xc_fmat=xc_fmat,     &
-                                   xc_geo_coor=(/i, j/) &
-                                  )
-                 call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res((j-1)*nr_atoms*3 + i)%elms, 1)
-              end do
-           end do
-        case default
-           print *, 'error: order not implemented in rsp_xcint'
-           stop 1
-     end select
-     
+        end do
+     end if
+
      deallocate(xc_dmat)
      deallocate(xc_fmat)
 
