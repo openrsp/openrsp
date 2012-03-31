@@ -459,7 +459,7 @@ contains
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
     type(rsp_field) geo4(4)
-    type(matrix) DFD, Sg(ng), Dg(ng), Fg(ng), DSDg, FDSg(1), DFDg
+    type(matrix) DFD, Sg(ng), Dg(ng), Fg(ng), DSDg, FDSg(1), DFDg, A, Ag(ng)
     type(matrix) X(1), FgDS(ng), DgSD(ng), FDSgg, DSDgg, DFDgg
     type(matrix) Dgg(ng,ng), Sgg(ng,ng), Fgg(ng,ng) ! NOT INITIALIZED
     type(matrix) DFDggg2p, DSDggg2p, FDSggg2p, RHS(1), Dh
@@ -491,21 +491,44 @@ contains
     call rsp_ovlint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Sgg), Sgg)
 
 
-! CALCULATE Fgg
+!   calculate Fgg
+!   =============
 
     call rsp_oneint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), Fgg)
     call rsp_twoint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), D, Fgg)
     call rsp_xcint(D=(/D/), Fgg=Fgg)
+
+!   auxiliary matrices to avoid
+!   calculating same integrals twice
+    A = tiny(0.0d0)*D
+    do j = 1, size(Dg)
+       Ag(j) = tiny(0.0d0)*D
+    end do
+
     do i = 1, size(Dg)
-       call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fgg(:,i)), Dg(i), Fgg(:,i))
-       call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fgg(i,:)), Dg(i), Fgg(i,:)) !fixme twice the same thing
-       call rsp_xcint(D=(/D, Dg(i)/), Fg=Fgg(:, i))
-       call rsp_xcint(D=(/D, Dg(i)/), Fg=Fgg(i, :)) !fixme twice the same thing
        do j = 1, size(Dg)
-          call rsp_xcint(D=(/D, Dg(i), Dg(j)/), F=Fgg(i, j))
+          Ag(j)%elms = 0.0d0
+       end do
+       call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Ag), Dg(i), Ag)
+       call rsp_xcint(D=(/D, Dg(i)/), Fg=Ag)
+       do j = 1, size(Dg)
+          Fgg(i, j) = Fgg(i, j) + Ag(j)
+          Fgg(j, i) = Fgg(j, i) + Ag(j)
+       end do
+       do j = 1, i
+          A%elms = 0.0d0
+          call rsp_xcint(D=(/D, Dg(i), Dg(j)/), F=A)
+          Fgg(i, j) = Fgg(i, j) + A
+          if (i /= j) then
+             Fgg(j, i) = Fgg(j, i) + A
+          end if
        end do
     end do
 
+    A = 0
+    do j = 1, size(Dg)
+       Ag(j) = 0
+    end do
 
 
 ! CALCULATE Dgg
