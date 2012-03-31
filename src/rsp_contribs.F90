@@ -8,7 +8,7 @@
 
 !> This module contains routines for calculating contributions
 !> to molecular properties (1st order, linear response, etc.),
-!> and perturbed Fock matrices. 
+!> and perturbed Fock matrices.
 module rsp_contribs
 
   use matrix_defop
@@ -700,7 +700,7 @@ contains
   subroutine rsp_xcave(geo_order, res, D, Dg, Dgg)
 
      use xcint_main
-     
+
 !    ---------------------------------------------------------------------------
      integer,      intent(in)           :: geo_order
      complex(8),   intent(out)          :: res(*)
@@ -714,14 +714,14 @@ contains
      integer                            :: nr_atoms
      real(8)                            :: xc_energy
 !    ---------------------------------------------------------------------------
-    
+
      nr_atoms = get_natom()
- 
+
      if (.not. is_ks_calculation()) then
         res(1:(nr_atoms*3)**geo_order) = 0.0d0
         return
      end if
-    
+
      mat_dim = D%nrow
 
      select case (geo_order)
@@ -1121,34 +1121,35 @@ contains
 
   !> Exchange-correlation perturbed by fields 'field', contracted over
   !> densities 'D', added to Fock matrices 'F'
-  subroutine rsp_xcint(nr_dmat, D, F, Fg, Fgg)
+  subroutine rsp_xcint(D, F, Fg, Fgg)
 
      use xcint_main
-     
+
 !    ---------------------------------------------------------------------------
-     integer,      intent(in)    :: nr_dmat
-     type(matrix), intent(in)    :: D(*)
+     type(matrix), intent(in)              :: D(:)
      type(matrix), intent(inout), optional :: F
      type(matrix), intent(inout), optional :: Fg(:)
      type(matrix), intent(inout), optional :: Fgg(:, :)
 !    ---------------------------------------------------------------------------
-     integer                     :: icenter
-     integer                     :: ixyz
-     integer                     :: ioff
-     integer                     :: imat, i, j
-     integer                     :: mat_dim
-     integer                     :: nr_atoms
-     real(8),      allocatable   :: xc_dmat(:)
-     real(8),      allocatable   :: xc_fmat(:)
-     real(8)                     :: xc_energy
+     integer              :: icenter
+     integer              :: ixyz
+     integer              :: ioff
+     integer              :: imat, i, j
+     integer              :: mat_dim
+     integer              :: nr_atoms
+     integer              :: nr_dmat
+     real(8), allocatable :: xc_dmat(:)
+     real(8), allocatable :: xc_fmat(:)
+     real(8)              :: xc_energy
 !    ---------------------------------------------------------------------------
-     
+
      if (.not. is_ks_calculation()) then
         return
      end if
 
      nr_atoms = get_natom()
-     
+     nr_dmat  = size(D)
+
      mat_dim = D(1)%nrow
      allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
      xc_dmat = 0.0d0
@@ -1383,8 +1384,8 @@ contains
         end do
      end do
   end subroutine
-  
-  
+
+
   function rank_one_pointer(siz, arr) result(ptr)
      integer,         intent(in) :: siz
      real(8), target, intent(in) :: arr(siz)
@@ -1538,7 +1539,7 @@ contains
     integer,    intent(in)    :: comp(ndim), nc(ndim), tc(ndim)
     real(8),    intent(in)    :: ave(product(tc)) !tc = total num comp
     complex(8), intent(inout) :: rsp(product(nc)) !nc = num comp
-    
+
   end subroutine
 
 end module
