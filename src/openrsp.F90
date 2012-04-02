@@ -49,7 +49,6 @@ module openrsp
 
 #ifndef OPENRSP_STANDALONE
 ! xcint
-  use num_grid
   use interface_ao_specific
   use xcint_main
 #endif /* OPENRSP_STANDALONE */
@@ -115,8 +114,6 @@ contains
     integer, intent(in)    :: NBAST, LUCMD, LUPRI, LWORK
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
-    integer                :: kfree
-    logical                :: grid_file_exists
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
@@ -172,11 +169,6 @@ contains
 
     if (is_ks_calculation()) then
        ! write xcint interface files
-       kfree = 1
-       inquire(file = 'numerical_grid', exist = grid_file_exists)
-       if (.not. grid_file_exists) then
-          call write_num_grid_to_file(D%elms, work, kfree, lwork)
-       end if
        call interface_ao_write()
 
 #ifdef OPENRSP_STANDALONE

@@ -54,7 +54,6 @@ module openrsp_old
 
 ! xcint
 #ifndef OPENRSP_STANDALONE
-  use num_grid
   use interface_ao_specific
   use xcint_main
   use rsp_backend, only: is_ks_calculation
@@ -359,8 +358,6 @@ module openrsp_old
     ! temporary stuff
     integer i, j, k, l
 
-    integer              :: kfree, lwork
-    real(8), allocatable :: work(:)
 
 #ifdef G1INT_DEBUG
     ! pushes current subroutine into the stack
@@ -372,12 +369,6 @@ module openrsp_old
     stop 1
 #else /* OPENRSP_STANDALONE */
     if (is_ks_calculation()) then
-       ! write xcint interface files and generate grid
-       kfree = 1
-       lwork = 10000000 !fixme replace by Michal's grid gen
-       allocate(work(lwork))
-       call write_num_grid_to_file(D%elms, work, kfree, lwork)
-       deallocate(work)
        call interface_ao_write()
     end if
 #endif /* OPENRSP_STANDALONE */
