@@ -670,7 +670,7 @@ class run:
 
                  if line_l == []:
                      # subtask did not filter anything
-                     log_file.write('ERROR: subtask did not filter anything\n')
+                     log_file.write('ERROR: result "%s" not found\n' % filter_task.start_string)
                  else:
                      for x in line_l:
                          for line in x:
