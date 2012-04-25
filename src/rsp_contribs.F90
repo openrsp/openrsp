@@ -998,7 +998,7 @@ contains
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     num_ints = num_mom*num_geom
-    if (num_ints/=size(one_int)) &
+    if (num_ints/=size(oneint)) &
       call quit("rsp_oneint>> returning specific components is not implemented!")
 !FIXME:
     if (order_mom>1) &
