@@ -9,6 +9,7 @@ import os
 import sys
 import string
 import subprocess
+import shlex
 import time
 import signal
 from optparse import OptionParser, OptionGroup
@@ -558,14 +559,12 @@ class run:
 
          if program_is_dirac:
              if sys.platform != 'win32':
-                 p = subprocess.Popen(command,
-                                      shell=True,
+                 p = subprocess.Popen(shlex.split(command),
                                       stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE,
                                       preexec_fn=os.setsid)
              else:
-                 p = subprocess.Popen(command,
-                                      shell=True,
+                 p = subprocess.Popen(shlex.split(command),
                                       stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE)
              pgid_dirac = p.pid # save DIRAC process group id for latter killing of subprocesses
@@ -670,7 +669,7 @@ class run:
 
                  if line_l == []:
                      # subtask did not filter anything
-                     log_file.write('ERROR: subtask did not filter anything\n')
+                     log_file.write('ERROR: result "%s" not found\n' % filter_task.start_string)
                  else:
                      for x in line_l:
                          for line in x:
