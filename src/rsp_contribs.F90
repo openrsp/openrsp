@@ -1506,7 +1506,7 @@ contains
       do icomp = order_mom+2, num_field
         offset_geom(icomp) = num_coord*offset_geom(icomp-1)
       end do
-    end do
+    end if
     ! sets the last component in each field
     allocate(last_comp(num_field), stat=ierr)
     if (ierr/=0) call quit("gen1int_reorder>> failed to allocate last_comp!")
