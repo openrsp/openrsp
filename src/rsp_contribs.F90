@@ -295,7 +295,7 @@ contains
       else
         call gen1int_reorder(num_coord=num_coord, num_field=nf, &
                              first_comp=c, num_comp=nc,         &
-                             order_mom=0, num_geom=num_geom,    &
+                             order_mom=0, order_geo=order_geo,  &
                              val_expect=val_expt, rsp_expect=ave)
       end if
     end if
@@ -468,9 +468,9 @@ contains
                           io_viewer=get_lupri(),                  &
                           level_print=5)
     ! assigns the output average
-    call gen1int_reorder(num_coord=num_coord, num_field=nf,      &
-                         first_comp=c, num_comp=nc,              &
-                         order_mom=order_mom, num_geom=num_geom, &
+    call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
+                         first_comp=c, num_comp=nc,                &
+                         order_mom=order_mom, order_geo=order_geo, &
                          val_expect=val_expt, rsp_expect=ave)
     ! frees space
     deallocate(val_expt)
@@ -1049,9 +1049,9 @@ contains
                           io_viewer=get_lupri(),                  &
                           level_print=5)
 !FIXME: ! assigns the integral matrices
-!FIXME: call gen1int_reorder(num_coord=num_coord, num_field=nf,      &
-!FIXME:                      first_comp=c, num_comp=nc,              &
-!FIXME:                      order_mom=order_mom, num_geom=num_geom, &
+!FIXME: call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
+!FIXME:                      first_comp=c, num_comp=nc,                &
+!FIXME:                      order_mom=order_mom, order_geo=order_geo, &
 !FIXME:                      val_ints=val_ints, rsp_ints=oneint)
     ! frees space
     call OnePropDestroy(one_prop=one_prop)
@@ -1445,29 +1445,29 @@ contains
   !> \date 2012-04-25
   !> \param num_coord is the number of atomic coordinates
   !> \param num_field is the number of fields
-  !> \param first_comp constains the first component in each field ("EL" then "GEO")
-  !> \param num_comp contains the number of components in each field ("EL" then "GEO")
+  !> \param first_comp constains the first component in each field ("GEO", "EL")
+  !> \param num_comp contains the number of components in each field ("GEO", "EL")
   !> \param order_mom is the order of Cartesian multipole moments
-  !> \param num_geom is the number of total geometric derivatives
+  !> \param order_geo is the order of total geometric derivatives
   !> \param val_expect contains the redudant expectation values from Gen1Int
   !> \param val_ints contains the redudant integral matrices from Gen1Int
   !> \return rsp_expect contains the redudant expectation values for OpenRsp
   !> \return rsp_ints contains the redudant integral matrices for OpenRsp
-  !> \note all the expectation values and integral matrices are in the order ("EL", "GEO");
-  !>       this routine is implemented temporarily since it will cost much memory
+  !> \note all the expectation values and integral matrices are in the order ("EL", "GEO")
+  !>       in memory; this routine is implemented temporarily since it will cost much memory
   !>       for assigning integral matrices, it would be better that the integral
   !>       code returns the required integral matrices by itself
   subroutine gen1int_reorder(num_coord, num_field, first_comp, num_comp, &
-                             order_mom, num_geom, val_expect, val_ints,  &
+                             order_mom, order_geo, val_expect, val_ints, &
                              rsp_expect, rsp_ints)
     integer, intent(in) :: num_coord
     integer, intent(in) :: num_field
     integer, intent(in) :: first_comp(num_field)
     integer, intent(in) :: num_comp(num_field)
     integer, intent(in) :: order_mom
-    integer, intent(in) :: num_geom
-    real(8), optional, intent(in)  :: val_expect((order_mom+1)*(order_mom+2)/2*num_geom)
-    type(matrix), optional, intent(in) :: val_ints((order_mom+1)*(order_mom+2)/2*num_geom)
+    integer, intent(in) :: order_geo
+    real(8), optional, intent(in)  :: val_expect(:)
+    type(matrix), optional, intent(in) :: val_ints(:)
     complex(8), optional, intent(out) :: rsp_expect(product(num_comp))
     type(matrix), optional, intent(inout) :: rsp_ints(product(num_comp))
     logical assign_expect                   !if assigning expectation values
@@ -1480,7 +1480,7 @@ contains
     integer addr_gen1int                    !address of specific components in the results from Gen1Int
     integer icomp                           !incremental recorder over components
     integer ymom, zmom                      !orders of yz components of Cartesian multipole moments
-    logical find_next                       !indicates if finding the next specific components
+    logical not_found                       !indicates the next specific components are not found
     integer ierr                            !error information
     ! sets what jobs are going to do
     assign_expect = present(val_expect) .and. present(rsp_expect)
@@ -1498,13 +1498,13 @@ contains
     else
       return
     end if
-    ! sets the offset of total geometric derivatives
-    if (order_mom<num_field) then
-      allocate(offset_geom(order_mom+1:num_field), stat=ierr)
+    ! sets the offset of total geometric derivatives if there are
+    if (order_geo>0) then
+      allocate(offset_geom(order_geo), stat=ierr)
       if (ierr/=0) call quit("gen1int_reorder>> failed to allocate offset_geom!")
-      offset_geom(order_mom+1) = (order_mom+1)*(order_mom+2)/2  !the Cartesian multipole moments come first
-      do icomp = order_mom+2, num_field
-        offset_geom(icomp) = num_coord*offset_geom(icomp-1)
+      offset_geom(order_geo) = (order_mom+1)*(order_mom+2)/2  !Cartesian multipole moments come first in memory
+      do icomp = order_geo-1, 1, -1
+        offset_geom(icomp) = num_coord*offset_geom(icomp+1)
       end do
     end if
     ! sets the last component in each field
@@ -1520,7 +1520,7 @@ contains
     ! gets the orders of yz components of Cartesian multipole moments
     ymom = 0
     zmom = 0
-    do icomp = 1, order_mom
+    do icomp = num_field, order_geo+1, -1
       select case(idx_comp(icomp))
       case(1)
       case(2)
@@ -1534,7 +1534,7 @@ contains
     ! the address of x^{l}y^{m}z^{n} with l+m+n=order_mom is 1+m+(2*order_mom+3-n)*n/2
     addr_gen1int = 1+ymom+(2*order_mom+3-zmom)*zmom/2
     ! gets the address of total geometric derivatives in the results from Gen1Int
-    do icomp = order_mom+1, num_field
+    do icomp = order_geo, 1, -1
       addr_gen1int = addr_gen1int+(idx_comp(icomp)-1)*offset_geom(icomp)
     end do
     ! assigns the expectation values
@@ -1544,28 +1544,24 @@ contains
     ! sets other components
     do addr_rsp = 2, size_rsp_comp
       ! generates new specific components
-      find_next = .true.
-      do icomp = 1, num_field-1
+      not_found = .true.
+      do icomp = num_field, 1, -1
         ! we walk to the next component in this field, the new specific components are found
         if (idx_comp(icomp)<last_comp(icomp)) then
           idx_comp(icomp) = idx_comp(icomp)+1
-          find_next = .false.
+          not_found = .false.
           exit
         ! we have walked to the last component of this field, back to the first component
         else
           idx_comp(icomp) = first_comp(icomp)
         end if
       end do
-      ! we did not find new specific components, check the last field
-      if (find_next .and. (idx_comp(num_field)<last_comp(num_field))) then
-        idx_comp(num_field) = idx_comp(num_field)+1
-      else
-        call quit("gen1int_reorder>> can not find next components!")
-      end if
+      ! we could not find new specific components
+      if (not_found) call quit("gen1int_reorder>> can not find next components!")
       ! gets the orders of yz components of Cartesian multipole moments
       ymom = 0
       zmom = 0
-      do icomp = 1, order_mom
+    do icomp = num_field, order_geo+1, -1
         select case(idx_comp(icomp))
         case(1)
         case(2)
@@ -1579,7 +1575,7 @@ contains
       ! the address of x^{l}y^{m}z^{n} with l+m+n=order_mom is 1+m+(2*order_mom+3-n)*n/2
       addr_gen1int = 1+ymom+(2*order_mom+3-zmom)*zmom/2
       ! gets the address of total geometric derivatives in the results from Gen1Int
-      do icomp = order_mom+1, num_field
+      do icomp = order_geo, 1, -1
         addr_gen1int = addr_gen1int+(idx_comp(icomp)-1)*offset_geom(icomp)
       end do
       ! assigns the expectation values
