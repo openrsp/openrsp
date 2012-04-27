@@ -666,6 +666,7 @@ module dalton_ifc
   subroutine rsp_mosolver_init( max_num_iterat, max_dim_hess, max_dim_reduc, &
                                 threshold, optimal_orb )
     ! need certain low-level matrix routines
+    ! radovan: accessing low lever routines here is bad
     use matrix_backend, only: mat_nullify, &
                               mat_setup, &
                               mat_magic_setup, &
