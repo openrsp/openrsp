@@ -1,0 +1,6 @@
+$ERROR 1.E-6
+Nlines 4:d/dg dipmom = -Egf
+$ERROR 1.E-6
+Nlines 10:d/dg Alpha = -Egff
+$ERROR 1.E-6
+Nlines 28:d/dg Beta = -Egfff
