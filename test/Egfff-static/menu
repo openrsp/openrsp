@@ -1,1 +1,3 @@
-vibgamma.dal h2o2.mol -put DALTON.HES
+vibgamma.dal h2o2+p.mol -put DALTON.HES
+vibgamma.dal h2o2-p.mol -put DALTON.HES
+vibgamma.dal h2o2.mol   -put DALTON.HES
