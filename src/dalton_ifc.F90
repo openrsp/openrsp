@@ -52,12 +52,6 @@
 !> \date 2009-12-08
 module dalton_ifc
 
-  ! ajt I think precision should rather be specified with compiler flags:
-  !     "gfortran -fdefault-real-8", "ifort -real-size 64", or "pgf -r8",
-  !     and then remove (8) from every real declaration. This is far simpler,
-  !     and avoids having to use 1.234_xp, 1.234d0, etc. for every constant
-  !     in the code.
-  use xprecision     !precision
   use matrix_defop   !type matrix with operators
 
   implicit none
@@ -103,7 +97,7 @@ module dalton_ifc
   !> amount of the left work array
   integer, private, save :: left_f77_work = 0
   !> DALTON work array pointer
-  real(xp), public, pointer, save :: dal_work(:)
+  real(8), public, pointer, save :: dal_work(:)
   !> true for RHF - closed shell or one electron in one active orbital
   logical, save, private :: restrict_scf = .true.
   !> print level
@@ -123,7 +117,7 @@ module dalton_ifc
   !> -# maximum dimension of the reduced space to which new basis vectors are added
   integer, save, private :: solver_mxrm = 400
   !> -# convergence threshold for the solution of the frequency-independent response equations
-  real(xp), save, private :: solver_thresh = 1.0D-07
+  real(8), save, private :: solver_thresh = 1.0D-07
   !> -# true for optimal orbital trial vectors in the iterative solution of
   !>    the frequency-dependent linear response equations
   logical, save, private :: solver_optorb = .false.
@@ -141,7 +135,7 @@ module dalton_ifc
   !> coefficients of virtual molecular orbitals
   type(matrix), private, save :: solver_CMO_VIR
   !> active part of one-electron density matrix (MO)
-  real(xp), allocatable, save :: solver_DV(:)
+  real(8), allocatable, save :: solver_DV(:)
 
   contains
 
@@ -155,7 +149,7 @@ module dalton_ifc
   subroutine dal_ifc_init( WORK, LWORK, log_io, level_print, WAVPCM )
     implicit integer (i,m-n)
 #include <implicit.h>
-    real(xp), target :: WORK(:)
+    real(8), target :: WORK(:)
     integer LWORK
     integer, optional, intent(in) :: log_io
     integer, optional, intent(in) :: level_print
@@ -205,7 +199,7 @@ module dalton_ifc
   !> \param mem_req specifies the amount of memory asked
   !> \return wrk is the asked memory if sucessfully allocated
   subroutine di_select_wrk( wrk, mem_req )
-    real(xp), pointer, intent(inout) :: wrk(:)
+    real(8), pointer, intent(inout) :: wrk(:)
     integer, intent(in) :: mem_req
     if ( mem_req > left_f77_work ) then
       !> \todo call di_create_wrk( wrk, mem_req )
@@ -224,7 +218,7 @@ module dalton_ifc
   !> \param mem_req specifies the amount of memory
   !> \return wrk is the  memory to be released
   subroutine di_deselect_wrk( wrk, mem_req )
-    real(xp), pointer, intent(inout) :: wrk(:)
+    real(8), pointer, intent(inout) :: wrk(:)
     integer, intent(in) :: mem_req
     !> \todo if ( mem_req > left_f77_work ) then
     !> \todo   call di_delete_wrk( wrk )
@@ -264,8 +258,8 @@ module dalton_ifc
     ! uses NUCDEP, NAMN, CHARGE, CORD
 #include <nuclei.h>
     character*4, intent(out) :: aname(:)
-    real(xp), intent(out) :: acharge(:)
-    real(xp), intent(out) :: acoord(:,:)
+    real(8), intent(out) :: acharge(:)
+    real(8), intent(out) :: acoord(:,:)
     integer i
     ! checks the number of atoms
     if ( size(aname) /= NUCDEP ) call QUIT( 'Error: incorrect number of atoms!' )
@@ -297,7 +291,7 @@ module dalton_ifc
     ! PCM one-electron contributions
     integer work_pcm
     ! integer constants
-    real(xp), parameter :: one = 1.0D+00
+    real(8), parameter :: one = 1.0D+00
     ! dummy stuff
     integer idummy
     ! external DALTON function finding the corresponding label
@@ -523,10 +517,10 @@ module dalton_ifc
     ! parameters for SIRFCK
     integer NDMAT, ISYMDM, IFCTYP
     ! integer constants
-    real(xp), parameter :: two = 2.0D+00
+    real(8), parameter :: two = 2.0D+00
     ! dummy stuff
     integer idummy
-    real(xp) xdummy
+    real(8) xdummy
     ! assigns the work memory
     work_ao_dens = next_f77_work
     next_f77_work = work_ao_dens + N2BASX
@@ -608,7 +602,7 @@ module dalton_ifc
     ! parameters for SIRFCK
     integer NDMAT, ISYMDM(2), IFCTYP(2)
     ! integer constants
-    real(xp), parameter :: two = 2.0D+00
+    real(8), parameter :: two = 2.0D+00
     ! number of elements
     integer nelms
     call di_get_gmat( D, G )
@@ -681,7 +675,7 @@ module dalton_ifc
     integer, optional, intent(in) :: max_num_iterat
     integer, optional, intent(in) :: max_dim_hess
     integer, optional, intent(in) :: max_dim_reduc
-    real(xp), optional, intent(in) :: threshold
+    real(8), optional, intent(in) :: threshold
     logical, optional, intent(in) :: optimal_orb
     ! uses NBAST
 #include <inforb.h>
@@ -809,7 +803,7 @@ module dalton_ifc
     implicit integer (i,m-n)
 #include <implicit.h>
     type(matrix), intent(in) :: GD(*)
-    real(xp), intent(in)  :: eigval(*)
+    real(8), intent(in)  :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
     ! right hand side vector (MO)
     type(matrix) :: GD_MO
@@ -842,8 +836,8 @@ module dalton_ifc
     ! uses KZVAR
 #include <wrkrsp.h>
     ! constants
-    real(xp), parameter :: half = 5.0D-01
-    real(xp), parameter :: zero = 0.0D+00
+    real(8), parameter :: half = 5.0D-01
+    real(8), parameter :: zero = 0.0D+00
     ! tempary stuff
     integer :: ISYM = 1
     integer IRHS
@@ -975,8 +969,8 @@ module dalton_ifc
 #include <nuclei.h>
     integer, intent(in) :: n
     integer, intent(out) :: IS(n)
-    real(xp), intent(out) :: Z(n)
-    real(xp), intent(out) :: G(3,n)
+    real(8), intent(out) :: Z(n)
+    real(8), intent(out) :: G(3,n)
     if ( n /= NATOMS ) call QUIT( 'NUCLEI_ifc: n/=NATOMS!' )
     Z = CHARGE(1:n)
 #ifndef PRG_DIRAC
@@ -1002,8 +996,8 @@ module dalton_ifc
 #include <mxcent.h>
     ! uses DIPMN and DDIPN
 #include <dipole.h>
-    real(xp), intent(out) :: DN(3)
-    real(xp), parameter :: zero = 0.0D+00
+    real(8), intent(out) :: DN(3)
+    real(8), parameter :: zero = 0.0D+00
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
     DN = DIPMN
   end subroutine DIPNUC_ifc
@@ -1021,8 +1015,8 @@ module dalton_ifc
 #include <nuclei.h>
 #include <quadru.h>
 #include <priunit.h>
-    real(xp), intent(out) :: Q(6)
-    real(xp), parameter :: zero = 0.0D+00
+    real(8), intent(out) :: Q(6)
+    real(8), parameter :: zero = 0.0D+00
     call NUCQDR( CORD(:,1:NUCDEP), (/zero,zero,zero/), LUPRI, 0 )
     Q = (/QDRNUC(1,1),QDRNUC(1:2,2),QDRNUC(1:3,3)/)
   end subroutine QDRNUC_ifc
@@ -1044,8 +1038,8 @@ module dalton_ifc
     ! uses GRADNN
 #include <energy.h>
     integer, intent(in) :: n
-    real(xp), intent(out) :: G( 3*n )
-    real(xp), parameter :: zero = 0.0D+00
+    real(8), intent(out) :: G( 3*n )
+    real(8), parameter :: zero = 0.0D+00
     IPRINT = 0
     MAXDIF = 1
     call NUCREP( (/zero/), (/zero/), (/zero/) )
@@ -1063,14 +1057,14 @@ module dalton_ifc
     implicit integer (i,m-n)
 #include <implicit.h>
     integer, intent(in) :: na
-    real(xp), intent(inout) :: H( 3*na, 3*na )
+    real(8), intent(inout) :: H( 3*na, 3*na )
     ! uses MXCOOR
 #include <mxcent.h>
     ! uses IPRINT and MAXDIF
 #include <cbinuc.h>
     integer i, j
-    real(xp) HESSNN( MXCOOR, MXCOOR )
-    real(xp), parameter :: zero = 0.0D+00
+    real(8) HESSNN( MXCOOR, MXCOOR )
+    real(8), parameter :: zero = 0.0D+00
     IPRINT = 0
     MAXDIF = 2
     ! second and third arg only used when IPRINT > 1
@@ -1098,8 +1092,8 @@ module dalton_ifc
     ! uses DDIPN
 #include <dipole.h>
     integer, intent(in) :: na
-    real(xp), intent(out) :: DGN( 3*na, 3 )
-    real(xp), parameter :: zero = 0.0D+00
+    real(8), intent(out) :: DGN( 3*na, 3 )
+    real(8), parameter :: zero = 0.0D+00
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
     DGN = transpose( DDIPN( :, 1:3*na ) )
   end subroutine DPGNUC_ifc
@@ -1115,8 +1109,8 @@ module dalton_ifc
 #include <mxcent.h>
 #include <aatens.h>
     integer, intent(in) :: na
-    real(xp), intent(out) :: AATN( 3, 3*na )
-    real(xp) :: CSTRA( 3*na, 3*na ), SCTRA( 3*na, 3*na )
+    real(8), intent(out) :: AATN( 3, 3*na )
+    real(8) :: CSTRA( 3*na, 3*na ), SCTRA( 3*na, 3*na )
     call NUCAAT( CSTRA, SCTRA, 0 )
          AATN(:,:) = AATNUC( :, :3*na )
   end subroutine AATNUC_ifc
@@ -1218,7 +1212,7 @@ module dalton_ifc
   subroutine di_get_geomDeriv_FxD_DFT( gradient, natoms, D, B )
     type(matrix), intent(in) :: D
     type(matrix), intent(in) :: B
-    real(xp), intent(out) :: gradient( 3*natoms )
+    real(8), intent(out) :: gradient( 3*natoms )
     integer, intent(in) :: natoms
     call QUIT( 'di_get_geomDeriv_FxD_DFT is not implemented!' )
   end subroutine di_get_geomDeriv_FxD_DFT
@@ -1234,7 +1228,7 @@ module dalton_ifc
     type(matrix), intent(in) :: D
     type(matrix), intent(in) :: A
     type(matrix), intent(in) :: B
-    real(xp), intent(out) :: gradient( 3*natoms )
+    real(8), intent(out) :: gradient( 3*natoms )
     integer, intent(in) :: natoms
     call QUIT( 'di_get_geomDeriv_GxD_DFT is not implemented!' )
   end subroutine di_get_geomDeriv_GxD_DFT
@@ -1248,7 +1242,7 @@ module dalton_ifc
   !> \return gradient contains the exchange correlation part of the geometric derivative of the F^ks matrix
   subroutine di_get_geomDeriv_molgrad_DFT( gradient, natoms, D )
     type(matrix), intent(in) :: D
-    real(xp), intent(out) :: gradient( 3*natoms )
+    real(8), intent(out) :: gradient( 3*natoms )
     integer, intent(in) :: natoms
     call QUIT( 'di_get_geomDeriv_molgrad_DFT is not implemented!' )
   end subroutine di_get_geomDeriv_molgrad_DFT
@@ -1262,7 +1256,7 @@ module dalton_ifc
 #include <mxcent.h>
     ! need CHARGE
 #include <nuclei.h>
-    real(xp), pointer, intent(out) :: chg_ptr(:)
+    real(8), pointer, intent(out) :: chg_ptr(:)
     !ajt Won't compile as com-block vars arent TARGETs
     !ajt chg_ptr => CHARGE( :NATOMS )
     allocate( chg_ptr(NATOMS) )
@@ -1279,7 +1273,7 @@ module dalton_ifc
 #include <mxcent.h>
     ! need CORD
 #include <nuclei.h>
-    real(xp), pointer, intent(out) :: coord(:,:)
+    real(8), pointer, intent(out) :: coord(:,:)
     !ajt Won't compile as common block vars aren't TARGETs
     !ajt coord => CORD(:,:NATOMS)
     allocate(coord(3,NATOMS))
@@ -1329,7 +1323,7 @@ module dalton_ifc
 #include <implicit.h>
     integer,          intent(in)  :: ncgto, nectr
     type(cgto),       intent(out) :: bas(ncgto)
-    real(xp), target, intent(out) :: ectr(nectr)
+    real(8), target, intent(out) :: ectr(nectr)
     ! need MXSHEL
 #include <maxorb.h>
     ! need NLRGSH NBCH NUCO NRCO NUMCF CENT NHKT NSTRT
@@ -1341,7 +1335,7 @@ module dalton_ifc
     ! need MAXQNM
 #include <maxmom.h>
     integer alreadyis(MXSHEL)
-    real(xp) rescal(MXQNM+1)
+    real(8) rescal(MXQNM+1)
     integer i, j, k, l, m, ne, nc, maxm
     ! coefficient rescaling factors
     maxm = 0
@@ -1390,8 +1384,8 @@ module dalton_ifc
   contains
     ! point to re-ranked array
     subroutine point(ctr, ctr_pt)
-      real(xp), target,  intent(in)  :: ctr(nc,ne)
-      real(xp), pointer, intent(out) :: ctr_pt(:,:)
+      real(8), target,  intent(in)  :: ctr(nc,ne)
+      real(8), pointer, intent(out) :: ctr_pt(:,:)
       ctr_pt => ctr
     end subroutine
   end subroutine
@@ -1403,7 +1397,7 @@ module dalton_ifc
     implicit integer (i,m-n)
 #include <implicit.h>
     integer,  intent(in) :: ic
-    real(xp), intent(in) :: dc !step
+    real(8), intent(in) :: dc !step
     ! need MXSHEL
 #include <maxorb.h>
     ! need CENT
