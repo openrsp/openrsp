@@ -39,10 +39,6 @@
 !> \author Bin Gao
 !> \date 2009-12-08
 module openrsp_old
-  ! precision
-  use xprecision
-  ! tracking errors
-  use xtrack
   ! matrix
   use matrix_backend
   ! response-related testing routines and some calculations
@@ -69,9 +65,9 @@ module openrsp_old
     !> print level
     integer :: level_print = 10
     !> real frequencies
-    real(xp), allocatable :: real_freqs(:)
+    real(8), allocatable :: real_freqs(:)
     !> imaginary frequencies
-    real(xp), allocatable :: imag_freqs(:)
+    real(8), allocatable :: imag_freqs(:)
     !> if calculates electric-field-gradient-induced (Buckingham) birefringence (EFGB)
     logical :: openrsp_efgb = .false.
     !> if calculates London Cotton-mouton constant
@@ -149,8 +145,8 @@ module openrsp_old
     type(rspinfo_t), intent(inout) :: this_info
     integer, optional, intent(in) :: log_io
     integer, optional, intent(in) :: level_print
-    real(xp), optional, intent(in) :: real_freqs(:)
-    real(xp), optional, intent(in) :: imag_freqs(:)
+    real(8), optional, intent(in) :: real_freqs(:)
+    real(8), optional, intent(in) :: imag_freqs(:)
     logical, optional, intent(in) :: openrsp_efgb
     logical, optional, intent(in) :: openrsp_cme
     logical, optional, intent(in) :: openrsp_roa
@@ -166,10 +162,6 @@ module openrsp_old
     logical, optional, intent(in) :: openrsp_vibshyp
     ! error information
     integer ierr
-#ifdef G1INT_DEBUG
-    ! pushes current subroutine into the stack
-    call xsub_enter('openrsp_info_set')
-#endif
     ! sets the IO unit of log file
     if ( present( log_io ) ) this_info%log_io = log_io
     ! sets the print level
@@ -177,13 +169,19 @@ module openrsp_old
     ! sets the real frequencies
     if ( present( real_freqs) ) then
       allocate( this_info%real_freqs( size( real_freqs ) ), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate real_freqs!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate real_freqs!'
+         stop 1
+      end if
       this_info%real_freqs = real_freqs
     end if
     ! sets the imaginary frequencies
     if ( present( imag_freqs ) ) then
       allocate( this_info%imag_freqs( size( imag_freqs ) ), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate imag_freqs!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate imag_freqs!'
+         stop 1
+      end if
       this_info%imag_freqs = imag_freqs
     end if
     ! if calculates electric-field-gradient-induced (Buckingham) birefringence (EFGB)
@@ -212,10 +210,6 @@ module openrsp_old
     if ( present( openrsp_vibbeta ) ) this_info%openrsp_vibbeta = openrsp_vibbeta
     ! if calculates vibrational 2nd hyperpolarizability
     if ( present( openrsp_vibshyp ) ) this_info%openrsp_vibshyp = openrsp_vibshyp
-#ifdef G1INT_DEBUG
-    ! pops the stack
-    call xsub_leave
-#endif
   end subroutine openrsp_info_set
 
   !> \brief dumps the control information of openrsp
@@ -232,10 +226,6 @@ module openrsp_old
     integer num_freq
     ! temporary stuff
     integer i, j, k
-#ifdef G1INT_DEBUG
-    ! pushes current subroutine into the stack
-    call xsub_enter('openrsp_info_dump')
-#endif
     if ( present( io_dump ) ) then
       l_io_dump = io_dump
     ! uses IO unit of log file to dump the control information
@@ -292,10 +282,6 @@ module openrsp_old
       'Calculate vibrational hyperpolarizability'
     if ( this_info%openrsp_vibshyp ) write( l_io_dump, 100 )  &
       'Calculate vibrational second hyperpolarizability'
-#ifdef G1INT_DEBUG
-    ! pops the stack
-    call xsub_leave
-#endif
 100 format('INFO ',A,I6)
 110 format('INFO ',A,10F12.6)
   end subroutine openrsp_info_dump
@@ -306,18 +292,10 @@ module openrsp_old
   !> \param this_info contains the control information
   subroutine openrsp_info_clean( this_info )
     type(rspinfo_t), intent(inout) :: this_info
-#ifdef G1INT_DEBUG
-    ! pushes current subroutine into the stack
-    call xsub_enter('openrsp_info_clean')
-#endif
     ! cleans the real frequencies
     if ( allocated( this_info%real_freqs ) ) deallocate( this_info%real_freqs )
     ! cleans the imaginary frequencies
     if ( allocated( this_info%imag_freqs ) ) deallocate( this_info%imag_freqs )
-#ifdef G1INT_DEBUG
-    ! pops the stack
-    call xsub_leave
-#endif
   end subroutine openrsp_info_clean
 
   !> \brief performs the calculations asked
@@ -344,25 +322,19 @@ module openrsp_old
     ! number of coordinates
     integer num_coord
     ! scratch for property tensors
-    complex(dbl_t), allocatable :: tsr(:)
+    complex(8), allocatable :: tsr(:)
     ! error information
     integer ierr
     ! imaginary unit
-    complex(xp), parameter :: imag_one = (0.0D+00,1.0D+00)
+    complex(8), parameter :: imag_one = (0.0D+00,1.0D+00)
     ! zero
-    real(xp), parameter :: zero = 0.0D+00
+    real(8), parameter :: zero = 0.0D+00
     ! complex one
-    complex(xp), parameter :: cplx_one = (1.0D+00,0.0D+00)
+    complex(8), parameter :: cplx_one = (1.0D+00,0.0D+00)
     ! incremental recorder over frequencies
     integer iw
     ! temporary stuff
     integer i, j, k, l
-
-
-#ifdef G1INT_DEBUG
-    ! pushes current subroutine into the stack
-    call xsub_enter('openrsp_prop_calc')
-#endif
 
 #ifdef OPENRSP_STANDALONE
     print *, 'error: not part of standalone'
@@ -379,7 +351,10 @@ module openrsp_old
         if ( this_info%level_print >= 10 ) &
           write( this_info%log_io, 100 ) 'Calling efgb_Jpri_Bten_Bcal w=', this_info%real_freqs(iw)
         allocate( tsr(3+6+9+9+9+9+18+27+27+27+27+54+54), stat=ierr ) !ajt: This tsr() thing is a hack.
-        if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+        if ( ierr /= 0 ) then
+           print *, 'Failed to allocate tsr!'
+           stop 1
+        end if
         ! response functions should perhaps eventually be stored in a dedicated module
         call efgb_Jpri_Bten_Bcal( molcfg, S, D, F,                                        &
                                   this_info%real_freqs(iw)*cplx_one*(/1,-1,0/),           &
@@ -417,7 +392,10 @@ module openrsp_old
       call get_natoms( num_atoms )
       num_coord = 3*num_atoms
       allocate( tsr(3*3+3*3+6*3+num_coord*3*3+num_coord*3*3+num_coord*6*3), stat=ierr ) !ajt: hack
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call roa_pol_Gpri_Aten_grads( molcfg, S, D, F, num_coord,          &
                                     this_info%real_freqs(1)*cplx_one,    &
                                     tsr(1:9), tsr(10:18), tsr(19:36),    &
@@ -452,7 +430,10 @@ module openrsp_old
       call get_natoms( num_atoms )
       num_coord = 3*num_atoms
       allocate( tsr(3+3*3+3*3*3*3+num_coord*3*3), stat=ierr ) !ajt: hack
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call cars_pol_shyp_polgra( molcfg, S, D, F, num_coord, this_info%real_freqs(1)*cplx_one, &
                                  tsr(1:3), tsr(4:12), tsr(13:93), tsr(94:93+9*num_coord) )
       if ( this_info%level_print >= 10 ) then
@@ -483,7 +464,10 @@ module openrsp_old
     if ( this_info%openrsp_jones ) then
       allocate( tsr(3+6+3*3+3*3+3*3+3*3+6*3+3*3+3*3*3+3*3*3+6*3*3+6*3*3 &
                     +3*3*3*3+3*3*3*3+6*3*3*3+6*3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       do iw = 1, size( this_info%real_freqs )
         if ( this_info%level_print >= 10 ) &
           write( this_info%log_io, 100 ) 'Calling cme_jones_eta_apri, freq =', this_info%real_freqs(1)
@@ -522,7 +506,10 @@ module openrsp_old
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling elec_polariz ...'
       allocate( tsr(3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call elec_polariz( molcfg, S, D, F, this_info%real_freqs(1) &
                          + imag_one*this_info%imag_freqs(1), tsr )
       deallocate( tsr )
@@ -534,7 +521,10 @@ module openrsp_old
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling elec_hypolar ...'
       allocate( tsr(3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call elec_hypolar( molcfg, S, D, F,                                             &
                          (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                            -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2), &
@@ -549,7 +539,10 @@ module openrsp_old
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling alt_elec_hypol ...'
       allocate( tsr(3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call alt_elec_hypol( molcfg, S, D, F,                                             &
                            (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                              -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2), &
@@ -564,7 +557,10 @@ module openrsp_old
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling elec_sechyp ...'
            allocate( tsr(3*3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call elec_sechyp( molcfg, S, D, F,                                             &
                         (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                           -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2)  &
@@ -581,7 +577,10 @@ module openrsp_old
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling alt_elec_sechyp ...'
            allocate( tsr(3*3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call alt_elec_sechyp( molcfg, S, D, F,                                             &
                             (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                               -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2)  &
@@ -598,7 +597,10 @@ module openrsp_old
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling alt2_elec_sechyp ...'
            allocate( tsr(3*3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       call alt2_elec_sechyp( molcfg, S, D, F,                                             &
                              (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                                -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2)  &
@@ -615,7 +617,10 @@ module openrsp_old
       call get_natoms( num_atoms )
       num_coord = 3*num_atoms
       allocate( tsr(3+3*3*3+3*3*3+num_coord*3*3+num_coord*3*3*3), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       ! static case
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling vibhyp_hyp_dipgra_polgra ...'
@@ -676,7 +681,10 @@ module openrsp_old
       call get_natoms( num_atoms )
       num_coord = 3*num_atoms
       allocate( tsr(3+3*3*3*3+(3*4+3*3*6+3*3*3*4)*num_coord), stat=ierr )
-      if ( ierr /= 0 ) call xsub_error( 'Failed to allocate tsr!', (/ierr/) )
+      if ( ierr /= 0 ) then
+         print *, 'Failed to allocate tsr!'
+         stop 1
+      end if
       do iw = 0, size( this_info%real_freqs )-4, 4
         if ( this_info%level_print >= 10 ) &
           write( this_info%log_io, 100 ) 'Calling vibshyp_shyp_dipg_polg_hypg ...'
@@ -717,10 +725,6 @@ module openrsp_old
       end do
       deallocate( tsr )
     end if
-#ifdef G1INT_DEBUG
-    ! pops the stack
-    call xsub_leave
-#endif
 100 format('RSPC ',A,10F11.8)
   end subroutine openrsp_prop_calc
 

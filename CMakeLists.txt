@@ -59,8 +59,6 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_functions.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_general.F90
     ${PROJECT_SOURCE_DIR}/src/vib_prop_old.F90
-    ${PROJECT_SOURCE_DIR}/src/xprecision.F90
-    ${PROJECT_SOURCE_DIR}/src/xtrack.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_host_openrsp.F90
     )
 
