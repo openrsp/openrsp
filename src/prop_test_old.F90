@@ -8,16 +8,6 @@ module prop_test_old
    use prop_contribs_old
    use rsp_equations_old
 
-   ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
-   !     which doesn't exist in DIRAC. For now, this macro gets around that.
-   !     Ideally, we would prefer to use a macro quit(msg) => lsquit(msg,-1),
-   !     but some CPPs don't process line continuation (of msg) correctly.
-   !     So we just use quit(msg,unit) in the code, and replace quit with lsquit.
-   !     DIRAC's quit will ignore the extra argument.
-#ifdef LSDALTON_ONLY
-#define quit lsquit
-#endif
-
    implicit none
 
    public test_vcd
@@ -703,12 +693,8 @@ contains
           D(k, l, 1) = 1.0d0
           F          = 0.0d0
 
-#ifndef LSDALTON_ONLY
           call grcont(work, lwork, F, n*n*3, &
                       .false., .true., 1, 0, .false., .true., D(:, :, 1), 1)
-#else
-          call quit('Cannot call grcont, only LSDALTON integral code is compiled',-1)
-#endif
           do j = 1, n
             do i = 1, n
               write(0, '(4i3, 3f20.12)') i, j, k, l, F(i, j, :)
@@ -736,12 +722,8 @@ contains
               D(i, j, 2) = 1.0d0
               g          = 0.0d0
 
-#ifndef LSDALTON_ONLY
               call grcont(work, lwork, g, 3*nr_atoms, &
                           .true., .false., 1, 0, .true., .false., D, 2)
-#else
-          call quit('Cannot call grcont, only LSDALTON integral code is compiled',-1)
-#endif
               D(k, l, 1) = 0.0d0
               D(i, j, 2) = 0.0d0
 
