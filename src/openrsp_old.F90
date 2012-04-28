@@ -47,12 +47,12 @@ module openrsp_old
   use vib_prop_old
   ! calculation and outputting of optical birefringences
   use birefring_old
+  use interface_host
 
 ! xcint
 #ifndef OPENRSP_STANDALONE
   use interface_ao_specific
   use xcint_main
-  use rsp_backend, only: is_ks_calculation
 #endif /* OPENRSP_STANDALONE */
 
   implicit none
@@ -340,7 +340,7 @@ module openrsp_old
     print *, 'error: not part of standalone'
     stop 1
 #else /* OPENRSP_STANDALONE */
-    if (is_ks_calculation()) then
+    if (get_is_ks_calculation()) then
        call interface_ao_write()
     end if
 #endif /* OPENRSP_STANDALONE */

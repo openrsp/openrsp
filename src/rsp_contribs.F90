@@ -13,10 +13,12 @@ module rsp_contribs
 
   use matrix_defop
   use matrix_backend, only: mat_alloc
-  use rsp_backend
   use interface_host
   use dalton_ifc, only: di_read_operator_int, &
-                        di_get_gmat
+                        di_get_gmat,          &
+                        dipnuc_ifc,           &
+                        gradnn_ifc,           &
+                        hessnn_ifc
   use basis_set,  only: cgto
 
   implicit none
@@ -37,11 +39,10 @@ module rsp_contribs
   public rsp_cfg
 
   !ajt Public for now, for use also in rsp_functions, until interfaces
-  !    to integrals are all moved to rsp_backend, and transition of arguments
+  !    and transition of arguments
   !    of type(rsp_field) is complete.
   public perm_comp_add
 
-!FIXME Gao: all Gen1Int routines will be moved to rsp_backend.F90
 #ifdef BUILD_GEN1INT
   private gen1int_reorder
 #endif
@@ -716,7 +717,7 @@ contains
 
      nr_atoms = get_nr_atoms()
 
-     if (.not. is_ks_calculation()) then
+     if (.not. get_is_ks_calculation()) then
         res(1:(nr_atoms*3)**geo_order) = 0.0d0
         return
      end if
@@ -1188,7 +1189,7 @@ contains
      real(8)              :: xc_energy
 !    ---------------------------------------------------------------------------
 
-     if (.not. is_ks_calculation()) then
+     if (.not. get_is_ks_calculation()) then
         return
      end if
 
@@ -1391,45 +1392,6 @@ contains
                        intadr,0,.false.,0,.false.,ave, &
                        .true.,Dtri,0)
   end subroutine
-
-
-  !> Nuclear repulsion contribution to cubic force field, where \param na
-  !> is the number of atoms, \param chg the charges of the nuclei, and
-  !> \param cor the coordinates of the nuclei
-  subroutine cubicff_nuc(na, chg, cor, cub)
-     integer, intent(in)  :: na
-     real(8), intent(in)  :: chg(na)
-     real(8), intent(in)  :: cor(3,na)
-     real(8), intent(out) :: cub(3,na,3,na,3,na)
-     real(8) r(3), rrr(3,3,3), tr(3)
-     integer i, j, k, l
-     cub = 0 !start from zero
-     ! loop over pairs i<j of nuclei
-     do j = 2,na
-        do i = 1,j-1
-           ! contrcuct 3rd tensor prod with traces removed
-           r = cor(:,j) - cor(:,i)
-           rrr = reshape((/((r(:)*r(k)*r(l),k=1,3),l=1,3)/),(/3,3,3/))
-           tr = rrr(:,1,1) + rrr(:,2,2) + rrr(:,3,3)
-           do k = 1,3
-              rrr(:,k,k) = rrr(:,k,k) - tr/5
-              rrr(k,:,k) = rrr(k,:,k) - tr/5
-              rrr(k,k,:) = rrr(k,k,:) - tr/5
-           end do
-           ! apply scale factor 15 Qi Qj / r^7
-           rrr = rrr * (15 * chg(i) * chg(j) / sum(r**2)**(7/2d0))
-           cub(:,i,:,i,:,i) = cub(:,i,:,i,:,i) + rrr !iii
-           cub(:,i,:,i,:,j) = -rrr !iij
-           cub(:,i,:,j,:,i) = -rrr !iji
-           cub(:,j,:,i,:,i) = -rrr !jii
-           cub(:,i,:,j,:,j) =  rrr !ijj
-           cub(:,j,:,i,:,j) =  rrr !jij
-           cub(:,j,:,j,:,i) =  rrr !jji
-           cub(:,j,:,j,:,j) = cub(:,j,:,j,:,j) - rrr !jjj
-        end do
-     end do
-  end subroutine
-
 
   function rank_one_pointer(siz, arr) result(ptr)
      integer,         intent(in) :: siz
@@ -1664,4 +1626,139 @@ contains
 
   end subroutine
 
+  !> (derivatives of) nuclear repulsion and nuclei--field interaction
+  subroutine nuclear_potential(derv, ncor, field, ncomp, nucpot)
+    !> order of geometry derivative requested
+    integer,      intent(in)  :: derv
+    !> number of geometry coordinates
+    integer,      intent(in)  :: ncor
+    !> one external potential label, or 'NONE'
+    character(4), intent(in)  :: field
+    !> number of components of the field (must be all, ie. 1/3/6)
+    integer,      intent(in)  :: ncomp
+    !> output tensor
+    real(8),      intent(out) :: nucpot(ncor**derv * ncomp)
+    !-------------------------------------------------------
+    integer i, na
+    na = get_nr_atoms()
+    if (ncor /= 3*na) &
+       call quit('rsp_backend nuclear_potential error: expected ncor = 3*natom')
+    if ((field == 'NONE' .and. ncomp /= 1) .or. &
+        (field == 'EL  ' .and. ncomp /= 3)) &
+       call quit('rsp_backend nuclear_potential error: expected ncomp = 1 or 3')
+    ! switch
+    if (derv == 0 .and. field == 'NONE') then
+       call quit('rsp_ error: unperturbed nuc.rep. not implemented')
+    else if (derv == 0 .and. field == 'EL  ') then
+       call DIPNUC_ifc(nucpot)
+       nucpot = -nucpot !dip = -dE/dF
+    else if (derv == 1 .and. field == 'NONE') then
+       call GRADNN_ifc(na, nucpot)
+    else if (derv == 2 .and. field == 'NONE') then
+       call HESSNN_ifc(na, nucpot)
+    else if (derv == 3 .and. field == 'NONE') then
+       call cubicff_nuc(na, nucpot)
+    else if (derv == 4 .and. field == 'NONE') then
+       call quarticff_nuc(na, nucpot)
+    else
+       print *,'rsp_backend nuclear_potential error: not implented, derv =', &
+               derv, '  field = ', field
+       call quit('rsp_backend nuclear_potential error: not implented')
+    end if
+  end subroutine
+
+
+  !> Nuclear repulsion contribution to cubic force field, where \param na
+  !> is the number of atoms, \param chg the charges of the nuclei, and
+  !> \param cor the coordinates of the nuclei
+  subroutine cubicff_nuc(na, cub)
+     integer, intent(in)  :: na
+     real(8), intent(out) :: cub(3,na,3,na,3,na)
+     real(8) r(3), rrr(3,3,3), trace(3)
+     integer i, j, k, l
+     cub = 0 !start from zero
+     ! loop over pairs i<j of nuclei
+     do j = 2, na
+        do i = 1, j-1
+           ! construct triple tensor prod with traces removed
+           r(1) = get_nuc_xyz(1, j) - get_nuc_xyz(1, i)
+           r(2) = get_nuc_xyz(2, j) - get_nuc_xyz(2, i)
+           r(3) = get_nuc_xyz(3, j) - get_nuc_xyz(3, i)
+           rrr = reshape((/((r(:)*r(k)*r(l),k=1,3),l=1,3)/),(/3,3,3/))
+           trace = rrr(:,1,1) + rrr(:,2,2) + rrr(:,3,3)
+           do k = 1, 3
+              rrr(:,k,k) = rrr(:,k,k) - trace/5
+              rrr(k,:,k) = rrr(k,:,k) - trace/5
+              rrr(k,k,:) = rrr(k,k,:) - trace/5
+           end do
+           ! apply scale factor 15 Qi Qj / r^7
+           rrr = rrr * (15 * get_nuc_charge(i) * get_nuc_charge(j) / sum(r**2)**(7/2d0))
+           cub(:,i,:,i,:,i) = cub(:,i,:,i,:,i) + rrr !iii
+           cub(:,i,:,i,:,j) = -rrr !iij
+           cub(:,i,:,j,:,i) = -rrr !iji
+           cub(:,j,:,i,:,i) = -rrr !jii
+           cub(:,i,:,j,:,j) =  rrr !ijj
+           cub(:,j,:,i,:,j) =  rrr !jij
+           cub(:,j,:,j,:,i) =  rrr !jji
+           cub(:,j,:,j,:,j) = cub(:,j,:,j,:,j) - rrr !jjj
+        end do
+     end do
+  end subroutine
+
+
+  !> Nuclear repulsion contribution to quartic force field, where \param na
+  !> is the number of atoms, \param chg the charges of the nuclei, and
+  !> \param cor the coordinates of the nuclei
+  !> Note: Dimensions 7 and 8 of 'qua' have been joined, to comply with
+  !> fortran standard (max 7 dims)
+  subroutine quarticff_nuc(na, qua)
+     integer, intent(in)  :: na
+     real(8), intent(out) :: qua(3,na,3,na,3,na,3*na)
+     real(8) r(3), rrrr(3,3,3,3), trace(3,3), trace2
+     integer i, j, k, l, m
+     qua = 0 !start from zero
+     ! loop over pairs i<j of nuclei
+     do j = 2, na
+        do i = 1, j-1
+           ! construct quadruple tensor product with traces removed
+           r(1) = get_nuc_xyz(1, j) - get_nuc_xyz(1, i)
+           r(2) = get_nuc_xyz(2, j) - get_nuc_xyz(2, i)
+           r(3) = get_nuc_xyz(3, j) - get_nuc_xyz(3, i)
+           rrrr = reshape((/(((r(:)*r(k)*r(l)*r(m), &
+                          k=1,3),l=1,3),m=1,3)/),(/3,3,3,3/))
+           trace  = rrrr(:,:,1,1) + rrrr(:,:,2,2) + rrrr(:,:,3,3)
+           trace2 = trace(1,1) + trace(2,2) + trace(3,3)
+           do k = 1, 3
+              trace(k,k) = trace(k,k) - trace2/10
+           end do
+           do k = 1, 3
+              rrrr(:,:,k,k) = rrrr(:,:,k,k) - trace/7
+              rrrr(:,k,:,k) = rrrr(:,k,:,k) - trace/7
+              rrrr(k,:,:,k) = rrrr(k,:,:,k) - trace/7
+              rrrr(:,k,k,:) = rrrr(:,k,k,:) - trace/7
+              rrrr(k,:,k,:) = rrrr(k,:,k,:) - trace/7
+              rrrr(k,k,:,:) = rrrr(k,k,:,:) - trace/7
+           end do
+           ! apply scale factor 105 Qi Qj / r^9
+           rrrr = rrrr * (105 * get_nuc_charge(i) * get_nuc_charge(j) / sum(r**2)**(9/2d0))
+           qua(:,i,:,i,:,i,3*i-2:3*i) = qua(:,i,:,i,:,i,3*i-2:3*i) + rrrr !iiii
+           qua(:,i,:,i,:,i,3*j-2:3*j) = -rrrr !iiij
+           qua(:,i,:,i,:,j,3*i-2:3*i) = -rrrr !iiji
+           qua(:,i,:,j,:,i,3*i-2:3*i) = -rrrr !ijii
+           qua(:,j,:,i,:,i,3*i-2:3*i) = -rrrr !jiii
+           qua(:,i,:,i,:,j,3*j-2:3*j) =  rrrr !iijj
+           qua(:,i,:,j,:,i,3*j-2:3*j) =  rrrr !ijij
+           qua(:,j,:,i,:,i,3*j-2:3*j) =  rrrr !jiij
+           qua(:,i,:,j,:,j,3*i-2:3*i) =  rrrr !ijji
+           qua(:,j,:,i,:,j,3*i-2:3*i) =  rrrr !jiji
+           qua(:,j,:,j,:,i,3*i-2:3*i) =  rrrr !jjii
+           qua(:,i,:,j,:,j,3*j-2:3*j) = -rrrr !ijjj
+           qua(:,j,:,i,:,j,3*j-2:3*j) = -rrrr !jijj
+           qua(:,j,:,j,:,i,3*j-2:3*j) = -rrrr !jjij
+           qua(:,j,:,j,:,j,3*i-2:3*i) = -rrrr !jjji
+           qua(:,j,:,j,:,j,3*j-2:3*j) = qua(:,j,:,j,:,j,3*j-2:3*j) + rrrr !jjjj
+        end do
+     end do
+  end subroutine
+  
 end module

@@ -44,7 +44,6 @@ module openrsp
   use dalton_ifc
   use interface_host
   use rsp_functions
-  use rsp_backend
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
 
@@ -110,7 +109,6 @@ contains
 
 
   subroutine openrsp_setup(WAVPCM, LWORK, WORK)
-    use rsp_backend,  only: rsp_backend_setup
     logical, intent(in)    :: WAVPCM
     integer, intent(in)    :: LWORK
     integer                :: nbast, lupri
@@ -174,7 +172,7 @@ contains
     call mat_axpy((1d0,0d0), H1, .false., .false., F)
     call mat_free(H1)
 
-    if (is_ks_calculation()) then
+    if (get_is_ks_calculation()) then
        ! write xcint interface files
        call interface_ao_write()
 
@@ -204,12 +202,6 @@ contains
     ! setup response config structure
     call mat_nullify(cfg%zeromat)
     call mat_setup(cfg%zeromat, S) !after setup, mat is zero to matrix_defop
-    ! moved to rsp_backend: cfg%natom = num_atoms
-    ! moved to rsp_backend: cfg%lupri = LUPRI
-    ! moved to rsp_backend: cfg%hasxc = .false.
-    ! moved to rsp_backend: call CHARGE_ifc(cfg%charge)
-    ! moved to rsp_backend: call CORD_ifc(cfg%coord)
-    ! setup basis descriptor cfg%basis
     call SHELLS_find_sizes(num_cgto_blocks, num_exp_and_ctr)
     allocate(cfg%basis(num_cgto_blocks))
     allocate(exp_and_ctr(num_exp_and_ctr))
@@ -502,10 +494,7 @@ end subroutine
 
   end subroutine
 
-  
-  
   subroutine openrsp_finalize()
-    use rsp_backend, only: rsp_backend_finalize
     integer lupri
     lupri = get_print_unit()
     ! free
@@ -514,7 +503,6 @@ end subroutine
     call mat_free(F)
     call rsp_mosolver_free
     call dal_ifc_finalize
-    call rsp_backend_finalize !deallocate internals
     ! stamp with date, time and hostname
     call TSTAMP(' ', lupri)
     write (lupri,*)

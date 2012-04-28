@@ -51,7 +51,6 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/openrsp_old.F90
     ${PROJECT_SOURCE_DIR}/src/prop_contribs_old.F90
     ${PROJECT_SOURCE_DIR}/src/prop_test_old.F90
-    ${PROJECT_SOURCE_DIR}/src/rsp_backend.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_contribs.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.F90

@@ -14,15 +14,25 @@ module interface_host
    public get_nr_atoms
    public get_print_unit
    public get_input_unit
+   public get_nuc_charge
+   public get_nuc_xyz
+   public get_is_ks_calculation
 
    private
 
+!  if false the interface will refuse to be accessed
    logical :: is_initialized = .false.
 
+!  non-allocatables
    integer :: nr_ao
    integer :: nr_atoms
    integer :: print_unit
    integer :: input_unit
+   logical :: is_ks_calculation
+
+!  allocatables, deallocate them in interface_host_finalize
+   real(8), allocatable :: nuc_charge(:)
+   real(8), allocatable :: nuc_xyz(:, :)
 
 contains
 
@@ -32,11 +42,20 @@ contains
 #include "mxcent.h"
 #include "nuclei.h"
 #include "inforb.h"
+#include "maxorb.h"
+#include "infinp.h"
 
       nr_ao      = nbast
       nr_atoms   = natoms
       print_unit = lupri
       input_unit = lucmd
+      is_ks_calculation = dodft
+
+      allocate(nuc_charge(nr_atoms))
+      nuc_charge = charge(:nr_atoms)
+
+      allocate(nuc_xyz(3, nr_atoms))
+      nuc_xyz = cord(:, :nr_atoms)
 
       is_initialized = .true.
 
@@ -44,6 +63,9 @@ contains
 
    subroutine interface_host_finalize()
 !     here deallocate everything that is allocated
+      if (allocated(nuc_charge)) deallocate(nuc_charge)
+      if (allocated(nuc_xyz))    deallocate(nuc_xyz)
+
       is_initialized = .false.
    end subroutine
 
@@ -73,6 +95,24 @@ contains
    integer function get_input_unit()
       call check_if_interface_is_initialized()
       get_input_unit = input_unit
+   end function
+
+   real(8) function get_nuc_charge(i)
+      integer, intent(in) :: i
+      call check_if_interface_is_initialized()
+      get_nuc_charge = nuc_charge(i)
+   end function
+
+   real(8) function get_nuc_xyz(i, j)
+      integer, intent(in) :: i
+      integer, intent(in) :: j
+      call check_if_interface_is_initialized()
+      get_nuc_xyz = nuc_xyz(i, j)
+   end function
+
+   logical function get_is_ks_calculation()
+      call check_if_interface_is_initialized()
+      get_is_ks_calculation = is_ks_calculation
    end function
 
 end module
