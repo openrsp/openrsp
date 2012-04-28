@@ -42,6 +42,7 @@ module openrsp
 
   use matrix_backend
   use dalton_ifc
+  use interface_host_openrsp
   use rsp_functions
   use rsp_backend
   use rsp_contribs, only: rsp_cfg
@@ -108,17 +109,23 @@ module openrsp
 contains
 
 
-  subroutine openrsp_setup(NBAST, WAVPCM, LUCMD, LUPRI, LWORK, WORK)
+  subroutine openrsp_setup(WAVPCM, LWORK, WORK)
     use rsp_backend,  only: rsp_backend_setup, get_natom
     logical, intent(in)    :: WAVPCM
-    integer, intent(in)    :: NBAST, LUCMD, LUPRI, LWORK
+    integer, intent(in)    :: LWORK
+    integer                :: nbast, lupri
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
     real(8)                :: xc_energy
-    
+   
+    call interface_host_openrsp_init()
+
+    nbast = get_nr_ao()
+    lupri = get_print_unit()
+ 
     ! prints the header and license information
     call TITLER('OpenRSP: Response functions computed using AO basis', '*', -1)
     write (LUPRI,*) '>> -- solving equations with the MO response solver in DALTON.'
@@ -130,7 +137,7 @@ contains
     write (LUPRI,*)
 
     ! first parse input by running _calc in dryrun mode
-    call openrsp_calc(LUCMD, .true.) !2nd arg: dryrun = .true.
+    call openrsp_calc(dryrun=.true.)
 
     ! initialize the interface to DALTON
     call dal_ifc_init(WORK, LWORK, LUPRI, print_level, WAVPCM)
@@ -223,13 +230,15 @@ end subroutine
   !> \date 2009-12-08
   !> openrsp_setup must be called prior to this, and 
   !> \todo add some comments when calling Andreas' codes
-  subroutine openrsp_calc(LUCMD, dryrun)
+  subroutine openrsp_calc(dryrun)
 
-    integer, intent(in) :: LUCMD
     logical, intent(in) :: dryrun
+    integer             :: LUCMD
     character(80) word
     integer       num_lines_read, err, l, i
     type(p_tuple) :: perturbation_tuple
+
+    lucmd = get_input_unit()
 
     ! in case dryrun=T, we need to backspace LUCMD before returning,
     ! so keep track of number of lines read
@@ -530,14 +539,10 @@ subroutine OPENRSP_DRIVER(WORK, LWORK, WAVPCM)
   integer, intent(in)    :: LWORK
   real(8), intent(inout) :: WORK(LWORK)
   logical, intent(in)    :: WAVPCM
-  ! uses LUPRI, LUCMD which are the pre-defined unit numbers
-#include <priunit.h>
-  ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
   ! first setup, then calc, then finalize
   call QENTER('OpenRSP ')
-  call openrsp_setup(NBAST, WAVPCM, LUCMD, LUPRI, LWORK, WORK)
-  call openrsp_calc(LUCMD, .false.) !2nd arg: dryrun = .false.
-  call openrsp_finalize
+  call openrsp_setup(WAVPCM, LWORK, WORK)
+  call openrsp_calc(dryrun=.false.)
+  call openrsp_finalize()
   call QEXIT('OpenRSP ')
 end subroutine
