@@ -51,16 +51,16 @@
     use openrsp_old
     ! keeps molecule, energy, integral and solver config
     use prop_contribs_old, only: prop_molcfg
+
+    use interface_host_openrsp
   
     implicit none
   
     integer LWORK
     real(xp) WORK( LWORK )
     logical WAVPCM
-    ! uses LUPRI, LUCMD which are the pre-defined unit numbers
-#include <priunit.h>
-    ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
+
+    integer lupri, lucmd, nbast
 
     ! control information of openrsp
     type(rspinfo_t) openrsp_info
@@ -147,6 +147,12 @@
 
 real(xp), allocatable :: eigval(:)
 
+    call interface_host_openrsp_init()
+
+    nbast = get_nr_ao()
+    lupri = get_print_unit()
+    lucmd = get_input_unit()
+
     call QENTER( 'OpenRSP ' )
 
     ! prints the header and license information
@@ -186,25 +192,6 @@ real(xp), allocatable :: eigval(:)
     deallocate( aname )
     deallocate( acharge )
     deallocate( acoord )
-
-#ifdef OPENRSP_DEBUG
-    ! output number of basis functions to check
-    ! -# NBAST -- the number of basis functions (AOs),
-    ! -# NNBASX is NBAST*(NBAST+1)/2, whereas NNBAST is the same but symmetry packed,
-    ! thus, we should use NNBASX for the overlap for sure,
-    ! -# NNBAST for symmetry packed total density and Fock matrices,
-    ! -# NNBASX for unpacked total density and Focka matrices, unpacking using DSYM1. 
-    write( LUPRI, '()' )
-    write( LUPRI, 100 ) 'NBAST (number of basis functions): ', NBAST
-    write( LUPRI, 100 ) 'NNBASX (= NBAST*(NBAST+1)/2):      ', NNBASX
-    write( LUPRI, 100 ) 'NNBAST (symmetry packed):          ', NNBAST
-    write( LUPRI, 100 ) 'N2BASX (= NNBASX*NNBASX):          ', N2BASX
-    write( LUPRI, 100 ) 'NCMOT (number of elements in coefficients '// &
-      'of molecular orbitals?): ', NCMOT
-    write( LUPRI, 100 ) 'NOCCT (occupied orbitals):         ', NOCCT
-    write( LUPRI, 100 ) 'NVIRT (unoccupied orbitals):       ', NVIRT
-    write( LUPRI, '()' )
-#endif
 
     ! processes the input information
     read( LUCMD, 110, err=999, end=999 ) word
