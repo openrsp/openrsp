@@ -17,6 +17,7 @@ module interface_host
    public get_nuc_charge
    public get_nuc_xyz
    public get_is_ks_calculation
+   public get_dipole_origin
 
    private
 
@@ -29,6 +30,7 @@ module interface_host
    integer :: print_unit
    integer :: input_unit
    logical :: is_ks_calculation
+   real(8) :: dipole_origin(3)
 
 !  allocatables, deallocate them in interface_host_finalize
    real(8), allocatable :: nuc_charge(:)
@@ -44,6 +46,7 @@ contains
 #include "inforb.h"
 #include "maxorb.h"
 #include "infinp.h"
+#include "orgcom.h"
 
       nr_ao      = nbast
       nr_atoms   = natoms
@@ -57,16 +60,20 @@ contains
       allocate(nuc_xyz(3, nr_atoms))
       nuc_xyz = cord(:, :nr_atoms)
 
+      dipole_origin = diporg
+
       is_initialized = .true.
 
    end subroutine
 
    subroutine interface_host_finalize()
+
 !     here deallocate everything that is allocated
       if (allocated(nuc_charge)) deallocate(nuc_charge)
       if (allocated(nuc_xyz))    deallocate(nuc_xyz)
 
       is_initialized = .false.
+
    end subroutine
 
    subroutine check_if_interface_is_initialized()
@@ -113,6 +120,12 @@ contains
    logical function get_is_ks_calculation()
       call check_if_interface_is_initialized()
       get_is_ks_calculation = is_ks_calculation
+   end function
+
+   function get_dipole_origin()
+      real(8) :: get_dipole_origin(3)
+      call check_if_interface_is_initialized()
+      get_dipole_origin = dipole_origin
    end function
 
 end module

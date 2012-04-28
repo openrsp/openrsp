@@ -211,8 +211,6 @@ contains
     real(8), allocatable :: fdi(:,:)
     integer i, ncor
 #ifdef BUILD_GEN1INT
-    ! origins in Dalton
-#include "orgcom.h"
     integer num_atom                     !number of atoms
     integer num_coord                    !number of atomic coordinates
     integer order_geo                    !order of total geometric derivatives
@@ -242,7 +240,7 @@ contains
     call OnePropCreate(prop_name=INT_OVERLAP, &
                        one_prop=overlap,      &
                        info_prop=ierr,        &
-                       dipole_origin=DIPORG)
+                       dipole_origin=get_dipole_origin())
     if (ierr/=0) &
       call quit("rsp_ovlave>> failed to create operator of overlap integrals!")
 !FIXME changes to call Gen1Int
@@ -376,6 +374,9 @@ contains
 
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
+
+! radovan: there is code repetition in ave and int setup
+
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
     use dalton_ifc, only: SHELLS_NUCLEI_displace, dal_work
 #ifdef BUILD_GEN1INT
@@ -407,12 +408,6 @@ contains
     real(8), allocatable :: fdigf(:,:)
     integer i, j, k, n, indx, ncor
 #ifdef BUILD_GEN1INT
-    ! origins in Dalton
-#include "orgcom.h"
-    ! uses \var(MXCENT)
-#include "mxcent.h"
-    ! coordinates and charges of atoms
-#include "nuclei.h"
     integer order_mom                    !order of Cartesian multipole moments
     integer num_mom                      !number of Cartesian multipole moments
     integer order_geo                    !order of total geometric derivatives
@@ -423,6 +418,8 @@ contains
     real(8), allocatable :: val_expt(:)  !expectation values, real numbers
     type(one_prop_t) one_prop            !one-electron operator
     integer ierr                         !error information
+    real(8), allocatable :: cord(:, :)
+    real(8), allocatable :: charge(:)
     ! gets the order of Cartesian multipole moments
     order_mom = count(f=='EL  ')
     ! gets the order of total geometric derivatives
@@ -434,6 +431,17 @@ contains
     num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
+
+    allocate(cord(3, num_atom))
+    allocate(charge(num_atom))
+
+    do i = 1, num_atom
+       charge(i) = get_nuc_charge(i)
+       do j = 1, 3
+          cord(j, i) = get_nuc_xyz(j, i)
+       end do
+    end do
+
     ! allocates memory for expectation values
     num_expt = num_mom*num_geom
     allocate(val_expt(num_expt), stat=ierr)
@@ -443,7 +451,7 @@ contains
       call OnePropCreate(prop_name=INT_CART_MULTIPOLE, &
                          one_prop=one_prop,            &
                          info_prop=ierr,               &
-                         dipole_origin=DIPORG,         &
+                         dipole_origin=get_dipole_origin(),         &
                          order_mom=order_mom)
       if (ierr/=0) &
         call quit("rsp_oneave>> failed to create operator of Cartesian multipole moments!")
@@ -452,11 +460,15 @@ contains
       call OnePropCreate(prop_name=INT_ONE_HAMIL,       &
                          one_prop=one_prop,             &
                          info_prop=ierr,                &
-                         coord_nuclei=CORD(:,1:NUCDEP), &
-                         charge_nuclei=-CHARGE(1:NUCDEP))
+                         coord_nuclei=CORD(:,1:num_atom), &
+                         charge_nuclei=-CHARGE(1:num_atom))
       if (ierr/=0) &
         call quit("rsp_oneave>> failed to create operator of one-electron Hamiltonian!")
     end if
+
+    deallocate(cord)
+    deallocate(charge)
+
     ! calculates the expectaion values
 !FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
     val_expt = 0.0
@@ -839,8 +851,6 @@ contains
     !------------------------------------------------
     integer      i
 #ifdef BUILD_GEN1INT
-    ! origins in Dalton
-#include "orgcom.h"
     integer order_geo         !order of total geometric derivatives
     integer num_atom          !number of atoms
     integer num_coord         !number of atomic coordinates
@@ -869,7 +879,7 @@ contains
     call OnePropCreate(prop_name=INT_OVERLAP, &
                        one_prop=overlap,      &
                        info_prop=ierr,        &
-                       dipole_origin=DIPORG)
+                       dipole_origin=get_dipole_origin())
     if (ierr/=0) &
       call quit("rsp_ovlint>> failed to create operator of overlap integrals!")
 !FIXME changes to call Gen1Int
@@ -970,14 +980,8 @@ contains
     !> output perturbed integrals
     type(matrix),  intent(inout) :: oneint(product(nc))
     !--------------------------------------------------
-    integer      i
+    integer      i, j
 #ifdef BUILD_GEN1INT
-    ! origins in Dalton
-#include "orgcom.h"
-    ! uses \var(MXCENT)
-#include "mxcent.h"
-    ! coordinates and charges of atoms
-#include "nuclei.h"
     integer order_mom                         !order of Cartesian multipole moments
     integer num_mom                           !number of Cartesian multipole moments
     integer order_geo                         !order of total geometric derivatives
@@ -988,6 +992,10 @@ contains
     type(matrix), allocatable :: val_ints(:)  !integral matrices from Gen1Int
     type(one_prop_t) one_prop                 !one-electron operator
     integer ierr                              !error information
+
+    real(8), allocatable :: cord(:, :)
+    real(8), allocatable :: charge(:)
+
     ! gets the order of Cartesian multipole moments
     order_mom = count(f=='EL  ')
     ! gets the order of total geometric derivatives
@@ -1000,6 +1008,17 @@ contains
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     num_ints = num_mom*num_geom
+
+    allocate(cord(3, num_atom))
+    allocate(charge(num_atom))
+
+    do i = 1, num_atom
+       charge(i) = get_nuc_charge(i)
+       do j = 1, 3
+          cord(j, i) = get_nuc_xyz(j, i)
+       end do
+    end do
+
     if (num_ints/=size(oneint)) &
       call quit("rsp_oneint>> returning specific components is not implemented!")
 !FIXME:
@@ -1025,7 +1044,7 @@ contains
       call OnePropCreate(prop_name=INT_CART_MULTIPOLE, &
                          one_prop=one_prop,            &
                          info_prop=ierr,               &
-                         dipole_origin=DIPORG,         &
+                         dipole_origin=get_dipole_origin(),         &
                          order_mom=order_mom)
       if (ierr/=0) &
         call quit("rsp_oneint>> failed to create operator of Cartesian multipole moments!")
@@ -1034,11 +1053,15 @@ contains
       call OnePropCreate(prop_name=INT_ONE_HAMIL,       &
                          one_prop=one_prop,             &
                          info_prop=ierr,                &
-                         coord_nuclei=CORD(:,1:NUCDEP), &
-                         charge_nuclei=-CHARGE(1:NUCDEP))
+                         coord_nuclei=CORD(:,1:num_atom), &
+                         charge_nuclei=-CHARGE(1:num_atom))
       if (ierr/=0) &
         call quit("rsp_oneint>> failed to create operator of one-electron Hamiltonian!")
     end if
+
+    deallocate(cord)
+    deallocate(charge)
+
     ! calculates the one-electron Hamiltonian matrix
 !FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
     call gen1int_ifc_main(one_prop=one_prop,                      &
