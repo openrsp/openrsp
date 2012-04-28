@@ -43,9 +43,7 @@ module rsp_contribs
   !    of type(rsp_field) is complete.
   public perm_comp_add
 
-#ifdef BUILD_GEN1INT
   private gen1int_reorder
-#endif
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -184,10 +182,8 @@ contains
   !> and energy-weighted density DFD
   subroutine rsp_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
     use dalton_ifc, only: SHELLS_NUCLEI_displace
-#ifdef BUILD_GEN1INT
     ! Gen1Int interface in Dalton
     use gen1int_interface
-#endif
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
@@ -210,7 +206,6 @@ contains
     real(8), allocatable :: tmp(:,:,:)
     real(8), allocatable :: fdi(:,:)
     integer i, ncor
-#ifdef BUILD_GEN1INT
     integer num_atom                     !number of atoms
     integer num_coord                    !number of atomic coordinates
     integer order_geo                    !order of total geometric derivatives
@@ -219,11 +214,9 @@ contains
     real(8), allocatable :: val_expt(:)  !expectation values, real numbers
     type(one_prop_t) overlap             !operator of overlap integrals
     integer ierr                         !error information
-#endif
     if (present(w) .and. .not.present(D)) &
        call quit("error in rsp_ovlave: frequencies 'w' and density 'D' " &
               // 'must both be present or both absent')
-#ifdef BUILD_GEN1INT
     ! gets the order of total geometric derivatives
     order_geo = count(f=='GEO ')
     if (order_geo/=nf) &
@@ -302,72 +295,6 @@ contains
     ! frees space
     deallocate(val_expt)
     call OnePropDestroy(one_prop=overlap)
-#else
-    if (nf==0) then
-       call quit('rsp_ovlave error: unperturbed (nf=0) overlap not implemented')
-    else if (nf==1 .and. f(1)=='GEO ') then
-       ! allocate matrices for integrals
-       A(1) = mol%zeromat
-       call mat_alloc(A(1))
-       if (present(w)) then
-          A(2) = mol%zeromat
-          call mat_alloc(A(2))
-       end if
-       ! loop over nuclear coordinates
-       do i = 0, nc(1)-1
-          ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
-          if (present(w)) then !w=0 means no -i/2 Tg contribution
-             call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
-             A(1) = -A(1) !SQHDR is really -dS>/dg
-             A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
-             A(1) = A(1) + trps(A(1)) !=1DOVL
-          else
-             call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), A(1))
-             A(1) = -A(1) !1DOVL is really -dS/dg
-          end if
-          ave(1+i) = -tr(A(1),DFD)
-          if (present(w)) ave(1+i) = ave(1+i) + tr(A(2),D)
-       end do
-       A(1:2) = 0 !deallocate
-    else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-       if (present(w)) then
-          if (.not.all(w==0)) &
-             call quit('rsp_ovlave error: GEO-GEO with freqencies not implemented')
-       end if
-       ncor = 3 * get_nr_atoms()
-       allocate(tmp(ncor,ncor,1))
-       call ONEDRV_ave_ifc(f, size(tmp(:,:,1)), tmp(:,:,1), DFD=DFD)
-       ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
-                         c(2):c(2)+nc(2)-1,1), shape(ave))
-       deallocate(tmp)
-    else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-       if (present(w)) then
-          if (.not.all(w==0)) &
-             call quit('rsp_ovlave error: GEO-GEO-GEO with freqencies not implemented')
-       end if
-       ncor = 3 * get_nr_atoms()
-       allocate(tmp(ncor,ncor,ncor))
-       allocate(fdi(ncor,ncor))
-       do i = 0, nc(3)-1
-          call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
-          call ONEDRV_ave_ifc(f(1:2), size(fdi), fdi, DFD=DFD)
-          tmp(:,:,c(3)+i) = fdi / (2*fdistep)
-          call SHELLS_NUCLEI_displace(c(3)+i, -2*fdistep)
-          call ONEDRV_ave_ifc(f(1:2), size(fdi), fdi, DFD=DFD)
-          tmp(:,:,c(3)+i) = tmp(:,:,c(3)+i) - fdi / (2*fdistep)
-          call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
-       end do
-       deallocate(fdi)
-       ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
-                         c(2):c(2)+nc(2)-1, &
-                         c(3):c(3)+nc(3)-1), shape(ave))
-       deallocate(tmp)
-    else
-       print *, 'rsp_ovlave error: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('rsp_ovlave error: not implented or in wrong order')
-    end if
-#endif
   end subroutine
 
 
@@ -379,10 +306,8 @@ contains
 
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
     use dalton_ifc, only: SHELLS_NUCLEI_displace, dal_work
-#ifdef BUILD_GEN1INT
     ! Gen1Int interface in Dalton
     use gen1int_interface
-#endif
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
@@ -407,7 +332,6 @@ contains
     real(8), allocatable :: tmpggf(:,:,:)
     real(8), allocatable :: fdigf(:,:)
     integer i, j, k, n, indx, ncor
-#ifdef BUILD_GEN1INT
     integer order_mom                    !order of Cartesian multipole moments
     integer num_mom                      !number of Cartesian multipole moments
     integer order_geo                    !order of total geometric derivatives
@@ -489,100 +413,6 @@ contains
     ! frees space
     deallocate(val_expt)
     call OnePropDestroy(one_prop=one_prop)
-#else
-    if (nf==0) then
-       call quit('rsp_oneave error: unperturbed (nf=0) 1el.int. not implemented')
-    else if (nf==1 .and. f(1)=='GEO ') then
-       A(1) = mol%zeromat
-       call mat_alloc(A(1))
-       do i = 0, nc(1)-1
-          ! perturbed one-electron Hamiltonian integrals
-          call di_read_operator_int('1DHAM' // prefix_zeros(c(1)+i,3), A(1))
-          ave(1+i) = tr(A(1),D)
-       end do
-       A(1) = 0
-    else if (nf==1 .and. f(1)=='EL  ') then
-       A(1) = mol%zeromat
-       call mat_alloc(A(1))
-       do i = 0, nc(1)-1
-          ! dipole integrals
-          call di_read_operator_int(xyz(c(1)+i) // 'DIPLEN ', A(1))
-          ave(1+i) = tr(A(1),D)
-       end do
-       A(1) = 0
-    else if (nf==2 .and. all(f==(/'GEO ','EL  '/))) then
-       ! read integrals from AOPROPER
-       A(1) = mol%zeromat
-       call mat_alloc(A(1))
-       do j = 0, nc(2)-1 ! EL
-          do i = 0, nc(1)-1 ! GEO
-             call di_read_operator_int( &
-                  prefix_zeros(c(1)+i,3) // 'DPG ' // xyz(c(2)+j), A(1))
-                  ave(1+i+nc(1)*j) = -tr(A(1),D)
-          end do
-       end do
-       A(1) = 0
-    else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-       ncor = 3 * get_nr_atoms()
-       allocate(tmpggg(ncor,ncor,1))
-       call ONEDRV_ave_ifc(f, size(tmpggg(:,:,1)), tmpggg(:,:,1), D=D)
-       ave = reshape(tmpggg(c(1):c(1)+nc(1)-1, &
-                            c(2):c(2)+nc(2)-1,1), shape(ave))
-       deallocate(tmpggg)
-    else if (nf==3 .and. all(f==(/'GEO ','GEO ','EL  '/))) then
-       !dj use finite difference to calculate the second order total geometric
-       !derivatives of dipole length integrals
-       ncor = 3 * get_nr_atoms()
-       allocate(fdigf(ncor,3))
-       allocate(tmpggf(ncor,ncor,3))
-       fdigf = 0
-       do i = 0, nc(1)-1
-          call SHELLS_NUCLEI_displace(c(1)+i, fdistep)
-          fdigf = 0
-          call GET1IN_ave_ifc(f(2:3), size(fdigf), fdigf, D)
-          tmpggf(c(1)+i,:,:) = fdigf / (2*fdistep)
-          call SHELLS_NUCLEI_displace(c(1)+i, -2*fdistep)
-          fdigf = 0
-          call GET1IN_ave_ifc(f(2:3), size(fdigf), fdigf, D)
-          tmpggf(c(1)+i,:,:) = tmpggf(c(1)+i,:,:) - fdigf / (2*fdistep)
-          call SHELLS_NUCLEI_displace(c(1)+i, fdistep)
-          !tmpggf(c(1)+i,:,:) = transpose(tmpggf(c(1)+i,:,:))
-       end do
-       indx = 1
-       do k = 1, nc(3)
-          do i = 1, nc(3)
-             do j = k, nc(2), nc(3)
-                ave(indx:indx+nc(1)) = -2d0*tmpggf(:,j,i)
-                indx = indx + nc(1)
-             end do
-          end do
-       end do
-       deallocate(fdigf)
-       deallocate(tmpggf)
-    else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-       ncor = 3 * get_nr_atoms()
-       allocate(tmpggg(ncor,ncor,ncor))
-       allocate(fdigg(ncor,ncor))
-       do i = 0, nc(3)-1
-          call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
-          call ONEDRV_ave_ifc(f(1:2), size(fdigg), fdigg, D=D)
-          tmpggg(:,:,c(3)+i) = fdigg / (2*fdistep)
-          call SHELLS_NUCLEI_displace(c(3)+i, -2*fdistep)
-          call ONEDRV_ave_ifc(f(1:2), size(fdigg), fdigg, D=D)
-          tmpggg(:,:,c(3)+i) = tmpggg(:,:,c(3)+i) - fdigg / (2*fdistep)
-          call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
-       end do
-       deallocate(fdigg)
-       ave = reshape(tmpggg(c(1):c(1)+nc(1)-1, &
-                            c(2):c(2)+nc(2)-1, &
-                            c(3):c(3)+nc(3)-1), shape(ave))
-       deallocate(tmpggg)
-    else
-       print *, 'rsp_oneave error: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('rsp_oneave error: not implented or in wrong order')
-    end if
-#endif
   end subroutine
 
 
@@ -836,10 +666,8 @@ contains
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
   subroutine rsp_ovlint(mol, nf, f, c, nc, ovl, w, fock)
-#ifdef BUILD_GEN1INT
     ! Gen1Int interface in Dalton
     use gen1int_interface
-#endif
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
@@ -857,7 +685,6 @@ contains
     type(matrix),  intent(inout), optional :: fock(product(nc))
     !------------------------------------------------
     integer      i
-#ifdef BUILD_GEN1INT
     integer order_geo         !order of total geometric derivatives
     integer num_atom          !number of atoms
     integer num_coord         !number of atomic coordinates
@@ -865,11 +692,9 @@ contains
     integer dim_redunt_geo    !size of redundant total geometric derivatives
     type(one_prop_t) overlap  !operator of overlap integrals
     integer ierr              !error information
-#endif
     if (present(w) .and. .not.present(fock)) &
        call quit("error in rsp_ovlint: frequencies 'w' and Fock matrix 'fock' " &
               // 'must both be present or both absent')
-#ifdef BUILD_GEN1INT
     ! gets the order of total geometric derivatives
     order_geo = count(f=='GEO ')
     if (order_geo/=nf) &
@@ -938,44 +763,13 @@ contains
     end if
     ! frees space
     call OnePropDestroy(one_prop=overlap)
-#else
-    if (nf==0) then
-       call quit('rsp_ovlint error: unperturbed (nf=0) overlap not implemented')
-    else if (nf==1 .and. f(1)=='GEO ') then
-       ! loop over nuclear coordinates
-       do i = 0, nc(1)-1
-          ! allocate, if needed
-          if (.not.isdef(ovl(1+i))) then
-             ovl(1+i) = mol%zeromat
-             call mat_alloc(ovl(1+i))
-          end if
-          ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
-          if (present(w)) then
-             call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
-             ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
-             fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
-             fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
-             ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
-          else
-             call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), ovl(1+i))
-             ovl(1+i) = -ovl(1+i) !1DOVL is really -dS/dg
-          end if
-       end do
-    else
-       print *, 'rsp_ovlint error: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('rsp_ovlint error: not implented or in wrong order')
-    end if
-#endif
   end subroutine
 
 
 
   subroutine rsp_oneint(mol, nf, f, c, nc, oneint)
-#ifdef BUILD_GEN1INT
     ! Gen1Int interface in Dalton
     use gen1int_interface
-#endif
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
@@ -988,7 +782,6 @@ contains
     type(matrix),  intent(inout) :: oneint(product(nc))
     !--------------------------------------------------
     integer      i, j
-#ifdef BUILD_GEN1INT
     integer order_mom                         !order of Cartesian multipole moments
     integer num_mom                           !number of Cartesian multipole moments
     integer order_geo                         !order of total geometric derivatives
@@ -1091,35 +884,6 @@ contains
 !FIXME:   val_ints(i) = 0
 !FIXME: end do
 !FIXME: deallocate(val_ints)
-#else
-    if (nf==0) then
-       call quit('error in rsp_oneint: unperturbed (nf=0) 1el.int. not implemented')
-    else if (nf==1 .and. f(1)=='GEO ') then
-       do i = 0, nc(1)-1
-          ! allocate, if needed
-          if (.not.isdef(oneint(1+i))) then
-             oneint(1+i) = mol%zeromat
-             call mat_alloc(oneint(1+i))
-          end if
-          ! perturbed one-electron Hamiltonian integrals
-          call di_read_operator_int('1DHAM' // prefix_zeros(c(1)+i,3), oneint(1+i))
-       end do
-    else if (nf==1 .and. f(1)=='EL  ') then
-       do i = 0, nc(1)-1
-          ! allocate, if needed
-          if (.not.isdef(oneint(1+i))) then
-             oneint(1+i) = mol%zeromat
-             call mat_alloc(oneint(1+i))
-          end if
-          ! dipole integrals
-          call di_read_operator_int(xyz(c(1)+i) // 'DIPLEN ', oneint(1+i))
-       end do
-    else
-       print *, 'error in rsp_oneave: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('error in rsp_oneave: not implented or in wrong order')
-    end if
-#endif
   end subroutine
 
 
@@ -1350,7 +1114,6 @@ contains
 
 
 
-#ifdef BUILD_GEN1INT
   !> \brief reorders and assigns the expectation values and/or integral matrices from
   !>        Gen1int to OpenRsp
   !> \author Bin Gao
@@ -1500,10 +1263,6 @@ contains
     deallocate(last_comp)
     deallocate(idx_comp)
   end subroutine
-
-
-#endif
-
 
   !> Find the reordering of type(rsp_field)s f(:) that puts them in "canonical"
   !> order, sorted by:
