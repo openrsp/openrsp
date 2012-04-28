@@ -6,13 +6,6 @@ module vib_prop_old
    use rsp_equations_old
    use prop_contribs_old
 
-   ! ajt LSDALTON has replaced the (global) quit with lsquit
-   !     with unit (lupri) as extra argument, which doesn't
-   !     exist in DIRAC. For now, this macro gets around that.
-#ifdef LSDALTON_ONLY
-#define quit lsquit
-#endif
-
    implicit none
 
    public roa_pol_Gpri_Aten_grads
@@ -96,13 +89,7 @@ contains
    !> and sqrt eigenvalues for frequencies (w<0 means imaginary).
    !> ajt FIXME Does not work in LSDALTON.
    subroutine load_vib_modes(mol, nc, nq, w, Q)
-#ifdef LSDALTON_ONLY
-      use files
-#define GPOPEN  LSOPEN
-#define GPCLOSE LSCLOSE
-#elif defined(BUILD_OPENRSP)
       use dalton_ifc
-#endif
       !> reference to molecule, geometry, etc.
       type(prop_molcfg), intent(in)  :: mol
       !> number of (cartesian) coordinates
@@ -120,18 +107,10 @@ contains
       real(8)       :: diff
       logical       :: ex
       character(22) :: fmt
-#ifdef LSDALTON_ONLY
-      call quit('Cannot call NUCLEI_ifc or GPINQ, only new integral code is compiled')
-#else
       call NUCLEI_ifc(nc/3,Z,IS,G)
       call GPINQ('DALTON.HES','EXIST',ex)
-#endif
       if (.not.ex) call quit('load_vib_modes: Hessian file DALTON.HES not found')
-#ifdef BUILD_OPENRSP
       call GPOPEN(unit,'DALTON.HES','OLD',' ','FORMATTED',0,.false.)
-#else
-      call GPOPEN(unit,'DALTON.HES','OLD','FORMATTED')
-#endif
 
       rewind(unit)
 
@@ -174,16 +153,12 @@ contains
       end if
 
       call GPCLOSE(unit,'KEEP')
-#ifdef LSDALTON_ONLY
-      call quit('Cannot call VIBHES, VIBMAS, or VIBNOR - only new integral code is compiled')
-#else
       call VIBHES(1,nc,G,nq,(/(0d0,i=1,nc)/),H,(/(0d0,i=1,6*nc)/) &
                  ,nint(Z),(/(0d0,i=1,2*nc*nc)/)); nq=nc-nq
       call VIBMAS(M,Mtot,IS,nint(Z),nc/3,G,orig,1)
       call VIBNOR(H,M,(/(0d0,i=1,nc)/),(/(0d0,i=1,nc*(nc+1)/2)/) &
                  ,w,Q,(/(0d0,i=1,nc*nc)/),(/(0d0,i=1,30*nc*nc+1)/) &
                  ,30*nc*nc+1,nc,internal,negative,.false.,1)
-#endif
       w = sign(sqrt(abs(w)),w)
    end subroutine
 
@@ -888,11 +863,7 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('vibhyp_hyp_dipgra_polgra: sum(freq) should be zero!',-1)
       ! verify that DALTON.HES exists before doing anything
-#ifdef LSDALTON_ONLY
-      call quit('Cannot call GPINQ, only new integral code is compiled',-1)
-#else
       call GPINQ('DALTON.HES', 'EXIST', exists)
-#endif
       if (.not.exists) call quit('vibhyp_hyp_dipgra_polgra: Hessian file', &
                                  ' DALTON.HES not found, but will be needed',-1)
       ! dipole moment
@@ -1117,11 +1088,7 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('vibgam_shyp_dipg_polg_hypg: sum(freq) should be zero!',-1)
       ! verify that DALTON.HES exists before doing anything
-#ifdef LSDALTON_ONLY
-      call quit('Cannot call GPINQ, only new integral code is compiled',-1)
-#else
       call GPINQ('DALTON.HES', 'EXIST', exists)
-#endif
       if (.not.exists) call quit('vibgam_shyp_dipg_polg_hypg: Hessian file', &
                                  ' DALTON.HES not found, but will be needed',-1)
       ! dipole moment

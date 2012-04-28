@@ -148,7 +148,6 @@ module prop_contribs_old
 contains
 
 
-#if defined(VAR_LINSCA) || defined(BUILD_OPENRSP)
    function prefix_zeros(n, l)
       integer, intent(in) :: n, l !number, length
       character(l)        :: prefix_zeros !resulting n in ascii
@@ -163,7 +162,6 @@ contains
       if (k /= 0) call quit('prefix_zeros error: Argument integer does not fit ' &
                            // 'in the specified number of ASCII caracters',-1)
    end function
-#endif /* VAR_LINSCA */
 
 
    !> Contracts the 1-electron integrals perturbed by the perturbations p(:)
@@ -406,11 +404,7 @@ contains
          ! no densities means D(1) contains unperturbed density matrix.
          ! Then also add nuclear attraction contribution to -dipole moment
          if (nd==0) then
-#ifdef BUILD_OPENRSP
             call DIPNUC_ifc(R(:3))
-#else
-            call DIPNUC_ifc(na, R(:3), (/(0d0, i=1,9*na)/))
-#endif
             E(:dp(1)) = E(:dp(1)) - R(c(1):c(1)+dp(1)-1) !sign since dE/d(EL) = -dipole
          end if
       ! Velocity operator. Since anti-symmetric, no unperturbed (nd==0)
@@ -591,13 +585,8 @@ contains
          !contract perturbed densities with -dipole gradient integrals
          do j = 0, dp(2)-1 !EL indices
             do i = 0, dp(1)-1 !GEO indices
-#ifdef BUILD_OPENRSP
                call load_oneint(prefix_zeros(c(1)+i,3) // 'DPG ' &
                            // xyz(c(2)+j), A(1))
-#else
-               call load_oneint(prefix_zeros(c(1)+i,2) // ' DPG ' &
-                           // xyz(c(2)+j), A(1))
-#endif
                do k = 0, max(0,nd-1) !density indices
                   E(1+i+dp(1)*(j+dp(2)*k)) = -tr(A(1), D(k+1)) !minus sign
                end do
@@ -665,28 +654,16 @@ contains
          do i = 0, dp(1)-1 !GEO indices
             ! ajt The integrals '01QDG XY' are not traceless. Therefore,
             !     load all components at once and remove trace before contracting
-#ifdef BUILD_OPENRSP
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGXX', A(1))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGYY', A(3))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGZZ', A(6))
-#else
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG XX', A(1))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG YY', A(3))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG ZZ', A(6))
-#endif
             A(2) = A(1) + A(3) + A(6) !trace in A(2)
             A(1) = A(1) - 1/3d0*A(2)
             A(3) = A(3) - 1/3d0*A(2)
             A(6) = A(6) - 1/3d0*A(2)
-#ifdef BUILD_OPENRSP
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGXY', A(2))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGXZ', A(4))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGYZ', A(5))
-#else
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG XY', A(2))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG XZ', A(4))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG YZ', A(5))
-#endif
             do j = 0, dp(2)-1 !ELGR indices
                do k = 0, max(0,nd-1) !density indices
                   E(1+i+dp(1)*(j+dp(2)*k)) = tr(A(c(2)+j), D(k+1)) * (-3/2d0) !factor -3/2
@@ -1544,13 +1521,8 @@ contains
       else if (np==2 .and. all(p==(/'GEO','EL '/))) then
          do j = 0, dp(2)-1 !EL indices
             do i = 0, dp(1)-1 !GEO indices
-#ifdef BUILD_OPENRSP
                call load_oneint(prefix_zeros(c(1)+i,2) // ' DPG ' &
                                 // xyz(c(2)+j), F(1+i+dp(1)*j))
-#else
-               call load_oneint(prefix_zeros(c(1)+i,3) // 'DPG ' &
-                                // xyz(c(2)+j), F(1+i+dp(1)*j))
-#endif
                F(1+i+dp(1)*j) = -F(1+i+dp(1)*j) !minus sign
             end do
          end do
@@ -1566,28 +1538,16 @@ contains
          do i = 0, dp(1)-1 !GEO indices
             ! ajt The integrals '01QDG XY' are not traceless.
             !     Therefore load all integrals and remove trace manually
-#ifdef BUILD_OPENRSP
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGXX', A(1))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGYY', A(3))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGZZ', A(6))
-#else
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG XX', A(1))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG YY', A(3))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG ZZ', A(6))
-#endif
             A(2) = A(1) + A(3) + A(6) !trace in A(2)
             A(1) = A(1) - 1/3d0*A(2)
             A(3) = A(3) - 1/3d0*A(2)
             A(6) = A(6) - 1/3d0*A(2)
-#ifdef BUILD_OPENRSP
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGXY', A(2))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGXZ', A(4))
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGYZ', A(5))
-#else
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG XY', A(2))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG XZ', A(4))
-            call load_oneint(prefix_zeros(c(1)+i,2) // 'QDG YZ', A(5))
-#endif
             do j = 0, dp(2)-1 !ELGR indices
                F(1+i+dp(1)*j) = -3/2d0 * A(c(2)+j) !factor -3/2
             end do

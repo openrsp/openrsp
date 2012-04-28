@@ -34,16 +34,6 @@ module rsp_equations_old
 
    implicit none
 
-   ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
-   !     which doesn't exist in DIRAC. For now, this macro gets around that.
-   !     Ideally, we would prefer to use a macro quit(msg) => lsquit(msg,-1),
-   !     but some CPPs don't process line continuation (of msg) correctly.
-   !     So we just use quit(msg,unit) in the code, and replace quit with lsquit.
-   !     DIRAC's quit will ignore the extra argument.
-#ifdef LSDALTON_ONLY
-#define quit lsquit
-#endif
-
    public pert_fock    !contract perturbed Fock-matrices
    public pert_scf_eq  !contract perturbed scf equation residuals
    public pert_dens    !perturbed (or response-) densities and Fock-matrices
@@ -820,14 +810,7 @@ contains
       !       in:          --------------------------------------------
       !       out:                                                      ------
 use matrix_backend, only: mat_alloc, matrix_backend_debug
-#ifdef BUILD_OPENRSP
       use dalton_ifc
-#elif defined(VAR_LINSCA)
-      use RSPsolver,     only: rsp_init, rsp_solver
-      use complexsolver, only: rsp_complex_init, rsp_complex_solver
-      use scf_config,    only: cfg_rsp_complex, cfg_rsp_gamma
-      use decompMod,     only: decompItem
-#endif
       !> mol/basis/decomp/thresh needed by integrals and solver
       type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix
@@ -897,7 +880,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          end do
       end if
       ! call solver
-#ifdef BUILD_OPENRSP
       do i=1, neq
          rhs_norm = norm(FDSp(i))
          print *, 'before response solver: norm(RHS) = ', rhs_norm
@@ -927,85 +909,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          Xph(1) = 0
          FDSp(i) = 0
       end do
-#else
-      do i=1, neq
-         rhs_norm = norm(FDSp(i))
-         print *, 'before response solver: norm(RHS) = ', rhs_norm
-         if (rhs_norm < 1d-10) then
-            print *, '=> skipping this equation'
-            Xph(1) = 0d0 * S0
-         else if (FDSp(i)%complex .or. cfg_rsp_complex .or. dimag(freq) /= 0) then
-            !on the first run, initialize the solvers
-            if (first_complex) then
-               call rsp_init(2, 2, 2, 1, 2)
-               call rsp_complex_init(1, 1, 1, 1, 1)
-               first = .false.
-               first_complex = .false.
-            end if
-            has_imag = FDSp(i)%complex
-            if (.not.has_imag) then
-               call init_mat(reFDSp(1), FDSp(i), alias='FF')
-               call init_mat(FDSp(i), reset=.true.)
-               FDSp(i) = (1d0 + tiny(1d0)*(0d0,1d0)) * reFDSp(1)
-               reFDSp(1) = 0 !free
-            end if
-            !configure the frequency and damping factor
-            freq1(1) = dreal(freq)
-            gamma_saved = cfg_rsp_gamma !save, for restore after solver
-            if (cfg_rsp_complex) then
-               cfg_rsp_gamma = cfg_rsp_gamma + dimag(freq)
-            else
-               cfg_rsp_gamma = dimag(freq)
-            end if
-            ! the solver currently doesn't seem to work with zero gamma
-            if (abs(cfg_rsp_gamma) < 1d-6) &
-               cfg_rsp_gamma = 2d-6
-            ! allocate the solution matrix Xph (Xp/2)
-            call init_mat(Xph(1), FDSp(i))
-            !create aliases for the real and imaginary parts of FDSp and Xph
-            call init_mat(reFDSp(1), FDSp(i), alias='RF')
-            call init_mat(imFDSp(1), FDSp(i), alias='IF')
-            call init_mat(reXph(1), Xph(1), alias='RF')
-            call init_mat(imXph(1), Xph(1), alias='IF')
-            ! solve for the real and imaginary part of the FDSp simlultaneously
-            call rsp_complex_solver(decomp, F0, D0, S0, 1, reFDSp(1:1), &
-                                    freq1, 1, reXph(1:1), imXph(1:1),       &
-                                    .true., gdi=imFDSp(1:1))
-            !clear re and im aliases of FDSp and Xph
-            call init_mat(reFDSp(1), reset=.true.)
-            call init_mat(imFDSp(1), reset=.true.)
-            call init_mat(reXph(1), reset=.true.)
-            call init_mat(imXph(1), reset=.true.)
-            !restore gamma to avoid breaking other code
-            cfg_rsp_gamma = gamma_saved
-         else
-            if (first) then
-               call rsp_init(1, 1, 1, 1, 1)
-               first = .false.
-            end if
-            freq1(1) = dreal(freq)
-            call init_mat(Xph(1), Dp(i))
-            ! if non-resonant, no excitation vectors to pass
-            if (.not.allocated(iexci)) then
-               call rsp_solver(decomp, D0, S0, F0, .true., 1, FDSp(i:i), &
-                               freq1(1:1), Xph(1))
-            else !if resonant, pass excitation vectors Vexci
-               call rsp_solver(decomp, D0, S0, F0, .true., 1, FDSp(i:i), &
-                               freq1(1:1), Xph(1), Xproject=Vexci)
-            end if
-         end if
-         ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),
-         ! make sure Dp it comes out completely symmetric
-         if (sym /= 0 .and. freq==0 .and. .not.cfg_rsp_complex) then
-            Dp(i) = 1/2d0 * Dp(i) + 2d0 * DS*Xph(1)
-            Dp(i) = Dp(i) - 1d0*sym * trps(Dp(i))
-         else
-            Dp(i) = Dp(i) + 2d0 * (DS*Xph(1) - Xph(1)*trps(DS))
-         end if
-         Xph(1) = 0
-         FDSp(i) = 0
-      end do
-#endif
       ! if this is a projected resonant equation, add contribution from
       ! the opposite (de-)excitation (then deallocate)
       if (allocated(iexci)) then
