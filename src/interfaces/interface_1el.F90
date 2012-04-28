@@ -1,11 +1,14 @@
 module interface_1el
 
    use matrix_defop
-   use dalton_ifc !fixme ugly
+   use dalton_ifc     !fixme ugly
+   use interface_host !fixme ugly
 
    implicit none
 
    public oneint_ave
+   public get1in_ave_ifc
+   public onedrv_ave_ifc
 
    private
 
@@ -73,5 +76,89 @@ contains
       call write_dsofso(Dtri,DFDtri)
 #endif
    end subroutine
+
+  subroutine ONEDRV_ave_ifc(fld, siz, ave, D, DFD)
+    use dalton_ifc, only: dal_work
+    character(4),           intent(in)  :: fld(:)
+    integer,                intent(in)  :: siz
+    real(8),                intent(out) :: ave(siz)
+    type(matrix), optional, intent(in)  :: D, DFD
+    !--------------------------------------------
+#include <mxcent.h>
+#include <taymol.h>
+
+    real(8), allocatable :: Dtri(:)
+    real(8), allocatable :: DFDtri(:)
+
+    logical anti
+    integer nc
+
+    allocate(Dtri(  get_nr_ao()*(get_nr_ao()+1)/2))
+    allocate(DFDtri(get_nr_ao()*(get_nr_ao()+1)/2))
+
+    ! create triangularly packed matrices from D, DFD
+    anti = (mod(count(fld=='MAG '),2) == 1)
+    if (.not.present(D)) then
+       Dtri = 0
+    else if (anti) then
+       call DGETAP(D%nrow, D%elms, Dtri)
+    else !symm
+       call DGEFSP(D%nrow, D%elms, Dtri)
+    end if
+    if (.not.present(DFD)) then
+       DFDtri = 0
+    else if (anti) then
+       call DGETAP(DFD%nrow, DFD%elms, DFDtri)
+    else !symm
+       call DGEFSP(DFD%nrow, DFD%elms, DFDtri)
+    end if
+    ! write to files
+    call WRITE_DSOFSO(Dtri, DFDtri)
+    nc = 3 * get_nr_atoms()
+    HESMOL(:nc,:nc) = 0
+    !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
+    ! &                  DIFINT,NODC,NODV,DIFDIP,DIFQDP,
+    ! &                  HFONLY,NCLONE,PCM)
+    call ONEDRV(dal_work, size(dal_work), 5, .true., size(fld), &
+                .true., .true., .true., .false., .false., &
+                .true., .false., .false.)
+    ! HESMOL will contain either HESSKE+HESSNA or HESFS2 or their sum
+    if (size(fld)==1) &
+       call quit('error in ONEDRV_ave_ifc: not implemented')
+    if (size(fld)==2) &
+       ave = reshape(2*HESMOL(:nc,:nc), (/nc*nc/)) !factor 2 for total dens
+    deallocate(Dtri)
+    deallocate(DFDtri)
+  end subroutine
+
+  !> Call GET1IN in ABACUS
+  subroutine GET1IN_ave_ifc(fld, siz, ave, D)
+    use dalton_ifc, only: dal_work
+    character(4),           intent(in)  :: fld(:)
+    integer,                intent(in)  :: siz
+    real(8),                intent(out) :: ave(siz)
+    type(matrix),           intent(in)  :: D
+    !--------------------------------------------
+    real(8)                             :: dummy(2)
+#include <mxcent.h>
+    real(8), allocatable :: Dtri(:)
+    character(8), dimension(9*MXCENT) :: labint
+    integer, dimension(9*MXCENT) :: intrep, intadr
+    integer ncomp
+    allocate(Dtri(  get_nr_ao()*(get_nr_ao()+1)/2))
+    !ajt Dzero is dangerous! Should have been izero. =0 safe
+    intrep = 0 !call dzero(intrep,9*MXCENT)
+    intadr = 0 !call dzero(intadr,9*MXCENT)
+    ! create triangularly packed matrix from D
+    call DGEFSP(D%nrow, D%elms, Dtri)
+    ncomp = 0
+!      SUBROUTINE GET1IN(SINTMA,WORD,NCOMP,WORK,LWORK,LABINT,INTREP,
+!     &                  INTADR,MPQUAD,TOFILE,KPATOM,TRIMAT,EXPVAL,
+!     &                  EXP1VL,DENMAT,NPRINT)
+    call GET1IN(dummy,'DPLGRA ',ncomp,dal_work,size(dal_work),labint,intrep, &
+                       intadr,0,.false.,0,.false.,ave, &
+                       .true.,Dtri,0)
+    deallocate(Dtri)
+  end subroutine
 
 end module

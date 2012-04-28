@@ -336,7 +336,7 @@ contains
        end if
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1))
-       call ONEDRV_ave_ifc(mol, f, size(tmp(:,:,1)), tmp(:,:,1), DFD=DFD)
+       call ONEDRV_ave_ifc(f, size(tmp(:,:,1)), tmp(:,:,1), DFD=DFD)
        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
                          c(2):c(2)+nc(2)-1,1), shape(ave))
        deallocate(tmp)
@@ -350,10 +350,10 @@ contains
        allocate(fdi(ncor,ncor))
        do i = 0, nc(3)-1
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
-          call ONEDRV_ave_ifc(mol, f(1:2), size(fdi), fdi, DFD=DFD)
+          call ONEDRV_ave_ifc(f(1:2), size(fdi), fdi, DFD=DFD)
           tmp(:,:,c(3)+i) = fdi / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(3)+i, -2*fdistep)
-          call ONEDRV_ave_ifc(mol, f(1:2), size(fdi), fdi, DFD=DFD)
+          call ONEDRV_ave_ifc(f(1:2), size(fdi), fdi, DFD=DFD)
           tmp(:,:,c(3)+i) = tmp(:,:,c(3)+i) - fdi / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
        end do
@@ -525,7 +525,7 @@ contains
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmpggg(ncor,ncor,1))
-       call ONEDRV_ave_ifc(mol, f, size(tmpggg(:,:,1)), tmpggg(:,:,1), D=D)
+       call ONEDRV_ave_ifc(f, size(tmpggg(:,:,1)), tmpggg(:,:,1), D=D)
        ave = reshape(tmpggg(c(1):c(1)+nc(1)-1, &
                             c(2):c(2)+nc(2)-1,1), shape(ave))
        deallocate(tmpggg)
@@ -539,11 +539,11 @@ contains
        do i = 0, nc(1)-1
           call SHELLS_NUCLEI_displace(c(1)+i, fdistep)
           fdigf = 0
-          call GET1IN_ave_ifc(mol, f(2:3), size(fdigf), fdigf, D)
+          call GET1IN_ave_ifc(f(2:3), size(fdigf), fdigf, D)
           tmpggf(c(1)+i,:,:) = fdigf / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(1)+i, -2*fdistep)
           fdigf = 0
-          call GET1IN_ave_ifc(mol, f(2:3), size(fdigf), fdigf, D)
+          call GET1IN_ave_ifc(f(2:3), size(fdigf), fdigf, D)
           tmpggf(c(1)+i,:,:) = tmpggf(c(1)+i,:,:) - fdigf / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(1)+i, fdistep)
           !tmpggf(c(1)+i,:,:) = transpose(tmpggf(c(1)+i,:,:))
@@ -565,10 +565,10 @@ contains
        allocate(fdigg(ncor,ncor))
        do i = 0, nc(3)-1
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
-          call ONEDRV_ave_ifc(mol, f(1:2), size(fdigg), fdigg, D=D)
+          call ONEDRV_ave_ifc(f(1:2), size(fdigg), fdigg, D=D)
           tmpggg(:,:,c(3)+i) = fdigg / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(3)+i, -2*fdistep)
-          call ONEDRV_ave_ifc(mol, f(1:2), size(fdigg), fdigg, D=D)
+          call ONEDRV_ave_ifc(f(1:2), size(fdigg), fdigg, D=D)
           tmpggg(:,:,c(3)+i) = tmpggg(:,:,c(3)+i) - fdigg / (2*fdistep)
           call SHELLS_NUCLEI_displace(c(3)+i, fdistep)
        end do
@@ -585,6 +585,13 @@ contains
 #endif
   end subroutine
 
+
+  function rank_one_pointer(siz, arr) result(ptr)
+     integer,         intent(in) :: siz
+     real(8), target, intent(in) :: arr(siz)
+     real(8), pointer            :: ptr(:)
+     ptr => arr
+  end function
 
 
   !> Average 2-electron integrals perturbed by fields f over the
@@ -1339,89 +1346,8 @@ contains
 
   !> Same as set_dsofso in fock-eval.f90, but pertrubed
   !> Call ONEDRV in ABACUS
-  subroutine ONEDRV_ave_ifc(mol, fld, siz, ave, D, DFD)
-    use dalton_ifc, only: dal_work
-    type(rsp_cfg),          intent(in)  :: mol
-    character(4),           intent(in)  :: fld(:)
-    integer,                intent(in)  :: siz
-    real(8),                intent(out) :: ave(siz)
-    type(matrix), optional, intent(in)  :: D, DFD
-    !--------------------------------------------
-#include <mxcent.h>
-#include <taymol.h>
-    real(8) Dtri(  (mol%zeromat%nrow)*(mol%zeromat%nrow+1)/2)
-    real(8) DFDtri((mol%zeromat%nrow)*(mol%zeromat%nrow+1)/2)
-    logical anti
-    integer nc
-    ! create triangularly packed matrices from D, DFD
-    anti = (mod(count(fld=='MAG '),2) == 1)
-    if (.not.present(D)) then
-       Dtri = 0
-    else if (anti) then
-       call DGETAP(D%nrow, D%elms, Dtri)
-    else !symm
-       call DGEFSP(D%nrow, D%elms, Dtri)
-    end if
-    if (.not.present(DFD)) then
-       DFDtri = 0
-    else if (anti) then
-       call DGETAP(DFD%nrow, DFD%elms, DFDtri)
-    else !symm
-       call DGEFSP(DFD%nrow, DFD%elms, DFDtri)
-    end if
-    ! write to files
-    call WRITE_DSOFSO(Dtri, DFDtri)
-    nc = 3 * get_nr_atoms()
-    HESMOL(:nc,:nc) = 0
-    !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
-    ! &                  DIFINT,NODC,NODV,DIFDIP,DIFQDP,
-    ! &                  HFONLY,NCLONE,PCM)
-    call ONEDRV(dal_work, size(dal_work), 5, .true., size(fld), &
-                .true., .true., .true., .false., .false., &
-                .true., .false., .false.)
-    ! HESMOL will contain either HESSKE+HESSNA or HESFS2 or their sum
-    if (size(fld)==1) &
-       call quit('error in ONEDRV_ave_ifc: not implemented')
-    if (size(fld)==2) &
-       ave = reshape(2*HESMOL(:nc,:nc), (/nc*nc/)) !factor 2 for total dens
-  end subroutine
 
 
-  !> Call GET1IN in ABACUS
-  subroutine GET1IN_ave_ifc(mol, fld, siz, ave, D)
-    use dalton_ifc, only: dal_work
-    type(rsp_cfg),          intent(in)  :: mol
-    character(4),           intent(in)  :: fld(:)
-    integer,                intent(in)  :: siz
-    real(8),                intent(out) :: ave(siz)
-    type(matrix),           intent(in)  :: D
-    !--------------------------------------------
-#include <dummy.h>
-#include <mxcent.h>
-    real(8) Dtri(  (mol%zeromat%nrow)*(mol%zeromat%nrow+1)/2)
-    character(8), dimension(9*MXCENT) :: labint
-    integer, dimension(9*MXCENT) :: intrep, intadr
-    integer ncomp
-    !ajt Dzero is dangerous! Should have been izero. =0 safe
-    intrep = 0 !call dzero(intrep,9*MXCENT)
-    intadr = 0 !call dzero(intadr,9*MXCENT)
-    ! create triangularly packed matrix from D
-    call DGEFSP(D%nrow, D%elms, Dtri)
-    ncomp = 0
-!      SUBROUTINE GET1IN(SINTMA,WORD,NCOMP,WORK,LWORK,LABINT,INTREP,
-!     &                  INTADR,MPQUAD,TOFILE,KPATOM,TRIMAT,EXPVAL,
-!     &                  EXP1VL,DENMAT,NPRINT)
-    call GET1IN(dummy,'DPLGRA ',ncomp,dal_work,size(dal_work),labint,intrep, &
-                       intadr,0,.false.,0,.false.,ave, &
-                       .true.,Dtri,0)
-  end subroutine
-
-  function rank_one_pointer(siz, arr) result(ptr)
-     integer,         intent(in) :: siz
-     real(8), target, intent(in) :: arr(siz)
-     real(8), pointer            :: ptr(:)
-     ptr => arr
-  end function
 
 
 #ifdef BUILD_GEN1INT
