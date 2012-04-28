@@ -14,6 +14,7 @@ module rsp_contribs
   use matrix_defop
   use matrix_backend, only: mat_alloc
   use rsp_backend
+  use interface_host
   use dalton_ifc, only: di_read_operator_int, &
                         di_get_gmat
   use basis_set,  only: cgto
@@ -145,7 +146,7 @@ contains
     !---------------------------------------------------------------
     integer      ncor, ngeo, last_ncomp
     character(4) last_field
-    ncor = 3 * get_natom()
+    ncor = 3 * get_nr_atoms()
     ngeo = 0
     last_field = 'NONE'
     last_ncomp = 1
@@ -229,7 +230,7 @@ contains
     if (order_geo/=nf) &
       call quit("rsp_ovlave>> only geometric derivatives implemented!")
     ! sets the number of total geometric derivatives
-    num_atom = get_natom()
+    num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     ! allocates memory for expectation values
@@ -286,7 +287,7 @@ contains
                             num_dens=1, ao_dens=(/DFD/),            &
                             val_expt=val_expt,                      &
                             redunt_expt=order_geo>1,                &
-                            io_viewer=get_lupri(),                  &
+                            io_viewer=get_print_unit(),                  &
                             level_print=5)
       val_expt = -val_expt
       ! assigns the output average
@@ -334,7 +335,7 @@ contains
           if (.not.all(w==0)) &
              call quit('rsp_ovlave error: GEO-GEO with freqencies not implemented')
        end if
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1))
        call ONEDRV_ave_ifc(mol, f, size(tmp(:,:,1)), tmp(:,:,1), DFD=DFD)
        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
@@ -345,7 +346,7 @@ contains
           if (.not.all(w==0)) &
              call quit('rsp_ovlave error: GEO-GEO-GEO with freqencies not implemented')
        end if
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor))
        allocate(fdi(ncor,ncor))
        do i = 0, nc(3)-1
@@ -429,7 +430,7 @@ contains
       call quit("rsp_oneave>> only electric and geometric perturbations implemented!")
     ! sets the number of operators and derivatives
     num_mom = (order_mom+1)*(order_mom+2)/2
-    num_atom = get_natom()
+    num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     ! allocates memory for expectation values
@@ -465,7 +466,7 @@ contains
                           num_dens=1, ao_dens=(/D/),              &
                           val_expt=val_expt,                      &
                           redunt_expt=order_geo>1,                &
-                          io_viewer=get_lupri(),                  &
+                          io_viewer=get_print_unit(),                  &
                           level_print=5)
     ! assigns the output average
     call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
@@ -509,7 +510,7 @@ contains
        end do
        A(1) = 0
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmpggg(ncor,ncor,1))
        call ONEDRV_ave_ifc(mol, f, size(tmpggg(:,:,1)), tmpggg(:,:,1), D=D)
        ave = reshape(tmpggg(c(1):c(1)+nc(1)-1, &
@@ -518,7 +519,7 @@ contains
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','EL  '/))) then
        !dj use finite difference to calculate the second order total geometric
        !derivatives of dipole length integrals
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(fdigf(ncor,3))
        allocate(tmpggf(ncor,ncor,3))
        fdigf = 0
@@ -546,7 +547,7 @@ contains
        deallocate(fdigf)
        deallocate(tmpggf)
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmpggg(ncor,ncor,ncor))
        allocate(fdigg(ncor,ncor))
        do i = 0, nc(3)-1
@@ -604,7 +605,7 @@ contains
        call di_get_gmat(D2, A(1)) !Coulomb and exchange
        ave(1) = tr(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
        n = mol%zeromat%nrow
        dal_work(     :n*n)   = reshape(D1%elms,(/n*n/))
@@ -615,7 +616,7 @@ contains
        ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
        deallocate(tmp)
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
        n = mol%zeromat%nrow
        dal_work(     :n*n)   = reshape(D1%elms,(/n*n/))
@@ -628,7 +629,7 @@ contains
        deallocate(tmp)
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
        ! contract FULL cubic in tmp, unsymmetrized divided by six
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,1))
        arg(1) = ctr_arg(3, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**3, tmp(:,:,:,1)))
@@ -650,7 +651,7 @@ contains
                              c(3):c(3)+nc(3)-1, 1), shape(ave))
        deallocate(tmp)
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,ncor))
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
        arg(1) = ctr_arg(4, -huge(1), ncor, D1, D2, &
@@ -713,7 +714,7 @@ contains
      real(8)                            :: xc_energy
 !    ---------------------------------------------------------------------------
 
-     nr_atoms = get_natom()
+     nr_atoms = get_nr_atoms()
 
      if (.not. is_ks_calculation()) then
         res(1:(nr_atoms*3)**geo_order) = 0.0d0
@@ -856,7 +857,7 @@ contains
     if (order_geo/=nf) &
       call quit("rsp_ovlint>> only geometric derivatives implemented!")
     ! sets the number of total geometric derivatives
-    num_atom = get_natom()
+    num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     ! sets the size of redundant total geometric derivatives
@@ -914,7 +915,7 @@ contains
                             val_ints=ovl,                           &
                             redunt_ints=order_geo>1,                &
                             num_dens=1,                             &
-                            io_viewer=get_lupri(),                  &
+                            io_viewer=get_print_unit(),                  &
                             level_print=5)
     end if
     ! frees space
@@ -994,7 +995,7 @@ contains
       call quit("rsp_oneint>> only electric and geometric perturbations implemented!")
     ! sets the number of operators and derivatives
     num_mom = (order_mom+1)*(order_mom+2)/2
-    num_atom = get_natom()
+    num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     num_ints = num_mom*num_geom
@@ -1046,7 +1047,7 @@ contains
                           val_ints=oneint,                        &
                           redunt_ints=order_geo>1,                &
                           num_dens=1,                             &
-                          io_viewer=get_lupri(),                  &
+                          io_viewer=get_print_unit(),                  &
                           level_print=5)
 !FIXME: ! assigns the integral matrices
 !FIXME: call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
@@ -1141,7 +1142,7 @@ contains
           end if
        end do
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-       ncor = 3 * get_natom()
+       ncor = 3 * get_nr_atoms()
        nullify(null_ptr) !because null() isn't f90
        do j = 0, nc(2)-1
           do i = 0, nc(1)-1
@@ -1191,7 +1192,7 @@ contains
         return
      end if
 
-     nr_atoms = get_natom()
+     nr_atoms = get_nr_atoms()
      nr_dmat  = size(D)
 
      mat_dim = D(1)%nrow
@@ -1278,7 +1279,7 @@ contains
        if (rsp_field_dim(i) /= -1) then
           ! cycle
        else if (f(i) == 'GEO ') then
-          rsp_field_dim(i) = 3 * get_natom()
+          rsp_field_dim(i) = 3 * get_nr_atoms()
        else
           call quit('rsp_field_dim error: Number of comp. unknown for ' // f(i))
        end if
@@ -1346,7 +1347,7 @@ contains
     end if
     ! write to files
     call WRITE_DSOFSO(Dtri, DFDtri)
-    nc = 3 * get_natom()
+    nc = 3 * get_nr_atoms()
     HESMOL(:nc,:nc) = 0
     !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
     ! &                  DIFINT,NODC,NODV,DIFDIP,DIFQDP,

@@ -1,10 +1,10 @@
 There should be the following files:
 
-interface_host_openrsp.F90
-interface_openrsp_xc.F90
-interface_openrsp_1el.F90
-interface_openrsp_2el.F90
-interface_openrsp_rsp_solver.F90
+interface_host.F90
+interface_xc.F90
+interface_1el.F90
+interface_2el.F90
+interface_rsp_solver.F90
 
 Program specifics should be minimized.  Using common blocks is convenient for
 the quick hack but in the long term it is like nuclear waste.  Please always

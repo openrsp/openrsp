@@ -42,7 +42,7 @@ module openrsp
 
   use matrix_backend
   use dalton_ifc
-  use interface_host_openrsp
+  use interface_host
   use rsp_functions
   use rsp_backend
   use rsp_contribs, only: rsp_cfg
@@ -110,7 +110,7 @@ contains
 
 
   subroutine openrsp_setup(WAVPCM, LWORK, WORK)
-    use rsp_backend,  only: rsp_backend_setup, get_natom
+    use rsp_backend,  only: rsp_backend_setup
     logical, intent(in)    :: WAVPCM
     integer, intent(in)    :: LWORK
     integer                :: nbast, lupri
@@ -121,7 +121,7 @@ contains
     integer                :: mat_dim
     real(8)                :: xc_energy
    
-    call interface_host_openrsp_init()
+    call interface_host_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()
@@ -216,8 +216,7 @@ contains
     call SHELLS_to_type_cgto(num_cgto_blocks, num_exp_and_ctr, &
                              exp_and_ctr, cfg%basis)
 
-    ! retrieve NATOMS from DALTON's common blocks
-    num_atoms = get_natom()
+    num_atoms = get_nr_atoms()
 
 end subroutine
 
@@ -506,10 +505,9 @@ end subroutine
   
   
   subroutine openrsp_finalize()
-    use rsp_backend, only: rsp_backend_finalize, &
-                           get_lupri
+    use rsp_backend, only: rsp_backend_finalize
     integer lupri
-    lupri = get_lupri()
+    lupri = get_print_unit()
     ! free
     call mat_free(S)
     call mat_free(D)

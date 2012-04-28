@@ -50,7 +50,7 @@
     ! keeps molecule, energy, integral and solver config
     use prop_contribs_old, only: prop_molcfg
 
-    use interface_host_openrsp
+    use interface_host
   
     implicit none
   
@@ -145,7 +145,7 @@
 
 real(8), allocatable :: eigval(:)
 
-    call interface_host_openrsp_init()
+    call interface_host_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()

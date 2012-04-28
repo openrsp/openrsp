@@ -12,16 +12,13 @@ module rsp_backend
                         GRADNN_ifc, &
                         HESSNN_ifc
 
+  use interface_host
+
   implicit none
 
   public rsp_backend_setup
   public rsp_backend_finalize
   public nuclear_potential
-  !public one_electron_terms
-  !public electron_repulsion
-  !public dft_exchange_correlation
-  public get_lupri
-  public get_natom
   public is_ks_calculation
 
   !--------- private -----------
@@ -48,7 +45,7 @@ contains
     real(8),      intent(out) :: nucpot(ncor**derv * ncomp)
     !-------------------------------------------------------
     integer i, na
-    na = get_natom()
+    na = get_nr_atoms()
     if (ncor /= 3*na) &
        call quit('rsp_backend nuclear_potential error: expected ncor = 3*natom')
     if (.not.associated(nuc_charges) .and. &
@@ -178,7 +175,7 @@ contains
 #include <implicit.h>
 #include <mxcent.h>
 #include <nuclei.h>
-    na = get_natom()
+    na = get_nr_atoms()
     allocate(nuc_charges(na))
     nuc_charges = CHARGE(:na)
     allocate(nuc_coords(3,na))
@@ -190,26 +187,6 @@ contains
     deallocate(nuc_charges)
     deallocate(nuc_coords)
   end subroutine
-
-
-  function get_lupri()
-    implicit integer (i,m-n)
-#include <implicit.h>
-#include <priunit.h>
-    integer get_lupri
-    get_lupri = LUPRI
-  end function
-
-  
-  function get_natom()
-    implicit integer (i,m-n)
-#include <implicit.h>
-#include <mxcent.h>
-#include <nuclei.h>
-    integer get_natom
-    integer get_lupri
-    get_natom = NATOMS
-  end function
 
   function is_ks_calculation()
      logical :: is_ks_calculation

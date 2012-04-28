@@ -13,7 +13,7 @@ module prop_contribs_old
    use matrix_defop
    use matrix_backend, only: mat_nullify, mat_alloc, mat_free
    use dalton_ifc
-   use interface_openrsp_xc
+   use interface_xc
 
    ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
    !     which doesn't exist in DIRAC. For now, this macro gets around that.

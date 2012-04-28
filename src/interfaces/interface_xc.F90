@@ -1,4 +1,4 @@
-module interface_openrsp_xc
+module interface_xc
 
    use matrix_defop
 
