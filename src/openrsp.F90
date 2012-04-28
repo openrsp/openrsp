@@ -527,22 +527,23 @@ end subroutine
 
 end module
 
-
 !> \brief driver used for DALTON
 !> \author Bin Gao
 !> \date 2009-12-08
 !> \param WORK contains the work memory
 !> \param LWORK is the size of the work memory
-subroutine OPENRSP_DRIVER(WORK, LWORK, WAVPCM)
-  use openrsp
-  implicit none
-  integer, intent(in)    :: LWORK
-  real(8), intent(inout) :: WORK(LWORK)
-  logical, intent(in)    :: WAVPCM
-  ! first setup, then calc, then finalize
-  call QENTER('OpenRSP ')
-  call openrsp_setup(WAVPCM, LWORK, WORK)
-  call openrsp_calc(dryrun=.false.)
-  call openrsp_finalize()
-  call QEXIT('OpenRSP ')
+subroutine openrsp_driver(work, lwork, wavpcm)
+
+   use openrsp
+
+   implicit none
+
+   integer, intent(in)    :: lwork
+   real(8), intent(inout) :: work(lwork)
+   logical, intent(in)    :: wavpcm
+ 
+   call openrsp_setup(wavpcm, lwork, work)
+   call openrsp_calc(dryrun=.false.)
+   call openrsp_finalize()
+
 end subroutine
