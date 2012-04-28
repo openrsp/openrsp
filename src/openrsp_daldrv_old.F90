@@ -41,8 +41,6 @@
   !> \param WORK contains the work memory
   !> \param LWORK is the size of the work memory
   subroutine openrsp_daldrv_old( WORK, LWORK, WAVPCM )
-    ! precision
-    use xprecision
     ! matrix
     use matrix_backend
     ! interface of DALTON
@@ -57,7 +55,7 @@
     implicit none
   
     integer LWORK
-    real(xp) WORK( LWORK )
+    real(8) WORK( LWORK )
     logical WAVPCM
 
     integer lupri, lucmd, nbast
@@ -71,9 +69,9 @@
     ! number of frequencies
     integer num_freq
     ! real frequencies
-    real(xp), allocatable :: real_freqs(:)
+    real(8), allocatable :: real_freqs(:)
     ! imaginary frequencies
-    real(xp), allocatable :: imag_freqs(:)
+    real(8), allocatable :: imag_freqs(:)
     ! if calculates electric-field-gradient-induced (Buckingham) birefringence (EFGB)
     logical :: openrsp_efgb = .false.
     ! if calculates London Cotton-mouton constant
@@ -111,7 +109,7 @@
     ! maximum dimension of the reduced space to which new basis vectors are added
     integer :: solver_mxrm = 400
     ! convergence threshold for the solution of the frequency-independent response equations
-    real(xp) :: solver_thresh = 1.0D-07
+    real(8) :: solver_thresh = 1.0D-07
     ! true for optimal orbital trial vectors in the iterative solution of
     ! the frequency-dependent linear response equations
     logical :: solver_optorb = .false.
@@ -132,20 +130,20 @@
     ! name of atoms
     character*4, allocatable :: aname(:)
     ! charge of atoms
-    real(xp), allocatable :: acharge(:)
+    real(8), allocatable :: acharge(:)
     ! coordinates of atoms
-    real(xp), allocatable :: acoord(:,:)
+    real(8), allocatable :: acoord(:,:)
 
 
     ! some constants
-    real(xp), parameter :: one = 1.0D+00
-    real(xp), parameter :: half = 5.0D-01
+    real(8), parameter :: one = 1.0D+00
+    real(8), parameter :: half = 5.0D-01
     ! temporary stuff
     integer i, j, k
     ! error information
     integer ierr
 
-real(xp), allocatable :: eigval(:)
+real(8), allocatable :: eigval(:)
 
     call interface_host_openrsp_init()
 
