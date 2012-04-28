@@ -45,7 +45,6 @@ include(ConfigExternal)
 include_directories(${PROJECT_SOURCE_DIR})
 
 set(SOURCES
-    ${PROJECT_SOURCE_DIR}/src/dalton_ifc.F90
     ${PROJECT_SOURCE_DIR}/src/birefring_old.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp_daldrv_old.F90
@@ -59,7 +58,9 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_functions.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_general.F90
     ${PROJECT_SOURCE_DIR}/src/vib_prop_old.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/dalton_ifc.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_host_openrsp.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_openrsp_xc.F90
     )
 
 include(ConfigCompilerFlags)
