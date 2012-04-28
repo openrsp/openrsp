@@ -1,0 +1,14 @@
+There should be the following files:
+
+interface_host_openrsp.F90
+interface_openrsp_xc.F90
+interface_openrsp_1el.F90
+interface_openrsp_2el.F90
+interface_openrsp_rsp_solver.F90
+
+Program specifics should be minimized.  Using common blocks is convenient for
+the quick hack but in the long term it is like nuclear waste.  Please always
+think about others who are working on other codes where the infrastructure of
+your code is simply not there.
+
+Never access data directly, only through get functions.
