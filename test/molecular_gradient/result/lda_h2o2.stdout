@@ -7,20 +7,42 @@
 
    Invocation: /home/bast/dalton/develop/external/openrsp/../../build/dalton -d -nobackup -noarch lda.dal h2o2.mol
 
-   Mon Apr  2 20:27:06 CEST 2012
+   Sat Apr 28 15:49:39 CEST 2012
 
    Calculation: lda_h2o2  (input files: lda.dal and h2o2.mol)
-   PID        : 4503
+   PID        : 14681
    Input dir  : /home/bast/dalton/develop/external/openrsp/test/molecular_gradient
    Scratch dir: /scratch/DALTON_scratch/bast/lda_h2o2
 
 
 
+
+DFT grid generator
+------------------
+::
+
+ Becke atomic partitioning scheme
+ Lebedev angular quadrature (fixed size)
+ Rotational invariance of grid points: random rotation
+ Gauss-Chebyshev(I) radial quadrature
+ Radial grid points mapping:  Becke
+ Screening 1.d-10
+
+ Atom   1 has   11640 grid points
+ Atom   2 has   11640 grid points
+ Atom   3 has   11640 grid points
+ Atom   4 has   11640 grid points
+ Total          46560 grid points
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.093292366547 -0.223230248716  0.204889985223 -0.093292366547  0.223230248716  0.204889985223 -0.081901203345 -0.030409877350 -0.204889985223  0.081901203345  0.030409877350 -0.204889985223
+  0.093292247588 -0.223230513839  0.204890071630 -0.093292700952  0.223230201296  0.204890356658 -0.081900797493 -0.030409625511 -0.204889409383  0.081901250857  0.030409938054 -0.204891018905
 
 oneave
   -1.78160846114  17.34397998108  -5.22724078099   1.78160846114 -17.34397998108  -5.22724078099   2.04644012329   1.84277669433   5.22724078099  -2.04644012329  -1.84277669433   5.22724078099
@@ -32,21 +54,69 @@ twoave
 
 
 
+ nr electrons from xc =    18.000007854556266     
 
 
 
 
+ nr electrons from xc =    18.000007854556266     
 
 
 
 
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
+
+
+
+
+ nr electrons from xc =    18.000007854556266     
 xcave
- -0.092156738043  0.200645387173 -0.231202915311  0.092156738043 -0.200645387173 -0.231202915311  0.086628213525  0.048379205167  0.231209561229 -0.086628213525 -0.048379205167  0.231209561229
+ -0.092178300023  0.200687348843 -0.231162875891  0.092111527920 -0.200604885817 -0.231270954013  0.086631573737  0.048379018903  0.231209084392 -0.086629793048 -0.048379153013  0.231209710240
 
 gradient = Eg
-  0.023570728833  0.011119596143  0.037307925297 -0.023570728833 -0.011119596143  0.037307925297 -0.024662083395 -0.013592142780 -0.037301279379  0.024662083395  0.013592142780 -0.037301279379
+  0.023549047894  0.011161292690  0.037348051123 -0.023616273361 -0.011079142206  0.037240258030 -0.024658317331 -0.013592077206 -0.037301180376  0.024660551383  0.013592255638 -0.037302164049
 
- sum of gradient elements =  ( 1.32918358152211979E-005,  0.0000000000000000     )
+ sum of gradient elements =  ( 2.30222943531366298E-006,  0.0000000000000000     )
 lda_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/develop/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
@@ -58,5 +128,5 @@ WARNING for ERROR  (Dalton program stopped with exit code 0)
 Output from 'grep -n ERROR' :
 142:.MAX ERROR                                        
 
-   Mon Apr  2 20:27:24 CEST 2012
+   Sat Apr 28 15:49:54 CEST 2012
    ***************************************** 
