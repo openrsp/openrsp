@@ -974,13 +974,7 @@ module dalton_ifc
     real(8), intent(out) :: G(3,n)
     if ( n /= NATOMS ) call QUIT( 'NUCLEI_ifc: n/=NATOMS!' )
     Z = CHARGE(1:n)
-#ifndef PRG_DIRAC
     IS = ISOTOP(1:n)
-#else
-!radovan: isotop array is not there in DIRAC
-!         use workaround
-    IS = 1
-#endif
     G = CORD(:,1:n)
   end subroutine NUCLEI_ifc
 

@@ -271,9 +271,6 @@ contains
       !> Deferred shape (*) to permit any rank, size(DSDp) = product(dimp)
       type(matrix),   intent(inout) :: DSDp(*)
       !-------------------------------------
-#ifdef PRG_DIRAC
-      type(matrix) :: SDFp(1), X
-#endif
       !-------------------------------------
       !> starting indices for each p, default 1
       integer,    optional, intent(in) :: comp(:)
@@ -331,20 +328,9 @@ contains
             if (bas(1)) FDp(1) = Fp(1)*Dp(1)
             if (bas(1)) then
                call prop_oneint(mol, S0, p, dimp, S=Sp(2:1+dimp(1)), comp=c)
-#ifdef PRG_DIRAC
-!radovan       magic factor (?)
-               do k = 2, 1+dimp(1)
-                  Sp(k) = 0.5d0*Sp(k)
-               end do
-#endif
             end if
             do i0 = 1, dimp(1)
                i = 1+i0
-#ifdef PRG_DIRAC
-!radovan: this is necessary otherwise matrices inherit wrong irep from Sp
-!         which breaks point group symmetry in DIRAC
-               Sp(i)%irep = Fp(i)%irep
-#endif
                FDSp(i0) =            (Fp(i) - w(1)/2 * Sp(i)) * DSp(1)
                FDSp(i0) = FDSp(i0) - trps(DSp(1)) * (Fp(i) + w(1)/2 * Sp(i))
                FDSp(i0) = FDSp(i0) + FDp(1) * Sp(i) - Sp(i) * trps(FDp(1))
@@ -367,11 +353,6 @@ contains
                                           (dimp(1)+1)*(dimp(2)+1)), comp=c)
             do i0 = 1, dimp(1)*dimp(2)
                i = 1+dimp(1)+dimp(2)+i0
-#ifdef PRG_DIRAC
-!radovan: this is necessary otherwise matrices inherit wrong irep from Sp
-!         which breaks point group symmetry in DIRAC
-               Sp(i)%irep = Fp(i)%irep
-#endif
                FDSp(i0) =            (Fp(i) - (w(1)+w(2))/2 * Sp(i)) * DSp(1)
                FDSp(i0) = FDSp(i0) - trps(DSp(1)) * (Fp(i) + (w(1)+w(2))/2 * Sp(i))
                FDSp(i0) = FDSp(i0) + FDp(1) * Sp(i) - Sp(i) * trps(FDp(1))
@@ -393,11 +374,6 @@ contains
                                          1+dimp(1)+dimp(2)), comp=c(2:2))
             do j0 = 0, dimp(2)-1
                j = 2+dimp(1)+j0
-#ifdef PRG_DIRAC
-!radovan: this is necessary otherwise matrices inherit wrong irep from Sp
-!         which breaks point group symmetry in DIRAC
-               Sp(j)%irep = Fp(j)%irep
-#endif
                DSp(j) = Dp(j)*S0 + Dp(1)*Sp(j)
                SDp(j) = S0*Dp(j) + Sp(j)*Dp(1)
                if (bas(1)) FDp(j) = (Fp(j) - w(2)/2 * Sp(j)) * Dp(1) &
@@ -406,11 +382,6 @@ contains
                                   + Dp(j) * (Fp(1) + w(2) * S0)
                do i0 = 0, dimp(1)-1
                   i = 2+i0
-#ifdef PRG_DIRAC
-!radovan: this is necessary otherwise matrices inherit wrong irep from Sp
-!         which breaks point group symmetry in DIRAC
-                  Sp(i)%irep = Fp(i)%irep
-#endif
                   ij = 1+i0+dimp(1)*j0
                   !               (Fa - i/2 Sat) D S - S D (Fa + i/2 Sat)
                   ! +     (F D - i/2 St D - i S Dt) Sa - Sa (D F + i/2 D St + i Dt S)
@@ -504,49 +475,7 @@ contains
          end do
          SD1=0; SD2=0
       else
-#ifdef PRG_DIRAC
-!        this implements arbitrary order pert_scf_eq under two conditions:
-!        1. S is perturbation independent
-!        2. there is only one component/perturbation
-         do i = 1, size(p)
-!           check that S is perturbation independent
-            if (bas(i)) then
-               call quit('pert_scf_eq: size(p) > 2 and perturbation dependent S not implemented')
-            end if
-!           check that there is only one component/perturbation
-            if (dimp(i) > 1) then
-               call quit('pert_scf_eq: size(p) > 2 and more than one component/perturbation not implemented')
-            end if
-         end do
-
-!radovan:
-!        this has to be done in this order
-!        otherwise gamma is always zero in d2h
-!        no idea why
-         DSDp(1) = Dp(nd)*S0*Dp(1) + Dp(1)*S0*Dp(nd) - Dp(nd)
-         do i = 2, nd - 1
-            j = nd - i + 1
-            DSDp(1) = DSDp(1) + Dp(j)*S0*Dp(i)
-         end do
-
-         X = -sum(w/2.0d0)*S0
-
-         FDSp(1) = (Fp(1) - X)*Dp(nd)
-         SDFp(1) =             Dp(nd)*(Fp(1) + X)
-         do i = 1, nd
-            j = nd - i + 1
-            FDSp(1) = FDSp(1) + Fp(i)*Dp(j)
-            SDFp(1) = SDFp(1) + Dp(i)*Fp(j)
-         end do
-
-         FDSp(1) = FDSp(1)*S0 - S0*SDFp(1)
-
-         SDFp(1) = 0
-         X       = 0
-
-#else
          call quit('pert_scf_eq error: Too high order, size(p) > 2 not implemented',-1)
-#endif /* ifdef PRG_DIRAC */
       end if
    end subroutine
 
@@ -767,10 +696,6 @@ contains
       integer    :: ccomp(size(p)), pd, pd1, sym, nanti, i, j
       complex(8) :: ffreq(size(p)), freqdiff
 
-#ifdef PRG_DIRAC
-#include "dgroup.h"
-#endif
-
       if (size(dimp) /= size(p)) call quit('pert_dens: Differing numbers ' &
                // 'of perturbations and dimensions, size(dimp) /= size(p)',-1)
       pd  = product(dimp)
@@ -822,20 +747,8 @@ contains
                 // 'excitation densities saved in rsp_equations',-1)
       ! zero highest-order D and F for RHS calculation
       do i = 1, pd
-#ifdef PRG_DIRAC
-         if (nbsym > 1) then
-!           this breaks magnetizability
-            Dp(i) = 0d0*D(1)
-            Fp(i) = 0d0*F(1)
-         else
-!           this breaks point group symmetry
-            Dp(i) = tiny(0.0d0)*D(1)
-            Fp(i) = tiny(0.0d0)*F(1)
-         end if
-#else
          Dp(i) = 0d0*D(1)
          Fp(i) = 0d0*F(1)
-#endif
       end do
       ! if first order FREQ equation, result is zero (so just return)
       if (size(p)==1 .and. p(1)=='FREQ') return
@@ -849,13 +762,6 @@ contains
                      comp=ccomp, freq=ffreq)
       ! top DSDp off with DSpD and FDSp with (F-w/2S)DSp-SpD(F+w/2S)
       do i = 1, pd
-#ifdef PRG_DIRAC
-!         magic factor
-          Sp(i) = 0.5d0*Sp(i)
-!radovan: this is necessary otherwise matrices inherit wrong irep from Sp
-!         which breaks point group symmetry in DIRAC
-          Sp(i)%irep = DSDp(i)%irep
-#endif
          !ajt fixme This will not result in completely (anti-)symmetric
          !          DSDp and FDSp. Use +=sym*trps(..) to achieve this
          DSDp(i) = DSDp(i) + D(1)*Sp(i)*D(1)
@@ -914,11 +820,7 @@ contains
       !       in:          --------------------------------------------
       !       out:                                                      ------
 use matrix_backend, only: mat_alloc, matrix_backend_debug
-#ifdef PRG_DIRAC
-      use dirac_interface
-      use openrsp_cfg
-      use openrsp_interface_response
-#elif defined(BUILD_OPENRSP)
+#ifdef BUILD_OPENRSP
       use dalton_ifc
 #elif defined(VAR_LINSCA)
       use RSPsolver,     only: rsp_init, rsp_solver
@@ -955,11 +857,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
       integer        :: i, j
       real(8)        :: rhs_norm
       type(matrix)   :: Xph(1)
-#ifdef PRG_DIRAC
-      ! R for sym/anti of FDSp, Dhom for homogeneous part of Dp
-      type(matrix)   :: R, Dhom
-      real(8)        :: real_freq
-#else
       logical, save  :: first = .true.
       real(8)        :: freq1(1) !duplicate but array(1)
       ! for complex equations
@@ -974,7 +871,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
       integer,      allocatable :: iexci(:)     !indices in solved_eqs
       type(matrix), allocatable :: Vexci(:)     !resonant excitation vector(s)
       complex(8),   allocatable :: tsmom(:,:,:) !transition moments
-#endif /* PRG_DIRAC */
 #ifdef VAR_LINSCA
       ! points to mol%decomp, which in intent(inout) in the solvers
       type(decompItem), pointer :: decomp
@@ -986,13 +882,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
       ! prepare the right-hand-sides
       DS = D0*S0
       call scf_eq_prep_rhs(mol, D0, DS, sym, neq, FDSp, DSDp, Fp, Dp)
-#ifdef PRG_DIRAC
-!radovan: untested outside DIRAC
-      do i = 1, neq
-         DSDp(i) = 0
-      end do
-#endif
-#ifndef PRG_DIRAC
       ! check whether the frequency is resonant (+-excitation energy)
       call scf_eq_find_resonances(freq, iexci)
       ! if resonant, project away the resonant component form FDSp,
@@ -1007,38 +896,8 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
                                    FDSp, Fp, Vexci(i), tsmom(:,:,i))
          end do
       end if
-#endif /* not PRG_DIRAC */
       ! call solver
-#ifdef PRG_DIRAC
-      do i = 1, neq
-         real_freq = dreal(freq)
-
-         R = (FDSp(i) - trps(FDSp(i)))
-         R = 0.5d0*R
-         rhs_norm = norm(R)
-         print *, 'before response solver: h+ norm(RHS) = ', rhs_norm
-         if (rhs_norm > openrsp_cfg_threshold_rhs) then
-            R%tr_sym = 1
-            call response_solver(real_freq, R, Xph(1))
-            Dp(i) = Dp(i) + Xph(1)
-            Xph(1) = 0
-         end if
-
-         R = (FDSp(i) + trps(FDSp(i)))
-         R = 0.5d0*R
-         rhs_norm = norm(R)
-         print *, 'before response solver: h- norm(RHS) = ', rhs_norm
-         if (rhs_norm > openrsp_cfg_threshold_rhs) then
-            R%tr_sym = -1
-            call response_solver(real_freq, R, Xph(1))
-            Dp(i) = Dp(i) + Xph(1)
-            Xph(1) = 0
-         end if
-
-         FDSp(i) = 0
-         R = 0
-      end do
-#elif defined(BUILD_OPENRSP)
+#ifdef BUILD_OPENRSP
       do i=1, neq
          rhs_norm = norm(FDSp(i))
          print *, 'before response solver: norm(RHS) = ', rhs_norm
@@ -1146,8 +1005,7 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          Xph(1) = 0
          FDSp(i) = 0
       end do
-#endif /* PRG_DIRAC */
-#ifndef PRG_DIRAC
+#endif
       ! if this is a projected resonant equation, add contribution from
       ! the opposite (de-)excitation (then deallocate)
       if (allocated(iexci)) then
@@ -1162,7 +1020,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          deallocate(iexci)
          deallocate(tsmom)
       end if
-#endif /* not PRG_DIRAC */
       DS = 0
       ! add last contribution G(Dp) to Fp
       call prop_twoint(mol, UNP, (/D0, Dp/), (/neq/), Fp)
@@ -1212,7 +1069,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
    end subroutine
 
 
-#ifndef PRG_DIRAC
    ! Look through solved_eqs for whether freq is an excitation energy,
    ! and return then index of that entry. If not, return -1
    subroutine scf_eq_find_resonances(freq, iexci)
@@ -1235,10 +1091,8 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          if (j==1 .and. n/=0) allocate(iexci(n))
       end do
    end subroutine
-#endif /* not PRG_DIRAC */
 
 
-#ifndef PRG_DIRAC
    ! Project the excitation densities out of the -right-hand-sides FDSp,
    ! and return the corresponding excitation vector Vexci and
    ! transition moments tsmom. tsmom(1,:) are de-excitation moments (-exci),
@@ -1283,10 +1137,8 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
       SDxS = 0
       SVxS = 0
    end subroutine
-#endif /* not PRG_DIRAC */
 
 
-#ifndef PRG_DIRAC
    ! For an equation which was resonant (excitation: freq=exci,
    ! de-excitation: freq=-exci), and is being solved for the
    ! non-resonant part, add the contribution to the solution Dp
@@ -1314,7 +1166,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          end if
       end do
    end subroutine
-#endif /* not PRG_DIRAC */
 
 
 end module

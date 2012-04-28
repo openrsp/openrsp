@@ -14,15 +14,6 @@ module prop_contribs_old
    use matrix_backend, only: mat_nullify, mat_alloc, mat_free
    use dalton_ifc
 
-#ifdef PRG_DIRAC
-   use dirac_interface
-   use openrsp_interface_1el
-   use openrsp_interface_2el
-   use character_processing
-   use xc_driver
-   use memory_allocator
-#endif
-
    ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
    !     which doesn't exist in DIRAC. For now, this macro gets around that.
    !     Ideally, we would prefer to use a macro quit(msg) => lsquit(msg,-1),
@@ -149,9 +140,7 @@ module prop_contribs_old
 
    character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
 
-#ifndef PRG_DIRAC
    logical, external :: do_dft
-#endif /* PRG_DIRAC */
 
 contains
 
@@ -386,12 +375,6 @@ contains
       real(8)      :: R(6) !scratch
       integer      :: i, j, k, l, ii, jj, kk, ll, na
       type(matrix) :: A(6) !scratch matrices
-#ifdef PRG_DIRAC
-      !> temporary matrix
-      type(matrix) :: T
-      character(2)  :: ij_string, ji_string
-      character(16) :: integral_label
-#endif
       na = mol%natoms
       do i = 1, size(A)
          A(i) = 0*S0 !scratch matrices
@@ -440,11 +423,7 @@ contains
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', A(1))
             do j = 0, nd-1
-#ifndef PRG_DIRAC
                E(1+i+dp(1)*j) = tr(A(1), D(j+1)) / 2 !factor 1/2
-#else
-               E(1+i+dp(1)*j) = tr(A(1), D(j+1))
-#endif
             end do
          end do
       ! London magnetic, Since anti-symmetric, no unperturbed (nd==0)
@@ -452,23 +431,7 @@ contains
          !one-electron contribution
          do i = 0, dp(1)-1
             ! Hamiltonian integrals
-#ifdef PRG_DIRAC
-            integral_label = 'dkin/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, A(1))
-            T = tiny(0.0d0)*A(1)
-            integral_label = 'dnuc/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, T)
-            A(1) = A(1) + T
-            integral_label = 'dbet/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, T)
-            A(1) = A(1) + T
-            integral_label = 'dvec/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, T)
-            A(1) = A(1) + T
-            T = 0
-#else
             call load_oneint('dh/dB' // xyz(c(1)+i) // '  ', A(1))
-#endif
             ! -i/2 Tb in A(1), overlap integrals Sb in A(2)
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('dS/dB' // xyz(c(1)+i) // '  ', A(2))
@@ -504,28 +467,10 @@ contains
          !one-electron integral contribution
          do i = 0, dp(1)-1
             ! perturbed one-electron Hamiltonian integrals
-#ifdef PRG_DIRAC
-            call load_oneint('G1N' // prefix_zeros(c(1)+i, 3), A(1))
-            T = 1*A(1)
-            call load_oneint('G1B' // prefix_zeros(c(1)+i, 3), T)
-            A(1) = A(1) + T
-            call load_oneint('G1KX' // prefix_zeros(c(1)+i, 3), T)
-            call daxpy_iz_jz(1.0d0, T, 1, A(1), 4)
-            call load_oneint('G1KY' // prefix_zeros(c(1)+i, 3), T)
-            call daxpy_iz_jz(1.0d0, T, 1, A(1), 3)
-            call load_oneint('G1KZ' // prefix_zeros(c(1)+i, 3), T)
-            call daxpy_iz_jz(1.0d0, T, 1, A(1), 2)
-            T = 0
-#else
             call load_oneint('1DHAM' // prefix_zeros(c(1)+i, 3), A(1))
-#endif
             ! (half-) perturbed overlap -i/2 Tg added to A(1), Sg in A(2)
             if (w(1)==0) then !w=0 means no -i/2 Tg contribution
-#ifdef PRG_DIRAC
-               call load_oneint('G1O' // prefix_zeros(c(1)+i,3), A(2))
-#else
                call load_oneint('1DOVL' // prefix_zeros(c(1)+i,3), A(2))
-#endif
                A(2) = -A(2) !1DOVL is really -dS/dg
             else
                call load_oneint('SQHDR' // prefix_zeros(c(1)+i,3), A(2))
@@ -573,32 +518,8 @@ contains
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
                ! Hamiltonian integrals and -i/2 Tbb in A(1), Sbb in A(2)
-#ifdef PRG_DIRAC
-               ij_string = xyz(min(c(1) + i, c(2) + j)) // xyz(max(c(1) + i, c(2) + j))
-               ji_string = xyz(max(c(1) + i, c(2) + j)) // xyz(min(c(1) + i, c(2) + j))
-               integral_label = 'dbet/dB2' // ij_string // '      '
-               call load_oneint(integral_label, A(1))
-               T = tiny(0.0d0)*A(1)
-               integral_label = 'dnuc/dB2' // ij_string // '      '
-               call load_oneint(integral_label, T)
-               A(1) = A(1) + T
-               integral_label = 'dkin/dB2' // ij_string // '      '
-               call load_oneint(integral_label, T)
-               A(1) = A(1) + T
-               integral_label = ij_string // 'rdsusll       '
-               call load_oneint(integral_label, T)
-               A(1) = A(1) + 0.5d0*T
-               integral_label = ji_string // 'rdsusll       '
-               call load_oneint(integral_label, T)
-               A(1) = A(1) + 0.5d0*T
-               integral_label = ij_string // 'DSUSNL        '
-               call load_oneint(integral_label, T)
-               A(1) = A(1) + T
-               T = 0
-#else
                call load_oneint(xyz(min(c(1)+i,c(2)+j)) &
                         // xyz(max(c(1)+i,c(2)+j)) // 'dh/dB2', A(1))
-#endif
                ! If both fields static, no -i/2 Tbb to A(1)
                if (w(1)==0 .and. w(2)==0) then
                   call load_oneint('dS/dB2' // xyz(min(c(1)+i,c(2)+j)) &
@@ -727,11 +648,7 @@ contains
             ! nuclear contribution if unperturbed density (nd==0)
             if (nd == 0) then
                allocate(RR(3*(3*na)))
-#ifdef PRG_DIRAC
-               call quit('fix aatnuc_ifc')
-#else
                call AATNUC_ifc(3*na, RR)
-#endif
                do j = 0, dp(2)-1
                   do i = 0, dp(1)-1
                      E(1+i+dp(1)*j) = E(1+i+dp(1)*j) + 2 & !factor 2
@@ -1484,12 +1401,6 @@ contains
       integer      :: i, j, k, ii, jj, kk
       type(matrix) :: A(6) !scratch matrices
       real(8)      :: R(1) !dummy
-#ifdef PRG_DIRAC
-      !> temporary matrix
-      type(matrix)  :: T
-      character(2)  :: ij_string
-      character(16) :: integral_label
-#endif
       if (np==0) then
          call quit('prop_oneint error:' &
                 // ' Unperturbed one-electron integrals requested',mol%lupri)
@@ -1522,29 +1433,11 @@ contains
       else if (np==1 .and. p(1)=='MAGO') then
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', F(i+1))
-#ifndef PRG_DIRAC
             F(i+1) = (1/2d0) * F(1+i) !factor 1/2 here
-#endif
          end do
       else if (np==1 .and. p(1)=='MAG') then
          do i = 0, dp(1)-1
-#ifdef PRG_DIRAC
-            integral_label = 'dkin/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, F(i+1))
-            T = tiny(0.0d0)*F(i+1)
-            integral_label = 'dnuc/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, T)
-            F(i+1) = F(i+1) + T
-            integral_label = 'dbet/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, T)
-            F(i+1) = F(i+1) + T
-            integral_label = 'dvec/dB' // xyz(c(1) + i) // '        '
-            call load_oneint(integral_label, T)
-            F(i+1) = F(i+1) + T
-            T = 0
-#else
             call load_oneint('dh/dB' // xyz(c(1)+i) // '  ', F(i+1))
-#endif
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('dS/dB' // xyz(c(1)+i) // '  ', S(i+1))
             else
@@ -1562,11 +1455,7 @@ contains
          end do
       else if (np==1 .and. p(1)=='GEO') then
          do i = 0, dp(1)-1
-#ifdef PRG_DIRAC
-            call quit('implement 1dham')
-#else
             call load_oneint('1DHAM' // prefix_zeros(c(1)+i,3), F(i+1))
-#endif
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('1DOVL' // prefix_zeros(c(1)+i,3), S(i+1))
                S(i+1) = -S(i+1) !1DOVL is really -dS/dg
@@ -1600,28 +1489,8 @@ contains
             do i = 0, dp(1)-1
                ii = 1+i+dp(1)*j
                ! Hamiltonian integrals and -i/2 Tbb in A(1), Sbb in A(2)
-#ifdef PRG_DIRAC
-               ij_string = xyz(min(c(1) + i, c(2) + j)) // xyz(max(c(1) + i, c(2) + j))
-               integral_label = 'dbet/dB2' // ij_string // '      '
-               call load_oneint(integral_label, F(ii))
-               T = tiny(0.0d0)*F(ii)
-               integral_label = 'dnuc/dB2' // ij_string // '      '
-               call load_oneint(integral_label, T)
-               F(ii) = F(ii) + T
-               integral_label = 'dkin/dB2' // ij_string // '      '
-               call load_oneint(integral_label, T)
-               F(ii) = F(ii) + T
-               integral_label = ij_string // 'rdsusll       '
-               call load_oneint(integral_label, T)
-               F(ii) = F(ii) + T
-               integral_label = ij_string // 'DSUSNL        '
-               call load_oneint(integral_label, T)
-               F(ii) = F(ii) + T
-               T = 0
-#else
                call load_oneint(xyz(min(c(1)+i,c(2)+j)) &
                              // xyz(max(c(1)+i,c(2)+j)) // 'dh/dB2', F(ii))
-#endif
                ! If both fields static, no -i/2 Tbb to A(1)
                if (w(1)==0 .and. w(2)==0) then
                   call load_oneint('dS/dB2' // xyz(min(c(1)+i,c(2)+j))  &
@@ -1927,11 +1796,7 @@ contains
                end do
             end do
          else
-#ifdef PRG_DIRAC
-            call twofck_ks(pd1 - 1, D, F(1))
-#else
             call quit('prop_twoint: nd > 2 not implemented with DFT',-1)
-#endif
          end if
          A(1) = 0 !free
 #ifndef LSDALTON_ONLY
@@ -2019,11 +1884,7 @@ contains
       ! if A is zero, get it allocated
       if (iszero(A)) call mat_alloc(A)
       ! read integrals from file into A
-#ifdef PRG_DIRAC
-      call read_1el_integrals(lab, A)
-#else
       call di_read_operator_int(lab, A)
-#endif
    end subroutine
 
 
@@ -2041,11 +1902,7 @@ contains
       integer, optional, intent(in)    :: a, b
       type(matrix)     :: dupD, dupF(size(F))
       integer          :: nf, n2, lwrk, i, aa=0
-#ifdef PRG_DIRAC
-      real(8), allocatable :: wrk(:)
-#else
       real(8), pointer :: wrk(:)
-#endif
       nf = size(F)
       n2 = size(D(1)%elms)
       if (what=='  ' .and. nf==1) then
@@ -2073,14 +1930,7 @@ contains
       end do
       !allocate work
       if (lwrk/=0) then
-#ifdef PRG_DIRAC
-!radovan: for dirac the above lwork allocation is too much (and more than needed)
-!         so rather use the whole work array and hope for the best
-         lwrk = len_f77_work
-         allocate(wrk(lwrk))
-#else
          call di_select_wrk(wrk, lwrk)
-#endif
       end if
       !call integral program
       if (what=='  ') then
@@ -2101,11 +1951,7 @@ contains
       end if
       !deallocate work
       if (lwrk /= 0) then
-#ifdef PRG_DIRAC
-         deallocate(wrk)
-#else
          call di_deselect_wrk(wrk, lwrk)
-#endif
       end if
    contains
       subroutine subr(D, F)
@@ -2169,19 +2015,8 @@ contains
       character(*),      intent(in) :: what
       type(matrix),      intent(in) :: Da, Db
       real(8),        intent(inout) :: E(:)
-#ifdef PRG_DIRAC
-      real(8), allocatable :: wrk(:)
-#else
       real(8), pointer :: wrk(:)
-#endif
       integer          :: lwrk, na, nb, l
-
-#ifdef PRG_DIRAC
-!     early return
-      if (iszero(Da) .or. iszero(Db)) then
-         return
-      end if
-#endif
 
       na = mol%natoms
       nb = Da%nrow
@@ -2201,14 +2036,7 @@ contains
           call quit('prop_contribs/twoctr: wrong size(E) for what=' // what,mol%lupri)
       end if
 
-#ifdef PRG_DIRAC
-!radovan: for DIRAC the above lwrk allocation is too much (and more than needed)
-!         so rather use the whole work array and hope for the best
-      lwrk = len_f77_work
-      allocate(wrk(lwrk))
-#else
       call di_select_wrk(wrk, lwrk)
-#endif
 
 !     this is done because grcont presently needs Da and Db to be consecutive
 !     and (/Da%elms, Db%elms/) can cause stack overflow, depending
@@ -2236,17 +2064,7 @@ contains
                   2)
 
 
-#ifdef PRG_DIRAC
-!radovan: there is a factor 8 missing in dirac
-!         will fix it later so that it's taken care of inside grcont
-      e = 8.0d0*e
-#endif
-
-#ifdef PRG_DIRAC
-      deallocate(wrk)
-#else
       call di_deselect_wrk(wrk, lwrk)
-#endif
 
    end subroutine
 #endif /*ifndef LSDALTON_ONLY*/
@@ -2370,11 +2188,7 @@ contains
 #ifdef LSDALTON_ONLY
       call quit('Cannot call write_dsofso, only new integral code is compiled',-1)
 #else
-#ifdef PRG_DIRAC
-      call quit('dirac: implement write_dsofso')
-#else
       call write_dsofso(Dtri,DFDtri)
-#endif
 #endif
    end subroutine
 

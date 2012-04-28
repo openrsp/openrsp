@@ -290,9 +290,6 @@ contains
     SD0 = S0*D0
     call scf_eq_prep_rhs(mol, D0, SD0, sym, neq, FDS, DSD, F, D)
     ! call solver
-!#ifdef PRG_DIRAC
-!    !ajt FIXME momentarily removed
-!#elif defined(BUILD_OPENRSP)
     do i=1, neq
        norm_rhs = norm(FDS(i))
        print *, 'before response solver: norm(RHS) = ', norm_rhs
@@ -316,7 +313,6 @@ contains
        !Xph(1) = 0
        FDS(i) = 0
     end do
-!#endif
     SD0 = 0
     ! add last contribution G(Dp) to Fp
     ! call rsp_twoint(mol, UNP, (/D0, Dp/), (/neq/), Fp)
