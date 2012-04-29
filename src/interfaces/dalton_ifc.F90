@@ -550,10 +550,6 @@ module dalton_ifc
     integer ierr
     ! if found information on SIRIFC
     logical found
-#ifdef G1INT_DEBUG
-    ! pushes current subroutine into the stack
-    call xsub_enter('rsp_mosolver_init')
-#endif
     ! sets the maximum number of micro iterations of solving the response equations
     if ( present( max_num_iterat ) ) solver_maxit = max_num_iterat
     ! sets the maximum dimension of the sub-block of the configuration Hessian
@@ -595,10 +591,6 @@ module dalton_ifc
       if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
       solver_DV(1) = 0.0D+00
     end if
-#ifdef G1INT_DEBUG
-    ! pops the stack
-    call xsub_leave
-#endif
   end subroutine
 
 
@@ -620,10 +612,6 @@ module dalton_ifc
   !> \param io_dump is the IO unit to dump
   subroutine rsp_mosolver_dump( io_dump )
     integer, intent(in) :: io_dump
-#ifdef G1INT_DEBUG
-    ! pushes current subroutine into the stack
-    call xsub_enter('rsp_mosolver_dump')
-#endif
     write( io_dump, 100 ) &
       'Maximum number of micro iterations of solving the response equations: ', solver_maxit
     write( io_dump, 100 ) &
@@ -639,10 +627,6 @@ module dalton_ifc
     write( io_dump, 100 ) 'IO unit of log file: ', log_dal
     write( io_dump, 100 ) 'Print level:         ', lprt_dal
     ! outputs matrices to check
-#ifdef G1INT_DEBUG
-    ! pops the stack
-    call xsub_leave
-#endif
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
   end subroutine
