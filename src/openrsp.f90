@@ -49,6 +49,7 @@ module openrsp
   use interface_scf
   use interface_f77_memory
   use interface_rsp_solver
+  use interface_1el
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop

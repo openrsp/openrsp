@@ -17,11 +17,8 @@ module rsp_contribs
   use interface_io
   use interface_xc
   use interface_f77_memory
-  use dalton_ifc, only: di_read_operator_int, &
-                        di_get_gmat,          &
-                        dipnuc_ifc,           &
-                        gradnn_ifc,           &
-                        hessnn_ifc
+  use interface_1el
+  use dalton_ifc
   use basis_set,  only: cgto
 
   implicit none

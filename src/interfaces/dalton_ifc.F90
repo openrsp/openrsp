@@ -12,8 +12,6 @@ module dalton_ifc
 
   implicit none
 
-  public di_get_overlap_and_H1
-  public di_read_operator_int
   public di_get_dens
   public di_get_gmat
   public di_twofck
@@ -28,124 +26,6 @@ module dalton_ifc
   public VIBCTL_ifc
 
   contains
-
-  !> \brief gets the overlap and one-electron Hamiltonian matrices
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> \return S contains the overlap matrix
-  !> \return H1 contains the one-electron Hamiltonian matrix
-  subroutine di_get_overlap_and_H1( S, H1 )
-!   radovan: fixme it's not good for other codes to do S and H1 at the same time
-!            split this in two
-    implicit integer (i,m-n)
-#include <implicit.h>
-    type(matrix), intent(inout) :: S
-    type(matrix), intent(inout) :: H1
-    ! uses NBAST, NNBASX, N2BASX
-#include <inforb.h>
-    ! IO units, use LUPROP for file AOPROPER
-#include<inftap.h>
-    ! starts of the overlap and one electron Hamiltonian matrices in work memory
-    integer work_ovlp, work_ham1
-    ! PCM one-electron contributions
-    integer work_pcm
-    ! integer constants
-    real(8), parameter :: one = 1.0D+00
-    ! dummy stuff
-    integer idummy
-    ! external DALTON function finding the corresponding label
-    logical FNDLAB
-    ! reads overlap and one electron Hamiltonian matrices by calling RDONEL
-    work_ovlp = get_f77_memory_next()
-    work_ham1 = work_ovlp + NNBASX
-    call set_f77_memory_next(work_ham1 + NNBASX)
-
-    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
-    call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
-    call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
-    ! PCM one-electron contributions
-    if ( get_is_pcm_calculation() ) then
-      work_pcm = get_f77_memory_next()
-      call set_f77_memory_next(work_pcm + NNBASX)
-      if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
-#ifdef USE_WAVPCM
-      call pcm_ao_rsp_1elfock( f77_memory(work_pcm) )
-      ! adds to one-electron Hamiltonian
-      f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
-                    = f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
-                    + f77_memory( work_pcm  : work_pcm  + NNBASX - 1 )
-#endif
-      ! cleans
-      call set_f77_memory_next(work_pcm)
-    end if
-    ! fills the data into matrices S and H1
-    !N N2BASX = NBAST * NBAST
-    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
-    ! gets S
-    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
-    ! gets H1
-    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
-    ! clean
-    call set_f77_memory_next(work_ovlp)
-  end subroutine
-
-
-
-  !> \brief gets property integrals from file AOPROPER
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> \param prop_lab is the label of integral
-  !> \param init_prop indicates if initialize the integral matrix
-  !> \return prop_int contains the integral matrix
-  subroutine di_read_operator_int( prop_lab, prop_int )
-    implicit integer (i,m-n)
-#include <implicit.h>
-    character*(8), intent(in) :: prop_lab
-    type(matrix), intent(inout) :: prop_int
-    ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
-    ! IO units, use LUPROP for file AOPROPER
-#include<inftap.h>
-    ! external DALTON function finding the corresponding label
-    logical FNDLB2
-    ! information when calling subroutine FNDLB2
-    character*8 RTNLBL(2)
-    ! dummy stuff
-    integer IDUMMY
-    ! one-electron Hamiltonian
-    if ( prop_lab == 'ONEHAMIL' ) then
-      call QUIT( 'Not implemented!' )
-      call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
-      call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
-    else
-      ! closes file AOPROPER first
-      if ( LUPROP > 0 ) call GPCLOSE( LUPROP, 'KEEP' )
-      call GPOPEN( LUPROP, 'AOPROPER', 'OLD', ' ', 'UNFORMATTED', IDUMMY, .false. )
-      ! finds the label
-      if ( FNDLB2( prop_lab, RTNLBL, LUPROP ) ) then
-        ! square matrix
-        if ( RTNLBL(2) == 'SQUARE' ) then
-          call READT( LUPROP, N2BASX, prop_int%elms )
-        ! symmetric matrix
-        else if ( RTNLBL(2) == 'SYMMETRI' ) then
-          call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
-          call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
-        ! anti-symmetric matrix
-        else if ( RTNLBL(2) == 'ANTISYMM' ) then
-          call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
-          call DAPTGE( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
-        else
-          call QUIT( 'Error: No symmetry label on AOPROPER!' )
-        end if
-        ! closes file AOPROPER
-        call GPCLOSE( LUPROP, 'KEEP' )
-      else
-        call GPCLOSE( LUPROP, 'KEEP' )
-        call QUIT( 'Integrals with label '''//prop_lab// &
-                   ''' not found on file ''AOPROPER''!' )
-      end if
-    end if
-  end subroutine
 
 
 

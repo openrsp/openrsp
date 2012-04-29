@@ -51,6 +51,7 @@
     use interface_pcm
     use interface_scf
     use interface_rsp_solver
+    use interface_1el
     ! main module of openrsp
     use openrsp_old
     ! keeps molecule, energy, integral and solver config
