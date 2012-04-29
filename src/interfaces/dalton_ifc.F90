@@ -1,55 +1,3 @@
-!!  gen1int: compute derivatives of one-electron integrals using Hermite Gaussians
-!!  Copyright 2009 Bin Gao, Andreas Thorvaldsen, Radovan Bast, and Kenneth Ruud
-!!
-!!  This file is part of gen1int.
-!!
-!!  gen1int is free software: you can redistribute it and/or modify
-!!  it under the terms of the GNU Lesser General Public License as published by
-!!  the Free Software Foundation, either version 3 of the License, or
-!!  (at your option) any later version.
-!!
-!!  gen1int is distributed in the hope that it will be useful,
-!!  but WITHOUT ANY WARRANTY; without even the implied warranty of
-!!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-!!  GNU Lesser General Public License for more details.
-!!  
-!!  You should have received a copy of the GNU Lesser General Public License
-!!  along with gen1int. If not, see <http://www.gnu.org/licenses/>.
-!!
-!!  This file contains the interface of DALTON.
-!!
-!!  2010-09-27, ajt:
-!!  * added subroutine NUCAAT_ifc while updating against repo
-!!  * split DIPNUC_ifc into DIPNUC_ifc and DPGNUC_ifc
-!!
-!!  2010-02-27, Bin Gao:
-!!  * adds subroutine get_molecule to get the information of molecule
-!!
-!!  2010-01-16, Bin Gao:
-!!  * adds active part of one-electron density matrix (MO) in MO response solver
-!!
-!!  2010-01-14, Bin Gao:
-!!  * fix the dimension of MO coefficient matrix
-!!
-!!  2009-12-12, Bin Gao:
-!!  * add subroutine NUCLEI_ifc
-!!  * add subroutine VIBCTL_ifc
-!!
-!!  2009-12-10, Bin Gao:
-!!  * add subroutine get_natoms to get the number of atoms
-!!  * add subroutine DIPNUC_ifc to get the nuclear contributions to electric
-!!    dipole moments and dipole gradients
-!!  * add subroutine QDRNUC_ifc to get the nuclear contribution to quadrupole moments
-!!  * add subroutine GRADNN_ifc to get the nuclear repulsion contribution
-!!  * add subroutine HESSNN_ifc to get the nuclear contribution to Hessian
-!!  * add subroutine di_select_wrk and di_deselect_wrk to allocate and release the memory
-!!
-!!  2009-12-08, Bin Gao:
-!!  * first version
-
-!> \brief interface of DALTON
-!> \author Bin Gao
-!> \date 2009-12-08
 module dalton_ifc
 
   use matrix_defop   !type matrix with operators
@@ -57,6 +5,7 @@ module dalton_ifc
   use interface_molecule
   use interface_io
   use interface_pcm
+  use interface_scf
 
   implicit none
 
@@ -83,9 +32,6 @@ module dalton_ifc
   public DPGNUC_ifc
   public AATNUC_ifc
   public VIBCTL_ifc
-
-  !> true for RHF - closed shell or one electron in one active orbital
-  logical, save, private :: restrict_scf = .true.
 
   !> control information of MO response solver
   !>
@@ -134,7 +80,6 @@ module dalton_ifc
     logical, optional, intent(in) :: WAVPCM
     ! uses NASHT
 #include <inforb.h>
-    restrict_scf = ( NASHT == 0 )
   end subroutine
 
 
@@ -296,7 +241,7 @@ module dalton_ifc
     strt_cmo = get_f77_memory_next()
     ! start of active part of one-electron density matrix (MO)
     strt_dv = strt_cmo + NCMOT
-    if ( restrict_scf ) then
+    if ( get_is_restricted_scf_calculation() ) then
       ! start of active part of one-electron density matrix (AO)
       strt_dvao = strt_dv + 1
       ! start of left workspace
@@ -554,7 +499,7 @@ module dalton_ifc
     ! gets the coefficients of molecular orbitals
     call di_get_cmo( solver_CMO, solver_CMO_OCC, solver_CMO_VIR )
     ! reads active part of one-electron density matrix (MO)
-    if ( restrict_scf ) then
+    if ( get_is_restricted_scf_calculation() ) then
       allocate( solver_DV( NNASHX ), stat=ierr )
       if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
       call DZERO( solver_DV, NNASHX )
@@ -600,7 +545,7 @@ module dalton_ifc
       'Convergence threshold of solving the response equations:              ', solver_thresh
     if ( solver_optorb ) write( io_dump, 100 ) &
       'Using the optimal orbital trial vectors in solving the response equations'
-    if ( restrict_scf )  write( io_dump, 100 ) &
+    if ( get_is_restricted_scf_calculation() )  write( io_dump, 100 ) &
       'Restricted Hartree-Fock (RHF) calculations'
     write( io_dump, 100 ) 'IO unit of log file: ', get_print_unit()
     ! outputs matrices to check
@@ -721,7 +666,7 @@ module dalton_ifc
     ! when doing response calculations, we need to close RSPVEC
     if ( LURSP > 0 ) call GPCLOSE( LURSP, 'KEEP' )
     ! calls ABACUS solver
-    call ABARSP( solver_ci, restrict_scf, solver_triplet, solver_optorb, &
+    call ABARSP( solver_ci, get_is_restricted_scf_calculation(), solver_triplet, solver_optorb, &
                  ISYM, solver_excit, eigval, rsp2_number_of_omegas,      &
                  solver_nabaty, rsp2_number_of_rhs, LAB1,                &
                  LUGDVE, LUSOVE, LUREVE, solver_thresh, solver_maxit,    &
