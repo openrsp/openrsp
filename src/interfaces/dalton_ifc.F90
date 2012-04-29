@@ -84,8 +84,6 @@ module dalton_ifc
 
   !> true for RHF - closed shell or one electron in one active orbital
   logical, save, private :: restrict_scf = .true.
-  !> print level
-  integer, save, private :: lprt_dal = 5
   !> PCM
   logical, save, private :: dal_pcm = .false.
 
@@ -138,11 +136,6 @@ module dalton_ifc
 #include <inforb.h>
     if ( present( WAVPCM ) ) dal_pcm = WAVPCM
     restrict_scf = ( NASHT == 0 )
-    if ( present( level_print ) ) then
-      lprt_dal = level_print
-    else
-      lprt_dal = 10
-    end if
   end subroutine
 
 
@@ -398,12 +391,6 @@ module dalton_ifc
     call DCOPY( N2BASX, D%elms, 1, f77_memory(work_ao_dens), 1 )
     call DSCAL( N2BASX, two, f77_memory(work_ao_dens), 1 )
     ! outputs the total density matrix to check
-    if ( lprt_dal >= 20 ) then
-      !> \todo call xdump_array2( dims = (/NBAST,NBAST/),          &
-      !> \todo                    darray = f77_memory(work_ao_dens), &
-      !> \todo                    iout = log_dal,                  &
-      !> \todo                    label = 'Total density matrix (AO) in DALTON_IFC' )
-    end if
     ! only one density matrix
     NDMAT = 1
     ISYMDM = 1
@@ -617,7 +604,6 @@ module dalton_ifc
     if ( restrict_scf )  write( io_dump, 100 ) &
       'Restricted Hartree-Fock (RHF) calculations'
     write( io_dump, 100 ) 'IO unit of log file: ', get_print_unit()
-    write( io_dump, 100 ) 'Print level:         ', lprt_dal
     ! outputs matrices to check
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
@@ -740,7 +726,7 @@ module dalton_ifc
                  ISYM, solver_excit, eigval, rsp2_number_of_omegas,      &
                  solver_nabaty, rsp2_number_of_rhs, LAB1,                &
                  LUGDVE, LUSOVE, LUREVE, solver_thresh, solver_maxit,    &
-                 lprt_dal, solver_mxrm, solver_maxphp,                   &
+                 1, solver_mxrm, solver_maxphp,                   &
                  f77_memory(get_f77_memory_next()), get_f77_memory_left() )
 
     ! reads the MO solutions and residuals
