@@ -399,27 +399,15 @@ module dalton_ifc
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-    call SZERO( dal_work(strt_cmo), NCMOT )
-#else
     call DZERO( dal_work(strt_cmo), NCMOT )
-#endif
     call rd_sirifc( 'CMO', found, dal_work(strt_cmo), dal_work(next_f77_work), left_f77_work )
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     ! reads active part of one-electron density matrix (MO)
     if ( GETDV ) then
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-      call SZERO( dal_work(strt_dv), NNASHX )
-#else
       call DZERO( dal_work(strt_dv), NNASHX )
-#endif
       call rd_sirifc( 'DV', found, dal_work(strt_dv), dal_work(next_f77_work), left_f77_work )
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-      call SZERO( dal_work(strt_dvao), N2BASX )
-#else
       call DZERO( dal_work(strt_dvao), N2BASX )
-#endif
     end if
     ! gets the AO density matrix, using
     !
@@ -480,13 +468,8 @@ module dalton_ifc
     if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_gmat', next_f77_work-1, total_f77_work )
     ! sets the total density matrix
     !> \todo this may fail for unrestricted calculations
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-    call SCOPY( N2BASX, D%elms, 1, dal_work(work_ao_dens), 1 )
-    call SSCAL( N2BASX, two, dal_work(work_ao_dens), 1 )
-#else
     call DCOPY( N2BASX, D%elms, 1, dal_work(work_ao_dens), 1 )
     call DSCAL( N2BASX, two, dal_work(work_ao_dens), 1 )
-#endif
     ! outputs the total density matrix to check
     if ( lprt_dal >= 20 ) then
       !> \todo call xdump_array2( dims = (/NBAST,NBAST/),          &
@@ -518,11 +501,7 @@ module dalton_ifc
       call DSPTSI( NBAST, dal_work(work_pcm), dal_work(work_pcm2) )
 
       ! adds to G
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-      call SAXPY( N2BASX, 1.0, dal_work(work_pcm2), 1, G%elms, 1 )
-#else
       call DAXPY( N2BASX, 1D0, dal_work(work_pcm2), 1, G%elms, 1 )
-#endif
     end if
     !N if ( .not. restrict_scf ) G%elmsb = G%elms
     ! cleans
@@ -671,11 +650,7 @@ module dalton_ifc
     if ( restrict_scf ) then
       allocate( solver_DV( NNASHX ), stat=ierr )
       if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-      call SZERO( solver_DV, NNASHX )
-#else
       call DZERO( solver_DV, NNASHX )
-#endif
       ! opens SIRIFC
       if ( LUSIFC <= 0 ) &
         call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', ierr, .false. )
@@ -834,11 +809,7 @@ module dalton_ifc
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
       call PRPORB( GD_MO%elms, solver_DV, dal_work(next_f77_work) )
       !FIXME: why multiplied by -1
-#if defined (SYS_CRAY) || defined (SYS_T3D) || defined (VAR_REAL) || defined (SYS_T90)
-      call SSCAL( KZVAR, -1.0, dal_work(next_f77_work), 1 )
-#else
       call DSCAL( KZVAR, -1.0D+00, dal_work(next_f77_work), 1 )
-#endif
       ! writes out right hand side vector
       call WRITT( LUGDVE, KZYVAR, dal_work( next_f77_work : next_f77_work+KZYVAR-1 ) )
       !> \todo ! outputs to check
