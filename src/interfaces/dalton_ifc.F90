@@ -166,7 +166,7 @@ module dalton_ifc
     else
       lprt_dal = 10
     end if
-  end subroutine dal_ifc_init
+  end subroutine
 
 
   !> \brief finalizes the interface of DALTON
@@ -182,7 +182,7 @@ module dalton_ifc
     next_f77_work = 0
     left_f77_work = 0
     nullify( dal_work )
-  end subroutine dal_ifc_finalize
+  end subroutine
 
 
   !> \brief allocates the memory asked
@@ -201,7 +201,7 @@ module dalton_ifc
       next_f77_work = next_f77_work + mem_req
       left_f77_work = total_f77_work - next_f77_work + 1
     end if
-  end subroutine di_select_wrk
+  end subroutine
 
 
   !> \brief releases the memory asked
@@ -219,7 +219,7 @@ module dalton_ifc
       left_f77_work = left_f77_work + mem_req
       next_f77_work = next_f77_work - mem_req
     !> \todo end if
-  end subroutine di_deselect_wrk
+  end subroutine
 
 
   !> \brief gets the overlap and one-electron Hamiltonian matrices
@@ -285,7 +285,7 @@ module dalton_ifc
     ! clean
     next_f77_work = work_ovlp
     left_f77_work = total_f77_work - next_f77_work + 1
-  end subroutine di_get_overlap_and_H1
+  end subroutine
 
 
 
@@ -343,7 +343,7 @@ module dalton_ifc
                    ''' not found on file ''AOPROPER''!' )
       end if
     end if
-  end subroutine di_read_operator_int
+  end subroutine
 
 
 
@@ -440,7 +440,7 @@ module dalton_ifc
     ! clean
     next_f77_work = strt_cmo
     left_f77_work = total_f77_work - next_f77_work + 1
-  end subroutine di_get_dens
+  end subroutine
 
 
 
@@ -528,7 +528,7 @@ module dalton_ifc
     ! cleans
     next_f77_work = work_ao_dens
     left_f77_work = total_f77_work - next_f77_work + 1
-  end subroutine di_get_gmat
+  end subroutine
 
 
 
@@ -558,7 +558,7 @@ module dalton_ifc
     ! number of elements
     integer nelms
     call di_get_gmat( D, G )
-  end subroutine di_twofck
+  end subroutine
 
 
 
@@ -603,7 +603,7 @@ module dalton_ifc
     CMO_VIR%elms(:,NOCCT+1:) = CMO%elms(:,NOCCT+1:)
     ! closes SIRIFC
     if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
-  end subroutine di_get_cmo
+  end subroutine
 
 
 
@@ -691,7 +691,7 @@ module dalton_ifc
     ! pops the stack
     call xsub_leave
 #endif
-  end subroutine rsp_mosolver_init
+  end subroutine
 
 
 
@@ -703,7 +703,7 @@ module dalton_ifc
     solver_CMO_OCC = 0
     solver_CMO_VIR = 0
     deallocate( solver_DV )
-  end subroutine rsp_mosolver_free
+  end subroutine
 
 
   !> \brief dumps the control information of MO response solver
@@ -737,7 +737,7 @@ module dalton_ifc
 #endif
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
-  end subroutine rsp_mosolver_dump
+  end subroutine
 
 
 
@@ -903,7 +903,7 @@ module dalton_ifc
       mo_eigvec(ISOL) = 0
     end do
     deallocate( mo_eigvec )
-  end subroutine rsp_mosolver_exec
+  end subroutine
 
 
 
@@ -928,7 +928,7 @@ module dalton_ifc
     Z = CHARGE(1:n)
     IS = ISOTOP(1:n)
     G = CORD(:,1:n)
-  end subroutine NUCLEI_ifc
+  end subroutine
 
 
   !> \brief gets the nuclear contribution to electric dipole moment
@@ -947,7 +947,7 @@ module dalton_ifc
     real(8), parameter :: zero = 0.0D+00
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
     DN = DIPMN
-  end subroutine DIPNUC_ifc
+  end subroutine
 
 
   !> \brief gets the nuclear contribution to quadrupole moments
@@ -966,7 +966,7 @@ module dalton_ifc
     real(8), parameter :: zero = 0.0D+00
     call NUCQDR( CORD(:,1:NUCDEP), (/zero,zero,zero/), LUPRI, 0 )
     Q = (/QDRNUC(1,1),QDRNUC(1:2,2),QDRNUC(1:3,3)/)
-  end subroutine QDRNUC_ifc
+  end subroutine
 
 
   !> \brief gets the nuclear repulsion contribution
@@ -991,7 +991,7 @@ module dalton_ifc
     MAXDIF = 1
     call NUCREP( (/zero/), (/zero/), (/zero/) )
     G(1:3*n) = GRADNN(1:3*n)
-  end subroutine GRADNN_ifc
+  end subroutine
 
 
   !> \brief gets the nuclear contribution to Hessian
@@ -1022,7 +1022,7 @@ module dalton_ifc
         H(i,j) = HESSNN( max(i,j), min(i,j) )
       end do
     end do
-  end subroutine HESSNN_ifc
+  end subroutine
 
 
   !> \brief gets the nuclear contribution to electric dipole gradient
@@ -1043,7 +1043,7 @@ module dalton_ifc
     real(8), parameter :: zero = 0.0D+00
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
     DGN = transpose( DDIPN( :, 1:3*na ) )
-  end subroutine DPGNUC_ifc
+  end subroutine
 
 
   !> Nuclear contribution to the atomic axial tenaor (AAT),
@@ -1060,7 +1060,7 @@ module dalton_ifc
     real(8) :: CSTRA( 3*na, 3*na ), SCTRA( 3*na, 3*na )
     call NUCAAT( CSTRA, SCTRA, 0 )
          AATN(:,:) = AATNUC( :, :3*na )
-  end subroutine AATNUC_ifc
+  end subroutine
 
 
   !> \brief gets the 
@@ -1120,7 +1120,7 @@ module dalton_ifc
     DOSYM(1) = .true.
     IPRINT = 6
     call VIBCTL( dal_work(next_f77_work), left_f77_work )
-  end subroutine VIBCTL_ifc
+  end subroutine
 
 
   !> Count the number of contracted Gaussian-type orbital shells
