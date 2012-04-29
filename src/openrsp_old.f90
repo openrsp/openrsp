@@ -50,10 +50,8 @@ module openrsp_old
   use interface_host
 
 ! xcint
-#ifndef OPENRSP_STANDALONE
   use interface_ao_specific
   use xcint_main
-#endif /* OPENRSP_STANDALONE */
 
   implicit none
 
@@ -336,14 +334,9 @@ module openrsp_old
     ! temporary stuff
     integer i, j, k, l
 
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: not part of standalone'
-    stop 1
-#else /* OPENRSP_STANDALONE */
     if (get_is_ks_calculation()) then
        call interface_ao_write()
     end if
-#endif /* OPENRSP_STANDALONE */
 
     ! calculates electric-field-gradient-induced (Buckingham) birefringence
     if ( this_info%openrsp_efgb ) then

@@ -10,13 +10,6 @@ module birefring_old
    use rsp_equations_old     !response equation contractor/solver
    implicit none
 
-   ! ajt LSDALTON has replaced the (global) quit with lsquit
-   !     with unit (lupri) as extra argument, which doesn't
-   !     exist in DIRAC. For now, this macro gets around that.
-#ifdef LSDALTON_ONLY
-#define quit(msg) lsquit(msg,mol%lupri)
-#endif
-
    public efgb_Jpri_Bten_Bcal
    public efgb_output
    public cme_jones_eta_apri

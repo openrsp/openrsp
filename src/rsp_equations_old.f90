@@ -854,11 +854,6 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
       integer,      allocatable :: iexci(:)     !indices in solved_eqs
       type(matrix), allocatable :: Vexci(:)     !resonant excitation vector(s)
       complex(8),   allocatable :: tsmom(:,:,:) !transition moments
-#ifdef VAR_LINSCA
-      ! points to mol%decomp, which in intent(inout) in the solvers
-      type(decompItem), pointer :: decomp
-      decomp => mol%decomp
-#endif
       ! ajt Since we are called from pert_dens only, this check is not really needed...
       if (sym /= -1 .and. sym /= 0 .and. sym /= +1) &
          call quit("solve_scf_eq error: Argument 'sym' is not -1, 0 or 1",-1)
@@ -1021,14 +1016,12 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          ! de-excitation transition moment (frequency -exci)
          if (sym/=0) tsmom(1,i) = sym * tsmom(2,i)
          if (sym==0) tsmom(1,i) = tr(Vx, FDSp(i))
-#ifndef VAR_LINSCA
          ! remove both resonant and opposite-resonant component
          ! from FDSp. This preserves symmetry. The solution's
          ! opposite-resonant component will be added after solving.
          ! Not activated in LINSCA, as the solver takes care of this
          FDSp(i) = FDSp(i) - tsmom(1,i) * trps(SDxS) &
                            - tsmom(2,i) * SDxS
-#endif
          ! remove resonant component from Fp, so Fp/Dp will
          ! solve the response equation FpDS+FDpS...-wSDpS=0
          if (abs(exci+freq) < abs(exci-freq)) then
@@ -1059,13 +1052,9 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
          ! if excitation resonant, add de-excitation contrib a*Dx^T
          if (abs(exci-freq) <= abs(exci+freq)) then
 ! In LINSCA, the solver takes care of this
-#ifndef VAR_LINSCA
             Dp(i) = Dp(i) + (tsmom(1,i) / (freq+exci)) * trps(Dx)
-#endif
          else !if de-excitation resonant, add excitation contrib a*Dx
-#ifndef VAR_LINSCA
             Dp(i) = Dp(i) + (tsmom(2,i) / (freq-exci)) * Dx
-#endif
          end if
       end do
    end subroutine

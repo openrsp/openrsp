@@ -330,32 +330,14 @@ real(8), allocatable :: eigval(:)
 
     ! gets the overlap and one electron Hamiltonian matrices
     call di_get_overlap_and_H1(S, H1)
-#ifdef OPENRSP_DEBUG
-    ! outputs matrices to check
-    call mat_print(S,  'Overlap matrix in OpenRSP', LUPRI)
-    call mat_print(H1, 'One electron Hamiltonian matrix in OpenRSP', LUPRI)
-#endif
     ! gets the AO density matrix
     call di_get_dens(D)
     call mat_axpy((1d0,0d0)/2, D, .false., .true., D)
-#ifdef OPENRSP_DEBUG
-    ! outputs matrices to check
-    call mat_print(D, 'Density matrix in OpenRSP', LUPRI)
-#endif
     ! gets the two electron contribution (G) to Fock matrix
     call di_get_gmat(D, F)
-#ifdef OPENRSP_DEBUG
-    ! outputs matrices to check
-    call mat_print(F, 'Two electron contribution in OpenRSP', LUPRI)
-#endif
     ! Fock matrix F = H1 + G
     call mat_axpy((1d0,0d0), H1, .false., .false., F)
     call mat_free(H1)
-
-#ifdef OPENRSP_DEBUG
-    ! outputs matrices to check
-    call mat_print(F, 'Fock matrix in OpenRSP', LUPRI)
-#endif
 
     ! performs the calculations
     call mat_nullify(molcfg%zeromat)

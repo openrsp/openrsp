@@ -17,16 +17,6 @@ module prop_contribs_old
    use interface_xc
    use interface_1el
 
-   ! ajt LSDALTON has replaced the (global) quit(msg) with lsquit(msg,unit),
-   !     which doesn't exist in DIRAC. For now, this macro gets around that.
-   !     Ideally, we would prefer to use a macro quit(msg) => lsquit(msg,-1),
-   !     but some CPPs don't process line continuation (of msg) correctly.
-   !     So we just use quit(msg,unit) in the code, and replace quit with lsquit.
-   !     DIRAC's quit will ignore the extra argument.
-#ifdef LSDALTON_ONLY
-#define quit lsquit
-#endif
-
    implicit none
    public prop_oneave
    public prop_twoave
@@ -71,23 +61,10 @@ module prop_contribs_old
       !> 1-comp/2-comp/4-comp, real/complex, etc. from response
       !> code.
       type(matrix) :: zeromat
-#ifdef VAR_LINSCA
-      !> number of atoms
-      integer,          pointer :: natoms
-      !> unit number for printing output
-      integer,          pointer :: lupri
-      !> unit number for printing errors
-      integer,          pointer :: luerr
-      !> integral program settings
-      type(LSSETTING),  pointer :: setting
-      !> decomposition settings and precomputed data
-      type(decompItem), pointer :: decomp
-#else
       !> number of atoms
       integer :: natoms
       !> unit number for printing output
       integer :: lupri
-#endif
    end type
 
 
@@ -390,7 +367,6 @@ contains
          do j=0, max(0,nd-1)
             E(1+j) = tr(A(1),D(1+j))
          end do
-#ifndef LSDALTON_ONLY
       else if (np==1 .and. p(1)=='EL') then
          ! contract -dipole integrals '?DIPLEN ' with densities
          do i=0, dp(1)-1
@@ -726,36 +702,6 @@ contains
                end do
             end do
          end do
-#else /*LSDALTON_ONLY*/
-      else if (np==1 .and. p(1)=='EL') then
-         ! contract -dipole integrals '?DIPLEN ' with densities
-         ! direct calculation of oneel integrals in LSDALTON
-         !ajt Note: args D(1:1) and R(1:1) currently not used
-         call prop_intifc_1el(mol, p, D(:1), R(:1), A(:3))
-         do i=0, dp(1)-1
-            do j=0, max(0,nd-1)
-               E(1+i+dp(1)*j) = tr(A(c(1)+i),D(1+j))
-            end do
-         end do
-         ! no densities means D(1) contains unperturbed density matrix.
-         ! Then also add nuclear attraction contribution to -dipole moment
-         if (nd==0) then
-            call prop_intifc_nuc(mol, p, R(:3))
-            E(:dp(1)) = E(:dp(1)) + R(c(1):c(1)+dp(1)-1)
-         end if
-      else if (np==1 .and. p(1)=='GEO') then
-         ! one-electron integral contribution
-         allocate(RR(3*na))
-         do j=0, max(0,nd-1)
-            call prop_intifc_1el(mol, p, (/D(1+j),DFD(1+j)/), RR, A(:1))
-            E(1+dp(1)*j:dp(1)*(j+1)) = RR(c(1):c(1)+dp(1)-1)
-         end do
-         ! nuclear repulsion contribution to unperturbed:nd=0 gradient
-         if (nd==0) then
-            call prop_intifc_nuc(mol, p, RR)
-            E(:dp(1)) = E(:dp(1)) + RR(c(1):c(1)+dp(1)-1)
-         end if
-#endif
       else
          print *,'prop_oneave: no integrals for these perturbations: ', &
                  (p(i)//' ', i=1,np)
@@ -953,7 +899,6 @@ contains
          else if (nd > 3) then
             call quit('prop_twoave: nd > 3 not implemented',-1)
          end if
-#ifndef LSDALTON_ONLY
       !London magnetic, no nd==0 because because MAG anti
       else if (np==1 .and. p(1)=='MAG' .and. nd /= 0) then
          ! di_get_MagDeriv_(F,G)xD_DFT takes initialized
@@ -1152,57 +1097,6 @@ contains
             call quit('prop_twoave: GEO GEO, nd > 2 not implemented',mol%lupri)
          end if
          deallocate(RR)
-#else /*LSDALTON_ONLY*/
-      else if (np==1 .and. p(1)=='GEO') then
-         allocate(RR(3*na*2))
-         ! highest-order contribution
-         do j = 0, pd-1
-            if (iszero(D(pd1-pd+1+j))) then
-               E( 1+de(1)*j : de(1)*(j+1) ) = 0
-               cycle
-            end if
-            ! Coulomb-exchange
-            if (nd==0) call prop_intifc_2el(mol, p, D(1:1), RR(:3*na), A(1:1))
-            if (nd/=0) call prop_intifc_2el(mol, p, (/D(1), D(pd1-pd+1+j)/), &
-                                            RR(:3*na), A(1:1))
-            ! for molgra (nd==0), factor 1/2 on these integrals
-            if (nd==0) RR(:3*na) = RR(:3*na)/2
-            if (do_dft()) then
-               if (nd==0) call di_get_geomDeriv_molgrad_DFT( &
-                                          RR(3*na+1:3*na*2), &
-                                          na, D(1))
-               if (nd/=0) call di_get_geomDeriv_FxD_DFT(           &
-                                          RR(3*na+1:3*na*2), &
-                                          na, D(1), D(pd1-pd+1+j))
-               RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
-            end if
-            E( 1+de(1)*j : de(1)*(j+1) ) = RR(c(1):c(1)+de(1)-1)
-         end do
-         if (nd==0 .or. nd==1) then
-            ! nothing more
-         else if (nd==2) then
-            ! integrals over products of first order densities
-            do k = 0, de(3)-1
-               do j = 0, de(2)-1
-                  ! Coulomb-exchange
-                  call prop_intifc_2el(mol, p, (/D(2+j), D(2+de(2)+k)/), &
-                                       RR(:3*na), A(1:1))
-                  if (do_dft()) then
-                     call di_get_geomDeriv_GxD_DFT(RR(3*na+1:3*na*2), &
-                                                   na, D(1), D(2+j), D(2+de(2)+k))
-                     RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
-                  end if
-                  E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
-                            = E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
-                            + RR(c(1):c(1)+de(1)-1)
-               end do
-            end do
-         else
-            call quit('prop_twoave: GEO, nd > 2 not implemented',mol%lupri)
-         end if
-         deallocate(RR)
-         if (do_dft()) print* !after all the "...integrated to nn electrons..." prints
-#endif
       else
          print *,'prop_twoave: no integrals for these perturbations: ', &
                  (p(i)//' ', i=1,np)
@@ -1390,22 +1284,10 @@ contains
                   // ' Index in auxiliary label out of range 0..9',mol%lupri)
          call load_oneint(prop_auxlab(i), F(1))
       else if (np==1 .and. p(1)=='EL') then
-#ifdef LSDALTON_ONLY
-         do i = 1, 3
-            A(i) = 0*S0
-         end do
-         call prop_intifc_1el(mol, p, (/S0/), R(:1), A(:3))
-         do i = 0, dp(1)-1
-            F(1+i) = A(c(1)+i)
-         end do
-         A(:3) = 0
-#else
          do i = 0, dp(1)-1
             if (.not.isdef(F(i+1))) F(i+1) = 0*S0
             call load_oneint(xyz(c(1)+i) // 'DIPLEN ', F(i+1))
          end do
-#endif
-#ifndef LSDALTON_ONLY
       else if (np==1 .and. p(1)=='VEL') then
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'DIPVEL ', F(i+1))
@@ -1566,7 +1448,6 @@ contains
                end do
             end do
          end do
-#endif /*ifndef LSDALTON_ONLY*/
       else
          print *,'prop_oneint: No integrals for these perturbations:', &
                     (' ' // p(i),i=1,np)
@@ -1762,7 +1643,6 @@ contains
             call quit('prop_twoint: nd > 2 not implemented with DFT',-1)
          end if
          A(1) = 0 !free
-#ifndef LSDALTON_ONLY
       else if (np==1 .and. p(1)=='MAG') then
          do j = 0, pd-1
             if (iszero(D(pd1-pd+1+j))) cycle
@@ -1830,7 +1710,6 @@ contains
          else
             call quit('prop_twoint: MAG MAG and nd > 2 not implemented with DFT')
          end if
-#endif /*ifndef LSDALTON_ONLY*/
       else
          print *,'prop_twoint: No integrals for these perturbations: ', &
                  (p(i)//' ', i=1,np)
@@ -1900,14 +1779,10 @@ contains
          call di_get_gmat(D(1), F(1))
       else
          wrk(1:n2) = reshape(D(1)%elms, (/n2/)) !ajt fixme
-#ifdef LSDALTON_ONLY
-         call quit('Cannot call GRCONT, only new integral code is compiled',-1)
-#else
          call GRCONT(wrk( 1+n2+n2*nf : lwrk ), (lwrk-n2-n2*nf),         &
                      wrk( 1+n2 : n2+n2*nf ), n2*nf, (what(1:1) == 'G'), &
                      (what(1:1) == 'M'), merge(1,2,what(2:2)==' '),     &
                      aa, .false., .true., wrk(1:n2), 1)
-#endif
          do i = 1, nf
             F(i)%elms = reshape(wrk(1+n2*i:n2*(1+i)), shape(F(i)%elms)) !ajt fixme
          end do
@@ -1969,7 +1844,6 @@ contains
 
 
 
-#ifndef LSDALTON_ONLY
    !> what=G : 3*natoms geometric
    !> what=M : 3 magnetic
    subroutine twoctr(mol, what, Da, Db, E)
@@ -2030,7 +1904,6 @@ contains
       call di_deselect_wrk(wrk, lwrk)
 
    end subroutine
-#endif /*ifndef LSDALTON_ONLY*/
 
    function idx(p)
       character(*) :: p

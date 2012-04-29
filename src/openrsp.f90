@@ -47,11 +47,9 @@ module openrsp
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
 
-#ifndef OPENRSP_STANDALONE
 ! xcint
   use interface_ao_specific
   use xcint_main
-#endif /* OPENRSP_STANDALONE */
 
   implicit none
 
@@ -176,10 +174,6 @@ contains
        ! write xcint interface files
        call interface_ao_write()
 
-#ifdef OPENRSP_STANDALONE
-    print *, 'error: not part of standalone'
-    stop 1
-#else /* OPENRSP_STANDALONE */
        ! add xc contribution to the fock matrix
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
@@ -196,7 +190,6 @@ contains
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
-#endif /* OPENRSP_STANDALONE */
     end if
 
     ! setup response config structure
