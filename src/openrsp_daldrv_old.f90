@@ -169,7 +169,7 @@ real(8), allocatable :: eigval(:)
     end if
 
     ! dumps the molecule information
-    call get_natoms(num_atoms)
+    num_atoms = get_nr_atoms()
     allocate( aname(num_atoms), stat=ierr )
     if ( ierr /= 0 ) call QUIT( 'Failed to allocate aname!' )
     allocate( acharge(num_atoms), stat=ierr )

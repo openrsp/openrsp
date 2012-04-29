@@ -61,7 +61,6 @@ module dalton_ifc
   public di_select_wrk
   public di_deselect_wrk
 
-  public get_natoms
   public get_molecule
   public di_get_overlap_and_H1
   public di_read_operator_int
@@ -222,21 +221,6 @@ module dalton_ifc
       next_f77_work = next_f77_work - mem_req
     !> \todo end if
   end subroutine di_deselect_wrk
-
-
-  !> \brief gets the number of atoms
-  !> \author Bin Gao
-  !> \date 2009-12-10
-  !> \return natoms contains the number of atoms
-  subroutine get_natoms( num_atoms )
-    ! uses MXCOOR
-#include <mxcent.h>
-    ! uses NUCDEP
-#include <nuclei.h>
-    integer, intent(out) :: num_atoms
-    num_atoms = NUCDEP
-  end subroutine get_natoms
-
 
   !> \brief gets the information of molecule
   !> \author Bin Gao

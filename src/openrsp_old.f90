@@ -382,7 +382,7 @@ module openrsp_old
     if ( this_info%openrsp_roa ) then
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling roa_pol_Gpri_Aten_grads, freq =', this_info%real_freqs(1)
-      call get_natoms( num_atoms )
+      num_atoms = get_nr_atoms()
       num_coord = 3*num_atoms
       allocate( tsr(3*3+3*3+6*3+num_coord*3*3+num_coord*3*3+num_coord*6*3), stat=ierr ) !ajt: hack
       if ( ierr /= 0 ) then
@@ -420,7 +420,7 @@ module openrsp_old
         write( this_info%log_io, 100 ) 'Calling cars_pol_shyp_polgra, freq =', this_info%real_freqs(1)
       ! gets the number of atoms
       !> \todo call xmolecule_get_natom( this_mol, num_atoms )
-      call get_natoms( num_atoms )
+      num_atoms = get_nr_atoms()
       num_coord = 3*num_atoms
       allocate( tsr(3+3*3+3*3*3*3+num_coord*3*3), stat=ierr ) !ajt: hack
       if ( ierr /= 0 ) then
@@ -607,7 +607,7 @@ module openrsp_old
     end if
     ! calculates vibrational hyperpolarizability
     if ( this_info%openrsp_vibbeta ) then
-      call get_natoms( num_atoms )
+      num_atoms = get_nr_atoms()
       num_coord = 3*num_atoms
       allocate( tsr(3+3*3*3+3*3*3+num_coord*3*3+num_coord*3*3*3), stat=ierr )
       if ( ierr /= 0 ) then
@@ -671,7 +671,7 @@ module openrsp_old
     end if
     ! calculates vibrational 2nd hyperpolarizability
     if ( this_info%openrsp_vibshyp ) then
-      call get_natoms( num_atoms )
+      num_atoms = get_nr_atoms()
       num_coord = 3*num_atoms
       allocate( tsr(3+3*3*3*3+(3*4+3*3*6+3*3*3*4)*num_coord), stat=ierr )
       if ( ierr /= 0 ) then
