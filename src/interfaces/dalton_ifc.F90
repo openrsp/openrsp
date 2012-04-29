@@ -228,6 +228,8 @@ module dalton_ifc
   !> \return S contains the overlap matrix
   !> \return H1 contains the one-electron Hamiltonian matrix
   subroutine di_get_overlap_and_H1( S, H1 )
+!   radovan: fixme it's not good for other codes to do S and H1 at the same time
+!            split this in two
     implicit integer (i,m-n)
 #include <implicit.h>
     type(matrix), intent(inout) :: S
