@@ -1164,39 +1164,6 @@ module dalton_ifc
     call VIBCTL( dal_work(next_f77_work), left_f77_work )
   end subroutine VIBCTL_ifc
 
-  !> \brief Return pointer to CHARGE vector in common block nuclei
-  !> \date 2011-05-10
-  subroutine CHARGE_ifc( chg_ptr )
-    implicit integer (i,m-n)
-#include <implicit.h>
-    ! need MXCOOR
-#include <mxcent.h>
-    ! need CHARGE
-#include <nuclei.h>
-    real(8), pointer, intent(out) :: chg_ptr(:)
-    !ajt Won't compile as com-block vars arent TARGETs
-    !ajt chg_ptr => CHARGE( :NATOMS )
-    allocate( chg_ptr(NATOMS) )
-    chg_ptr = CHARGE( :NATOMS )
-  end subroutine
-
-
-  !> \brief Return CORD vector in common block nuclei
-  !> \date 2011-05-10
-  subroutine CORD_ifc(coord)
-    implicit integer (i,m-n)
-#include <implicit.h>
-    ! need MXCOOR
-#include <mxcent.h>
-    ! need CORD
-#include <nuclei.h>
-    real(8), pointer, intent(out) :: coord(:,:)
-    !ajt Won't compile as common block vars aren't TARGETs
-    !ajt coord => CORD(:,:NATOMS)
-    allocate(coord(3,NATOMS))
-    coord = CORD(:,:NATOMS)
-  end subroutine
-
 
   !> Count the number of contracted Gaussian-type orbital shells
   !> \param ncgto, and number of exponents and contraction coefficents
