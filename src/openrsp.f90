@@ -119,6 +119,7 @@ contains
     real(8)                :: xc_energy
    
     call interface_molecule_init()
+    call interface_io_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()

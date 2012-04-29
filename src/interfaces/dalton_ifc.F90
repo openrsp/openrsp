@@ -55,6 +55,7 @@ module dalton_ifc
   use matrix_defop   !type matrix with operators
   use interface_f77_memory
   use interface_molecule
+  use interface_io
 
   implicit none
 

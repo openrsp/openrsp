@@ -14,6 +14,7 @@ module rsp_contribs
   use matrix_defop
   use matrix_backend, only: mat_alloc
   use interface_molecule
+  use interface_io
   use interface_f77_memory
   use dalton_ifc, only: di_read_operator_int, &
                         di_get_gmat,          &

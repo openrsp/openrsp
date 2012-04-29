@@ -12,8 +12,6 @@ module interface_molecule
 
    public get_nr_ao
    public get_nr_atoms
-   public get_print_unit
-   public get_input_unit
    public get_nuc_name
    public get_nuc_charge
    public get_nuc_xyz
@@ -28,8 +26,6 @@ module interface_molecule
 !  non-allocatables
    integer :: nr_ao
    integer :: nr_atoms
-   integer :: print_unit        !fixme move to separate module: interface_io
-   integer :: input_unit        !fixme move to separate module: interface_io
    logical :: is_ks_calculation !fixme move to interface_xc
    real(8) :: dipole_origin(3)
 
@@ -42,7 +38,6 @@ contains
 
    subroutine interface_molecule_init()
 
-#include "priunit.h"
 #include "mxcent.h"
 #include "nuclei.h"
 #include "inforb.h"
@@ -52,8 +47,6 @@ contains
 
       nr_ao      = nbast
       nr_atoms   = natoms
-      print_unit = lupri
-      input_unit = lucmd
       is_ks_calculation = dodft
 
       allocate(nuc_name(nr_atoms))
@@ -98,16 +91,6 @@ contains
    integer function get_nr_atoms()
       call check_if_interface_is_initialized()
       get_nr_atoms = nr_atoms
-   end function
-
-   integer function get_print_unit()
-      call check_if_interface_is_initialized()
-      get_print_unit = print_unit
-   end function
-
-   integer function get_input_unit()
-      call check_if_interface_is_initialized()
-      get_input_unit = input_unit
    end function
 
    character(4) function get_nuc_name(i)
