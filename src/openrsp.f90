@@ -42,7 +42,7 @@ module openrsp
 
   use matrix_backend
   use dalton_ifc
-  use interface_host
+  use interface_molecule
   use interface_f77_memory
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
@@ -118,7 +118,7 @@ contains
     integer                :: mat_dim
     real(8)                :: xc_energy
    
-    call interface_host_init()
+    call interface_molecule_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()

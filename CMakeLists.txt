@@ -58,7 +58,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_general.f90
     ${PROJECT_SOURCE_DIR}/src/vib_prop_old.f90
     ${PROJECT_SOURCE_DIR}/src/interfaces/dalton_ifc.F90
-    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_host.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_molecule.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_xc.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_1el.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_scf.F90

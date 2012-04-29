@@ -1,14 +1,14 @@
-module interface_host
+module interface_molecule
 
-!  interface_host_init is the ONLY routine
+!  interface_molecule_init is the ONLY routine
 !  that is program specific
 !  you are NOT allowed to introduce anything specific
-!  to a host program outside of interface_host_init
+!  to a host program outside of interface_molecule_init
 
    implicit none
 
-   public interface_host_init
-   public interface_host_finalize
+   public interface_molecule_init
+   public interface_molecule_finalize
 
    public get_nr_ao
    public get_nr_atoms
@@ -33,14 +33,14 @@ module interface_host
    logical :: is_ks_calculation !fixme move to interface_xc
    real(8) :: dipole_origin(3)
 
-!  allocatables, deallocate them in interface_host_finalize
+!  allocatables, deallocate them in interface_molecule_finalize
    character(4), allocatable :: nuc_name(:)
    real(8),      allocatable :: nuc_charge(:)
    real(8),      allocatable :: nuc_xyz(:, :)
 
 contains
 
-   subroutine interface_host_init()
+   subroutine interface_molecule_init()
 
 #include "priunit.h"
 #include "mxcent.h"
@@ -71,7 +71,7 @@ contains
 
    end subroutine
 
-   subroutine interface_host_finalize()
+   subroutine interface_molecule_finalize()
 
 !     here deallocate everything that is allocated
       if (allocated(nuc_name))   deallocate(nuc_name)
@@ -84,7 +84,7 @@ contains
 
    subroutine check_if_interface_is_initialized()
       if (.not. is_initialized) then
-         print *, 'error: you try to access interface_host'
+         print *, 'error: you try to access interface_molecule'
          print *, '       but this interface is not initialized'
          stop 1
       end if

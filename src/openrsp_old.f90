@@ -47,7 +47,7 @@ module openrsp_old
   use vib_prop_old
   ! calculation and outputting of optical birefringences
   use birefring_old
-  use interface_host
+  use interface_molecule
 
 ! xcint
   use interface_ao_specific

@@ -1,7 +1,7 @@
 module interface_1el
 
    use matrix_defop
-   use interface_host !fixme ugly
+   use interface_molecule !fixme ugly
    use interface_f77_memory
 
    implicit none

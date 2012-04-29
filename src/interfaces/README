@@ -1,6 +1,6 @@
 There should be the following files:
 
-interface_host.F90            basis set, coordinates fixme: move to interface_molecule
+interface_molecule.F90        basis set, coordinates
 interface_xc.F90              exchange-correlation
 interface_1el.F90             1el integrals, overlap matrix
 interface_2el.F90             2el integrals
