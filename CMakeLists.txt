@@ -62,6 +62,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_xc.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_1el.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_scf.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_f77_memory.F90
     )
 
 include(ConfigCompilerFlags)
