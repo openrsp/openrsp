@@ -54,6 +54,7 @@ module dalton_ifc
 
   use matrix_defop   !type matrix with operators
   use interface_f77_memory
+  use interface_host
 
   implicit none
 
@@ -85,8 +86,6 @@ module dalton_ifc
   logical, save, private :: restrict_scf = .true.
   !> print level
   integer, save, private :: lprt_dal = 5
-  !> IO unit of log file
-  integer, save, private :: log_dal = 6
   !> PCM
   logical, save, private :: dal_pcm = .false.
 
@@ -137,15 +136,8 @@ module dalton_ifc
     logical, optional, intent(in) :: WAVPCM
     ! uses NASHT
 #include <inforb.h>
-    ! uses LUPRI: pre-defined unit numbers
-#include <priunit.h>
     if ( present( WAVPCM ) ) dal_pcm = WAVPCM
     restrict_scf = ( NASHT == 0 )
-    if ( present( log_io ) ) then
-      log_dal = log_io
-    else
-      log_dal = LUPRI
-    end if
     if ( present( level_print ) ) then
       lprt_dal = level_print
     else
@@ -624,7 +616,7 @@ module dalton_ifc
       'Using the optimal orbital trial vectors in solving the response equations'
     if ( restrict_scf )  write( io_dump, 100 ) &
       'Restricted Hartree-Fock (RHF) calculations'
-    write( io_dump, 100 ) 'IO unit of log file: ', log_dal
+    write( io_dump, 100 ) 'IO unit of log file: ', get_print_unit()
     write( io_dump, 100 ) 'Print level:         ', lprt_dal
     ! outputs matrices to check
 100 format('INFO ',A,I6)
@@ -849,10 +841,9 @@ module dalton_ifc
 #include <mxcent.h>
 #include <nuclei.h>
 #include <quadru.h>
-#include <priunit.h>
     real(8), intent(out) :: Q(6)
     real(8), parameter :: zero = 0.0D+00
-    call NUCQDR( CORD(:,1:NUCDEP), (/zero,zero,zero/), LUPRI, 0 )
+    call NUCQDR( CORD(:,1:NUCDEP), (/zero,zero,zero/), get_print_unit(), 0 )
     Q = (/QDRNUC(1,1),QDRNUC(1:2,2),QDRNUC(1:3,3)/)
   end subroutine
 
