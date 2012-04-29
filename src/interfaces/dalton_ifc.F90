@@ -53,13 +53,12 @@
 module dalton_ifc
 
   use matrix_defop   !type matrix with operators
+  use interface_f77_memory
 
   implicit none
 
   public dal_ifc_init
   public dal_ifc_finalize
-  public di_select_wrk
-  public di_deselect_wrk
 
   public di_get_overlap_and_H1
   public di_read_operator_int
@@ -82,14 +81,6 @@ module dalton_ifc
   public AATNUC_ifc
   public VIBCTL_ifc
 
-  !> length of the work array
-  integer, private, save :: total_f77_work = 0
-  !> position of the non-used work array
-  integer, private, save :: next_f77_work = 0
-  !> amount of the left work array
-  integer, private, save :: left_f77_work = 0
-  !> DALTON work array pointer
-  real(8), public, pointer, save :: dal_work(:)
   !> true for RHF - closed shell or one electron in one active orbital
   logical, save, private :: restrict_scf = .true.
   !> print level
@@ -138,11 +129,9 @@ module dalton_ifc
   !> \param LWORK is the size of the work memory
   !> \param log_io is the IO unit of log file
   !> \param level_print is the print level
-  subroutine dal_ifc_init( WORK, LWORK, log_io, level_print, WAVPCM )
+  subroutine dal_ifc_init(log_io, level_print, WAVPCM )
     implicit integer (i,m-n)
 #include <implicit.h>
-    real(8), target :: WORK(:)
-    integer LWORK
     integer, optional, intent(in) :: log_io
     integer, optional, intent(in) :: level_print
     logical, optional, intent(in) :: WAVPCM
@@ -151,10 +140,6 @@ module dalton_ifc
     ! uses LUPRI: pre-defined unit numbers
 #include <priunit.h>
     if ( present( WAVPCM ) ) dal_pcm = WAVPCM
-    total_f77_work = LWORK
-    next_f77_work = 1
-    left_f77_work = LWORK
-    dal_work => WORK
     restrict_scf = ( NASHT == 0 )
     if ( present( log_io ) ) then
       log_dal = log_io
@@ -178,47 +163,6 @@ module dalton_ifc
       call pcm_finalize
 #endif
     end if
-    total_f77_work = 0
-    next_f77_work = 0
-    left_f77_work = 0
-    nullify( dal_work )
-  end subroutine
-
-
-  !> \brief allocates the memory asked
-  !> \author Bin Gao
-  !> \date 2009-12-10
-  !> \param mem_req specifies the amount of memory asked
-  !> \return wrk is the asked memory if sucessfully allocated
-  subroutine di_select_wrk( wrk, mem_req )
-    real(8), pointer, intent(inout) :: wrk(:)
-    integer, intent(in) :: mem_req
-    if ( mem_req > left_f77_work ) then
-      !> \todo call di_create_wrk( wrk, mem_req )
-      call STOPIT( 'DALTON_IFC', 'di_select_wrk', next_f77_work+mem_req-1, total_f77_work )
-    else
-      wrk => dal_work
-      next_f77_work = next_f77_work + mem_req
-      left_f77_work = total_f77_work - next_f77_work + 1
-    end if
-  end subroutine
-
-
-  !> \brief releases the memory asked
-  !> \author Bin Gao
-  !> \date 2009-12-10
-  !> \param mem_req specifies the amount of memory
-  !> \return wrk is the  memory to be released
-  subroutine di_deselect_wrk( wrk, mem_req )
-    real(8), pointer, intent(inout) :: wrk(:)
-    integer, intent(in) :: mem_req
-    !> \todo if ( mem_req > left_f77_work ) then
-    !> \todo   call di_delete_wrk( wrk )
-    !> \todo else
-      nullify( wrk )
-      left_f77_work = left_f77_work + mem_req
-      next_f77_work = next_f77_work - mem_req
-    !> \todo end if
   end subroutine
 
 
@@ -249,42 +193,37 @@ module dalton_ifc
     ! external DALTON function finding the corresponding label
     logical FNDLAB
     ! reads overlap and one electron Hamiltonian matrices by calling RDONEL
-    work_ovlp = next_f77_work
+    work_ovlp = get_f77_memory_next()
     work_ham1 = work_ovlp + NNBASX
-    next_f77_work = work_ham1 + NNBASX
-    left_f77_work = total_f77_work - next_f77_work + 1
+    call set_f77_memory_next(work_ham1 + NNBASX)
 
-    if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', next_f77_work-1, total_f77_work )
-    call RDONEL( 'OVERLAP', .true., dal_work(work_ovlp), NNBASX )
-    call RDONEL( 'ONEHAMIL', .true., dal_work(work_ham1), NNBASX )
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
+    call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
+    call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
     ! PCM one-electron contributions    
     if ( dal_pcm ) then
-      work_pcm = next_f77_work
-      next_f77_work = work_pcm + NNBASX
-      left_f77_work = total_f77_work - next_f77_work + 1
-      if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', next_f77_work-1, total_f77_work )
+      work_pcm = get_f77_memory_next()
+      call set_f77_memory_next(work_pcm + NNBASX)
+      if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
 #ifdef USE_WAVPCM      
-      call pcm_ao_rsp_1elfock( dal_work(work_pcm) )
+      call pcm_ao_rsp_1elfock( f77_memory(work_pcm) )
       ! adds to one-electron Hamiltonian
-      dal_work( work_ham1 : work_ham1 + NNBASX - 1 ) &
-                    = dal_work( work_ham1 : work_ham1 + NNBASX - 1 ) &
-                    + dal_work( work_pcm  : work_pcm  + NNBASX - 1 )
+      f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
+                    = f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
+                    + f77_memory( work_pcm  : work_pcm  + NNBASX - 1 )
 #endif
       ! cleans
-      next_f77_work = work_pcm
-      left_f77_work = left_f77_work + NNBASX
+      call set_f77_memory_next(work_pcm)
     end if
     ! fills the data into matrices S and H1
     !N N2BASX = NBAST * NBAST
-    left_f77_work = left_f77_work - N2BASX
-    if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', next_f77_work+N2BASX-1, total_f77_work )
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
-    call DSPTSI( NBAST, dal_work(work_ovlp), S%elms )
+    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
     ! gets H1
-    call DSPTSI( NBAST, dal_work(work_ham1), H1%elms )
+    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
     ! clean
-    next_f77_work = work_ovlp
-    left_f77_work = total_f77_work - next_f77_work + 1
+    call set_f77_memory_next(work_ovlp)
   end subroutine
 
 
@@ -313,8 +252,8 @@ module dalton_ifc
     ! one-electron Hamiltonian
     if ( prop_lab == 'ONEHAMIL' ) then
       call QUIT( 'Not implemented!' )
-      call RDONEL( 'ONEHAMIL', ANTI, dal_work(next_f77_work), NNBASX )
-      call DSPTSI( NBAST, dal_work(next_f77_work), prop_int%elms )
+      call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
+      call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
     else
       ! closes file AOPROPER first
       if ( LUPROP > 0 ) call GPCLOSE( LUPROP, 'KEEP' )
@@ -326,12 +265,12 @@ module dalton_ifc
           call READT( LUPROP, N2BASX, prop_int%elms )
         ! symmetric matrix
         else if ( RTNLBL(2) == 'SYMMETRI' ) then
-          call READT( LUPROP, NNBASX, dal_work(next_f77_work) )
-          call DSPTSI( NBAST, dal_work(next_f77_work), prop_int%elms )
+          call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
+          call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
         ! anti-symmetric matrix
         else if ( RTNLBL(2) == 'ANTISYMM' ) then
-          call READT( LUPROP, NNBASX, dal_work(next_f77_work) )
-          call DAPTGE( NBAST, dal_work(next_f77_work), prop_int%elms )
+          call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
+          call DAPTGE( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
         else
           call QUIT( 'Error: No symmetry label on AOPROPER!' )
         end if
@@ -370,14 +309,14 @@ module dalton_ifc
     ! indicates if found required data from SIRIFC
     logical found
     ! start of coefficients of molecular orbitals
-    strt_cmo = next_f77_work
+    strt_cmo = get_f77_memory_next()
     ! start of active part of one-electron density matrix (MO)
     strt_dv = strt_cmo + NCMOT
     if ( restrict_scf ) then
       ! start of active part of one-electron density matrix (AO)
       strt_dvao = strt_dv + 1
       ! start of left workspace
-      next_f77_work = strt_dvao + 1
+      call set_f77_memory_next(strt_dvao + 1)
       ! only calculates DCAO
       GETDC = .true.
       GETDV = .false.
@@ -385,29 +324,27 @@ module dalton_ifc
       ! start of active part of one-electron density matrix (AO)
       strt_dvao = strt_dv + NNASHX
       ! start of left workspace
-      next_f77_work = strt_dvao + N2BASX
+      call set_f77_memory_next(strt_dvao + N2BASX)
       ! we calculate DCAO and DVAO
       GETDC = .true.
       GETDV = .true.
     end if
-    ! size of the left work
-    left_f77_work = total_f77_work - next_f77_work + 1
     ! checks if the memory is enough
-    if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_dens', next_f77_work-1, total_f77_work )
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_dens', get_f77_memory_next()-1, get_f77_memory_total() )
     ! opens SIRIFC
     if ( LUSIFC <= 0 ) &
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
-    call DZERO( dal_work(strt_cmo), NCMOT )
-    call rd_sirifc( 'CMO', found, dal_work(strt_cmo), dal_work(next_f77_work), left_f77_work )
+    call DZERO( f77_memory(strt_cmo), NCMOT )
+    call rd_sirifc( 'CMO', found, f77_memory(strt_cmo), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     ! reads active part of one-electron density matrix (MO)
     if ( GETDV ) then
-      call DZERO( dal_work(strt_dv), NNASHX )
-      call rd_sirifc( 'DV', found, dal_work(strt_dv), dal_work(next_f77_work), left_f77_work )
+      call DZERO( f77_memory(strt_dv), NNASHX )
+      call rd_sirifc( 'DV', found, f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
-      call DZERO( dal_work(strt_dvao), N2BASX )
+      call DZERO( f77_memory(strt_dvao), N2BASX )
     end if
     ! gets the AO density matrix, using
     !
@@ -419,15 +356,14 @@ module dalton_ifc
     !   DV(*)   active part of one-electron density matrix (over MO's)
     ! Scratch:
     !   WRK(LFRSAV)
-    call FCKDEN( GETDC, GETDV, D%elms, dal_work(strt_dvao), dal_work(strt_cmo), &
-                 dal_work(strt_dv), dal_work(next_f77_work), left_f77_work )
+    call FCKDEN( GETDC, GETDV, D%elms, f77_memory(strt_dvao), f77_memory(strt_cmo), &
+                 f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! sums DCAO and DVAO
     if ( GETDV ) &
-      D%elms = D%elms + reshape( dal_work(strt_dvao : strt_dvao+N2BASX-1), &
+      D%elms = D%elms + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
                                  (/D%nrow, D%ncol/) )
     ! clean
-    next_f77_work = strt_cmo
-    left_f77_work = total_f77_work - next_f77_work + 1
+    call set_f77_memory_next(strt_cmo)
   end subroutine
 
 
@@ -462,18 +398,17 @@ module dalton_ifc
     integer idummy
     real(8) xdummy
     ! assigns the work memory
-    work_ao_dens = next_f77_work
-    next_f77_work = work_ao_dens + N2BASX
-    left_f77_work = total_f77_work - next_f77_work + 1
-    if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_gmat', next_f77_work-1, total_f77_work )
+    work_ao_dens = get_f77_memory_next()
+    call set_f77_memory_next(work_ao_dens + N2BASX)
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_gmat', get_f77_memory_next()-1, get_f77_memory_total() )
     ! sets the total density matrix
     !> \todo this may fail for unrestricted calculations
-    call DCOPY( N2BASX, D%elms, 1, dal_work(work_ao_dens), 1 )
-    call DSCAL( N2BASX, two, dal_work(work_ao_dens), 1 )
+    call DCOPY( N2BASX, D%elms, 1, f77_memory(work_ao_dens), 1 )
+    call DSCAL( N2BASX, two, f77_memory(work_ao_dens), 1 )
     ! outputs the total density matrix to check
     if ( lprt_dal >= 20 ) then
       !> \todo call xdump_array2( dims = (/NBAST,NBAST/),          &
-      !> \todo                    darray = dal_work(work_ao_dens), &
+      !> \todo                    darray = f77_memory(work_ao_dens), &
       !> \todo                    iout = log_dal,                  &
       !> \todo                    label = 'Total density matrix (AO) in DALTON_IFC' )
     end if
@@ -483,30 +418,28 @@ module dalton_ifc
     !> \todo determines IFCTYP run-time
     IFCTYP = 3
     ! calculates two electron contribution by calling SIRFCK
-    call SIRFCK( G%elms, dal_work(work_ao_dens), NDMAT, &
-                 ISYMDM, IFCTYP, .true., dal_work(next_f77_work), left_f77_work )
+    call SIRFCK( G%elms, f77_memory(work_ao_dens), NDMAT, &
+                 ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! PCM two-electron contributions
     if ( dal_pcm ) then
       ! assigns the work memory
-      work_pcm = next_f77_work
+      work_pcm = get_f77_memory_next()
       work_pcm2 = work_pcm + NNBASX
-      next_f77_work = work_pcm2 + N2BASX
-      left_f77_work = total_f77_work - next_f77_work + 1
-      if ( left_f77_work < 0 ) call STOPIT( 'DALTON_IFC', 'di_pcmfck2', next_f77_work-1, total_f77_work )
-      call WAVPCM_2EL( dal_work(work_pcm), dal_work(work_ao_dens), dal_work(next_f77_work), left_f77_work )
-!      call pcm_ao_rsp_2elfock( dal_work(work_pcm), dal_work(work_ao_dens) )
+      call set_f77_memory_next(work_pcm2 + N2BASX)
+      if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_pcmfck2', get_f77_memory_next()-1, get_f77_memory_total() )
+      call WAVPCM_2EL( f77_memory(work_pcm), f77_memory(work_ao_dens), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+!      call pcm_ao_rsp_2elfock( f77_memory(work_pcm), f77_memory(work_ao_dens) )
 
       ! transforms to square matrix
-      call DZERO( dal_work(work_pcm2), N2BASX )
-      call DSPTSI( NBAST, dal_work(work_pcm), dal_work(work_pcm2) )
+      call DZERO( f77_memory(work_pcm2), N2BASX )
+      call DSPTSI( NBAST, f77_memory(work_pcm), f77_memory(work_pcm2) )
 
       ! adds to G
-      call DAXPY( N2BASX, 1D0, dal_work(work_pcm2), 1, G%elms, 1 )
+      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms, 1 )
     end if
     !N if ( .not. restrict_scf ) G%elmsb = G%elms
     ! cleans
-    next_f77_work = work_ao_dens
-    left_f77_work = total_f77_work - next_f77_work + 1
+    call set_f77_memory_next(work_ao_dens)
   end subroutine
 
 
@@ -572,7 +505,7 @@ module dalton_ifc
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
-    call rd_sirifc( 'CMO', found, CMO%elms, dal_work(next_f77_work), left_f77_work )
+    call rd_sirifc( 'CMO', found, CMO%elms, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     !N if ( .not. restrict_scf ) CMO%elmsb = CMO%elms
     ! generates the occupied and virtual molecular orbitals
@@ -655,7 +588,7 @@ module dalton_ifc
       if ( LUSIFC <= 0 ) &
         call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', ierr, .false. )
       rewind( LUSIFC )
-      call rd_sirifc( 'DV', found, solver_DV, dal_work(next_f77_work), left_f77_work )
+      call rd_sirifc( 'DV', found, solver_DV, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
     else
       allocate( solver_DV(1), stat=ierr )
@@ -778,9 +711,9 @@ module dalton_ifc
     KZWOPT = NOCCT*NVIRT
     KZVAR = KZWOPT
     KZYVAR = KZWOPT + KZWOPT
-    KMJWOP = next_f77_work + KZYVAR
-    if ( KMJWOP+(16*MAXWOP+1)/IRAT > total_f77_work ) &
-      call STOPIT( 'DALTON_IFC', 'SOL(MO)', KMJWOP+(16*MAXWOP+1)/IRAT, total_f77_work )
+    KMJWOP = get_f77_memory_next() + KZYVAR
+    if ( KMJWOP+(16*MAXWOP+1)/IRAT > get_f77_memory_total() ) &
+      call STOPIT( 'DALTON_IFC', 'SOL(MO)', KMJWOP+(16*MAXWOP+1)/IRAT, get_f77_memory_total() )
 
     ! open files
     LUSOVE = -1
@@ -805,17 +738,17 @@ module dalton_ifc
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
       call UTHV( solver_CMO%elms, GD(IRHS)%elms, solver_CMO%elms, &
-                 ISYM, ISYM, NBAST, NBAST, GD_MO%elms, dal_work(next_f77_work) )
+                 ISYM, ISYM, NBAST, NBAST, GD_MO%elms, f77_memory(get_f77_memory_next()) )
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
-      call PRPORB( GD_MO%elms, solver_DV, dal_work(next_f77_work) )
+      call PRPORB( GD_MO%elms, solver_DV, f77_memory(get_f77_memory_next()) )
       !FIXME: why multiplied by -1
-      call DSCAL( KZVAR, -1.0D+00, dal_work(next_f77_work), 1 )
+      call DSCAL( KZVAR, -1.0D+00, f77_memory(get_f77_memory_next()), 1 )
       ! writes out right hand side vector
-      call WRITT( LUGDVE, KZYVAR, dal_work( next_f77_work : next_f77_work+KZYVAR-1 ) )
+      call WRITT( LUGDVE, KZYVAR, f77_memory( get_f77_memory_next() : get_f77_memory_next()+KZYVAR-1 ) )
       !> \todo ! outputs to check
       !> \todo if ( lprt_dal >= 20 ) then
       !> \todo   call xdump_array2( dims = (/KZVAR,KZVAR/),       &
-      !> \todo                      darray = dal_work(next_f77_work), &
+      !> \todo                      darray = f77_memory(get_f77_memory_next()), &
       !> \todo                      iout = log_dal,               &
       !> \todo                      label = 'GP Vector (MO) in DALTON_IFC' )
       !> \todo end if
@@ -832,7 +765,7 @@ module dalton_ifc
                  solver_nabaty, rsp2_number_of_rhs, LAB1,                &
                  LUGDVE, LUSOVE, LUREVE, solver_thresh, solver_maxit,    &
                  lprt_dal, solver_mxrm, solver_maxphp,                   &
-                 dal_work(next_f77_work), left_f77_work )
+                 f77_memory(get_f77_memory_next()), get_f77_memory_left() )
 
     ! reads the MO solutions and residuals
     rewind( LUSOVE )
@@ -845,17 +778,17 @@ module dalton_ifc
       call mat_setup( mo_eigvec(ISOL), GD_MO )
       call mat_alloc( mo_eigvec(ISOL) )
       ! reads the solution
-      call READT( LUSOVE, KZYVAR, dal_work(next_f77_work) )
+      call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
 
       ! JWOP(1,i): inactive (i)
       ! JWOP(2,i): secondary (a)
       !    i  a
       ! i [0  k*]
       ! a [k  0 ]
-      call SETZY( dal_work(KMJWOP) )
+      call SETZY( f77_memory(KMJWOP) )
       ! This subroutine unpacks the ZY matrix from the vector.
       ! It uses the Z and the Y part of the vector.
-      call GTZYMT( 1, dal_work(next_f77_work), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, dal_work(KMJWOP) )
+      call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, f77_memory(KMJWOP) )
       ! divides solution by 2 in accordance with ABACUS solver, or
       ! because Andreas' code does not use total density matrix
       mo_eigvec(ISOL)%elms = mo_eigvec(ISOL)%elms / 2
@@ -1090,7 +1023,7 @@ module dalton_ifc
     DIPFLT(:,nc+1:MXCOOR) = 0
     DOSYM(1) = .true.
     IPRINT = 6
-    call VIBCTL( dal_work(next_f77_work), left_f77_work )
+    call VIBCTL( f77_memory(get_f77_memory_next()), get_f77_memory_left() )
   end subroutine
 
 

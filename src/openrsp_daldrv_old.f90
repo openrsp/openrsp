@@ -45,6 +45,7 @@
     use matrix_backend
     ! interface of DALTON
     use dalton_ifc
+    use interface_f77_memory
     ! main module of openrsp
     use openrsp_old
     ! keeps molecule, energy, integral and solver config
@@ -286,7 +287,9 @@ real(8), allocatable :: eigval(:)
     end if
 
     ! initializes the interface of DALTON
-    call dal_ifc_init( WORK, LWORK, LUPRI, level_print, WAVPCM )
+    call dal_ifc_init(LUPRI, level_print, WAVPCM )
+
+    call interface_f77_memory_init(work_len=lwork, work=work) 
 
     ! initializes the MO response solver
     call rsp_mosolver_init( solver_maxit, solver_maxphp, solver_mxrm, &
@@ -360,6 +363,7 @@ real(8), allocatable :: eigval(:)
     call openrsp_info_clean(openrsp_info)
     call rsp_mosolver_free
     call dal_ifc_finalize
+    call interface_f77_memory_finalize()
 
     ! stamps the date, time and hostname
     call TSTAMP( ' ', LUPRI )

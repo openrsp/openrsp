@@ -14,6 +14,7 @@ module rsp_contribs
   use matrix_defop
   use matrix_backend, only: mat_alloc
   use interface_host
+  use interface_f77_memory
   use dalton_ifc, only: di_read_operator_int, &
                         di_get_gmat,          &
                         dipnuc_ifc,           &
@@ -305,7 +306,7 @@ contains
 ! radovan: there is code repetition in ave and int setup
 
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
-    use dalton_ifc, only: SHELLS_NUCLEI_displace, dal_work
+    use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface in Dalton
     use gen1int_interface
     !> structure containing integral program settings
@@ -427,7 +428,6 @@ contains
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
   subroutine rsp_twoave(mol, nf, f, c, nc, D1, D2, ave)
-    use dalton_ifc,       only: dal_work
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
     !> structure containing integral program settings
@@ -458,22 +458,22 @@ contains
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
        n = mol%zeromat%nrow
-       dal_work(     :n*n)   = reshape(D1%elms,(/n*n/))
-       dal_work(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
-       call GRCONT(dal_work(n*n*2+1:), size(dal_work)-n*n*2, &
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+       call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,1,1,1), ncor, .true., .false., &
-                   1, 0, .true., .false., dal_work(:n*n*2), 2)
+                   1, 0, .true., .false., f77_memory(:n*n*2), 2)
        ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
        deallocate(tmp)
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
        n = mol%zeromat%nrow
-       dal_work(     :n*n)   = reshape(D1%elms,(/n*n/))
-       dal_work(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
-       call GRCONT(dal_work(n*n*2+1:), size(dal_work)-n*n*2, &
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+       call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,:,1,1), ncor**2, .true., .false., &
-                   2, 0, .true., .false., dal_work(:n*n*2), 2)
+                   2, 0, .true., .false., f77_memory(:n*n*2), 2)
        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
                          c(2):c(2)+nc(2)-1,1,1), shape(ave))
        deallocate(tmp)
@@ -893,7 +893,6 @@ contains
   !> product of density matrces D1 and D2
   subroutine rsp_twoint(mol, nf, f, c, nc, dens, fock)
     ! work array to be passed to GRCONT
-    use dalton_ifc,       only: dal_work
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
     !> structure containing integral program settings
@@ -924,16 +923,16 @@ contains
        do i = 0, nc(1)-1
           ! if first or an x-coord, call GRCONT
           if (i==0 .or. mod(c(1)+i,3) == 1) &
-             call GRCONT(dal_work(n*n*3+1:), size(dal_work)-n*n*3, &
-                         dal_work(:n*n*3), n*n*3, .true., .false., &
+             call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
+                         f77_memory(:n*n*3), n*n*3, .true., .false., &
                          1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
              call mat_alloc(fock(1+i))
-             fock(1+i)%elms = reshape(dal_work(n*n*(j-1)+1:n*n*j),(/n,n/))
+             fock(1+i)%elms = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
              fock(1+i)%elms = fock(1+i)%elms &
-                            + reshape(dal_work(n*n*(j-1)+1:n*n*j),(/n,n/))
+                            + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
        end do
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then

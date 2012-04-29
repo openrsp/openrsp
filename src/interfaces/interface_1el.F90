@@ -1,8 +1,8 @@
 module interface_1el
 
    use matrix_defop
-   use dalton_ifc     !fixme ugly
    use interface_host !fixme ugly
+   use interface_f77_memory
 
    implicit none
 
@@ -31,7 +31,7 @@ contains
 #else
       call save_D_and_DFD_for_ABACUS(.false., D, DFD)
       lwrk = 50*D%nrow**2+10000*D%nrow+50000000
-      call di_select_wrk(wrk, lwrk)
+      call f77_memory_select(work_len=lwrk, work=wrk)
       HESMOL(:3*nr_atoms,:3*nr_atoms) = 0
       ! SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,DIFINT,NODC,
       ! &                  NODV,DIFDIP,HFONLY,NCLONE)
@@ -39,7 +39,7 @@ contains
                   .true.,.false.,.true.,.false.)
       ! HESMOL will contain either HESSKE+HESSNA or HESFS2 or their sum
       R(1:9*nr_atoms**2) = reshape(HESMOL(:3*nr_atoms,:3*nr_atoms), (/9*nr_atoms**2/))
-      call di_deselect_wrk(wrk, lwrk)
+      call f77_memory_deselect(work_len=lwrk, work=wrk)
 #endif
    end subroutine
 
@@ -78,7 +78,6 @@ contains
    end subroutine
 
   subroutine ONEDRV_ave_ifc(fld, siz, ave, D, DFD)
-    use dalton_ifc, only: dal_work
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
     real(8),                intent(out) :: ave(siz)
@@ -119,7 +118,7 @@ contains
     !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
     ! &                  DIFINT,NODC,NODV,DIFDIP,DIFQDP,
     ! &                  HFONLY,NCLONE,PCM)
-    call ONEDRV(dal_work, size(dal_work), 5, .true., size(fld), &
+    call ONEDRV(f77_memory, size(f77_memory), 5, .true., size(fld), &
                 .true., .true., .true., .false., .false., &
                 .true., .false., .false.)
     ! HESMOL will contain either HESSKE+HESSNA or HESFS2 or their sum
@@ -133,7 +132,6 @@ contains
 
   !> Call GET1IN in ABACUS
   subroutine GET1IN_ave_ifc(fld, siz, ave, D)
-    use dalton_ifc, only: dal_work
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
     real(8),                intent(out) :: ave(siz)
@@ -155,7 +153,7 @@ contains
 !      SUBROUTINE GET1IN(SINTMA,WORD,NCOMP,WORK,LWORK,LABINT,INTREP,
 !     &                  INTADR,MPQUAD,TOFILE,KPATOM,TRIMAT,EXPVAL,
 !     &                  EXP1VL,DENMAT,NPRINT)
-    call GET1IN(dummy,'DPLGRA ',ncomp,dal_work,size(dal_work),labint,intrep, &
+    call GET1IN(dummy,'DPLGRA ',ncomp,f77_memory,size(f77_memory),labint,intrep, &
                        intadr,0,.false.,0,.false.,ave, &
                        .true.,Dtri,0)
     deallocate(Dtri)

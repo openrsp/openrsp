@@ -43,6 +43,7 @@ module openrsp
   use matrix_backend
   use dalton_ifc
   use interface_host
+  use interface_f77_memory
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
@@ -136,7 +137,9 @@ contains
     call openrsp_calc(dryrun=.true.)
 
     ! initialize the interface to DALTON
-    call dal_ifc_init(WORK, LWORK, LUPRI, print_level, WAVPCM)
+    call dal_ifc_init(LUPRI, print_level, WAVPCM)
+
+    call interface_f77_memory_init(work_len=lwork, work=work) 
 
     ! initialize the MO response solver
     call rsp_mosolver_init(solver_maxit, solver_maxphp, solver_mxrm, &
@@ -496,6 +499,7 @@ end subroutine
     call mat_free(F)
     call rsp_mosolver_free
     call dal_ifc_finalize
+    call interface_f77_memory_finalize()
     ! stamp with date, time and hostname
     call TSTAMP(' ', lupri)
     write (lupri,*)

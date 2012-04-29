@@ -16,6 +16,7 @@ module prop_contribs_old
    use interface_host
    use interface_xc
    use interface_1el
+   use interface_f77_memory
 
    implicit none
    public prop_oneave
@@ -1772,7 +1773,7 @@ contains
       end do
       !allocate work
       if (lwrk/=0) then
-         call di_select_wrk(wrk, lwrk)
+         call f77_memory_select(work_len=lwrk, work=wrk)
       end if
       !call integral program
       if (what=='  ') then
@@ -1789,7 +1790,7 @@ contains
       end if
       !deallocate work
       if (lwrk /= 0) then
-         call di_deselect_wrk(wrk, lwrk)
+         call f77_memory_deselect(work_len=lwrk, work=wrk)
       end if
    contains
       subroutine subr(D, F)
@@ -1873,7 +1874,7 @@ contains
           call quit('prop_contribs/twoctr: wrong size(E) for what=' // what,mol%lupri)
       end if
 
-      call di_select_wrk(wrk, lwrk)
+      call f77_memory_select(work_len=lwrk, work=wrk)
 
 !     this is done because grcont presently needs Da and Db to be consecutive
 !     and (/Da%elms, Db%elms/) can cause stack overflow, depending
@@ -1901,7 +1902,7 @@ contains
                   2)
 
 
-      call di_deselect_wrk(wrk, lwrk)
+      call f77_memory_deselect(work_len=lwrk, work=wrk)
 
    end subroutine
 
