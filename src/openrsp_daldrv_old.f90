@@ -176,7 +176,15 @@ real(8), allocatable :: eigval(:)
     if ( ierr /= 0 ) call QUIT( 'Failed to allocate acharge!' )
     allocate( acoord(3,num_atoms), stat=ierr )
     if ( ierr /= 0 ) call QUIT( 'Failed to allocate acoord!' )
-    call get_molecule( aname, acharge, acoord )
+
+    do i = 1, num_atoms
+       aname(i)     = get_nuc_name(i)
+       acharge(i)   = get_nuc_charge(i)
+       acoord(1, i) = get_nuc_xyz(1, i)
+       acoord(2, i) = get_nuc_xyz(2, i)
+       acoord(3, i) = get_nuc_xyz(3, i)
+    end do
+
     ! dumps geometry for PyVib2
     write( LUPRI, '(2X,A)' ) 'Cartesian Coordinates (a.u.)'
     write( LUPRI, '(2X,A)' ) '----------------------------'

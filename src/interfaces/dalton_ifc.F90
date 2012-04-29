@@ -61,7 +61,6 @@ module dalton_ifc
   public di_select_wrk
   public di_deselect_wrk
 
-  public get_molecule
   public di_get_overlap_and_H1
   public di_read_operator_int
   public di_get_dens
@@ -221,33 +220,6 @@ module dalton_ifc
       next_f77_work = next_f77_work - mem_req
     !> \todo end if
   end subroutine di_deselect_wrk
-
-  !> \brief gets the information of molecule
-  !> \author Bin Gao
-  !> \date 2010-02-27
-  !> \return aname contains the names of atoms
-  !> \return acharge contains the charges of atoms
-  !> \return acoord contains the coordinates of atoms
-  subroutine get_molecule( aname, acharge, acoord )
-    implicit integer (i,m-n)
-#include <implicit.h>
-    ! uses MXCOOR
-#include <mxcent.h>
-    ! uses NUCDEP, NAMN, CHARGE, CORD
-#include <nuclei.h>
-    character*4, intent(out) :: aname(:)
-    real(8), intent(out) :: acharge(:)
-    real(8), intent(out) :: acoord(:,:)
-    integer i
-    ! checks the number of atoms
-    if ( size(aname) /= NUCDEP ) call QUIT( 'Error: incorrect number of atoms!' )
-    do i = 1, NUCDEP
-      aname(i) = NAMN(i)
-      acharge(i) = CHARGE(i)
-      acoord(:,i) = CORD(:,i)
-    end do
-  end subroutine get_molecule
-
 
 
   !> \brief gets the overlap and one-electron Hamiltonian matrices

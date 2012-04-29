@@ -14,6 +14,7 @@ module interface_host
    public get_nr_atoms
    public get_print_unit
    public get_input_unit
+   public get_nuc_name
    public get_nuc_charge
    public get_nuc_xyz
    public get_is_ks_calculation
@@ -33,8 +34,9 @@ module interface_host
    real(8) :: dipole_origin(3)
 
 !  allocatables, deallocate them in interface_host_finalize
-   real(8), allocatable :: nuc_charge(:)
-   real(8), allocatable :: nuc_xyz(:, :)
+   character(4), allocatable :: nuc_name(:)
+   real(8),      allocatable :: nuc_charge(:)
+   real(8),      allocatable :: nuc_xyz(:, :)
 
 contains
 
@@ -54,6 +56,9 @@ contains
       input_unit = lucmd
       is_ks_calculation = dodft
 
+      allocate(nuc_name(nr_atoms))
+      nuc_name = namn(:nr_atoms)
+
       allocate(nuc_charge(nr_atoms))
       nuc_charge = charge(:nr_atoms)
 
@@ -69,6 +74,7 @@ contains
    subroutine interface_host_finalize()
 
 !     here deallocate everything that is allocated
+      if (allocated(nuc_name))   deallocate(nuc_name)
       if (allocated(nuc_charge)) deallocate(nuc_charge)
       if (allocated(nuc_xyz))    deallocate(nuc_xyz)
 
@@ -102,6 +108,12 @@ contains
    integer function get_input_unit()
       call check_if_interface_is_initialized()
       get_input_unit = input_unit
+   end function
+
+   character(4) function get_nuc_name(i)
+      integer, intent(in) :: i
+      call check_if_interface_is_initialized()
+      get_nuc_name = nuc_name(i)
    end function
 
    real(8) function get_nuc_charge(i)
