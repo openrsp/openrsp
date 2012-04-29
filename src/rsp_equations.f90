@@ -188,7 +188,7 @@ contains
     FDS = mol%zeromat
     ! calculate all lower-order contributions to the p-perturbed Fock
     ! matrices, as well as the p-perturbed overlap matrices
-!     call rsp_fock(mol, fld, 
+!     call rsp_fock(mol, fld,
 !     call pert_fock(mol, p, dimp, (/D,Dp(:pd)/), Fp(:pd), Sp, &
 !                    comp=ccomp, freq=ffreq)
     ! top DSDp off with DSpD and FDSp with (F-w/2S)DSp-SpD(F+w/2S)

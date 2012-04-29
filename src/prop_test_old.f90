@@ -1,7 +1,7 @@
 !> @file
 !> Contains module prop_test
 
-!> ajt/radovan: Response-related testing routines and some calculations 
+!> ajt/radovan: Response-related testing routines and some calculations
 module prop_test_old
 
    use matrix_defop

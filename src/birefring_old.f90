@@ -97,7 +97,7 @@ contains
       integer      :: i, j, k
       integer, parameter :: eps(3,3,3) =       &
           reshape((/0, 0, 0, 0, 0,-1, 0,+1, 0, &
-                    0, 0,+1, 0, 0, 0,-1, 0, 0, &      
+                    0, 0,+1, 0, 0, 0,-1, 0, 0, &
                     0,-1, 0,+1, 0, 0, 0, 0, 0/), (/3,3,3/))
       if (abs(sum(freq)) > 1d-15) &
          call quit('verdet_dpol_db: sum(freq) should be zero!')
@@ -210,7 +210,7 @@ contains
    ! For freq=(w1,w2,w3) calculate the dipole moment in Ef, quadrupole moment in Eq,
    ! polarizability alpha(w1,w2) in Eff, velocity-polarizability(w1,w2) in Evf,
    ! no-London G-prime(w1,w2) in Eof, London G-prime(w1,w2) in Ebf, A-tensor(w1,w2)
-   ! in Eqf, hyperpolarizability beta(w1,w2,w3) in Efff, no-London 
+   ! in Eqf, hyperpolarizability beta(w1,w2,w3) in Efff, no-London
    ! electric-field-perturbed G-prime in Eoff, London electric-field-perturbed
    ! G-prime in Ebff, electric-field-perturbed A-tensor in Eqff, and
    ! electric-field-gradient-perturbed polarizability in Effq
@@ -366,7 +366,7 @@ contains
 
    subroutine cme_jones_eta_apri(mol, S, D, F, freq, Ef, Eq, Eoo, Ebb, Eof, Ebf, Eqf, Eff, &
                                  Eoof, Ebbf, Eqof, Eqbf, Eooff, Ebbff, Eqoff, Eqbff)
-   ! ajt jan09 For magneto-electric Jones- and magneto-magnetic Cotton-Mouton birefringences. 
+   ! ajt jan09 For magneto-electric Jones- and magneto-magnetic Cotton-Mouton birefringences.
    ! For Jones, the four frequencies should be (w,0,-w,0), for CME, (0,0,-w,w)
    ! In the code, 'e' denotes the first electric field, 'f' the second electric field,
    ! 'b' the first magnetic field, 'c' the second magnetic field, and 'q' the electric field gradient
@@ -859,7 +859,7 @@ contains
       integer, optional, intent(in) :: unit
       integer, parameter :: eps(3,3,3) = &
           reshape( (/0, 0, 0, 0, 0,-1, 0,+1, 0,             &
-                     0, 0,+1, 0, 0, 0,-1, 0, 0,             &      
+                     0, 0,+1, 0, 0, 0,-1, 0, 0,             &
                      0,-1, 0,+1, 0, 0, 0, 0, 0/), (/3,3,3/) )
       integer, parameter :: ij(3,3) = &
           reshape( (/1, 2, 4, 2, 3, 5, 4, 5, 6/), (/3,3/) )
@@ -884,7 +884,7 @@ contains
       !                   (/0,-1,0,1/)*freq, unit=unit )
       !call print_tensor( (/3,3,3,6/), ApriF0FmwB0Qw,            &
       !                   lonnol//' d/df d/db A-prime = -Effbq', &
-      !                   (/0,-1,0,1/)*freq, unit=unit ) !colwidth=16, 
+      !                   (/0,-1,0,1/)*freq, unit=unit ) !colwidth=16,
       !calculate temperature-dependent averages
       Gb = (/ ( sum( (/ ( 3*GtenFmwB0Bw(j,j,i)  &
                         + 3*GtenFmwB0Bw(i,j,j)  &

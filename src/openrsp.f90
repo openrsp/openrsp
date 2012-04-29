@@ -12,7 +12,7 @@
 !!  but WITHOUT ANY WARRANTY; without even the implied warranty of
 !!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !!  GNU Lesser General Public License for more details.
-!!  
+!!
 !!  You should have received a copy of the GNU Lesser General Public License
 !!  along with openrsp. If not, see <http://www.gnu.org/licenses/>.
 !!
@@ -48,6 +48,7 @@ module openrsp
   use interface_pcm
   use interface_scf
   use interface_f77_memory
+  use interface_rsp_solver
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
@@ -76,7 +77,7 @@ module openrsp
   ! true for optimal orbital trial vectors in the iterative solution of
   ! the frequency-dependent linear response equations
   logical :: solver_optorb = .false.
-  
+
   ! ------------- SCF state and settings ------------
   ! config
   type(rsp_cfg) cfg
@@ -121,7 +122,7 @@ contains
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
     real(8)                :: xc_energy
-   
+
     call interface_molecule_init()
     call interface_io_init()
     call interface_xc_init()
@@ -130,7 +131,7 @@ contains
 
     nbast = get_nr_ao()
     lupri = get_print_unit()
- 
+
     ! prints the header and license information
     call TITLER('OpenRSP: Response functions computed using AO basis', '*', -1)
     write (LUPRI,*) '>> -- solving equations with the MO response solver in DALTON.'
@@ -144,7 +145,7 @@ contains
     ! first parse input by running _calc in dryrun mode
     call openrsp_calc(dryrun=.true.)
 
-    call interface_f77_memory_init(work_len=lwork, work=work) 
+    call interface_f77_memory_init(work_len=lwork, work=work)
 
     ! initialize the MO response solver
     call rsp_mosolver_init(solver_maxit, solver_maxphp, solver_mxrm, &
@@ -220,7 +221,7 @@ end subroutine
   !> only parse and validate the commands, but update the module's setup.
   !> \author Bin Gao
   !> \date 2009-12-08
-  !> openrsp_setup must be called prior to this, and 
+  !> openrsp_setup must be called prior to this, and
   !> \todo add some comments when calling Andreas' codes
   subroutine openrsp_calc(dryrun)
 
@@ -391,7 +392,7 @@ end subroutine
              perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms/)
              perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO '/)
              perturbation_tuple%pid = (/1, 2, 3/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0/)             
+             perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
              call rsp_prop(cfg, perturbation_tuple, F, D, S)
 
@@ -490,7 +491,7 @@ end subroutine
        end do
     end if
     return
-    
+
 999 call quit('Failed to process input "' // word(:l) // '"!')
 
   end subroutine
@@ -533,7 +534,7 @@ subroutine openrsp_driver(work, lwork, wavpcm)
    integer, intent(in)    :: lwork
    real(8), intent(inout) :: work(lwork)
    logical, intent(in)    :: wavpcm
- 
+
    call openrsp_setup(wavpcm, lwork, work)
    call openrsp_calc(dryrun=.false.)
    call openrsp_finalize()

@@ -12,7 +12,7 @@
 !!  but WITHOUT ANY WARRANTY; without even the implied warranty of
 !!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !!  GNU Lesser General Public License for more details.
-!!  
+!!
 !!  You should have received a copy of the GNU Lesser General Public License
 !!  along with openrsp. If not, see <http://www.gnu.org/licenses/>.
 !!
@@ -50,15 +50,16 @@
     use interface_xc
     use interface_pcm
     use interface_scf
+    use interface_rsp_solver
     ! main module of openrsp
     use openrsp_old
     ! keeps molecule, energy, integral and solver config
     use prop_contribs_old, only: prop_molcfg
 
     use interface_molecule
-  
+
     implicit none
-  
+
     integer LWORK
     real(8) WORK( LWORK )
     logical WAVPCM
@@ -294,7 +295,7 @@ real(8), allocatable :: eigval(:)
       imag_freqs = 0.0D+00
     end if
 
-    call interface_f77_memory_init(work_len=lwork, work=work) 
+    call interface_f77_memory_init(work_len=lwork, work=work)
 
     ! initializes the MO response solver
     call rsp_mosolver_init( solver_maxit, solver_maxphp, solver_mxrm, &

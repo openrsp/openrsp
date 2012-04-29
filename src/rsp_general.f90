@@ -15,6 +15,7 @@ module rsp_general
   use matrix_backend
   use rsp_contribs
   use rsp_equations
+  use interface_rsp_solver
 
 
   implicit none
@@ -28,7 +29,7 @@ module rsp_general
   !radovan: a unit nr this high may not work on all compilers and/or processors
   !         we should be careful going beyond 100
   integer, parameter :: iounit = 345645
-  
+
 
   ! Zero matrix
 
@@ -57,11 +58,11 @@ module rsp_general
      type(p_tuple) :: perturb
      type(matrix), allocatable, dimension(:) :: data ! (Perturbed) matrix data
 
-  ! Note(MaR): Like for property_cache, a good extension here would be 
-  ! to let the data attribute point to a function/routine that manages retrieval 
-  ! (and storage) of values. This will allow better management of very large pieces 
-  ! of data, for instance by letting the function manage whether some (large) piece 
-  ! of data is stored on disk (and retrieved from there) or if, for smaller pieces 
+  ! Note(MaR): Like for property_cache, a good extension here would be
+  ! to let the data attribute point to a function/routine that manages retrieval
+  ! (and storage) of values. This will allow better management of very large pieces
+  ! of data, for instance by letting the function manage whether some (large) piece
+  ! of data is stored on disk (and retrieved from there) or if, for smaller pieces
   ! of data or, in case of parallel implementations, the data is stored in memory.
 
   end type
@@ -74,9 +75,9 @@ module rsp_general
      logical :: last
      integer :: num_p_tuples
      type(p_tuple), allocatable, dimension(:) :: p_tuples
-     complex(8), allocatable, dimension(:) :: data ! Property data    
+     complex(8), allocatable, dimension(:) :: data ! Property data
 
-  end type 
+  end type
 
   ! MR: Like for SDF, a future extension could be made here in which the data
   ! attribute points to a function that manages retrieval (and storage) of values.
@@ -111,7 +112,7 @@ module rsp_general
        p_tuple_extend%plab = (/(pert%plab(i), i = 1, pert%n_perturbations), ext%plab(:)/)
        p_tuple_extend%pid = (/(pert%pid(i), i = 1, pert%n_perturbations), ext%pid(:)/)
        p_tuple_extend%freq = (/(pert%freq(i), i = 1, pert%n_perturbations), ext%freq(:)/)
- 
+
 end if
 
   end function
@@ -235,7 +236,7 @@ end if
 
     p2%n_perturbations = p1%n_perturbations
 
-    allocate(p2%pdim(p1%n_perturbations)) 
+    allocate(p2%pdim(p1%n_perturbations))
     allocate(p2%plab(p1%n_perturbations))
     allocate(p2%pid(p1%n_perturbations))
     allocate(p2%freq(p1%n_perturbations))
@@ -253,7 +254,7 @@ end if
 
     p1%n_perturbations = 0
 
-    deallocate(p1%pdim) 
+    deallocate(p1%pdim)
     deallocate(p1%plab)
     deallocate(p1%pid)
     deallocate(p1%freq)
@@ -268,7 +269,7 @@ end if
       type(p_tuple) :: emptypert
 
       emptypert%n_perturbations = 0
-      allocate(emptypert%pdim(0))    
+      allocate(emptypert%pdim(0))
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
       allocate(emptypert%freq(0))
@@ -276,7 +277,7 @@ end if
   end function
 
 
-! Compare two perturbation tuples to each other 
+! Compare two perturbation tuples to each other
 ! Assumes that input is already in standard order
 
   function p_tuple_p1_lt_p2(p1, p2)
@@ -287,7 +288,7 @@ end if
     integer :: i
     type(p_tuple) :: p1, p2
 
-    ! NOTE (MaR): COULD THERE BE FALSE NEGATIVES HERE? 
+    ! NOTE (MaR): COULD THERE BE FALSE NEGATIVES HERE?
     p_tuple_p1_lt_p2 = .FALSE.
 
     ! Compare number of perturbations
@@ -302,7 +303,7 @@ end if
 
           if (llt(p1%plab(i), p2%plab(i)) .eqv. .TRUE.) then
 
-             p_tuple_p1_lt_p2 = .TRUE.  
+             p_tuple_p1_lt_p2 = .TRUE.
              exit
 
           elseif (p1%plab(i) == p2%plab(i)) then
@@ -311,7 +312,7 @@ end if
              ! THE FREQS.? WHICH CASES WILL INCLUDE COMPLEX FREQS. IN THE PERTURBATIONS?
              if (real(p1%freq(i)) < real(p2%freq(i))) then
 
-                p_tuple_p1_lt_p2 = .TRUE.  
+                p_tuple_p1_lt_p2 = .TRUE.
                 exit
 
              end if
@@ -619,7 +620,7 @@ end if
     type(property_cache), target :: current_element
     type(property_cache), pointer :: next_element
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st_order
-    
+
     next_element => current_element
     passedlast = 0
     p_tuples_st_order = p_tuples_standardorder(num_p_tuples, p_tuples)
@@ -708,7 +709,7 @@ end if
     logical :: found
     integer :: i, j, k, first, last, passedlast, num_p_tuples, &
                property_size, total_num_perturbations
-    integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contribution, & 
+    integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contribution, &
                                           p_tuples_dimensions
     integer, allocatable, dimension(:,:) :: indices
     type(property_cache), target :: cache
@@ -778,10 +779,10 @@ end if
                                          p_tuples_st_order)
 
        ! Making indices
-       ! Note (MaR): This can take a lot of memory: 
+       ! Note (MaR): This can take a lot of memory:
        ! Consider splitting index generation into several
        ! steps in order to save memory - e.g. "every n ranks"
-       ! starts a new loop (note that this probably means that 
+       ! starts a new loop (note that this probably means that
        ! this procedure needs to be recursive)
 
        allocate(indices(product(p_tuples_dimensions), total_num_perturbations))
@@ -790,12 +791,12 @@ end if
 
        do i = 1, size(indices, 1)
 
-          ! To which element in the cached data does that 
+          ! To which element in the cached data does that
           ! cache t_order index tuple correspond?
           ! Get that element
-          ! To which index in the p_tuples of the term 
+          ! To which index in the p_tuples of the term
           ! under consideration does this correspond?
-          ! To which element in the property tensor does that correspond? 
+          ! To which element in the property tensor does that correspond?
           ! Put the element there
 
           prop(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
@@ -803,7 +804,7 @@ end if
           prop(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
                pids_current_contribution, p_tuples_dimensions)) + &
           next_element%data(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-               pids_in_cache, p_tuples_dimensions)) 
+               pids_in_cache, p_tuples_dimensions))
 
        end do
 
@@ -837,7 +838,7 @@ end if
     allocate(new_element%data(product(pert%pdim)))
 
     do i = 1, product(pert%pdim)
-    
+
        call mat_nullify(new_element%data(i))
        new_element%data(i)%nrow = data(i)%nrow
        new_element%data(i)%ncol = data(i)%nrow
@@ -850,7 +851,7 @@ end if
        new_element%data(i) = data(i)
 
     end do
- 
+
   end subroutine
 
 
@@ -920,7 +921,7 @@ end if
   ! NOTE(MaR): This routine assumes that the pert_tuple and data
   ! is already in standard order
 
-  subroutine sdf_add(current_element, pert_tuple, data) 
+  subroutine sdf_add(current_element, pert_tuple, data)
 
     implicit none
 
@@ -1003,7 +1004,7 @@ end if
     logical :: pfreq_compare
     integer :: i, n
     complex(8), dimension(n) :: p1, p2
-    
+
     pfreq_compare = .TRUE.
 
     do i = 1, n
@@ -1034,19 +1035,19 @@ end if
              ! p_tuple_compare = .FALSE.
              ! end if
 
-          else 
+          else
 
              p_tuple_compare = .FALSE.
 
           end if
 
-       else 
+       else
 
           p_tuple_compare = .FALSE.
 
        end if
 
-    else 
+    else
 
        p_tuple_compare = .FALSE.
 
@@ -1068,7 +1069,7 @@ end if
     next_element => current_element
 
     passedlast = 0
-    
+
     p_tuple_st_order = p_tuple_standardorder(pert_tuple)
 
     sdf_already = .FALSE.
@@ -1115,7 +1116,7 @@ end if
 
           offset = offset + (ind(i) - 1)*product(pert_tuple%pdim &
                             (i:pert_tuple%n_perturbations))/pert_tuple%pdim(i)
- 
+
        end do
 
     else
@@ -1187,12 +1188,12 @@ end if
     if (pert_tuple%n_perturbations > 0) then
 
        offset = 1
-       
+
        do i = 1, pert_tuple%n_perturbations
 
           offset = offset + (ind(i) - 1)*product(pert_tuple%pdim(i: &
                    pert_tuple%n_perturbations))/pert_tuple%pdim(i)
- 
+
        end do
 
     else
@@ -1260,7 +1261,7 @@ end if
        end if
     end do
 
-   
+
     if (p_tuple_hasfirst .eqv. .TRUE.) then
 
        if (kn(1) < size(pertid)) then
@@ -1396,30 +1397,30 @@ end if
 
 
 !   function make_outerwhichpertbig(total_num_perturbations, num_p_tuples, p_tuples)
-! 
+!
 !     implicit none
-! 
+!
 !     integer :: i, j, k, total_num_perturbations, num_p_tuples
 !     type(p_tuple), dimension(num_p_tuples) :: p_tuples
 !     integer, dimension(total_num_perturbations) :: make_outerwhichpertbig
-! 
+!
 !     do i = 1, total_num_perturbations
-! 
+!
 !        make_outerwhichpertbig(i) = 0
-! 
+!
 !     end do
-! 
+!
 !     k = 1
-! 
+!
 !     do i = 1, num_p_tuples
 !        do j = 1, p_tuples(i)%n_perturbations
-! 
+!
 !           make_outerwhichpertbig(p_tuples(i)%pid(j)) = k
 !           k = k + 1
-! 
+!
 !        end do
 !     end do
-! 
+!
 !   end function
 
 
@@ -1575,7 +1576,7 @@ end if
        o_wh_forave(o_whichpert(i)) = i
 
        end if
-  
+
     end do
 
 
@@ -1617,7 +1618,7 @@ end if
        if (num_p_tuples == 1) then
 
           call rsp_oneave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
+                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                          p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
                          contrib)
 
@@ -1670,15 +1671,15 @@ end if
 ! end if
 
 ! NOTE (MaR): XCAVE CALL REMOVED FOR NOW
-! 
+!
 !        contrib = 0.0
-! 
+!
 !        call rsp_xcave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                      num_p_tuples, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
 !                      (dens_tuple(k), k = 2, num_p_tuples) /), contrib)
-! 
-! 
+!
+!
 !        tmp = tmp + contrib
 
        if (p_tuples(1)%n_perturbations > 0) then
@@ -1723,7 +1724,7 @@ end if
        tmp = 0.0
        contrib = 0.0
 
-       call rsp_nucpot(nucpot_pert, contrib) 
+       call rsp_nucpot(nucpot_pert, contrib)
        tmp = tmp + contrib
 
 ! write(*,*) 'AFTER NUCPOT'
@@ -1756,13 +1757,13 @@ end if
 ! write(*,*) ' '
 
 ! NOTE (MaR): XCAVE CALL REMOVED FOR NOW
- 
+
 !        contrib = 0.0
 !
 !        call rsp_xcave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                      1, (/ sdf_getdata(D, get_emptypert(), (/1/)) /), contrib)
-! 
+!
 !        tmp = tmp + contrib
 
        prop =  prop + tmp
@@ -1771,7 +1772,7 @@ end if
     end if
 
     call property_cache_add_element(cache, num_p_tuples, p_tuples, &
-                                    property_size, prop_forcache)    
+                                    property_size, prop_forcache)
 
     deallocate(nucpot_pert)
     deallocate(dens_tuple)
@@ -1823,7 +1824,7 @@ end if
        p_tuples(2:size(p_tuples))/), density_order, D, property_size, cache, prop)
 
     end if
-    
+
        ! 2. Differentiate all of the contraction densities in turn
 
        ! Find the number of terms
@@ -1848,7 +1849,7 @@ end if
        end do
 
 
-       ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
+       ! 3. Chain rule differentiate the energy w.r.t. the density (giving
        ! a(nother) pert D contraction)
 
        call rsp_ener(mol, p_tuple_remove_first(pert), total_num_perturbations, &
@@ -1857,7 +1858,7 @@ end if
 
 
     ! At the final recursion level: Calculate the contribution (if k,n choice of rule
-    ! allows it) or get it from cache if it was already calculated (and if k,n choice 
+    ! allows it) or get it from cache if it was already calculated (and if k,n choice
     ! of rule allow it)
 
     else
@@ -1868,7 +1869,7 @@ end if
        write(*,*) 'Getting energy contribution'
 
        do i = 1, num_p_tuples
- 
+
           if (i > 1) then
 
              write(*,*) 'D ', p_tuples(i)%pid
@@ -1878,7 +1879,7 @@ end if
                 e_knskip = .TRUE.
 
              end if
-          
+
           elseif (i == 1) then
 
              write(*,*) 'E ', p_tuples(i)%pid
@@ -1891,30 +1892,30 @@ end if
        if (e_knskip .EQV. .FALSE.) then
 
           open(unit=257, file='totterms', status='old', action='write', &
-               position='append') 
+               position='append')
           write(257,*) 'T'
           close(257)
-          
+
           write(*,*) 'Evaluating property_cache_already'
 
           if (property_cache_already(cache, num_p_tuples, p_tuples) .EQV. .TRUE.) then
 
              open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append') 
+                  position='append')
              write(257,*) 'T'
              close(257)
 
              write(*,*) 'Getting values from cache'
              write(*,*) ' '
 
-             ! NOTE (MaR): EVERYTHING IS IN STANDARD ORDER IN 
+             ! NOTE (MaR): EVERYTHING IS IN STANDARD ORDER IN
              ! THIS CALL (LIKE property_cache_getdata ASSUMES)
              call property_cache_getdata(cache, num_p_tuples, &
                   p_tuples_standardorder(num_p_tuples, p_tuples), property_size, prop)
-       
+
           else
 
-             call get_energy(mol, num_p_tuples, total_num_perturbations, & 
+             call get_energy(mol, num_p_tuples, total_num_perturbations, &
                   (/ (p_tuple_standardorder(p_tuples(i)) , i = 1, num_p_tuples ) /), &
                   density_order, D, property_size, cache, prop)
 
@@ -2007,14 +2008,14 @@ end if
 
 
   recursive subroutine derivative_superstructure(mol, pert, kn, primed, &
-                       current_derivative_term, superstructure_size, & 
+                       current_derivative_term, superstructure_size, &
                        new_element_position, derivative_structure)
 
     implicit none
 
     logical :: primed
     integer :: i, superstructure_size, new_element_position
-    integer, dimension(2) :: kn    
+    integer, dimension(2) :: kn
     type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
@@ -2048,7 +2049,7 @@ end if
 
              new_element_position = new_element_position + 1
              derivative_structure(new_element_position, :) = current_derivative_term
- 
+
           end if
 
        else
@@ -2060,7 +2061,7 @@ end if
                   kn_skip(current_derivative_term(3)%n_perturbations, &
                           current_derivative_term(3)%pid, kn) ) .eqv. .FALSE.) then
 
-             new_element_position = new_element_position + 1 
+             new_element_position = new_element_position + 1
              derivative_structure(new_element_position, :) = current_derivative_term(:)
 
           end if
@@ -2276,9 +2277,9 @@ end if
 
        Y = Y - A*B*C
 
-       ! Note (MaR): Can do frequency_zero_or_sum in 
+       ! Note (MaR): Can do frequency_zero_or_sum in
        ! if evaluation to save matrix fetching
-        
+
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2287,7 +2288,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Y = Y - ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A*B*C
-        
+
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2431,7 +2432,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        L = L + A * B * C
-        
+
        call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2440,7 +2441,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        L = L - A * B * C
-       
+
     end do
 
     A = 0
@@ -2520,7 +2521,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-         
+
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2538,7 +2539,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Zeta = Zeta +  A * B * C
-         
+
        call sdf_getdata_s(S, merged_A, get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2547,7 +2548,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Zeta = Zeta - A * B * C
-         
+
        call sdf_getdata_s(S, merged_A, get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2556,7 +2557,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-         
+
        call sdf_getdata_s(S, merged_A, get_fds_data_index(merged_A,  &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
@@ -2565,7 +2566,7 @@ end if
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-         
+
     end do
 
     merged_p_tuple = merge_p_tuple(p_tuple_a, merge_p_tuple(deriv_struct(1,1), &
@@ -2574,7 +2575,7 @@ end if
     if (kn_skip(merged_p_tuple%n_perturbations, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-       call sdf_getdata_s(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, & 
+       call sdf_getdata_s(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, &
        total_num_perturbations, which_index_is_pid, indices_len, ind), A)
 
        Zeta = Zeta - A
@@ -2673,7 +2674,7 @@ end if
 
     end do
 
-    call property_cache_add_element(cache, 2, p12, property_size, prop_forcache)    
+    call property_cache_add_element(cache, 2, p12, property_size, prop_forcache)
 
     deallocate(deriv_structb)
     deallocate(ncarray)
@@ -2700,7 +2701,7 @@ end if
     integer :: property_size, i
     integer, dimension(2) :: kn
     complex(8), dimension(property_size) :: prop
-    
+
     if (pert%n_perturbations > 0) then
 
        call rsp_pulay_kn(mol, p_tuple_remove_first(pert), kn, &
@@ -2731,15 +2732,15 @@ end if
              write(*,*) ' '
 
              open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append') 
+                  position='append')
              write(257,*) 'T'
              close(257)
 
              call property_cache_getdata(cache, 2, p12, property_size, prop)
-       
+
           else
 
-             call get_pulay_kn(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
+             call get_pulay_kn(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), &
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated Pulay k-n contribution'
@@ -2750,11 +2751,11 @@ end if
        else
 
           write(*,*) 'Pulay k-n contribution was k-n skipped:'
-          write(*,*) 'S ', p12(1)%pid 
-          write(*,*) 'W ', p12(2)%pid 
+          write(*,*) 'S ', p12(1)%pid
+          write(*,*) 'W ', p12(2)%pid
           write(*,*) ' '
 
-       end if 
+       end if
 
     end if
 
@@ -2786,7 +2787,7 @@ end if
 
     d_supsize = derivative_superstructure_getsize(mol, p12(2), kn, .TRUE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
-   
+
     allocate(deriv_structb(d_supsize, 3))
 
     incr = 0
@@ -2875,7 +2876,7 @@ end if
     integer :: property_size, i
     integer, dimension(2) :: kn
     complex(8), dimension(property_size) :: prop
-    
+
     if (pert%n_perturbations > 0) then
 
        call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
@@ -2894,7 +2895,7 @@ end if
        write(*,*) 'S', p12(1)%pid
        write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
 
-       open(unit=257, file='totterms', status='old', action='write', position='append') 
+       open(unit=257, file='totterms', status='old', action='write', position='append')
        write(257,*) 'T'
        close(257)
 
@@ -2902,9 +2903,9 @@ end if
 
              write(*,*) 'Getting values from cache'
              write(*,*) ' '
-       
+
              open(unit=257, file='cachehit', status='old', action='write', &
-             position='append') 
+             position='append')
              write(257,*) 'T'
              close(257)
 
@@ -2912,7 +2913,7 @@ end if
 
           else
 
-             call get_pulaylag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+             call get_pulaylag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated Pulay lagrange contribution'
@@ -2923,7 +2924,7 @@ end if
        else
 
           write(*,*) 'Pulay lagrange contribution was k-n skipped:'
-          write(*,*) 'S', p12(1)%pid 
+          write(*,*) 'S', p12(1)%pid
           write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
           write(*,*) ' '
 
@@ -2969,7 +2970,7 @@ end if
     incr1 = 0
     incr2 = 0
 
-    call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., & 
+    call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize(1), incr1, deriv_structa)
     call derivative_superstructure(mol, p12(2), kn, .TRUE., &
@@ -3041,7 +3042,7 @@ end if
 
     end do
 
-    call property_cache_add_element(cache, 2, p12, property_size, prop_forcache) 
+    call property_cache_add_element(cache, 2, p12, property_size, prop_forcache)
 
     deallocate(deriv_structa)
     deallocate(deriv_structb)
@@ -3073,7 +3074,7 @@ end if
     integer :: property_size, i
     integer, dimension(2) :: kn
     complex(8), dimension(property_size) :: prop
-    
+
     if (pert%n_perturbations > 0) then
 
        call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
@@ -3092,7 +3093,7 @@ end if
           write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
 
           open(unit=257, file='totterms', status='old', action='write', &
-               position='append') 
+               position='append')
           write(257,*) 'T'
           close(257)
 
@@ -3107,11 +3108,11 @@ end if
              close(257)
 
              call property_cache_getdata(cache, 2, p12, property_size, prop)
-      
+
           else
 
              ! At lowest level:
-             call get_idem_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+             call get_idem_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated idempotency lagrange contribution'
@@ -3122,7 +3123,7 @@ end if
        else
 
           write(*,*) 'Idempotency lagrange contribution was k-n skipped:'
-          write(*,*) 'Zeta', p12(1)%pid 
+          write(*,*) 'Zeta', p12(1)%pid
           write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
           write(*,*) ' '
 
@@ -3168,7 +3169,7 @@ end if
     incr2 = 0
 
     call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., &
-                    (/get_emptypert(), get_emptypert(), get_emptypert()/), & 
+                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                     d_supsize(1), incr1, deriv_structa)
     call derivative_superstructure(mol, p12(2), kn, .TRUE., &
                     (/get_emptypert(), get_emptypert(), get_emptypert()/), &
@@ -3261,7 +3262,7 @@ end if
     integer :: property_size, i
     integer, dimension(2) :: kn
     complex(8), dimension(property_size) :: prop
-    
+
     if (pert%n_perturbations > 0) then
 
        call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
@@ -3280,14 +3281,14 @@ end if
           write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
 
           open(unit=257, file='totterms', status='old', action='write', &
-               position='append') 
+               position='append')
           write(257,*) 'T'
           close(257)
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
              open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append') 
+                  position='append')
              write(257,*) 'T'
              close(257)
 
@@ -3295,7 +3296,7 @@ end if
              write(*,*) ' '
 
              call property_cache_getdata(cache, 2, p12, property_size, prop)
-       
+
           else
 
              ! At lowest level:
@@ -3310,7 +3311,7 @@ end if
        else
 
           write(*,*) 'scfe lagrange contribution was k-n skipped:'
-          write(*,*) 'Lambda', p12(1)%pid 
+          write(*,*) 'Lambda', p12(1)%pid
           write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
           write(*,*) ' '
 
@@ -3356,7 +3357,7 @@ end if
 
        end do
     end do
-  
+
   end subroutine
 
 
@@ -3380,9 +3381,9 @@ end if
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     type(matrix), allocatable, dimension(:) :: tmp
     type(matrix), dimension(property_size) :: Fp
-    
+
     ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
-    ncouter = nc_only(total_num_perturbations, total_num_perturbations - & 
+    ncouter = nc_only(total_num_perturbations, total_num_perturbations - &
                       p_tuples(1)%n_perturbations, num_p_tuples - 1, &
                       p_tuples(2:num_p_tuples), ncarray)
     ncinner = nc_only(total_num_perturbations, p_tuples(1)%n_perturbations, 1, &
@@ -3423,7 +3424,7 @@ end if
              o_wh_forave(o_whichpert(i)) = i
 
           end if
-  
+
        end do
 
 
@@ -3451,7 +3452,7 @@ end if
 
        end do
 
-       call make_indices(total_num_perturbations - p_tuples(1)%n_perturbations, 1, & 
+       call make_indices(total_num_perturbations - p_tuples(1)%n_perturbations, 1, &
                          ncoutersmall, 0, outer_indices)
 
        if (p_tuples(1)%n_perturbations > 0) then
@@ -3514,7 +3515,7 @@ end if
 
              do j = 1, size(inner_indices, 1)
 
-                offset = get_one_tensor_offset( sum( (/ (p_tuples(k)%n_perturbations, & 
+                offset = get_one_tensor_offset( sum( (/ (p_tuples(k)%n_perturbations, &
                          k=1, num_p_tuples ) /) ), &
                          (/ inner_indices(j,:), outer_indices(i,:) /), &
                          (/ (p_tuples(k)%pid, k=1, num_p_tuples ) /), ncarray)
@@ -3604,7 +3605,7 @@ end if
 
        if (p_tuples(1)%n_perturbations == 0) then
 
-          call fock_lowerorder(mol, p_tuple_remove_first(pert), & 
+          call fock_lowerorder(mol, p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
                density_order, D, property_size, Fp)
@@ -3618,7 +3619,7 @@ end if
                density_order, D, property_size, Fp)
 
        end if
-    
+
        ! 2. Differentiate all of the contraction densities in turn
 
        do i = 2, num_p_tuples
@@ -3641,7 +3642,7 @@ end if
 
        end do
 
-       ! 3. Chain rule differentiate w.r.t. the density (giving 
+       ! 3. Chain rule differentiate w.r.t. the density (giving
        ! a(nother) pert D contraction)
 
        call fock_lowerorder(mol, p_tuple_remove_first(pert), total_num_perturbations, &
@@ -3653,7 +3654,7 @@ end if
        write(*,*) 'Getting perturbed Fock matrix lower order contribution'
 
        do i = 1, num_p_tuples
- 
+
           if (i == 1) then
 
              write(*,*) 'F', p_tuples(i)%pid
@@ -3677,7 +3678,7 @@ end if
           end if
 
        end do
-      
+
        if (density_order_skip .EQV. .FALSE.) then
 
           call get_fock_lowerorder(mol, num_p_tuples, total_num_perturbations, &
@@ -3688,7 +3689,7 @@ end if
 
        else
 
-          write(*,*) 'Skipping contribution: At least one contraction D perturbed' 
+          write(*,*) 'Skipping contribution: At least one contraction D perturbed'
           write(*,*) 'at order for which perturbed D is to be found '
           write(*,*) ' '
 
@@ -3723,8 +3724,6 @@ end if
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(mol, pert, F, D, S)
-
-    use dalton_ifc, only: rsp_mosolver_exec
 
     implicit none
 
@@ -3766,7 +3765,7 @@ end if
     call sdf_add(D, pert, Dp)
 
     ! 2. Construct Dp and the initial part of Fp
-    ! a) For the initial part of Fp: Make the initial recursive (lower order) 
+    ! a) For the initial part of Fp: Make the initial recursive (lower order)
     ! oneint, twoint, and xcint calls as needed
 
     call fock_lowerorder(mol, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
@@ -3803,7 +3802,7 @@ end if
        Dp(i) = Dp(i) - sdf_getdata(D, get_emptypert(), (/1/)) * &
                        sdf_getdata(S, get_emptypert(), (/1/)) * Dp(i) - &
                Dp(i) * sdf_getdata(S, get_emptypert(), (/1/)) * &
-                       sdf_getdata(D, get_emptypert(), (/1/)) 
+                       sdf_getdata(D, get_emptypert(), (/1/))
 
        call sdf_add(D, pert, Dp)
 
@@ -3827,7 +3826,7 @@ end if
        RHS(1) = rsp_get_matrix_y(mol, superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S)
-     
+
        X(1) = 0*RHS(1)
        call mat_alloc(X(1))
        X(1)%elms= 0.0
@@ -3887,7 +3886,7 @@ end if
 
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
-    ! Then (at final recursion level) get perturbed F, D, S 
+    ! Then (at final recursion level) get perturbed F, D, S
 
     if (pert%n_perturbations > 1) then
 
@@ -3897,21 +3896,21 @@ end if
 
           call rsp_fds(mol, psub(i), kn, F, D, S)
 
-       end do       
+       end do
 
     end if
 
     if (sdf_already(D, pert) .eqv. .FALSE.) then
-         
+
        if (kn_skip(pert%n_perturbations, pert%pid, kn) .eqv. .FALSE.) then
 
           write(*,*) 'Calling ovlint/fock/density with labels ', pert%plab, &
                      ' and perturbation id ', pert%pid
           write(*,*) ' '
-                 
-          ! FIXME (MaR) Quick fix: Reenumerate pids from 1 and up so that 
+
+          ! FIXME (MaR) Quick fix: Reenumerate pids from 1 and up so that
           ! get_fds doesn't stumble. It seems to work, but consider rewrite.
-         
+
           k = 1
 
           do j = 1, pert%n_perturbations
@@ -3959,8 +3958,8 @@ end if
        else
 
           rm_dim(j) = dims(i)
-  
-          j = j + 1   
+
+          j = j + 1
 
        end if
 
@@ -4007,7 +4006,7 @@ end if
     ! Do the case n = 1 first to establish one value
 
     minsize = kn_prod(pert%n_perturbations - 1, 1, pert%pdim(2:pert%n_perturbations), &
-              pert%n_perturbations - 1 - 1, pert%pdim(1)) 
+              pert%n_perturbations - 1 - 1, pert%pdim(1))
 
 
     minsize = minsize + kn_prod(pert%n_perturbations - 1, &
@@ -4027,7 +4026,7 @@ end if
        csize = csize + kn_prod(pert%n_perturbations - 1, &
                  0, pert%pdim(2:pert%n_perturbations), n, 1)
 
-       ! If the products are smaller than the previous min, update 
+       ! If the products are smaller than the previous min, update
        ! index identifer and minsize
 
        if (csize < minsize) then
@@ -4084,7 +4083,7 @@ end if
                        pulay_lag_cache, idem_cache, scfe_cache
 
     emptypert%n_perturbations = 0
-    allocate(emptypert%pdim(0))    
+    allocate(emptypert%pdim(0))
     allocate(emptypert%plab(0))
     allocate(emptypert%pid(0))
     allocate(emptypert%freq(0))
@@ -4096,7 +4095,7 @@ end if
     ! Maybe also extend to get W for kn part of rsp_pulay
 
     call rsp_fds(mol, pert, kn, F, D, S)
- 
+
     write(*,*) ' '
     write(*,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
     write(*,*) ' '
@@ -4127,7 +4126,7 @@ end if
                        S, D, F, product(pert%pdim), pulay_lag_cache, prop)
 
     write(*,*) ' '
-    write(*,*) 'Finished calculating Pulay lagrangian type contributions' 
+    write(*,*) 'Finished calculating Pulay lagrangian type contributions'
     write(*,*) ' '
 
     deallocate(pulay_lag_cache)
@@ -4169,11 +4168,11 @@ end if
     integer :: i, j
     complex(8), allocatable, dimension(:) :: prop
 
-    open(unit=257, file='totterms', status='replace', action='write') 
+    open(unit=257, file='totterms', status='replace', action='write')
     write(257,*) 'START'
     close(257)
 
-    open(unit=257, file='cachehit', status='replace', action='write') 
+    open(unit=257, file='cachehit', status='replace', action='write')
     write(257,*) 'START'
     close(257)
 
@@ -4226,17 +4225,17 @@ end if
     write(*,*) 'Property was calculated:'
     write(*,*) ' '
 
-    open(unit=260, file='rsp_tensor', status='replace', action='write') 
+    open(unit=260, file='rsp_tensor', status='replace', action='write')
     write(260,*) real(prop)
     close(260)
 
     write(*,*) 'End of print'
 
-    open(unit=257, file='totterms', status='old', action='write', position='append') 
+    open(unit=257, file='totterms', status='old', action='write', position='append')
     write(257,*) 'END'
     close(257)
 
-    open(unit=257, file='cachehit', status='old', action='write', position='append') 
+    open(unit=257, file='cachehit', status='old', action='write', position='append')
     write(257,*) 'END'
     close(257)
 

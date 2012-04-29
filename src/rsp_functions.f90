@@ -14,6 +14,7 @@ module rsp_functions
   use matrix_defop
   use rsp_contribs
   use rsp_equations
+  use interface_rsp_solver
 
   implicit none
 
@@ -83,7 +84,6 @@ contains
   subroutine get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
 
     use matrix_backend, only: mat_alloc
-    use dalton_ifc,     only: rsp_mosolver_exec
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in)    :: mol
     integer,       intent(in)    :: ng
@@ -124,7 +124,6 @@ contains
   subroutine contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
 
     use matrix_backend, only: mat_alloc
-    use dalton_ifc,     only: rsp_mosolver_exec
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
@@ -209,7 +208,6 @@ contains
   subroutine contract_cubicff(mol, ng, S, D, F, Sg, Dg, Fg)
 
     use matrix_backend, only: mat_alloc
-    use dalton_ifc,     only: rsp_mosolver_exec
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
@@ -353,7 +351,7 @@ contains
              tmp(i,j,k) = -tr(FgDS(i),DSDgg)
           end do; DSDgg=0
        end do
-    end do; FgDS=0; 
+    end do; FgDS=0;
     cub = cub + tmp
 
 
@@ -366,7 +364,7 @@ contains
     do k = 1, size(Dg)
        do j = 1, size(Dg)
           FDSgg = (Fg(k)*Dg(j)+Fg(j)*Dg(k))*S - (Sg(k)*Dg(j)+Sg(j)*Dg(k))*F &
-                + (Fg(k)*D+F*Dg(k))*Sg(j) - (Sg(k)*D+S*Dg(k))*Fg(j) & 
+                + (Fg(k)*D+F*Dg(k))*Sg(j) - (Sg(k)*D+S*Dg(k))*Fg(j) &
                 + (Fg(j)*D+F*Dg(j))*Sg(k) - (Sg(j)*D+S*Dg(j))*Fg(k)
           do i = 1, size(Dg)
              tmp(i,j,k) = -tr(DgSD(i),FDSgg)
@@ -454,7 +452,6 @@ contains
 ! the quartic force field.
 
   subroutine prop_test_quarticff(mol, ng, S, D, F)
-    use dalton_ifc,     only: rsp_mosolver_exec
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
@@ -464,8 +461,8 @@ contains
     type(matrix) Dgg(ng,ng), Sgg(ng,ng), Fgg(ng,ng) ! NOT INITIALIZED
     type(matrix) DFDggg2p, DSDggg2p, FDSggg2p, RHS(1), Dh
     complex(8)   gra(ng), tm1(ng), hes(ng,ng), tm2(ng,ng)
-    complex(8)   cub(ng,ng,ng), tm3(ng,ng,ng) 
-    complex(8)   qua(ng,ng,ng,ng), tmp(ng,ng,ng,ng) 
+    complex(8)   cub(ng,ng,ng), tm3(ng,ng,ng)
+    complex(8)   qua(ng,ng,ng,ng), tmp(ng,ng,ng,ng)
     complex(8)   xc_qua(ng,ng,ng,ng)
     character(4) nof(0) !no-field
     integer      i, j, k, l, m, noc(0) !no-comp
@@ -850,7 +847,7 @@ contains
     do i = 1, size(Dg)
        DgSD(i) = Dg(i)*S*D - D*S*Dg(i)
     end do
-    
+
     do k = 1, size(Dg)
       do j = 1, size(Dg)
         do i = 1, size(Dg)
@@ -872,7 +869,7 @@ contains
           end do
 
         end do
-      end do 
+      end do
     end do
     FDSggg2p=0
     DgSD=0
@@ -895,7 +892,6 @@ contains
 
   subroutine prop_test_diphes(mol, ng, S, D, F)
     use matrix_backend, only: mat_alloc
-    use dalton_ifc,     only: rsp_mosolver_exec
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
@@ -996,7 +992,7 @@ contains
     end do
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, '-SaDFDbf1')
 
-    ! 1-electron contribution 
+    ! 1-electron contribution
     ! fixme: finite field calculation in rsp_oneave
     call rsp_oneave(mol, 3, (/'GEO ','GEO ','EL  '/), (/1,1,1/), shape(tmp), D, tmp)
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, 'HabfD')
@@ -1046,7 +1042,7 @@ contains
              tmp(i,j,k) = -tr(FgDS(i),DSDgf)
           end do; DSDgf=0
        end do
-    end do; FgDS=0; 
+    end do; FgDS=0;
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, '-FaDS DSDbf1')
     ! self-consistency multiplier contribution
     do i = 1, size(Dg)
@@ -1055,7 +1051,7 @@ contains
     do k = 1, size(Df)
        do j = 1, size(Dg)
           FDSgf = (Ff(k)*Dg(j)+Fg(j)*Df(k))*S - Sg(j)*(D*Ff(k) + Df(k)*F) &
-                + (Ff(k)*D+F*Df(k))*Sg(j) - S*(Dg(j)*Ff(k) + Df(k)*Fg(j)) 
+                + (Ff(k)*D+F*Df(k))*Sg(j) - S*(Dg(j)*Ff(k) + Df(k)*Fg(j))
           do i = 1, size(Dg)
              tmp(i,j,k) = -tr(DgSD(i),FDSgf)
           end do; FDSgf=0

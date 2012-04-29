@@ -7,7 +7,7 @@
 
 !> This module contains routines for calculating contributions
 !> to molecular properties (1st order, linear response, etc.),
-!> and perturbed Fock matrices. 
+!> and perturbed Fock matrices.
 module prop_contribs_old
 
    use matrix_defop
@@ -69,7 +69,7 @@ module prop_contribs_old
    end type
 
 
-   !> private struct to collect 
+   !> private struct to collect
    type prop_field_info
       !> four-letter abbreviation
       character(4)  :: code
@@ -165,7 +165,7 @@ contains
       !-------------------------------------------------------------
       !> property contributions, works incrementally, thus
       !> contributions are ADDED to E(*). size(E) = product(dime)
-      complex(8),     intent(inout) :: E(*) 
+      complex(8),     intent(inout) :: E(*)
       !-------------------------------------------------------------
       !> perm(np+nd), permutation of indices.
       !> For each dimension of p and D, the corresponding dimension in E.
@@ -180,7 +180,7 @@ contains
       complex(8),   optional, intent(in) :: freq(:)
       !> optional perturbed energy-weighted density matrices.
       !> Contracted against perturbed overlap integrals
-      type(matrix), optional, intent(in) :: DFD(:) 
+      type(matrix), optional, intent(in) :: DFD(:)
       !-------------------------------------------------------------
       integer      :: idxp(size(p)), pperm(size(dime)), ccomp(size(p)), &
                       stepe(size(dime)), ddime(size(dime)), idxe(size(dime)), &

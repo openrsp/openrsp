@@ -31,6 +31,7 @@ module rsp_equations_old
 
    use matrix_defop      !matrix type and operators
    use prop_contribs_old !integrals and integral contractions
+   use interface_rsp_solver
 
    implicit none
 
@@ -69,7 +70,7 @@ module rsp_equations_old
       integer      :: scomp(max_order) = 1
       !> frequencies (0d0,0d0)
       complex(8)   :: freq(max_order)  = 0
-      !> cached perturbed densities, if any. We could potentially cache 
+      !> cached perturbed densities, if any. We could potentially cache
       !> other matrices too: F, DS, SD, FD, DF, DFDp, FpDS or DpSD.
       !> Also, to save memory, files can be used, with filenames stored here.
       type(matrix), pointer :: D(:) => null()
@@ -716,7 +717,7 @@ contains
                  sol%scomp(:size(p)) /= ccomp)) cycle !wrong start comp
          if (.not.all(sol%freq(:size(p)) ==  ffreq) .and. & !wrong
              .not.all(sol%freq(:size(p)) == -ffreq)) cycle  !frequencies
-         ! solution exists. If same freq, just copy, 
+         ! solution exists. If same freq, just copy,
          do j = 1, pd  !if -freq copy and +-transpose
             if (all(sol%freq(:size(p)) == ffreq)) then
                Dp(j) = sol%D(j)
