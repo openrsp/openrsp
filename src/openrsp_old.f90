@@ -49,6 +49,7 @@ module openrsp_old
   use birefring_old
   use interface_molecule
   use interface_xc
+  use dalton_ifc
 
 ! xcint
   use interface_ao_specific
@@ -310,7 +311,6 @@ module openrsp_old
     !> \todo
     !> \todo type(molecule_t), intent(in) :: this_mol
     use prop_contribs_old, only: prop_molcfg
-    use dalton_ifc
     type(prop_molcfg), intent(in) :: molcfg
     type(matrix), intent(in) :: S
     type(matrix), intent(in) :: D

@@ -41,7 +41,6 @@
 module openrsp
 
   use matrix_backend
-  use dalton_ifc
   use interface_molecule
   use interface_io
   use interface_xc
@@ -53,6 +52,7 @@ module openrsp
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
+  use dalton_ifc
 
 ! xcint
   use interface_ao_specific

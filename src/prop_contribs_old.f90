@@ -12,11 +12,12 @@ module prop_contribs_old
 
    use matrix_defop
    use matrix_backend, only: mat_nullify, mat_alloc, mat_free
-   use dalton_ifc
    use interface_molecule
    use interface_xc
    use interface_1el
    use interface_f77_memory
+   use interface_scf
+   use dalton_ifc
 
    implicit none
    public prop_oneave

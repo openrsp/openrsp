@@ -18,6 +18,7 @@ module rsp_contribs
   use interface_xc
   use interface_f77_memory
   use interface_1el
+  use interface_scf
   use dalton_ifc
   use basis_set,  only: cgto
 

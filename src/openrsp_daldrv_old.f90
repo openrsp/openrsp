@@ -44,7 +44,6 @@
     ! matrix
     use matrix_backend
     ! interface of DALTON
-    use dalton_ifc
     use interface_f77_memory
     use interface_io
     use interface_xc

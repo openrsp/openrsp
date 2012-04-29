@@ -811,7 +811,6 @@ contains
       !       in:          --------------------------------------------
       !       out:                                                      ------
 use matrix_backend, only: mat_alloc, matrix_backend_debug
-      use dalton_ifc
       !> mol/basis/decomp/thresh needed by integrals and solver
       type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix

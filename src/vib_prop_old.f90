@@ -5,6 +5,7 @@ module vib_prop_old
    use matrix_defop
    use rsp_equations_old
    use prop_contribs_old
+   use dalton_ifc
 
    implicit none
 
@@ -89,7 +90,6 @@ contains
    !> and sqrt eigenvalues for frequencies (w<0 means imaginary).
    !> ajt FIXME Does not work in LSDALTON.
    subroutine load_vib_modes(mol, nc, nq, w, Q)
-      use dalton_ifc
       !> reference to molecule, geometry, etc.
       type(prop_molcfg), intent(in)  :: mol
       !> number of (cartesian) coordinates
