@@ -9,9 +9,6 @@ module dalton_ifc
 
   implicit none
 
-  public dal_ifc_init
-  public dal_ifc_finalize
-
   public di_get_overlap_and_H1
   public di_read_operator_int
   public di_get_dens
@@ -64,36 +61,6 @@ module dalton_ifc
   real(8), allocatable, save :: solver_DV(:)
 
   contains
-
-  !> \brief initializes the interface of DALTON
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> \param WORK contains the work memory
-  !> \param LWORK is the size of the work memory
-  !> \param log_io is the IO unit of log file
-  !> \param level_print is the print level
-  subroutine dal_ifc_init(log_io, level_print, WAVPCM )
-    implicit integer (i,m-n)
-#include <implicit.h>
-    integer, optional, intent(in) :: log_io
-    integer, optional, intent(in) :: level_print
-    logical, optional, intent(in) :: WAVPCM
-    ! uses NASHT
-#include <inforb.h>
-  end subroutine
-
-
-  !> \brief finalizes the interface of DALTON
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  subroutine dal_ifc_finalize
-#ifdef USE_WAVPCM
-    if (get_is_pcm_calculation()) then
-       call pcm_finalize
-    end if
-#endif
-  end subroutine
-
 
   !> \brief gets the overlap and one-electron Hamiltonian matrices
   !> \author Bin Gao

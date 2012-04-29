@@ -144,9 +144,6 @@ contains
     ! first parse input by running _calc in dryrun mode
     call openrsp_calc(dryrun=.true.)
 
-    ! initialize the interface to DALTON
-    call dal_ifc_init(LUPRI, print_level, WAVPCM)
-
     call interface_f77_memory_init(work_len=lwork, work=work) 
 
     ! initialize the MO response solver
@@ -506,7 +503,11 @@ end subroutine
     call mat_free(D)
     call mat_free(F)
     call rsp_mosolver_free
-    call dal_ifc_finalize
+#ifdef USE_WAVPCM
+    if (get_is_pcm_calculation()) then
+       call pcm_finalize()
+    end if
+#endif
     call interface_f77_memory_finalize()
     ! stamp with date, time and hostname
     call TSTAMP(' ', lupri)

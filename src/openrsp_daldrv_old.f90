@@ -294,9 +294,6 @@ real(8), allocatable :: eigval(:)
       imag_freqs = 0.0D+00
     end if
 
-    ! initializes the interface of DALTON
-    call dal_ifc_init(LUPRI, level_print, WAVPCM )
-
     call interface_f77_memory_init(work_len=lwork, work=work) 
 
     ! initializes the MO response solver
@@ -370,7 +367,11 @@ real(8), allocatable :: eigval(:)
     call mat_free(S)
     call openrsp_info_clean(openrsp_info)
     call rsp_mosolver_free
-    call dal_ifc_finalize
+#ifdef USE_WAVPCM
+    if (get_is_pcm_calculation()) then
+       call pcm_finalize()
+    end if
+#endif
     call interface_f77_memory_finalize()
 
     ! stamps the date, time and hostname
