@@ -28,9 +28,9 @@ module interface_host
 !  non-allocatables
    integer :: nr_ao
    integer :: nr_atoms
-   integer :: print_unit
-   integer :: input_unit
-   logical :: is_ks_calculation
+   integer :: print_unit        !fixme move to separate module: interface_io
+   integer :: input_unit        !fixme move to separate module: interface_io
+   logical :: is_ks_calculation !fixme move to interface_xc
    real(8) :: dipole_origin(3)
 
 !  allocatables, deallocate them in interface_host_finalize
