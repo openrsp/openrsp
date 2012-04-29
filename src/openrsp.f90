@@ -46,6 +46,7 @@ module openrsp
   use interface_io
   use interface_xc
   use interface_pcm
+  use interface_scf
   use interface_f77_memory
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
@@ -125,6 +126,7 @@ contains
     call interface_io_init()
     call interface_xc_init()
     call interface_pcm_init(wavpcm)
+    call interface_scf_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()

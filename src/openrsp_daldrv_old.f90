@@ -49,6 +49,7 @@
     use interface_io
     use interface_xc
     use interface_pcm
+    use interface_scf
     ! main module of openrsp
     use openrsp_old
     ! keeps molecule, energy, integral and solver config
@@ -152,6 +153,7 @@ real(8), allocatable :: eigval(:)
     call interface_molecule_init()
     call interface_io_init()
     call interface_xc_init()
+    call interface_scf_init()
     call interface_pcm_init(wavpcm)
 
     nbast = get_nr_ao()
