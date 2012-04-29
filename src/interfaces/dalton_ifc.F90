@@ -56,6 +56,7 @@ module dalton_ifc
   use interface_f77_memory
   use interface_molecule
   use interface_io
+  use interface_pcm
 
   implicit none
 
@@ -85,8 +86,6 @@ module dalton_ifc
 
   !> true for RHF - closed shell or one electron in one active orbital
   logical, save, private :: restrict_scf = .true.
-  !> PCM
-  logical, save, private :: dal_pcm = .false.
 
   !> control information of MO response solver
   !>
@@ -135,7 +134,6 @@ module dalton_ifc
     logical, optional, intent(in) :: WAVPCM
     ! uses NASHT
 #include <inforb.h>
-    if ( present( WAVPCM ) ) dal_pcm = WAVPCM
     restrict_scf = ( NASHT == 0 )
   end subroutine
 
@@ -144,11 +142,11 @@ module dalton_ifc
   !> \author Bin Gao
   !> \date 2009-12-08
   subroutine dal_ifc_finalize
-    if ( dal_pcm ) then
 #ifdef USE_WAVPCM
-      call pcm_finalize
-#endif
+    if (get_is_pcm_calculation()) then
+       call pcm_finalize
     end if
+#endif
   end subroutine
 
 
@@ -187,7 +185,7 @@ module dalton_ifc
     call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
     call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
     ! PCM one-electron contributions    
-    if ( dal_pcm ) then
+    if ( get_is_pcm_calculation() ) then
       work_pcm = get_f77_memory_next()
       call set_f77_memory_next(work_pcm + NNBASX)
       if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
@@ -401,7 +399,7 @@ module dalton_ifc
     call SIRFCK( G%elms, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! PCM two-electron contributions
-    if ( dal_pcm ) then
+    if ( get_is_pcm_calculation() ) then
       ! assigns the work memory
       work_pcm = get_f77_memory_next()
       work_pcm2 = work_pcm + NNBASX

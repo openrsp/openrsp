@@ -15,7 +15,6 @@ module interface_molecule
    public get_nuc_name
    public get_nuc_charge
    public get_nuc_xyz
-   public get_is_ks_calculation
    public get_dipole_origin
 
    private
@@ -26,7 +25,6 @@ module interface_molecule
 !  non-allocatables
    integer :: nr_ao
    integer :: nr_atoms
-   logical :: is_ks_calculation !fixme move to interface_xc
    real(8) :: dipole_origin(3)
 
 !  allocatables, deallocate them in interface_molecule_finalize
@@ -45,9 +43,8 @@ contains
 #include "infinp.h"
 #include "orgcom.h"
 
-      nr_ao      = nbast
-      nr_atoms   = natoms
-      is_ks_calculation = dodft
+      nr_ao    = nbast
+      nr_atoms = natoms
 
       allocate(nuc_name(nr_atoms))
       nuc_name = namn(:nr_atoms)
@@ -110,11 +107,6 @@ contains
       integer, intent(in) :: j
       call check_if_interface_is_initialized()
       get_nuc_xyz = nuc_xyz(i, j)
-   end function
-
-   logical function get_is_ks_calculation()
-      call check_if_interface_is_initialized()
-      get_is_ks_calculation = is_ks_calculation
    end function
 
    function get_dipole_origin()

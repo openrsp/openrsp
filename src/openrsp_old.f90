@@ -48,6 +48,7 @@ module openrsp_old
   ! calculation and outputting of optical birefringences
   use birefring_old
   use interface_molecule
+  use interface_xc
 
 ! xcint
   use interface_ao_specific
