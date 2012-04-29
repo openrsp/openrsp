@@ -1160,6 +1160,7 @@ module dalton_ifc
 
 
   subroutine SHELLS_to_type_cgto(ncgto, nectr, ectr, bas)
+    !radovan: fixme ugly dependency on basis_set
     use basis_set, only: cgto
     implicit integer (i,m-n)
 #include <implicit.h>
