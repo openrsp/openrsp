@@ -1,4 +1,4 @@
 $ERROR 1.E-6
-Nlines 4:d/dg dipmom = -Egf w:-0.000 0.000
+Nlines 4:d/dg dipmom
 $ERROR 1.E-6
-Nlines 10:d/dg Alpha = -Egff w:-0.000 0.000 0.000
+Nlines 10:d/dg Alpha
