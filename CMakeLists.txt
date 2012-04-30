@@ -46,8 +46,8 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/birefring_old.f90
-    ${PROJECT_SOURCE_DIR}/src/openrsp.f90
-    ${PROJECT_SOURCE_DIR}/src/openrsp_daldrv_old.f90
+    ${PROJECT_SOURCE_DIR}/src/openrsp.F90
+    ${PROJECT_SOURCE_DIR}/src/openrsp_daldrv_old.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp_old.f90
     ${PROJECT_SOURCE_DIR}/src/prop_contribs_old.f90
     ${PROJECT_SOURCE_DIR}/src/prop_test_old.f90
