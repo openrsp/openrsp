@@ -8,7 +8,6 @@ module dalton_ifc
 
   implicit none
 
-  public NUCLEI_ifc
   public DIPNUC_ifc
   public QDRNUC_ifc
   public GRADNN_ifc
@@ -19,28 +18,28 @@ module dalton_ifc
 
   contains
 
-  !> \brief gets the information of atoms
-  !> \author Bin Gao
-  !> \date 2009-12-12
-  !> \param n is the number of atoms
-  !> \return Z contains the charges
-  !> \return IS contains the ...
-  !> \return G contains the coordinates
-  !> \note modified on linsca/linears/VIBCTL_interface.F
-  subroutine NUCLEI_ifc( n, Z, IS, G )
-    implicit integer (i,m-n)
-#include <implicit.h>
-#include <mxcent.h>
-#include <nuclei.h>
-    integer, intent(in) :: n
-    integer, intent(out) :: IS(n)
-    real(8), intent(out) :: Z(n)
-    real(8), intent(out) :: G(3,n)
-    if ( n /= NATOMS ) call QUIT( 'NUCLEI_ifc: n/=NATOMS!' )
-    Z = CHARGE(1:n)
-    IS = ISOTOP(1:n)
-    G = CORD(:,1:n)
-  end subroutine
+! !> \brief gets the information of atoms
+! !> \author Bin Gao
+! !> \date 2009-12-12
+! !> \param n is the number of atoms
+! !> \return Z contains the charges
+! !> \return IS contains the ...
+! !> \return G contains the coordinates
+! !> \note modified on linsca/linears/VIBCTL_interface.F
+! subroutine NUCLEI_ifc( n, Z, IS, G )
+!   implicit integer (i,m-n)
+!include <implicit.h>
+!include <mxcent.h>
+!include <nuclei.h>
+!   integer, intent(in) :: n
+!   integer, intent(out) :: IS(n)
+!   real(8), intent(out) :: Z(n)
+!   real(8), intent(out) :: G(3,n)
+!   if ( n /= NATOMS ) call QUIT( 'NUCLEI_ifc: n/=NATOMS!' )
+!   Z = CHARGE(1:n)
+!   IS = ISOTOP(1:n)
+!   G = CORD(:,1:n)
+! end subroutine
 
 
   !> \brief gets the nuclear contribution to electric dipole moment

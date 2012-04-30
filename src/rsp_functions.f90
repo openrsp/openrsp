@@ -14,6 +14,7 @@ module rsp_functions
   use matrix_defop
   use rsp_contribs
   use rsp_equations
+  use interface_molecule
   use interface_rsp_solver
 
   implicit none
@@ -427,15 +428,21 @@ contains
 
   subroutine print_nuclear_masses(ng)
 
-    use dalton_ifc, only: nuclei_ifc
-
     integer, intent(in) :: ng
 
     real(8)             :: charges(ng/3), coords(ng)
     real(8)             :: masses(ng/3), totmass, origin(3)
     integer             :: isotopes(ng/3)
+    integer             :: i
 
-    call NUCLEI_ifc(ng/3, charges, isotopes, coords)
+    do i = 1, ng/3
+       charges(i)  = get_nuc_charge(i)
+       isotopes(i) = get_nuc_isotope(i)
+       coords((i-1)*3 + 1) = get_nuc_xyz(1, i)
+       coords((i-1)*3 + 2) = get_nuc_xyz(2, i)
+       coords((i-1)*3 + 3) = get_nuc_xyz(3, i)
+    end do
+
     call VIBMAS(masses, totmass, isotopes, nint(charges), ng/3, coords, origin, 1)
     open (unit=iounit, file='masses', status='replace', action='write')
     call print_tensor(shape(masses), masses*(1d0,0d0), unit=iounit)

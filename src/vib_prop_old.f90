@@ -6,6 +6,7 @@ module vib_prop_old
    use rsp_equations_old
    use prop_contribs_old
    use dalton_ifc
+   use interface_molecule
 
    implicit none
 
@@ -107,7 +108,16 @@ contains
       real(8)       :: diff
       logical       :: ex
       character(22) :: fmt
-      call NUCLEI_ifc(nc/3,Z,IS,G)
+
+      do i = 1, nc/3
+         Z(i)  = get_nuc_charge(i)
+         IS(i) = get_nuc_isotope(i)
+         G((i-1)*3 + 1) = get_nuc_xyz(1, i)
+         G((i-1)*3 + 2) = get_nuc_xyz(2, i)
+         G((i-1)*3 + 3) = get_nuc_xyz(3, i)
+      end do
+
+
       call GPINQ('DALTON.HES','EXIST',ex)
       if (.not.ex) call quit('load_vib_modes: Hessian file DALTON.HES not found')
       call GPOPEN(unit,'DALTON.HES','OLD',' ','FORMATTED',0,.false.)

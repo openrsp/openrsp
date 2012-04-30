@@ -14,6 +14,7 @@ module interface_molecule
    public get_nr_atoms
    public get_nuc_name
    public get_nuc_charge
+   public get_nuc_isotope
    public get_nuc_xyz
    public get_dipole_origin
 
@@ -30,6 +31,7 @@ module interface_molecule
 !  allocatables, deallocate them in interface_molecule_finalize
    character(4), allocatable :: nuc_name(:)
    real(8),      allocatable :: nuc_charge(:)
+   integer,      allocatable :: nuc_isotope(:)
    real(8),      allocatable :: nuc_xyz(:, :)
 
 contains
@@ -52,6 +54,9 @@ contains
       allocate(nuc_charge(nr_atoms))
       nuc_charge = charge(:nr_atoms)
 
+      allocate(nuc_isotope(nr_atoms))
+      nuc_isotope = isotop(:nr_atoms)
+
       allocate(nuc_xyz(3, nr_atoms))
       nuc_xyz = cord(:, :nr_atoms)
 
@@ -64,9 +69,10 @@ contains
    subroutine interface_molecule_finalize()
 
 !     here deallocate everything that is allocated
-      if (allocated(nuc_name))   deallocate(nuc_name)
-      if (allocated(nuc_charge)) deallocate(nuc_charge)
-      if (allocated(nuc_xyz))    deallocate(nuc_xyz)
+      if (allocated(nuc_name))    deallocate(nuc_name)
+      if (allocated(nuc_charge))  deallocate(nuc_charge)
+      if (allocated(nuc_isotope)) deallocate(nuc_isotope)
+      if (allocated(nuc_xyz))     deallocate(nuc_xyz)
 
       is_initialized = .false.
 
@@ -100,6 +106,12 @@ contains
       integer, intent(in) :: i
       call check_if_interface_is_initialized()
       get_nuc_charge = nuc_charge(i)
+   end function
+
+   integer function get_nuc_isotope(i)
+      integer, intent(in) :: i
+      call check_if_interface_is_initialized()
+      get_nuc_isotope = nuc_isotope(i)
    end function
 
    real(8) function get_nuc_xyz(i, j)
