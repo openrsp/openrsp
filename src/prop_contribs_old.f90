@@ -1235,14 +1235,10 @@ contains
          i = 1 + sum(idxf * stepf)
          if (.not.present(F)) Ftmp(j) = 0
          if (.not.present(S)) Stmp(j) = 0
-         if (present(F)) then
-            F(i)    = Ftmp(j)
-            Ftmp(j) = 0
-         end if
-         if (present(S) .and. bas) then
-            S(i) = Stmp(j)
-            Stmp(j) = 0
-         end if
+         if (present(F)) &
+            call mat_move(Ftmp(j), F(i))
+         if (present(S) .and. bas) &
+            call mat_move(Stmp(j), S(i))
          do k = 1, size(dimp)
             idxf(k) = idxf(k) + 1
             if (idxf(k) /= ddimp(k)) exit
@@ -1568,8 +1564,7 @@ contains
       idxf = 0
       do j = 1, product(dimf)
          i = 1 + sum(idxf * stepf)
-         Ftmp(j) = F(i)
-         F(i)    = 0
+         call mat_move(F(i), Ftmp(j))
          do k = 1, size(dimf)
             idxf(k) = idxf(k) + 1
             if (idxf(k) /= ddimf(k)) exit
@@ -1582,8 +1577,7 @@ contains
       idxf = 0
       do j = 1, product(dimf)
          i = 1 + sum(idxf * stepf)
-         F(i)    = Ftmp(j)
-         Ftmp(j) = 0
+         call mat_move(Ftmp(j), F(i))
          do k = 1, size(dimf)
             idxf(k) = idxf(k) + 1
             if (idxf(k) /= ddimf(k)) exit
