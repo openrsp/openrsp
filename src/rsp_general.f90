@@ -15,7 +15,7 @@ module rsp_general
   use matrix_backend
   use rsp_contribs
   use rsp_equations
-
+  use interface_rsp_solver
 
   implicit none
 
@@ -3987,8 +3987,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(mol, pert, F, D, S)
-
-    use dalton_ifc, only: rsp_mosolver_exec
 
     implicit none
 
