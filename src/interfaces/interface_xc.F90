@@ -6,6 +6,7 @@ module interface_xc
 !  to a host program outside of interface_xc_init
 
    use matrix_defop
+   use xcint_main
 
    implicit none
 
@@ -89,19 +90,39 @@ contains
    end subroutine
 
 
-   !> \brief calculates the exchange correlation part of the geometric derivative of the F^ks matrix
-   !> \author Bin Gao
-   !> \date 2009-12-10
-   !> \param natoms is the number of atoms
-   !> \param D
-   !> \param B
-   !> \return gradient contains the exchange correlation part of the geometric derivative of the F^ks matrix
-   subroutine di_get_geomDeriv_FxD_DFT( gradient, natoms, D, B )
-     type(matrix), intent(in) :: D
-     type(matrix), intent(in) :: B
-     real(8), intent(out) :: gradient( 3*natoms )
-     integer, intent(in) :: natoms
-     call QUIT( 'di_get_geomDeriv_FxD_DFT is not implemented!' )
+   subroutine di_get_geomDeriv_FxD_DFT(res, nr_atoms, D, Dp)
+
+!    ---------------------------------------------------------------------------
+     real(8),      intent(out) :: res(*)
+     integer,      intent(in)  :: nr_atoms
+     type(matrix), intent(in)  :: D
+     type(matrix), intent(in)  :: Dp
+!    ---------------------------------------------------------------------------
+     integer                   :: i
+     integer                   :: mat_dim
+     real(8)                   :: xc_energy
+     type(matrix)              :: T, N
+!    ---------------------------------------------------------------------------
+
+     res(1:nr_atoms*3) = 0.0d0
+
+     mat_dim = D%nrow
+     T = 0.5d0*Dp
+     N = tiny(0.0d0)*D
+
+     do i = 1, nr_atoms*3
+        call xc_integrate(           &
+                xc_mat_dim=mat_dim,  &
+                xc_nr_dmat=3,        &
+                xc_dmat=(/D%elms,    &
+                          N%elms,    &
+                          T%elms/),  &
+                xc_energy=xc_energy, &
+                xc_geo_coor=(/i, 0/) &
+             )
+        res(i) = xc_energy
+     end do
+
    end subroutine
 
 

@@ -967,12 +967,15 @@ contains
             ! for molgra (nd==0), factor 1/2 on these integrals
             if (nd==0) RR(:3*na) = RR(:3*na)/2
             if (do_dft()) then
-               if (nd==0) call di_get_geomDeriv_molgrad_DFT( &
-                                          RR(3*na+1:3*na*2), &
-                                          na, D(1))
-               if (nd/=0) call di_get_geomDeriv_FxD_DFT(           &
-                                          RR(3*na+1:3*na*2), &
-                                          na, D(1), D(pd1-pd+1+j))
+               if (nd == 0) then
+                  call di_get_geomDeriv_molgrad_DFT( &
+                                  RR(3*na+1:3*na*2), &
+                                  na, D(1))
+               else
+                  call di_get_geomDeriv_FxD_DFT(     &
+                                  RR(3*na+1:3*na*2), &
+                                  na, D(1), D(pd1-pd+1+j))
+               end if
                RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
             end if
             E( 1+de(1)*j : de(1)*(j+1) ) = RR(c(1):c(1)+de(1)-1)
