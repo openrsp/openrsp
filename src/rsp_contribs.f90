@@ -183,8 +183,8 @@ contains
   !> and energy-weighted density DFD
   subroutine rsp_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
     use dalton_ifc, only: SHELLS_NUCLEI_displace
-    ! Gen1Int interface in Dalton
-    use gen1int_interface
+    ! Gen1Int interface
+    use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
@@ -206,14 +206,13 @@ contains
     real(8), parameter   :: fdistep = 2d0**(-25)
     real(8), allocatable :: tmp(:,:,:)
     real(8), allocatable :: fdi(:,:)
-    integer i, ncor
+    integer i
+    integer order_geo                    !order of total geometric derivatives
     integer num_atom                     !number of atoms
     integer num_coord                    !number of atomic coordinates
-    integer order_geo                    !order of total geometric derivatives
     integer num_geom                     !number of total geometric derivatives
     integer num_expt                     !number of all expectation values
     real(8), allocatable :: val_expt(:)  !expectation values, real numbers
-    type(one_prop_t) overlap             !operator of overlap integrals
     integer ierr                         !error information
     if (present(w) .and. .not.present(D)) &
        call quit("error in rsp_ovlave: frequencies 'w' and density 'D' " &
@@ -230,13 +229,7 @@ contains
     num_expt = num_geom
     allocate(val_expt(num_expt), stat=ierr)
     if (ierr/=0) call quit("rsp_ovlave>> failed to allocate val_expt!")
-    ! creates operator for overlap integrals
-    call OnePropCreate(prop_name=INT_OVERLAP, &
-                       one_prop=overlap,      &
-                       info_prop=ierr,        &
-                       dipole_origin=get_dipole_origin())
-    if (ierr/=0) &
-      call quit("rsp_ovlave>> failed to create operator of overlap integrals!")
+    val_expt = 0.0
 !FIXME changes to call Gen1Int
 !FIXME \sum_{j+k=n} (-\sum_{j}w_{j}+\sum_{k}w_{k})/2 S(>)^{j}(<)^{k}
 ! When it comes to w, I think it's a better idea to ask the integral program for S>> and S<>, and multiply the resulting average or integral by w afterwards, rather than to send w into the integral program.
@@ -271,17 +264,19 @@ contains
       end if
     else
       ! calculates the expectaion values of overlap matrix
-!FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
-      val_expt = 0.0
-      call gen1int_ifc_main(one_prop=overlap,                       &
-                            order_geo_total=order_geo,              &
-                            max_num_cent=min(2,order_geo,num_atom), &
-                            num_ints=num_expt,                      &
-                            num_dens=1, ao_dens=(/DFD/),            &
-                            val_expt=val_expt,                      &
-                            redunt_expt=order_geo>1,                &
-                            io_viewer=get_print_unit(),                  &
-                            level_print=5)
+      call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
+                                 0,                          &  !multipole moments
+                                 0, 0, 0,                    &  !magnetic derivatives
+                                 0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                 0, 0,                       &  !partial geometric derivatives
+                                 min(2,order_geo,num_atom),  &  !total geometric derivatives
+                                 order_geo,                  &
+                                 0, (/0/),                   &
+                                 REDUNDANT_GEO,              &
+                                 .false., .false., .false.,  &  !not implemented yet
+                                 1, (/DFD/), num_expt,       &  !expectation values
+                                 val_expt, .false.,          &
+                                 get_print_unit(), 5)
       val_expt = -val_expt
       ! assigns the output average
       if (order_geo==0) then
@@ -295,7 +290,6 @@ contains
     end if
     ! frees space
     deallocate(val_expt)
-    call OnePropDestroy(one_prop=overlap)
   end subroutine
 
 
@@ -308,7 +302,7 @@ contains
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface in Dalton
-    use gen1int_interface
+    use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
@@ -322,17 +316,6 @@ contains
     !> output average
     complex(8),    intent(out) :: ave(product(nc))
     !----------------------------------------------
-    ! step length for finite difference. Power of 2 to ensure
-    ! addition and subsequent subtraction yields original
-    type(matrix) A(1)
-    real(8), parameter   :: fdistep = 2d0**(-25)
-    real(8), allocatable :: tmpggg(:,:,:)
-    real(8), allocatable :: fdigg(:,:)
-    real(8), allocatable :: tmpfg(:,:)
-    real(8), allocatable :: tmpfgg(:,:,:)
-    real(8), allocatable :: tmpggf(:,:,:)
-    real(8), allocatable :: fdigf(:,:)
-    integer i, j, k, n, indx, ncor
     integer order_mom                    !order of Cartesian multipole moments
     integer num_mom                      !number of Cartesian multipole moments
     integer order_geo                    !order of total geometric derivatives
@@ -341,10 +324,7 @@ contains
     integer num_geom                     !number of total geometric derivatives
     integer num_expt                     !number of all expectation values
     real(8), allocatable :: val_expt(:)  !expectation values, real numbers
-    type(one_prop_t) one_prop            !one-electron operator
     integer ierr                         !error information
-    real(8), allocatable :: cord(:, :)
-    real(8), allocatable :: charge(:)
     ! gets the order of Cartesian multipole moments
     order_mom = count(f=='EL  ')
     ! gets the order of total geometric derivatives
@@ -356,56 +336,42 @@ contains
     num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
-
-    allocate(cord(3, num_atom))
-    allocate(charge(num_atom))
-
-    do i = 1, num_atom
-       charge(i) = get_nuc_charge(i)
-       do j = 1, 3
-          cord(j, i) = get_nuc_xyz(j, i)
-       end do
-    end do
-
     ! allocates memory for expectation values
     num_expt = num_mom*num_geom
     allocate(val_expt(num_expt), stat=ierr)
     if (ierr/=0) call quit("rsp_oneave>> failed to allocate val_expt!")
+    val_expt = 0.0
     ! electric perturbations
     if (order_mom/=0) then
-      call OnePropCreate(prop_name=INT_CART_MULTIPOLE, &
-                         one_prop=one_prop,            &
-                         info_prop=ierr,               &
-                         dipole_origin=get_dipole_origin(),         &
-                         order_mom=order_mom)
-      if (ierr/=0) &
-        call quit("rsp_oneave>> failed to create operator of Cartesian multipole moments!")
+      call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
+                                 order_mom,                   &  !multipole moments
+                                 0, 0, 0,                     &  !magnetic derivatives
+                                 0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                 0, 0,                        &  !partial geometric derivatives
+                                 min(3,order_geo,num_atom),   &  !total geometric derivatives
+                                 order_geo,                   &
+                                 0, (/0/),                    &
+                                 REDUNDANT_GEO,               &
+                                 .false., .false., .false.,   &  !not implemented yet
+                                 1, (/D/), num_expt,          &  !expectation values
+                                 val_expt, .false.,           &
+                                 get_print_unit(), 5)
     ! only geometric perturbations
     else
-      call OnePropCreate(prop_name=INT_ONE_HAMIL,       &
-                         one_prop=one_prop,             &
-                         info_prop=ierr,                &
-                         coord_nuclei=CORD(:,1:num_atom), &
-                         charge_nuclei=-CHARGE(1:num_atom))
-      if (ierr/=0) &
-        call quit("rsp_oneave>> failed to create operator of one-electron Hamiltonian!")
+      call gen1int_host_get_expt(NON_LAO, INT_ONE_HAMIL,    &
+                                 0,                         &  !multipole moments
+                                 0, 0, 0,                   &  !magnetic derivatives
+                                 0, 0, 0,                   &  !derivatives w.r.t. total RAM
+                                 0, 0,                      &  !partial geometric derivatives
+                                 min(3,order_geo,num_atom), &  !total geometric derivatives
+                                 order_geo,                 &
+                                 0, (/0/),                  &
+                                 REDUNDANT_GEO,             &
+                                 .false., .false., .false., &  !not implemented yet
+                                 1, (/D/), num_expt,        &  !expectation values
+                                 val_expt, .false.,         &
+                                 get_print_unit(), 5)
     end if
-
-    deallocate(cord)
-    deallocate(charge)
-
-    ! calculates the expectaion values
-!FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
-    val_expt = 0.0
-    call gen1int_ifc_main(one_prop=one_prop,                      &
-                          order_geo_total=order_geo,              &
-                          max_num_cent=min(3,order_geo,num_atom), &  !3 due to the centers of basis sets
-                          num_ints=num_expt,                      &  !and operator
-                          num_dens=1, ao_dens=(/D/),              &
-                          val_expt=val_expt,                      &
-                          redunt_expt=order_geo>1,                &
-                          io_viewer=get_print_unit(),                  &
-                          level_print=5)
     ! assigns the output average
     call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
                          first_comp=c, num_comp=nc,                &
@@ -413,7 +379,6 @@ contains
                          val_expect=val_expt, rsp_expect=ave)
     ! frees space
     deallocate(val_expt)
-    call OnePropDestroy(one_prop=one_prop)
   end subroutine
 
 
@@ -667,7 +632,7 @@ contains
   !> add half-differentiated overlap contribution to Fock matrices
   subroutine rsp_ovlint(mol, nf, f, c, nc, ovl, w, fock)
     ! Gen1Int interface in Dalton
-    use gen1int_interface
+    use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
@@ -685,16 +650,14 @@ contains
     type(matrix),  intent(inout), optional :: fock(product(nc))
     !------------------------------------------------
     integer      i
-    integer order_geo         !order of total geometric derivatives
-    integer num_atom          !number of atoms
-    integer num_coord         !number of atomic coordinates
-    integer num_geom          !number of total geometric derivatives
-    integer dim_redunt_geo    !size of redundant total geometric derivatives
-    type(one_prop_t) overlap  !operator of overlap integrals
-    integer ierr              !error information
-    if (present(w) .and. .not.present(fock)) &
-       call quit("error in rsp_ovlint: frequencies 'w' and Fock matrix 'fock' " &
-              // 'must both be present or both absent')
+    integer order_geo  !order of total geometric derivatives
+    integer num_atom   !number of atoms
+    integer num_coord  !number of atomic coordinates
+    integer num_geom   !number of total geometric derivatives
+    integer num_ints   !number of integral matrices
+    if (present(w) .and. .not.present(fock))                                      &
+       call quit("error in rsp_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
+                 "must both be present or both absent")
     ! gets the order of total geometric derivatives
     order_geo = count(f=='GEO ')
     if (order_geo/=nf) &
@@ -703,17 +666,10 @@ contains
     num_atom = get_nr_atoms()
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
-    ! sets the size of redundant total geometric derivatives
-    dim_redunt_geo = num_geom
-    if (dim_redunt_geo/=size(ovl)) &
+    ! sets the number of integral matrices
+    num_ints = num_geom
+    if (num_ints/=size(ovl)) &
       call quit("rsp_ovlint>> returning specific components not implemented!")
-    ! creates operator for overlap integrals
-    call OnePropCreate(prop_name=INT_OVERLAP, &
-                       one_prop=overlap,      &
-                       info_prop=ierr,        &
-                       dipole_origin=get_dipole_origin())
-    if (ierr/=0) &
-      call quit("rsp_ovlint>> failed to create operator of overlap integrals!")
 !FIXME changes to call Gen1Int
     ! with field frequencies
     if (present(w)) then
@@ -743,33 +699,33 @@ contains
       end if
     else
       ! allocates matrices
-      do i = 1, dim_redunt_geo
+      do i = 1, num_ints
         if (.not.isdef(ovl(i))) then
           ovl(i) = mol%zeromat
           call mat_alloc(ovl(i))
         end if
       end do
       ! calculates the overlap matrix
-!FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
-      call gen1int_ifc_main(one_prop=overlap,                       &
-                            order_geo_total=order_geo,              &
-                            max_num_cent=min(2,order_geo,num_atom), &
-                            num_ints=dim_redunt_geo,                &
-                            val_ints=ovl,                           &
-                            redunt_ints=order_geo>1,                &
-                            num_dens=1,                             &
-                            io_viewer=get_print_unit(),                  &
-                            level_print=5)
+      call gen1int_host_get_int(NON_LAO, INT_OVERLAP,       &
+                                0,                          &  !multipole moments
+                                0, 0, 0,                    &  !magnetic derivatives
+                                0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                0, 0,                       &  !partial geometric derivatives
+                                min(2,order_geo,num_atom),  &  !total geometric derivatives
+                                order_geo,                  &
+                                0, (/0/),                   &
+                                REDUNDANT_GEO,              &
+                                .false., .false., .false.,  &  !not implemented yet
+                                num_ints, ovl, .false.,     &  !integral matrices
+                                get_print_unit(), 5)
     end if
-    ! frees space
-    call OnePropDestroy(one_prop=overlap)
   end subroutine
 
 
 
   subroutine rsp_oneint(mol, nf, f, c, nc, oneint)
     ! Gen1Int interface in Dalton
-    use gen1int_interface
+    use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
@@ -781,21 +737,14 @@ contains
     !> output perturbed integrals
     type(matrix),  intent(inout) :: oneint(product(nc))
     !--------------------------------------------------
-    integer      i, j
-    integer order_mom                         !order of Cartesian multipole moments
-    integer num_mom                           !number of Cartesian multipole moments
-    integer order_geo                         !order of total geometric derivatives
-    integer num_atom                          !number of atoms
-    integer num_coord                         !number of atomic coordinates
-    integer num_geom                          !number of total geometric derivatives
-    integer num_ints                          !number of all integral matrices
-    type(matrix), allocatable :: val_ints(:)  !integral matrices from Gen1Int
-    type(one_prop_t) one_prop                 !one-electron operator
-    integer ierr                              !error information
-
-    real(8), allocatable :: cord(:, :)
-    real(8), allocatable :: charge(:)
-
+    integer order_mom  !order of Cartesian multipole moments
+    integer num_mom    !number of Cartesian multipole moments
+    integer order_geo  !order of total geometric derivatives
+    integer num_atom   !number of atoms
+    integer num_coord  !number of atomic coordinates
+    integer num_geom   !number of total geometric derivatives
+    integer num_ints   !number of all integral matrices
+    integer imat       !incremental recorder over matrices
     ! gets the order of Cartesian multipole moments
     order_mom = count(f=='EL  ')
     ! gets the order of total geometric derivatives
@@ -808,82 +757,47 @@ contains
     num_coord = 3*num_atom
     num_geom = num_coord**order_geo
     num_ints = num_mom*num_geom
-
-    allocate(cord(3, num_atom))
-    allocate(charge(num_atom))
-
-    do i = 1, num_atom
-       charge(i) = get_nuc_charge(i)
-       do j = 1, 3
-          cord(j, i) = get_nuc_xyz(j, i)
-       end do
-    end do
-
     if (num_ints/=size(oneint)) &
       call quit("rsp_oneint>> returning specific components is not implemented!")
-!FIXME:
+!FIXME: it is better that we use unique components for higher order
     if (order_mom>1) &
       call quit("rsp_oneint>> only the first Cartesian multipole moments implemented!")
-!FIXME: this may take a lot of memory, it would be better either integral code returns
-!FIXME: required integral matrices, or openrsp do not require the redundant electric perturbations
-    ! allocates memory for integral matrices
-!FIXME: allocate(val_ints(num_ints), stat=ierr)
-!FIXME: if (ierr/=0) call quit("rsp_oneint>> failed to allocate val_ints!")
-!FIXME: do i = 1, num_ints
-!FIXME:   val_ints(i) = mol%zeromat
-!FIXME:   call mat_alloc(val_ints(i))
-!FIXME: end do
-    do i = 1, size(oneint)
-      if (.not.isdef(oneint(i))) then
-        oneint(i) = mol%zeromat
-        call mat_alloc(oneint(i))
+    do imat = 1, size(oneint)
+      if (.not.isdef(oneint(imat))) then
+        oneint(imat) = mol%zeromat
+        call mat_alloc(oneint(imat))
       end if
     end do
     ! electric perturbations
     if (order_mom/=0) then
-      call OnePropCreate(prop_name=INT_CART_MULTIPOLE, &
-                         one_prop=one_prop,            &
-                         info_prop=ierr,               &
-                         dipole_origin=get_dipole_origin(),         &
-                         order_mom=order_mom)
-      if (ierr/=0) &
-        call quit("rsp_oneint>> failed to create operator of Cartesian multipole moments!")
+      call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
+                                order_mom,                   &  !multipole moments
+                                0, 0, 0,                     &  !magnetic derivatives
+                                0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                0, 0,                        &  !partial geometric derivatives
+                                min(3,order_geo,num_atom),   &  !total geometric derivatives
+                                order_geo,                   &
+                                0, (/0/),                    &
+                                REDUNDANT_GEO,               &
+                                .false., .false., .false.,   &  !not implemented yet
+                                num_ints, oneint, .false.,   &  !integral matrices
+                                get_print_unit(), 5)
+
     ! only geometric perturbations
     else
-      call OnePropCreate(prop_name=INT_ONE_HAMIL,       &
-                         one_prop=one_prop,             &
-                         info_prop=ierr,                &
-                         coord_nuclei=CORD(:,1:num_atom), &
-                         charge_nuclei=-CHARGE(1:num_atom))
-      if (ierr/=0) &
-        call quit("rsp_oneint>> failed to create operator of one-electron Hamiltonian!")
+      call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
+                                0,                         &  !multipole moments
+                                0, 0, 0,                   &  !magnetic derivatives
+                                0, 0, 0,                   &  !derivatives w.r.t. total RAM
+                                0, 0,                      &  !partial geometric derivatives
+                                min(3,order_geo,num_atom), &  !total geometric derivatives
+                                order_geo,                 &
+                                0, (/0/),                  &
+                                REDUNDANT_GEO,             &
+                                .false., .false., .false., &  !not implemented yet
+                                num_ints, oneint, .false., &  !integral matrices
+                                get_print_unit(), 5)
     end if
-
-    deallocate(cord)
-    deallocate(charge)
-
-    ! calculates the one-electron Hamiltonian matrix
-!FIXME: rewrites \fn(gen1int_ifc_main) so that we could pass information of basis sets
-    call gen1int_ifc_main(one_prop=one_prop,                      &
-                          order_geo_total=order_geo,              &
-                          max_num_cent=min(3,order_geo,num_atom), &
-                          num_ints=num_ints,                      &
-                          val_ints=oneint,                        &
-                          redunt_ints=order_geo>1,                &
-                          num_dens=1,                             &
-                          io_viewer=get_print_unit(),                  &
-                          level_print=5)
-!FIXME: ! assigns the integral matrices
-!FIXME: call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
-!FIXME:                      first_comp=c, num_comp=nc,                &
-!FIXME:                      order_mom=order_mom, order_geo=order_geo, &
-!FIXME:                      val_ints=val_ints, rsp_ints=oneint)
-    ! frees space
-    call OnePropDestroy(one_prop=one_prop)
-!FIXME: do i = 1, num_ints
-!FIXME:   val_ints(i) = 0
-!FIXME: end do
-!FIXME: deallocate(val_ints)
   end subroutine
 
 
