@@ -40,7 +40,6 @@ if(NOT "${PARENT_MODULE_DIR}" STREQUAL "")
 endif()
 
 set(LIBS)
-include(ConfigExternal)
 
 include_directories(${PROJECT_SOURCE_DIR})
 
@@ -74,7 +73,5 @@ add_library(
     openrsp
     ${SOURCES}
     )
-
-add_dependencies(openrsp external)
 
 install(TARGETS openrsp ARCHIVE DESTINATION lib)
