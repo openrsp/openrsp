@@ -1286,21 +1286,25 @@ contains
          call load_oneint(prop_auxlab(i), F(1))
       else if (np==1 .and. p(1)=='EL') then
          do i = 0, dp(1)-1
-            if (.not.isdef(F(i+1))) F(i+1) = 0*S0
+            F(i+1) = mat_alloc_like(S0)
             call load_oneint(xyz(c(1)+i) // 'DIPLEN ', F(i+1))
          end do
       else if (np==1 .and. p(1)=='VEL') then
          do i = 0, dp(1)-1
+            F(i+1) = mat_alloc_like(S0)
             call load_oneint(xyz(c(1)+i) // 'DIPVEL ', F(i+1))
          end do
       else if (np==1 .and. p(1)=='MAGO') then
          do i = 0, dp(1)-1
+            F(i+1) = mat_alloc_like(S0)
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', F(i+1))
             F(i+1) = (1/2d0) * F(1+i) !factor 1/2 here
          end do
       else if (np==1 .and. p(1)=='MAG') then
          do i = 0, dp(1)-1
+            F(i+1) = mat_alloc_like(S0)
             call load_oneint('dh/dB' // xyz(c(1)+i) // '  ', F(i+1))
+            S(i+1) = mat_alloc_like(S0)
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('dS/dB' // xyz(c(1)+i) // '  ', S(i+1))
             else
@@ -1313,12 +1317,15 @@ contains
       else if (np==1 .and. p(1)=='ELGR') then
          do i = 0, dp(1)-1
             ii = c(1)+i + merge(3, merge(2, 0, c(1)+i > 1), c(1)+i > 3) - 1
+            F(i+1) = mat_alloc_like(S0)
             call load_oneint(xyz(1+mod(ii,3)) // xyz(1+ii/3) // 'THETA ', &
                              F(1+i))
          end do
       else if (np==1 .and. p(1)=='GEO') then
          do i = 0, dp(1)-1
+            F(i+1) = mat_alloc_like(S0)
             call load_oneint('1DHAM' // prefix_zeros(c(1)+i,3), F(i+1))
+            S(i+1) = mat_alloc_like(S0)
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('1DOVL' // prefix_zeros(c(1)+i,3), S(i+1))
                S(i+1) = -S(i+1) !1DOVL is really -dS/dg
@@ -1333,6 +1340,7 @@ contains
       else if (np==2 .and. all(p==(/'MAG','EL '/))) then
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
+               F(1+i+dp(1)*j) = mat_alloc_like(S0)
                call load_oneint(xyz(c(2)+j) // '-CM1 ' &
                              // xyz(c(1)+i) // ' ', F(1+i+dp(1)*j))
             end do
@@ -1340,6 +1348,7 @@ contains
       else if (np==2 .and. all(p==(/'MAGO','MAGO'/))) then
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
+               F(1+i+dp(1)*j) = mat_alloc_like(S0)
                call load_oneint(xyz(min(c(1)+i,c(2)+j))              &
                              // xyz(max(c(1)+i,c(2)+j)) // 'SUSCGO', &
                                 F(1+i+dp(1)*j))
@@ -1352,9 +1361,11 @@ contains
             do i = 0, dp(1)-1
                ii = 1+i+dp(1)*j
                ! Hamiltonian integrals and -i/2 Tbb in A(1), Sbb in A(2)
+               F(ii) = mat_alloc_like(S0)
                call load_oneint(xyz(min(c(1)+i,c(2)+j)) &
                              // xyz(max(c(1)+i,c(2)+j)) // 'dh/dB2', F(ii))
                ! If both fields static, no -i/2 Tbb to A(1)
+               S(ii) = mat_alloc_like(S0)
                if (w(1)==0 .and. w(2)==0) then
                   call load_oneint('dS/dB2' // xyz(min(c(1)+i,c(2)+j))  &
                                             // xyz(max(c(1)+i,c(2)+j)), S(ii))
@@ -1366,6 +1377,7 @@ contains
                   F(ii) = F(ii) + (w(1)+w(2))/2 * trps(S(ii))
                   S(ii) = S(ii) + trps(S(ii))
                   !only load <> XX XY YY XZ YZ ZZ, use trps(..) for the others
+                  A(1) = mat_alloc_like(S0)
                   call load_oneint('<>S/B2' // xyz(min(c(1)+i,c(2)+j)) &
                                             // xyz(max(c(1)+i,c(2)+j)), A(1))
                   !ajt&kk 0410 Changed sign on these two: (think it's correct)
@@ -1383,6 +1395,9 @@ contains
             end do
          end do
       else if (np==2 .and. all(p==(/'ELGR','MAG '/))) then
+         do i = 1, 6
+            A(i) = mat_alloc_like(S0)
+         end do
          do j = 0, dp(2)-1 !MAG indices
             ! ajt The integrals 'XY-QDB Z' are not traceless like THETA.
             !     Therefore load all integrals and remove trace manually
@@ -1400,10 +1415,11 @@ contains
                F(1+i+dp(1)*j) = A(c(1)+i)
             end do
          end do
-         if (dp(2) /= 0) A(:) = 0 !free
+         A(:) = 0 !free
       else if (np==2 .and. all(p==(/'GEO','EL '/))) then
          do j = 0, dp(2)-1 !EL indices
             do i = 0, dp(1)-1 !GEO indices
+               F(1+i+dp(1)*j) = mat_alloc_like(S0)
                call load_oneint(prefix_zeros(c(1)+i,2) // ' DPG ' &
                                 // xyz(c(2)+j), F(1+i+dp(1)*j))
                F(1+i+dp(1)*j) = -F(1+i+dp(1)*j) !minus sign
@@ -1412,12 +1428,16 @@ contains
       else if (np==2 .and. all(p==(/'GEO ','MAGO'/))) then
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
+               F(1+i+dp(1)*j) = mat_alloc_like(S0)
                call load_oneint(prefix_zeros(c(1)+i,3) // 'AMDR' &
                                 // xyz(c(2)+j), F(1+i+dp(1)*j))
                F(1+i+dp(1)*j) = 1/2d0 * F(1+i+dp(1)*j) !factor 1/2
             end do
          end do
       else if (np==2 .and. all(p==(/'GEO ','ELGR'/))) then
+         do i = 1, 6
+            A(i) = mat_alloc_like(S0)
+         end do
          do i = 0, dp(1)-1 !GEO indices
             ! ajt The integrals '01QDG XY' are not traceless.
             !     Therefore load all integrals and remove trace manually
@@ -1435,11 +1455,12 @@ contains
                F(1+i+dp(1)*j) = -3/2d0 * A(c(2)+j) !factor -3/2
             end do
          end do
-         if (dp(1) /= 0) A(:) = 0
+         A(:) = 0
       else if (np==3 .and. all(p==(/'MAG','MAG','EL '/))) then
          do k = 0, dp(3)-1
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
+                  F(1+i+dp(1)*(j+dp(2)*k)) = mat_alloc_like(S0)
                   call load_oneint(xyz(c(3)+k) // '-CM2'              &
                                    // xyz(min(c(1)+i,c(2)+j))         &
                                    // xyz(max(c(1)+i,c(2)+j)) // ' ', &
