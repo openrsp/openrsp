@@ -107,7 +107,7 @@ contains
      res(1:nr_atoms*3) = 0.0d0
 
      mat_dim = D%nrow
-     T = 0.5d0*Dp
+     T = 1.0d0*Dp
      N = tiny(0.0d0)*D
 
      do i = 1, nr_atoms*3

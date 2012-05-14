@@ -148,8 +148,11 @@
     integer i, j, k
     ! error information
     integer ierr
-
-real(8), allocatable :: eigval(:)
+    integer mat_dim
+    real(8), allocatable :: xc_fmat(:)
+    real(8), allocatable :: xc_dmat(:)
+    real(8)              :: xc_energy
+    real(8), allocatable :: eigval(:)
 
     call interface_molecule_init()
     call interface_io_init()
@@ -355,6 +358,28 @@ real(8), allocatable :: eigval(:)
     ! Fock matrix F = H1 + G
     call mat_axpy((1d0,0d0), H1, .false., .false., F)
     call mat_free(H1)
+
+    if (get_is_ks_calculation()) then
+       ! write xcint interface files
+       call interface_ao_write()
+
+       ! add xc contribution to the fock matrix
+       mat_dim = D%nrow
+       allocate(xc_dmat(mat_dim*mat_dim))
+       xc_dmat = 0.0d0
+       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
+       allocate(xc_fmat(mat_dim*mat_dim))
+       call xc_integrate(                     &
+                         xc_mat_dim=mat_dim,  &
+                         xc_nr_dmat=1,        &
+                         xc_dmat=xc_dmat,     &
+                         xc_energy=xc_energy, &
+                         xc_fmat=xc_fmat      &
+                        )
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+       deallocate(xc_dmat)
+       deallocate(xc_fmat)
+    end if
 
     ! performs the calculations
     call mat_nullify(molcfg%zeromat)
