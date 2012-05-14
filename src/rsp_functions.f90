@@ -76,7 +76,7 @@ contains
     gra = gra + tmp/2
     call print_tensor(shape(tmp), tmp/2, 'twoave')
     ! Kohn-Sham exchange correlation average
-    call rsp_xcave(geo_order=1, res=tmp, D=D)
+    call rsp_xcave(pert='g', res=tmp, D=D)
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'xcave')
 
@@ -214,7 +214,7 @@ contains
 
     xc_hes = 0.0d0
     ! Exchange/correlation contribution
-    call rsp_xcave(geo_order=2, res=xc_hes, D=D, Dg=Dg)
+    call rsp_xcave(pert='gg', res=xc_hes, D=D, Dg=Dg)
     call print_tensor(shape(xc_hes), xc_hes, 'xc_hes')
     hes = hes + xc_hes
 
@@ -373,7 +373,7 @@ contains
 !   ===============
 
     xc_cub = 0.0d0
-    call rsp_xcave(geo_order=3, res=xc_cub, D=D, Dg=Dg)
+    call rsp_xcave(pert='ggg', res=xc_cub, D=D, Dg=Dg)
     call print_tensor(shape(xc_cub), xc_cub, 'xc_cub')
     cub = cub + xc_cub
 
@@ -856,7 +856,7 @@ contains
 !   ========================================
 
     xc_qua = 0.0d0
-    call rsp_xcave(geo_order=4, res=xc_qua, D=D, Dg=Dg, Dgg=Dgg)
+    call rsp_xcave(pert='gggg', res=xc_qua, D=D, Dg=Dg, Dgg=Dgg)
     call print_tensor(shape(xc_qua), xc_qua, 'xc_qua')
     qua = qua + xc_qua
 

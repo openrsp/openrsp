@@ -97,7 +97,7 @@ contains
    subroutine di_get_geomDeriv_FxD_DFT(res, nr_atoms, D, Dp)
 
 !    ---------------------------------------------------------------------------
-     real(8),      intent(out) :: res(*)
+     complex(8),   intent(out) :: res(*)
      integer,      intent(in)  :: nr_atoms
      type(matrix), intent(in)  :: D
      type(matrix), intent(in)  :: Dp
@@ -124,7 +124,7 @@ contains
                 xc_energy=xc_energy, &
                 xc_geo_coor=(/i, 0/) &
              )
-        res(i) = xc_energy
+        res(i) = cmplx(xc_energy, 0.0d0)
      end do
 
    end subroutine
@@ -160,33 +160,39 @@ contains
    end subroutine
 
    !> Exchange-correlation perturbed by fields f, averaged over densities D
-   subroutine rsp_xcave(geo_order, res, D, Dg, Dgg)
+   subroutine rsp_xcave(pert, res, D, Dg, Dgg, Df, Dff)
 
 !     ---------------------------------------------------------------------------
-      integer,      intent(in)           :: geo_order
+      character(*), intent(in)           :: pert
       complex(8),   intent(out)          :: res(*)
       type(matrix), intent(in)           :: D
       type(matrix), intent(in), optional :: Dg(:)
       type(matrix), intent(in), optional :: Dgg(:, :)
+      type(matrix), intent(in), optional :: Df
+      type(matrix), intent(in), optional :: Dff(:, :)
 !     ---------------------------------------------------------------------------
       integer                            :: i, j, k, l
       integer                            :: element
       integer                            :: mat_dim
       integer                            :: nr_atoms
       real(8)                            :: xc_energy
+      type(matrix)                       :: X, T
 !     ---------------------------------------------------------------------------
 
       nr_atoms = get_nr_atoms()
 
       if (.not. get_is_ks_calculation()) then
-         res(1:(nr_atoms*3)**geo_order) = 0.0d0
+         res(1:(nr_atoms*3)**len(pert)) = 0.0d0
          return
       end if
 
       mat_dim = D%nrow
 
-      select case (geo_order)
-         case (1)
+      X = tiny(0.0d0)*D
+!     T = 1.0d0*Df
+
+      select case (pert)
+         case ('g')
             do i = 1, nr_atoms*3
                element = i
                call xc_integrate(           &
@@ -198,7 +204,7 @@ contains
                     )
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
-         case (2)
+         case ('gg')
             do i = 1, nr_atoms*3
                do j = 1, i
                   element = i &
@@ -215,7 +221,24 @@ contains
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
-         case (3)
+         case ('gf')
+            do i = 1, nr_atoms*3
+               do j = 1, 1
+                  element = i &
+                          + (j-1)*nr_atoms*3
+                  call xc_integrate(              &
+                          xc_mat_dim=mat_dim,     &
+                          xc_nr_dmat=3,           &
+                          xc_dmat=(/D%elms,       &
+                                    X%elms,       &
+                                    T%elms/),     &
+                          xc_energy=xc_energy,    &
+                          xc_geo_coor=(/i, 0/)    &
+                       )
+                  res(element) = cmplx(xc_energy, 0.0d0)
+               end do
+            end do
+         case ('ggg')
             do i = 1, nr_atoms*3
                do j = 1, i
                   do k = 1, j
@@ -236,7 +259,7 @@ contains
                   end do
                end do
             end do
-         case (4)
+         case ('gggg')
             do i = 1, nr_atoms*3
                do j = 1, i
                   do k = 1, j
@@ -268,9 +291,11 @@ contains
                end do
             end do
          case default
-            print *, 'error: order too hight in xcave'
+            print *, 'error: perturbation not implemented in xcave'
             stop 1
       end select
+
+      X = 0
 
    end subroutine
 

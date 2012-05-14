@@ -971,12 +971,12 @@ contains
                   call di_get_geomDeriv_molgrad_DFT( &
                                   RR(3*na+1:3*na*2), &
                                   na, D(1))
+                  RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
                else
-                  call di_get_geomDeriv_FxD_DFT(     &
-                                  RR(3*na+1:3*na*2), &
-                                  na, D(1), D(pd1-pd+1+j))
+                 !call di_get_geomDeriv_FxD_DFT(     &
+                 !                RR(3*na+1:3*na*2), &
+                 !                na, D(1), D(pd1-pd+1+j))
                end if
-               RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
             end if
             E( 1+de(1)*j : de(1)*(j+1) ) = RR(c(1):c(1)+de(1)-1)
          end do

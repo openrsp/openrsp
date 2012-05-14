@@ -7,6 +7,7 @@ module vib_prop_old
    use prop_contribs_old
    use dalton_ifc
    use interface_molecule
+   use interface_xc
 
    implicit none
 
@@ -1094,6 +1095,8 @@ contains
       integer      :: i, j, k, l, m, n, ni, nj, nk, nl, mi, mj, mk, ml
       integer      :: nij, nik, njk, njl, nkl, mij, mik, mjk
       logical      :: exists
+      complex(8)   :: Egf_xc(ng, 3)
+      complex(8)   :: blub(12)
       ! verify that frequencies sum to zero
       if (abs(sum(freq)) > 1d-15) &
          call quit('vibgam_shyp_dipg_polg_hypg: sum(freq) should be zero!',-1)
@@ -1142,6 +1145,11 @@ contains
          end do
          call prop_oneave(mol, S, (/'GEO'/), (/Df(:,n)/), (/ng,3/), Egf(:,:,n), &
                           DFD=(/DFDf/), freq=(/-freq(n)/))
+
+       ! call rsp_xcave(pert='gf', res=Egf_xc(:, 1), D=D, Df=Df(1, n))
+       ! call rsp_xcave(pert='gf', res=Egf_xc(:, 2), D=D, Df=Df(2, n))
+       ! call rsp_xcave(pert='gf', res=Egf_xc(:, 3), D=D, Df=Df(3, n))
+       ! Egf(:, :, n) = Egf(:, :, n) + Egf_xc(:, :)
          DFDf = 0
          ! call print_tensor((/ng,3/), Egf(:,:,n), 'E1gDf - i/2TgDf - Sg(DFD)f'); Egf(:,:,n)=0
          call print_tensor((/ng,3/), -Egf(:,:,n), 'd/dg dipmom = -Egf', &
