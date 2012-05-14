@@ -16,6 +16,7 @@ module rsp_functions
   use rsp_equations
   use interface_molecule
   use interface_rsp_solver
+  use interface_xc
 
   implicit none
 

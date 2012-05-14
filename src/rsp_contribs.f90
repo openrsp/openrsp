@@ -27,11 +27,9 @@ module rsp_contribs
   public rsp_ovlave
   public rsp_oneave
   public rsp_twoave
-  public rsp_xcave
   public rsp_ovlint
   public rsp_oneint
   public rsp_twoint
-  public rsp_xcint
   public rsp_field
   public rsp_field_bas
   public rsp_field_dim
@@ -510,123 +508,6 @@ contains
     end if
   end subroutine
 
-  !> Exchange-correlation perturbed by fields f, averaged over densities D
-  subroutine rsp_xcave(geo_order, res, D, Dg, Dgg)
-
-     use xcint_main
-
-!    ---------------------------------------------------------------------------
-     integer,      intent(in)           :: geo_order
-     complex(8),   intent(out)          :: res(*)
-     type(matrix), intent(in)           :: D
-     type(matrix), intent(in), optional :: Dg(:)
-     type(matrix), intent(in), optional :: Dgg(:, :)
-!    ---------------------------------------------------------------------------
-     integer                            :: i, j, k, l
-     integer                            :: element
-     integer                            :: mat_dim
-     integer                            :: nr_atoms
-     real(8)                            :: xc_energy
-!    ---------------------------------------------------------------------------
-
-     nr_atoms = get_nr_atoms()
-
-     if (.not. get_is_ks_calculation()) then
-        res(1:(nr_atoms*3)**geo_order) = 0.0d0
-        return
-     end if
-
-     mat_dim = D%nrow
-
-     select case (geo_order)
-        case (1)
-           do i = 1, nr_atoms*3
-              element = i
-              call xc_integrate(           &
-                      xc_mat_dim=mat_dim,  &
-                      xc_nr_dmat=1,        &
-                      xc_dmat=(/D%elms/),  &
-                      xc_energy=xc_energy, &
-                      xc_geo_coor=(/i/)    &
-                   )
-              res(element) = cmplx(xc_energy, 0.0d0)
-           end do
-        case (2)
-           do i = 1, nr_atoms*3
-              do j = 1, i
-                 element = i &
-                         + (j-1)*nr_atoms*3
-                 call xc_integrate(               &
-                         xc_mat_dim=mat_dim,      &
-                         xc_nr_dmat=3,            &
-                         xc_dmat=(/D%elms,        &
-                                   Dg(i)%elms,    &
-                                   Dg(j)%elms/),  &
-                         xc_energy=xc_energy,     &
-                         xc_geo_coor=(/i, j/)     &
-                      )
-                 res(element) = cmplx(xc_energy, 0.0d0)
-              end do
-           end do
-        case (3)
-           do i = 1, nr_atoms*3
-              do j = 1, i
-                 do k = 1, j
-                    element = i                &
-                            + (j-1)*nr_atoms*3 &
-                            + (k-1)*(nr_atoms*3)**2
-                    call xc_integrate(               &
-                            xc_mat_dim=mat_dim,      &
-                            xc_nr_dmat=4,            &
-                            xc_dmat=(/D%elms,        &
-                                      Dg(i)%elms,    &
-                                      Dg(j)%elms,    &
-                                      Dg(k)%elms/),  &
-                            xc_energy=xc_energy,     &
-                            xc_geo_coor=(/i, j, k/)  &
-                         )
-                    res(element) = cmplx(xc_energy, 0.0d0)
-                 end do
-              end do
-           end do
-        case (4)
-           do i = 1, nr_atoms*3
-              do j = 1, i
-                 do k = 1, j
-                    do l = 1, k
-                       element = i                     &
-                               + (j-1)*nr_atoms*3      &
-                               + (k-1)*(nr_atoms*3)**2 &
-                               + (l-1)*(nr_atoms*3)**3
-                       call xc_integrate(                  &
-                               xc_mat_dim=mat_dim,         &
-                               xc_nr_dmat=11,              &
-                               xc_dmat=(/D%elms,           &
-                                         Dg(i)%elms,       &
-                                         Dg(j)%elms,       &
-                                         Dg(k)%elms,       &
-                                         Dg(l)%elms,       &
-                                         Dgg(i, j)%elms,   &
-                                         Dgg(i, k)%elms,   &
-                                         Dgg(i, l)%elms,   &
-                                         Dgg(j, k)%elms,   &
-                                         Dgg(j, l)%elms,   &
-                                         Dgg(k, l)%elms/), &
-                               xc_energy=xc_energy,        &
-                               xc_geo_coor=(/i, j, k, l/)  &
-                            )
-                       res(element) = cmplx(xc_energy, 0.0d0)
-                    end do
-                 end do
-              end do
-           end do
-        case default
-           print *, 'error: order too hight in xcave'
-           stop 1
-     end select
-
-  end subroutine
-
 
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
@@ -870,94 +751,6 @@ contains
        call quit('error in rsp_oneave: not implented or in wrong order')
     end if
   end subroutine
-
-
-
-  !> Exchange-correlation perturbed by fields 'field', contracted over
-  !> densities 'D', added to Fock matrices 'F'
-  subroutine rsp_xcint(D, F, Fg, Fgg)
-
-     use xcint_main
-
-!    ---------------------------------------------------------------------------
-     type(matrix), intent(in)              :: D(:)
-     type(matrix), intent(inout), optional :: F
-     type(matrix), intent(inout), optional :: Fg(:)
-     type(matrix), intent(inout), optional :: Fgg(:, :)
-!    ---------------------------------------------------------------------------
-     integer              :: icenter
-     integer              :: ioff
-     integer              :: imat, i, j
-     integer              :: mat_dim
-     integer              :: nr_atoms
-     integer              :: nr_dmat
-     real(8), allocatable :: xc_dmat(:)
-     real(8), allocatable :: xc_fmat(:)
-     real(8)              :: xc_energy
-!    ---------------------------------------------------------------------------
-
-     if (.not. get_is_ks_calculation()) then
-        return
-     end if
-
-     nr_atoms = get_nr_atoms()
-     nr_dmat  = size(D)
-
-     mat_dim = D(1)%nrow
-     allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
-     xc_dmat = 0.0d0
-     do imat = 1, nr_dmat
-        call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
-     end do
-
-     allocate(xc_fmat(mat_dim*mat_dim))
-
-     if (present(F)) then
-        call xc_integrate(                     &
-                          xc_mat_dim=mat_dim,  &
-                          xc_nr_dmat=nr_dmat,  &
-                          xc_dmat=xc_dmat,     &
-                          xc_energy=xc_energy, &
-                          xc_fmat=xc_fmat      &
-                         )
-        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
-     end if
-
-     if (present(Fg)) then
-        do i = 1, nr_atoms*3
-           call xc_integrate(                     &
-                             xc_mat_dim=mat_dim,  &
-                             xc_nr_dmat=nr_dmat,  &
-                             xc_dmat=xc_dmat,     &
-                             xc_energy=xc_energy, &
-                             xc_fmat=xc_fmat,     &
-                             xc_geo_coor=(/i/)    &
-                            )
-           call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
-        end do
-     end if
-
-     if (present(Fgg)) then
-        do i = 1, nr_atoms*3
-           do j = 1, i
-              call xc_integrate(                     &
-                                xc_mat_dim=mat_dim,  &
-                                xc_nr_dmat=nr_dmat,  &
-                                xc_dmat=xc_dmat,     &
-                                xc_energy=xc_energy, &
-                                xc_fmat=xc_fmat,     &
-                                xc_geo_coor=(/i, j/) &
-                               )
-              call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
-           end do
-        end do
-     end if
-
-     deallocate(xc_dmat)
-     deallocate(xc_fmat)
-
-  end subroutine
-
 
   function idx(f)
     character(4) :: f
