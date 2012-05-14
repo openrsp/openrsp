@@ -44,6 +44,10 @@ contains
     complex(8)      gra(ng), tmp(ng)
     type(matrix)    DFD
     type(rsp_field) geo(1)
+
+    real(8) :: total_force(3)
+    integer :: iatom, ixyz, k
+
     geo(1) = rsp_field('GEO ', (0d0,0d0), 1, ng)
     ! first nuclear contribution
     tmp = 0.0d0
@@ -73,7 +77,15 @@ contains
     ! print to screen
     call print_tensor(shape(gra), gra, 'gradient = Eg')
 
-    print *, 'sum of gradient elements = ', sum(gra)
+    total_force = 0.0d0
+    k = 0
+    do iatom = 1, ng/3
+       do ixyz = 1, 3
+          k = k + 1
+          total_force(ixyz) = total_force(ixyz) - dreal(gra(k))
+       end do
+    end do
+    write(*, '(a,3e12.3)') 'total force on molecule = ', total_force
 
     ! print to file
     open(unit=iounit, file='gradient', status='replace', action='write')
