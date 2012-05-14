@@ -301,7 +301,7 @@ contains
 
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
     use dalton_ifc, only: SHELLS_NUCLEI_displace
-    ! Gen1Int interface in Dalton
+    ! Gen1Int interface
     use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
@@ -631,7 +631,7 @@ contains
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
   subroutine rsp_ovlint(mol, nf, f, c, nc, ovl, w, fock)
-    ! Gen1Int interface in Dalton
+    ! Gen1Int interface
     use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
@@ -724,7 +724,7 @@ contains
 
 
   subroutine rsp_oneint(mol, nf, f, c, nc, oneint)
-    ! Gen1Int interface in Dalton
+    ! Gen1Int interface
     use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
