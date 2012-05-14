@@ -46,7 +46,12 @@ contains
     type(rsp_field) geo(1)
 
     real(8) :: total_force(3)
+    real(8) :: total_torque(3)
     integer :: iatom, ixyz, k
+
+    real(8)             :: charges(ng/3), coords(ng)
+    real(8)             :: masses(ng/3), totmass, origin(3)
+    integer             :: isotopes(ng/3)
 
     geo(1) = rsp_field('GEO ', (0d0,0d0), 1, ng)
     ! first nuclear contribution
@@ -85,7 +90,29 @@ contains
           total_force(ixyz) = total_force(ixyz) - dreal(gra(k))
        end do
     end do
-    write(*, '(a,3e12.3)') 'total force on molecule = ', total_force
+    write(*, '(a, 3e12.3)') 'total force = ', total_force
+
+    do iatom = 1, ng/3
+       charges(iatom)  = get_nuc_charge(iatom)
+       isotopes(iatom) = get_nuc_isotope(iatom)
+       coords((iatom-1)*3 + 1) = get_nuc_xyz(1, iatom)
+       coords((iatom-1)*3 + 2) = get_nuc_xyz(2, iatom)
+       coords((iatom-1)*3 + 3) = get_nuc_xyz(3, iatom)
+    end do
+    call vibmas(masses, totmass, isotopes, nint(charges), ng/3, coords, origin, 1)
+
+    total_torque = 0.0d0
+    k = 0
+    do iatom = 1, ng/3
+       total_torque(1) = total_torque(1) + (get_nuc_xyz(2, iatom) - origin(2))*dreal(gra(k + 3)) &
+                                         - (get_nuc_xyz(3, iatom) - origin(3))*dreal(gra(k + 2))
+       total_torque(2) = total_torque(2) + (get_nuc_xyz(3, iatom) - origin(3))*dreal(gra(k + 1)) &
+                                         - (get_nuc_xyz(1, iatom) - origin(1))*dreal(gra(k + 3))
+       total_torque(3) = total_torque(3) + (get_nuc_xyz(1, iatom) - origin(1))*dreal(gra(k + 2)) &
+                                         - (get_nuc_xyz(2, iatom) - origin(2))*dreal(gra(k + 1))
+       k = k + 3
+    end do
+    write(*, '(a, 3e12.3)') 'total torque = ', total_torque
 
     ! print to file
     open(unit=iounit, file='gradient', status='replace', action='write')
