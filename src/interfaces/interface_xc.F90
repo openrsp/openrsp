@@ -168,31 +168,25 @@ contains
       type(matrix), intent(in)           :: D
       type(matrix), intent(in), optional :: Dg(:)
       type(matrix), intent(in), optional :: Dgg(:, :)
-      type(matrix), intent(in), optional :: Df
+      type(matrix), intent(in), optional :: Df(:)
       type(matrix), intent(in), optional :: Dff(:, :)
 !     ---------------------------------------------------------------------------
       integer                            :: i, j, k, l
       integer                            :: element
       integer                            :: mat_dim
       integer                            :: nr_atoms
+      integer                            :: nr_dmat
       real(8)                            :: xc_energy
-      type(matrix)                       :: X, T
+      real(8), allocatable               :: xc_dmat(:)
 !     ---------------------------------------------------------------------------
 
       nr_atoms = get_nr_atoms()
-
-      if (.not. get_is_ks_calculation()) then
-         res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-         return
-      end if
-
-      mat_dim = D%nrow
-
-      X = tiny(0.0d0)*D
-!     T = 1.0d0*Df
+      mat_dim  = D%nrow
 
       select case (pert)
          case ('g')
+            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                element = i
                call xc_integrate(           &
@@ -205,6 +199,8 @@ contains
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
          case ('gg')
+            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
                   element = i &
@@ -222,23 +218,30 @@ contains
                end do
             end do
          case ('gf')
-            do i = 1, nr_atoms*3
-               do j = 1, 1
+!           res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+            if (.not. get_is_ks_calculation()) return
+            nr_dmat = 3
+            allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+            xc_dmat = 0.0d0
+            call dcopy(mat_dim*mat_dim, D%elms, 1, xc_dmat(1), 1)
+            do j = 1, 3
+               call dcopy(mat_dim*mat_dim, Df(j)%elms, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
+               do i = 1, 1
                   element = i &
                           + (j-1)*nr_atoms*3
-                  call xc_integrate(              &
-                          xc_mat_dim=mat_dim,     &
-                          xc_nr_dmat=3,           &
-                          xc_dmat=(/D%elms,       &
-                                    X%elms,       &
-                                    T%elms/),     &
-                          xc_energy=xc_energy,    &
-                          xc_geo_coor=(/i, 0/)    &
+                  call xc_integrate(           &
+                          xc_mat_dim=mat_dim,  &
+                          xc_nr_dmat=nr_dmat,  &
+                          xc_dmat=xc_dmat,     &
+                          xc_energy=xc_energy, &
+                          xc_geo_coor=(/i, 0/) &
                        )
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
          case ('ggg')
+            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
                   do k = 1, j
@@ -260,6 +263,8 @@ contains
                end do
             end do
          case ('gggg')
+            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
                   do k = 1, j
@@ -295,7 +300,7 @@ contains
             stop 1
       end select
 
-      X = 0
+      if (allocated(xc_dmat)) deallocate(xc_dmat)
 
    end subroutine
 
