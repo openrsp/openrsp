@@ -15,7 +15,7 @@ module rsp_general
   use matrix_backend
   use rsp_contribs
   use rsp_equations
-  use interface_rsp_solver
+
 
   implicit none
 
@@ -3771,64 +3771,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 !                       (/product(p_tuples(1)%pdim)/), 1, &
 !                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
 !                       Fp)
-! if (product(p_tuples(1)%pdim) == 36) then
-! 
-! write(*,*) 'rearranging'
-! 
-!        do j = 1, size(tmp)
-! 
-!           call mat_nullify(tmp(j))
-!           tmp(j)%nrow = mol%zeromat%nrow
-!           tmp(j)%ncol = mol%zeromat%ncol
-!           tmp(j)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
-!           tmp(j)%magic_tag = 825169837 !mark as set-up
-!           call mat_alloc(tmp(j))
-!           call mat_axpy((0.0d0, 0.0d0), tmp(j), .false., .true., tmp(j))
-! 
-!        end do
-! 
-! tmp(1) = Fp(1)
-! tmp(2) = Fp(13)
-! tmp(3) = Fp(25)
-! tmp(4) = Fp(2)
-! tmp(5) = Fp(14)
-! tmp(6) = Fp(26)
-! tmp(7) = Fp(3)
-! tmp(8) = Fp(15)
-! tmp(9) = Fp(27)
-! tmp(10) = Fp(4)
-! tmp(11) = Fp(16)
-! tmp(12) = Fp(28)
-! tmp(13) = Fp(5)
-! tmp(14) = Fp(17)
-! tmp(15) = Fp(29)
-! tmp(16) = Fp(6)
-! tmp(17) = Fp(18)
-! tmp(18) = Fp(30)
-! tmp(19) = Fp(7)
-! tmp(20) = Fp(19)
-! tmp(21) = Fp(31)
-! tmp(22) = Fp(8)
-! tmp(23) = Fp(20)
-! tmp(24) = Fp(32)
-! tmp(25) = Fp(9)
-! tmp(26) = Fp(21)
-! tmp(27) = Fp(33)
-! tmp(28) = Fp(10)
-! tmp(29) = Fp(22)
-! tmp(30) = Fp(34)
-! tmp(31) = Fp(11)
-! tmp(32) = Fp(23)
-! tmp(33) = Fp(35)
-! tmp(34) = Fp(12)
-! tmp(35) = Fp(24)
-! tmp(36) = Fp(36)
-! 
-! 
-! Fp(:) = tmp(:)
-! 
-! end if
-
 
 
     end if
@@ -3988,13 +3930,15 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(mol, pert, F, D, S)
 
+    use interface_rsp_solver, only: rsp_mosolver_exec
+
     implicit none
 
     type(rsp_cfg) :: mol
     integer :: sstr_incr, i, j, superstructure_size
     integer, allocatable, dimension(:) :: ind
     integer, dimension(0) :: noc
-    character(4), dimension(0) :: nof
+    character, dimension(0) :: nof
     type(p_tuple) :: pert
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(SDF) :: F, D, S
@@ -4571,7 +4515,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   end subroutine
 
-  subroutine rsp_prop(mol, pert_unordered, F_unperturbed, D_unperturbed, S_unperturbed)
+  subroutine rsp_prop(mol, pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
 
     implicit none
 
@@ -4594,15 +4538,17 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     pert = p_tuple_standardorder(pert_unordered)
 
-    kn = get_bestkn(pert)
-    write(*,*) ' '
-    write(*,*) 'Best k, n was found to be ', kn(1), ' and ', kn(2)
-    write(*,*) ' '
 
-kn(1) = 2
-kn(2) = 2
+! The get_bestkn function is taken out of use for now until it has been improved
+!    kn = get_bestkn(pert)
+   write(*,*) ' '
+   write(*,*) 'Choice of k, n is ', kn(1), ' and ', kn(2)
+   write(*,*) ' '
 
-write(*,*) 'NOTE: (k, n) forced for debug purposes:', kn(1), kn(2)
+! kn(1) = 0
+! kn(2) = 2
+! 
+! write(*,*) 'NOTE: (k, n) forced for debug purposes:', kn(1), kn(2)
 
     allocate(S)
     S%next => S

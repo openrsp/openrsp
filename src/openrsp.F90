@@ -228,6 +228,7 @@ end subroutine
 
     logical, intent(in) :: dryrun
     integer             :: LUCMD
+    integer, dimension(2) :: kn
     character(80) word
     integer       num_lines_read, err, l, i
     type(p_tuple) :: perturbation_tuple
@@ -323,9 +324,33 @@ end subroutine
           if (.not.dryrun) &
              call prop_test_quarticff(cfg, 3*num_atoms, S, D, F)
 
+       case ('.GEN_DIPMOM')
+
+          if (.not.dryrun) then
+
+             kn = (/0, 0/)
+
+             perturbation_tuple%n_perturbations = 1
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%pdim = (/3/)
+             perturbation_tuple%plab = (/'EL  '/)
+             perturbation_tuple%pid = (/1/)
+             perturbation_tuple%freq = (/0.0/)
+
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+
+          end if
+
+
        case ('.GEN_GRADIENT')
 
           if (.not.dryrun) then
+
+             kn = (/0, 0/)
 
              perturbation_tuple%n_perturbations = 1
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -338,13 +363,15 @@ end subroutine
              perturbation_tuple%pid = (/1/)
              perturbation_tuple%freq = (/0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POL')
 
           if (.not.dryrun) then
+
+             kn = (/0, 1/)
 
              perturbation_tuple%n_perturbations = 2
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -357,13 +384,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2/)
              perturbation_tuple%freq = (/0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_DIPGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 1/)
 
              perturbation_tuple%n_perturbations = 2
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -376,7 +405,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2/)
              perturbation_tuple%freq = (/0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -384,6 +413,8 @@ end subroutine
        case ('.GEN_HESSIAN')
 
           if (.not.dryrun) then
+
+             kn = (/0, 1/)
 
              perturbation_tuple%n_perturbations = 2
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -396,13 +427,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2/)
              perturbation_tuple%freq = (/0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_FHYP')
 
           if (.not.dryrun) then
+
+             kn = (/1, 1/)
 
              perturbation_tuple%n_perturbations = 3
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -415,13 +448,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POLGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 2/)
 
              perturbation_tuple%n_perturbations = 3
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -434,13 +469,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_DIPHES')
 
           if (.not.dryrun) then
+
+             kn = (/1, 1/)
 
              perturbation_tuple%n_perturbations = 3
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -453,13 +490,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
-       case ('.GEN_CUBICFF')
+       case ('.GEN_CFF')
 
           if (.not.dryrun) then
+
+             kn = (/1, 1/)
 
              perturbation_tuple%n_perturbations = 3
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -472,13 +511,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)             
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_SHYP')
 
           if (.not.dryrun) then
+
+             kn = (/2, 1/)
 
              perturbation_tuple%n_perturbations = 4
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -491,13 +532,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_FHYPGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 3/)
 
              perturbation_tuple%n_perturbations = 4
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -510,13 +553,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POLHES')
 
           if (.not.dryrun) then
+
+             kn = (/1, 2/)
 
              perturbation_tuple%n_perturbations = 4
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -529,13 +574,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_DIPCFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 1/)
 
              perturbation_tuple%n_perturbations = 4
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -548,13 +595,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
-       case ('.GEN_QUARTICFF')
+       case ('.GEN_QFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 1/)
 
              perturbation_tuple%n_perturbations = 4
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -568,13 +617,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_3HYP')
 
           if (.not.dryrun) then
+
+             kn = (/2, 2/)
 
              perturbation_tuple%n_perturbations = 5
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -587,13 +638,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_SHYPGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 4/)
 
              perturbation_tuple%n_perturbations = 5
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -606,13 +659,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_FHYPHES')
 
           if (.not.dryrun) then
+
+             kn = (/1, 3/)
 
              perturbation_tuple%n_perturbations = 5
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -625,13 +680,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POLCFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 2/)
 
              perturbation_tuple%n_perturbations = 5
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -644,13 +701,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_DIPQFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 2/)
 
              perturbation_tuple%n_perturbations = 5
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -664,13 +723,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_5FF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 2/)
 
              perturbation_tuple%n_perturbations = 5
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -684,13 +745,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_4HYP')
 
           if (.not.dryrun) then
+
+             kn = (/3, 2/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -703,13 +766,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_3HYPGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 5/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -722,13 +787,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_SHYPHES')
 
           if (.not.dryrun) then
+
+             kn = (/1, 4/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -741,13 +808,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_FHYPCFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 3/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -760,13 +829,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POLQFF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 2/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -780,7 +851,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -788,6 +859,8 @@ end subroutine
        case ('.GEN_DIP5FF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 2/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -801,13 +874,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_6FF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 2/)
 
              perturbation_tuple%n_perturbations = 6
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -821,13 +896,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_5HYP')
 
           if (.not.dryrun) then
+
+             kn = (/3, 3/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -841,13 +918,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_4HYPGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 6/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -861,13 +940,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_3HYPHES')
 
           if (.not.dryrun) then
+
+             kn = (/1, 5/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -881,7 +962,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -889,6 +970,8 @@ end subroutine
        case ('.GEN_SHYPCFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 4/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -903,13 +986,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_FHYPQFF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 3/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -924,13 +1009,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POL5FF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 3/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -945,13 +1032,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_DIP6FF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 3/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -966,13 +1055,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_7FF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 3/)
 
              perturbation_tuple%n_perturbations = 7
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -988,7 +1079,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -996,6 +1087,8 @@ end subroutine
        case ('.GEN_6HYP')
 
           if (.not.dryrun) then
+
+             kn = (/4, 3/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1009,13 +1102,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_5HYPGRA')
 
           if (.not.dryrun) then
+
+             kn = (/0, 7/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1029,13 +1124,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_4HYPHES')
 
           if (.not.dryrun) then
+
+             kn = (/1, 6/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1049,13 +1146,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_3HYPCFF')
 
           if (.not.dryrun) then
+
+             kn = (/2, 5/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1070,13 +1169,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_SHYPQFF')
 
           if (.not.dryrun) then
+
+             kn = (/3, 4/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1091,13 +1192,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_FHYP5FF')
 
           if (.not.dryrun) then
+
+             kn = (/4, 3/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1112,13 +1215,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_POL6FF')
 
           if (.not.dryrun) then
+
+             kn = (/4, 3/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1133,13 +1238,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_DIP7FF')
 
           if (.not.dryrun) then
+
+             kn = (/4, 3/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1155,13 +1262,15 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 
        case ('.GEN_8FF')
 
           if (.not.dryrun) then
+
+             kn = (/4, 3/)
 
              perturbation_tuple%n_perturbations = 8
              allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
@@ -1177,7 +1286,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, F, D, S)
+             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
 
           end if
 

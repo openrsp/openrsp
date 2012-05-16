@@ -150,19 +150,25 @@ contains
     last_ncomp = 1
     !ajt FIXME validate comp/ncomp ranges
     !ajt FIXME determine sorting
-    ! count the number of GEO
-    if (all(fields(:size(fields)-1)%label == 'GEO ')) then
-       ngeo = size(fields) - 1
-       if (fields(size(fields))%label == 'GEO ') then
-          ngeo = ngeo + 1
-       else
-          last_field = fields(size(fields))%label
-          last_ncomp = 3 !ajt FIXME
+    if (any(fields(:)%label == 'EL  ')) then
+       if (size(fields) > 2) then
+          rspfunc = 0.0
        end if
     else
-       call quit('rsp_nucpot error: failed to parse fields')
+       ! count the number of GEO
+       if (all(fields(:size(fields)-1)%label == 'GEO ')) then
+          ngeo = size(fields) - 1
+          if (fields(size(fields))%label == 'GEO ') then
+             ngeo = ngeo + 1
+          else
+             last_field = fields(size(fields))%label
+             last_ncomp = 3 !ajt FIXME
+          end if
+       else
+          call quit('rsp_nucpot error: failed to parse fields')
+       end if
+       call inner
     end if
-    call inner
   contains
     subroutine inner
       real(8) tmp(ncor**ngeo * last_ncomp)
@@ -215,6 +221,11 @@ contains
     if (present(w) .and. .not.present(D)) &
        call quit("error in rsp_ovlave: frequencies 'w' and density 'D' " &
               // 'must both be present or both absent')
+
+  if (any(f=='EL  ')) then
+     ave = 0.0
+  else
+
     ! gets the order of total geometric derivatives
     order_geo = count(f=='GEO ')
     if (order_geo/=nf) &
@@ -288,6 +299,8 @@ contains
     end if
     ! frees space
     deallocate(val_expt)
+
+  end if
   end subroutine
 
 
@@ -299,7 +312,7 @@ contains
 
   subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
     use dalton_ifc, only: SHELLS_NUCLEI_displace
-    ! Gen1Int interface
+    ! Gen1Int interface in Dalton
     use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)  :: mol
@@ -325,6 +338,11 @@ contains
     integer ierr                         !error information
     ! gets the order of Cartesian multipole moments
     order_mom = count(f=='EL  ')
+
+  if (order_mom > 1) then
+     ave = 0.0
+  else
+
     ! gets the order of total geometric derivatives
     order_geo = count(f=='GEO ')
     if (order_mom+order_geo/=nf) &
@@ -377,6 +395,9 @@ contains
                          val_expect=val_expt, rsp_expect=ave)
     ! frees space
     deallocate(val_expt)
+
+  end if
+
   end subroutine
 
 
@@ -411,6 +432,11 @@ contains
     type(ctr_arg) arg(1)
     real(8)       r
     integer       i, j, k, l, n, ncor
+
+  if (any(f== 'EL  ')) then
+     ave = 0.0
+  else
+
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
        A(1) = mol%zeromat
@@ -506,13 +532,17 @@ contains
                 (' ' // f(i), i=1,nf)
        call quit('rsp_twoave error: not implented or in wrong order')
     end if
+
+  end if
+
   end subroutine
+
 
 
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
   subroutine rsp_ovlint(mol, nf, f, c, nc, ovl, w, fock)
-    ! Gen1Int interface
+    ! Gen1Int interface in Dalton
     use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
@@ -539,6 +569,17 @@ contains
     if (present(w) .and. .not.present(fock))                                      &
        call quit("error in rsp_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
                  "must both be present or both absent")
+
+  if (any(f=='EL  ')) then
+
+     do i = 1, product(nc)
+        ovl(i) = mol%zeromat
+        call mat_alloc(ovl(i))
+        ovl(i)%elms = 0.0
+     end do
+
+  else
+
     ! gets the order of total geometric derivatives
     order_geo = count(f=='GEO ')
     if (order_geo/=nf) &
@@ -600,12 +641,15 @@ contains
                                 num_ints, ovl, .false.,     &  !integral matrices
                                 get_print_unit(), 5)
     end if
+
+  end if
+
   end subroutine
 
 
 
   subroutine rsp_oneint(mol, nf, f, c, nc, oneint)
-    ! Gen1Int interface
+    ! Gen1Int interface in Dalton
     use gen1int_api
     !> structure containing integral program settings
     type(rsp_cfg), intent(in)    :: mol
@@ -626,6 +670,24 @@ contains
     integer num_geom   !number of total geometric derivatives
     integer num_ints   !number of all integral matrices
     integer imat       !incremental recorder over matrices
+    integer :: i
+    type(matrix) :: A
+
+  if (count(f=='EL  ') > 1) then
+        A = mol%zeromat
+        call mat_alloc(A)
+        A%elms = 0.0
+     do i = 1, product(nc)
+        if (iszero(oneint(i))) then
+           call mat_alloc(oneint(i))
+           oneint(i)%elms = oneint(i)%elms + A%elms
+        else
+           oneint(i)%elms = oneint(i)%elms + A%elms
+        end if
+     end do
+
+  else
+
     ! gets the order of Cartesian multipole moments
     order_mom = count(f=='EL  ')
     ! gets the order of total geometric derivatives
@@ -679,6 +741,9 @@ contains
                                 num_ints, oneint, .false., &  !integral matrices
                                 get_print_unit(), 5)
     end if
+
+  end if
+
   end subroutine
 
 
@@ -707,6 +772,20 @@ contains
     integer       i, j, n, ij, ncor
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
+  if (any(f=='EL  ')) then
+        A = mol%zeromat
+        call mat_alloc(A)
+        A%elms = 0.0
+     do i = 1, product(nc)
+        if (iszero(fock(i))) then
+           call mat_alloc(fock(i))
+           fock(i)%elms = fock(i)%elms + A%elms
+        else
+           fock(i)%elms = fock(i)%elms + A%elms
+        end if
+     end do
+  else
+
     if (nf==0) then
        A = 0*dens
        call mat_alloc(A)
@@ -750,7 +829,14 @@ contains
                 (' ' // f(i), i=1,nf)
        call quit('error in rsp_oneave: not implented or in wrong order')
     end if
+
+  end if
+
   end subroutine
+
+
+
+
 
   function idx(f)
     character(4) :: f
