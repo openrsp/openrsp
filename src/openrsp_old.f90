@@ -40,7 +40,7 @@
 !> \date 2009-12-08
 module openrsp_old
   ! matrix
-  use matrix_backend
+  use matrix_defop
   ! response-related testing routines and some calculations
   use prop_test_old
   ! calculation and outputting of vibrational (optical) properties

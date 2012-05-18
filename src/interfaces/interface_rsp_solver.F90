@@ -54,12 +54,6 @@ contains
   !> \param optimal_orb indicates if using optimal orbital trial vectors of solving response equations
   subroutine rsp_mosolver_init( max_num_iterat, max_dim_hess, max_dim_reduc, &
                                 threshold, optimal_orb )
-    ! need certain low-level matrix routines
-    ! radovan: accessing low lever routines here is bad
-    use matrix_backend, only: mat_nullify, &
-                              mat_setup, &
-                              mat_magic_setup, &
-                              mat_alloc
     implicit integer (i,m-n)
 #include <implicit.h>
     integer, optional, intent(in) :: max_num_iterat
@@ -86,18 +80,11 @@ contains
     ! if using the optimal orbital trial vectors in solving response equations
     if ( present( optimal_orb ) ) solver_optorb = optimal_orb
     ! initializes the coefficients of molecular orbitals matrices
-    call mat_nullify( solver_CMO )
-    solver_CMO%nrow  = NBAST
-    solver_CMO%ncol  = solver_CMO%nrow !also virtual
-    solver_CMO%closed_shell = .true.
-    solver_CMO%magic_tag = mat_magic_setup
-    call mat_alloc( solver_CMO )
-    call mat_nullify( solver_CMO_OCC )
-    call mat_setup( solver_CMO_OCC, solver_CMO )
-    call mat_alloc( solver_CMO_OCC )
-    call mat_nullify( solver_CMO_VIR )
-    call mat_setup( solver_CMO_VIR, solver_CMO )
-    call mat_alloc( solver_CMO_VIR )
+
+    call mat_init(solver_CMO, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+
+    solver_CMO_OCC = mat_alloc_like(solver_CMO)
+    solver_CMO_VIR = mat_alloc_like(solver_CMO)
     ! gets the coefficients of molecular orbitals
     call di_get_cmo( solver_CMO, solver_CMO_OCC, solver_CMO_VIR )
     ! reads active part of one-electron density matrix (MO)
@@ -164,11 +151,6 @@ contains
   !> \param eigval contains the frequencies
   !> \return eigvec contains the solution vectors (AO)
   subroutine rsp_mosolver_exec( GD, eigval, eigvec )
-    ! need certain low-level matrix routines
-    use matrix_backend, only: mat_nullify, &
-                              mat_setup, &
-                              mat_magic_setup, &
-                              mat_alloc
     implicit integer (i,m-n)
 #include <implicit.h>
     type(matrix), intent(in) :: GD(*)
@@ -236,12 +218,7 @@ contains
 
     ! transforms from AO to MO, and writes RHS (MO) into file
 
-    call mat_nullify(GD_MO)
-    GD_MO%nrow  = NORBT
-    GD_MO%ncol  = GD_MO%nrow
-    GD_MO%closed_shell = .true.
-    GD_MO%magic_tag = mat_magic_setup
-    call mat_alloc( GD_MO )
+    call mat_init(GD_MO, nrow=NORBT, ncol=NORBT, closed_shell=.true.)
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
@@ -282,9 +259,7 @@ contains
     if ( ierr /= 0 ) call QUIT( 'Failed to allocate MO solutions!' )
     ! loops over solution vectors
     do ISOL = 1, rsp2_number_of_omegas
-      call mat_nullify( mo_eigvec(ISOL) )
-      call mat_setup( mo_eigvec(ISOL), GD_MO )
-      call mat_alloc( mo_eigvec(ISOL) )
+      mo_eigvec(ISOL) = mat_alloc_like(GD_MO)
       ! reads the solution
       call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
 

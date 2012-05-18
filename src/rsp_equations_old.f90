@@ -810,7 +810,7 @@ contains
    subroutine solve_scf_eq(mol, S0, D0, F0, sym, freq, neq, DSDp, FDSp, Dp, Fp)
       !       in:          --------------------------------------------
       !       out:                                                      ------
-use matrix_backend, only: mat_alloc, matrix_backend_debug
+
       !> mol/basis/decomp/thresh needed by integrals and solver
       type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix
@@ -884,8 +884,7 @@ use matrix_backend, only: mat_alloc, matrix_backend_debug
             Xph(1) = 0*S0
          else
             freq1(1) = dreal(freq)
-            Xph(1) = 0*Dp(i)
-            call mat_alloc(Xph(1))
+            Xph(1) = mat_zero_like(Dp(i))
             call rsp_mosolver_exec(FDSp(i:i), freq1(1:1), Xph(1))
          end if
          ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),

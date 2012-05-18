@@ -42,7 +42,7 @@
   !> \param LWORK is the size of the work memory
   subroutine openrsp_daldrv_old( WORK, LWORK, WAVPCM )
     ! matrix
-    use matrix_backend
+    use matrix_defop
     ! interface of DALTON
     use interface_f77_memory
     use interface_io
@@ -130,6 +130,8 @@
     type(matrix) F
     ! one electron Hamiltonian
     type(matrix) H1
+    ! two electron Hamiltonian
+    type(matrix) G
 
     ! number of atoms
     integer num_atoms
@@ -332,32 +334,28 @@
     call rsp_mosolver_dump( LUPRI )
 
     ! initialize and allocate matrices
-    call mat_nullify(S)
-    S%nrow  = NBAST
-    S%ncol  = S%nrow
-    S%closed_shell = .true.
-    S%magic_tag = mat_magic_setup
-    call mat_alloc(S)
-    call mat_nullify(D)
-    call mat_setup(D, S)
-    call mat_alloc(D)
-    call mat_nullify(H1)
-    call mat_setup(H1, S)
-    call mat_alloc(H1)
-    call mat_nullify(F)
-    call mat_setup(F, S)
-    call mat_alloc(F)
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
 
-    ! gets the overlap and one electron Hamiltonian matrices
+    D  = mat_alloc_like(S)
+    H1 = mat_alloc_like(S)
+    G  = mat_alloc_like(S)
+
+    ! get the overlap and one electron Hamiltonian matrices
     call di_get_overlap_and_H1(S, H1)
-    ! gets the AO density matrix
+
+    ! get the AO density matrix, halving it
     call di_get_dens(D)
-    call mat_axpy((1d0,0d0)/2, D, .false., .true., D)
-    ! gets the two electron contribution (G) to Fock matrix
-    call di_get_gmat(D, F)
+
+    D = 0.5d0*D
+
+    ! get the two electron contribution (G) to Fock matrix
+    call di_get_gmat(D, G)
+
     ! Fock matrix F = H1 + G
-    call mat_axpy((1d0,0d0), H1, .false., .false., F)
-    call mat_free(H1)
+    F = H1 + G
+
+    H1 = 0
+    G  = 0
 
     if (get_is_ks_calculation()) then
        ! write xcint interface files
@@ -382,15 +380,14 @@
     end if
 
     ! performs the calculations
-    call mat_nullify(molcfg%zeromat)
-    call mat_setup(molcfg%zeromat, S)
+    molcfg%zeromat  = mat_zero_like(S)
     molcfg = prop_molcfg(molcfg%zeromat, num_atoms, LUPRI)
     call openrsp_prop_calc( molcfg, S, D, F, openrsp_info )
 
     ! cleans
-    call mat_free(F)
-    call mat_free(D)
-    call mat_free(S)
+    S = 0
+    D = 0
+    F = 0
     call openrsp_info_clean(openrsp_info)
     call rsp_mosolver_free
 #ifdef USE_WAVPCM

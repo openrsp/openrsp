@@ -11,7 +11,6 @@
 module prop_contribs_old
 
    use matrix_defop
-   use matrix_backend, only: mat_nullify, mat_alloc, mat_free
    use interface_molecule
    use interface_xc
    use interface_1el
@@ -906,7 +905,7 @@ contains
          ! di_get_MagDeriv_(F,G)xD_DFT takes initialized
          if (do_dft()) then !scratch in A(4:6)
             do i = 4, 6
-               if (iszero(A(i))) call mat_alloc(A(i))
+               if (iszero(A(i))) call mat_ensure_alloc(A(i))
             end do
          end if
          if (all((/(iszero(D(i)), i=pd1-pd+1,pd1)/))) then
@@ -1642,7 +1641,7 @@ contains
          if (nd==0) call quit('prop_twoint error: Unperturbed ' &
                            // 'two-electron Fock matrix requested',-1)
          ! di_get_gmat and di_get_sigma expects A initialized (allocated)
-         if (iszero(A(1))) call mat_alloc(A(1))
+         if (iszero(A(1))) call mat_ensure_alloc(A(1))
          do i = 0, pd-1
             if (iszero(D(pd1-pd+1+i))) cycle
             ! Coulomb-exchange
@@ -1744,7 +1743,7 @@ contains
       if (.not.isdef(A)) &
          call quit('load_oneint: matrix A undefined - must be defined',-1)
       ! if A is zero, get it allocated
-      if (iszero(A)) call mat_alloc(A)
+      if (iszero(A)) call mat_ensure_alloc(A)
       ! read integrals from file into A
       call di_read_operator_int(lab, A)
    end subroutine
@@ -1788,7 +1787,7 @@ contains
       end if
       !make usre F is properly allocated
       do i = 1, nf
-         if (iszero(F(i))) call mat_alloc(F(i))
+         if (iszero(F(i))) call mat_ensure_alloc(F(i))
       end do
       !allocate work
       if (lwrk/=0) then

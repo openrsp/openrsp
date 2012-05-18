@@ -12,7 +12,6 @@
 module rsp_contribs
 
   use matrix_defop
-  use matrix_backend, only: mat_alloc
   use interface_molecule
   use interface_io
   use interface_xc
@@ -247,10 +246,10 @@ contains
       if (order_geo==1) then
         ! allocate matrices for integrals
         A(1) = mol%zeromat
-        call mat_alloc(A(1))
+        call mat_ensure_alloc(A(1))
         if (present(w)) then
            A(2) = mol%zeromat
-           call mat_alloc(A(2))
+           call mat_ensure_alloc(A(2))
         end if
         ! loop over nuclear coordinates
         do i = 0, nc(1)-1
@@ -440,7 +439,7 @@ contains
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
        A(1) = mol%zeromat
-       call mat_alloc(A(1))
+       call mat_ensure_alloc(A(1))
        call di_get_gmat(D2, A(1)) !Coulomb and exchange
        ave(1) = tr(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
@@ -574,7 +573,7 @@ contains
 
      do i = 1, product(nc)
         ovl(i) = mol%zeromat
-        call mat_alloc(ovl(i))
+        call mat_ensure_alloc(ovl(i))
         ovl(i)%elms = 0.0
      end do
 
@@ -601,7 +600,7 @@ contains
            ! allocate, if needed
            if (.not.isdef(ovl(1+i))) then
               ovl(1+i) = mol%zeromat
-              call mat_alloc(ovl(1+i))
+              call mat_ensure_alloc(ovl(1+i))
            end if
            ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
            if (present(w)) then
@@ -624,7 +623,7 @@ contains
       do i = 1, num_ints
         if (.not.isdef(ovl(i))) then
           ovl(i) = mol%zeromat
-          call mat_alloc(ovl(i))
+          call mat_ensure_alloc(ovl(i))
         end if
       end do
       ! calculates the overlap matrix
@@ -675,11 +674,11 @@ contains
 
   if (count(f=='EL  ') > 1) then
         A = mol%zeromat
-        call mat_alloc(A)
+        call mat_ensure_alloc(A)
         A%elms = 0.0
      do i = 1, product(nc)
         if (iszero(oneint(i))) then
-           call mat_alloc(oneint(i))
+           call mat_ensure_alloc(oneint(i))
            oneint(i)%elms = oneint(i)%elms + A%elms
         else
            oneint(i)%elms = oneint(i)%elms + A%elms
@@ -708,7 +707,7 @@ contains
     do imat = 1, size(oneint)
       if (.not.isdef(oneint(imat))) then
         oneint(imat) = mol%zeromat
-        call mat_alloc(oneint(imat))
+        call mat_ensure_alloc(oneint(imat))
       end if
     end do
     ! electric perturbations
@@ -774,11 +773,11 @@ contains
     type(matrix)  A !scratch
   if (any(f=='EL  ')) then
         A = mol%zeromat
-        call mat_alloc(A)
+        call mat_ensure_alloc(A)
         A%elms = 0.0
      do i = 1, product(nc)
         if (iszero(fock(i))) then
-           call mat_alloc(fock(i))
+           call mat_ensure_alloc(fock(i))
            fock(i)%elms = fock(i)%elms + A%elms
         else
            fock(i)%elms = fock(i)%elms + A%elms
@@ -788,7 +787,7 @@ contains
 
     if (nf==0) then
        A = 0*dens
-       call mat_alloc(A)
+       call mat_ensure_alloc(A)
        call di_get_gmat(dens, A)
        fock(1) = fock(1) + A
        A = 0
@@ -802,7 +801,7 @@ contains
                          1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
-             call mat_alloc(fock(1+i))
+             call mat_ensure_alloc(fock(1+i))
              fock(1+i)%elms = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
              fock(1+i)%elms = fock(1+i)%elms &
@@ -816,7 +815,7 @@ contains
           do i = 0, nc(1)-1
              ij = 1 + i + nc(1)*j
              if (iszero(fock(ij))) then
-                call mat_alloc(fock(ij))
+                call mat_ensure_alloc(fock(ij))
                 fock(ij)%elms = 0 !ajt FIXME use mat_axpy
              end if
              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &

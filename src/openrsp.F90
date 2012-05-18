@@ -40,7 +40,6 @@
 !> \date 2009-12-08
 module openrsp
 
-  use matrix_backend
   use interface_molecule
   use interface_io
   use interface_xc
@@ -119,6 +118,7 @@ contains
     integer                :: nbast, lupri
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
+    type(matrix)           :: G  !two electron Hamiltonian
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
@@ -153,32 +153,28 @@ contains
                            solver_thresh, solver_optorb)
 
     ! initialize and allocate matrices
-    call mat_nullify(S)
-    S%nrow  = NBAST
-    S%ncol  = S%nrow
-    S%closed_shell = .true.
-    S%magic_tag = mat_magic_setup
-    call mat_alloc(S)
-    call mat_nullify(D)
-    call mat_setup(D, S)
-    call mat_alloc(D)
-    call mat_nullify(H1)
-    call mat_setup(H1, S)
-    call mat_alloc(H1)
-    call mat_nullify(F)
-    call mat_setup(F, S)
-    call mat_alloc(F)
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+
+    D  = mat_alloc_like(S)
+    H1 = mat_alloc_like(S)
+    G  = mat_alloc_like(S)
 
     ! get the overlap and one electron Hamiltonian matrices
     call di_get_overlap_and_H1(S, H1)
+
     ! get the AO density matrix, halving it
     call di_get_dens(D)
-    call mat_axpy((1d0,0d0)/2, D, .false., .true., D)
+
+    D = 0.5d0*D
+
     ! get the two electron contribution (G) to Fock matrix
-    call di_get_gmat(D, F)
+    call di_get_gmat(D, G)
+
     ! Fock matrix F = H1 + G
-    call mat_axpy((1d0,0d0), H1, .false., .false., F)
-    call mat_free(H1)
+    F = H1 + G
+
+    H1 = 0
+    G  = 0
 
     if (get_is_ks_calculation()) then
        ! write xcint interface files
@@ -203,8 +199,7 @@ contains
     end if
 
     ! setup response config structure
-    call mat_nullify(cfg%zeromat)
-    call mat_setup(cfg%zeromat, S) !after setup, mat is zero to matrix_defop
+    cfg%zeromat = mat_zero_like(S)
     call SHELLS_find_sizes(num_cgto_blocks, num_exp_and_ctr)
     allocate(cfg%basis(num_cgto_blocks))
     allocate(exp_and_ctr(num_exp_and_ctr))
@@ -1313,9 +1308,11 @@ end subroutine
     integer lupri
     lupri = get_print_unit()
     ! free
-    call mat_free(S)
-    call mat_free(D)
-    call mat_free(F)
+
+    S = 0
+    D = 0
+    F = 0
+
     call rsp_mosolver_free
 #ifdef USE_WAVPCM
     if (get_is_pcm_calculation()) then

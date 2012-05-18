@@ -124,7 +124,6 @@ contains
 
   subroutine get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
 
-    use matrix_backend, only: mat_alloc
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in)    :: mol
     integer,       intent(in)    :: ng
@@ -152,7 +151,7 @@ contains
        call rsp_xcint(D=(/D, Dg(i)/), F=FDSg(1))
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1)
        X(1) = 0*FDSg(1)
-       call mat_alloc(X(1))
+       call mat_ensure_alloc(X(1))
        call rsp_mosolver_exec(FDSg(1), (/0d0/), X)
        X(1)=-2*X(1); FDSg(1)=0
        Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1); X(1)=0
@@ -164,7 +163,6 @@ contains
 
   subroutine contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
 
-    use matrix_backend, only: mat_alloc
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
@@ -248,7 +246,6 @@ contains
 
   subroutine contract_cubicff(mol, ng, S, D, F, Sg, Dg, Fg)
 
-    use matrix_backend, only: mat_alloc
 !   ----------------------------------------------------------------------------
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
@@ -938,7 +935,7 @@ contains
   end subroutine
 
   subroutine prop_test_diphes(mol, ng, S, D, F)
-    use matrix_backend, only: mat_alloc
+
     type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
@@ -996,7 +993,7 @@ contains
        FDSf(1) = Ff(i)*D*S
        FDSf(1) = FDSf(1) - S*D*Ff(i)
        X(1) = 0*FDSf(1)
-       call mat_alloc(X(1))
+       call mat_ensure_alloc(X(1))
        call rsp_mosolver_exec(FDSf(1), (/0d0/), X)
        X(1)=-2d0*X(1); FDSf(1)=0
        Df(i) = Df(i) + X(1)*S*D
