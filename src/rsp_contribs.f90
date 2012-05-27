@@ -36,12 +36,6 @@ module rsp_contribs
   public rsp_field_ordering
   public rsp_cfg
 
-  !ajt Public for now, for use also in rsp_functions, until interfaces
-  !    and transition of arguments
-  !    of type(rsp_field) is complete.
-  public perm_comp_add
-
-  private gen1int_reorder
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -1099,31 +1093,66 @@ contains
   end function
 
 
-  !> Add the average contribution 'ave', with 'canonical' (integral program-)
-  !> ordering of dimensions, and full/total component ranges 'tc', to response
-  !> tensor 'rsp', in which the dimensions are ordered arbitrarily, related to
-  !> those in 'ave' by ordering 'perm', and with component ranges
-  !> 'comp : comp + nc-1'. 'dcomp', either zero or a number within each range,
-  !> specify the indices belong to the density matrix (!=0), whose dimensions
-  !> are not present in ave. After each call to an integral program, this subroutine
-  !> will be used to place the contribution in the resulting response tensor.
-  !> 'neg' and 'imag' determine the phase factor of addition.
-  !> @neg   minus sign, rsp = rsp - ave
-  !> @imag  imaginary,  rsp = rsp + i*ave
-  !> @ndim  number of dimensions
-  !> @perm  ordering of dimensions. For each dim in rsp, the corresponding dim in ave
-  !> @dcomp indices of density dimensions or zero for integral dimension
-  !> @comp  startint component for each field in rsp
-  !> @tc    total number of components. Dimensions of ave
-  !> @nc    number of components. Dimensions of rsp
-  subroutine perm_comp_add(neg, imag, ndim, perm, dcomp, comp, tc, nc, ave, rsp)
-    logical,    intent(in)    :: neg, imag
-    integer,    intent(in)    :: ndim, perm(ndim), dcomp(ndim)
-    integer,    intent(in)    :: comp(ndim), nc(ndim), tc(ndim)
-    real(8),    intent(in)    :: ave(product(tc)) !tc = total num comp
-    complex(8), intent(inout) :: rsp(product(nc)) !nc = num comp
-
+  !> Add the average contribution 'ave', with dimensions 'dima' to response tensor
+  !> 'rsp', with dimensions 'dimr', but where dimensions are permuted by 'perm'.
+  !> 'idxr' selects (if >0) which starting components in 'ave' for each dim in 'rsp',
+  !> or (if <0) index of a density matrix dimension.
+  !> @prefac  sign or prefactor: rsp = rsp + prefac * ave
+  !> @ndim    number of dimensions
+  !> @perm    ordering of dimensions. For each dim in ave, the corresponding dim in rsp
+  !> @idxr    starting component in ave for each dim in rsp, or if negative, the index
+  !>          of a density dimension in rsp
+  !> @dima    dimensions of ave. Density dimensions must have dim 1
+  !> @dimr    dimensions of rsp
+  !> @ave     real array of integral averages, as from integral program
+  !> @rsp     complex respons function tensor
+  subroutine permute_selcomp_add(prefac, ndim, perm, idxr, dima, dimr, ave, rsp)
+    complex(8), intent(in)    :: prefac
+    integer,    intent(in)    :: ndim, perm(ndim), idxr(ndim)
+    integer,    intent(in)    :: dima(ndim), dimr(ndim)
+    real(8),    intent(in)    :: ave(product(dima))
+    complex(8), intent(inout) :: rsp(product(dimr))
+    integer i, ia, ir, stpr(ndim), stpa(ndim), ii(ndim), dd(ndim)
+    ! calculate dimension steps in ave (cumulative products of
+    ! dimensions), as well as offset due to starting indices idxr (ia)
+    ia = 0
+    do i = 1, ndim
+       if (i==1) stpa(i) = 1
+       if (i/=1) stpa(i) = stpa(i-1) * dima(i-1)
+       if (idxr(perm(i)) > 0) & !positive means starting comp
+          ia = ia + stpa(i) * (idxr(perm(i)) - 1)
+    end do
+    ! calculate (permuted) dimension steps in rsp, and offset due to
+    ! density indices (ir), and permuted dimensions (dd)
+    ir = 0
+    do i = 1, ndim
+       if (i==1) stpr(perm(i)) = 1
+       if (i/=1) stpr(perm(i)) = stpr(perm(i-1)) * dimr(i-1)
+       if (idxr(i) <= 0) then !negative means density index
+          ir = ir + stpr(perm(i)) * (-idxr(i) - 1)
+          dd(perm(i)) = 1
+       else
+          dd(perm(i)) = dimr(i)
+       end if
+    end do
+    ! loop over indices in ave and rsp
+    ii = 0 !indices from zero to dd-1
+    do
+       rsp(ir+1) = rsp(ir+1) + prefac * ave(ia+1)
+       ! increment indices
+       do i = 1, ndim
+          ii(i) = ii(i) + 1
+          ia = ia + stpa(i)
+          ir = ir + stpr(i)
+          if (ii(i) /= dd(i)) exit
+          ii(i) = 0
+          ia = ia - stpa(i) * dd(i)
+          ir = ir - stpr(i) * dd(i)
+       end do
+       if (i == ndim+1) exit
+    end do
   end subroutine
+
 
   !> (derivatives of) nuclear repulsion and nuclei--field interaction
   subroutine nuclear_potential(derv, ncor, field, ncomp, nucpot)
