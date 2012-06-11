@@ -796,4 +796,122 @@ contains
      end do
   end subroutine
 
+
+
+  ! derivatives of nuclear repulsion energy
+  subroutine nucrep_deriv(na, charges, coords, deriv, nucrep)
+    integer, intent(in)  :: na, deriv, charges(na)
+    real(8), intent(in)  :: coords(3,na)
+    real(8), intent(out) :: nucrep((3*na)**deriv)
+    !--------------------------------------------
+    real(8) displ(3), power(3**deriv)
+    integer nuci, nucj, k, l, m, ncor_pow(deriv)
+    ! powers of ncor=3*na, for navigating through nucrep
+    ncor_pow(:) = (/((3*na)**k, k=0,deriv-1)/)
+    ! start from zero 
+    nucrep(:) = 0
+    ! loop over pairs i<j of nuclei
+    do nucj = 2, na
+       do nuci = 1, nucj-1
+          ! internuclear displacement
+          displ(:) = coords(:,nucj) - coords(:,nuci)
+          ! first unperturbed repulsion energy
+          power(1) = charges(nuci) * charges(nucj) / sqrt(sum(displ**2))
+          ! construct deriv'th tensor power of displacement vector,
+          ! carrying the prefactor QiQj (2k-1)!! / r^(2k+1)
+          do k = 1, deriv
+             l = 3**(k-1)
+             power(2*l+1:3*l) = power(:l) * displ(3) * (2*k-1) / sum(displ**2)
+             power(  l+1:2*l) = power(:l) * displ(2) * (2*k-1) / sum(displ**2)
+             power(     :  l) = power(:l) * displ(1) * (2*k-1) / sum(displ**2)
+          end do
+          ! remove traces from displacement power
+          if (deriv >= 2) call remove_traces(deriv, power)
+          ! add traceless displacement power at the 2^deriv different
+          ! places in the nucrep derivative tensor
+          call place_power_tensor
+       end do
+    end do
+
+  contains
+
+    recursive subroutine remove_traces(m,a)
+      integer, intent(in)    :: m
+      real(8), intent(inout) :: a(3**(m-2),3,3)
+      real(8) b(3**(m-2))
+      integer i, j
+      b(:) = a(:,1,1) + a(:,2,2) + a(:,3,3)
+      if (m >= 4) call remove_traces(m-2,b)
+      do j = 2, m
+         do i = 1, j-1
+            call subtract_from_diag( &
+                         (deriv+m-1) * (1+(deriv-m)/2), &
+                         3**(i-1), 3**(j-i-1), 3**(m-j), b, a)
+         end do
+      end do
+    end subroutine
+
+    subroutine subtract_from_diag(denom, l, m, t, b, a)
+      integer, intent(in)    :: denom, l, m, t
+      real(8), intent(in)    :: b(l,m,t)
+      real(8), intent(inout) :: a(l,3,m,3,t)
+      a(:,1,:,1,:) = a(:,1,:,1,:) - b(:,:,:)/denom
+      a(:,2,:,2,:) = a(:,2,:,2,:) - b(:,:,:)/denom
+      a(:,3,:,3,:) = a(:,3,:,3,:) - b(:,:,:)/denom
+    end subroutine
+    
+    subroutine place_power_tensor
+      integer offset, i, j, y, z, k, s
+      logical neg
+      offset = (3*(nuci-1)) * sum(ncor_pow)
+      neg = .false.
+      ! loop over all index permutations iiiii jiiii ... ijjjj jjjjj
+      do k = 0, 2**deriv - 1
+         ! loop over Cartesian indices xxxxx yxxxx ... yzzzz zzzzz
+         i = offset + 1
+         y = 0
+         z = 0
+         do j = 1, 3**deriv
+            ! add or set
+            if (k==0 .or. k == 2**deriv-1) then
+               nucrep(i) = nucrep(i) + merge(-1,1,neg) * power(j)
+            else
+               nucrep(i) = merge(-1,1,neg) * power(j)
+            end if
+            ! increment index i
+            do s = 0, deriv-1
+               ! x -> y transition
+               if (.not.btest(y,s) .and. .not.btest(z,s)) then
+                  y = ibset(y,s)
+                  i = i + ncor_pow(s+1)
+                  exit
+               ! y -> z transition
+               else if (btest(y,s)) then
+                  y = ibclr(y,s)
+                  z = ibset(z,s)
+                  i = i + ncor_pow(s+1)
+                  exit
+               ! z -> x transition (followed by 'carry')
+               else
+                  z = ibclr(z,s)
+                  i = i - 2*ncor_pow(s+1)
+               end if
+            end do
+         end do
+         ! increment offset ofs for next index permutation
+         do s = 0, deriv-1
+            neg = .not.neg
+            if (.not.btest(k,s)) then
+               offset = offset + 3*(nucj-nuci) * ncor_pow(s+1)
+               exit
+            else
+               offset = offset - 3*(nucj-nuci) * ncor_pow(s+1)
+            end if
+         end do
+      end do
+    end subroutine
+
+  end subroutine
+
+
 end module
