@@ -195,7 +195,7 @@ contains
     complex(8),    intent(in), optional  :: w(nf)
     !> density matrix to contract half-differentiated overlap against
     type(matrix),  intent(in), optional  :: D
-    call interface_1el_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
+    call interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
   end subroutine
 
 

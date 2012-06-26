@@ -25,7 +25,7 @@ contains
 
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
+   subroutine interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
 !FIXME: going to remove
      use dalton_ifc, only: SHELLS_NUCLEI_displace
      ! Gen1Int interface
@@ -34,8 +34,6 @@ contains
 #else
      use gen1int_api
 #endif
-     !> structure containing integral program settings
-     type(rsp_cfg), intent(in)  :: mol
      !> number of fields
      integer,       intent(in)  :: nf
      !> field labels in std order
@@ -91,11 +89,9 @@ contains
      if (present(w)) then
        if (order_geo==1) then
          ! allocate matrices for integrals
-         A(1) = mol%zeromat
-         call mat_ensure_alloc(A(1))
+         A(1) = mat_alloc_like(DFD)
          if (present(w)) then
-            A(2) = mol%zeromat
-            call mat_ensure_alloc(A(2))
+            A(2) = mat_alloc_like(DFD)
          end if
          ! loop over nuclear coordinates
          do i = 0, nc(1)-1
