@@ -18,6 +18,7 @@ module rsp_contribs
   use interface_f77_memory
   use interface_1el
   use interface_scf
+  use interface_basis
   use dalton_ifc
   use basis_set,  only: cgto
 
@@ -63,8 +64,6 @@ module rsp_contribs
      !> prototype zero matrix, of same shape and multiplicity as
      !> then density matrix
      type(matrix) :: zeromat
-     !> basis
-     type(cgto), pointer :: basis(:)
   end type
 
 
@@ -228,11 +227,9 @@ contains
 
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
-  subroutine rsp_twoave(mol, nf, f, c, nc, D1, D2, ave)
+  subroutine rsp_twoave(nf, f, c, nc, D1, D2, ave)
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
-    !> structure containing integral program settings
-    type(rsp_cfg),        intent(in)  :: mol
     !> number of fields
     integer,              intent(in)  :: nf
     !> field labels in std order
@@ -288,7 +285,7 @@ contains
        allocate(tmp(ncor,ncor,ncor,1))
        arg(1) = ctr_arg(3, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**3, tmp(:,:,:,1)))
-       call unopt_geodiff_loop(mol%basis, arg)
+       call unopt_geodiff_loop(interface_basis_pointer, arg)
        ! symmetrize
        do k = 1, ncor
           do j = 1, k
@@ -311,7 +308,7 @@ contains
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
        arg(1) = ctr_arg(4, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**4, tmp))
-       call unopt_geodiff_loop(mol%basis, arg)
+       call unopt_geodiff_loop(interface_basis_pointer, arg)
        ! symmetrize
        do l = 1, ncor
           do k = 1, l
@@ -467,7 +464,7 @@ contains
              end if
              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
                               ncor, dens, fock(ij), null_ptr)
-             call unopt_geodiff_loop(mol%basis, arg)
+             call unopt_geodiff_loop(interface_basis_pointer, arg)
           end do
        end do
     else

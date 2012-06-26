@@ -72,7 +72,7 @@ contains
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'oneave')
     ! 2-electron contribution
-    call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tmp), D, D, tmp)
+    call rsp_twoave(1, (/'GEO '/), (/1/), shape(tmp), D, D, tmp)
     gra = gra + tmp/2
     call print_tensor(shape(tmp), tmp/2, 'twoave')
     ! Kohn-Sham exchange correlation average
@@ -202,11 +202,11 @@ contains
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'HaDb')
     ! 2-electron contribution
-    call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(temp), D, D, temp)
+    call rsp_twoave(2, (/'GEO ','GEO '/), (/1,1/), shape(temp), D, D, temp)
     hes = hes + temp/2; call print_tensor(shape(temp), temp/2, 'Gab(D)D/2')
     !
     do i = 1, size(Dg)
-       call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(temp(:,i)), D, Dg(i), temp(:,i))
+       call rsp_twoave(1, (/'GEO '/), (/1/), shape(temp(:,i)), D, Dg(i), temp(:,i))
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'Ga(D)Db')
 
@@ -335,11 +335,11 @@ contains
 !   =======================
 
     tmp = 0.0d0
-    call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), D, D, tmp)
+    call rsp_twoave(3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), D, D, tmp)
     cub = cub + tmp/2
     do i = 1, size(Dg)
        tmp = 0.0d0
-       call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
+       call rsp_twoave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
                        D, Dg(i), tmp(i,:,:))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
@@ -350,7 +350,7 @@ contains
        end do
        do j = 1, i
           tmp = 0.0d0
-          call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tmp(i,j,:)), &
+          call rsp_twoave(1, (/'GEO '/), (/1/), shape(tmp(i,j,:)), &
                           Dg(i), Dg(j), tmp(i,j,:))
           do k = 1, size(Dg)
              cub(i, j, k) = cub(i, j, k) + tmp(i, j, k)
@@ -750,14 +750,14 @@ contains
 ! MR (01/2012: THE TWOAVE CALLS SEEM TO RETURN THE CORRECT RESULTS)
 
 ! E0-TYPE CALLS
-    call rsp_twoave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, D, tmp)
+    call rsp_twoave(4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, D, tmp)
     qua = qua + tmp/2; call print_tensor(shape(tmp), tmp/2, 'Gabcd(D)D/2')
 
 ! E1-TYPE CALLS
 ! D-Dg CALLS
     do i = 1, size(Dg)
        tmp = 0.0d0
-       call rsp_twoave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
+       call rsp_twoave(3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
                        D, Dg(i), tmp(i,:,:,:))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
@@ -776,7 +776,7 @@ contains
     do j = 1, size(Dg)
        do i = 1, j
           tmp = 0.0d0
-          call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
+          call rsp_twoave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
                           D, Dgg(i,j), tmp(:,:,i,j))
           do k = 1, size(Dg)
              do l = 1, size(Dg)
@@ -799,7 +799,7 @@ contains
     do i = 1, size(Dg)
        do j = 1, i
           tmp = 0.0d0
-          call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,j,:,:)), &
+          call rsp_twoave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,j,:,:)), &
                           Dg(i), Dg(j), tmp(i,j,:,:))
           do k = 1, size(Dg)
              do l = 1, size(Dg)
@@ -826,7 +826,7 @@ contains
       do j = 1, k
         do i = 1, size(Dg)
            tmp = 0.0d0
-           call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tmp(i,j,k,:)), &
+           call rsp_twoave(1, (/'GEO '/), (/1/), shape(tmp(i,j,k,:)), &
                          Dg(i), Dgg(j,k), tmp(i,j,k,:))
            do l = 1, size(Dg)
               qua(i, j, k, l) = qua(i, j, k, l) + tmp(i, j, k, l)
@@ -968,7 +968,7 @@ contains
     call rsp_oneave(1, (/'GEO '/), (/1/), shape(tm1), D, tm1)
     gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'HgD')
     ! 2-electron contribution
-    call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tm1), D, D, tm1)
+    call rsp_twoave(1, (/'GEO '/), (/1/), shape(tm1), D, D, tm1)
     gra = gra + tm1/2; call print_tensor(shape(tm1), tm1/2, 'Gg(D)D/2')
     ! Kohn-Sham exchange correlation average
 !   call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(tm1), 1, (/D/), tm1)
@@ -1059,14 +1059,14 @@ contains
 
     ! 2-electron contribution
     do i = 1, size(Df)
-       call rsp_twoave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
+       call rsp_twoave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
                        D, Df(i), tmp(:,:,i))
     end do
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, 'Gab(D)Df')
     do j = 1, size(Df)
        do i = 1, size(Dg)
           tmp = 0.0d0
-          call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
+          call rsp_twoave(1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
                           Dg(i), Df(j), tmp(:,i,j))
           do k = 1, size(Dg)
              Eggf(k, i, j) = Eggf(k, i, j) + tmp(k, i, j)

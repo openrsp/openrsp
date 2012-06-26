@@ -1797,14 +1797,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (num_p_tuples == 1) then
 
-          call rsp_twoave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), &
                           (/1/)), sdf_getdata(D, get_emptypert(), (/1/)) , contrib)
 
        elseif (num_p_tuples == 2) then
 
-          call rsp_twoave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, dens_tuple(2), &
                           sdf_getdata(D, get_emptypert(), (/1/)) , contrib)
@@ -1816,7 +1816,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! write(*,*) 'dens tuple 3', dens_tuple(3)%elms
 ! write(*,*) 'dens tuple 3 plabs', p_tuples(3)%plab
 
-          call rsp_twoave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, dens_tuple(2), dens_tuple(3), contrib)
 
@@ -1911,7 +1911,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        contrib = 0.0
 
-       call rsp_twoave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        sdf_getdata(D, get_emptypert(), (/1/)) , &
                        sdf_getdata(D, get_emptypert(), (/1/)) , contrib)

@@ -48,6 +48,7 @@ module openrsp
   use interface_f77_memory
   use interface_rsp_solver
   use interface_1el
+  use interface_basis
   use rsp_functions
   use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
@@ -200,11 +201,7 @@ contains
 
     ! setup response config structure
     cfg%zeromat = mat_zero_like(S)
-    call SHELLS_find_sizes(num_cgto_blocks, num_exp_and_ctr)
-    allocate(cfg%basis(num_cgto_blocks))
-    allocate(exp_and_ctr(num_exp_and_ctr))
-    call SHELLS_to_type_cgto(num_cgto_blocks, num_exp_and_ctr, &
-                             exp_and_ctr, cfg%basis)
+    call interface_basis_init()
 
     num_atoms = get_nr_atoms()
 
