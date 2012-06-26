@@ -6,7 +6,9 @@ module interface_xc
 !  to a host program outside of interface_xc_init
 
    use matrix_defop
+#ifndef PRG_DIRAC
    use xcint_main
+#endif
    use interface_molecule
 
    implicit none
@@ -114,6 +116,7 @@ contains
      T = 1.0d0*Dp
      N = tiny(0.0d0)*D
 
+#ifndef PRG_DIRAC
      do i = 1, nr_atoms*3
         call xc_integrate(           &
                 xc_mat_dim=mat_dim,  &
@@ -126,6 +129,7 @@ contains
              )
         res(i) = cmplx(xc_energy, 0.0d0)
      end do
+#endif
 
    end subroutine
 
@@ -180,6 +184,7 @@ contains
       real(8), allocatable               :: xc_dmat(:)
 !     ---------------------------------------------------------------------------
 
+#ifndef PRG_DIRAC
       nr_atoms = get_nr_atoms()
       mat_dim  = D%nrow
 
@@ -301,6 +306,7 @@ contains
       end select
 
       if (allocated(xc_dmat)) deallocate(xc_dmat)
+#endif
 
    end subroutine
 
@@ -326,6 +332,7 @@ contains
       real(8)              :: xc_energy
 !     ---------------------------------------------------------------------------
 
+#ifndef PRG_DIRAC
       if (.not. get_is_ks_calculation()) then
          return
       end if
@@ -385,6 +392,7 @@ contains
 
       deallocate(xc_dmat)
       deallocate(xc_fmat)
+#endif
 
    end subroutine
 
