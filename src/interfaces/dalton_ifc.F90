@@ -47,11 +47,18 @@ module dalton_ifc
 #include <implicit.h>
 #include <mxcent.h>
 #include <nuclei.h>
+#ifndef PRG_DIRAC
 #include <quadru.h>
+#endif
     real(8), intent(out) :: Q(6)
     real(8), parameter :: zero = 0.0D+00
+#ifdef PRG_DIRAC
+    print *, 'implement qdrnuc_ifc in dirac'
+    stop 1
+#else
     call NUCQDR( CORD(:,1:NUCDEP), (/zero,zero,zero/), get_print_unit(), 0 )
     Q = (/QDRNUC(1,1),QDRNUC(1:2,2),QDRNUC(1:3,3)/)
+#endif
   end subroutine
 
 
@@ -66,17 +73,24 @@ module dalton_ifc
 #include <implicit.h>
     ! uses MXCOOR
 #include <mxcent.h>
+#ifndef PRG_DIRAC
     ! uses IPRINT and MAXDIF
 #include <cbinuc.h>
+#endif
     ! uses GRADNN
 #include <energy.h>
     integer, intent(in) :: n
     real(8), intent(out) :: G( 3*n )
     real(8), parameter :: zero = 0.0D+00
+#ifdef PRG_DIRAC
+    print *, 'implement gradnn_ifc in dirac'
+    stop 1
+#else
     IPRINT = 0
     MAXDIF = 1
     call NUCREP( (/zero/), (/zero/), (/zero/) )
     G(1:3*n) = GRADNN(1:3*n)
+#endif
   end subroutine
 
 
@@ -93,11 +107,17 @@ module dalton_ifc
     real(8), intent(inout) :: H( 3*na, 3*na )
     ! uses MXCOOR
 #include <mxcent.h>
+#ifndef PRG_DIRAC
     ! uses IPRINT and MAXDIF
 #include <cbinuc.h>
+#endif
     integer i, j
     real(8) HESSNN( MXCOOR, MXCOOR )
     real(8), parameter :: zero = 0.0D+00
+#ifdef PRG_DIRAC
+    print *, 'implement hessnn_ifc in dirac'
+    stop 1
+#else
     IPRINT = 0
     MAXDIF = 2
     ! second and third arg only used when IPRINT > 1
@@ -108,6 +128,7 @@ module dalton_ifc
         H(i,j) = HESSNN( max(i,j), min(i,j) )
       end do
     end do
+#endif
   end subroutine
 
 
