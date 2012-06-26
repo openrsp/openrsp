@@ -29,7 +29,7 @@ contains
 !FIXME: going to remove
      use dalton_ifc, only: SHELLS_NUCLEI_displace
      ! Gen1Int interface
-#if define(VAR_LINSCA)
+#ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
@@ -152,7 +152,7 @@ contains
    !>        with the (perturbed) density matrix D
    subroutine interface_1el_oneave(mol, nf, f, c, nc, D, ave)
      ! Gen1Int interface
-#if define(VAR_LINSCA)
+#ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
@@ -246,7 +246,7 @@ contains
    !>        add half-differentiated overlap contribution to Fock matrices
    subroutine interface_1el_ovlint(mol, nf, f, c, nc, ovl, w, fock)
      ! Gen1Int interface
-#if define(VAR_LINSCA)
+#ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
@@ -354,7 +354,7 @@ contains
 
    subroutine interface_1el_oneint(mol, nf, f, c, nc, oneint)
      ! Gen1Int interface
-#if define(VAR_LINSCA)
+#ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
