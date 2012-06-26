@@ -4,6 +4,7 @@ module interface_1el
    use interface_molecule
    use interface_f77_memory
    use interface_pcm
+   use rsp_contribs !ugly dependency on rsp_cfg
 
    implicit none
 
