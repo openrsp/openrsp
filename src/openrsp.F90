@@ -302,7 +302,7 @@ end subroutine
        !case ('.VIBSHYP')
        case ('.GRADIENT')
           if (.not.dryrun) &
-             call prop_test_gradient(cfg, 3*num_atoms, S, D, F)
+             call prop_test_gradient(3*num_atoms, S, D, F)
        case ('.HESSIAN')
           if (.not.dryrun) &
              call prop_test_hessian(cfg, 3*num_atoms, S, D, F)

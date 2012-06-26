@@ -239,15 +239,14 @@ contains
 
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
-   subroutine interface_1el_ovlint(zeromat, nf, f, c, nc, ovl, w, fock)
+   subroutine interface_1el_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
      ! Gen1Int interface
 #ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
 #endif
-     !> structure containing integral program settings
-     type(matrix)                 :: zeromat
+     integer, intent(in)          :: nr_ao
      !> number of fields
      integer,       intent(in)    :: nf
      !> field labels in std order
@@ -275,8 +274,7 @@ contains
    if (any(f=='EL  ')) then
  
       do i = 1, product(nc)
-         ovl(i) = mat_alloc_like(zeromat)
-         ovl(i)%elms = 0.0
+         call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
       end do
  
    else
@@ -301,7 +299,7 @@ contains
          do i = 0, nc(1)-1
             ! allocate, if needed
             if (.not.isdef(ovl(1+i))) then
-               ovl(1+i) = mat_alloc_like(zeromat)
+               call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
             end if
             ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
             if (present(w)) then
@@ -323,7 +321,7 @@ contains
        ! allocates matrices
        do i = 1, num_ints
          if (.not.isdef(ovl(i))) then
-           ovl(i) = mat_alloc_like(zeromat)
+           call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          end if
        end do
        ! calculates the overlap matrix
@@ -344,15 +342,14 @@ contains
    end if
    end subroutine interface_1el_ovlint
 
-   subroutine interface_1el_oneint(zeromat, nf, f, c, nc, oneint)
+   subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
      ! Gen1Int interface
 #ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
 #endif
-     !> structure containing integral program settings
-     type(matrix)                 :: zeromat
+     integer, intent(in)          :: nr_ao
      !> number of fields
      integer,       intent(in)    :: nf
      !> field labels in std order
@@ -374,8 +371,7 @@ contains
      type(matrix) :: A
  
    if (count(f=='EL  ') > 1) then
-         A = mat_alloc_like(zeromat)
-         A%elms = 0.0
+      call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
       do i = 1, product(nc)
          if (iszero(oneint(i))) then
             call mat_ensure_alloc(oneint(i))
@@ -406,7 +402,7 @@ contains
        call quit("interface_1el_oneint>> only the first Cartesian multipole moments implemented!")
      do imat = 1, size(oneint)
        if (.not.isdef(oneint(imat))) then
-         oneint(imat) = mat_alloc_like(zeromat)
+         call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
        end if
      end do
      ! electric perturbations
@@ -594,7 +590,6 @@ contains
   end subroutine gen1int_reorder
 
    subroutine oneint_ave(nr_atoms, what, D, DFD, R)
-      !> structure containing the integral program settings
       integer,           intent(in)  :: nr_atoms
       character(*),      intent(in)  :: what
       type(matrix),      intent(in)  :: D, DFD

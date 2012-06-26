@@ -354,9 +354,9 @@ contains
 
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
-  subroutine rsp_ovlint(mol, nf, f, c, nc, ovl, w, fock)
+  subroutine rsp_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
     !> structure containing integral program settings
-    type(rsp_cfg), intent(in)    :: mol
+    integer,       intent(in)    :: nr_ao
     !> number of fields
     integer,       intent(in)    :: nf
     !> field labels in std order
@@ -370,14 +370,14 @@ contains
     !> Fock matrices to which the half-differentiated overlap
     !> contribution is ADDED
     type(matrix),  intent(inout), optional :: fock(product(nc))
-    call interface_1el_ovlint(mol%zeromat, nf, f, c, nc, ovl, w, fock)
+    call interface_1el_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
   end subroutine
 
 
 
-  subroutine rsp_oneint(mol, nf, f, c, nc, oneint)
+  subroutine rsp_oneint(nr_ao, nf, f, c, nc, oneint)
     !> structure containing integral program settings
-    type(rsp_cfg), intent(in)    :: mol
+    integer,       intent(in)    :: nr_ao
     !> number of fields
     integer,       intent(in)    :: nf
     !> field labels in std order
@@ -386,7 +386,7 @@ contains
     integer,       intent(in)    :: c(nf), nc(nf)
     !> output perturbed integrals
     type(matrix),  intent(inout) :: oneint(product(nc))
-    call interface_1el_oneint(mol%zeromat, nf, f, c, nc, oneint)
+    call interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
   end subroutine
 
 

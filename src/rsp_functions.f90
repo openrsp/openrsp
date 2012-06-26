@@ -38,8 +38,7 @@ contains
 
   !> Calculate the gradient: dE/dR  =  dh_nuc/dR  +  Tr dH/dR D
   !>            +  1/2 Tr dG/dR(D) D  +  dExc[D]/dR  -  Tr dS/dR DFD
-  subroutine prop_test_gradient(mol, ng, S, D, F)
-    type(rsp_cfg), intent(in) :: mol
+  subroutine prop_test_gradient(ng, S, D, F)
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
     complex(8)      gra(ng), tmp(ng)
@@ -137,8 +136,8 @@ contains
 !   ----------------------------------------------------------------------------
 
 !   calculate perturbed integrals
-    call rsp_ovlint(mol, 1, (/'GEO '/), (/1/), shape(Sg), Sg)
-    call rsp_oneint(mol, 1, (/'GEO '/), (/1/), shape(Fg), Fg)
+    call rsp_ovlint(S%nrow, 1, (/'GEO '/), (/1/), shape(Sg), Sg)
+    call rsp_oneint(S%nrow, 1, (/'GEO '/), (/1/), shape(Fg), Fg)
     call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fg), D, Fg)
     call rsp_xcint(D=(/D/), Fg=Fg)
 
@@ -161,10 +160,9 @@ contains
 
   end subroutine
 
-  subroutine contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
+  subroutine contract_hessian(ng, S, D, F, Sg, Dg, Fg)
 
 !   ----------------------------------------------------------------------------
-    type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
     type(matrix),  intent(in) :: Sg(ng), Dg(ng), Fg(ng)
@@ -244,10 +242,9 @@ contains
 !   !------------------------------------
   end subroutine
 
-  subroutine contract_cubicff(mol, ng, S, D, F, Sg, Dg, Fg)
+  subroutine contract_cubicff(ng, S, D, F, Sg, Dg, Fg)
 
 !   ----------------------------------------------------------------------------
-    type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
     type(matrix),  intent(in) :: Sg(ng), Dg(ng), Fg(ng)
@@ -433,9 +430,9 @@ contains
     type(matrix)              :: Sg(ng), Dg(ng), Fg(ng)
 
     call print_nuclear_masses(ng)
-    call prop_test_gradient(mol, ng, S, D, F)
+    call prop_test_gradient(ng, S, D, F)
     call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
-    call contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
+    call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
 
     Sg = 0
     Dg = 0
@@ -452,10 +449,10 @@ contains
     type(matrix)              :: Sg(ng), Dg(ng), Fg(ng)
 
     call print_nuclear_masses(ng)
-    call prop_test_gradient(mol, ng, S, D, F)
+    call prop_test_gradient(ng, S, D, F)
     call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
-    call contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
-    call contract_cubicff(mol, ng, S, D, F, Sg, Dg, Fg)
+    call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
+    call contract_cubicff(ng, S, D, F, Sg, Dg, Fg)
 
     Sg = 0
     Dg = 0
@@ -517,10 +514,10 @@ contains
     geo4(4) = rsp_field('GEO ', (0d0,0d0), 1, ng)
 
     call print_nuclear_masses(ng)
-    call prop_test_gradient(mol, ng, S, D, F)
+    call prop_test_gradient(ng, S, D, F)
     call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
-    call contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
-    call contract_cubicff(mol, ng, S, D, F, Sg, Dg, Fg)
+    call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
+    call contract_cubicff(ng, S, D, F, Sg, Dg, Fg)
 
 
 ! MR: BEGIN QUARTIC FORCE FIELD
@@ -529,13 +526,13 @@ contains
 
 ! CALCULATE Sgg
 
-    call rsp_ovlint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Sgg), Sgg)
+    call rsp_ovlint(S%nrow, 2, (/'GEO ','GEO '/), (/1,1/), shape(Sgg), Sgg)
 
 
 !   calculate Fgg
 !   =============
 
-    call rsp_oneint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), Fgg)
+    call rsp_oneint(S%nrow, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), Fgg)
     call rsp_twoint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), D, Fgg)
     call rsp_xcint(D=(/D/), Fgg=Fgg)
 
@@ -985,7 +982,7 @@ contains
     call print_tensor(shape(tmp(:,1,:)), tmp(:,1,:), 'dpgave form rsp_oneave')
 
 ! density independent contribution to Ff
-    call rsp_oneint(mol, 1, (/'EL  '/), (/1/), shape(Ff), Ff)
+    call rsp_oneint(S%nrow, 1, (/'EL  '/), (/1/), shape(Ff), Ff)
 ! solve equations for Df and construct Ff
     pol = 0
     do i = 1, size(Df)
@@ -1008,7 +1005,7 @@ contains
 
 
     call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
-    call contract_hessian(mol, ng, S, D, F, Sg, Dg, Fg)
+    call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
 
 
     !------------------------------------

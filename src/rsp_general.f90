@@ -3686,7 +3686,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           if (num_p_tuples <= 1) then
 
-             call rsp_oneint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_oneint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, tmp)
 
@@ -3747,7 +3747,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (num_p_tuples <= 1) then
 
-          call rsp_oneint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, &
                           Fp)
@@ -3962,7 +3962,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     ! 1. Call ovlint and store perturbed overlap matrix
 
-    call rsp_ovlint(mol, pert%n_perturbations, pert%plab, &
+    call rsp_ovlint(mol%zeromat%nrow, pert%n_perturbations, pert%plab, &
                     (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, Sp)
     call sdf_add(S, pert, Sp)
 
