@@ -378,7 +378,7 @@ contains
     !> Fock matrices to which the half-differentiated overlap
     !> contribution is ADDED
     type(matrix),  intent(inout), optional :: fock(product(nc))
-    call interface_1el_ovlint(mol, nf, f, c, nc, ovl, w, fock)
+    call interface_1el_ovlint(mol%zeromat, nf, f, c, nc, ovl, w, fock)
   end subroutine
 
 
@@ -394,7 +394,7 @@ contains
     integer,       intent(in)    :: c(nf), nc(nf)
     !> output perturbed integrals
     type(matrix),  intent(inout) :: oneint(product(nc))
-    call interface_1el_oneint(mol, nf, f, c, nc, oneint)
+    call interface_1el_oneint(mol%zeromat, nf, f, c, nc, oneint)
   end subroutine
 
 

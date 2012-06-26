@@ -4,6 +4,7 @@ module interface_1el
    use interface_molecule
    use interface_f77_memory
    use interface_pcm
+   use interface_io
 
    implicit none
 
@@ -238,7 +239,7 @@ contains
 
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
-   subroutine interface_1el_ovlint(mol, nf, f, c, nc, ovl, w, fock)
+   subroutine interface_1el_ovlint(zeromat, nf, f, c, nc, ovl, w, fock)
      ! Gen1Int interface
 #ifdef VAR_LINSCA
      use gen1int_host
@@ -246,7 +247,7 @@ contains
      use gen1int_api
 #endif
      !> structure containing integral program settings
-     type(rsp_cfg), intent(in)    :: mol
+     type(matrix)                 :: zeromat
      !> number of fields
      integer,       intent(in)    :: nf
      !> field labels in std order
@@ -274,8 +275,7 @@ contains
    if (any(f=='EL  ')) then
  
       do i = 1, product(nc)
-         ovl(i) = mol%zeromat
-         call mat_ensure_alloc(ovl(i))
+         ovl(i) = mat_alloc_like(zeromat)
          ovl(i)%elms = 0.0
       end do
  
@@ -301,8 +301,7 @@ contains
          do i = 0, nc(1)-1
             ! allocate, if needed
             if (.not.isdef(ovl(1+i))) then
-               ovl(1+i) = mol%zeromat
-               call mat_ensure_alloc(ovl(1+i))
+               ovl(1+i) = mat_alloc_like(zeromat)
             end if
             ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
             if (present(w)) then
@@ -324,8 +323,7 @@ contains
        ! allocates matrices
        do i = 1, num_ints
          if (.not.isdef(ovl(i))) then
-           ovl(i) = mol%zeromat
-           call mat_ensure_alloc(ovl(i))
+           ovl(i) = mat_alloc_like(zeromat)
          end if
        end do
        ! calculates the overlap matrix
@@ -346,7 +344,7 @@ contains
    end if
    end subroutine interface_1el_ovlint
 
-   subroutine interface_1el_oneint(mol, nf, f, c, nc, oneint)
+   subroutine interface_1el_oneint(zeromat, nf, f, c, nc, oneint)
      ! Gen1Int interface
 #ifdef VAR_LINSCA
      use gen1int_host
@@ -354,7 +352,7 @@ contains
      use gen1int_api
 #endif
      !> structure containing integral program settings
-     type(rsp_cfg), intent(in)    :: mol
+     type(matrix)                 :: zeromat
      !> number of fields
      integer,       intent(in)    :: nf
      !> field labels in std order
@@ -376,8 +374,7 @@ contains
      type(matrix) :: A
  
    if (count(f=='EL  ') > 1) then
-         A = mol%zeromat
-         call mat_ensure_alloc(A)
+         A = mat_alloc_like(zeromat)
          A%elms = 0.0
       do i = 1, product(nc)
          if (iszero(oneint(i))) then
@@ -409,8 +406,7 @@ contains
        call quit("interface_1el_oneint>> only the first Cartesian multipole moments implemented!")
      do imat = 1, size(oneint)
        if (.not.isdef(oneint(imat))) then
-         oneint(imat) = mol%zeromat
-         call mat_ensure_alloc(oneint(imat))
+         oneint(imat) = mat_alloc_like(zeromat)
        end if
      end do
      ! electric perturbations
@@ -860,5 +856,19 @@ contains
     end if
   end subroutine
 
+  function prefix_zeros(n, l)
+    integer, intent(in) :: n, l !number, length
+    character(l)        :: prefix_zeros !resulting n in ascii
+    character(1), parameter :: char0to9(0:9) &
+          = (/'0','1','2','3','4','5','6','7','8','9'/)
+    integer :: i, k
+    k = n
+    do i = l, 1, -1
+       prefix_zeros(i:i) = char0to9(mod(k,10))
+       k = k / 10
+    end do
+    if (k /= 0) call quit('prefix_zeros error: Argument integer does not fit ' &
+                       // 'in the specified number of ASCII caracters')
+  end function
 
 end module
