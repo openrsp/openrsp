@@ -62,13 +62,13 @@ contains
     call print_tensor(shape(tmp), tmp, 'nucpot')
     ! overlap contribution
     DFD = D*F*D
-    call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp), DFD, &
+    call rsp_ovlave(1, (/'GEO '/), (/1/), shape(tmp), DFD, &
                     tmp, (/(0d0,0d0)/), D)
     DFD = 0 !free
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'ovlave')
     ! 1-electron contribution
-    call rsp_oneave(mol, 1, (/'GEO '/), (/1/), shape(tmp), D, tmp)
+    call rsp_oneave(1, (/'GEO '/), (/1/), shape(tmp), D, tmp)
     gra = gra + tmp
     call print_tensor(shape(tmp), tmp, 'oneave')
     ! 2-electron contribution
@@ -183,22 +183,22 @@ contains
     hes = temp; call print_tensor(shape(temp), temp, 'hnuc_ab')
     ! overlap contribution
     DFD = D*F*D
-    call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(temp), DFD, &
+    call rsp_ovlave(2, (/'GEO ','GEO '/), (/1,1/), shape(temp), DFD, &
                     temp); DFD=0
     hes = hes + temp; call print_tensor(shape(temp), temp, '-SabDFD')
     !
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
-       call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(temp(:,i)), DFDg, &
+       call rsp_ovlave(1, (/'GEO '/), (/1/), shape(temp(:,i)), DFDg, &
                        temp(:,i)); DFDg=0
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, '-SaDFDb')
     ! 1-electron contribution
-    call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(temp), D, temp)
+    call rsp_oneave(2, (/'GEO ','GEO '/), (/1,1/), shape(temp), D, temp)
     hes = hes + temp; call print_tensor(shape(temp), temp, 'HabD')
     !
     do i = 1, size(Dg)
-       call rsp_oneave(mol, 1, (/'GEO '/), (/1/), shape(temp(:,i)), Dg(i), temp(:,i))
+       call rsp_oneave(1, (/'GEO '/), (/1/), shape(temp(:,i)), Dg(i), temp(:,i))
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'HaDb')
     ! 2-electron contribution
@@ -277,14 +277,14 @@ contains
 
     DFD = D*F*D
     tmp = 0.0d0
-    call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
+    call rsp_ovlave(3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), &
                     shape(tmp), DFD, tmp)
     cub = cub + tmp
     DFD = 0
     do i = 1, size(Dg)
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i)
        tmp = 0.0d0
-       call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
+       call rsp_ovlave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
                        DFDg, tmp(i,:,:))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
@@ -298,7 +298,7 @@ contains
           DFDgg = Dg(j)*Fg(i)*D + Dg(j)*F*Dg(i) + D*Fg(j)*Dg(i) &
                 + Dg(i)*Fg(j)*D + Dg(i)*F*Dg(j) + D*Fg(i)*Dg(j)
           tmp = 0.0d0
-          call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
+          call rsp_ovlave(1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
                           DFDgg, tmp(:,i,j))
           do k = 1, size(Dg)
              cub(k, i, j) = cub(k, i, j) + tmp(k, i, j)
@@ -315,11 +315,11 @@ contains
 !   =======================
 
     tmp = 0.0d0
-    call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), D, tmp)
+    call rsp_oneave(3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp), D, tmp)
     cub = cub + tmp
     do i = 1, size(Dg)
        tmp = 0.0d0
-       call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
+       call rsp_oneave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(i,:,:)), &
                        Dg(i), tmp(i,:,:))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
@@ -625,7 +625,7 @@ contains
 ! MR (01/2012: THE OVLAVE CALLS SEEM TO RETURN THE CORRECT RESULTS)
 
     DFD = D*F*D
-    call rsp_ovlave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
+    call rsp_ovlave(4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), &
                     shape(tmp), DFD, tmp); DFD=0
     qua = qua + tmp; call print_tensor(shape(tmp), tmp, '-SabcdDFD')
 
@@ -633,7 +633,7 @@ contains
     do i = 1, size(Dg)
        tmp = 0.0d0
        DFDg = Dg(i)*F*D + D*Fg(i)*D + D*F*Dg(i) ! Wa
-       call rsp_ovlave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
+       call rsp_ovlave(3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
                        DFDg, tmp(i,:,:,:))
        DFDg=0
        do j = 1, size(Dg)
@@ -661,7 +661,7 @@ contains
           DFDgg = Dgg(i,j)*F*D + Dg(i)*Fg(j)*D + Dg(i)*F*Dg(j) + &
                   D*F*Dgg(i,j) + D*Fg(j)*Dg(i) + Dg(j)*F*Dg(i) + &
                   Dg(j)*Fg(i)*D + D*Fgg(i,j)*D + D*Fg(i)*Dg(j) ! Wcd
-          call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
+          call rsp_ovlave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
                           DFDgg, tmp(:,:,i,j)); DFDgg=0
           do k = 1, size(Dg)
              do l = 1, size(Dg)
@@ -688,7 +688,7 @@ contains
                       Dg(i)*(Fgg(j,k)*D+Fg(j)*Dg(k))+(D*Fgg(j,k)+Dg(k)*Fg(j))*Dg(i) + &
                       Dg(j)*(Fgg(i,k)*D+Fg(k)*Dg(i))+(D*Fgg(i,k)+Dg(i)*Fg(k))*Dg(j) + &
                       Dg(k)*(Fgg(i,j)*D+Fg(i)*Dg(j))+(D*Fgg(i,j)+Dg(j)*Fg(i))*Dg(k)
-            call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j,k)), &
+            call rsp_ovlave(1, (/'GEO '/), (/1/), shape(tmp(:,i,j,k)), &
                             DFDggg2p, tmp(:,i,j,k)); DFDggg2p=0
         end do
       end do
@@ -703,14 +703,14 @@ contains
 
 
     tmp = 0.0d0
-    call rsp_oneave(mol, 4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, tmp)
+    call rsp_oneave(4, (/'GEO ','GEO ','GEO ','GEO '/), (/1,1,1,1/), shape(tmp), D, tmp)
     qua = qua + tmp
 
 ! E1-TYPE CALLS
 ! Dg CALLS
     do i = 1, size(Dg)
        tmp = 0.0d0
-       call rsp_oneave(mol, 3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
+       call rsp_oneave(3, (/'GEO ','GEO ','GEO '/), (/1,1,1/), shape(tmp(i,:,:,:)), &
                        Dg(i), tmp(i,:,:,:))
        do j = 1, size(Dg)
           do k = 1, size(Dg)
@@ -728,7 +728,7 @@ contains
     do j = 1, size(Dg)
        do i = 1, j
           tmp = 0.0d0
-          call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
+          call rsp_oneave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i,j)), &
                           Dgg(i,j), tmp(:,:,i,j))
           do k = 1, size(Dg)
              do l = 1, size(Dg)
@@ -953,7 +953,7 @@ contains
     !-------------------------------------------------
     dip = 0
     call rsp_nucpot(geo2_el(3:3), dip)
-    call rsp_oneave(mol, 1, (/'EL  '/), (/1/), shape(dip), D, dip)
+    call rsp_oneave(1, (/'EL  '/), (/1/), shape(dip), D, dip)
     call print_tensor(shape(dip), -dip, 'dipole moment')
     ! gradient, first nuclear contribution
     tm1 = 0
@@ -961,11 +961,11 @@ contains
     gra = tm1; call print_tensor(shape(tm1), tm1, 'hnuc_g')
     ! overlap contribution
     DFD = D*F*D
-    call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tm1), DFD, &
+    call rsp_ovlave(1, (/'GEO '/), (/1/), shape(tm1), DFD, &
                     tm1, (/(0d0,0d0)/), D); DFD=0
     gra = gra + tm1; call print_tensor(shape(tm1), tm1, '-SgDFD')
     ! 1-electron contribution
-    call rsp_oneave(mol, 1, (/'GEO '/), (/1/), shape(tm1), D, tm1)
+    call rsp_oneave(1, (/'GEO '/), (/1/), shape(tm1), D, tm1)
     gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'HgD')
     ! 2-electron contribution
     call rsp_twoave(mol, 1, (/'GEO '/), (/1/), shape(tm1), D, D, tm1)
@@ -980,7 +980,7 @@ contains
     call print_tensor(shape(gra), gra, unit=iounit)
     close (iounit)
     ! test dipole gradient average
-    call rsp_oneave(mol, 2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(:,1,:)), &
+    call rsp_oneave(2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(:,1,:)), &
                        D, tmp(:,1,:))
     call print_tensor(shape(tmp(:,1,:)), tmp(:,1,:), 'dpgave form rsp_oneave')
 
@@ -1001,7 +1001,7 @@ contains
        ! Df contribution to Ff
        call rsp_twoint(mol, 0, nof, noc, noc, Df(i), Ff(i:i))
        !polarzability
-       call rsp_oneave(mol, 1, (/'EL  '/), (/1/), shape(pol(:,i)), Df(i), pol(:,i))
+       call rsp_oneave(1, (/'EL  '/), (/1/), shape(pol(:,i)), Df(i), pol(:,i))
     end do
     call print_tensor(shape(pol), -pol, 'polarizability')
 
@@ -1019,7 +1019,7 @@ contains
     !
     do i = 1, size(Df)
        DFDf = Df(i)*F*D + D*Ff(i)*D + D*F*Df(i)
-       call rsp_ovlave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
+       call rsp_ovlave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
                        DFDf, tmp(:,:,i))
        DFDf=0
     end do
@@ -1029,7 +1029,7 @@ contains
        do i = 1, size(Dg)
           DFDgf = Df(j)*Fg(i)*D + Df(j)*F*Dg(i) + D*Ff(j)*Dg(i) &
                 + Dg(i)*Ff(j)*D + Dg(i)*F*Df(j) + D*Fg(i)*Df(j)
-          call rsp_ovlave(mol, 1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
+          call rsp_ovlave(1, (/'GEO '/), (/1/), shape(tmp(:,i,j)), &
                           DFDgf, tmp(:,i,j))
           DFDgf=0
        end do
@@ -1038,16 +1038,16 @@ contains
 
     ! 1-electron contribution
     ! fixme: finite field calculation in rsp_oneave
-    call rsp_oneave(mol, 3, (/'GEO ','GEO ','EL  '/), (/1,1,1/), shape(tmp), D, tmp)
+    call rsp_oneave(3, (/'GEO ','GEO ','EL  '/), (/1,1,1/), shape(tmp), D, tmp)
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, 'HabfD')
     do i = 1, size(Df)
-       call rsp_oneave(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
+       call rsp_oneave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
                        Df(i), tmp(:,:,i))
     end do
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, 'HabDf')
     do i = 1, size(Dg)
        tmp = 0.0d0
-       call rsp_oneave(mol, 2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(i,:,:)), &
+       call rsp_oneave(2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(i,:,:)), &
                        Dg(i), tmp(i,:,:))
        do j = 1, size(Dg)
           do k = 1, size(Df)

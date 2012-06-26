@@ -178,9 +178,7 @@ contains
 
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
-  subroutine rsp_ovlave(mol, nf, f, c, nc, DFD, ave, w, D)
-    !> structure containing integral program settings
-    type(rsp_cfg), intent(in)  :: mol
+  subroutine rsp_ovlave(nf, f, c, nc, DFD, ave, w, D)
     !> number of fields
     integer,       intent(in)  :: nf
     !> field labels in std order
@@ -205,9 +203,7 @@ contains
 
 ! radovan: there is code repetition in ave and int setup
 
-  subroutine rsp_oneave(mol, nf, f, c, nc, D, ave)
-    !> structure containing integral program settings
-    type(rsp_cfg), intent(in)  :: mol
+  subroutine rsp_oneave(nf, f, c, nc, D, ave)
     !> number of fields
     integer,       intent(in)  :: nf
     !> field labels in std order
@@ -260,14 +256,13 @@ contains
 
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
-       A(1) = mol%zeromat
-       call mat_ensure_alloc(A(1))
+       A(1) = mat_alloc_like(D1)
        call di_get_gmat(D2, A(1)) !Coulomb and exchange
        ave(1) = tr(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
-       n = mol%zeromat%nrow
+       n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
@@ -278,7 +273,7 @@ contains
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
-       n = mol%zeromat%nrow
+       n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &

@@ -1772,14 +1772,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (num_p_tuples == 1) then
 
-          call rsp_oneave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
                          p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
                          contrib)
 
        elseif (num_p_tuples == 2) then
 
-          call rsp_oneave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                          p_tuples(1)%pdim, dens_tuple(2), contrib)
 
@@ -1897,7 +1897,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        contrib = 0.0
 
-       call rsp_oneave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        sdf_getdata(D, get_emptypert(), (/1/)) , contrib)
 
@@ -2823,7 +2823,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! write(*,*) 'got W', W%elms
 ! write(*,*) 'ncinner', ncinner
 
-       call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
+       call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
                       (/ (j/j, j = 1, p12(1)%n_perturbations) /), p12(1)%pdim, W, tmp)
 
 ! write(*,*) 'tmp tensor', tmp
@@ -3010,7 +3010,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S)
 
-       call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
+       call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
                        p12(1)%pdim, W, tmp)
 
