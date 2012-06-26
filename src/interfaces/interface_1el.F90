@@ -146,15 +146,13 @@ contains
 
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
-   subroutine interface_1el_oneave(mol, nf, f, c, nc, D, ave)
+   subroutine interface_1el_oneave(nf, f, c, nc, D, ave)
      ! Gen1Int interface
 #ifdef VAR_LINSCA
      use gen1int_host
 #else
      use gen1int_api
 #endif
-     !> structure containing integral program settings
-     type(rsp_cfg), intent(in)  :: mol
      !> number of fields
      integer,       intent(in)  :: nf
      !> field labels in std order

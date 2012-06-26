@@ -218,7 +218,7 @@ contains
     type(matrix),  intent(in)  :: D
     !> output average
     complex(8),    intent(out) :: ave(product(nc))
-    call interface_1el_oneave(mol, nf, f, c, nc, D, ave)
+    call interface_1el_oneave(nf, f, c, nc, D, ave)
   end subroutine
 
 
