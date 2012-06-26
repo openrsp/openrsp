@@ -55,7 +55,12 @@ contains
       nuc_charge = charge(:nr_atoms)
 
       allocate(nuc_isotope(nr_atoms))
+#ifdef PRG_DIRAC
+      print *, 'fix isotop() for dirac'
+      stop 1
+#else
       nuc_isotope = isotop(:nr_atoms)
+#endif
 
       allocate(nuc_xyz(3, nr_atoms))
       nuc_xyz = cord(:, :nr_atoms)
