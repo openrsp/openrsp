@@ -51,9 +51,11 @@ module openrsp_old
   use interface_xc
   use dalton_ifc
 
+#ifndef PRG_DIRAC
 ! xcint
   use interface_ao_specific
   use xcint_main
+#endif
 
   implicit none
 

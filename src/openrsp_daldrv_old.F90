@@ -353,6 +353,7 @@
     H1 = 0
     G  = 0
 
+#ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
        ! write xcint interface files
        call interface_ao_write()
@@ -374,6 +375,7 @@
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if
+#endif
 
     ! performs the calculations
     call openrsp_prop_calc(S, D, F, openrsp_info )

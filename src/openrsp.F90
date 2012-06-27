@@ -53,9 +53,11 @@ module openrsp
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
 
+#ifndef PRG_DIRAC
 ! xcint
   use interface_ao_specific
   use xcint_main
+#endif
 
   implicit none
 
@@ -174,6 +176,7 @@ contains
     H1 = 0
     G  = 0
 
+#ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
        ! write xcint interface files
        call interface_ao_write()
@@ -195,6 +198,7 @@ contains
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if
+#endif
 
     call interface_basis_init()
     num_atoms = get_nr_atoms()
