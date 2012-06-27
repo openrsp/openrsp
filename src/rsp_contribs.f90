@@ -35,7 +35,6 @@ module rsp_contribs
   public rsp_field_dim
   public rsp_field_anti
   public rsp_field_ordering
-  public rsp_cfg
 
 
   !> Type describing a single field in a response function
@@ -54,18 +53,6 @@ module rsp_contribs
      !> number of components
      integer      :: ncomp
   end type
-
-
-  !> Molecule configuration type, abstracting data and settings
-  !> to be passed to solver and integral routines.
-  !> Should eventually be moved to separate program-specific
-  !> interface modules
-  type rsp_cfg
-     !> prototype zero matrix, of same shape and multiplicity as
-     !> then density matrix
-     type(matrix) :: zeromat
-  end type
-
 
   !> private struct to collect properties of perturbing "fields"
   type field_stats

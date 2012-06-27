@@ -50,7 +50,6 @@ module openrsp
   use interface_1el
   use interface_basis
   use rsp_functions
-  use rsp_contribs, only: rsp_cfg
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
 
@@ -80,8 +79,6 @@ module openrsp
   logical :: solver_optorb = .false.
 
   ! ------------- SCF state and settings ------------
-  ! config
-  type(rsp_cfg) cfg
   ! overlap matrix
   type(matrix) S
   ! AO density matrix
@@ -199,10 +196,7 @@ contains
        deallocate(xc_fmat)
     end if
 
-    ! setup response config structure
-    cfg%zeromat = mat_zero_like(S)
     call interface_basis_init()
-
     num_atoms = get_nr_atoms()
 
 end subroutine

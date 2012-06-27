@@ -80,9 +80,7 @@ contains
 
   !> contract *one* full perturbed Fock matrix, and additionally calculate
   !> the correcponding perturbed overlap matrix, for use in right-hand-sides
-  subroutine rsp_fock(mol, fld, D, F, S)
-    !> mol/basis/decomp/thresh needed by integrals and solver
-    type(rsp_cfg),   intent(in) :: mol
+  subroutine rsp_fock(fld, D, F, S)
     !> field lables, frequencies and components. All fld%ncomp must be 1
     type(rsp_field), intent(in) :: fld(:)
     !> density matrix expansion for fld(:)
@@ -100,7 +98,7 @@ contains
     ! look through rsp_cached_sols for cached F
     if (.not.iszero(D(size(D))) .and. .not.present(S)) then
        if (isdef(F)) F = 0
-       call rsp_sol_lookup(mol, fld, dumD, F)
+       call rsp_sol_lookup(fld, dumD, F)
        if (isdef(dumD)) dumD = 0
        if (isdef(F)) return
     end if
@@ -122,9 +120,7 @@ contains
   !> above order 'keep' omitted. up_to_order=size(fld)-1 gives
   !> (minus) equation right-hand-sides. up_to_order=size(fld) gives
   !> (minus) equation residuals
-  subroutine rsp_eval_eqs(mol, fld, S, D, F, DSD, FDS, up_to_order)
-    !> mol/basis/thresh's etc. needed by integrals and solver
-    type(rsp_cfg),   intent(in) :: mol
+  subroutine rsp_eval_eqs(fld, S, D, F, DSD, FDS, up_to_order)
     !> fields, frequencies and components. NB: all fld%ncomp must be 1
     type(rsp_field), intent(in) :: fld(:)
     !> perturbation series for overlap matrix
@@ -144,8 +140,8 @@ contains
     if (any(fld%ncomp /= 1)) &
        call quit('error: rsp_fock expected fld%ncomp = 1')
     if (size(fld) == 1 .and. up_to_order == 0) then
-       DSD = mol%zeromat
-       FDS = mol%zeromat
+       DSD = mat_zero_like(S(1))
+       FDS = mat_zero_like(DSD)
     else
        call quit('rsp_pert_eqs: not implemented order size(fld) > 1')
     end if
@@ -156,9 +152,7 @@ contains
   !> Solve fld-perturbed response equation for perturbed density D.
   !> If already stored in the cache (rsp_cached_sols), the solution is fetched
   !> from there. Otherwise, the RHSs are computed before calling the solver
-  subroutine rsp_dens(mol, fld, D)
-    !> mol/basis/decomp/thresh needed by integrals and solver
-    type(rsp_cfg),   intent(in) :: mol
+  subroutine rsp_dens(fld, D)
     !> fields, frequencies and components. NB: all fld%ncomp must be 1
     type(rsp_field), intent(in) :: fld(:)
     !> output density matrix perturbed by fields fld
@@ -178,14 +172,14 @@ contains
                 .not.any(rsp_field_bas(fld%label))))
     ! search through solved_eqs for an already calculated solution
     if (isdef(D)) D = 0
-    call rsp_sol_lookup(mol, fld, D)
+    call rsp_sol_lookup(fld, D)
     if (isdef(D)) return
     ! calculate all lower-order contributions to the
     ! minus-right-hand-sides DSD and FDS
     !ajt FIXME Disabled for now
     ! call rsp_eval_eqs(mol, fld, S, D, F, DSD, FDS, size(fld)-1)
-    DSD = mol%zeromat
-    FDS = mol%zeromat
+    DSD = mat_zero_like(S(1))
+    FDS = mat_zero_like(S(1))
     ! calculate all lower-order contributions to the p-perturbed Fock
     ! matrices, as well as the p-perturbed overlap matrices
 !     call rsp_fock(mol, fld,
@@ -196,7 +190,7 @@ contains
     FDS = FDS + (F(1) - sum(fld%freq)/2  * S(1)) * DD(1) * S(size(S)) &
               - S(size(S)) * DD(1) * (F(1) + sum(fld%freq)/2 * S(1))
     S = 0 !free
-    call solve_scf_eq(mol, S(1), DD(1), F(1), sym, sum(fld%freq), &
+    call solve_scf_eq(S(1), DD(1), F(1), sym, sum(fld%freq), &
                       1, DSD, FDS, D, F(size(F)))
     print* !ajt Blank line after prints from solve_scf_eq
   end subroutine
@@ -204,8 +198,7 @@ contains
 
 
   !> search through rsp_cached_sols, looking for a kept solution
-  subroutine rsp_sol_lookup(mol, fld, D, F, S)
-    type(rsp_cfg),   intent(in) :: mol
+  subroutine rsp_sol_lookup(fld, D, F, S)
     type(rsp_field), intent(in) :: fld(:)
     type(matrix), intent(inout) :: D
     type(matrix), optional, intent(inout) :: F, S
@@ -239,8 +232,7 @@ contains
   end subroutine
 
 
-  subroutine rsp_sol_insert(mol, fld, D, F, S)
-    type(rsp_cfg),          intent(in) :: mol
+  subroutine rsp_sol_insert(fld, D, F, S)
     type(rsp_field),        intent(in) :: fld
     type(matrix),           intent(in) :: D
     type(matrix), optional, intent(in) :: F, S
@@ -258,11 +250,9 @@ contains
   !>           solved in one go
   !> ajt feb10 For linsca, added comparison with excitation energies,
   !>           and projection
-  subroutine rsp_solve_eqs(mol, S0, D0, F0, sym, freq, neq, DSD, FDS, D, F)
+  subroutine rsp_solve_eqs(S0, D0, F0, sym, freq, neq, DSD, FDS, D, F)
     !       in:            -----------------------------------------
     !       out:                                                      ----
-    !> info needed by integrals and solver
-    type(rsp_cfg),   intent(in) :: mol
     !> unperturbed overlap matrix, density and Fock matrices
     type(matrix),    intent(in) :: S0, D0, F0
     !> FDS anti:-1, symm:+1, general:0
@@ -288,7 +278,7 @@ contains
        call quit("solve_scf_eq error: Argument 'sym' is not -1, 0 or 1")
     ! prepare the right-hand-sides
     SD0 = S0*D0
-    call scf_eq_prep_rhs(mol, D0, SD0, sym, neq, FDS, DSD, F, D)
+    call scf_eq_prep_rhs(D0, SD0, sym, neq, FDS, DSD, F, D)
     ! call solver
     do i=1, neq
        norm_rhs = norm(FDS(i))
@@ -324,12 +314,10 @@ contains
   !> Calculates particular component of D from DSD, adds contribution
   !> from that to FDS, and projects out the particular component from FDS
   !> (this is for numerical stability). Precalculated S0*D0 is taken as input.
-  subroutine scf_eq_prep_rhs(mol, D0, SD0, sym, neq, FDS, DSD, F, D)
-      type(rsp_cfg), intent(in)    :: mol
+  subroutine scf_eq_prep_rhs(D0, SD0, sym, neq, FDS, DSD, F, D)
       type(matrix),  intent(in)    :: D0, SD0, F(neq)
       integer,       intent(in)    :: sym, neq
       type(matrix),  intent(inout) :: FDS(neq), DSD(neq), D(neq)
-      type(rsp_cfg) :: UNP(0)
       integer       :: i
       do i = 1,neq
          ! if the minus-right-hand-sides are (anti-)symmetric, one gets away
