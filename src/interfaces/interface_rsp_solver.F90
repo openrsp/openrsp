@@ -173,19 +173,24 @@ contains
     ! uses NVARPT (number of solution vectors?)
     integer IPRLIN, LSYMRF, LSYMPT, LSYMST, &
             NCONRF, NCONST, NWOPPT, NVARPT
+
+#ifndef PRG_DIRAC
 #include "inflin.h"
     ! uses LURSP
 #include "inftap.h"
     ! uses JWOP(2,MAXWOP) for the orbital rotation
 #include "infvar.h"
+#endif
     !
     integer KMJWOP
     ! uses IRAT
 #include "iratdef.h"
     !
     character*8 :: LAB1 = 'MOSOLVER', LAB2 = '        '
+#ifndef PRG_DIRAC
     ! uses KZVAR
 #include "wrkrsp.h"
+#endif
     ! constants
     real(8), parameter :: half = 5.0D-01
     real(8), parameter :: zero = 0.0D+00
@@ -198,6 +203,7 @@ contains
     integer :: rsp2_number_of_omegas = 1
     integer :: rsp2_number_of_rhs = 1
 
+#ifndef PRG_DIRAC
     KZWOPT = NOCCT*NVIRT
     KZVAR = KZWOPT
     KZYVAR = KZWOPT + KZWOPT
@@ -290,6 +296,7 @@ contains
       mo_eigvec(ISOL) = 0
     end do
     deallocate( mo_eigvec )
+#endif /* ifndef PRG_DIRAC */
   end subroutine
 
   !> \brief gets the coefficients of molecular orbitals
