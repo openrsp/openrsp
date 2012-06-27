@@ -61,7 +61,6 @@ contains
      integer num_expt                       !number of all expectation values
      real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
      integer ierr                           !error information
-#ifndef PRG_DIRAC
      if (present(w) .and. .not.present(D)) &
         call quit("error in interface_1el_ovlave: frequencies 'w' and density 'D' " &
                // 'must both be present or both absent')
@@ -143,7 +142,6 @@ contains
      deallocate(val_expt)
  
    end if
-#endif /* ifndef PRG_DIRAC */
    end subroutine
 
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
@@ -175,7 +173,6 @@ contains
      integer num_expt                       !number of all expectation values
      real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
      integer ierr                           !error information
-#ifndef PRG_DIRAC
      ! gets the order of Cartesian multipole moments
      order_mom = count(f=='EL  ')
  
@@ -237,7 +234,6 @@ contains
      deallocate(val_expt)
  
    end if
-#endif /* ifndef PRG_DIRAC */
    end subroutine
 
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
@@ -270,7 +266,6 @@ contains
      integer num_coord  !number of atomic coordinates
      integer num_geom   !number of total geometric derivatives
      integer num_ints   !number of integral matrices
-#ifndef PRG_DIRAC
      if (present(w) .and. .not.present(fock))                                      &
         call quit("error in interface_1el_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
                   "must both be present or both absent")
@@ -344,7 +339,6 @@ contains
      end if
  
    end if
-#endif /* ifndef PRG_DIRAC */
    end subroutine
 
    subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
@@ -374,7 +368,6 @@ contains
      integer imat       !incremental recorder over matrices
      integer :: i
      type(matrix) :: A
-#ifndef PRG_DIRAC
  
    if (count(f=='EL  ') > 1) then
       call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
@@ -443,7 +436,6 @@ contains
      end if
  
    end if
-#endif /* ifndef PRG_DIRAC */
    end subroutine
 
   !> \brief reorders and assigns the expectation values and/or integral matrices from
