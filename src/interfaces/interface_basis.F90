@@ -61,12 +61,12 @@ contains
   !> \param nectr, so that memory for data structures can be allocated
   subroutine SHELLS_find_sizes(ncgto, nectr)
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer, intent(out) :: ncgto, nectr
     ! need MXSHEL
-#include <maxorb.h>
+#include "maxorb.h"
     ! need NLRGSH NBCH NUCO NRCO
-#include <shells.h>
+#include "shells.h"
     logical haveit(MXSHEL)
     integer i, j
     ! count the number of cgto blocks and the number of cgto
@@ -95,20 +95,20 @@ contains
     !radovan: fixme ugly dependency on basis_set
     use basis_set, only: cgto
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer,          intent(in)  :: ncgto, nectr
     type(cgto),       intent(out) :: bas(ncgto)
     real(8), target, intent(out) :: ectr(nectr)
     ! need MXSHEL
-#include <maxorb.h>
+#include "maxorb.h"
     ! need NLRGSH NBCH NUCO NRCO NUMCF CENT NHKT NSTRT
-#include <shells.h>
+#include "shells.h"
     ! need MXCONT
-#include <aovec.h>
+#include "aovec.h"
     ! need PRIEXP PRICCF
-#include <primit.h>
+#include "primit.h"
     ! need MAXQNM
-#include <maxmom.h>
+#include "maxmom.h"
     integer alreadyis(MXSHEL)
     real(8) rescal(MXQNM+1)
     integer i, j, k, l, m, ne, nc, maxm

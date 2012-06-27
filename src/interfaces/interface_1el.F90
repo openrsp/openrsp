@@ -602,8 +602,8 @@ contains
       type(matrix),      intent(in)  :: D, DFD
       real(8),           intent(out) :: R(:)
 #ifndef LSDALTON_ONLY
-#include <mxcent.h>
-#include <taymol.h>
+#include "mxcent.h"
+#include "taymol.h"
 #endif
       real(8), pointer :: wrk(:)
       integer          :: lwrk
@@ -664,8 +664,8 @@ contains
     real(8),                intent(out) :: ave(siz)
     type(matrix), optional, intent(in)  :: D, DFD
     !--------------------------------------------
-#include <mxcent.h>
-#include <taymol.h>
+#include "mxcent.h"
+#include "taymol.h"
 
     real(8), allocatable :: Dtri(:)
     real(8), allocatable :: DFDtri(:)
@@ -719,7 +719,7 @@ contains
     type(matrix),           intent(in)  :: D
     !--------------------------------------------
     real(8)                             :: dummy(2)
-#include <mxcent.h>
+#include "mxcent.h"
     real(8), allocatable :: Dtri(:)
     character(8), dimension(9*MXCENT) :: labint
     integer, dimension(9*MXCENT) :: intrep, intadr
@@ -749,13 +749,13 @@ contains
 !   radovan: fixme it's not good for other codes to do S and H1 at the same time
 !            split this in two
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     type(matrix), intent(inout) :: S
     type(matrix), intent(inout) :: H1
     ! uses NBAST, NNBASX, N2BASX
-#include <inforb.h>
+#include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
-#include<inftap.h>
+#include<inftap.h"
     ! starts of the overlap and one electron Hamiltonian matrices in work memory
     integer work_ovlp, work_ham1
     ! PCM one-electron contributions
@@ -810,13 +810,13 @@ contains
   !> \return prop_int contains the integral matrix
   subroutine di_read_operator_int( prop_lab, prop_int )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     character*(8), intent(in) :: prop_lab
     type(matrix), intent(inout) :: prop_int
     ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
+#include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
-#include<inftap.h>
+#include<inftap.h"
     ! external DALTON function finding the corresponding label
     logical FNDLB2
     ! information when calling subroutine FNDLB2

@@ -55,16 +55,16 @@ contains
   subroutine rsp_mosolver_init( max_num_iterat, max_dim_hess, max_dim_reduc, &
                                 threshold, optimal_orb )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer, optional, intent(in) :: max_num_iterat
     integer, optional, intent(in) :: max_dim_hess
     integer, optional, intent(in) :: max_dim_reduc
     real(8), optional, intent(in) :: threshold
     logical, optional, intent(in) :: optimal_orb
     ! uses NBAST
-#include <inforb.h>
+#include "inforb.h"
     ! uses LUSIFC
-#include <inftap.h>
+#include "inftap.h"
     ! error information
     integer ierr
     ! if found information on SIRIFC
@@ -152,7 +152,7 @@ contains
   !> \return eigvec contains the solution vectors (AO)
   subroutine rsp_mosolver_exec( GD, eigval, eigvec )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     type(matrix), intent(in) :: GD(*)
     real(8), intent(in)  :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
@@ -169,23 +169,23 @@ contains
     ! dummy stuff
     integer idummy
     ! uses NSYM
-#include <inforb.h>
+#include "inforb.h"
     ! uses NVARPT (number of solution vectors?)
     integer IPRLIN, LSYMRF, LSYMPT, LSYMST, &
             NCONRF, NCONST, NWOPPT, NVARPT
-#include <inflin.h>
+#include "inflin.h"
     ! uses LURSP
-#include <inftap.h>
+#include "inftap.h"
     ! uses JWOP(2,MAXWOP) for the orbital rotation
-#include <infvar.h>
+#include "infvar.h"
     !
     integer KMJWOP
     ! uses IRAT
-#include <iratdef.h>
+#include "iratdef.h"
     !
     character*8 :: LAB1 = 'MOSOLVER', LAB2 = '        '
     ! uses KZVAR
-#include <wrkrsp.h>
+#include "wrkrsp.h"
     ! constants
     real(8), parameter :: half = 5.0D-01
     real(8), parameter :: zero = 0.0D+00
@@ -300,19 +300,19 @@ contains
   !> \return CMO_VIR contains the coefficients of virtual molecular orbitals
   subroutine di_get_cmo( CMO, CMO_OCC, CMO_VIR )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     type(matrix), intent(inout) :: CMO
     type(matrix), intent(inout) :: CMO_OCC
     type(matrix), intent(inout) :: CMO_VIR
     ! uses LUSIFC, unit number for SIRFC
-#include <inftap.h>
+#include "inftap.h"
     ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
+#include "inforb.h"
     ! uses NODC, NODV
     ! since we here prefer "implicit none", we have to
     ! define some variables even we do not need them
     integer IPRINT, IDCOOR, MAXDIF, IDATOM
-#include <cbione.h>
+#include "cbione.h"
     ! dummy stuff
     integer idummy
     ! temparary stuff

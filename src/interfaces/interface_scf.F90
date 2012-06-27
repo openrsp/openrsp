@@ -65,12 +65,12 @@ contains
   !> \return D contains the AO density matrix
   subroutine di_get_dens( D )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     type(matrix), intent(inout) :: D
     ! uses NCMOT, NASHT, NNASHX, N2BASX
-#include <inforb.h>
+#include "inforb.h"
     ! uses LUSIFC
-#include <inftap.h>
+#include "inftap.h"
     ! start of coefficients of molecular orbitals in the work array
     integer strt_cmo
     ! start of active part of one-electron density matrix (MO and AO) in the work array
@@ -148,16 +148,16 @@ contains
   !> \return G contains the two electron contribution
   subroutine di_get_gmat( D, G )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     type(matrix), intent(in) :: D
     type(matrix), intent(inout) :: G
     ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
+#include "inforb.h"
     ! uses NODC, NODV
     ! since we here prefer "implicit none", we have to
     ! define some variables even we do not need them
     integer IPRINT, IDCOOR, MAXDIF, IDATOM
-#include <cbione.h>
+#include "cbione.h"
     ! use PCM
     ! start of total density matrix (AO) in work memory
     integer work_ao_dens
@@ -218,16 +218,16 @@ contains
   !> \return G contains the two electron contribution
   subroutine di_twofck( D, G )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     type(matrix), intent(in) :: D
     type(matrix), intent(inout) :: G
     ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include <inforb.h>
+#include "inforb.h"
     ! uses NODC, NODV
     ! since we here prefer "implicit none", we have to
     ! define some variables even we do not need them
     integer IPRINT, IDCOOR, MAXDIF, IDATOM
-#include <cbione.h>
+#include "cbione.h"
     ! start of total density matrix (AO) in work memory
     integer work_ao_dens
     ! parameters for SIRFCK

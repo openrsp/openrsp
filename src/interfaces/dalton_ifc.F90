@@ -25,11 +25,11 @@ module dalton_ifc
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine DIPNUC_ifc( DN )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     ! uses MXCOOR
-#include <mxcent.h>
+#include "mxcent.h"
     ! uses DIPMN and DDIPN
-#include <dipole.h>
+#include "dipole.h"
     real(8), intent(out) :: DN(3)
     real(8), parameter :: zero = 0.0D+00
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
@@ -44,11 +44,11 @@ module dalton_ifc
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine QDRNUC_ifc( Q )
     implicit integer (i,m-n)
-#include <implicit.h>
-#include <mxcent.h>
-#include <nuclei.h>
+#include "implicit.h"
+#include "mxcent.h"
+#include "nuclei.h"
 #ifndef PRG_DIRAC
-#include <quadru.h>
+#include "quadru.h"
 #endif
     real(8), intent(out) :: Q(6)
     real(8), parameter :: zero = 0.0D+00
@@ -70,15 +70,15 @@ module dalton_ifc
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine GRADNN_ifc( n, G )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     ! uses MXCOOR
-#include <mxcent.h>
+#include "mxcent.h"
 #ifndef PRG_DIRAC
     ! uses IPRINT and MAXDIF
-#include <cbinuc.h>
+#include "cbinuc.h"
 #endif
     ! uses GRADNN
-#include <energy.h>
+#include "energy.h"
     integer, intent(in) :: n
     real(8), intent(out) :: G( 3*n )
     real(8), parameter :: zero = 0.0D+00
@@ -102,14 +102,14 @@ module dalton_ifc
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine HESSNN_ifc( na, H )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer, intent(in) :: na
     real(8), intent(inout) :: H( 3*na, 3*na )
     ! uses MXCOOR
-#include <mxcent.h>
+#include "mxcent.h"
 #ifndef PRG_DIRAC
     ! uses IPRINT and MAXDIF
-#include <cbinuc.h>
+#include "cbinuc.h"
 #endif
     integer i, j
     real(8) HESSNN( MXCOOR, MXCOOR )
@@ -140,11 +140,11 @@ module dalton_ifc
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine DPGNUC_ifc( na, DGN )
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     ! uses MXCOOR
-#include <mxcent.h>
+#include "mxcent.h"
     ! uses DDIPN
-#include <dipole.h>
+#include "dipole.h"
     integer, intent(in) :: na
     real(8), intent(out) :: DGN( 3*na, 3 )
     real(8), parameter :: zero = 0.0D+00
@@ -159,9 +159,9 @@ module dalton_ifc
   !> d^3E/dR(-w)dB(w)dw |w=0
   subroutine AATNUC_ifc( na, AATN )
     implicit integer (i,m-n)
-#include <implicit.h>
-#include <mxcent.h>
-#include <aatens.h>
+#include "implicit.h"
+#include "mxcent.h"
+#include "aatens.h"
     integer, intent(in) :: na
     real(8), intent(out) :: AATN( 3, 3*na )
     real(8) :: CSTRA( 3*na, 3*na ), SCTRA( 3*na, 3*na )
@@ -179,12 +179,12 @@ module dalton_ifc
   subroutine VIBCTL_ifc( nc, w, ALPHA, GPRIME, THETA, DIPGRAD, &
                          dALPHAdR, dGPRIMEdR, dTHETAdR )
     implicit integer (i,m-n)
-#include <implicit.h>
-#include <mxcent.h>
-#include <cbilnr.h>
-#include <cbivib.h>
-#include <abainf.h>
-#include <moldip.h>
+#include "implicit.h"
+#include "mxcent.h"
+#include "cbilnr.h"
+#include "cbivib.h"
+#include "abainf.h"
+#include "moldip.h"
     dimension ALPHA(3,3), GPRIME(3,3), THETA(3,6)
     dimension DIPGRAD(3,nc), dALPHAdR(3,3,nc)
     dimension dGPRIMEdR(3,3,nc), dTHETAdR(3,6,nc)
@@ -235,12 +235,12 @@ module dalton_ifc
   !> \param nectr, so that memory for data structures can be allocated
   subroutine SHELLS_find_sizes(ncgto, nectr)
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer, intent(out) :: ncgto, nectr
     ! need MXSHEL
-#include <maxorb.h>
+#include "maxorb.h"
     ! need NLRGSH NBCH NUCO NRCO
-#include <shells.h>
+#include "shells.h"
     logical haveit(MXSHEL)
     integer i, j
     ! count the number of cgto blocks and the number of cgto
@@ -270,20 +270,20 @@ module dalton_ifc
     !radovan: fixme ugly dependency on basis_set
     use basis_set, only: cgto
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer,          intent(in)  :: ncgto, nectr
     type(cgto),       intent(out) :: bas(ncgto)
     real(8), target, intent(out) :: ectr(nectr)
     ! need MXSHEL
-#include <maxorb.h>
+#include "maxorb.h"
     ! need NLRGSH NBCH NUCO NRCO NUMCF CENT NHKT NSTRT
-#include <shells.h>
+#include "shells.h"
     ! need MXCONT
-#include <aovec.h>
+#include "aovec.h"
     ! need PRIEXP PRICCF
-#include <primit.h>
+#include "primit.h"
     ! need MAXQNM
-#include <maxmom.h>
+#include "maxmom.h"
     integer alreadyis(MXSHEL)
     real(8) rescal(MXQNM+1)
     integer i, j, k, l, m, ne, nc, maxm
@@ -345,17 +345,17 @@ module dalton_ifc
   !> programs. For doing finite difference differentiation.
   subroutine SHELLS_NUCLEI_displace(ic, dc)
     implicit integer (i,m-n)
-#include <implicit.h>
+#include "implicit.h"
     integer,  intent(in) :: ic
     real(8), intent(in) :: dc !step
     ! need MXSHEL
-#include <maxorb.h>
+#include "maxorb.h"
     ! need CENT
-#include <shells.h>
+#include "shells.h"
     ! need MXCOOR
-#include <mxcent.h>
+#include "mxcent.h"
     ! need CORD
-#include <nuclei.h>
+#include "nuclei.h"
     integer a, r, i
     a = 1 + (ic-1)/3
     r = 1 + mod(ic-1,3)
