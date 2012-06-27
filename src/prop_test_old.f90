@@ -7,6 +7,7 @@ module prop_test_old
    use matrix_defop
    use prop_contribs_old
    use rsp_equations_old
+   use interface_io
 
    implicit none
 
@@ -37,23 +38,22 @@ module prop_test_old
 
 contains
 
-   subroutine test_vcd(mol, ng, S, D, F)
+   subroutine test_vcd(ng, S, D, F)
    ! "Atomic axial tensor" = -1/2 * Egbw
    ! Egbw = << GEO(0.0) MAG(0.0) FREQ(91) >>
-      type(prop_molcfg), intent(in) :: mol
       integer,      intent(in) :: ng
       type(matrix), intent(in) :: S, D, F
       complex(8)    :: Egbw(ng,3), Rn3(ng,3), Rm3(ng,3)
       type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
       type(matrix)  :: M3(3), Sb(3), FDSbw(3), DFDbw(3)
       integer       :: j
-      call pert_dens(mol, S, (/'MAG'/), (/3/), &
+      call pert_dens(S, (/'MAG'/), (/3/), &
                      (/D/), (/F/), Db, Fb, freq=(/(0d0,0d0)/))
       ! hack: Obtain frequency derivative of one-electron integrals
       !       by HUGE finite difference
-      call prop_oneint(mol, S, (/'MAG'/), (/3/), F=Fbw, S=Sb, &
+      call prop_oneint(S, (/'MAG'/), (/3/), F=Fbw, S=Sb, &
                        freq = (huge(1d0)/128) * (/(1d0,0d0)/))
-      call prop_oneint(mol, S, (/'MAG'/), (/3/), F=M3, &
+      call prop_oneint(S, (/'MAG'/), (/3/), F=M3, &
                        freq = (/(0d0,0d0)/))
       do j=1,3
          Fbw(j) = (128/huge(1d0)) * (Fbw(j)-M3(j))
@@ -67,20 +67,20 @@ contains
          Sb(j) = 0
       end do
       ! call solver directly
-      call solve_scf_eq(mol, S, D, F, -1, (0d0,0d0), 3, &
+      call solve_scf_eq(S, D, F, -1, (0d0,0d0), 3, &
                         Sb, FDSbw, Dbw, Fbw)
       ! contract the frequency-differentiated response function
       Egbw = 0
-      call prop_oneave(mol, S, (/'GEO','MAG'/), (/D/), shape(Egbw), Egbw, &
+      call prop_oneave(S, (/'GEO','MAG'/), (/D/), shape(Egbw), Egbw, &
                        freq = (/(-1d0,0d0), (1d0,0d0)/))
       ! call print_tensor(shape(Egbw), Egbw, '-i/2TgbwD'); Egbw=0
       ! hack: Obtain frequency-differentiated one-electron integrals
       !       by another HUGE finite difference
       Rn3 = 0
-      call prop_oneave(mol, S, (/'GEO'/), (/Db/), shape(Rn3), Rn3, &
+      call prop_oneave(S, (/'GEO'/), (/Db/), shape(Rn3), Rn3, &
                        freq = (huge(1d0)/128) * (/(-1d0,0d0)/))
       Rm3 = 0
-      call prop_oneave(mol, S, (/'GEO'/), (/Db/), shape(Rm3), Rm3, &
+      call prop_oneave(S, (/'GEO'/), (/Db/), shape(Rm3), Rm3, &
                        freq = (/(0d0,0d0)/))
       Egbw = Egbw + (128/huge(1d0)) * (Rn3 - Rm3)
       ! call print_tensor(shape(Egbw), Egbw, '-i/2TgwDb'); Egbw=0
@@ -88,11 +88,11 @@ contains
          DFDbw(j) = Dbw(j)*F*D + D*Fbw(j)*D + D*F*Dbw(j) &
                   + 1/2d0 * Db(j)*S*D - 1/2d0 * D*S*Db(j)
       end do
-      call prop_oneave(mol, S, (/'GEO'/), (/Dbw/), shape(Egbw), Egbw, &
+      call prop_oneave(S, (/'GEO'/), (/Dbw/), shape(Egbw), Egbw, &
                        DFD = DFDbw)
       DFDbw = 0
       ! call print_tensor(shape(Egbw), Egbw, 'HgDbw - SgDFDbw'); Egbw=0
-      call prop_twoave(mol, (/'GEO'/), (/D,Dbw/), shape(Egbw), Egbw)
+      call prop_twoave((/'GEO'/), (/D,Dbw/), shape(Egbw), Egbw)
       ! call print_tensor(shape(Egbw), Egbw, 'Gg(D)Dbw'); Egbw=0
       ! print, free, return
       call print_tensor(shape(Egbw), Egbw, 'Egbw')
@@ -101,8 +101,7 @@ contains
 
 
 
-   subroutine test_mcd(mol, S, D, F)
-      type(prop_molcfg), intent(in) :: mol
+   subroutine test_mcd(S, D, F)
       type(matrix),      intent(in) :: S, D, F
       complex(8)   :: exci(2), Ebfx(3,3,2)
       type(matrix) :: Df(3), Dx(2), Dfx(3,2), DFDfx(3,2)
@@ -126,29 +125,29 @@ contains
          return
       end if
       print *, 'found degenerate excitations: ', real(exci(1)), real(exci(2))
-      call pert_dens(mol, S, (/'EL'/), (/3/), &
+      call pert_dens(S, (/'EL'/), (/3/), &
                      (/D/), (/F/), Df, Ff, freq=(/-(exci(1)+exci(2))/2/))
-      call pert_dens(mol, S, (/'EXCI'/), (/1/), &
+      call pert_dens(S, (/'EXCI'/), (/1/), &
                      (/D/), (/F/), Dx(1:1), Fx(1:1), freq=exci(1:1))
-      call pert_dens(mol, S, (/'EXCI'/), (/1/), &
+      call pert_dens(S, (/'EXCI'/), (/1/), &
                      (/D/), (/F/), Dx(2:2), Fx(2:2), freq=exci(2:2))
-      call pert_dens(mol, S, (/'EL  ','EXCI'/), (/3,1/), &
+      call pert_dens(S, (/'EL  ','EXCI'/), (/3,1/), &
                      (/D,Df,Dx(1:1)/), (/F,Ff,Fx(1:1)/),    &
                      Dfx(:,1), Ffx(:,1), freq=(/-exci(1),exci(1)/))
-      call pert_dens(mol, S, (/'EL  ','EXCI'/), (/3,1/), &
+      call pert_dens(S, (/'EL  ','EXCI'/), (/3,1/), &
                      (/D,Df,Dx(2:2)/), (/F,Ff,Fx(2:2)/),    &
                      Dfx(:,2), Ffx(:,2), freq=(/-exci(2),exci(2)/))
       ! contract no-London response function
       Ebfx(:,:,:) = 0
-      call prop_oneave(mol, S, (/'MAGO'/), (/Dfx/), shape(Ebfx), Ebfx)
+      call prop_oneave(S, (/'MAGO'/), (/Dfx/), shape(Ebfx), Ebfx)
       ! call print_tensor(shape(Ebfx), Ebfx, 'E1bDfx - i/2TbDfx - SbDFDfx'); Ebfx=0
       call print_tensor(shape(Ebfx), -Ebfx, 'London d/db alphax = -Ebfx', &
                         (/0*exci(1),-exci(1),exci(1)/))
       ! contract London response function
       Ebfx(:,:,:) = 0
-      call prop_oneave(mol, S, (/'MAG','EL '/), (/Dx/), shape(Ebfx), Ebfx)
+      call prop_oneave(S, (/'MAG','EL '/), (/Dx/), shape(Ebfx), Ebfx)
       ! call print_tensor(shape(Ebfx), Ebfx, 'E1fbDx'); Ebfx=0
-      call prop_twoave(mol, (/'MAG'/), (/D,Df,Dx,Dfx/), shape(Ebfx), Ebfx)
+      call prop_twoave((/'MAG'/), (/D,Df,Dx,Dfx/), shape(Ebfx), Ebfx)
       ! call print_tensor(shape(Ebfx), Ebfx, 'E2bDfDx+E2bD0Dfx'); Ebfx=0
       do k = 1, 2
          do j = 1, 3
@@ -160,7 +159,7 @@ contains
                        + D*(F-(0*exci(k))/2*S)*Dfx(j,k)
          end do
       end do
-      call prop_oneave(mol, S, (/'MAG'/), (/Dfx/), shape(Ebfx), Ebfx, &
+      call prop_oneave(S, (/'MAG'/), (/Dfx/), shape(Ebfx), Ebfx, &
                        freq=(/(0d0,0d0)/), DFD=(/DFDfx/))
       DFDfx = 0
       ! call print_tensor(shape(Ebfx), Ebfx, 'E1bDfx - i/2TbDfx - SbDFDfx'); Ebfx=0
@@ -171,8 +170,7 @@ contains
 
 
 
-   subroutine prop_test_gradient(mol, S, D, F, ng)
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_test_gradient(S, D, F, ng)
       type(matrix), intent(in) :: S, D, F
       integer,      intent(in) :: ng !number of geometrical coordinates
       complex(8)   :: Eg(ng) !NB: zero first
@@ -182,8 +180,8 @@ contains
       ! with unperturbed density D and energy-weighted density DFD
       DFD = D*F*D
       Eg = 0 !zero first, since prop_one/twoave are incremental
-      call prop_oneave(mol, S, (/'GEO'/), (/D/), (/ng/), Eg, DFD=(/DFD/))
-      call prop_twoave(mol, (/'GEO'/), (/D/), (/ng/), Eg)
+      call prop_oneave(S, (/'GEO'/), (/D/), (/ng/), Eg, DFD=(/DFD/))
+      call prop_twoave((/'GEO'/), (/D/), (/ng/), Eg)
       ! print
       call print_tensor((/ng/), Eg, 'gradient = Eg = E0g - Sg DFD')
       ! free DFD
@@ -191,8 +189,7 @@ contains
 
    end subroutine
 
-   subroutine prop_test_Gprime_Df(mol, S, D, F, idum, freq) !Gprime_Df(-freq)
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_test_Gprime_Df(S, D, F, idum, freq) !Gprime_Df(-freq)
       type(matrix), intent(in) :: S, D, F
       integer,      intent(in) :: idum    !not used
       complex(8),   intent(in) :: freq(:) !frequency
@@ -200,9 +197,9 @@ contains
       type(matrix) :: Df(3), Ff(3), DFDf(3)
       integer      :: i, j
       ! the following contribution is zero
-      ! call prop_oneave(mol, S, (/'EL ','MAG'/), (/D/), shape(Efb), Efb)
+      ! call prop_oneave(S, (/'EL ','MAG'/), (/D/), shape(Efb), Efb)
       ! solve EL response equations for the negative frequency
-      call pert_dens(mol, S, (/'EL'/), shape(Df), (/D/), (/F/), &
+      call pert_dens(S, (/'EL'/), shape(Df), (/D/), (/F/), &
                      Df, Ff, freq=-freq(1:1))
       ! compute the EL-perturbed energy-weighted density matrices,
       ! to be contracted against MAG-perturbed overlap integrals
@@ -211,9 +208,9 @@ contains
                      + D*(F + freq(1)/2*S)*Df(i)
       end do
       ! contract Df and DFDf with MAG-perturbed integrals
-      call prop_oneave(mol, S, (/'MAG'/), (/Df/), shape(Efb), Efb, &
+      call prop_oneave(S, (/'MAG'/), (/Df/), shape(Efb), Efb, &
                        perm=(/2,1/), freq=freq(1:1), DFD=DFDf)
-      call prop_twoave(mol, (/'MAG'/), (/D,Df/), shape(Efb), Efb, perm=(/2,1/))
+      call prop_twoave((/'MAG'/), (/D,Df/), shape(Efb), Efb, perm=(/2,1/))
       ! print
       call print_tensor(shape(Efb), Efb, 'G-prime = Efb = E1b Df - Sb DFDf')
       ! free Df(:), Ff(:), DFDf(:)
@@ -221,8 +218,7 @@ contains
    end subroutine
 
 
-   subroutine prop_test_Gprime_Db(mol, S, D, F, idum, freq) !Gprime_Db(+freq)
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_test_Gprime_Db(S, D, F, idum, freq) !Gprime_Db(+freq)
       type(matrix),      intent(in) :: S, D, F
       integer,           intent(in) :: idum    !not used
       complex(8),        intent(in) :: freq(:) !frequency
@@ -230,12 +226,12 @@ contains
       type(matrix) :: Db(3), Fb(3)
       integer      :: i
       ! the following contribution is zero
-      call prop_oneave(mol, S, (/'EL ','MAG'/), (/D/), shape(Efb), Efb)
+      call prop_oneave(S, (/'EL ','MAG'/), (/D/), shape(Efb), Efb)
       ! solve EL response equations for the negative frequency
-      call pert_dens(mol, S, (/'MAG'/), shape(Db), (/D/), (/F/), &
+      call pert_dens(S, (/'MAG'/), shape(Db), (/D/), (/F/), &
                      Db, Fb, freq=freq(1:1))
       ! contract Db with -dipole integrals
-      call prop_oneave(mol, S, (/'EL'/), (/Db/), shape(Efb), Efb)
+      call prop_oneave(S, (/'EL'/), (/Db/), shape(Efb), Efb)
       ! print
       call print_tensor(shape(Efb), Efb, 'G-prime = Efb = E1f Db')
       ! free
@@ -243,38 +239,35 @@ contains
    end subroutine
 
 
-   subroutine elec_dipmom(mol, S, D, F, Ef)
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine elec_dipmom(S, D, F, Ef)
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(out) :: Ef(3)
       Ef = 0
-      call prop_oneave(mol, S, (/'EL'/), (/D/), (/3/), Ef)
-      call print_tensor((/3/), -Ef, 'mu = -Ef', unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3/), -Ef, 'mu = -Ef')
+      call prop_oneave(S, (/'EL'/), (/D/), (/3/), Ef)
+      call print_tensor((/3/), -Ef, 'mu = -Ef', unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3/), -Ef, 'mu = -Ef')
    end subroutine
 
 
-   subroutine elec_quadrupole(mol, S, D, F, t)
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine elec_quadrupole(S, D, F, t)
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(out) :: t(6)
       t = 0.0d0
-      call prop_oneave(mol, S, (/'ELGR'/), (/D/), (/6/), t)
+      call prop_oneave(S, (/'ELGR'/), (/D/), (/6/), t)
       call print_tensor((/6/), -t, 'quadrupole = -t')
    end subroutine
 
 
-   subroutine elec_polariz(mol, S, D, F, freq, Eff)
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine elec_polariz(S, D, F, freq, Eff)
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(in)  :: freq
       complex(8),        intent(out) :: Eff(3,3)
       type(matrix) :: Df(3), Ff(3)
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq/))
       Eff = 0 !zero, as prop_oneave works incrementally
-      call prop_oneave(mol, S, (/'EL'/), (/Df/), (/3,3/), Eff)
-      call print_tensor((/3,3/), -Eff, 'alpha = -Eff', unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3,3/), -Eff, 'alpha = -Eff')
+      call prop_oneave(S, (/'EL'/), (/Df/), (/3,3/), Eff)
+      call print_tensor((/3,3/), -Eff, 'alpha = -Eff', unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3,3/), -Eff, 'alpha = -Eff')
       !delete response matrices
       Df = 0; Ff = 0
       !change sign, since polarizability is minus quasi-energy derivative
@@ -282,8 +275,7 @@ contains
    end subroutine
 
 
-   subroutine elec_hypolar(mol, S, D, F, freq, Efff)
-      type(prop_molcfg), intent(in)   :: mol
+   subroutine elec_hypolar(S, D, F, freq, Efff)
       type(matrix),      intent(in)   :: S, D, F
       complex(8),        intent(in)   :: freq(3)
       complex(8),        intent(out)  :: Efff(3,3,3)
@@ -293,16 +285,16 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('prop_test/elec_hypolar: sum(freq) should be zero!',-1)
       !solve equations
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=freq(2:2))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=freq(3:3))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,Df,De/), (/F,Ff,Fe/), &
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=freq(2:2))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=freq(3:3))
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,Df,De/), (/F,Ff,Fe/), &
                      Dfe, Ffe, freq=(/freq(2),freq(3)/))
       !just one energy contribution, no reort or multiplier contributions
       Efff=0
-      call prop_oneave(mol, S, (/'EL'/), (/Dfe/), (/3,3,3/), Efff)
+      call prop_oneave(S, (/'EL'/), (/Dfe/), (/3,3,3/), Efff)
       !print
-      call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq, unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
+      call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq, unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
       !free
       Df=0; Ff=0; De=0; Fe=0; Dfe=0; Ffe=0
       !change sign to get beta
@@ -310,8 +302,7 @@ contains
    end subroutine
 
 
-   subroutine alt_elec_hypol(mol, S, D, F, freq, Efff)
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine alt_elec_hypol(S, D, F, freq, Efff)
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(in)  :: freq(3)
       complex(8),        intent(out) :: Efff(3,3,3)
@@ -322,13 +313,13 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('prop_test/alt_elec_hypol: sum(w) should be zero!',-1)
       !solve equations
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=freq(1:1))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=freq(2:2))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=freq(3:3))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=freq(1:1))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=freq(2:2))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=freq(3:3))
       !no energy contributions for HF, one for KSDFT
       Efff = 0
       zm = 0*D
-      call prop_twoave(mol, UNP, (/D,De,Df,Dg,(zm,i=1,54)/), (/3,3,3/), Efff)
+      call prop_twoave(UNP, (/D,De,Df,Dg,(zm,i=1,54)/), (/3,3,3/), Efff)
       !gradient Lagrange multiplier contribution -tr (DeSD-) (FDS-)fg
       do i = 1, 3
          DeSD(i) = De(i)*S*D - D*S*De(i)
@@ -355,8 +346,8 @@ contains
          end do
       end do; FeDS=0
       !print
-      call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq, unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
+      call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq, unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3,3,3/), -Efff, 'beta = -Efff', freq)
       !free
       De=0; Fe=0; Df=0; Ff=0; Dg=0; Fg=0
       !change sign for beta
@@ -364,8 +355,7 @@ contains
    end subroutine
 
 
-   subroutine elec_sechyp(mol, S, D, F, freq, Effff)
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine elec_sechyp(S, D, F, freq, Effff)
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(in)  :: freq(4)
       complex(8),        intent(out) :: Effff(3,3,3,3)
@@ -376,25 +366,25 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('prop_test/elec_sechyp: sum(freq) should be zero!',-1)
       !solve equations
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(2)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(3)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=(/freq(4)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,De,Df/), (/F,Fe,Ff/), &
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(2)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(3)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=(/freq(4)/))
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,De,Df/), (/F,Fe,Ff/), &
                      Def, Fef, freq=(/freq(2),freq(3)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,De,Dg/), (/F,Fe,Fg/), &
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,De,Dg/), (/F,Fe,Fg/), &
                      Deg, Feg, freq=(/freq(2),freq(4)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,Df,Dg/), (/F,Ff,Fg/), &
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,Df,Dg/), (/F,Ff,Fg/), &
                      Dfg, Ffg, freq=(/freq(3),freq(4)/))
-      call pert_dens(mol, S, (/'EL','EL','EL'/), (/3,3,3/), &
+      call pert_dens(S, (/'EL','EL','EL'/), (/3,3,3/), &
                      (/D,De,Df,Dg,Def,Deg,Dfg/), &
                      (/F,Fe,Ff,Fg,Fef,Feg,Ffg/), &
                      Defg, Fefg, freq=(/freq(2),freq(3),freq(4)/))
       !just one property contribution
       Effff=0
-      call prop_oneave(mol, S, (/'EL'/), (/Defg/), (/3,3,3,3/), Effff)
+      call prop_oneave(S, (/'EL'/), (/Defg/), (/3,3,3,3/), Effff)
       !print
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
+      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !free
       De=0; Df=0; Dg=0; Def=0; Deg=0; Dfg=0; Defg=0
       Fe=0; Ff=0; Fg=0; Fef=0; Feg=0; Ffg=0; Fefg=0
@@ -403,8 +393,7 @@ contains
    end subroutine
 
 
-   subroutine alt_elec_sechyp(mol, S, D, F, freq, Effff)
-      type(prop_molcfg), intent(in) :: mol
+   subroutine alt_elec_sechyp(S, D, F, freq, Effff)
       type(matrix), intent(in)  :: S, D, F
       complex(8),   intent(in)  :: freq(4)
       complex(8),   intent(out) :: Effff(3,3,3,3)
@@ -417,20 +406,20 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('prop_test/alt_elec_sechyp: sum(w) should be zero!',-1)
       !solve equations
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(1)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(2)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=(/freq(3)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dh, Fh, freq=(/freq(4)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,Df,Dg/), (/F,Ff,Fg/), &
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(1)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(2)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=(/freq(3)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Dh, Fh, freq=(/freq(4)/))
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,Df,Dg/), (/F,Ff,Fg/), &
                      Dfg, Ffg, freq=(/freq(2),freq(3)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,Df,Dh/), (/F,Ff,Fh/), &
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,Df,Dh/), (/F,Ff,Fh/), &
                      Dfh, Ffh, freq=(/freq(2),freq(4)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,Dg,Dh/), (/F,Fg,Fh/), &
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,Dg,Dh/), (/F,Fg,Fh/), &
                      Dgh, Fgh, freq=(/freq(3),freq(4)/))
       ! one energy contribution
       Effff=0
       zm = 0*D
-      call prop_twoave(mol, UNP, (/D,De,Df,Dg,Dh, &
+      call prop_twoave(UNP, (/D,De,Df,Dg,Dh, &
                               (zm,i=1,18),Dfg,(zm,i=1,9), &
                               Dfh,Dgh,(zm,i=1,189)/), &
                        shape(Effff), Effff)
@@ -470,8 +459,8 @@ contains
          end do
       end do; FeDS=0
       ! print
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
+      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !free
       De=0; Df=0; Dg=0; Dh=0; Dfg=0; Dfh=0; Dgh=0
       Fe=0; Ff=0; Fg=0; Fh=0; Ffg=0; Ffh=0; Fgh=0
@@ -480,8 +469,7 @@ contains
    end subroutine
 
 
-   subroutine alt2_elec_sechyp(mol, S, D, F, freq, Effff)
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine alt2_elec_sechyp(S, D, F, freq, Effff)
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(in)  :: freq(4)
       complex(8),        intent(out) :: Effff(3,3,3,3)
@@ -496,15 +484,15 @@ contains
       if (abs(sum(freq)) > 1d-15) &
          call quit('prop_test/alt_elec_sechyp: sum(freq) should be zero!',-1)
       !solve equations
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(1)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(2)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=(/freq(3)/))
-      call pert_dens(mol, S, (/'EL'/), (/3/), (/D/), (/F/), Dh, Fh, freq=(/freq(4)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,De,Df/), (/F,Fe,Ff/), &
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), De, Fe, freq=(/freq(1)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq(2)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Dg, Fg, freq=(/freq(3)/))
+      call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Dh, Fh, freq=(/freq(4)/))
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,De,Df/), (/F,Fe,Ff/), &
                      Def, Fef, freq=(/freq(1),freq(2)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,De,Dg/), (/F,Fe,Fg/), &
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,De,Dg/), (/F,Fe,Fg/), &
                      Deg, Feg, freq=(/freq(1),freq(3)/))
-      call pert_dens(mol, S, (/'EL','EL'/), (/3,3/), (/D,De,Dh/), (/F,Fe,Fh/), &
+      call pert_dens(S, (/'EL','EL'/), (/3,3/), (/D,De,Dh/), (/F,Fe,Fh/), &
                      Deh, Feh, freq=(/freq(1),freq(4)/))
       !no energy contributions
       Effff=0
@@ -614,8 +602,8 @@ contains
          end do
       end do; FeDSh=0
       !print
-      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=mol%lupri)
-      if (mol%lupri /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
+      call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq, unit=get_print_unit())
+      if (get_print_unit() /= 6) call print_tensor((/3,3,3,3/), -Effff, 'gamma = -Effff', freq)
       !free
       De=0; Df=0; Dg=0; Dh=0; Def=0; Deg=0; Deh=0
       Fe=0; Ff=0; Fg=0; Dh=0; Fef=0; Feg=0; Feh=0
@@ -624,39 +612,38 @@ contains
    end subroutine
 
 
-   subroutine magnetiz(mol, S, D, F, freq, Eoo, Ebb)
+   subroutine magnetiz(S, D, F, freq, Eoo, Ebb)
    !no-Lon and London magnetizability
-      type(prop_molcfg), intent(in)  :: mol
       type(matrix),      intent(in)  :: S, D, F
       complex(8),        intent(in)  :: freq
       complex(8),        intent(out) :: Eoo(3,3), Ebb(3,3)
       type(matrix) :: Db(3), Fb(3), DFD, DFDb(3)
       integer      :: i, j
       !no-London
-      call pert_dens(mol, S, (/'MAGO'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
+      call pert_dens(S, (/'MAGO'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
       Eoo = 0
-      call prop_oneave(mol, S, (/'MAGO','MAGO'/), (/D/), (/3,3/), Eoo)
+      call prop_oneave(S, (/'MAGO','MAGO'/), (/D/), (/3,3/), Eoo)
       !call print_tensor( (/3,3/), Eoo, 'E0oo'); Eoo=0
-      call prop_oneave(mol, S, (/'MAGO'/), (/Db/), (/3,3/), Eoo)
+      call prop_oneave(S, (/'MAGO'/), (/Db/), (/3,3/), Eoo)
       !call print_tensor( (/3,3/), Eoo, 'E1oDo'); Eoo=0
       call print_tensor((/3,3/), Eoo, 'no-London Magnetizability = Eoo', (/-freq,freq/))
       Db=0; Fb=0
       !London diamag
-      call pert_dens(mol, S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
+      call pert_dens(S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
       Ebb = 0
-      call prop_twoave(mol, (/'MAG','MAG'/), (/D/), (/3,3/), Ebb)
+      call prop_twoave((/'MAG','MAG'/), (/D/), (/3,3/), Ebb)
       DFD = D*F*D
-      call prop_oneave(mol, S, (/'MAG','MAG'/), (/D/), (/3,3/), Ebb, &
+      call prop_oneave(S, (/'MAG','MAG'/), (/D/), (/3,3/), Ebb, &
                        DFD=(/DFD/), freq=(/-freq,freq/))
       DFD = 0
       !call print_tensor( (/3,3/), Ebb, 'E0bb-i/2TbbD-SbbW'); Ebb=0
       !London paramag
-      call prop_twoave(mol, (/'MAG'/), (/D,Db/), (/3,3/), Ebb)
+      call prop_twoave((/'MAG'/), (/D,Db/), (/3,3/), Ebb)
       do j = 1, 3
          DFDb(j) = Db(j)*(F+(freq/2)*S)*D + D*Fb(j)*D &
                  +     D*(F-(freq/2)*S)*Db(j)
       end do
-      call prop_oneave(mol, S, (/'MAG'/), (/Db/), (/3,3/), Ebb, &
+      call prop_oneave(S, (/'MAG'/), (/Db/), (/3,3/), Ebb, &
                        DFD=DFDb, freq=(/-freq/))
       Db=0; Fb=0; DFDb=0
       !call print_tensor( (/3,3/), Ebb, 'E1bDb-i/2TbDb-SbDFDb'); Ebb=0

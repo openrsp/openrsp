@@ -53,8 +53,6 @@
     use interface_1el
     ! main module of openrsp
     use openrsp_old
-    ! keeps molecule, energy, integral and solver config
-    use prop_contribs_old, only: prop_molcfg
 
     use interface_molecule
 
@@ -120,8 +118,6 @@
     ! the frequency-dependent linear response equations
     logical :: solver_optorb = .false.
 
-    ! config
-    type(prop_molcfg) molcfg
     ! overlap matrix
     type(matrix) S
     ! AO density matrix
@@ -380,9 +376,7 @@
     end if
 
     ! performs the calculations
-    molcfg%zeromat  = mat_zero_like(S)
-    molcfg = prop_molcfg(molcfg%zeromat, num_atoms, LUPRI)
-    call openrsp_prop_calc( molcfg, S, D, F, openrsp_info )
+    call openrsp_prop_calc(S, D, F, openrsp_info )
 
     ! cleans
     S = 0

@@ -95,9 +95,7 @@ contains
    !> Contract perturbed integrals with (an expansion of) perturbed density
    !> matrices to get the corresponding perturbed Fock matrix.
    !> Optionally, also return the corresponding perturbed overlap integrals
-   subroutine pert_fock(mol, p, dimp, D, F, S, comp, freq)
-      !> mol/basis/decomp/thresh needed by integrals and solver
-      type(prop_molcfg), intent(in) :: mol
+   subroutine pert_fock(p, dimp, D, F, S, comp, freq)
       !> perturbation lables
       character(*),      intent(in) :: p(:)
       !> dimension of each p, and thus also of F
@@ -137,18 +135,18 @@ contains
       end if
       ! fill F with perturbed one-electron integrals, and
       ! optionally S with perturbed overlap integrals
-      call prop_oneint(mol, D(1), p, dimp, F, S, comp=ccomp, freq=ffreq)
+      call prop_oneint(D(1), p, dimp, F, S, comp=ccomp, freq=ffreq)
       ! add p-perturbed Coulomb-exchange+Kohn-Sham contracted against
-      call prop_twoint(mol, p, D(1:1), dimp, F, comp=ccomp) !unperturbed D
+      call prop_twoint(p, D(1:1), dimp, F, comp=ccomp) !unperturbed D
       ! add unperturbed Coulomb-exchange+Kohn-Sham contribution
-      call prop_twoint(mol, UNP, D, dimp, F)
+      call prop_twoint(UNP, D, dimp, F)
       ! additional contributions for each basis-dependent subset of p
       bas = pert_basdep(p)
       if (size(p)==2 .and. bas(size(p))) &
-         call prop_twoint(mol, p(2:2), D(1:1+dimp(1)), &
+         call prop_twoint(p(2:2), D(1:1+dimp(1)), &
                           dimp, F, perm=(/2,1/), comp=ccomp(2:2))
       if (size(p)==2 .and. bas(1)) &
-         call prop_twoint(mol, p(1:1), (/D(1),D(1+dimp(1)+1:1+dimp(1)+dimp(2))/), &
+         call prop_twoint(p(1:1), (/D(1),D(1+dimp(1)+1:1+dimp(1)+dimp(2))/), &
                           dimp, F, comp=ccomp(1:1))
       if (size(p) > 2 .and. any(bas)) &
          call quit('pert_fock: general case not implemented',-1)
@@ -241,9 +239,7 @@ contains
 
    !> Computes the p'th derivative of idempotency relation DSD-D
    !> and SCF equation FDS-SDF, ie. the p-perturbed SCF equations.
-   subroutine pert_scf_eq(mol, S0, p, dimp, Dp, Fp, FDSp, DSDp, comp, freq)
-      !> mol/basis/decomp/thresh needed by integrals and solver
-      type(prop_molcfg), intent(in) :: mol
+   subroutine pert_scf_eq(S0, p, dimp, Dp, Fp, FDSp, DSDp, comp, freq)
       !> unperturbed overlap matrix
       type(matrix),      intent(in) :: S0
       !> perturbation lables
@@ -318,7 +314,7 @@ contains
             DSp(1) = Dp(1)*S0
             if (bas(1)) FDp(1) = Fp(1)*Dp(1)
             if (bas(1)) then
-               call prop_oneint(mol, S0, p, dimp, S=Sp(2:1+dimp(1)), comp=c)
+               call prop_oneint(S0, p, dimp, S=Sp(2:1+dimp(1)), comp=c)
             end if
             do i0 = 1, dimp(1)
                i = 1+i0
@@ -340,7 +336,7 @@ contains
          if (presnt) then
             DSp(1) = Dp(1) * S0
             if (all(bas)) FDp(1) = Fp(1) * Dp(1)
-            if (all(bas))call prop_oneint(mol, S0, p, dimp, S=Sp(2+dimp(1)+dimp(2) : &
+            if (all(bas))call prop_oneint(S0, p, dimp, S=Sp(2+dimp(1)+dimp(2) : &
                                           (dimp(1)+1)*(dimp(2)+1)), comp=c)
             do i0 = 1, dimp(1)*dimp(2)
                i = 1+dimp(1)+dimp(2)+i0
@@ -359,9 +355,9 @@ contains
          presnt = .not.all((/(iszero(Dp(i)), i=2,1+dimp(1))/)) .and. &
                   .not.all((/(iszero(Dp(j)), j=2+dimp(1),1+dimp(1)+dimp(2))/))
          if (presnt) then
-            if (bas(1)) call prop_oneint(mol, S0, p(1:1), dimp(1:1), &
+            if (bas(1)) call prop_oneint(S0, p(1:1), dimp(1:1), &
                                          S=Sp(2:1+dimp(1)), comp=c(1:1))
-            if (bas(2)) call prop_oneint(mol, S0, p(2:2), dimp(2:2), S=Sp(2+dimp(1): &
+            if (bas(2)) call prop_oneint(S0, p(2:2), dimp(2:2), S=Sp(2+dimp(1): &
                                          1+dimp(1)+dimp(2)), comp=c(2:2))
             do j0 = 0, dimp(2)-1
                j = 2+dimp(1)+j0
@@ -658,9 +654,7 @@ contains
    !> Solve the p-perturbed response equations for Dp and Fp.
    !> If already stored in the cache (solved_eqs), the solution is fetched
    !> from there. Otherwise, the RHSs are computed before calling the solver
-   subroutine pert_dens(mol, S0, p, dimp, D, F, Dp, Fp, comp, freq)
-      !> mol/basis/decomp/thresh needed by integrals and solver
-      type(prop_molcfg), intent(in) :: mol
+   subroutine pert_dens(S0, p, dimp, D, F, Dp, Fp, comp, freq)
       !> unperturbed overlap matrix
       type(matrix), intent(in) :: S0
       !> perturbation lables
@@ -726,7 +720,7 @@ contains
             end if
          end do
          ! calculate the corresponding Fock matrix
-         call pert_fock(mol, p, dimp, (/D,Dp(:pd)/), Fp(:pd), &
+         call pert_fock(p, dimp, (/D,Dp(:pd)/), Fp(:pd), &
                         comp=ccomp, freq=ffreq)
          return
       end do
@@ -745,11 +739,11 @@ contains
       if (size(p)==1 .and. p(1)=='FREQ') return
       ! calculate all lower-order contributions to the
       ! minus-right-hand-sides DSDp and FDSp
-      call pert_scf_eq(mol, S0, p, dimp, (/D,Dp(:pd)/), (/F,Fp(:pd)/), FDSp, DSDp, &
+      call pert_scf_eq(S0, p, dimp, (/D,Dp(:pd)/), (/F,Fp(:pd)/), FDSp, DSDp, &
                        comp=ccomp, freq=ffreq)
       ! calculate all lower-order contributions to the p-perturbed Fock
       ! matrices, as well as the p-perturbed overlap matrices
-      call pert_fock(mol, p, dimp, (/D,Dp(:pd)/), Fp(:pd), Sp, &
+      call pert_fock(p, dimp, (/D,Dp(:pd)/), Fp(:pd), Sp, &
                      comp=ccomp, freq=ffreq)
       ! top DSDp off with DSpD and FDSp with (F-w/2S)DSp-SpD(F+w/2S)
       do i = 1, pd
@@ -788,7 +782,7 @@ contains
         end if SecondOrderEq
 
          ! If no symmetry can be exploited, calculate response parameter
-         call solve_scf_eq(mol, S0, D(1), F(1), sym, sum(ffreq), 1, &
+         call solve_scf_eq(S0, D(1), F(1), sym, sum(ffreq), 1, &
                            DSDp(i:i), FDSp(i:i), Dp(i:i), Fp(i:i))
 
       end do
@@ -807,12 +801,10 @@ contains
    !>           solved in one go
    !> ajt feb10 For linsca, added comparison with excitation energies,
    !>           and projection
-   subroutine solve_scf_eq(mol, S0, D0, F0, sym, freq, neq, DSDp, FDSp, Dp, Fp)
+   subroutine solve_scf_eq(S0, D0, F0, sym, freq, neq, DSDp, FDSp, Dp, Fp)
       !       in:          --------------------------------------------
       !       out:                                                      ------
 
-      !> mol/basis/decomp/thresh needed by integrals and solver
-      type(prop_molcfg), intent(in) :: mol
       !> unperturbed overlap matrix
       type(matrix),      intent(in) :: S0
       !> unperturbed density matrix
@@ -859,7 +851,7 @@ contains
          call quit("solve_scf_eq error: Argument 'sym' is not -1, 0 or 1",-1)
       ! prepare the right-hand-sides
       DS = D0*S0
-      call scf_eq_prep_rhs(mol, D0, DS, sym, neq, FDSp, DSDp, Fp, Dp)
+      call scf_eq_prep_rhs(D0, DS, sym, neq, FDSp, DSDp, Fp, Dp)
       ! check whether the frequency is resonant (+-excitation energy)
       call scf_eq_find_resonances(freq, iexci)
       ! if resonant, project away the resonant component form FDSp,
@@ -919,7 +911,7 @@ contains
       end if
       DS = 0
       ! add last contribution G(Dp) to Fp
-      call prop_twoint(mol, UNP, (/D0, Dp/), (/neq/), Fp)
+      call prop_twoint(UNP, (/D0, Dp/), (/neq/), Fp)
    end subroutine
 
 
@@ -927,9 +919,7 @@ contains
    !> Calculates particular component of Dp from DSDp, adds contribution
    !> from that to FDSp, and projects out the particular component from FDSp
    !> (this is for numerical stability). Precalculated DS is taken as input.
-   subroutine scf_eq_prep_rhs(mol, D0, DS, sym, neq, FDSp, DSDp, Fp, Dp)
-      !> mol/basis/decomp/thresh needed by integrals and solver
-      type(prop_molcfg), intent(in) :: mol
+   subroutine scf_eq_prep_rhs(D0, DS, sym, neq, FDSp, DSDp, Fp, Dp)
       type(matrix),      intent(in) :: D0, DS, Fp(neq)
       integer,           intent(in) :: sym, neq
       type(matrix),   intent(inout) :: FDSp(neq), DSDp(neq), Dp(neq)
@@ -953,7 +943,7 @@ contains
          DSDp(i) = 0
       end do
       ! contract Coulomb-exchange+Kohn-Sham with particular components Dp(;)
-      call prop_twoint(mol, UNP, (/D0, Dp/), (/neq/), FDSp)
+      call prop_twoint(UNP, (/D0, Dp/), (/neq/), FDSp)
       ! complete right-hand-sides
       do i=1, neq
          if (sym /= 0) then

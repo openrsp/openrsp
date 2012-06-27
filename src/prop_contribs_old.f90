@@ -28,7 +28,6 @@ module prop_contribs_old
    public pert_antisym
    public prop_auxlab
    public prop_field
-   public prop_molcfg
 
    private
 
@@ -48,26 +47,6 @@ module prop_contribs_old
       !> number of components
       integer      :: ncomp
    end type
-
-
-   !> Molecule configuration type, abstracting data and settings
-   !> to be passed to solver and integral routines.
-   !> Should eventually be moved to separate program-specific
-   !> interface modules
-   type prop_molcfg
-      !> basic/prototype zero matrix, such as overlap or diplen
-      !> Must have shape set, but may (should) not be allocated.
-      !> Used to create/initialize other matrices, and thus hide
-      !> program-specific information, like sparse/full,
-      !> 1-comp/2-comp/4-comp, real/complex, etc. from response
-      !> code.
-      type(matrix) :: zeromat
-      !> number of atoms
-      integer :: natoms
-      !> unit number for printing output
-      integer :: lupri
-   end type
-
 
    !> private struct to collect
    type prop_field_info
@@ -148,9 +127,7 @@ contains
    !> E(:). Front for the private subroutine 'oneave' below, checking the
    !> arguments' dimensions, and doing permutations
    !> S0 is passed as argument only as reference to nuclei and basis set
-   subroutine prop_oneave(mol, S0, p, D, dime, E, perm, comp, freq, DFD)
-      !> structure containing integral program settings
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_oneave(S0, p, D, dime, E, perm, comp, freq, DFD)
       !> unperturbed overlap matrix
       type(matrix),      intent(in) :: S0
       !> p(np) perturbation lables
@@ -215,9 +192,9 @@ contains
       end do
       ! check dimensions argument dime, verify that dimensions are positive
       if (size(dime) < size(p)) call quit('prop_oneave argument error: ' &
-               // 'More perturbations than dimensions of property, size(dime) < size(p)',mol%lupri)
+               // 'More perturbations than dimensions of property, size(dime) < size(p)',get_print_unit())
       if (any(dime <= 0)) call quit('prop_oneave argument error: ' &
-               // 'Property has a zero or negative dimension, dime <= 0',mol%lupri)
+               // 'Property has a zero or negative dimension, dime <= 0',get_print_unit())
       ! compute step lengths in E (cumulative products of dimensions)
       stepe(1) = 1
       do i = 2, size(dime)
@@ -227,12 +204,12 @@ contains
       ddime = dime
       if (present(perm)) then
          if (size(perm) /= size(dime)) call quit('prop_oneave argument ' &
-               // 'error: Wrong length of permutation vector, size(perm) /= size(dime)',mol%lupri)
+               // 'error: Wrong length of permutation vector, size(perm) /= size(dime)',get_print_unit())
          ! verify that perm is indeed a permutation
          do i = 1, size(dime)-1
             if (perm(i) <= 0 .or. perm(i) > size(dime) .or. &
                 any(perm(i) == perm(i+1:size(dime)))) call quit('prop_oneave ' &
-                      // 'argument error: Permutation must contain each number exactly once',mol%lupri)
+                      // 'argument error: Permutation must contain each number exactly once',get_print_unit())
          end do
          ddime = (/( dime(perm(i)), i=1,size(dime))/)
          stepe = (/(stepe(perm(i)), i=1,size(dime))/)
@@ -241,19 +218,19 @@ contains
       ccomp = 1
       if (present(comp)) then
          if (size(comp) /= size(p)) call quit('prop_oneave argument error: ' &
-                    // 'Wrong number of lowest component indices, size(comp) /= size(p)',mol%lupri)
+                    // 'Wrong number of lowest component indices, size(comp) /= size(p)',get_print_unit())
          if (any(comp <= 0)) call quit('prop_oneave argument error: ' &
-                    // 'Lowest component indices must be positive, comp <= 0',mol%lupri)
+                    // 'Lowest component indices must be positive, comp <= 0',get_print_unit())
          ccomp = comp
       end if
-      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(mol,p))) &
+      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(p))) &
          call quit('prop_oneave argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(mol,p)',mol%lupri)
+                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(p)',get_print_unit())
       ! check optional argument freq, default to zero
       ffreq = 0
       if (present(freq)) then
          if (size(freq) /= size(p)) call quit('prop_oneave ' &
-               // 'argument error: Wrong number of frequencies, size(freq) /= size(p)',mol%lupri)
+               // 'argument error: Wrong number of frequencies, size(freq) /= size(p)',get_print_unit())
          ffreq = freq
       end if
       ! if unperturbed density and anti-symmetric integral, also zero
@@ -283,30 +260,30 @@ contains
       ! verify that we have the correct number of perturbed densities
       nd = product(ddime(size(p)+1:size(dime)))
       if (size(D) /= nd) call quit('prop_oneave error: Number of' &
-               // 'perturbed densities D does not correspond to dime (and perm)',mol%lupri)
+               // 'perturbed densities D does not correspond to dime (and perm)',get_print_unit())
       ! verify number of DFD, and that all are defined
       bas = all((/(field_list(idxp(i))%bas, i=1,size(p))/))
       if (present(DFD)) then
          if (size(DFD) /= nd) call quit('prop_oneave error: Number of' &
-               // 'perturbed DFD differs from number of perturbed densities D',mol%lupri)
+               // 'perturbed DFD differs from number of perturbed densities D',get_print_unit())
          ! if no basis perturbation (or zero perturbed integrals,
          ! DFD will not be used, so verify they are defined
          if (.not.bas .or. zero) then
             if (.not.all((/(isdef(DFD(i)), i=1,nd)/))) &
-               call quit('prop_oneave error: Undefined matrix in argument DFD(:)',mol%lupri)
+               call quit('prop_oneave error: Undefined matrix in argument DFD(:)',get_print_unit())
          end if
       end if
       ! arguments checked. If perturbed integrals are zero, verify all D defined, return
       if (zero) then
          if (.not.all((/(isdef(D(i)), i=1,nd)/))) &
-            call quit('prop_oneave error: Undefined matrix in argument D(:)',mol%lupri)
+            call quit('prop_oneave error: Undefined matrix in argument D(:)',get_print_unit())
          return
       end if
       ! everything set up, so call core procedure oneave.
       ! Argument nd=0 is used when averaging over unperturbed density,
       ! in which case also perturbed nuclear attraction should be included
       nd = merge(0, nd, size(p)==size(dime))
-      call oneave(mol, S0, size(p), pp, ccomp, ddime(:size(p)), ffreq, nd, D, Etmp, DFD)
+      call oneave(S0, size(p), pp, ccomp, ddime(:size(p)), ffreq, nd, D, Etmp, DFD)
       ! add oneavg property contribution in temporary array Etmp(:) to
       ! resulting property array E(:), while permuting indices according to pperm
       idxe = 0
@@ -322,9 +299,7 @@ contains
    end subroutine
 
 
-   subroutine oneave(mol, S0, np, p, c, dp, w, nd, D, E, DFD)
-      !> structure containing integral program settings
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine oneave(S0, np, p, c, dp, w, nd, D, E, DFD)
       !> unperturbed overlap, to know its dimension
       type(matrix),      intent(in)  :: S0
       !> number of perturbations and order of density
@@ -354,16 +329,16 @@ contains
       real(8)      :: R(6) !scratch
       integer      :: i, j, k, l, ii, jj, kk, ll, na
       type(matrix) :: A(6) !scratch matrices
-      na = mol%natoms
+      na = get_nr_atoms()
       do i = 1, size(A)
          A(i) = 0*S0 !scratch matrices
       end do
       if (np==0) then
-         call quit('prop_oneave error: unperturbed one-electron contribution requested',mol%lupri)
+         call quit('prop_oneave error: unperturbed one-electron contribution requested',get_print_unit())
       else if (np==1 .and. p(1)(1:3)=='AUX') then
          read (p(1)(4:),'(i1)') i
          if (i < 0 .or. i > 9) call quit('prop_oneave error: Index in' &
-                  // ' auxiliary label out of range 0..9: ' // p(1),mol%lupri)
+                  // ' auxiliary label out of range 0..9: ' // p(1),get_print_unit())
          call load_oneint(prop_auxlab(i), A(1))
          do j=0, max(0,nd-1)
             E(1+j) = tr(A(1),D(1+j))
@@ -706,7 +681,7 @@ contains
       else
          print *,'prop_oneave: no integrals for these perturbations: ', &
                  (p(i)//' ', i=1,np)
-         call quit('prop_oneave: no such integrals',mol%lupri)
+         call quit('prop_oneave: no such integrals',get_print_unit())
       end if
       A(:) = 0 !delete scratch matrices
    end subroutine
@@ -719,9 +694,7 @@ contains
    !> array E(:). Front for the private subroutine 'twoave' below, checking the
    !> arguments' dimensions, and doing permutations
    !> D(1) serves as reference to nuclei, basis and model/functional
-   subroutine prop_twoave(mol, p, D, dime, E, perm, comp)
-      !> structure containing integral program settings
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_twoave(p, D, dime, E, perm, comp)
       !> p(np) perturbation lables
       character(*),      intent(in) :: p(:)
       !> (un)perturbed density matrices to contract perturbed one-electron
@@ -786,9 +759,9 @@ contains
                     // 'Lowest component indices must be positive, comp <= 0',-1)
          ccomp = comp
       end if
-      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(mol,p))) &
+      if (any(ccomp + ddime(:size(p)) - 1 > pert_shape(p))) &
          call quit('prop_twoave argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(mol,p)',-1)
+                // 'dimension exceeds dimension of perturbation, comp + dime > pert_shape(p)',-1)
       ! sort perturbations p so that idxp is descending
       pp = p
       do i = 1, size(p)
@@ -818,7 +791,7 @@ contains
       ! everything set up, so call core procedure oneave.
       ! Argument nd=0 is used when averaging over unperturbed density,
       ! in which case also perturbed nuclear attraction should be included
-      call twoave(mol, size(p), size(dime)-size(p), pp, ccomp, ddime, D, Etmp)
+      call twoave(size(p), size(dime)-size(p), pp, ccomp, ddime, D, Etmp)
       ! add oneavg property contribution in temporary array Etmp(:) to
       ! resulting property array E(:), while permuting indices according to pperm
       idxe = 0
@@ -835,9 +808,7 @@ contains
 
 
 
-   subroutine twoave(mol, np, nd, p, c, de, D, E)
-      !> structure containing integral program settings
-      type(prop_molcfg), intent(in)  :: mol
+   subroutine twoave(np, nd, p, c, de, D, E)
       !> number of perturbations and order of density
       integer,           intent(in)  :: np, nd
       !> perturbation lables
@@ -857,7 +828,7 @@ contains
       real(8)      :: R(6) !scratch
       integer      :: i, j, k, l, ii, jj, kk, ll, pd, pd1, na
       type(matrix) :: A(6) !scratch matrices
-      na = mol%natoms
+      na = get_nr_atoms()
       do i = 1, size(A)
          A(i) = 0*D(1) !scratch matrices
       end do
@@ -962,7 +933,7 @@ contains
                cycle
             end if
             ! Coulomb-exchange
-            call twoctr(mol, 'G', D(1), D(pd1-pd+1+j), RR(:3*na))
+            call twoctr('G', D(1), D(pd1-pd+1+j), RR(:3*na))
             ! for molgra (nd==0), factor 1/2 on these integrals
             if (nd==0) RR(:3*na) = RR(:3*na)/2
             if (do_dft()) then
@@ -988,7 +959,7 @@ contains
                do j = 0, de(2)-1
                   if (iszero(D(2+j))) cycle
                   ! Coulomb-exchange
-                  call twoctr(mol, 'G', D(2+j), D(2+de(2)+k), RR(:3*na))
+                  call twoctr('G', D(2+j), D(2+de(2)+k), RR(:3*na))
                   if (do_dft()) then
                      call di_get_geomDeriv_GxD_DFT(RR(3*na+1:3*na*2), &
                                                    na, D(1), D(2+j), D(2+de(2)+k))
@@ -1064,11 +1035,11 @@ contains
                cycle
             end if
             ! Coulomb-exchange
-            call twoctr(mol, 'GG', D(1), D(pd1-pd+1+k), RR)
+            call twoctr('GG', D(1), D(pd1-pd+1+k), RR)
             if (nd==0) RR = RR/2 !factor 1/2 for unperturbed Hessian integrals
             ! Kohn-Sham exchange-correlation
             if (do_dft()) then
-               call quit('prop_twoave: GEO GEO, DFT not implemented',mol%lupri)
+               call quit('prop_twoave: GEO GEO, DFT not implemented',get_print_unit())
             end if
             do j = 0, de(2)-1
                do i = 0, de(1)-1
@@ -1084,9 +1055,9 @@ contains
                if (iszero(D(2+de(3)+l))) cycle
                do k = 0, de(3)-1
                   if (iszero(D(2+k))) cycle
-                  call twoctr(mol, 'GG', D(2+k), D(2+de(3)+l), RR)
+                  call twoctr('GG', D(2+k), D(2+de(3)+l), RR)
                   if (do_dft()) then
-                     call quit('prop_twoave: GEO GEO, DFT not implemented',mol%lupri)
+                     call quit('prop_twoave: GEO GEO, DFT not implemented',get_print_unit())
                   end if
                   do j = 0, de(2)-1
                      do i = 0, de(1)-1
@@ -1098,7 +1069,7 @@ contains
                end do
             end do
          else
-            call quit('prop_twoave: GEO GEO, nd > 2 not implemented',mol%lupri)
+            call quit('prop_twoave: GEO GEO, nd > 2 not implemented',get_print_unit())
          end if
          deallocate(RR)
       else
@@ -1116,9 +1087,7 @@ contains
    !> Front for the private subroutine 'oneint' below, checking the
    !> arguments' dimensions, and doing permutations
    !> S0 is passed as argument only as reference to nuclei and basis set
-   subroutine prop_oneint(mol, S0, p, dimp, F, S, comp, freq)
-      !> mol/basis data needed by integral program
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_oneint(S0, p, dimp, F, S, comp, freq)
       !> unperturbed overlap matrix
       type(matrix),      intent(in) :: S0
       !> perturbation lables
@@ -1175,9 +1144,9 @@ contains
       end do
       ! check dimensions argument dimp, verify that dimensions are positive
       if (size(dimp) /= size(p)) call quit('prop_oneint argument error: ' &
-               // 'Different number of perturbations and dimensions, size(dimp) /= size(p)',mol%lupri)
+               // 'Different number of perturbations and dimensions, size(dimp) /= size(p)',get_print_unit())
       if (any(dimp <= 0)) call quit('prop_oneint argument error: ' &
-               // 'Perturbations have a zero or negative dimension, dimp <= 0',mol%lupri)
+               // 'Perturbations have a zero or negative dimension, dimp <= 0',get_print_unit())
       ! compute step lengths in F (cumulative product of dimp)
       stepf(1) = 1
       do i = 2, size(dimp)
@@ -1187,19 +1156,19 @@ contains
       ccomp = 1
       if (present(comp)) then
          if (size(comp) /= size(p)) call quit('prop_oneint argument error: ' &
-                    // 'Wrong number of lowest component indices, size(comp) /= size(p)',mol%lupri)
+                    // 'Wrong number of lowest component indices, size(comp) /= size(p)',get_print_unit())
          if (any(comp <= 0)) call quit('prop_oneint argument error: ' &
-                    // 'Lowest component indices must be positive, but comp <= 0',mol%lupri)
+                    // 'Lowest component indices must be positive, but comp <= 0',get_print_unit())
          ccomp = comp
       end if
-      if (any(ccomp + dimp - 1 > pert_shape(mol,p))) &
+      if (any(ccomp + dimp - 1 > pert_shape(p))) &
          call quit('prop_oneint argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dimp - 1 > pert_shape(mol,p)',mol%lupri)
+                // 'dimension exceeds dimension of perturbation, comp + dimp - 1 > pert_shape(p)',get_print_unit())
       ! check optional argument freq, default to zero
       ffreq = 0
       if (present(freq)) then
          if (size(freq) /= size(p)) call quit('prop_oneave ' &
-               // 'argument error: Wrong number of frequencies, size(freq) /= size(p)',mol%lupri)
+               // 'argument error: Wrong number of frequencies, size(freq) /= size(p)',get_print_unit())
          ffreq = freq
       end if
       ! sort perturbations p so that idxp is descending
@@ -1228,7 +1197,7 @@ contains
       ! early return if the result is zero
       if (zero) return
       ! everything set up, so call core procedure oneint
-      call oneint(mol, S0, size(p), pp, ccomp, ddimp, ffreq, Ftmp, Stmp)
+      call oneint(S0, size(p), pp, ccomp, ddimp, ffreq, Ftmp, Stmp)
       ! add oneavg property contribution in temporary array Etmp(:) to
       ! resulting property array E(:), while permuting indices according to pperm
       bas = all(pert_basdep(p))
@@ -1251,9 +1220,7 @@ contains
 
 
 
-   subroutine oneint(mol, S0, np, p, c, dp, w, F, S)
-      !> mol/basis data needed by integral program
-      type(prop_molcfg), intent(in) :: mol
+   subroutine oneint(S0, np, p, c, dp, w, F, S)
       !> unperturbed overlap matrix
       type(matrix),      intent(in) :: S0
       !> number of perturbations
@@ -1277,11 +1244,11 @@ contains
       real(8)      :: R(1) !dummy
       if (np==0) then
          call quit('prop_oneint error:' &
-                // ' Unperturbed one-electron integrals requested',mol%lupri)
+                // ' Unperturbed one-electron integrals requested',get_print_unit())
       else if (np==1 .and. p(1)(1:3)=='AUX') then
          read (p(1)(4:),'(i1)') i
          if (i < 0 .or. i > 9) call quit('prop_oneint error:' &
-                  // ' Index in auxiliary label out of range 0..9',mol%lupri)
+                  // ' Index in auxiliary label out of range 0..9',get_print_unit())
          call load_oneint(prop_auxlab(i), F(1))
       else if (np==1 .and. p(1)=='EL') then
          do i = 0, dp(1)-1
@@ -1472,7 +1439,7 @@ contains
       else
          print *,'prop_oneint: No integrals for these perturbations:', &
                     (' ' // p(i),i=1,np)
-         call quit('prop_oneint: No such integrals',mol%lupri)
+         call quit('prop_oneint: No such integrals',get_print_unit())
       end if
    end subroutine
 
@@ -1485,9 +1452,7 @@ contains
    !> Front for the private subroutine 'twoave' below, checking the arguments'
    !> dimensions, and doing permutations
    !> D(1) serves as reference to nuclei, basis and model/functional
-   subroutine prop_twoint(mol, p, D, dimf, F, perm, comp)
-      !> mol/basis data needed by integral program
-      type(prop_molcfg), intent(in) :: mol
+   subroutine prop_twoint(p, D, dimf, F, perm, comp)
       !> p(np) perturbation lables
       character(*),      intent(in) :: p(:)
       !> (un)perturbed density matrices to contract perturbed
@@ -1554,9 +1519,9 @@ contains
                     // 'Lowest component indices must be positive, comp <= 0',-1)
          ccomp = comp
       end if
-      if (any(ccomp + ddimf(:size(p)) - 1 > pert_shape(mol,p))) &
+      if (any(ccomp + ddimf(:size(p)) - 1 > pert_shape(p))) &
          call quit('prop_twoint argument error: Lowest component index plus ' &
-                // 'dimension exceeds dimension of perturbation, comp + dimf > pert_shape(mol,p)',-1)
+                // 'dimension exceeds dimension of perturbation, comp + dimf > pert_shape(p)',-1)
       ! sort perturbations p so that idxp is descending
       pp = p
       do i = 1, size(p)
@@ -1595,7 +1560,7 @@ contains
          end do
       end do
       ! everything set up, so call core procedure twoint
-      call twoint(mol, size(p), size(dimf)-size(p), pp, ccomp, ddimf, D, Ftmp)
+      call twoint(size(p), size(dimf)-size(p), pp, ccomp, ddimf, D, Ftmp)
       ! 'un-permute' perturbed Fock matrices from Ftmp(:) back into F(:)
       idxf = 0
       do j = 1, product(dimf)
@@ -1611,9 +1576,7 @@ contains
 
 
 
-   subroutine twoint(mol, np, nd, p, c, df, D, F)
-      !> mol/basis data needed by integral program
-      type(prop_molcfg), intent(in) :: mol
+   subroutine twoint(np, nd, p, c, df, D, F)
       !> number of perturbations and order of density
       integer,           intent(in) :: np, nd
       !> perturbation lables
@@ -1865,16 +1828,14 @@ contains
 
    !> what=G : 3*natoms geometric
    !> what=M : 3 magnetic
-   subroutine twoctr(mol, what, Da, Db, E)
-      !> structure containing the integral program settings
-      type(prop_molcfg), intent(in) :: mol
+   subroutine twoctr(what, Da, Db, E)
       character(*),      intent(in) :: what
       type(matrix),      intent(in) :: Da, Db
       real(8),        intent(inout) :: E(:)
       real(8), pointer :: wrk(:)
       integer          :: lwrk, na, nb, l
 
-      na = mol%natoms
+      na = get_nr_atoms()
       nb = Da%nrow
 
       !ajt MagSus contraction doesn't work, so I disabled this. Use twofck instead
@@ -1889,7 +1850,7 @@ contains
       else if (what=='MM' .and. size(e) == 3*3) then
          lwrk = 50*nb**2 + 10000*nb + 5000000
       else
-          call quit('prop_contribs/twoctr: wrong size(E) for what=' // what,mol%lupri)
+          call quit('prop_contribs/twoctr: wrong size(E) for what=' // what,get_print_unit())
       end if
 
       call f77_memory_select(work_len=lwrk, work=wrk)
@@ -1951,9 +1912,7 @@ contains
 
 
    !> shape (dimensions) of property p(:)
-   function pert_shape(mol, p)
-      !> structure containing the integral program settings
-      type(prop_molcfg), intent(in) :: mol
+   function pert_shape(p)
       !> field lables
       character(*),      intent(in) :: p(:)
       integer :: pert_shape(size(p)), i
@@ -1963,9 +1922,9 @@ contains
          if (pert_shape(i) /= -1) then
             ! cycle
          else if (p(i) == 'GEO') then
-            pert_shape(i) = 3 * mol%natoms
+            pert_shape(i) = 3 * get_nr_atoms()
          else
-            call quit('pert_shape error: Number of comp. unknown for ' // p(i),mol%lupri)
+            call quit('pert_shape error: Number of comp. unknown for ' // p(i),get_print_unit())
          end if
       end do
    end function

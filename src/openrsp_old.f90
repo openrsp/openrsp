@@ -307,11 +307,7 @@ module openrsp_old
   !> \param F contains the unperturbed Fock matrix
   !> \param this_info contains the control information of openrsp
   !> \todo adds some comments when calling Andreas' codes
-  subroutine openrsp_prop_calc( molcfg, S, D, F, this_info )
-    !> \todo
-    !> \todo type(molecule_t), intent(in) :: this_mol
-    use prop_contribs_old, only: prop_molcfg
-    type(prop_molcfg), intent(in) :: molcfg
+  subroutine openrsp_prop_calc(S, D, F, this_info )
     type(matrix), intent(in) :: S
     type(matrix), intent(in) :: D
     type(matrix), intent(in) :: F
@@ -350,7 +346,7 @@ module openrsp_old
            stop 1
         end if
         ! response functions should perhaps eventually be stored in a dedicated module
-        call efgb_Jpri_Bten_Bcal( molcfg, S, D, F,                                        &
+        call efgb_Jpri_Bten_Bcal( S, D, F,                                        &
                                   this_info%real_freqs(iw)*cplx_one*(/1,-1,0/),           &
                                   tsr(1:3), tsr(4:9), tsr(10:18), tsr(19:27), tsr(28:36), &
                                   tsr(37:45), tsr(46:63), tsr(64:90), tsr(91:117),        &
@@ -390,7 +386,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call roa_pol_Gpri_Aten_grads( molcfg, S, D, F, num_coord,          &
+      call roa_pol_Gpri_Aten_grads( S, D, F, num_coord,          &
                                     this_info%real_freqs(1)*cplx_one,    &
                                     tsr(1:9), tsr(10:18), tsr(19:36),    &
                                     tsr(37:36+9*num_coord),              &
@@ -428,7 +424,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call cars_pol_shyp_polgra( molcfg, S, D, F, num_coord, this_info%real_freqs(1)*cplx_one, &
+      call cars_pol_shyp_polgra( S, D, F, num_coord, this_info%real_freqs(1)*cplx_one, &
                                  tsr(1:3), tsr(4:12), tsr(13:93), tsr(94:93+9*num_coord) )
       if ( this_info%level_print >= 10 ) then
         write( this_info%log_io, 100 ) 'Backing from cars_pol_shyp_polgra ...'
@@ -441,7 +437,7 @@ module openrsp_old
         write( this_info%log_io, 100 ) 'Backing from print_shypol ...'
         write( this_info%log_io, 100 ) 'Calling vib_ana_polari ...'
       end if
-      call vib_ana_polari( molcfg, this_info%real_freqs(1)*(/-1,1,-1,1/),             &
+      call vib_ana_polari( this_info%real_freqs(1)*(/-1,1,-1,1/),             &
                            dreal(tsr(1:3)), num_coord, (/(zero,i=1,3*num_coord*4)/),  &
                           (/((dreal(tsr(94+i+num_coord*j)),j=0,8),i=0,num_coord-1),   &
                             (zero,i=1,9*num_coord),                                   &
@@ -465,7 +461,7 @@ module openrsp_old
       do iw = 1, size( this_info%real_freqs )
         if ( this_info%level_print >= 10 ) &
           write( this_info%log_io, 100 ) 'Calling cme_jones_eta_apri, freq =', this_info%real_freqs(1)
-         call cme_jones_eta_apri( molcfg, S, D, F,                                        &
+         call cme_jones_eta_apri( S, D, F,                                        &
                                   this_info%real_freqs(iw)*cplx_one*(/1,0,-1,0/),         &
                                   tsr(1:3), tsr(4:9), tsr(10:18), tsr(19:27), tsr(28:36), &
                                   tsr(37:45), tsr(46:63), tsr(64:72), tsr(73:99),         &
@@ -504,7 +500,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call elec_polariz( molcfg, S, D, F, this_info%real_freqs(1) &
+      call elec_polariz( S, D, F, this_info%real_freqs(1) &
                          + imag_one*this_info%imag_freqs(1), tsr )
       deallocate( tsr )
       if ( this_info%level_print >= 10 ) &
@@ -519,7 +515,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call elec_hypolar( molcfg, S, D, F,                                             &
+      call elec_hypolar( S, D, F,                                             &
                          (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                            -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2), &
                             this_info%real_freqs(1)+imag_one*this_info%imag_freqs(1), &
@@ -537,7 +533,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call alt_elec_hypol( molcfg, S, D, F,                                             &
+      call alt_elec_hypol( S, D, F,                                             &
                            (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                              -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2), &
                               this_info%real_freqs(1)+imag_one*this_info%imag_freqs(1), &
@@ -555,7 +551,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call elec_sechyp( molcfg, S, D, F,                                             &
+      call elec_sechyp( S, D, F,                                             &
                         (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                           -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2)  &
                           -this_info%real_freqs(3)-imag_one*this_info%imag_freqs(3), &
@@ -575,7 +571,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call alt_elec_sechyp( molcfg, S, D, F,                                             &
+      call alt_elec_sechyp( S, D, F,                                             &
                             (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                               -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2)  &
                               -this_info%real_freqs(3)-imag_one*this_info%imag_freqs(3), &
@@ -595,7 +591,7 @@ module openrsp_old
          print *, 'Failed to allocate tsr!'
          stop 1
       end if
-      call alt2_elec_sechyp( molcfg, S, D, F,                                             &
+      call alt2_elec_sechyp( S, D, F,                                             &
                              (/-this_info%real_freqs(1)-imag_one*this_info%imag_freqs(1)  &
                                -this_info%real_freqs(2)-imag_one*this_info%imag_freqs(2)  &
                                -this_info%real_freqs(3)-imag_one*this_info%imag_freqs(3), &
@@ -618,7 +614,7 @@ module openrsp_old
       ! static case
       if ( this_info%level_print >= 10 ) &
         write( this_info%log_io, 100 ) 'Calling vibhyp_hyp_dipgra_polgra ...'
-      call vibhyp_hyp_dipgra_polgra( molcfg, S, D, F, num_coord, cplx_one* &
+      call vibhyp_hyp_dipgra_polgra( S, D, F, num_coord, cplx_one* &
                                      !(/-this_info%real_freqs(iw+1)    & !-imag_one*this_info%imag_freqs(1)    &
                                      !  -this_info%real_freqs(iw+2),   & !-imag_one*this_info%imag_freqs(2),   &
                                      !   this_info%real_freqs(iw+1),   & !+imag_one*this_info%imag_freqs(1),   &
@@ -647,7 +643,7 @@ module openrsp_old
           write( this_info%log_io, 100 ) 'Calling vib_ana_polari freq=',          &
                                          -sum( this_info%real_freqs(iw+1:iw+2) ), &
                                          this_info%real_freqs(iw+1:iw+2)
-        call vib_ana_polari( molcfg, &
+        call vib_ana_polari( &
                              (/-this_info%real_freqs(iw+1)  & !-imag_one*this_info%imag_freqs(1)  &
                                -this_info%real_freqs(iw+2), & !-imag_one*this_info%imag_freqs(2), &
                                 this_info%real_freqs(iw+1), & !+imag_one*this_info%imag_freqs(1), &
@@ -682,7 +678,7 @@ module openrsp_old
       do iw = 0, size( this_info%real_freqs )-4, 4
         if ( this_info%level_print >= 10 ) &
           write( this_info%log_io, 100 ) 'Calling vibshyp_shyp_dipg_polg_hypg ...'
-        call vibshyp_shyp_dipg_polg_hypg( molcfg, S, D, F, num_coord,                &
+        call vibshyp_shyp_dipg_polg_hypg( S, D, F, num_coord,                &
                                           (1d0,0d0)*this_info%real_freqs(iw+1:iw+4)  &
                                         + (0d0,1d0)*this_info%imag_freqs(iw+1:iw+4), &
                                           tsr(1:3), tsr(4:84),                       &
@@ -705,7 +701,7 @@ module openrsp_old
           write( this_info%log_io, 100 ) 'Calling vib_ana_polari freq =', &
                                          this_info%real_freqs(iw+1:iw+4)
         !ajt FIXME reverse index ordering in vib_ana_polari
-        call vib_ana_polari( molcfg, this_info%real_freqs(iw+1:iw+4),        &
+        call vib_ana_polari( this_info%real_freqs(iw+1:iw+4),        &
                              dreal(tsr(1:3)), num_coord,                     &
                              (/(((dreal(tsr(85+i+num_coord*(j+3*k))),        &
                                   j=0,3-1),i=0,num_coord-1),k=0,4-1)/),      &
