@@ -236,7 +236,7 @@ end subroutine
 
        ! Initial '!' or '#' are comments, skip those
        if (word(:1) == '!' .or. word(:1) == '#') cycle
-       ! '*END OF' marks end of **AORSP section
+       ! '*END OF' marks end of **OPENRSP section
        if (word(:7) == '*END OF') exit
        ! keywords start with '.', sections with '*'
        if (word(:1) /= '.' .and. word(:1) /= '*') &

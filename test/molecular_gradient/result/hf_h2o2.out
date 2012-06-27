@@ -158,11 +158,11 @@ Compilation info
 !.VIBANA                                          
 !*VIBANA                                          
 !.HESPUN                                          
-**AORSP                                           
+**OPENRSP                                           
 .GRADIENT                                         
 .THRESH                                           
  1e-10                                            
-*END OF AORSP                                     
+*END OF OPENRSP                                     
 *END OF INPUT                                     
 
 
