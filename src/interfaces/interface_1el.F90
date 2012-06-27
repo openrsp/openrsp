@@ -755,7 +755,7 @@ contains
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
-#include<inftap.h"
+#include "inftap.h"
     ! starts of the overlap and one electron Hamiltonian matrices in work memory
     integer work_ovlp, work_ham1
     ! PCM one-electron contributions
@@ -816,7 +816,7 @@ contains
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
-#include<inftap.h"
+#include "inftap.h"
     ! external DALTON function finding the corresponding label
     logical FNDLB2
     ! information when calling subroutine FNDLB2
