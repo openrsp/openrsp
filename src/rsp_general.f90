@@ -32,7 +32,7 @@ module rsp_general
 
   ! Zero matrix
 
-  type(matrix) :: zromtrx
+  type(matrix) :: zeromatrix
 
   ! Define perturbation tuple datatype
 
@@ -1309,7 +1309,7 @@ p_debug = 0.0
     integer, dimension(pert_tuple%n_perturbations) :: ind
     integer :: i, offset, passedlast
 
-    sdf_getdata = 1.0d0*zromtrx
+    sdf_getdata = 1.0d0*zeromatrix
     next_element => current_element
 
     if (pert_tuple%n_perturbations > 0) then
@@ -1604,12 +1604,11 @@ p_debug = 0.0
   end subroutine
 
 
-  subroutine get_energy(mol, num_p_tuples, total_num_perturbations, p_tuples, density_order, &
+  subroutine get_energy(num_p_tuples, total_num_perturbations, p_tuples, density_order, &
                         D, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
     type(property_cache) :: cache
@@ -1706,8 +1705,8 @@ end do
     do i = 1, num_p_tuples
 
        call mat_nullify(dens_tuple(i))
-       dens_tuple(i)%nrow = mol%zeromat%nrow
-       dens_tuple(i)%ncol = mol%zeromat%ncol
+       dens_tuple(i)%nrow = zeromatrix%nrow
+       dens_tuple(i)%ncol = zeromatrix%ncol
        dens_tuple(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
        dens_tuple(i)%magic_tag = 825169837 !mark as set-up
        call mat_alloc(dens_tuple(i))
@@ -1834,7 +1833,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! 
 !        contrib = 0.0
 ! 
-!        call rsp_xcave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!        call rsp_xcave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                      num_p_tuples, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
 !                      (dens_tuple(k), k = 2, num_p_tuples) /), contrib)
@@ -1926,7 +1925,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
  
 !        contrib = 0.0
 !
-!        call rsp_xcave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!        call rsp_xcave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                      1, (/ sdf_getdata(D, get_emptypert(), (/1/)) /), contrib)
 ! 
@@ -1961,13 +1960,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   ! Calculate and add all the energy contributions
 
-  recursive subroutine rsp_ener(mol, pert, total_num_perturbations, kn, num_p_tuples, &
+  recursive subroutine rsp_ener(pert, total_num_perturbations, kn, num_p_tuples, &
                                 p_tuples, density_order, D, property_size, cache, prop)
 
     implicit none
 
     logical :: e_knskip
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     integer, dimension(2) :: kn
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
@@ -1983,14 +1981,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     if (p_tuples(1)%n_perturbations == 0) then
 
-       call rsp_ener(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+       call rsp_ener(p_tuple_remove_first(pert), total_num_perturbations, &
        kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
        density_order, D, property_size, cache, prop)
 
     else
 
 
-       call rsp_ener(mol, p_tuple_remove_first(pert), total_num_perturbations,  &
+       call rsp_ener(p_tuple_remove_first(pert), total_num_perturbations,  &
        kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
        p_tuples(2:size(p_tuples))/), density_order, D, property_size, cache, prop)
 
@@ -2014,7 +2012,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           end if
 
-          call rsp_ener(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+          call rsp_ener(p_tuple_remove_first(pert), total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, property_size, cache, prop)
 
        end do
@@ -2023,7 +2021,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
        ! a(nother) pert D contraction)
 
-       call rsp_ener(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+       call rsp_ener(p_tuple_remove_first(pert), total_num_perturbations, &
        kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
        density_order + 1, D, property_size, cache, prop)
 
@@ -2088,7 +2086,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        
           else
 
-             call get_energy(mol, num_p_tuples, total_num_perturbations, & 
+             call get_energy(num_p_tuples, total_num_perturbations, & 
                   (/ (p_tuple_standardorder(p_tuples(i)) , i = 1, num_p_tuples ) /), &
                   density_order, D, property_size, cache, prop)
 
@@ -2109,13 +2107,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive function derivative_superstructure_getsize(mol, pert, kn, &
+  recursive function derivative_superstructure_getsize(pert, kn, &
                      primed, current_derivative_term) result(superstructure_size)
 
     implicit none
 
     logical :: primed
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     integer, dimension(2) :: kn
@@ -2126,18 +2123,18 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     if (pert%n_perturbations > 0) then
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
-                             mol,p_tuple_remove_first(pert), kn, primed, &
+                             p_tuple_remove_first(pert), kn, primed, &
                              (/p_tuple_extend(current_derivative_term(1), &
                              p_tuple_getone(pert, 1)), current_derivative_term(2:3)/))
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
-                             mol, p_tuple_remove_first(pert), kn, primed, &
+                             p_tuple_remove_first(pert), kn, primed, &
                              (/current_derivative_term(1), &
                              p_tuple_extend(current_derivative_term(2), &
                              p_tuple_getone(pert,1)), current_derivative_term(3)/))
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
-                             mol, p_tuple_remove_first(pert), kn, primed, &
+                             p_tuple_remove_first(pert), kn, primed, &
                              (/current_derivative_term(1:2), &
                              p_tuple_extend(current_derivative_term(3), &
                              p_tuple_getone(pert, 1))/))
@@ -2180,7 +2177,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end function
 
 
-  recursive subroutine derivative_superstructure(mol, pert, kn, primed, &
+  recursive subroutine derivative_superstructure(pert, kn, primed, &
                        current_derivative_term, superstructure_size, & 
                        new_element_position, derivative_structure)
 
@@ -2189,24 +2186,23 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     logical :: primed
     integer :: i, superstructure_size, new_element_position
     integer, dimension(2) :: kn    
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     type(p_tuple), dimension(superstructure_size, 3) :: derivative_structure
 
     if (pert%n_perturbations > 0) then
 
-       call derivative_superstructure(mol, p_tuple_remove_first(pert), kn, primed, &
+       call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/p_tuple_extend(current_derivative_term(1), p_tuple_getone(pert, 1)), &
             current_derivative_term(2:3)/), superstructure_size, new_element_position, &
             derivative_structure)
 
-       call derivative_superstructure(mol, p_tuple_remove_first(pert), kn, primed, &
+       call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/current_derivative_term(1), p_tuple_extend(current_derivative_term(2), &
             p_tuple_getone(pert, 1)), current_derivative_term(3)/), &
             superstructure_size, new_element_position, derivative_structure)
 
-       call derivative_superstructure(mol, p_tuple_remove_first(pert), kn, primed, &
+       call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/current_derivative_term(1:2), p_tuple_extend(current_derivative_term(3), &
             p_tuple_getone(pert, 1))/), superstructure_size, new_element_position, &
             derivative_structure)
@@ -2315,14 +2311,13 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  function rsp_get_matrix_w(mol, superstructure_size, &
+  function rsp_get_matrix_w(superstructure_size, &
            deriv_struct, total_num_perturbations, which_index_is_pid, &
            indices_len, ind, F, D, S) result(W)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
@@ -2330,20 +2325,20 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     type(matrix) :: W, A, B, C
 
     call mat_nullify(W)
-    W%nrow = mol%zeromat%nrow
-    W%ncol = mol%zeromat%ncol
+    W%nrow = zeromatrix%nrow
+    W%ncol = zeromatrix%ncol
     W%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     W%magic_tag = 825169837 !mark as set-up
     call mat_alloc(W)
     call mat_axpy((0.0d0, 0.0d0), W, .false., .true., W)
 
-    A = tiny(0.0d0)*mol%zeromat
+    A = tiny(0.0d0)*zeromatrix
     call mat_alloc(A)
 
-    B = tiny(0.0d0)*mol%zeromat
+    B = tiny(0.0d0)*zeromatrix
     call mat_alloc(B)
 
-    C = tiny(0.0d0)*mol%zeromat
+    C = tiny(0.0d0)*zeromatrix
     call mat_alloc(C)
 
     do i = 1, superstructure_size
@@ -2386,38 +2381,37 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end function
 
 
-  function rsp_get_matrix_y(mol, superstructure_size, deriv_struct, &
+  function rsp_get_matrix_y(superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S) result(Y)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
     type(sdf) :: F, D, S
     type(matrix) :: Y, A, B, C
 
-    call mat_manual_attribute_inherit(Y, mol%zeromat)
-    call mat_manual_attribute_inherit(A, mol%zeromat)
-    call mat_manual_attribute_inherit(B, mol%zeromat)
-    call mat_manual_attribute_inherit(C, mol%zeromat)
+    call mat_manual_attribute_inherit(Y, zeromatrix)
+    call mat_manual_attribute_inherit(A, zeromatrix)
+    call mat_manual_attribute_inherit(B, zeromatrix)
+    call mat_manual_attribute_inherit(C, zeromatrix)
 
     call mat_nullify(Y)
-    Y%nrow = mol%zeromat%nrow
-    Y%ncol = mol%zeromat%ncol
+    Y%nrow = zeromatrix%nrow
+    Y%ncol = zeromatrix%ncol
     Y%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     Y%magic_tag = 825169837 !mark as set-up
     call mat_alloc(Y)
     call mat_axpy((0.0d0, 0.0d0), Y, .false., .true., Y)
 
-    A = mol%zeromat
+    A = zeromatrix
     call mat_alloc(A)
-    B = mol%zeromat
+    B = zeromatrix
     call mat_alloc(B)
-    C = mol%zeromat
+    C = zeromatrix
     call mat_alloc(C)
 
     ! NOTE (MaR): THIS CAN PROBABLY BE DONE MORE ECONOMICALLY
@@ -2474,14 +2468,13 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end function
 
 
-  function rsp_get_matrix_z(mol, superstructure_size, deriv_struct, kn, &
+  function rsp_get_matrix_z(superstructure_size, deriv_struct, kn, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S) result(Z)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     type(p_tuple) :: merged_p_tuple
     integer, dimension(2) :: kn
@@ -2490,24 +2483,24 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     type(sdf) :: F, D, S
     type(matrix) :: Z, A, B, C
 
-    call mat_manual_attribute_inherit(Z, mol%zeromat)
-    call mat_manual_attribute_inherit(A, mol%zeromat)
-    call mat_manual_attribute_inherit(B, mol%zeromat)
-    call mat_manual_attribute_inherit(C, mol%zeromat)
+    call mat_manual_attribute_inherit(Z, zeromatrix)
+    call mat_manual_attribute_inherit(A, zeromatrix)
+    call mat_manual_attribute_inherit(B, zeromatrix)
+    call mat_manual_attribute_inherit(C, zeromatrix)
 
     call mat_nullify(Z)
-    Z%nrow = mol%zeromat%nrow
-    Z%ncol = mol%zeromat%ncol
+    Z%nrow = zeromatrix%nrow
+    Z%ncol = zeromatrix%ncol
     Z%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     Z%magic_tag = 825169837 !mark as set-up
     call mat_alloc(Z)
     call mat_axpy((0.0d0, 0.0d0), Z, .false., .true., Z)
 
-    A = mol%zeromat
+    A = zeromatrix
     call mat_alloc(A)
-    B = mol%zeromat
+    B = zeromatrix
     call mat_alloc(B)
-    C = mol%zeromat
+    C = zeromatrix
     call mat_alloc(C)
 
     Z%elms = 0.0
@@ -2549,13 +2542,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end function
 
 
-  function rsp_get_matrix_lambda(mol, p_tuple_a, superstructure_size, deriv_struct, &
+  function rsp_get_matrix_lambda(p_tuple_a, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, ind, D, S) result(L)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
     type(p_tuple) :: p_tuple_a, merged_A, merged_B
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
@@ -2563,24 +2555,24 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     type(sdf) :: D, S
     type(matrix) :: L, A, B, C
 
-    call mat_manual_attribute_inherit(L, mol%zeromat)
-    call mat_manual_attribute_inherit(A, mol%zeromat)
-    call mat_manual_attribute_inherit(B, mol%zeromat)
-    call mat_manual_attribute_inherit(C, mol%zeromat)
+    call mat_manual_attribute_inherit(L, zeromatrix)
+    call mat_manual_attribute_inherit(A, zeromatrix)
+    call mat_manual_attribute_inherit(B, zeromatrix)
+    call mat_manual_attribute_inherit(C, zeromatrix)
 
     call mat_nullify(L)
-    L%nrow = mol%zeromat%nrow
-    L%ncol = mol%zeromat%ncol
+    L%nrow = zeromatrix%nrow
+    L%ncol = zeromatrix%ncol
     L%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     L%magic_tag = 825169837 !mark as set-up
     call mat_alloc(L)
     call mat_axpy((0.0d0, 0.0d0), L, .false., .true., L)
 
-    A = mol%zeromat
+    A = zeromatrix
     call mat_alloc(A)
-    B = mol%zeromat
+    B = zeromatrix
     call mat_alloc(B)
-    C = mol%zeromat
+    C = zeromatrix
     call mat_alloc(C)
 
     L%elms = 0.0
@@ -2617,14 +2609,13 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end function
 
 
-  function rsp_get_matrix_zeta(mol, p_tuple_a, kn, superstructure_size, deriv_struct, &
+  function rsp_get_matrix_zeta(p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S) result(Zeta)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
     type(p_tuple) :: p_tuple_a, merged_p_tuple, merged_A, merged_B
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(2) :: kn
@@ -2633,24 +2624,24 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     type(sdf) :: F, D, S
     type(matrix) :: Zeta, A, B, C
 
-    call mat_manual_attribute_inherit(Zeta, mol%zeromat)
-    call mat_manual_attribute_inherit(A, mol%zeromat)
-    call mat_manual_attribute_inherit(B, mol%zeromat)
-    call mat_manual_attribute_inherit(C, mol%zeromat)
+    call mat_manual_attribute_inherit(Zeta, zeromatrix)
+    call mat_manual_attribute_inherit(A, zeromatrix)
+    call mat_manual_attribute_inherit(B, zeromatrix)
+    call mat_manual_attribute_inherit(C, zeromatrix)
 
     call mat_nullify(Zeta)
-    Zeta%nrow = mol%zeromat%nrow
-    Zeta%ncol = mol%zeromat%ncol
+    Zeta%nrow = zeromatrix%nrow
+    Zeta%ncol = zeromatrix%ncol
     Zeta%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     Zeta%magic_tag = 825169837 !mark as set-up
     call mat_alloc(Zeta)
     call mat_axpy((0.0d0, 0.0d0), Zeta, .false., .true., Zeta)
 
-    A = mol%zeromat
+    A = zeromatrix
     call mat_alloc(A)
-    B = mol%zeromat
+    B = zeromatrix
     call mat_alloc(B)
-    C = mol%zeromat
+    C = zeromatrix
     call mat_alloc(C)
 
     do i = 1, superstructure_size
@@ -2752,11 +2743,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end function
 
 
-  subroutine get_pulay_kn(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_pulay_kn(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
@@ -2775,14 +2765,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     prop_forcache = 0.0
 
-    d_supsize = derivative_superstructure_getsize(mol, p12(2), kn, .FALSE., &
+    d_supsize = derivative_superstructure_getsize(p12(2), kn, .FALSE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(deriv_structb(d_supsize, 3))
 
     sstr_incr = 0
 
-    call derivative_superstructure(mol, p12(2), kn, .FALSE., &
+    call derivative_superstructure(p12(2), kn, .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize, sstr_incr, deriv_structb)
 
@@ -2813,10 +2803,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        tmp = 0.0
 
-       W = mol%zeromat
+       W = zeromatrix
        call mat_alloc(W)
 
-       W = rsp_get_matrix_w(mol, d_supsize, deriv_structb, p12(1)%n_perturbations + &
+       W = rsp_get_matrix_w(d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S)
 
@@ -2867,11 +2857,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive subroutine rsp_pulay_kn(mol, pert, kn, p12, S, D, F, property_size, cache, prop)
+  recursive subroutine rsp_pulay_kn(pert, kn, p12, S, D, F, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -2882,11 +2871,11 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_pulay_kn(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_kn(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, property_size, &
        cache, prop)
 
-       call rsp_pulay_kn(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_kn(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, property_size, &
        cache, prop)
 
@@ -2918,7 +2907,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        
           else
 
-             call get_pulay_kn(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
+             call get_pulay_kn((/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated Pulay k-n contribution'
@@ -2940,11 +2929,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  subroutine get_pulaylag(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_pulaylag(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
@@ -2964,14 +2952,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     prop_forcache = 0.0
 
-    d_supsize = derivative_superstructure_getsize(mol, p12(2), kn, .TRUE., &
+    d_supsize = derivative_superstructure_getsize(p12(2), kn, .TRUE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
    
     allocate(deriv_structb(d_supsize, 3))
 
     incr = 0
 
-    call derivative_superstructure(mol, p12(2), kn, .TRUE., &
+    call derivative_superstructure(p12(2), kn, .TRUE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize, incr, deriv_structb)
 
@@ -2999,14 +2987,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     call make_indices(p12(2)%n_perturbations, 1, p12(2)%pdim, 0, outer_indices)
     call make_indices(p12(1)%n_perturbations, 1, p12(1)%pdim, 0, inner_indices)
 
-    W = mol%zeromat
+    W = zeromatrix
     call mat_alloc(W)
 
     do i = 1, size(outer_indices, 1)
 
        tmp = 0.0
 
-       W = rsp_get_matrix_w(mol, d_supsize, deriv_structb, p12(1)%n_perturbations + &
+       W = rsp_get_matrix_w(d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S)
 
@@ -3048,11 +3036,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive subroutine rsp_pulay_lag(mol, pert, kn, p12, S, D, F, property_size, cache, prop)
+  recursive subroutine rsp_pulay_lag(pert, kn, p12, S, D, F, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -3063,10 +3050,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
        S, D, F, property_size, cache, prop)
-       call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
        S, D, F, property_size, cache, prop)
 
@@ -3097,7 +3084,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           else
 
-             call get_pulaylag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+             call get_pulaylag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated Pulay lagrange contribution'
@@ -3119,11 +3106,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  subroutine get_idem_lag(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_idem_lag(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
@@ -3144,9 +3130,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     d_supsize = 0
 
-    d_supsize(1) = derivative_superstructure_getsize(mol, p_tuple_remove_first(p12(1)), &
+    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
                    kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-    d_supsize(2) = derivative_superstructure_getsize(mol, p12(2), &
+    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
                    kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(deriv_structa(d_supsize(1), 3))
@@ -3155,10 +3141,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     incr1 = 0
     incr2 = 0
 
-    call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., & 
+    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., & 
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize(1), incr1, deriv_structa)
-    call derivative_superstructure(mol, p12(2), kn, .TRUE., &
+    call derivative_superstructure(p12(2), kn, .TRUE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize(2), incr2, deriv_structb)
 
@@ -3206,13 +3192,13 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     do i = 1, size(outer_indices_a, 1)
 
-       Zeta = rsp_get_matrix_zeta(mol, p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
+       Zeta = rsp_get_matrix_zeta(p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
            deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
            which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), F, D, S)
 
        do j = 1, size(outer_indices_b, 1)
 
-          Z = rsp_get_matrix_z(mol, d_supsize(2), deriv_structb, kn, &
+          Z = rsp_get_matrix_z(d_supsize(2), deriv_structb, kn, &
               p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
               p12(2)%n_perturbations, outer_indices_b(j,:), F, D, S)
 
@@ -3252,12 +3238,11 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive subroutine rsp_idem_lag(mol, pert, kn, p12, S, D, F, &
+  recursive subroutine rsp_idem_lag(pert, kn, p12, S, D, F, &
                                     property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -3268,10 +3253,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, property_size, &
        cache, prop)
-       call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, property_size, &
        cache, prop)
 
@@ -3303,7 +3288,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
           else
 
              ! At lowest level:
-             call get_idem_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+             call get_idem_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated idempotency lagrange contribution'
@@ -3325,11 +3310,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  subroutine get_scfe_lag(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_scfe_lag(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
@@ -3348,9 +3332,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     prop_forcache = 0.0
     d_supsize = 0
 
-    d_supsize(1) = derivative_superstructure_getsize(mol, p_tuple_remove_first(p12(1)), &
+    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
                    kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-    d_supsize(2) = derivative_superstructure_getsize(mol, p12(2), &
+    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
                    kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(deriv_structa(d_supsize(1), 3))
@@ -3359,10 +3343,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     incr1 = 0
     incr2 = 0
 
-    call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., &
+    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., &
                     (/get_emptypert(), get_emptypert(), get_emptypert()/), & 
                     d_supsize(1), incr1, deriv_structa)
-    call derivative_superstructure(mol, p12(2), kn, .TRUE., &
+    call derivative_superstructure(p12(2), kn, .TRUE., &
                     (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                     d_supsize(2), incr2, deriv_structb)
 
@@ -3402,13 +3386,13 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     do i = 1, size(outer_indices_a, 1)
 
-       L = rsp_get_matrix_lambda(mol, p_tuple_getone(p12(1), 1), d_supsize(1), &
+       L = rsp_get_matrix_lambda(p_tuple_getone(p12(1), 1), d_supsize(1), &
            deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
            which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), D, S)
 
        do j = 1, size(outer_indices_b, 1)
 
-          Y = rsp_get_matrix_y(mol, d_supsize(2), deriv_structb, &
+          Y = rsp_get_matrix_y(d_supsize(2), deriv_structb, &
               p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
               p12(2)%n_perturbations, outer_indices_b(j,:), F, D, S)
 
@@ -3447,11 +3431,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive subroutine rsp_scfe_lag(mol, pert, kn, p12, S, D, F, property_size, cache, prop)
+  recursive subroutine rsp_scfe_lag(pert, kn, p12, S, D, F, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -3462,10 +3445,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
             (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
             S, D, F, property_size, cache, prop)
-       call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
             (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
             S, D, F, property_size, cache, prop)
 
@@ -3497,7 +3480,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
           else
 
              ! At lowest level:
-             call get_scfe_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
+             call get_scfe_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
              kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated scfe lagrange contribution'
@@ -3558,12 +3541,11 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  subroutine get_fock_lowerorder(mol, num_p_tuples, total_num_perturbations, p_tuples, &
+  subroutine get_fock_lowerorder(num_p_tuples, total_num_perturbations, p_tuples, &
                                  density_order, D, property_size, Fp)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
     type(property_cache) :: energy_cache
@@ -3628,8 +3610,8 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        do i = 1, num_p_tuples
 
           call mat_nullify(dens_tuple(i))
-          dens_tuple(i)%nrow = mol%zeromat%nrow
-          dens_tuple(i)%ncol = mol%zeromat%ncol
+          dens_tuple(i)%nrow = zeromatrix%nrow
+          dens_tuple(i)%ncol = zeromatrix%ncol
           dens_tuple(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           dens_tuple(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(dens_tuple(i))
@@ -3640,8 +3622,8 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        do j = 1, size(tmp)
 
           call mat_nullify(tmp(j))
-          tmp(j)%nrow = mol%zeromat%nrow
-          tmp(j)%ncol = mol%zeromat%ncol
+          tmp(j)%nrow = zeromatrix%nrow
+          tmp(j)%ncol = zeromatrix%ncol
           tmp(j)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           tmp(j)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(tmp(j))
@@ -3674,8 +3656,8 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
           do j = 1, size(tmp)
 
              call mat_nullify(tmp(j))
-             tmp(j)%nrow = mol%zeromat%nrow
-             tmp(j)%ncol = mol%zeromat%ncol
+             tmp(j)%nrow = zeromatrix%nrow
+             tmp(j)%ncol = zeromatrix%ncol
              tmp(j)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
              tmp(j)%magic_tag = 825169837 !mark as set-up
              call mat_alloc(tmp(j))
@@ -3686,7 +3668,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           if (num_p_tuples <= 1) then
 
-             call rsp_oneint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_oneint(zeromatrix%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, tmp)
 
@@ -3695,7 +3677,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           if (num_p_tuples <= 2) then
 
-             call rsp_twoint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoint(zeromatrix%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), tmp)
 
@@ -3703,7 +3685,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !              write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 !
-!              call rsp_xcint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!              call rsp_xcint(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                            p_tuples(1)%pdim, density_order, &
 !                            (/ sdf_getdata(D, get_emptypert(), (/1/)), &
@@ -3747,7 +3729,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (num_p_tuples <= 1) then
 
-          call rsp_oneint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneint(zeromatrix%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, &
                           Fp)
@@ -3756,7 +3738,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (num_p_tuples <= 2) then
 
-          call rsp_twoint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoint(zeromatrix%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, &
                sdf_getdata(D, get_emptypert(), (/1/) ), &
@@ -3766,7 +3748,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !        write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 
-!        call rsp_xcint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!        call rsp_xcint(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                       (/product(p_tuples(1)%pdim)/), 1, &
 !                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
@@ -3789,13 +3771,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive subroutine fock_lowerorder(mol, pert, total_num_perturbations, num_p_tuples, p_tuples, &
+  recursive subroutine fock_lowerorder(pert, total_num_perturbations, num_p_tuples, p_tuples, &
                        density_order, D, property_size, Fp)
 
     implicit none
 
     logical :: density_order_skip
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
@@ -3810,14 +3791,14 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (p_tuples(1)%n_perturbations == 0) then
 
-          call fock_lowerorder(mol, p_tuple_remove_first(pert), & 
+          call fock_lowerorder(p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
                density_order, D, property_size, Fp)
 
        else
 
-          call fock_lowerorder(mol, p_tuple_remove_first(pert), &
+          call fock_lowerorder(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
                p_tuples(2:size(p_tuples))/), &
@@ -3841,7 +3822,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           end if
 
-          call fock_lowerorder(mol, p_tuple_remove_first(pert), &
+          call fock_lowerorder(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
                t_new, density_order + 1, D, property_size, Fp)
 
@@ -3850,7 +3831,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        ! 3. Chain rule differentiate w.r.t. the density (giving 
        ! a(nother) pert D contraction)
 
-       call fock_lowerorder(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+       call fock_lowerorder(p_tuple_remove_first(pert), total_num_perturbations, &
             num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
             density_order + 1, D, property_size, Fp)
 
@@ -3886,7 +3867,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
       
        if (density_order_skip .EQV. .FALSE.) then
 
-          call get_fock_lowerorder(mol, num_p_tuples, total_num_perturbations, &
+          call get_fock_lowerorder(num_p_tuples, total_num_perturbations, &
                                    p_tuples, density_order, D, property_size, Fp)
 
           write(*,*) 'Calculated perturbed Fock matrix lower order contribution'
@@ -3928,13 +3909,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
-  subroutine get_fds(mol, pert, F, D, S)
+  subroutine get_fds(pert, F, D, S)
 
     use interface_rsp_solver, only: rsp_mosolver_exec
 
     implicit none
 
-    type(rsp_cfg) :: mol
     integer :: sstr_incr, i, j, superstructure_size
     integer, allocatable, dimension(:) :: ind
     integer, dimension(0) :: noc
@@ -3947,10 +3927,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 ! write(*,*) 'Starting'
 
-    A = mol%zeromat
+    A = zeromatrix
     call mat_alloc(A)
 ! write(*,*) 'Starting'
-    B = mol%zeromat
+    B = zeromatrix
     call mat_alloc(B)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
@@ -3962,7 +3942,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     ! 1. Call ovlint and store perturbed overlap matrix
 
-    call rsp_ovlint(mol%zeromat%nrow, pert%n_perturbations, pert%plab, &
+    call rsp_ovlint(zeromatrix%nrow, pert%n_perturbations, pert%plab, &
                     (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, Sp)
     call sdf_add(S, pert, Sp)
 
@@ -3982,20 +3962,20 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     do i = 1, product(pert%pdim)
 
        call mat_nullify(Dp(i))
-          Dp(i)%nrow = mol%zeromat%nrow
-          Dp(i)%ncol = mol%zeromat%ncol
+          Dp(i)%nrow = zeromatrix%nrow
+          Dp(i)%ncol = zeromatrix%ncol
           Dp(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           Dp(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(Dp(i))
           call mat_axpy((0.0d0, 0.0d0), Dp(i), .false., .true., Dp(i))
 ! write(*,*) 'Set Dp'
-!        Dp(i) = mol%zeromat
+!        Dp(i) = zeromatrix
 !        call mat_alloc(Dp(i))
 !        Dp(i)%elms = 0.0
 
        call mat_nullify(Dh(i))
-          Dh(i)%nrow = mol%zeromat%nrow
-          Dh(i)%ncol = mol%zeromat%ncol
+          Dh(i)%nrow = zeromatrix%nrow
+          Dh(i)%ncol = zeromatrix%ncol
           Dh(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           Dh(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(Dh(i))
@@ -4003,13 +3983,13 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! write(*,*) 'Set Dh'
 
        call mat_nullify(Fp(i))
-          Fp(i)%nrow = mol%zeromat%nrow
-          Fp(i)%ncol = mol%zeromat%ncol
+          Fp(i)%nrow = zeromatrix%nrow
+          Fp(i)%ncol = zeromatrix%ncol
           Fp(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           Fp(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(Fp(i))
           call mat_axpy((0.0d0, 0.0d0), Fp(i), .false., .true., Fp(i))
-!        Fp(i) = mol%zeromat
+!        Fp(i) = zeromatrix
 !        call mat_alloc(Fp(i))
 !        Fp(i)%elms = 0.0
 ! write(*,*) 'Set Fp'
@@ -4021,7 +4001,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     ! a) For the initial part of Fp: Make the initial recursive (lower order) 
     ! oneint, twoint, and xcint calls as needed
 
-    call fock_lowerorder(mol, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
+    call fock_lowerorder(pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          0, D, product(pert%pdim), Fp)
 
 
@@ -4034,7 +4014,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     ! b) For Dp: Create differentiation superstructure: First dryrun, then actual call
 
-    superstructure_size = derivative_superstructure_getsize(mol, pert, &
+    superstructure_size = derivative_superstructure_getsize(pert, &
                           (/pert%n_perturbations, pert%n_perturbations/), .FALSE., &
                           (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
@@ -4043,7 +4023,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     allocate(derivative_structure(superstructure_size,3))
     allocate(ind(pert%n_perturbations))
 
-    call derivative_superstructure(mol, pert, (/pert%n_perturbations, &
+    call derivative_superstructure(pert, (/pert%n_perturbations, &
          pert%n_perturbations/), .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          superstructure_size, sstr_incr, derivative_structure)
@@ -4056,7 +4036,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !         write(*,*) 'Dp before z', Dp(i)%elms
 
-       Dp(i) = 1.0d0 * rsp_get_matrix_z(mol, superstructure_size, derivative_structure, &
+       Dp(i) = 1.0d0 * rsp_get_matrix_z(superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S)
@@ -4083,7 +4063,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !        if (pert%n_perturbations <=2) then
 ! 
-          call rsp_twoint(mol%zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), Fp(i:i))
+          call rsp_twoint(zeromatrix%nrow, 0, nof, noc, pert%pdim, Dp(i), Fp(i:i))
 ! 
 !        end if
 
@@ -4098,10 +4078,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        ! 4. Make right-hand side using Dp
 
-       RHS(1) = mol%zeromat
+       RHS(1) = zeromatrix
        call mat_alloc(RHS(1))
 
-       RHS(1) = rsp_get_matrix_y(mol, superstructure_size, derivative_structure, &
+       RHS(1) = rsp_get_matrix_y(superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S)
      
@@ -4134,7 +4114,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !        if (pert%n_perturbations <=2) then
 
-          call rsp_twoint(mol%zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), Fp(i:i))
+          call rsp_twoint(zeromatrix%nrow, 0, nof, noc, pert%pdim, Dh(i), Fp(i:i))
 
 !        end if
 
@@ -4142,7 +4122,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        ! 'NOTE (MaR): XCINT CALL SKIPPED FOR NOW'
 
-       ! call rsp_xcint(mol, 0, nof, noc, pert%pdim, 2, &
+       ! call rsp_xcint(0, nof, noc, pert%pdim, 2, &
        ! (/sdf_getdata(D, get_emptypert(), (/1/)), Dh(i)/), Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
@@ -4173,7 +4153,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 ! if (pert%pdim(1) == 12) then
 
-! TEST = mol%zeromat
+! TEST = zeromatrix
 ! call mat_alloc(TEST)
 ! do i = 1, pert%pdim(1)
 ! 
@@ -4187,11 +4167,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  recursive subroutine rsp_fds(mol, pert, kn, F, D, S)
+  recursive subroutine rsp_fds(pert, kn, F, D, S)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(pert%n_perturbations) :: psub
     integer, dimension(2) :: kn
@@ -4208,7 +4187,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        do i = 1, size(psub)
 
-          call rsp_fds(mol, psub(i), kn, F, D, S)
+          call rsp_fds(psub(i), kn, F, D, S)
 
        end do       
 
@@ -4234,7 +4213,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           end do
 
-          call get_fds(mol, p_tuple_standardorder(pert), F, D, S)
+          call get_fds(p_tuple_standardorder(pert), F, D, S)
 
        else
 
@@ -4383,13 +4362,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   end subroutine
 
 
-  subroutine get_prop(mol, pert, kn, prop, F, D, S)
+  subroutine get_prop(pert, kn, prop, F, D, S)
 
     implicit none
 
     type(matrix) :: TEST
     type(SDF) :: F, D, S
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: emptyp_tuples
     integer, dimension(2) :: kn
@@ -4409,12 +4387,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     ! number of perturbations and kn
     ! Maybe also extend to get W for kn part of rsp_pulay
 
-    call rsp_fds(mol, pert, kn, F, D, S)
+    call rsp_fds(pert, kn, F, D, S)
  
     write(*,*) ' '
     write(*,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
     write(*,*) ' '
-! TEST = mol%zeromat
+! TEST = zeromatrix
 ! call mat_alloc(TEST)
 ! 
 !           call sdf_getdata_s(D, p_tuple_getone(pert,2), (/ 3 /), TEST)
@@ -4425,7 +4403,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 
     call property_cache_allocate(energy_cache)
-    call rsp_ener(mol, pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, &
+    call rsp_ener(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, &
                   product(pert%pdim), energy_cache, prop)
 
     write(*,*) ' '
@@ -4435,7 +4413,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     deallocate(energy_cache)
 
     call property_cache_allocate(pulay_kn_cache)
-    call rsp_pulay_kn(mol, pert, kn, (/emptypert, emptypert/), S, D, F, &
+    call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
                       product(pert%pdim), pulay_kn_cache, prop)
 
     write(*,*) ' '
@@ -4445,7 +4423,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     deallocate(pulay_kn_cache)
 
     call property_cache_allocate(pulay_lag_cache)
-    call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
+    call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
                        (/p_tuple_getone(pert,1), emptypert/), &
                        S, D, F, product(pert%pdim), pulay_lag_cache, prop)
 
@@ -4456,7 +4434,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     deallocate(pulay_lag_cache)
 
     call property_cache_allocate(idem_cache)
-    call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
+    call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
                       S, D, F, product(pert%pdim), idem_cache, prop)
 
@@ -4467,7 +4445,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     deallocate(idem_cache)
 
     call property_cache_allocate(scfe_cache)
-    call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
+    call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
                       S, D, F, product(pert%pdim), scfe_cache, prop)
 
@@ -4515,11 +4493,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   end subroutine
 
-  subroutine rsp_prop(mol, pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
+  subroutine rsp_prop(pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
 
     implicit none
 
-    type(rsp_cfg) :: mol
     type(p_tuple) :: pert, pert_unordered
     type(matrix) :: F_unperturbed, D_unperturbed, S_unperturbed
     type(SDF), pointer :: F, D, S
@@ -4583,13 +4560,12 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     allocate(F%data(1))
     F%data = F_unperturbed
 
-    zromtrx = mol%zeromat
-    call mat_alloc(zromtrx)
+    zeromatrix = mat_zero_like(S_unperturbed)
 
     allocate(prop(product(pert%pdim)))
     prop = 0.0
 
-    call get_prop(mol, pert, kn, prop, F, D, S)
+    call get_prop(pert, kn, prop, F, D, S)
 
     write(*,*) 'Property was calculated and printed to rsp_tensor'
     write(*,*) ' '

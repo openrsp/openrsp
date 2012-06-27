@@ -333,7 +333,7 @@ end subroutine
              perturbation_tuple%pid = (/1/)
              perturbation_tuple%freq = (/0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -355,7 +355,7 @@ end subroutine
              perturbation_tuple%pid = (/1/)
              perturbation_tuple%freq = (/0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -376,7 +376,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2/)
              perturbation_tuple%freq = (/0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -397,7 +397,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2/)
              perturbation_tuple%freq = (/0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -419,7 +419,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2/)
              perturbation_tuple%freq = (/0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -440,7 +440,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -461,7 +461,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -482,7 +482,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -503,7 +503,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0/)             
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -524,7 +524,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -545,7 +545,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -566,7 +566,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -587,7 +587,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -609,7 +609,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -630,7 +630,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -651,7 +651,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -672,7 +672,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -693,7 +693,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -715,7 +715,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -737,7 +737,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -758,7 +758,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -779,7 +779,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -800,7 +800,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -821,7 +821,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -843,7 +843,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -866,7 +866,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -888,7 +888,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -910,7 +910,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -932,7 +932,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -954,7 +954,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -978,7 +978,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1001,7 +1001,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1024,7 +1024,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1047,7 +1047,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1071,7 +1071,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1094,7 +1094,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1116,7 +1116,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1138,7 +1138,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1161,7 +1161,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1184,7 +1184,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1207,7 +1207,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1230,7 +1230,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1254,7 +1254,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
@@ -1278,7 +1278,7 @@ end subroutine
              perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
              perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
 
-             call rsp_prop(cfg, perturbation_tuple, kn, F, D, S)
+             call rsp_prop(perturbation_tuple, kn, F, D, S)
 
           end if
 
