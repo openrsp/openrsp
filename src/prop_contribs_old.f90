@@ -1784,7 +1784,9 @@ contains
 
    subroutine twofck_ks(n, D, F)
 
+#ifndef PRG_DIRAC
       use xcint_main
+#endif
 
       integer,      intent(in)    :: n
       type(matrix)                :: D(n+1)
