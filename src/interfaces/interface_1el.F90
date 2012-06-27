@@ -12,7 +12,6 @@ module interface_1el
    public interface_1el_oneave
    public interface_1el_ovlint
    public interface_1el_oneint
-   private gen1int_reorder
 
    public oneint_ave
    public get1in_ave_ifc
