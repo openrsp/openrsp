@@ -305,16 +305,16 @@ end subroutine
              call prop_test_gradient(3*num_atoms, S, D, F)
        case ('.HESSIAN')
           if (.not.dryrun) &
-             call prop_test_hessian(cfg, 3*num_atoms, S, D, F)
+             call prop_test_hessian(3*num_atoms, S, D, F)
        case ('.DIPHES')
           if (.not.dryrun) &
-             call prop_test_diphes(cfg, 3*num_atoms, S, D, F)
+             call prop_test_diphes(3*num_atoms, S, D, F)
        case ('.CUBICFF')
           if (.not.dryrun) &
-             call prop_test_cubicff(cfg, 3*num_atoms, S, D, F)
+             call prop_test_cubicff(3*num_atoms, S, D, F)
        case ('.QUARTICFF')
           if (.not.dryrun) &
-             call prop_test_quarticff(cfg, 3*num_atoms, S, D, F)
+             call prop_test_quarticff(3*num_atoms, S, D, F)
 
        case ('.GEN_DIPMOM')
 

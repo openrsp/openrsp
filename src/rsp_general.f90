@@ -3695,7 +3695,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
           if (num_p_tuples <= 2) then
 
-             call rsp_twoint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), tmp)
 
@@ -3756,7 +3756,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        if (num_p_tuples <= 2) then
 
-          call rsp_twoint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoint(mol%zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, &
                sdf_getdata(D, get_emptypert(), (/1/) ), &
@@ -4083,7 +4083,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !        if (pert%n_perturbations <=2) then
 ! 
-          call rsp_twoint(mol, 0, nof, noc, pert%pdim, Dp(i), Fp(i:i))
+          call rsp_twoint(mol%zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), Fp(i:i))
 ! 
 !        end if
 
@@ -4134,7 +4134,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 !        if (pert%n_perturbations <=2) then
 
-          call rsp_twoint(mol, 0, nof, noc, pert%pdim, Dh(i), Fp(i:i))
+          call rsp_twoint(mol%zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), Fp(i:i))
 
 !        end if
 

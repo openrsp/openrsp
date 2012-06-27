@@ -121,10 +121,9 @@ contains
 
   end subroutine
 
-  subroutine get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
+  subroutine get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
 
 !   ----------------------------------------------------------------------------
-    type(rsp_cfg), intent(in)    :: mol
     integer,       intent(in)    :: ng
     type(matrix),  intent(in)    :: S, D, F
     type(matrix),  intent(inout) :: Sg(ng), Dg(ng), Fg(ng)
@@ -138,7 +137,7 @@ contains
 !   calculate perturbed integrals
     call rsp_ovlint(S%nrow, 1, (/'GEO '/), (/1/), shape(Sg), Sg)
     call rsp_oneint(S%nrow, 1, (/'GEO '/), (/1/), shape(Fg), Fg)
-    call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Fg), D, Fg)
+    call rsp_twoint(S%nrow, 1, (/'GEO '/), (/1/), shape(Fg), D, Fg)
     call rsp_xcint(D=(/D/), Fg=Fg)
 
 !   solve equations
@@ -146,7 +145,7 @@ contains
        FDSg(1) = F*D*Sg(i) - Sg(i)*D*F
        Dg(i) = -D*Sg(i)*D
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1) + Fg(i)
-       call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), FDSg(1:1))
+       call rsp_twoint(S%nrow, 0, nof, noc, noc, Dg(i), FDSg(1:1))
        call rsp_xcint(D=(/D, Dg(i)/), F=FDSg(1))
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1)
        X(1) = 0*FDSg(1)
@@ -154,7 +153,7 @@ contains
        call rsp_mosolver_exec(FDSg(1), (/0d0/), X)
        X(1)=-2*X(1); FDSg(1)=0
        Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1); X(1)=0
-       call rsp_twoint(mol, 0, nof, noc, noc, Dg(i), Fg(i:i))
+       call rsp_twoint(S%nrow, 0, nof, noc, noc, Dg(i), Fg(i:i))
        call rsp_xcint(D=(/D, Dg(i)/), F=Fg(i))
     end do
 
@@ -421,9 +420,8 @@ contains
 
   end subroutine
 
-  subroutine prop_test_hessian(mol, ng, S, D, F)
+  subroutine prop_test_hessian(ng, S, D, F)
 
-    type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
 
@@ -431,7 +429,7 @@ contains
 
     call print_nuclear_masses(ng)
     call prop_test_gradient(ng, S, D, F)
-    call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
+    call get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
     call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
 
     Sg = 0
@@ -440,9 +438,8 @@ contains
 
   end subroutine
 
-  subroutine prop_test_cubicff(mol, ng, S, D, F)
+  subroutine prop_test_cubicff(ng, S, D, F)
 
-    type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
 
@@ -450,7 +447,7 @@ contains
 
     call print_nuclear_masses(ng)
     call prop_test_gradient(ng, S, D, F)
-    call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
+    call get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
     call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
     call contract_cubicff(ng, S, D, F, Sg, Dg, Fg)
 
@@ -492,8 +489,7 @@ contains
 ! and cubic force field. Then comes the new code that is intended to get
 ! the quartic force field.
 
-  subroutine prop_test_quarticff(mol, ng, S, D, F)
-    type(rsp_cfg), intent(in) :: mol
+  subroutine prop_test_quarticff(ng, S, D, F)
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
     type(rsp_field) geo4(4)
@@ -515,7 +511,7 @@ contains
 
     call print_nuclear_masses(ng)
     call prop_test_gradient(ng, S, D, F)
-    call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
+    call get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
     call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
     call contract_cubicff(ng, S, D, F, Sg, Dg, Fg)
 
@@ -533,7 +529,7 @@ contains
 !   =============
 
     call rsp_oneint(S%nrow, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), Fgg)
-    call rsp_twoint(mol, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), D, Fgg)
+    call rsp_twoint(S%nrow, 2, (/'GEO ','GEO '/), (/1,1/), shape(Fgg), D, Fgg)
     call rsp_xcint(D=(/D/), Fgg=Fgg)
 
 !   auxiliary matrices to avoid
@@ -547,7 +543,7 @@ contains
        do j = 1, size(Dg)
           Ag(j)%elms = 0.0d0
        end do
-       call rsp_twoint(mol, 1, (/'GEO '/), (/1/), shape(Ag), Dg(i), Ag)
+       call rsp_twoint(S%nrow, 1, (/'GEO '/), (/1/), shape(Ag), Dg(i), Ag)
        call rsp_xcint(D=(/D, Dg(i)/), Fg=Ag)
        do j = 1, size(Dg)
           Fgg(i, j) = Fgg(i, j) + Ag(j)
@@ -576,7 +572,7 @@ contains
           Dgg(i,j) = D*Sg(i)*Dg(j) + D*Sgg(i,j)*D + D*Sg(j)*Dg(i) + &
                Dg(i)*S*Dg(j) + Dg(i)*Sg(j)*D + Dg(j)*S*Dg(i) + Dg(j)*Sg(i)*D
           Dgg(i,j) = Dgg(i,j) - D*S*Dgg(i,j) - Dgg(i,j)*S*D
-          call rsp_twoint(mol, 0, (nof), (noc), shape(Fgg(i,j)), Dgg(i,j), Fgg(i,j))
+          call rsp_twoint(S%nrow, 0, (nof), (noc), shape(Fgg(i,j)), Dgg(i,j), Fgg(i,j))
           call rsp_xcint(D=(/D, Dgg(i, j)/), F=Fgg(i, j))
           RHS(1) = F*D*Sgg(i,j) + F*Dg(i)*Sg(j) + F*Dgg(i,j)*S + F*Dg(j)*Sg(i)  &
                  + Fg(i)*D*Sg(j) + Fg(i)*Dg(j)*S + Fgg(i,j)*D*S + Fg(j)*D*Sg(i) &
@@ -591,7 +587,7 @@ contains
           Dh = Dh - D*S*X(1)
           X(1)=0
           Dgg(i,j) = Dgg(i,j) + Dh
-          call rsp_twoint(mol, 0, (nof), (noc), shape(Fgg(i,j)), Dh, Fgg(i,j))
+          call rsp_twoint(S%nrow, 0, (nof), (noc), shape(Fgg(i,j)), Dh, Fgg(i,j))
           call rsp_xcint(D=(/D, Dh/), F=Fgg(i, j))
        end do
     end do
@@ -931,9 +927,8 @@ contains
 
   end subroutine
 
-  subroutine prop_test_diphes(mol, ng, S, D, F)
+  subroutine prop_test_diphes(ng, S, D, F)
 
-    type(rsp_cfg), intent(in) :: mol
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
     type(rsp_field) geo2_el(3)
@@ -996,7 +991,7 @@ contains
        Df(i) = Df(i) + X(1)*S*D
        Df(i) = Df(i) - D*S*X(1); X(1)=0
        ! Df contribution to Ff
-       call rsp_twoint(mol, 0, nof, noc, noc, Df(i), Ff(i:i))
+       call rsp_twoint(S%nrow, 0, nof, noc, noc, Df(i), Ff(i:i))
        !polarzability
        call rsp_oneave(1, (/'EL  '/), (/1/), shape(pol(:,i)), Df(i), pol(:,i))
     end do
@@ -1004,7 +999,7 @@ contains
 
 
 
-    call get_fo_geo_perturbed_matrices(mol, ng, S, D, F, Sg, Dg, Fg)
+    call get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
     call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
 
 

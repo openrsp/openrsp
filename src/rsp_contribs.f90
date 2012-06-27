@@ -394,12 +394,11 @@ contains
   !> Contract 2-electron integrals perturbed by fields 'f' with density
   !> matrix 'dens', and add to Fock matrices 'fock' Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
-  subroutine rsp_twoint(mol, nf, f, c, nc, dens, fock)
+  subroutine rsp_twoint(nr_ao, nf, f, c, nc, dens, fock)
     ! work array to be passed to GRCONT
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
-    !> structure containing integral program settings
-    type(rsp_cfg),        intent(in)    :: mol
+    integer,              intent(in)    :: nr_ao
     !> number of fields
     integer,              intent(in)    :: nf
     !> field labels in std order
@@ -416,9 +415,7 @@ contains
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
   if (any(f=='EL  ')) then
-        A = mol%zeromat
-        call mat_ensure_alloc(A)
-        A%elms = 0.0
+     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))
@@ -436,7 +433,7 @@ contains
        fock(1) = fock(1) + A
        A = 0
     else if (nf==1 .and. f(1)=='GEO ') then
-       n = mol%zeromat%nrow
+       n = nr_ao
        do i = 0, nc(1)-1
           ! if first or an x-coord, call GRCONT
           if (i==0 .or. mod(c(1)+i,3) == 1) &
