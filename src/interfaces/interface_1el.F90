@@ -144,7 +144,7 @@ contains
  
    end if
 #endif /* ifndef PRG_DIRAC */
-   end subroutine interface_1el_ovlave
+   end subroutine
 
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
@@ -238,7 +238,7 @@ contains
  
    end if
 #endif /* ifndef PRG_DIRAC */
-   end subroutine interface_1el_oneave
+   end subroutine
 
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
@@ -345,7 +345,7 @@ contains
  
    end if
 #endif /* ifndef PRG_DIRAC */
-   end subroutine interface_1el_ovlint
+   end subroutine
 
    subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
      ! Gen1Int interface
@@ -444,7 +444,7 @@ contains
  
    end if
 #endif /* ifndef PRG_DIRAC */
-   end subroutine interface_1el_oneint
+   end subroutine
 
   !> \brief reorders and assigns the expectation values and/or integral matrices from
   !>        Gen1int to OpenRsp
@@ -594,7 +594,7 @@ contains
     if (allocated(offset_geom)) deallocate(offset_geom)
     deallocate(last_comp)
     deallocate(idx_comp)
-  end subroutine gen1int_reorder
+  end subroutine
 
    subroutine oneint_ave(nr_atoms, what, D, DFD, R)
       integer,           intent(in)  :: nr_atoms
