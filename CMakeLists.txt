@@ -66,6 +66,8 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_pcm.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_rsp_solver.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_basis.F90
+    ${PROJECT_SOURCE_DIR}/src/input/parse_input.F90
+    ${PROJECT_SOURCE_DIR}/src/input/openrsp_cfg.F90
     )
 
 include(ConfigCompilerFlags)

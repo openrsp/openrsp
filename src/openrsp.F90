@@ -52,6 +52,7 @@ module openrsp
   use rsp_functions
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
+  use openrsp_cfg
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -64,21 +65,8 @@ module openrsp
   public openrsp_setup
   public openrsp_calc
   public openrsp_finalize
-  private
 
-  ! ------------ MO response solver settings -----------
-  ! maximum number of micro iterations in the iterative solution of
-  ! the frequency independent linear response functions
-  integer :: solver_maxit = 100
-  ! maximum dimension of the sub-block of the configuration Hessian
-  integer :: solver_maxphp = 0
-  ! maximum dimension of the reduced space to which new basis vectors are added
-  integer :: solver_mxrm = 400
-  ! convergence threshold for the solution of the frequency-independent response equations
-  real(8) :: solver_thresh = 1.0D-10
-  ! true for optimal orbital trial vectors in the iterative solution of
-  ! the frequency-dependent linear response equations
-  logical :: solver_optorb = .false.
+  private
 
   ! ------------- SCF state and settings ------------
   ! overlap matrix
@@ -87,14 +75,6 @@ module openrsp
   type(matrix) D
   ! Fock matrix
   type(matrix) F
-
-  ! -------------- response function settings -----------
-  ! number of frequencies
-  integer num_freq
-  ! (real parts of) frequencies
-  real(8), allocatable :: real_freqs(:)
-  ! imaginary frequencies
-  real(8), allocatable :: imag_freqs(:)
 
   ! --------------- geometry and basis settings -----------
   ! number of atoms
@@ -143,14 +123,14 @@ contains
     write (LUPRI,*) '>>  J. Chem. Phys. 129, 214108 (2008).'
     write (LUPRI,*)
 
-    ! first parse input by running _calc in dryrun mode
-    call openrsp_calc(dryrun=.true.)
-
     call interface_f77_memory_init(work_len=lwork, work=work)
 
     ! initialize the MO response solver
-    call rsp_mosolver_init(solver_maxit, solver_maxphp, solver_mxrm, &
-                           solver_thresh, solver_optorb)
+    call rsp_mosolver_init(openrsp_cfg_solver_maxitr, &
+                           openrsp_cfg_solver_maxphp, &
+                           openrsp_cfg_solver_maxred, &
+                           openrsp_cfg_solver_thresh, &
+                           openrsp_cfg_solver_optorb)
 
     ! initialize and allocate matrices
     call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
@@ -205,1097 +185,500 @@ contains
 
 end subroutine
 
+  subroutine openrsp_calc()
 
-
-  !> \brief If \param dryrun = .false., read commands from \param LUCMD
-  !> and perform the requested calculations. If \param dryrun = .true.,
-  !> only parse and validate the commands, but update the module's setup.
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> openrsp_setup must be called prior to this, and
-  !> \todo add some comments when calling Andreas' codes
-  subroutine openrsp_calc(dryrun)
-
-    logical, intent(in) :: dryrun
-    integer             :: LUCMD
-    integer, dimension(2) :: kn
-    character(80) word
-    integer       num_lines_read, err, l, i
+!   logical, intent(in) :: dryrun
+!   integer             :: LUCMD
+!   character(80) word
+!   integer       num_lines_read, err, l, i
+    integer       :: kn(2)
     type(p_tuple) :: perturbation_tuple
 
-    lucmd = get_input_unit()
 
-    ! in case dryrun=T, we need to backspace LUCMD before returning,
-    ! so keep track of number of lines read
-    num_lines_read = 0
-
-    do
-       read (LUCMD, '(a)', end=888, err=999) word
-       l = len_trim(word) !word/line's length
-       num_lines_read = num_lines_read + 1
-
-       ! Initial '!' or '#' are comments, skip those
-       if (word(:1) == '!' .or. word(:1) == '#') cycle
-       ! '*END OF' marks end of **OPENRSP section
-       if (word(:7) == '*END OF') exit
-       ! keywords start with '.', sections with '*'
-       if (word(:1) /= '.' .and. word(:1) /= '*') &
-          call quit("Failed to parse input. Expected word starting with" &
-                    // " '.' or '*', got '" // word(:l) // "'")
-
-       ! parse the keyword (or section)
-       select case(word(:l))
-       ! print level
-       case ('.PRINT')
-          read (LUCMD, *, end=888, err=999) print_level
-          num_lines_read = num_lines_read + 1
-
-       ! settings for MO response solver
-       case ('.MAX IT')
-          read (LUCMD, *, end=888, err=999) solver_maxit
-          num_lines_read = num_lines_read + 1
-       case ('.MAXPHP')
-          read (LUCMD, *, end=888, err=999) solver_maxphp
-          num_lines_read = num_lines_read + 1
-       case ('.MAXRED')
-          read (LUCMD, *, end=888, err=999) solver_mxrm
-          num_lines_read = num_lines_read + 1
-       case ('.THRESH')
-          read (LUCMD, *, end=888, err=999) solver_thresh
-          num_lines_read = num_lines_read + 1
-       case ('.OPTORB')
-          solver_optorb = .true.
-
-       ! input (real part of) frequencies
-       case ('.FREQ')
-          ! read the number of frequencies first
-          read (LUCMD, *, end=888, err=999) num_freq
-          backspace(LUCMD)
-          allocate(real_freqs(num_freq))
-          read (LUCMD, *, end=888, err=999) num_freq, real_freqs
-          num_lines_read = num_lines_read + 1
-
-       ! input imaginary parts of frequencies
-       case ('.IMFREQ')
-          ! read the number of imaginary frequencies first
-          read (LUCMD, *, end=888, err=999) num_freq
-          backspace(LUCMD)
-          allocate(imag_freqs(num_freq))
-          read (LUCMD, *, end=888, err=999) num_freq, imag_freqs
-          num_lines_read = num_lines_read + 1
-
-       ! calculate properties (unless dryrun)
-       !case ('.EFGB')
-       !case ('.CME')
-       !case ('.ROA')
-       !case ('.CARS')
-       !case ('.JONES')
-       !case ('.POLARIZ')
-       !case ('.HYPOLAR2')
-       !case ('.HYPOLAR')
-       !case ('.SECHYP3')
-       !case ('.SECHYP')
-       !case ('.SECHYP1')
-       !case ('.VIBBETA')
-       !case ('.VIBSHYP')
-       case ('.GRADIENT')
-          if (.not.dryrun) &
-             call prop_test_gradient(3*num_atoms, S, D, F)
-       case ('.HESSIAN')
-          if (.not.dryrun) &
-             call prop_test_hessian(3*num_atoms, S, D, F)
-       case ('.DIPHES')
-          if (.not.dryrun) &
-             call prop_test_diphes(3*num_atoms, S, D, F)
-       case ('.CUBICFF')
-          if (.not.dryrun) &
-             call prop_test_cubicff(3*num_atoms, S, D, F)
-       case ('.QUARTICFF')
-          if (.not.dryrun) &
-             call prop_test_quarticff(3*num_atoms, S, D, F)
-
-       case ('.GEN_DIPMOM')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 0/)
-
-             perturbation_tuple%n_perturbations = 1
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3/)
-             perturbation_tuple%plab = (/'EL  '/)
-             perturbation_tuple%pid = (/1/)
-             perturbation_tuple%freq = (/0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-
-       case ('.GEN_GRADIENT')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 0/)
-
-             perturbation_tuple%n_perturbations = 1
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO '/)
-             perturbation_tuple%pid = (/1/)
-             perturbation_tuple%freq = (/0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POL')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 1/)
-
-             perturbation_tuple%n_perturbations = 2
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2/)
-             perturbation_tuple%freq = (/0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_DIPGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 1/)
-
-             perturbation_tuple%n_perturbations = 2
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2/)
-             perturbation_tuple%freq = (/0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-
-       case ('.GEN_HESSIAN')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 1/)
-
-             perturbation_tuple%n_perturbations = 2
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2/)
-             perturbation_tuple%freq = (/0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_FHYP')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 1/)
-
-             perturbation_tuple%n_perturbations = 3
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POLGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 2/)
-
-             perturbation_tuple%n_perturbations = 3
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_DIPHES')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 1/)
-
-             perturbation_tuple%n_perturbations = 3
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_CFF')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 1/)
-
-             perturbation_tuple%n_perturbations = 3
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2, 3/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0/)             
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_SHYP')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 1/)
-
-             perturbation_tuple%n_perturbations = 4
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_FHYPGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 3/)
-
-             perturbation_tuple%n_perturbations = 4
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POLHES')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 2/)
-
-             perturbation_tuple%n_perturbations = 4
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_DIPCFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 1/)
-
-             perturbation_tuple%n_perturbations = 4
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_QFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 1/)
-
-             perturbation_tuple%n_perturbations = 4
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_3HYP')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 2/)
-
-             perturbation_tuple%n_perturbations = 5
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_SHYPGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 4/)
-
-             perturbation_tuple%n_perturbations = 5
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_FHYPHES')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 3/)
-
-             perturbation_tuple%n_perturbations = 5
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POLCFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 2/)
-
-             perturbation_tuple%n_perturbations = 5
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_DIPQFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 2/)
-
-             perturbation_tuple%n_perturbations = 5
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_5FF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 2/)
-
-             perturbation_tuple%n_perturbations = 5
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_4HYP')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 2/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_3HYPGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 5/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_SHYPHES')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 4/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_FHYPCFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 3/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POLQFF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 2/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-
-       case ('.GEN_DIP5FF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 2/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_6FF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 2/)
-
-             perturbation_tuple%n_perturbations = 6
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_5HYP')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 3/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_4HYPGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 6/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_3HYPHES')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 5/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-
-       case ('.GEN_SHYPCFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 4/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_FHYPQFF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 3/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  ', &
-                                         'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POL5FF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 3/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_DIP6FF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 3/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_7FF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 3/)
-
-             perturbation_tuple%n_perturbations = 7
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-
-       case ('.GEN_6HYP')
-
-          if (.not.dryrun) then
-
-             kn = (/4, 3/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3, 3, 3, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_5HYPGRA')
-
-          if (.not.dryrun) then
-
-             kn = (/0, 7/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_4HYPHES')
-
-          if (.not.dryrun) then
-
-             kn = (/1, 6/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_3HYPCFF')
-
-          if (.not.dryrun) then
-
-             kn = (/2, 5/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', &
-                                         'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_SHYPQFF')
-
-          if (.not.dryrun) then
-
-             kn = (/3, 4/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  ', &
-                                         'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_FHYP5FF')
-
-          if (.not.dryrun) then
-
-             kn = (/4, 3/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'EL  ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_POL6FF')
-
-          if (.not.dryrun) then
-
-             kn = (/4, 3/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'GEO ', 'EL  ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_DIP7FF')
-
-          if (.not.dryrun) then
-
-             kn = (/4, 3/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3*num_atoms, & 
-                                         3*num_atoms, 3/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'GEO ', 'GEO ', 'EL  '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       case ('.GEN_8FF')
-
-          if (.not.dryrun) then
-
-             kn = (/4, 3/)
-
-             perturbation_tuple%n_perturbations = 8
-             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                         3*num_atoms, 3*num_atoms/)
-             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', &
-                                         'GEO ', 'GEO ', 'GEO '/)
-             perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-             perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
-
-             call rsp_prop(perturbation_tuple, kn, F, D, S)
-
-          end if
-
-       ! illegal keyword
-       case default
-          call quit("Error: Keyword '" // word(:l) // "' is not recognized in OpenRSP!")
-
-       end select
-    end do
-
-    ! if dryrun, rewind to where we started
-888 if (dryrun) then
-       do i = 1, num_lines_read
-          backspace(LUCMD)
-       end do
+    if (openrsp_cfg_gradient) then
+       call prop_test_gradient(3*num_atoms, S, D, F)
     end if
-    return
 
-999 call quit('Failed to process input "' // word(:l) // '"!')
+    if (openrsp_cfg_hessian) then
+       call prop_test_hessian(3*num_atoms, S, D, F)
+    end if
+
+    if (openrsp_cfg_dipole_hessian) then
+       call prop_test_diphes(3*num_atoms, S, D, F)
+    end if
+
+    if (openrsp_cfg_cubic_ff) then
+       call prop_test_cubicff(3*num_atoms, S, D, F)
+    end if
+
+    if (openrsp_cfg_quartic_ff) then
+       call prop_test_quarticff(3*num_atoms, S, D, F)
+    end if
+
+    if (openrsp_cfg_general_f) then
+       kn = (/0, 0/)
+
+       perturbation_tuple%n_perturbations = 1
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3/)
+       perturbation_tuple%plab = (/'EL  '/)
+       perturbation_tuple%pid = (/1/)
+       perturbation_tuple%freq = (/0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_g) then
+       kn = (/0, 0/)
+
+       perturbation_tuple%n_perturbations = 1
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms/)
+       perturbation_tuple%plab = (/'GEO '/)
+       perturbation_tuple%pid = (/1/)
+       perturbation_tuple%freq = (/0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ff) then
+       kn = (/0, 1/)
+
+       perturbation_tuple%n_perturbations = 2
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3, 3/)
+       perturbation_tuple%plab = (/'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2/)
+       perturbation_tuple%freq = (/0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gf) then
+       kn = (/0, 1/)
+
+       perturbation_tuple%n_perturbations = 2
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2/)
+       perturbation_tuple%freq = (/0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gg) then
+       kn = (/0, 1/)
+
+       perturbation_tuple%n_perturbations = 2
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO '/)
+       perturbation_tuple%pid = (/1, 2/)
+       perturbation_tuple%freq = (/0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_fff) then
+       kn = (/1, 1/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3, 3, 3/)
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gff) then
+       kn = (/0, 2/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggf) then
+       kn = (/1, 1/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggg) then
+       kn = (/1, 1/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO '/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0/)             
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ffff) then
+       kn = (/2, 1/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3, 3, 3, 3/)
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gfff) then
+       kn = (/0, 3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggff) then
+       kn = (/1, 2/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gggf) then
+       kn = (/2, 1/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gggg) then
+       kn = (/2, 1/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
+                                   3*num_atoms/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_fffff) then
+       kn = (/2, 2/)
+
+       perturbation_tuple%n_perturbations = 5
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3, 3, 3, 3, 3/)
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gffff) then
+       kn = (/0, 4/)
+
+       perturbation_tuple%n_perturbations = 5
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggfff) then
+       kn = (/1, 3/)
+
+       perturbation_tuple%n_perturbations = 5
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gggff) then
+       kn = (/2, 2/)
+
+       perturbation_tuple%n_perturbations = 5
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggggf) then
+       kn = (/2, 2/)
+
+       perturbation_tuple%n_perturbations = 5
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
+                                   3*num_atoms, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggggg) then
+       kn = (/2, 2/)
+
+       perturbation_tuple%n_perturbations = 5
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
+                                   3*num_atoms, 3*num_atoms/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ffffff) then
+       kn = (/3, 2/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3, 3, 3, 3, 3, 3/)
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gfffff) then
+       kn = (/0, 5/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggffff) then
+       kn = (/1, 4/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gggfff) then
+       kn = (/2, 3/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_ggggff) then
+       kn = (/3, 2/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
+                                   3*num_atoms, 3, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gggggf) then
+       kn = (/3, 2/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
+                                   3*num_atoms, 3*num_atoms, 3/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
+
+    if (openrsp_cfg_general_gggggg) then
+       kn = (/3, 2/)
+
+       perturbation_tuple%n_perturbations = 6
+       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
+                                   3*num_atoms, 3*num_atoms, 3*num_atoms/)
+       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
+       perturbation_tuple%freq = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+    end if
 
   end subroutine
 
@@ -1341,7 +724,7 @@ subroutine openrsp_driver(work, lwork, wavpcm)
    logical, intent(in)    :: wavpcm
 
    call openrsp_setup(wavpcm, lwork, work)
-   call openrsp_calc(dryrun=.false.)
+   call openrsp_calc()
    call openrsp_finalize()
 
 end subroutine
