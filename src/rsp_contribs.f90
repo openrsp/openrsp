@@ -249,9 +249,14 @@ contains
        n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+#ifdef PRG_DIRAC
+    print *, 'fix grcont call'
+    stop 1
+#else
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,1,1,1), ncor, .true., .false., &
                    1, 0, .true., .false., f77_memory(:n*n*2), 2)
+#endif
        ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
        deallocate(tmp)
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
@@ -260,9 +265,14 @@ contains
        n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+#ifdef PRG_DIRAC
+    print *, 'fix grcont call'
+    stop 1
+#else
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,:,1,1), ncor**2, .true., .false., &
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
+#endif
        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
                          c(2):c(2)+nc(2)-1,1,1), shape(ave))
        deallocate(tmp)
@@ -424,9 +434,14 @@ contains
        do i = 0, nc(1)-1
           ! if first or an x-coord, call GRCONT
           if (i==0 .or. mod(c(1)+i,3) == 1) &
+#ifdef PRG_DIRAC
+    print *, 'fix grcont call'
+    stop 1
+#else
              call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
                          f77_memory(:n*n*3), n*n*3, .true., .false., &
                          1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
+#endif
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
              call mat_ensure_alloc(fock(1+i))

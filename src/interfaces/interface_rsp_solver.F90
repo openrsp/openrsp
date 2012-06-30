@@ -96,7 +96,12 @@ contains
       if ( LUSIFC <= 0 ) &
         call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', ierr, .false. )
       rewind( LUSIFC )
+#ifdef PRG_DIRAC
+    print *, 'fix rd_sirifc call'
+    stop 1
+#else 
       call rd_sirifc( 'DV', found, solver_DV, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
     else
       allocate( solver_DV(1), stat=ierr )
@@ -330,7 +335,12 @@ contains
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
+#ifdef PRG_DIRAC
+    print *, 'fix rd_sirifc call'
+    stop 1
+#else 
     call rd_sirifc( 'CMO', found, CMO%elms, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     !N if ( .not. restrict_scf ) CMO%elmsb = CMO%elms
     ! generates the occupied and virtual molecular orbitals

@@ -110,12 +110,22 @@ contains
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
     call DZERO( f77_memory(strt_cmo), NCMOT )
+#ifdef PRG_DIRAC
+    print *, 'fix rd_sirifc call'
+    stop 1
+#else
     call rd_sirifc( 'CMO', found, f77_memory(strt_cmo), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     ! reads active part of one-electron density matrix (MO)
     if ( GETDV ) then
       call DZERO( f77_memory(strt_dv), NNASHX )
+#ifdef PRG_DIRAC
+    print *, 'fix rd_sirifc call'
+    stop 1
+#else
       call rd_sirifc( 'DV', found, f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
       call DZERO( f77_memory(strt_dvao), N2BASX )
     end if
@@ -185,8 +195,13 @@ contains
     !> \todo determines IFCTYP run-time
     IFCTYP = 3
     ! calculates two electron contribution by calling SIRFCK
+#ifdef PRG_DIRAC
+    print *, 'fix sirfck call'
+    stop 1
+#else
     call SIRFCK( G%elms, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
     ! PCM two-electron contributions
     if ( get_is_pcm_calculation() ) then
       ! assigns the work memory
@@ -194,7 +209,12 @@ contains
       work_pcm2 = work_pcm + NNBASX
       call set_f77_memory_next(work_pcm2 + N2BASX)
       if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_pcmfck2', get_f77_memory_next()-1, get_f77_memory_total() )
+#ifdef PRG_DIRAC
+    print *, 'fix wavpcm_2el call'
+    stop 1
+#else
       call WAVPCM_2EL( f77_memory(work_pcm), f77_memory(work_ao_dens), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
 !      call pcm_ao_rsp_2elfock( f77_memory(work_pcm), f77_memory(work_ao_dens) )
 
       ! transforms to square matrix

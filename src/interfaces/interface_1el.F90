@@ -643,7 +643,7 @@ contains
          DFDtri = DFDtri * merge(4,2,anti)
       end if
       ! write fo files
-#ifdef LSDALTON_ONLY
+#if defined(LSDALTON_ONLY) || defined(PRG_DIRAC)
       call quit('Cannot call write_dsofso, only new integral code is compiled',-1)
 #else
       call write_dsofso(Dtri,DFDtri)
@@ -685,7 +685,12 @@ contains
        call DGEFSP(DFD%nrow, DFD%elms, DFDtri)
     end if
     ! write to files
+#ifdef PRG_DIRAC
+    print *, 'fix WRITE_DSOFSO'
+    stop 1
+#else
     call WRITE_DSOFSO(Dtri, DFDtri)
+#endif
     nc = 3 * get_nr_atoms()
     HESMOL(:nc,:nc) = 0
     !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
@@ -726,9 +731,14 @@ contains
 !      SUBROUTINE GET1IN(SINTMA,WORD,NCOMP,WORK,LWORK,LABINT,INTREP,
 !     &                  INTADR,MPQUAD,TOFILE,KPATOM,TRIMAT,EXPVAL,
 !     &                  EXP1VL,DENMAT,NPRINT)
+#ifdef PRG_DIRAC
+    print *, 'fix get1in call'
+    stop 1
+#else
     call GET1IN(dummy,'DPLGRA ',ncomp,f77_memory,size(f77_memory),labint,intrep, &
                        intadr,0,.false.,0,.false.,ave, &
                        .true.,Dtri,0)
+#endif
     deallocate(Dtri)
   end subroutine
 
@@ -764,8 +774,13 @@ contains
     call set_f77_memory_next(work_ham1 + NNBASX)
 
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
+#ifdef PRG_DIRAC
+    print *, 'fix rdonel calls'
+    stop 1
+#else
     call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
     call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
+#endif
     ! PCM one-electron contributions
     if ( get_is_pcm_calculation() ) then
       work_pcm = get_f77_memory_next()
@@ -818,7 +833,12 @@ contains
     ! one-electron Hamiltonian
     if ( prop_lab == 'ONEHAMIL' ) then
       call QUIT( 'Not implemented!' )
+#ifdef PRG_DIRAC
+    print *, 'fix rdonel call'
+    stop 1
+#else
       call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
+#endif
       call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
     else
       ! closes file AOPROPER first

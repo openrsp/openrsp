@@ -165,8 +165,13 @@ module dalton_ifc
     integer, intent(in) :: na
     real(8), intent(out) :: AATN( 3, 3*na )
     real(8) :: CSTRA( 3*na, 3*na ), SCTRA( 3*na, 3*na )
+#ifdef PRG_DIRAC
+    print *, 'fix nucaat call'
+    stop 1
+#else
     call NUCAAT( CSTRA, SCTRA, 0 )
          AATN(:,:) = AATNUC( :, :3*na )
+#endif
   end subroutine
 
 
@@ -215,6 +220,10 @@ module dalton_ifc
                                   (0d0,i=1,9*3*MXFR*(MXCOOR-nc)),     &
                                   (0d0,i=1,9*3*MXFR)
     call GPCLOSE( lunit, 'KEEP' )
+#ifdef PRG_DIRAC
+    print *, 'fix vibini and vibctl call'
+    stop 1
+#else
     call VIBINI()
     NUMHES = .false.
     HESFIL = .true. !DALTON.HES must be there!
@@ -227,6 +236,7 @@ module dalton_ifc
     DOSYM(1) = .true.
     IPRINT = 6
     call VIBCTL( f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+#endif
   end subroutine
 
 
