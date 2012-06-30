@@ -8,7 +8,10 @@ module dalton_ifc
 
   implicit none
 
-  public VIBCTL_ifc
+  public vibctl_ifc
+  public shells_nuclei_displace
+
+  private
 
   contains
 

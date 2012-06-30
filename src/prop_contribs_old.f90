@@ -18,6 +18,7 @@ module prop_contribs_old
    use interface_scf
    use dalton_ifc
    use nuc_contributions
+   use interface_io
 
    implicit none
    public prop_oneave
