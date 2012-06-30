@@ -17,6 +17,7 @@ module prop_contribs_old
    use interface_f77_memory
    use interface_scf
    use dalton_ifc
+   use nuc_contributions
 
    implicit none
    public prop_oneave
@@ -437,7 +438,7 @@ contains
          ! nuclear repulsion contribution
          if (nd==0) then
             allocate(RR(3*na))
-            call GRADNN_ifc(na, RR(:3*na))
+            call gradient_nuc(na, RR(:3*na))
             E(:dp(1)) = E(:dp(1)) + RR(c(1):c(1)+dp(1)-1)
             deallocate(RR)
          end if
@@ -657,7 +658,7 @@ contains
          end do
          ! for zero-order density, add nuclear contribution to Hessian
          if (nd==0) then
-            call HESSNN_ifc(na, RR)
+            call hessian_nuc(na, RR)
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
                   E(1+i+dp(1)*j) = E(1+i+dp(1)*j) + RR(c(1)+i + 3*na*(c(2)+j-1))

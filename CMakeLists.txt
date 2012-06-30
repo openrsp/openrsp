@@ -56,6 +56,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_functions.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_general.f90
     ${PROJECT_SOURCE_DIR}/src/vib_prop_old.f90
+    ${PROJECT_SOURCE_DIR}/src/nuc_contributions.f90
     ${PROJECT_SOURCE_DIR}/src/interfaces/dalton_ifc.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_molecule.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_xc.F90
