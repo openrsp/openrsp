@@ -19,6 +19,7 @@ module interface_scf
    public di_get_dens
    public di_get_gmat
    public di_twofck
+   public di_get_overlap_and_H1
 
    private
 
@@ -248,6 +249,71 @@ contains
     ! number of elements
     integer nelms
     call di_get_gmat( D, G )
+  end subroutine
+
+  !> \brief gets the overlap and one-electron Hamiltonian matrices
+  !> \author Bin Gao
+  !> \date 2009-12-08
+  !> \return S contains the overlap matrix
+  !> \return H1 contains the one-electron Hamiltonian matrix
+  subroutine di_get_overlap_and_H1( S, H1 )
+!   radovan: fixme it's not good for other codes to do S and H1 at the same time
+!            split this in two
+    implicit integer (i,m-n)
+#include "implicit.h"
+    type(matrix), intent(inout) :: S
+    type(matrix), intent(inout) :: H1
+    ! uses NBAST, NNBASX, N2BASX
+#include "inforb.h"
+    ! IO units, use LUPROP for file AOPROPER
+#include "inftap.h"
+    ! starts of the overlap and one electron Hamiltonian matrices in work memory
+    integer work_ovlp, work_ham1
+    ! PCM one-electron contributions
+    integer work_pcm
+    ! integer constants
+    real(8), parameter :: one = 1.0D+00
+    ! dummy stuff
+    integer idummy
+    ! external DALTON function finding the corresponding label
+    logical FNDLAB
+    ! reads overlap and one electron Hamiltonian matrices by calling RDONEL
+    work_ovlp = get_f77_memory_next()
+    work_ham1 = work_ovlp + NNBASX
+    call set_f77_memory_next(work_ham1 + NNBASX)
+
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
+#ifdef PRG_DIRAC
+    print *, 'fix rdonel calls'
+    stop 1
+#else
+    call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
+    call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
+#endif
+    ! PCM one-electron contributions
+    if ( get_is_pcm_calculation() ) then
+      work_pcm = get_f77_memory_next()
+      call set_f77_memory_next(work_pcm + NNBASX)
+      if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
+#ifdef USE_WAVPCM
+      call pcm_ao_rsp_1elfock( f77_memory(work_pcm) )
+      ! adds to one-electron Hamiltonian
+      f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
+                    = f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
+                    + f77_memory( work_pcm  : work_pcm  + NNBASX - 1 )
+#endif
+      ! cleans
+      call set_f77_memory_next(work_pcm)
+    end if
+    ! fills the data into matrices S and H1
+    !N N2BASX = NBAST * NBAST
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
+    ! gets S
+    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
+    ! gets H1
+    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
+    ! clean
+    call set_f77_memory_next(work_ovlp)
   end subroutine
 
 end module
