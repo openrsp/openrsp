@@ -346,8 +346,6 @@ contains
   !> \return DN contains the nuclear contribution to electric dipole moment
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine DIPNUC_ifc( DN )
-    implicit integer (i,m-n)
-#include "implicit.h"
     ! uses MXCOOR
 #include "mxcent.h"
     ! uses DIPMN and DDIPN
@@ -365,8 +363,6 @@ contains
   !> \return Q contains the nuclear contribution to quadrupole moments
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine QDRNUC_ifc( Q )
-    implicit integer (i,m-n)
-#include "implicit.h"
 #include "mxcent.h"
 #include "nuclei.h"
 #ifndef PRG_DIRAC
@@ -391,8 +387,6 @@ contains
   !> \return DGN contains the nuclear contributions to dipole gradient
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine DPGNUC_ifc( na, DGN )
-    implicit integer (i,m-n)
-#include "implicit.h"
     ! uses MXCOOR
 #include "mxcent.h"
     ! uses DDIPN
@@ -410,8 +404,6 @@ contains
   !> In the quasienergy formalism, the AAT is:
   !> d^3E/dR(-w)dB(w)dw |w=0
   subroutine AATNUC_ifc( na, AATN )
-    implicit integer (i,m-n)
-#include "implicit.h"
 #include "mxcent.h"
 #include "aatens.h"
     integer, intent(in) :: na

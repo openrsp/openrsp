@@ -23,8 +23,6 @@ module dalton_ifc
   !> \note modified on linsca/linears/VIBCTL_interface.F
   subroutine VIBCTL_ifc( nc, w, ALPHA, GPRIME, THETA, DIPGRAD, &
                          dALPHAdR, dGPRIMEdR, dTHETAdR )
-    implicit integer (i,m-n)
-#include "implicit.h"
 #include "mxcent.h"
 #include "cbilnr.h"
 #include "cbivib.h"
@@ -84,8 +82,6 @@ module dalton_ifc
   !> \param ncgto, and number of exponents and contraction coefficents
   !> \param nectr, so that memory for data structures can be allocated
   subroutine SHELLS_find_sizes(ncgto, nectr)
-    implicit integer (i,m-n)
-#include "implicit.h"
     integer, intent(out) :: ncgto, nectr
     ! need MXSHEL
 #include "maxorb.h"
@@ -119,8 +115,6 @@ module dalton_ifc
   subroutine SHELLS_to_type_cgto(ncgto, nectr, ectr, bas)
     !radovan: fixme ugly dependency on basis_set
     use basis_set, only: cgto
-    implicit integer (i,m-n)
-#include "implicit.h"
     integer,          intent(in)  :: ncgto, nectr
     type(cgto),       intent(out) :: bas(ncgto)
     real(8), target, intent(out) :: ectr(nectr)
@@ -194,8 +188,6 @@ module dalton_ifc
   !> Move the nuclei and basis functions, as seen from the integral
   !> programs. For doing finite difference differentiation.
   subroutine SHELLS_NUCLEI_displace(ic, dc)
-    implicit integer (i,m-n)
-#include "implicit.h"
     integer,  intent(in) :: ic
     real(8), intent(in) :: dc !step
     ! need MXSHEL
