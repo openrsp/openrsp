@@ -25,8 +25,6 @@ contains
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
    subroutine interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
-!FIXME: going to remove
-     use dalton_ifc, only: SHELLS_NUCLEI_displace
      ! Gen1Int interface
 #ifdef VAR_LINSCA
      use gen1int_host
