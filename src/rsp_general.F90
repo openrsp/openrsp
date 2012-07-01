@@ -17,8 +17,6 @@ module rsp_general
   use rsp_equations
 
 
-  implicit none
-
   ! Note(MaR): Make sure that this private statement is placed correctly and then delete
   ! this comment. Should it maybe come after e.g. the type definitions?
 
@@ -85,7 +83,6 @@ module rsp_general
 
   recursive subroutine print_rsp_tensor_stdout(npert, lvl, pdim, prop, offset)
 
-    implicit none
 
     integer :: npert, i, j, offset, lvl, new_offset
     integer, dimension(npert) :: pdim
@@ -114,7 +111,6 @@ module rsp_general
 
   function p_tuple_extend(pert, ext)
 
-    implicit none
 
     type(p_tuple) :: pert, ext, p_tuple_extend
     integer :: i
@@ -147,7 +143,6 @@ end if
 
   function p_tuple_getone(pert, which)
 
-    implicit none
 
     type(p_tuple) :: pert, p_tuple_getone
     integer :: which
@@ -168,7 +163,6 @@ end if
 
   function p_tuple_remove_first(pert)
 
-    implicit none
 
     type(p_tuple) :: pert, p_tuple_remove_first
 
@@ -201,7 +195,6 @@ end if
 
   function merge_p_tuple(p1, p2)
 
-    implicit none
 
     type(p_tuple) :: p1, p2, merge_p_tuple
 
@@ -257,7 +250,6 @@ end if
 
   subroutine p_tuple_p1_cloneto_p2(p1, p2)
 
-    implicit none
 
     type(p_tuple) :: p1, p2
 
@@ -291,7 +283,6 @@ end if
 
   function get_emptypert() result(emptypert)
 
-    implicit none
 
       type(p_tuple) :: emptypert
 
@@ -309,7 +300,6 @@ end if
 
   function p_tuple_p1_lt_p2(p1, p2)
 
-    implicit none
 
     logical :: p_tuple_p1_lt_p2
     integer :: i
@@ -373,7 +363,6 @@ end if
 
   function p_tuple_standardorder(pert) result(p_tuple_st)
 
-    implicit none
 
     type(p_tuple) :: pert, p_tuple_st
     integer :: i, j, new_minimum, position_in_result
@@ -516,7 +505,6 @@ end if
   subroutine property_cache_initialize(new_element, num_p_tuples, p_tuples, &
                                        property_size, data)
 
-    implicit none
 
     integer :: i, num_p_tuples
     type(property_cache) :: new_element
@@ -542,7 +530,6 @@ end if
 
   function p_tuples_standardorder(num_p_tuples, p_tuples) result(p_tuples_st)
 
-    implicit none
 
     integer :: num_p_tuples
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st
@@ -592,7 +579,6 @@ end if
 
   function property_cache_next_element(current_element) result(next_element)
 
-    implicit none
 
     type(property_cache), target :: current_element
     type(property_cache), pointer :: next_element
@@ -604,7 +590,6 @@ end if
 
   function p_tuples_compare(num_p_tuples, p_tuples, p_tuples_st_order)
 
-    implicit none
 
     logical :: p_tuples_compare, elem_by_elem_isequivalent
     integer ::  num_p_tuples, i
@@ -633,7 +618,6 @@ end if
   subroutine property_cache_add_element(current_element, num_p_tuples, p_tuples, &
                                         property_size, data)
 
-    implicit none
 
     integer :: num_p_tuples, property_size !, i
     type(property_cache), target :: current_element
@@ -667,7 +651,6 @@ end if
 
   function property_cache_already(current_element, num_p_tuples, p_tuples)
 
-    implicit none
 
     logical :: property_cache_already
     integer :: passedlast, num_p_tuples
@@ -715,7 +698,6 @@ end if
 
   function get_one_tensor_offset(total_num_perturbations, indices, pids, dims)
 
-    implicit none
 
     integer :: total_num_perturbations, i, get_one_tensor_offset
     integer, dimension(total_num_perturbations) ::  indices, pids, dims
@@ -734,7 +716,6 @@ end if
 
   function get_ncarray(total_order, num_p_tuples, p_tuples)
 
-    implicit none
 
     integer :: total_order, num_p_tuples, i, j, k
     integer, dimension(total_order) :: get_ncarray
@@ -758,7 +739,6 @@ end if
 
   subroutine property_cache_getdata(cache, num_p_tuples, p_tuples, property_size, prop)
 
-    implicit none
 
     logical :: found
     integer :: i, j, k, first, last, passedlast, num_p_tuples, &
@@ -922,7 +902,6 @@ p_debug = 0.0
 
   subroutine sdf_init(new_element, pert, data)
 
-    implicit none
 
     type(SDF) :: new_element
     type(p_tuple) :: pert
@@ -954,7 +933,6 @@ p_debug = 0.0
 
   subroutine sdf_standardorder(pert_tuple)
 
-    implicit none
 
     type(p_tuple) :: pert_tuple
     integer :: i, j,  new_minimum, position_in_result
@@ -1004,7 +982,6 @@ p_debug = 0.0
 
   function sdf_next_element(current_element) result(next_element)
 
-    implicit none
 
     type(SDF), target :: current_element
     type(SDF), pointer :: next_element
@@ -1020,7 +997,6 @@ p_debug = 0.0
 
   subroutine sdf_add(current_element, pert_tuple, data) 
 
-    implicit none
 
     logical :: found_element
     integer :: passedlast, i
@@ -1092,7 +1068,6 @@ p_debug = 0.0
 
   function plab_compare(n_perturbations, plab1, plab2)
 
-    implicit none
 
     logical :: plab_compare
     integer :: n_perturbations, i, j
@@ -1111,7 +1086,6 @@ p_debug = 0.0
 
   function pfreq_compare(n, p1, p2)
 
-    implicit none
 
     logical :: pfreq_compare
     integer :: i, n
@@ -1130,7 +1104,6 @@ p_debug = 0.0
 
   function p_tuple_compare(p1, p2)
 
-    implicit none
 
     logical :: p_tuple_compare
     type(p_tuple) :: p1, p2
@@ -1170,7 +1143,6 @@ p_debug = 0.0
 
   function sdf_already(current_element, pert_tuple)
 
-    implicit none
 
     logical :: sdf_already
     type(SDF), target :: current_element
@@ -1207,7 +1179,6 @@ p_debug = 0.0
 
   subroutine sdf_getdata_s(current_element, pert_tuple, ind, M)
 
-    implicit none
 
     logical :: found
     type(SDF), target :: current_element
@@ -1299,7 +1270,6 @@ p_debug = 0.0
 
   function sdf_getdata(current_element, pert_tuple, ind)
 
-    implicit none
 
     logical :: found
     type(SDF), target :: current_element
@@ -1380,7 +1350,6 @@ p_debug = 0.0
   ! Find out if kn rules say that this term should be skipped
   function kn_skip(n_perturbations, pertid, kn)
 
-    implicit none
 
     logical :: kn_skip, p_tuple_hasfirst
     integer :: n_perturbations, i
@@ -1420,7 +1389,6 @@ p_debug = 0.0
 
   function nc_only(total_order, thisorder, num_p_tuples, p_tuples, ncarray)
 
-    implicit none
 
     integer :: i, j, total_order, thisorder, num_p_tuples
     integer, dimension(total_order) :: ncarray
@@ -1442,7 +1410,6 @@ p_debug = 0.0
 
   function nc_onlysmall(total_order, thisorder, num_p_tuples, p_tuples, ncarray)
 
-    implicit none
 
     integer :: i, j, k, total_order, thisorder, num_p_tuples
     integer, dimension(total_order) :: ncarray
@@ -1465,7 +1432,6 @@ p_debug = 0.0
 
   recursive subroutine make_indices(tot_outer, lvl, ncarray, offset, outer_indices)
 
-    implicit none
 
     integer :: i, j, k, tot_outer, lvl, offset
     integer, dimension(tot_outer) :: ncarray
@@ -1505,7 +1471,6 @@ p_debug = 0.0
 
   function make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
 
-    implicit none
 
     integer :: i, j, k, total_num_perturbations, num_p_tuples
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
@@ -1533,7 +1498,6 @@ p_debug = 0.0
 
   function get_pidoutersmall(totouter, len_outer, o_orders)
 
-    implicit none
 
     integer :: totouter, len_outer, i, j, k
     integer, dimension(totouter) :: get_pidoutersmall
@@ -1555,7 +1519,6 @@ p_debug = 0.0
 
   subroutine sortdimbypid(total_num_perturbations, totouter, pids, dims, dimsouter, whichs)
 
-    implicit none
 
     integer :: totouter, total_num_perturbations, s, i, j, whichmax, whatmax
     integer, dimension(totouter) :: b, d, pids, dimsouter
@@ -1607,7 +1570,6 @@ p_debug = 0.0
   subroutine get_energy(num_p_tuples, total_num_perturbations, p_tuples, density_order, &
                         D, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
@@ -1963,7 +1925,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   recursive subroutine rsp_ener(pert, total_num_perturbations, kn, num_p_tuples, &
                                 p_tuples, density_order, D, property_size, cache, prop)
 
-    implicit none
 
     logical :: e_knskip
     type(p_tuple) :: pert
@@ -2110,7 +2071,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   recursive function derivative_superstructure_getsize(pert, kn, &
                      primed, current_derivative_term) result(superstructure_size)
 
-    implicit none
 
     logical :: primed
     type(p_tuple) :: pert
@@ -2181,7 +2141,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
                        current_derivative_term, superstructure_size, & 
                        new_element_position, derivative_structure)
 
-    implicit none
 
     logical :: primed
     integer :: i, superstructure_size, new_element_position
@@ -2245,7 +2204,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   function get_fds_data_index(pert_tuple, total_num_perturbations, which_index_is_pid, &
                               indices_len, indices)
 
-    implicit none
 
     type(p_tuple) :: pert_tuple
     integer :: i, total_num_perturbations, indices_len
@@ -2275,7 +2233,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   function frequency_zero_or_sum(pert_tuple)
 
-    implicit none
 
     type(p_tuple) :: pert_tuple
     complex(8) :: frequency_zero_or_sum
@@ -2298,7 +2255,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine mat_manual_attribute_inherit(A, B)
 
-    implicit none
 
     type(matrix) :: A, B
 
@@ -2315,7 +2271,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
            deriv_struct, total_num_perturbations, which_index_is_pid, &
            indices_len, ind, F, D, S) result(W)
 
-    implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
@@ -2385,7 +2340,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S) result(Y)
 
-    implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
@@ -2472,7 +2426,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S) result(Z)
 
-    implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
@@ -2545,7 +2498,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   function rsp_get_matrix_lambda(p_tuple_a, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, ind, D, S) result(L)
 
-    implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple) :: p_tuple_a, merged_A, merged_B
@@ -2613,7 +2565,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S) result(Zeta)
 
-    implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple) :: p_tuple_a, merged_p_tuple, merged_A, merged_B
@@ -2745,7 +2696,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine get_pulay_kn(p12, kn, F, D, S, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
@@ -2859,7 +2809,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   recursive subroutine rsp_pulay_kn(pert, kn, p12, S, D, F, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
@@ -2931,7 +2880,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine get_pulaylag(p12, kn, F, D, S, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
@@ -3038,7 +2986,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   recursive subroutine rsp_pulay_lag(pert, kn, p12, S, D, F, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
@@ -3108,7 +3055,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine get_idem_lag(p12, kn, F, D, S, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
@@ -3241,7 +3187,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   recursive subroutine rsp_idem_lag(pert, kn, p12, S, D, F, &
                                     property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
@@ -3312,7 +3257,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine get_scfe_lag(p12, kn, F, D, S, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
@@ -3433,7 +3377,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   recursive subroutine rsp_scfe_lag(pert, kn, p12, S, D, F, property_size, cache, prop)
 
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
@@ -3504,7 +3447,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine make_p_tuple_subset(pert, psub)
 
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(pert%n_perturbations) :: psub
@@ -3544,7 +3486,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   subroutine get_fock_lowerorder(num_p_tuples, total_num_perturbations, p_tuples, &
                                  density_order, D, property_size, Fp)
 
-    implicit none
 
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
@@ -3774,7 +3715,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
   recursive subroutine fock_lowerorder(pert, total_num_perturbations, num_p_tuples, p_tuples, &
                        density_order, D, property_size, Fp)
 
-    implicit none
 
     logical :: density_order_skip
     type(p_tuple) :: pert
@@ -3889,7 +3829,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   function make_one_index_tuple(n_perturbations, pdim, icomp_in)
 
-    implicit none
 
     integer :: n_perturbations, icomp, i, icomp_in
     integer, dimension(n_perturbations) :: pdim, make_one_index_tuple
@@ -3913,7 +3852,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     use interface_rsp_solver, only: rsp_mosolver_exec
 
-    implicit none
 
     integer :: sstr_incr, i, j, superstructure_size
     integer, allocatable, dimension(:) :: ind
@@ -4169,7 +4107,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   recursive subroutine rsp_fds(pert, kn, F, D, S)
 
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(pert%n_perturbations) :: psub
@@ -4236,7 +4173,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   function rm_dim(np, dims, skip)
 
-    implicit none
 
     integer :: skip, i, j, np
     integer, dimension(np) :: dims
@@ -4263,7 +4199,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   recursive function kn_prod(np, lvl, dims, k_or_n, sofar) result (kn_p)
 
-    implicit none
 
     integer :: np, lvl, k_or_n, sofar, kn_p, i
     integer, dimension(np) :: dims
@@ -4290,7 +4225,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   function get_bestkn(pert)
 
-    implicit none
 
     type(p_tuple) :: pert
     integer, dimension(2) :: get_bestkn
@@ -4339,7 +4273,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine property_cache_allocate(current_element)
 
-    implicit none
 
     type(property_cache), pointer :: current_element
 
@@ -4364,7 +4297,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine get_prop(pert, kn, prop, F, D, S)
 
-    implicit none
 
     type(matrix) :: TEST
     type(SDF) :: F, D, S
@@ -4460,7 +4392,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   recursive subroutine print_rsp_tensor(npert, lvl, pdim, prop, offset)
 
-    implicit none
 
     integer :: npert, i, j, offset, lvl, new_offset
     integer, dimension(npert) :: pdim
@@ -4495,7 +4426,6 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
   subroutine rsp_prop(pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
 
-    implicit none
 
     type(p_tuple) :: pert, pert_unordered
     type(matrix) :: F_unperturbed, D_unperturbed, S_unperturbed

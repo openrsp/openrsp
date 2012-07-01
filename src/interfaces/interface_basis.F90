@@ -60,8 +60,6 @@ contains
   !> \param ncgto, and number of exponents and contraction coefficents
   !> \param nectr, so that memory for data structures can be allocated
   subroutine SHELLS_find_sizes(ncgto, nectr)
-    implicit integer (i,m-n)
-#include "implicit.h"
     integer, intent(out) :: ncgto, nectr
     ! need MXSHEL
 #include "maxorb.h"
@@ -94,8 +92,6 @@ contains
   subroutine SHELLS_to_type_cgto(ncgto, nectr, ectr, bas)
     !radovan: fixme ugly dependency on basis_set
     use basis_set, only: cgto
-    implicit integer (i,m-n)
-#include "implicit.h"
     integer,          intent(in)  :: ncgto, nectr
     type(cgto),       intent(out) :: bas(ncgto)
     real(8), target, intent(out) :: ectr(nectr)

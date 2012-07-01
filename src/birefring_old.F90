@@ -8,6 +8,7 @@ module birefring_old
    use matrix_defop          !matrix type and operators
    use prop_contribs_old     !property contractions and integrals
    use rsp_equations_old     !response equation contractor/solver
+
    implicit none
 
    public efgb_Jpri_Bten_Bcal

@@ -24,6 +24,7 @@ module rsp_contribs
   use basis_set,  only: cgto
 
   implicit none
+
   public rsp_nucpot
   public rsp_ovlave
   public rsp_oneave
