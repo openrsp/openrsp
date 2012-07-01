@@ -8,39 +8,41 @@ module interface_rsp_solver
    implicit none
 
    public rsp_mosolver_init
-   public rsp_mosolver_free
-   public rsp_mosolver_dump
+   public rsp_mosolver_splash
    public rsp_mosolver_exec
+   public rsp_mosolver_finalize
+
+   private
 
    !> control information of MO response solver
    !>
    !> -# maximum number of micro iterations in the iterative solution of
    !>    the frequency independent linear response functions
-   integer, save, private :: solver_maxit = 100
+   integer   :: solver_maxit = 100
    !> -# maximum dimension of the sub-block of the configuration Hessian
-   integer, save, private :: solver_maxphp = 0
+   integer   :: solver_maxphp = 0
    !> -# maximum dimension of the reduced space to which new basis vectors are added
-   integer, save, private :: solver_mxrm = 400
+   integer   :: solver_mxrm = 400
    !> -# convergence threshold for the solution of the frequency-independent response equations
-   real(8), save, private :: solver_thresh = 1.0D-07
+   real(8)   :: solver_thresh = 1.0D-07
    !> -# true for optimal orbital trial vectors in the iterative solution of
    !>    the frequency-dependent linear response equations
-   logical, save, private :: solver_optorb = .false.
+   logical   :: solver_optorb = .false.
    !> -# true for CI calculations
-   logical, save, private :: solver_ci = .false.
+   logical   :: solver_ci = .false.
    !> -# true for triplet perturbation operators
-   logical, save, private :: solver_triplet = .false.
+   logical   :: solver_triplet = .false.
    !> -# true for excitation energy calculations, false for linear response equations
-   logical, save, private :: solver_excit = .false.
+   logical   :: solver_excit = .false.
 
    !> coefficients of molecular orbitals
-   type(matrix), private, save :: solver_CMO
+   type(matrix) :: solver_CMO
    !> coefficients of occupied molecular orbitals
-   type(matrix), private, save :: solver_CMO_OCC
+   type(matrix) :: solver_CMO_OCC
    !> coefficients of virtual molecular orbitals
-   type(matrix), private, save :: solver_CMO_VIR
+   type(matrix) :: solver_CMO_VIR
    !> active part of one-electron density matrix (MO)
-   real(8), allocatable, save :: solver_DV(:)
+   real(8), allocatable :: solver_DV(:)
 
 contains
 
@@ -116,7 +118,7 @@ contains
   !> \brief cleans the MO response solver
   !> \author Bin Gao
   !> \date 2009-12-08
-  subroutine rsp_mosolver_free()
+  subroutine rsp_mosolver_finalize()
 
 #ifdef VAR_DALTON
     solver_CMO = 0
@@ -131,24 +133,24 @@ contains
   !> \brief dumps the control information of MO response solver
   !> \author Bin Gao
   !> \date 2009-12-08
-  !> \param io_dump is the IO unit to dump
-  subroutine rsp_mosolver_dump( io_dump )
-    integer, intent(in) :: io_dump
+  !> \param io is the IO unit to dump
+  subroutine rsp_mosolver_splash( io )
+    integer, intent(in) :: io
 
 #ifdef VAR_DALTON
-    write( io_dump, 100 ) &
+    write( io, 100 ) &
       'Maximum number of micro iterations of solving the response equations: ', solver_maxit
-    write( io_dump, 100 ) &
+    write( io, 100 ) &
       'Maximum dimension of the sub-block of the configuration Hessian:      ', solver_maxphp
-    write( io_dump, 100 ) &
+    write( io, 100 ) &
       'Maximum dimension of the reduced space:                               ', solver_mxrm
-    write( io_dump, 110 ) &
+    write( io, 110 ) &
       'Convergence threshold of solving the response equations:              ', solver_thresh
-    if ( solver_optorb ) write( io_dump, 100 ) &
+    if ( solver_optorb ) write( io, 100 ) &
       'Using the optimal orbital trial vectors in solving the response equations'
-    if ( get_is_restricted_scf_calculation() )  write( io_dump, 100 ) &
+    if ( get_is_restricted_scf_calculation() )  write( io, 100 ) &
       'Restricted Hartree-Fock (RHF) calculations'
-    write( io_dump, 100 ) 'IO unit of log file: ', get_print_unit()
+    write( io, 100 ) 'IO unit of log file: ', get_print_unit()
     ! outputs matrices to check
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
@@ -161,18 +163,20 @@ contains
   !> \brief calls MO response solver in DALTON
   !> \author Bin Gao
   !> \date 2009-12-08
-  !> \param GD is the right hand side vectors (property gradients?)
+  !> \param RHS is the right hand side vectors (property gradients?)
   !> \param eigval contains the frequencies
   !> \return eigvec contains the solution vectors (AO)
-  subroutine rsp_mosolver_exec( GD, eigval, eigvec )
+  subroutine rsp_mosolver_exec(RHS,    &
+                               eigval, &
+                               eigvec)
 
-    type(matrix), intent(in)    :: GD(*)
+    type(matrix), intent(in)    :: RHS(*)
     real(8),      intent(in)    :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
 
 #ifdef VAR_DALTON
     ! right hand side vector (MO)
-    type(matrix) :: GD_MO
+    type(matrix) :: RHS_MO
     ! for MO response solver of DALTON, 1 for real operator, -1 for imaginary operator
     integer, parameter :: solver_nabaty = 2
     ! solution vectors of MO solver
@@ -234,14 +238,14 @@ contains
 
     ! transforms from AO to MO, and writes RHS (MO) into file
 
-    call mat_init(GD_MO, nrow=NORBT, ncol=NORBT, closed_shell=.true.)
+    call mat_init(RHS_MO, nrow=NORBT, ncol=NORBT, closed_shell=.true.)
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
-      call UTHV( solver_CMO%elms, GD(IRHS)%elms, solver_CMO%elms, &
-                 ISYM, ISYM, NBAST, NBAST, GD_MO%elms, f77_memory(get_f77_memory_next()) )
+      call UTHV( solver_CMO%elms, RHS(IRHS)%elms, solver_CMO%elms, &
+                 ISYM, ISYM, NBAST, NBAST, RHS_MO%elms, f77_memory(get_f77_memory_next()) )
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
-      call PRPORB( GD_MO%elms, solver_DV, f77_memory(get_f77_memory_next()) )
+      call PRPORB( RHS_MO%elms, solver_DV, f77_memory(get_f77_memory_next()) )
       !FIXME: why multiplied by -1
       call DSCAL( KZVAR, -1.0D+00, f77_memory(get_f77_memory_next()), 1 )
       ! writes out right hand side vector
@@ -253,7 +257,7 @@ contains
       !> \todo                      iout = log_dal,               &
       !> \todo                      label = 'GP Vector (MO) in DALTON_IFC' )
       !> \todo end if
-      call DZERO( GD_MO%elms, NORBT*NORBT )
+      call DZERO( RHS_MO%elms, NORBT*NORBT )
     end do
 
     ! calculates the linear response vector and writes to file
@@ -275,7 +279,7 @@ contains
     if ( ierr /= 0 ) call QUIT( 'Failed to allocate MO solutions!' )
     ! loops over solution vectors
     do ISOL = 1, rsp2_number_of_omegas
-      mo_eigvec(ISOL) = mat_alloc_like(GD_MO)
+      mo_eigvec(ISOL) = mat_alloc_like(RHS_MO)
       ! reads the solution
       call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
 
@@ -301,7 +305,7 @@ contains
     if ( LUGDVE > 0 ) call GPCLOSE( LUGDVE, 'DELETE' )
     if ( LUREVE > 0 ) call GPCLOSE( LUREVE, 'DELETE' )
     ! cleans
-    GD_MO = 0
+    RHS_MO = 0
     do ISOL = 1, rsp2_number_of_omegas
       mo_eigvec(ISOL) = 0
     end do
@@ -310,6 +314,7 @@ contains
 
   end subroutine
 
+#ifdef VAR_DALTON
   !> \brief gets the coefficients of molecular orbitals
   !> \author Bin Gao
   !> \date 2009-12-08
@@ -348,6 +353,6 @@ contains
     ! closes SIRIFC
     if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
   end subroutine
-
+#endif /* ifdef VAR_DALTON */
 
 end module
