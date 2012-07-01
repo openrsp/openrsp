@@ -44,19 +44,19 @@ set(LIBS)
 include_directories(${PROJECT_SOURCE_DIR})
 
 set(SOURCES
-    ${PROJECT_SOURCE_DIR}/src/birefring_old.f90
+    ${PROJECT_SOURCE_DIR}/src/birefring_old.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp_daldrv_old.F90
-    ${PROJECT_SOURCE_DIR}/src/openrsp_old.f90
-    ${PROJECT_SOURCE_DIR}/src/prop_contribs_old.f90
-    ${PROJECT_SOURCE_DIR}/src/prop_test_old.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_contribs.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_equations.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_functions.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_general.f90
-    ${PROJECT_SOURCE_DIR}/src/vib_prop_old.f90
-    ${PROJECT_SOURCE_DIR}/src/nuc_contributions.f90
+    ${PROJECT_SOURCE_DIR}/src/openrsp_old.F90
+    ${PROJECT_SOURCE_DIR}/src/prop_contribs_old.F90
+    ${PROJECT_SOURCE_DIR}/src/prop_test_old.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_contribs.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_equations.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_functions.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_general.F90
+    ${PROJECT_SOURCE_DIR}/src/vib_prop_old.F90
+    ${PROJECT_SOURCE_DIR}/src/nuc_contributions.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/dalton_ifc.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_molecule.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_xc.F90
