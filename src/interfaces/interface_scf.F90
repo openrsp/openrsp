@@ -59,9 +59,11 @@ contains
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \return D contains the AO density matrix
-  subroutine interface_scf_get_d( D )
+  subroutine interface_scf_get_d(D)
 
     type(matrix), intent(inout) :: D
+
+#ifdef VAR_DALTON
     ! uses NCMOT, NASHT, NNASHX, N2BASX
 #include "inforb.h"
     ! uses LUSIFC
@@ -105,22 +107,12 @@ contains
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
     call DZERO( f77_memory(strt_cmo), NCMOT )
-#ifdef PRG_DIRAC
-    print *, 'fix rd_sirifc call'
-    stop 1
-#else
     call rd_sirifc( 'CMO', found, f77_memory(strt_cmo), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-#endif
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     ! reads active part of one-electron density matrix (MO)
     if ( GETDV ) then
       call DZERO( f77_memory(strt_dv), NNASHX )
-#ifdef PRG_DIRAC
-    print *, 'fix rd_sirifc call'
-    stop 1
-#else
       call rd_sirifc( 'DV', found, f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-#endif
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
       call DZERO( f77_memory(strt_dvao), N2BASX )
     end if
@@ -142,6 +134,8 @@ contains
                                  (/D%nrow, D%ncol/) )
     ! clean
     call set_f77_memory_next(strt_cmo)
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 
@@ -151,10 +145,12 @@ contains
   !> \date 2009-12-08
   !> \param D contains the AO density matrix
   !> \return G contains the two electron contribution
-  subroutine interface_scf_get_g( D, G )
+  subroutine interface_scf_get_g(D, G)
 
-    type(matrix), intent(in) :: D
+    type(matrix), intent(in)    :: D
     type(matrix), intent(inout) :: G
+
+#ifdef VAR_DALTON
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! uses NODC, NODV
@@ -186,13 +182,8 @@ contains
     !> \todo determines IFCTYP run-time
     IFCTYP = 3
     ! calculates two electron contribution by calling SIRFCK
-#ifdef PRG_DIRAC
-    print *, 'fix sirfck call'
-    stop 1
-#else
     call SIRFCK( G%elms, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-#endif
     ! PCM two-electron contributions
     if ( get_is_pcm_calculation() ) then
       ! assigns the work memory
@@ -200,12 +191,7 @@ contains
       work_pcm2 = work_pcm + NNBASX
       call set_f77_memory_next(work_pcm2 + N2BASX)
       if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_pcmfck2', get_f77_memory_next()-1, get_f77_memory_total() )
-#ifdef PRG_DIRAC
-    print *, 'fix wavpcm_2el call'
-    stop 1
-#else
       call WAVPCM_2EL( f77_memory(work_pcm), f77_memory(work_ao_dens), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-#endif
 !      call pcm_ao_rsp_2elfock( f77_memory(work_pcm), f77_memory(work_ao_dens) )
 
       ! transforms to square matrix
@@ -218,6 +204,8 @@ contains
     !N if ( .not. restrict_scf ) G%elmsb = G%elms
     ! cleans
     call set_f77_memory_next(work_ao_dens)
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 
@@ -225,8 +213,10 @@ contains
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \return S contains the overlap matrix
-  subroutine interface_scf_get_s( S )
+  subroutine interface_scf_get_s(S)
     type(matrix), intent(inout) :: S
+
+#ifdef VAR_DALTON
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
@@ -244,12 +234,7 @@ contains
     call set_f77_memory_next(work_ovlp + NNBASX)
 
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
-#ifdef PRG_DIRAC
-    print *, 'fix rdonel calls'
-    stop 1
-#else
     call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
-#endif
     ! fills the data into matrices S and H1
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
@@ -257,6 +242,8 @@ contains
     call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
     ! clean
     call set_f77_memory_next(work_ovlp)
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 
@@ -264,8 +251,10 @@ contains
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \return H1 contains the one-electron Hamiltonian matrix
-  subroutine interface_scf_get_h1( H1 )
+  subroutine interface_scf_get_h1(H1)
     type(matrix), intent(inout) :: H1
+
+#ifdef VAR_DALTON
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
@@ -285,12 +274,7 @@ contains
     call set_f77_memory_next(work_ham1 + NNBASX)
 
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
-#ifdef PRG_DIRAC
-    print *, 'fix rdonel calls'
-    stop 1
-#else
     call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
-#endif
     ! PCM one-electron contributions
     if ( get_is_pcm_calculation() ) then
       work_pcm = get_f77_memory_next()
@@ -314,6 +298,8 @@ contains
     call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
     ! clean
     call set_f77_memory_next(work_ham1)
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 end module
