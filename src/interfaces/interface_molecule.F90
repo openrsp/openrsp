@@ -56,8 +56,10 @@ contains
 
       allocate(nuc_isotope(nr_atoms))
 #ifdef PRG_DIRAC
-      print *, 'fix isotop() for dirac'
-      stop 1
+      ! isotop array is not available in DIRAC
+      ! this should be program independent
+      ! for the moment use workaround
+      nuc_isotope = 1
 #else
       nuc_isotope = isotop(:nr_atoms)
 #endif
