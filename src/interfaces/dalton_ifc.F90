@@ -28,9 +28,11 @@ module dalton_ifc
 #include "cbivib.h"
 #include "abainf.h"
 #include "moldip.h"
-    dimension ALPHA(3,3), GPRIME(3,3), THETA(3,6)
-    dimension DIPGRAD(3,nc), dALPHAdR(3,3,nc)
-    dimension dGPRIMEdR(3,3,nc), dTHETAdR(3,6,nc)
+    integer :: nc
+    real(8) :: w
+    real(8) :: ALPHA(3,3), GPRIME(3,3), THETA(3,6)
+    real(8) :: DIPGRAD(3,nc), dALPHAdR(3,3,nc)
+    real(8) :: dGPRIMEdR(3,3,nc), dTHETAdR(3,6,nc)
     integer lunit, i, j, k
     NFRVAL = 1 !NFRVAL in cbilnr
     FRVAL(1) = w  !FRVAL in cbilnr
