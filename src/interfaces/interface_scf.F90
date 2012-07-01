@@ -18,7 +18,6 @@ module interface_scf
 
    public di_get_dens
    public di_get_gmat
-   public di_twofck
    public di_get_overlap_and_H1
 
    private
@@ -225,31 +224,6 @@ contains
     call set_f77_memory_next(work_ao_dens)
   end subroutine
 
-
-
-  !> \brief gets the two electron contribution (G) to Fock matrix
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> \param D contains the AO density matrix
-  !> \return G contains the two electron contribution
-  subroutine di_twofck( D, G )
-
-    type(matrix), intent(in) :: D
-    type(matrix), intent(inout) :: G
-    ! uses NBAST, NNBAST, NNBASX, N2BASX
-#include "inforb.h"
-    ! uses NODC, NODV
-#include "cbione.h"
-    ! start of total density matrix (AO) in work memory
-    integer work_ao_dens
-    ! parameters for SIRFCK
-    integer NDMAT, ISYMDM(2), IFCTYP(2)
-    ! integer constants
-    real(8), parameter :: two = 2.0D+00
-    ! number of elements
-    integer nelms
-    call di_get_gmat( D, G )
-  end subroutine
 
   !> \brief gets the overlap and one-electron Hamiltonian matrices
   !> \author Bin Gao
