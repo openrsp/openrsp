@@ -53,6 +53,7 @@ module openrsp
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
   use openrsp_cfg
+  use matrix_defop
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -691,7 +692,7 @@ end subroutine
     D = 0
     F = 0
 
-    call rsp_mosolver_free
+    call rsp_mosolver_finalize()
 #ifdef USE_WAVPCM
     if (get_is_pcm_calculation()) then
        call pcm_finalize()

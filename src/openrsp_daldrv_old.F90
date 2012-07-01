@@ -327,7 +327,7 @@
     call openrsp_info_dump( openrsp_info, LUPRI )
 
     ! dumps the control information of MO response solver
-    call rsp_mosolver_dump( LUPRI )
+    call rsp_mosolver_splash( LUPRI )
 
     ! initialize and allocate matrices
     call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
@@ -385,7 +385,7 @@
     D = 0
     F = 0
     call openrsp_info_clean(openrsp_info)
-    call rsp_mosolver_free
+    call rsp_mosolver_finalize()
 #ifdef USE_WAVPCM
     if (get_is_pcm_calculation()) then
        call pcm_finalize()
