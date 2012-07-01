@@ -1,10 +1,5 @@
 module interface_scf
 
-!  interface_scf_init is the ONLY routine
-!  that is program specific
-!  you are NOT allowed to introduce anything specific
-!  to a host program outside of interface_scf_init
-
    use matrix_defop
    use interface_f77_memory
    use interface_pcm
@@ -16,9 +11,10 @@ module interface_scf
 
    public get_is_restricted_scf_calculation
 
-   public di_get_dens
-   public di_get_gmat
-   public di_get_overlap_and_H1
+   public interface_scf_get_s
+   public interface_scf_get_d
+   public interface_scf_get_h1
+   public interface_scf_get_g
 
    private
 
@@ -63,7 +59,7 @@ contains
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \return D contains the AO density matrix
-  subroutine di_get_dens( D )
+  subroutine interface_scf_get_d( D )
 
     type(matrix), intent(inout) :: D
     ! uses NCMOT, NASHT, NNASHX, N2BASX
@@ -155,7 +151,7 @@ contains
   !> \date 2009-12-08
   !> \param D contains the AO density matrix
   !> \return G contains the two electron contribution
-  subroutine di_get_gmat( D, G )
+  subroutine interface_scf_get_g( D, G )
 
     type(matrix), intent(in) :: D
     type(matrix), intent(inout) :: G
@@ -229,20 +225,57 @@ contains
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \return S contains the overlap matrix
-  !> \return H1 contains the one-electron Hamiltonian matrix
-  subroutine di_get_overlap_and_H1( S, H1 )
-!   radovan: fixme it's not good for other codes to do S and H1 at the same time
-!            split this in two
+  subroutine interface_scf_get_s( S )
     implicit integer (i,m-n)
 #include "implicit.h"
     type(matrix), intent(inout) :: S
+    ! uses NBAST, NNBASX, N2BASX
+#include "inforb.h"
+    ! IO units, use LUPROP for file AOPROPER
+#include "inftap.h"
+    ! starts of the overlap and one electron Hamiltonian matrices in work memory
+    integer work_ovlp
+    ! integer constants
+    real(8), parameter :: one = 1.0D+00
+    ! dummy stuff
+    integer idummy
+    ! external DALTON function finding the corresponding label
+    logical FNDLAB
+    ! reads overlap and one electron Hamiltonian matrices by calling RDONEL
+    work_ovlp = get_f77_memory_next()
+    call set_f77_memory_next(work_ovlp + NNBASX)
+
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
+#ifdef PRG_DIRAC
+    print *, 'fix rdonel calls'
+    stop 1
+#else
+    call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
+#endif
+    ! fills the data into matrices S and H1
+    !N N2BASX = NBAST * NBAST
+    if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
+    ! gets S
+    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
+    ! clean
+    call set_f77_memory_next(work_ovlp)
+  end subroutine
+
+
+  !> \brief gets the overlap and one-electron Hamiltonian matrices
+  !> \author Bin Gao
+  !> \date 2009-12-08
+  !> \return H1 contains the one-electron Hamiltonian matrix
+  subroutine interface_scf_get_h1( H1 )
+    implicit integer (i,m-n)
+#include "implicit.h"
     type(matrix), intent(inout) :: H1
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
 #include "inftap.h"
     ! starts of the overlap and one electron Hamiltonian matrices in work memory
-    integer work_ovlp, work_ham1
+    integer work_ham1
     ! PCM one-electron contributions
     integer work_pcm
     ! integer constants
@@ -252,8 +285,7 @@ contains
     ! external DALTON function finding the corresponding label
     logical FNDLAB
     ! reads overlap and one electron Hamiltonian matrices by calling RDONEL
-    work_ovlp = get_f77_memory_next()
-    work_ham1 = work_ovlp + NNBASX
+    work_ham1 = get_f77_memory_next()
     call set_f77_memory_next(work_ham1 + NNBASX)
 
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
@@ -261,7 +293,6 @@ contains
     print *, 'fix rdonel calls'
     stop 1
 #else
-    call RDONEL( 'OVERLAP', .true., f77_memory(work_ovlp), NNBASX )
     call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
 #endif
     ! PCM one-electron contributions
@@ -283,11 +314,10 @@ contains
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
-    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
     ! gets H1
     call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
     ! clean
-    call set_f77_memory_next(work_ovlp)
+    call set_f77_memory_next(work_ham1)
   end subroutine
 
 end module

@@ -242,7 +242,7 @@ contains
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
        A(1) = mat_alloc_like(D1)
-       call di_get_gmat(D2, A(1)) !Coulomb and exchange
+       call interface_scf_get_g(D2, A(1)) !Coulomb and exchange
        ave(1) = tr(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
        ncor = 3 * get_nr_atoms()
@@ -427,7 +427,7 @@ contains
     if (nf==0) then
        A = 0*dens
        call mat_ensure_alloc(A)
-       call di_get_gmat(dens, A)
+       call interface_scf_get_g(dens, A)
        fock(1) = fock(1) + A
        A = 0
     else if (nf==1 .and. f(1)=='GEO ') then

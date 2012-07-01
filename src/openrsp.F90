@@ -141,15 +141,16 @@ contains
     G  = mat_alloc_like(S)
 
     ! get the overlap and one electron Hamiltonian matrices
-    call di_get_overlap_and_H1(S, H1)
+    call interface_scf_get_s(S)
+    call interface_scf_get_h1(H1)
 
     ! get the AO density matrix, halving it
-    call di_get_dens(D)
+    call interface_scf_get_d(D)
 
     D = 0.5d0*D
 
     ! get the two electron contribution (G) to Fock matrix
-    call di_get_gmat(D, G)
+    call interface_scf_get_g(D, G)
 
     ! Fock matrix F = H1 + G
     F = H1 + G

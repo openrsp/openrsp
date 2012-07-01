@@ -1760,7 +1760,7 @@ contains
       end if
       !call integral program
       if (what=='  ') then
-         call di_get_gmat(D(1), F(1))
+         call interface_scf_get_g(D(1), F(1))
       else
          wrk(1:n2) = reshape(D(1)%elms, (/n2/)) !ajt fixme
          call GRCONT(wrk( 1+n2+n2*nf : lwrk ), (lwrk-n2-n2*nf),         &
