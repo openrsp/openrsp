@@ -52,14 +52,19 @@ contains
   !> \param max_dim_reduc is the maximum dimension of the reduced space to which new basis vectors are added
   !> \param threshold is the convergence threshold of solving response equations
   !> \param optimal_orb indicates if using optimal orbital trial vectors of solving response equations
-  subroutine rsp_mosolver_init( max_num_iterat, max_dim_hess, max_dim_reduc, &
-                                threshold, optimal_orb )
+  subroutine rsp_mosolver_init(max_num_iterat, &
+                               max_dim_hess,   &
+                               max_dim_reduc,  &
+                               threshold,      &
+                               optimal_orb)
 
     integer, optional, intent(in) :: max_num_iterat
     integer, optional, intent(in) :: max_dim_hess
     integer, optional, intent(in) :: max_dim_reduc
     real(8), optional, intent(in) :: threshold
     logical, optional, intent(in) :: optimal_orb
+
+#ifdef VAR_DALTON
     ! uses NBAST
 #include "inforb.h"
     ! uses LUSIFC
@@ -95,18 +100,15 @@ contains
       if ( LUSIFC <= 0 ) &
         call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', ierr, .false. )
       rewind( LUSIFC )
-#ifdef PRG_DIRAC
-    print *, 'fix rd_sirifc call'
-    stop 1
-#else 
       call rd_sirifc( 'DV', found, solver_DV, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-#endif
       if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
     else
       allocate( solver_DV(1), stat=ierr )
       if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
       solver_DV(1) = 0.0D+00
     end if
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 
@@ -114,11 +116,15 @@ contains
   !> \brief cleans the MO response solver
   !> \author Bin Gao
   !> \date 2009-12-08
-  subroutine rsp_mosolver_free
+  subroutine rsp_mosolver_free()
+
+#ifdef VAR_DALTON
     solver_CMO = 0
     solver_CMO_OCC = 0
     solver_CMO_VIR = 0
     deallocate( solver_DV )
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 
@@ -128,6 +134,8 @@ contains
   !> \param io_dump is the IO unit to dump
   subroutine rsp_mosolver_dump( io_dump )
     integer, intent(in) :: io_dump
+
+#ifdef VAR_DALTON
     write( io_dump, 100 ) &
       'Maximum number of micro iterations of solving the response equations: ', solver_maxit
     write( io_dump, 100 ) &
@@ -144,6 +152,8 @@ contains
     ! outputs matrices to check
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
 
@@ -156,9 +166,11 @@ contains
   !> \return eigvec contains the solution vectors (AO)
   subroutine rsp_mosolver_exec( GD, eigval, eigvec )
 
-    type(matrix), intent(in) :: GD(*)
-    real(8), intent(in)  :: eigval(*)
+    type(matrix), intent(in)    :: GD(*)
+    real(8),      intent(in)    :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
+
+#ifdef VAR_DALTON
     ! right hand side vector (MO)
     type(matrix) :: GD_MO
     ! for MO response solver of DALTON, 1 for real operator, -1 for imaginary operator
@@ -177,23 +189,19 @@ contains
     integer IPRLIN, LSYMRF, LSYMPT, LSYMST, &
             NCONRF, NCONST, NWOPPT, NVARPT
 
-#ifndef PRG_DIRAC
 #include "inflin.h"
     ! uses LURSP
 #include "inftap.h"
     ! uses JWOP(2,MAXWOP) for the orbital rotation
 #include "infvar.h"
-#endif
     !
     integer KMJWOP
     ! uses IRAT
 #include "iratdef.h"
     !
     character*8 :: LAB1 = 'MOSOLVER', LAB2 = '        '
-#ifndef PRG_DIRAC
     ! uses KZVAR
 #include "wrkrsp.h"
-#endif
     ! constants
     real(8), parameter :: half = 5.0D-01
     real(8), parameter :: zero = 0.0D+00
@@ -206,7 +214,6 @@ contains
     integer :: rsp2_number_of_omegas = 1
     integer :: rsp2_number_of_rhs = 1
 
-#ifndef PRG_DIRAC
     KZWOPT = NOCCT*NVIRT
     KZVAR = KZWOPT
     KZYVAR = KZWOPT + KZWOPT
@@ -299,7 +306,8 @@ contains
       mo_eigvec(ISOL) = 0
     end do
     deallocate( mo_eigvec )
-#endif /* ifndef PRG_DIRAC */
+#endif /* ifdef VAR_DALTON */
+
   end subroutine
 
   !> \brief gets the coefficients of molecular orbitals
@@ -329,12 +337,7 @@ contains
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
-#ifdef PRG_DIRAC
-    print *, 'fix rd_sirifc call'
-    stop 1
-#else 
     call rd_sirifc( 'CMO', found, CMO%elms, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-#endif
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     !N if ( .not. restrict_scf ) CMO%elmsb = CMO%elms
     ! generates the occupied and virtual molecular orbitals
