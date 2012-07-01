@@ -747,8 +747,6 @@ contains
   !> \param init_prop indicates if initialize the integral matrix
   !> \return prop_int contains the integral matrix
   subroutine di_read_operator_int( prop_lab, prop_int )
-    implicit integer (i,m-n)
-#include "implicit.h"
     character*(8), intent(in) :: prop_lab
     type(matrix), intent(inout) :: prop_int
     ! uses NBAST, NNBAST, NNBASX, N2BASX
@@ -761,6 +759,7 @@ contains
     character*8 RTNLBL(2)
     ! dummy stuff
     integer IDUMMY
+    logical anti
     ! one-electron Hamiltonian
     if ( prop_lab == 'ONEHAMIL' ) then
       call QUIT( 'Not implemented!' )
@@ -768,6 +767,7 @@ contains
     print *, 'fix rdonel call'
     stop 1
 #else
+      anti = .false. !radovan: was undefined, setting it to false
       call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
 #endif
       call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )

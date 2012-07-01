@@ -226,8 +226,6 @@ contains
   !> \date 2009-12-08
   !> \return S contains the overlap matrix
   subroutine interface_scf_get_s( S )
-    implicit integer (i,m-n)
-#include "implicit.h"
     type(matrix), intent(inout) :: S
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
@@ -267,8 +265,6 @@ contains
   !> \date 2009-12-08
   !> \return H1 contains the one-electron Hamiltonian matrix
   subroutine interface_scf_get_h1( H1 )
-    implicit integer (i,m-n)
-#include "implicit.h"
     type(matrix), intent(inout) :: H1
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
