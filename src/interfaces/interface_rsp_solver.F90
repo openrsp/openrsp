@@ -54,8 +54,7 @@ contains
   !> \param optimal_orb indicates if using optimal orbital trial vectors of solving response equations
   subroutine rsp_mosolver_init( max_num_iterat, max_dim_hess, max_dim_reduc, &
                                 threshold, optimal_orb )
-    implicit integer (i,m-n)
-#include "implicit.h"
+
     integer, optional, intent(in) :: max_num_iterat
     integer, optional, intent(in) :: max_dim_hess
     integer, optional, intent(in) :: max_dim_reduc
@@ -156,8 +155,7 @@ contains
   !> \param eigval contains the frequencies
   !> \return eigvec contains the solution vectors (AO)
   subroutine rsp_mosolver_exec( GD, eigval, eigvec )
-    implicit integer (i,m-n)
-#include "implicit.h"
+
     type(matrix), intent(in) :: GD(*)
     real(8), intent(in)  :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
@@ -311,8 +309,7 @@ contains
   !> \return CMO_OCC contains the coefficients of occupied molecular orbitals
   !> \return CMO_VIR contains the coefficients of virtual molecular orbitals
   subroutine di_get_cmo( CMO, CMO_OCC, CMO_VIR )
-    implicit integer (i,m-n)
-#include "implicit.h"
+
     type(matrix), intent(inout) :: CMO
     type(matrix), intent(inout) :: CMO_OCC
     type(matrix), intent(inout) :: CMO_VIR
@@ -321,9 +318,6 @@ contains
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! uses NODC, NODV
-    ! since we here prefer "implicit none", we have to
-    ! define some variables even we do not need them
-    integer IPRINT, IDCOOR, MAXDIF, IDATOM
 #include "cbione.h"
     ! dummy stuff
     integer idummy

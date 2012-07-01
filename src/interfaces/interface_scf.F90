@@ -64,8 +64,7 @@ contains
   !> \date 2009-12-08
   !> \return D contains the AO density matrix
   subroutine di_get_dens( D )
-    implicit integer (i,m-n)
-#include "implicit.h"
+
     type(matrix), intent(inout) :: D
     ! uses NCMOT, NASHT, NNASHX, N2BASX
 #include "inforb.h"
@@ -157,16 +156,12 @@ contains
   !> \param D contains the AO density matrix
   !> \return G contains the two electron contribution
   subroutine di_get_gmat( D, G )
-    implicit integer (i,m-n)
-#include "implicit.h"
+
     type(matrix), intent(in) :: D
     type(matrix), intent(inout) :: G
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! uses NODC, NODV
-    ! since we here prefer "implicit none", we have to
-    ! define some variables even we do not need them
-    integer IPRINT, IDCOOR, MAXDIF, IDATOM
 #include "cbione.h"
     ! use PCM
     ! start of total density matrix (AO) in work memory
@@ -237,16 +232,12 @@ contains
   !> \param D contains the AO density matrix
   !> \return G contains the two electron contribution
   subroutine di_twofck( D, G )
-    implicit integer (i,m-n)
-#include "implicit.h"
+
     type(matrix), intent(in) :: D
     type(matrix), intent(inout) :: G
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! uses NODC, NODV
-    ! since we here prefer "implicit none", we have to
-    ! define some variables even we do not need them
-    integer IPRINT, IDCOOR, MAXDIF, IDATOM
 #include "cbione.h"
     ! start of total density matrix (AO) in work memory
     integer work_ao_dens
