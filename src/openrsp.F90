@@ -49,6 +49,7 @@ module openrsp
   use interface_rsp_solver
   use interface_1el
   use interface_basis
+  use interface_algebra
   use rsp_functions
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
@@ -135,7 +136,7 @@ contains
                            openrsp_cfg_solver_optorb)
 
     ! initialize and allocate overlap matrix
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true., nz=get_nz())
 
     ! get the overlap
     call interface_scf_get_s(S)

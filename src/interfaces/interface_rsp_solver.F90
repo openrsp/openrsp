@@ -4,6 +4,7 @@ module interface_rsp_solver
    use interface_scf
    use interface_f77_memory
    use interface_io
+   use interface_algebra
 
    implicit none
 
@@ -87,7 +88,7 @@ contains
     if ( present( optimal_orb ) ) solver_optorb = optimal_orb
     ! initializes the coefficients of molecular orbitals matrices
 
-    call mat_init(solver_CMO, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(solver_CMO, nrow=NBAST, ncol=NBAST, closed_shell=.true., nz=get_nz())
 
     solver_CMO_OCC = mat_alloc_like(solver_CMO)
     solver_CMO_VIR = mat_alloc_like(solver_CMO)
@@ -238,7 +239,7 @@ contains
 
     ! transforms from AO to MO, and writes RHS (MO) into file
 
-    call mat_init(RHS_MO, nrow=NORBT, ncol=NORBT, closed_shell=.true.)
+    call mat_init(RHS_MO, nrow=NORBT, ncol=NORBT, closed_shell=.true., nz=get_nz())
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS

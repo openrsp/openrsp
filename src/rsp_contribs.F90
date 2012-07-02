@@ -19,6 +19,7 @@ module rsp_contribs
   use interface_1el
   use interface_scf
   use interface_basis
+  use interface_algebra
   use dalton_ifc
   use nuc_contributions
   use basis_set,  only: cgto
@@ -414,7 +415,7 @@ contains
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
   if (any(f=='EL  ')) then
-     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., nz=get_nz())
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))

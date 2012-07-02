@@ -52,6 +52,7 @@
     use interface_scf
     use interface_rsp_solver
     use interface_1el
+    use interface_algebra
     ! main module of openrsp
     use openrsp_old
 
@@ -331,7 +332,7 @@
     call rsp_mosolver_splash( LUPRI )
 
     ! initialize and allocate matrices
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true., nz=get_nz())
 
     D  = mat_alloc_like(S)
     H1 = mat_alloc_like(S)
