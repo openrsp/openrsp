@@ -160,6 +160,11 @@ contains
 
     print *, 'nr of electrons from dot(D, S) =', dot(D, S)
 
+#ifdef PRG_DIRAC
+!   stop here, nothing below can work on the dirac side
+    stop 1
+#endif
+
 #ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
        ! write xcint interface files
