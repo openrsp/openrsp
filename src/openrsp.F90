@@ -110,6 +110,7 @@ contains
     call interface_xc_init()
     call interface_pcm_init(wavpcm)
     call interface_scf_init()
+    call interface_basis_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()
@@ -189,7 +190,6 @@ contains
     end if
 #endif
 
-    call interface_basis_init()
     num_atoms = get_nr_atoms()
 
 end subroutine

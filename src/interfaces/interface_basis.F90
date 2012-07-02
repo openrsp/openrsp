@@ -6,6 +6,7 @@ module interface_basis
 
    public interface_basis_init
    public interface_basis_finalize
+   public get_nr_ao
 
    private
 
@@ -14,6 +15,9 @@ module interface_basis
 
    type(cgto), pointer, public :: interface_basis_pointer(:)
 
+!  non-allocatables
+   integer :: nr_ao
+
 contains
 
    subroutine interface_basis_init()
@@ -21,6 +25,24 @@ contains
       integer              :: num_cgto_blocks
       integer              :: num_exp_and_ctr
       real(8), allocatable :: exp_and_ctr(:)
+
+#ifdef PRG_DALTON
+! uses nbast
+#include "inforb.h"
+#endif
+
+#ifdef PRG_DIRAC
+! uses ntbas(0)
+#include "dcbbas.h"
+#endif
+
+#ifdef PRG_DALTON
+      nr_ao = nbast
+#endif
+
+#ifdef PRG_DIRAC
+      nr_ao = ntbas(0)
+#endif
 
       call shells_find_sizes(num_cgto_blocks, num_exp_and_ctr)
 
@@ -55,6 +77,11 @@ contains
          stop 1
       end if
    end subroutine
+
+   integer function get_nr_ao()
+      call check_if_interface_is_initialized()
+      get_nr_ao = nr_ao
+   end function
 
   !> Count the number of contracted Gaussian-type orbital shells
   !> \param ncgto, and number of exponents and contraction coefficents

@@ -2,6 +2,7 @@ module interface_1el
 
    use matrix_defop
    use interface_molecule
+   use interface_basis
    use interface_f77_memory
    use interface_pcm
    use interface_io

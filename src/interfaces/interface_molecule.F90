@@ -10,7 +10,6 @@ module interface_molecule
    public interface_molecule_init
    public interface_molecule_finalize
 
-   public get_nr_ao
    public get_nr_atoms
    public get_nuc_name
    public get_nuc_charge
@@ -24,7 +23,6 @@ module interface_molecule
    logical :: is_initialized = .false.
 
 !  non-allocatables
-   integer :: nr_ao
    integer :: nr_atoms
    real(8) :: dipole_origin(3)
 
@@ -45,7 +43,6 @@ contains
 #include "infinp.h"
 #include "orgcom.h"
 
-      nr_ao    = nbast
       nr_atoms = natoms
 
       allocate(nuc_name(nr_atoms))
@@ -92,11 +89,6 @@ contains
          stop 1
       end if
    end subroutine
-
-   integer function get_nr_ao()
-      call check_if_interface_is_initialized()
-      get_nr_ao = nr_ao
-   end function
 
    integer function get_nr_atoms()
       call check_if_interface_is_initialized()

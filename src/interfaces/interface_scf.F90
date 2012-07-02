@@ -55,13 +55,13 @@ contains
       get_is_restricted_scf_calculation = is_restricted_scf_calculation
    end function
 
-  !> \brief gets the AO density matrix
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> \return D contains the AO density matrix
-  subroutine interface_scf_get_d(D)
-
-    type(matrix), intent(inout) :: D
+   !> \brief gets the AO density matrix
+   !> \author Bin Gao
+   !> \date 2009-12-08
+   !> \return D contains the AO density matrix
+   subroutine interface_scf_get_d(D)
+ 
+      type(matrix), intent(inout) :: D
 
 #ifdef PRG_DALTON
     ! uses NCMOT, NASHT, NNASHX, N2BASX
@@ -136,7 +136,37 @@ contains
     call set_f77_memory_next(strt_cmo)
 #endif /* ifdef PRG_DALTON */
 
-  end subroutine
+#ifdef PRG_DIRAC
+      integer, parameter   :: io = 66
+      real(8), allocatable :: mo_coef(:)
+
+! uses n2bbasxq
+include "dcbbas.h"
+
+      open(io,    &
+           file   = 'DFCOEF',      &
+           status = 'unknown',     &
+           form   = 'unformatted', &
+           access = 'sequential')
+      rewind(io)
+      allocate(mo_coef(n2bbasxq))
+      mo_coef = 0.0d0
+
+      call reacmo_no_work(io,        &
+                          'DFCOEF',  &
+                          mo_coef,   &
+                          (/0.0d0/), &
+                          (/0/),     &
+                          (/0.0d0/), &
+                          4)
+
+      close(io, status = 'keep')
+
+      D%elms = 0.0d0
+      call genden(D%elms, mo_coef, 1, 0)
+#endif /* ifdef PRG_DIRAC */
+
+   end subroutine
 
 
 
@@ -209,12 +239,13 @@ contains
   end subroutine
 
 
-  !> \brief gets the overlap and one-electron Hamiltonian matrices
-  !> \author Bin Gao
-  !> \date 2009-12-08
-  !> \return S contains the overlap matrix
-  subroutine interface_scf_get_s(S)
-    type(matrix), intent(inout) :: S
+   !> \brief gets the overlap
+   !> \author Bin Gao
+   !> \date 2009-12-08
+   !> \return S contains the overlap matrix
+   subroutine interface_scf_get_s(S)
+
+      type(matrix), intent(inout) :: S
 
 #ifdef PRG_DALTON
     ! uses NBAST, NNBASX, N2BASX
@@ -244,7 +275,18 @@ contains
     call set_f77_memory_next(work_ovlp)
 #endif /* ifdef PRG_DALTON */
 
-  end subroutine
+#ifdef PRG_DIRAC
+
+! uses ssmtrc (small-small metric)
+#include "dcbham.h"
+
+      S%elms = 0.0d0
+      !fixme rather use gen1int
+      call gtovlx(S%elms, ssmtrc)
+
+#endif /* ifdef PRG_DIRAC */
+
+   end subroutine
 
 
   !> \brief gets the overlap and one-electron Hamiltonian matrices

@@ -46,6 +46,7 @@
     ! interface of DALTON
     use interface_f77_memory
     use interface_io
+    use interface_basis
     use interface_xc
     use interface_pcm
     use interface_scf
