@@ -136,7 +136,7 @@ contains
                            openrsp_cfg_solver_optorb)
 
     ! initialize and allocate overlap matrix
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true., nz=get_nz())
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
 
     ! get the overlap
     call interface_scf_get_s(S)
