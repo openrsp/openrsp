@@ -1731,7 +1731,7 @@ contains
       integer          :: nf, n2, lwrk, i, aa=0
       real(8), pointer :: wrk(:)
       nf = size(F)
-      n2 = size(D(1)%elms)
+      n2 = size(D(1)%elms_0)
       if (what=='  ' .and. nf==1) then
          lwrk = 0
       else if (what=='M ' .and. nf==3) then
@@ -1763,13 +1763,13 @@ contains
       if (what=='  ') then
          call interface_scf_get_g(D(1), F(1))
       else
-         wrk(1:n2) = reshape(D(1)%elms, (/n2/)) !ajt fixme
+         wrk(1:n2) = reshape(D(1)%elms_0, (/n2/)) !ajt fixme
          call GRCONT(wrk( 1+n2+n2*nf : lwrk ), (lwrk-n2-n2*nf),         &
                      wrk( 1+n2 : n2+n2*nf ), n2*nf, (what(1:1) == 'G'), &
                      (what(1:1) == 'M'), merge(1,2,what(2:2)==' '),     &
                      aa, .false., .true., wrk(1:n2), 1)
          do i = 1, nf
-            F(i)%elms = reshape(wrk(1+n2*i:n2*(1+i)), shape(F(i)%elms)) !ajt fixme
+            F(i)%elms_0 = reshape(wrk(1+n2*i:n2*(1+i)), shape(F(i)%elms_0)) !ajt fixme
          end do
       end if
       !deallocate work
@@ -1861,13 +1861,13 @@ contains
       call f77_memory_select(work_len=lwrk, work=wrk)
 
 !     this is done because grcont presently needs Da and Db to be consecutive
-!     and (/Da%elms, Db%elms/) can cause stack overflow, depending
+!     and (/Da%elms_0, Db%elms_0/) can cause stack overflow, depending
 !     on ulimit and compiler flags; -auto-scalar:fine: -auto:overflow
 !     a future rewrite of grcont could take a list of pointers
 !     (or just type(matrix)) instead of consecutive real(8) arrays
-      l = size(Da%elms)
-      wrk(    1:  l) = reshape(Da%elms, (/l/))
-      wrk(l + 1:2*l) = reshape(Db%elms, (/l/))
+      l = size(Da%elms_0)
+      wrk(    1:  l) = reshape(Da%elms_0, (/l/))
+      wrk(l + 1:2*l) = reshape(Db%elms_0, (/l/))
 
       e = 0.0d0
 

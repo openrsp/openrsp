@@ -1031,16 +1031,16 @@ p_debug = 0.0
 ! do i = 1, size(data)
 ! 
 ! write(*,*) 'i is', i
-! write(*,*) data(i)%elms
+! write(*,*) data(i)%elms_0
 ! 
 ! end do
 ! if (size(data) >= 5) then
 
 ! write(*,*) 'component 5 data'
-! write(*,*) data(5)%elms
+! write(*,*) data(5)%elms_0
        next_element%data = data
 ! write(*,*) 'component 5 n elem'
-! write(*,*) next_element%data(5)%elms
+! write(*,*) next_element%data(5)%elms_0
 
 ! end if
 
@@ -1244,13 +1244,13 @@ p_debug = 0.0
 !  write(*,*) 'found element in s', pert_tuple%plab
 ! write(*,*) 'indices are', ind
 ! write(*,*) 'offset is', offset
-! write(*,*) next_element%data(offset)%elms
+! write(*,*) next_element%data(offset)%elms_0
 ! end if
 
 ! write(*,*)'found element', pert_tuple%plab, offset
 ! do i =  1, size(next_element%data)
 ! 
-! write(*,*) next_element%data(i)%elms
+! write(*,*) next_element%data(i)%elms_0
 ! 
 ! end do
 ! write(*,*) 'data size', size(next_element%data)
@@ -1331,7 +1331,7 @@ p_debug = 0.0
 !  write(*,*) 'found element in fn', pert_tuple%plab
 ! write(*,*) 'indices are', ind
 ! write(*,*) 'offset is', offset
-! write(*,*) next_element%data(offset)%elms
+! write(*,*) next_element%data(offset)%elms_0
 
        sdf_getdata = next_element%data(offset)
 
@@ -1677,9 +1677,9 @@ end do
     end do
 
 ! if (num_p_tuples >= 3) then
-! 	  write(*,*) 'dt2 before', dens_tuple(2)%elms
+! 	  write(*,*) 'dt2 before', dens_tuple(2)%elms_0
 !           call sdf_getdata_s(D, p_tuples(2), (/ 5 /), dens_tuple(2))
-! 	  write(*,*) 'dt2', dens_tuple(2)%elms
+! 	  write(*,*) 'dt2', dens_tuple(2)%elms_0
 ! 
 ! 
 ! end if
@@ -1772,9 +1772,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
        elseif (num_p_tuples == 3) then
 
-! write(*,*) 'dens tuple 2', dens_tuple(2)%elms
+! write(*,*) 'dens tuple 2', dens_tuple(2)%elms_0
 ! write(*,*) 'dens tuple 2 plabs', p_tuples(2)%plab
-! write(*,*) 'dens tuple 3', dens_tuple(3)%elms
+! write(*,*) 'dens tuple 3', dens_tuple(3)%elms_0
 ! write(*,*) 'dens tuple 3 plabs', p_tuples(3)%plab
 
           call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -2370,7 +2370,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     ! NOTE (MaR): THIS CAN PROBABLY BE DONE MORE ECONOMICALLY
 
-    Y%elms= 0.0
+    Y%elms_0= 0.0
 
     do i = 1, superstructure_size
 
@@ -2456,7 +2456,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     C = zeromatrix
     call mat_alloc(C)
 
-    Z%elms = 0.0
+    Z%elms_0 = 0.0
 
     do i = 1, superstructure_size
 
@@ -2470,10 +2470,10 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        Z = Z + A*B*C
 
 !     write(*,*) 'i is',i
-!     write(*,*) 'Z', Z%elms
-!     write(*,*) 'A', A%elms
-!     write(*,*) 'B', B%elms
-!     write(*,*) 'C', C%elms
+!     write(*,*) 'Z', Z%elms_0
+!     write(*,*) 'A', A%elms_0
+!     write(*,*) 'B', B%elms_0
+!     write(*,*) 'C', C%elms_0
     end do
 
     merged_p_tuple = merge_p_tuple(deriv_struct(1,1), merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3)))
@@ -2527,7 +2527,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     C = zeromatrix
     call mat_alloc(C)
 
-    L%elms = 0.0
+    L%elms_0 = 0.0
 
     do i = 1, superstructure_size
 
@@ -2760,7 +2760,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S)
 
-! write(*,*) 'got W', W%elms
+! write(*,*) 'got W', W%elms_0
 ! write(*,*) 'ncinner', ncinner
 
        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
@@ -3644,7 +3644,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
                          (/ (p_tuples(k)%pid, k=1, num_p_tuples ) /), ncarray)
 ! write(*,*) 'indices', (/ inner_indices(j,:), outer_indices(i,:) /)
 ! write(*,*) 'offset', offset
-! write(*,*) 'Fp tmp contribution', tmp(j)%elms
+! write(*,*) 'Fp tmp contribution', tmp(j)%elms_0
                 Fp(offset) = Fp(offset) + tmp(j)
 
              end do
@@ -3657,7 +3657,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
                       (/ (p_tuples(k)%pid, k=2, num_p_tuples ) /), ncarray)
 ! write(*,*) 'indices', outer_indices(i,:)
 ! write(*,*) 'offset', offset
-! write(*,*) 'Fp tmp contribution', tmp(1)%elms
+! write(*,*) 'Fp tmp contribution', tmp(1)%elms_0
                 Fp(offset) = Fp(offset) + tmp(1)
 
           end if
@@ -3888,7 +3888,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! do i = 1, product(pert%pdim)
 ! 
 ! write(*,*) 'Sp at', i
-!        write(*,*) Sp(i)%elms
+!        write(*,*) Sp(i)%elms_0
 ! 
 ! end do
 
@@ -3909,7 +3909,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! write(*,*) 'Set Dp'
 !        Dp(i) = zeromatrix
 !        call mat_alloc(Dp(i))
-!        Dp(i)%elms = 0.0
+!        Dp(i)%elms_0 = 0.0
 
        call mat_nullify(Dh(i))
           Dh(i)%nrow = zeromatrix%nrow
@@ -3929,7 +3929,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
           call mat_axpy((0.0d0, 0.0d0), Fp(i), .false., .true., Fp(i))
 !        Fp(i) = zeromatrix
 !        call mat_alloc(Fp(i))
-!        Fp(i)%elms = 0.0
+!        Fp(i)%elms_0 = 0.0
 ! write(*,*) 'Set Fp'
     end do
 
@@ -3947,8 +3947,8 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 ! write(*,*) 'added Fp'
 ! 
-!        write(*,*) Dp(1)%elms
-!        write(*,*) Fp(1)%elms
+!        write(*,*) Dp(1)%elms_0
+!        write(*,*) Fp(1)%elms_0
 
     ! b) For Dp: Create differentiation superstructure: First dryrun, then actual call
 
@@ -3972,7 +3972,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! write(*,*) 'i', i
        ind = make_one_index_tuple(pert%n_perturbations, pert%pdim, i)
 
-!         write(*,*) 'Dp before z', Dp(i)%elms
+!         write(*,*) 'Dp before z', Dp(i)%elms_0
 
        Dp(i) = 1.0d0 * rsp_get_matrix_z(superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
@@ -3981,7 +3981,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 ! write(*,*) 'got z'
 
-!         write(*,*) 'Dp at z', Dp(i)%elms
+!         write(*,*) 'Dp at z', Dp(i)%elms_0
 
        Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
 
@@ -3991,7 +3991,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 !                Dp(i) * sdf_getdata(S, get_emptypert(), (/1/)) * &
 !                        sdf_getdata(D, get_emptypert(), (/1/)) 
 
-!        write(*,*) 'Dp at projection', Dp(i)%elms
+!        write(*,*) 'Dp at projection', Dp(i)%elms_0
 
        call sdf_add(D, pert, Dp)
 
@@ -4010,8 +4010,8 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
 ! write(*,*) 'added Fp'
 ! 
-!        write(*,*) Dp(i)%elms
-!        write(*,*) Fp(i)%elms
+!        write(*,*) Dp(i)%elms_0
+!        write(*,*) Fp(i)%elms_0
 
 
        ! 4. Make right-hand side using Dp
@@ -4025,9 +4025,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
      
        X(1) = 0*RHS(1)
        call mat_alloc(X(1))
-       X(1)%elms= 0.0
+       X(1)%elms_0= 0.0
 
-! write(*,*) 'RHS', RHS(1)%elms
+! write(*,*) 'RHS', RHS(1)%elms_0
 ! write(*,*) 'set up solver'
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
@@ -4036,7 +4036,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        X(1) = -2d0*X(1)
        RHS(1) = 0
 
-! write(*,*) 'solved', X(1)%elms
+! write(*,*) 'solved', X(1)%elms_0
        ! 5. Get Dh using the rsp equation solution X
 
        Dh(i) = X(1) * B * A - A * B * X(1)
@@ -4068,9 +4068,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        Dp(i) = Dp(i) + Dh(i)
 
 ! write(*,*) 'Finally, Dp(i) at i', i, 'is'
-! write(*,*) Dp(i)%elms
+! write(*,*) Dp(i)%elms_0
 ! write(*,*) 'Fp(i) at i', i, 'is'
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_0
 
 
 ! write(*,*) 'added homogeneous'
@@ -4096,7 +4096,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! do i = 1, pert%pdim(1)
 ! 
 !           call sdf_getdata_s(D, pert, (/ i /), TEST)
-! 	  write(*,*) 'dt2 3 in get fds', TEST%elms
+! 	  write(*,*) 'dt2 3 in get fds', TEST%elms_0
 ! 
 ! 
 ! 
@@ -4328,9 +4328,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 ! call mat_alloc(TEST)
 ! 
 !           call sdf_getdata_s(D, p_tuple_getone(pert,2), (/ 3 /), TEST)
-! 	  write(*,*) 'dt2 3', TEST%elms
+! 	  write(*,*) 'dt2 3', TEST%elms_0
 !           call sdf_getdata_s(D, p_tuple_getone(pert,2), (/ 5 /), TEST)
-! 	  write(*,*) 'dt2 5', TEST%elms
+! 	  write(*,*) 'dt2 5', TEST%elms_0
 
 
 

@@ -52,7 +52,6 @@
     use interface_scf
     use interface_rsp_solver
     use interface_1el
-    use interface_algebra
     ! main module of openrsp
     use openrsp_old
 
@@ -332,7 +331,7 @@
     call rsp_mosolver_splash( LUPRI )
 
     ! initialize and allocate matrices
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true., nz=get_nz())
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
 
     D  = mat_alloc_like(S)
     H1 = mat_alloc_like(S)
@@ -365,7 +364,7 @@
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_0, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
        call xc_integrate(                     &
                          xc_mat_dim=mat_dim,  &
@@ -374,7 +373,7 @@
                          xc_energy=xc_energy, &
                          xc_fmat=xc_fmat      &
                         )
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_0, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if

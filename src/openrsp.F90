@@ -49,7 +49,6 @@ module openrsp
   use interface_rsp_solver
   use interface_1el
   use interface_basis
-  use interface_algebra
   use rsp_functions
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
@@ -176,7 +175,7 @@ contains
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_0, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
        call xc_integrate(                     &
                          xc_mat_dim=mat_dim,  &
@@ -185,7 +184,7 @@ contains
                          xc_energy=xc_energy, &
                          xc_fmat=xc_fmat      &
                         )
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_0, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if

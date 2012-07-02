@@ -19,7 +19,6 @@ module rsp_contribs
   use interface_1el
   use interface_scf
   use interface_basis
-  use interface_algebra
   use dalton_ifc
   use nuc_contributions
   use basis_set,  only: cgto
@@ -250,8 +249,8 @@ contains
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms_0,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_0,(/n*n/))
 #ifdef PRG_DIRAC
     print *, 'fix grcont call'
     stop 1
@@ -266,8 +265,8 @@ contains
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms_0,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_0,(/n*n/))
 #ifdef PRG_DIRAC
     print *, 'fix grcont call'
     stop 1
@@ -415,13 +414,13 @@ contains
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
   if (any(f=='EL  ')) then
-     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., nz=get_nz())
+     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))
-           fock(i)%elms = fock(i)%elms + A%elms
+           fock(i)%elms_0 = fock(i)%elms_0 + A%elms_0
         else
-           fock(i)%elms = fock(i)%elms + A%elms
+           fock(i)%elms_0 = fock(i)%elms_0 + A%elms_0
         end if
      end do
   else
@@ -443,14 +442,14 @@ contains
 #else
              call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
                          f77_memory(:n*n*3), n*n*3, .true., .false., &
-                         1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
+                         1, (c(1)+i+2)/3, .false., .true., dens%elms_0, 1)
 #endif
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
              call mat_ensure_alloc(fock(1+i))
-             fock(1+i)%elms = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+             fock(1+i)%elms_0 = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
-             fock(1+i)%elms = fock(1+i)%elms &
+             fock(1+i)%elms_0 = fock(1+i)%elms_0 &
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
        end do
@@ -462,7 +461,7 @@ contains
              ij = 1 + i + nc(1)*j
              if (iszero(fock(ij))) then
                 call mat_ensure_alloc(fock(ij))
-                fock(ij)%elms = 0 !ajt FIXME use mat_axpy
+                fock(ij)%elms_0 = 0 !ajt FIXME use mat_axpy
              end if
              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
                               ncor, dens, fock(ij), null_ptr)
