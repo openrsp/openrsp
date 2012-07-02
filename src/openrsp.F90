@@ -133,23 +133,23 @@ contains
                            openrsp_cfg_solver_thresh, &
                            openrsp_cfg_solver_optorb)
 
-    ! initialize and allocate matrices
+    ! initialize and allocate overlap matrix
     call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
 
-    D  = mat_alloc_like(S)
-    H1 = mat_alloc_like(S)
-    G  = mat_alloc_like(S)
-
-    ! get the overlap and one electron Hamiltonian matrices
+    ! get the overlap
     call interface_scf_get_s(S)
-    call interface_scf_get_h1(H1)
 
-    ! get the AO density matrix, halving it
+    ! get the AO density matrix and divide by 2
+    D  = mat_alloc_like(S)
     call interface_scf_get_d(D)
-
     D = 0.5d0*D
 
+    ! get the one electron Hamiltonian
+    H1 = mat_alloc_like(S)
+    call interface_scf_get_h1(H1)
+
     ! get the two electron contribution (G) to Fock matrix
+    G  = mat_alloc_like(S)
     call interface_scf_get_g(D, G)
 
     ! Fock matrix F = H1 + G
@@ -157,6 +157,8 @@ contains
 
     H1 = 0
     G  = 0
+
+    print *, 'nr of electrons from dot(D, S) =', dot(D, S)
 
 #ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
