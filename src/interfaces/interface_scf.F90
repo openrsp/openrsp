@@ -63,7 +63,7 @@ contains
 
     type(matrix), intent(inout) :: D
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     ! uses NCMOT, NASHT, NNASHX, N2BASX
 #include "inforb.h"
     ! uses LUSIFC
@@ -134,7 +134,7 @@ contains
                                  (/D%nrow, D%ncol/) )
     ! clean
     call set_f77_memory_next(strt_cmo)
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
@@ -150,7 +150,7 @@ contains
     type(matrix), intent(in)    :: D
     type(matrix), intent(inout) :: G
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! uses NODC, NODV
@@ -204,7 +204,7 @@ contains
     !N if ( .not. restrict_scf ) G%elmsb = G%elms
     ! cleans
     call set_f77_memory_next(work_ao_dens)
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
@@ -216,7 +216,7 @@ contains
   subroutine interface_scf_get_s(S)
     type(matrix), intent(inout) :: S
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
@@ -242,7 +242,7 @@ contains
     call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
     ! clean
     call set_f77_memory_next(work_ovlp)
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
@@ -254,7 +254,7 @@ contains
   subroutine interface_scf_get_h1(H1)
     type(matrix), intent(inout) :: H1
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     ! uses NBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
@@ -298,7 +298,7 @@ contains
     call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
     ! clean
     call set_f77_memory_next(work_ham1)
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 

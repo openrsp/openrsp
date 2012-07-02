@@ -66,7 +66,7 @@ contains
     real(8), optional, intent(in) :: threshold
     logical, optional, intent(in) :: optimal_orb
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     ! uses NBAST
 #include "inforb.h"
     ! uses LUSIFC
@@ -109,7 +109,7 @@ contains
       if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
       solver_DV(1) = 0.0D+00
     end if
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
@@ -120,12 +120,12 @@ contains
   !> \date 2009-12-08
   subroutine rsp_mosolver_finalize()
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     solver_CMO = 0
     solver_CMO_OCC = 0
     solver_CMO_VIR = 0
     deallocate( solver_DV )
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
@@ -137,7 +137,7 @@ contains
   subroutine rsp_mosolver_splash( io )
     integer, intent(in) :: io
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     write( io, 100 ) &
       'Maximum number of micro iterations of solving the response equations: ', solver_maxit
     write( io, 100 ) &
@@ -154,7 +154,7 @@ contains
     ! outputs matrices to check
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
@@ -174,7 +174,7 @@ contains
     real(8),      intent(in)    :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
     ! right hand side vector (MO)
     type(matrix) :: RHS_MO
     ! for MO response solver of DALTON, 1 for real operator, -1 for imaginary operator
@@ -310,11 +310,11 @@ contains
       mo_eigvec(ISOL) = 0
     end do
     deallocate( mo_eigvec )
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
   end subroutine
 
-#ifdef VAR_DALTON
+#ifdef PRG_DALTON
   !> \brief gets the coefficients of molecular orbitals
   !> \author Bin Gao
   !> \date 2009-12-08
@@ -353,6 +353,6 @@ contains
     ! closes SIRIFC
     if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
   end subroutine
-#endif /* ifdef VAR_DALTON */
+#endif /* ifdef PRG_DALTON */
 
 end module
