@@ -918,7 +918,7 @@ p_debug = 0.0
        call mat_nullify(new_element%data(i))
        new_element%data(i)%nrow = data(i)%nrow
        new_element%data(i)%ncol = data(i)%nrow
-       new_element%data(i)%closed_shell = .true. !*2 on tr(A,B) and dot(A,B)
+       new_element%data(i)%is_closed_shell = .true. !*2 on tr(A,B) and dot(A,B)
        new_element%data(i)%magic_tag = 825169837 !mark as set-up
        call mat_alloc(new_element%data(i))
        call mat_axpy((0.0d0, 0.0d0), new_element%data(i), &
@@ -1669,7 +1669,7 @@ end do
        call mat_nullify(dens_tuple(i))
        dens_tuple(i)%nrow = zeromatrix%nrow
        dens_tuple(i)%ncol = zeromatrix%ncol
-       dens_tuple(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+       dens_tuple(i)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
        dens_tuple(i)%magic_tag = 825169837 !mark as set-up
        call mat_alloc(dens_tuple(i))
        call mat_axpy((0.0d0, 0.0d0), dens_tuple(i), .false., .true., dens_tuple(i))
@@ -2258,9 +2258,9 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     type(matrix) :: A, B
 
-    A%complex = B%complex
-    A%closed_shell = B%closed_shell
-    A%open_shell = B%open_shell
+    A%is_complex = B%is_complex
+    A%is_closed_shell = B%is_closed_shell
+    A%is_open_shell = B%is_open_shell
     A%ih_sym = B%ih_sym
     A%pg_sym = B%pg_sym
 
@@ -2282,7 +2282,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     call mat_nullify(W)
     W%nrow = zeromatrix%nrow
     W%ncol = zeromatrix%ncol
-    W%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+    W%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     W%magic_tag = 825169837 !mark as set-up
     call mat_alloc(W)
     call mat_axpy((0.0d0, 0.0d0), W, .false., .true., W)
@@ -2356,7 +2356,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     call mat_nullify(Y)
     Y%nrow = zeromatrix%nrow
     Y%ncol = zeromatrix%ncol
-    Y%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+    Y%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     Y%magic_tag = 825169837 !mark as set-up
     call mat_alloc(Y)
     call mat_axpy((0.0d0, 0.0d0), Y, .false., .true., Y)
@@ -2444,7 +2444,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     call mat_nullify(Z)
     Z%nrow = zeromatrix%nrow
     Z%ncol = zeromatrix%ncol
-    Z%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+    Z%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     Z%magic_tag = 825169837 !mark as set-up
     call mat_alloc(Z)
     call mat_axpy((0.0d0, 0.0d0), Z, .false., .true., Z)
@@ -2515,7 +2515,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     call mat_nullify(L)
     L%nrow = zeromatrix%nrow
     L%ncol = zeromatrix%ncol
-    L%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+    L%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     L%magic_tag = 825169837 !mark as set-up
     call mat_alloc(L)
     call mat_axpy((0.0d0, 0.0d0), L, .false., .true., L)
@@ -2583,7 +2583,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
     call mat_nullify(Zeta)
     Zeta%nrow = zeromatrix%nrow
     Zeta%ncol = zeromatrix%ncol
-    Zeta%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+    Zeta%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
     Zeta%magic_tag = 825169837 !mark as set-up
     call mat_alloc(Zeta)
     call mat_axpy((0.0d0, 0.0d0), Zeta, .false., .true., Zeta)
@@ -3553,7 +3553,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
           call mat_nullify(dens_tuple(i))
           dens_tuple(i)%nrow = zeromatrix%nrow
           dens_tuple(i)%ncol = zeromatrix%ncol
-          dens_tuple(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+          dens_tuple(i)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           dens_tuple(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(dens_tuple(i))
           call mat_axpy((0.0d0, 0.0d0), dens_tuple(i), .false., .true., dens_tuple(i))
@@ -3565,7 +3565,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
           call mat_nullify(tmp(j))
           tmp(j)%nrow = zeromatrix%nrow
           tmp(j)%ncol = zeromatrix%ncol
-          tmp(j)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+          tmp(j)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           tmp(j)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(tmp(j))
           call mat_axpy((0.0d0, 0.0d0), tmp(j), .false., .true., tmp(j))
@@ -3599,7 +3599,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
              call mat_nullify(tmp(j))
              tmp(j)%nrow = zeromatrix%nrow
              tmp(j)%ncol = zeromatrix%ncol
-             tmp(j)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+             tmp(j)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
              tmp(j)%magic_tag = 825169837 !mark as set-up
              call mat_alloc(tmp(j))
              call mat_axpy((0.0d0, 0.0d0), tmp(j), .false., .true., tmp(j))
@@ -3902,7 +3902,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        call mat_nullify(Dp(i))
           Dp(i)%nrow = zeromatrix%nrow
           Dp(i)%ncol = zeromatrix%ncol
-          Dp(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+          Dp(i)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           Dp(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(Dp(i))
           call mat_axpy((0.0d0, 0.0d0), Dp(i), .false., .true., Dp(i))
@@ -3914,7 +3914,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        call mat_nullify(Dh(i))
           Dh(i)%nrow = zeromatrix%nrow
           Dh(i)%ncol = zeromatrix%ncol
-          Dh(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+          Dh(i)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           Dh(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(Dh(i))
           call mat_axpy((0.0d0, 0.0d0), Dh(i), .false., .true., Dh(i))
@@ -3923,7 +3923,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
        call mat_nullify(Fp(i))
           Fp(i)%nrow = zeromatrix%nrow
           Fp(i)%ncol = zeromatrix%ncol
-          Fp(i)%closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
+          Fp(i)%is_closed_shell = .true.       !*2 on tr(A,B) and dot(A,B)
           Fp(i)%magic_tag = 825169837 !mark as set-up
           call mat_alloc(Fp(i))
           call mat_axpy((0.0d0, 0.0d0), Fp(i), .false., .true., Fp(i))
