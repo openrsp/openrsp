@@ -158,6 +158,7 @@
     call interface_xc_init()
     call interface_scf_init()
     call interface_pcm_init(wavpcm)
+    call interface_basis_init()
 
     nbast = get_nr_ao()
     lupri = get_print_unit()
