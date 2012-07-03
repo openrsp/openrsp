@@ -139,9 +139,17 @@ contains
 #ifdef PRG_DIRAC
       integer, parameter   :: io = 66
       real(8), allocatable :: mo_coef(:)
+      real(8), allocatable :: temp(:, :, :)
 
-! uses n2bbasxq
+! uses n2bbasxq and ntbas(0)
 include "dcbbas.h"
+! uses nz
+include "dgroup.h"
+
+      if (nz /= 4) then
+         print *, 'adapt interface_scf_get_d for nz /= 4'
+         stop 1
+      end if
 
       open(io,    &
            file   = 'DFCOEF',      &
@@ -158,12 +166,23 @@ include "dcbbas.h"
                           (/0.0d0/), &
                           (/0/),     &
                           (/0.0d0/), &
-                          4)
+                          2)
 
       close(io, status = 'keep')
 
-      D%elms_0a = 0.0d0
-      call genden(D%elms_0a, mo_coef, 1, 0)
+      allocate(temp(ntbas(0), ntbas(0), nz))
+      temp = 0.0d0
+      call genden(temp, mo_coef, 1, 0)
+      deallocate(mo_coef)
+
+      temp = 2.0d0*temp
+
+      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, D%elms_0a, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, D%elms_ia, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, D%elms_ja, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, D%elms_ka, 1)
+
+      deallocate(temp)
 #endif /* ifdef PRG_DIRAC */
 
    end subroutine
