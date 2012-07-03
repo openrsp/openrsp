@@ -126,11 +126,11 @@ contains
     !   DV(*)   active part of one-electron density matrix (over MO's)
     ! Scratch:
     !   WRK(LFRSAV)
-    call FCKDEN( GETDC, GETDV, D%elms_0, f77_memory(strt_dvao), f77_memory(strt_cmo), &
+    call FCKDEN( GETDC, GETDV, D%elms_0a, f77_memory(strt_dvao), f77_memory(strt_cmo), &
                  f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! sums DCAO and DVAO
     if ( GETDV ) &
-      D%elms_0 = D%elms_0 + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
+      D%elms_0a = D%elms_0a + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
                                  (/D%nrow, D%ncol/) )
     ! clean
     call set_f77_memory_next(strt_cmo)
@@ -162,8 +162,8 @@ include "dcbbas.h"
 
       close(io, status = 'keep')
 
-      D%elms_0 = 0.0d0
-      call genden(D%elms_0, mo_coef, 1, 0)
+      D%elms_0a = 0.0d0
+      call genden(D%elms_0a, mo_coef, 1, 0)
 #endif /* ifdef PRG_DIRAC */
 
    end subroutine
@@ -203,7 +203,7 @@ include "dcbbas.h"
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_gmat', get_f77_memory_next()-1, get_f77_memory_total() )
     ! sets the total density matrix
     !> \todo this may fail for unrestricted calculations
-    call DCOPY( N2BASX, D%elms_0, 1, f77_memory(work_ao_dens), 1 )
+    call DCOPY( N2BASX, D%elms_0a, 1, f77_memory(work_ao_dens), 1 )
     call DSCAL( N2BASX, two, f77_memory(work_ao_dens), 1 )
     ! outputs the total density matrix to check
     ! only one density matrix
@@ -212,7 +212,7 @@ include "dcbbas.h"
     !> \todo determines IFCTYP run-time
     IFCTYP = 3
     ! calculates two electron contribution by calling SIRFCK
-    call SIRFCK( G%elms_0, f77_memory(work_ao_dens), NDMAT, &
+    call SIRFCK( G%elms_0a, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! PCM two-electron contributions
     if ( get_is_pcm_calculation() ) then
@@ -229,9 +229,9 @@ include "dcbbas.h"
       call DSPTSI( NBAST, f77_memory(work_pcm), f77_memory(work_pcm2) )
 
       ! adds to G
-      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms_0, 1 )
+      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms_0a, 1 )
     end if
-    !N if ( .not. restrict_scf ) G%elms_0 = G%elms_0
+    !N if ( .not. restrict_scf ) G%elms_0a = G%elms_0a
     ! cleans
     call set_f77_memory_next(work_ao_dens)
 #endif /* ifdef PRG_DALTON */
@@ -270,7 +270,7 @@ include "dcbbas.h"
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
-    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms_0 )
+    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms_0a )
     ! clean
     call set_f77_memory_next(work_ovlp)
 #endif /* ifdef PRG_DALTON */
@@ -280,9 +280,9 @@ include "dcbbas.h"
 ! uses ssmtrc (small-small metric)
 #include "dcbham.h"
 
-      S%elms_0 = 0.0d0
+      S%elms_0a = 0.0d0
       !fixme rather use gen1int
-      call gtovlx(S%elms_0, ssmtrc)
+      call gtovlx(S%elms_0a, ssmtrc)
 
 #endif /* ifdef PRG_DIRAC */
 
@@ -337,7 +337,7 @@ include "dcbbas.h"
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
     ! gets H1
-    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms_0 )
+    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms_0a )
     ! clean
     call set_f77_memory_next(work_ham1)
 #endif /* ifdef PRG_DALTON */

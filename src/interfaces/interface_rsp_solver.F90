@@ -242,10 +242,10 @@ contains
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
-      call UTHV( solver_CMO%elms_0, RHS(IRHS)%elms_0, solver_CMO%elms_0, &
-                 ISYM, ISYM, NBAST, NBAST, RHS_MO%elms_0, f77_memory(get_f77_memory_next()) )
+      call UTHV( solver_CMO%elms_0a, RHS(IRHS)%elms_0a, solver_CMO%elms_0a, &
+                 ISYM, ISYM, NBAST, NBAST, RHS_MO%elms_0a, f77_memory(get_f77_memory_next()) )
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
-      call PRPORB( RHS_MO%elms_0, solver_DV, f77_memory(get_f77_memory_next()) )
+      call PRPORB( RHS_MO%elms_0a, solver_DV, f77_memory(get_f77_memory_next()) )
       !FIXME: why multiplied by -1
       call DSCAL( KZVAR, -1.0D+00, f77_memory(get_f77_memory_next()), 1 )
       ! writes out right hand side vector
@@ -257,7 +257,7 @@ contains
       !> \todo                      iout = log_dal,               &
       !> \todo                      label = 'GP Vector (MO) in DALTON_IFC' )
       !> \todo end if
-      call DZERO( RHS_MO%elms_0, NORBT*NORBT )
+      call DZERO( RHS_MO%elms_0a, NORBT*NORBT )
     end do
 
     ! calculates the linear response vector and writes to file
@@ -291,10 +291,10 @@ contains
       call SETZY( f77_memory(KMJWOP) )
       ! This subroutine unpacks the ZY matrix from the vector.
       ! It uses the Z and the Y part of the vector.
-      call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms_0, f77_memory(KMJWOP) )
+      call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms_0a, f77_memory(KMJWOP) )
       ! divides solution by 2 in accordance with ABACUS solver, or
       ! because Andreas' code does not use total density matrix
-      mo_eigvec(ISOL)%elms_0 = mo_eigvec(ISOL)%elms_0 / 2
+      mo_eigvec(ISOL)%elms_0a = mo_eigvec(ISOL)%elms_0a / 2
       ! transforms from MO to AO
       eigvec(ISOL) = - solver_CMO_OCC*( mo_eigvec(ISOL)*trps( solver_CMO_VIR ) ) &
                      - solver_CMO_VIR*( mo_eigvec(ISOL)*trps( solver_CMO_OCC ) )
@@ -342,14 +342,14 @@ contains
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
-    call rd_sirifc( 'CMO', found, CMO%elms_0, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+    call rd_sirifc( 'CMO', found, CMO%elms_0a, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
-    !N if ( .not. restrict_scf ) CMO%elms_0 = CMO%elms_0
+    !N if ( .not. restrict_scf ) CMO%elms_0a = CMO%elms_0a
     ! generates the occupied and virtual molecular orbitals
-    CMO_OCC%elms_0(:,:NOCCT)   = CMO%elms_0(:,:NOCCT)
-    CMO_OCC%elms_0(:,NOCCT+1:) = 0
-    CMO_VIR%elms_0(:,:NOCCT)   = 0
-    CMO_VIR%elms_0(:,NOCCT+1:) = CMO%elms_0(:,NOCCT+1:)
+    CMO_OCC%elms_0a(:,:NOCCT)   = CMO%elms_0a(:,:NOCCT)
+    CMO_OCC%elms_0a(:,NOCCT+1:) = 0
+    CMO_VIR%elms_0a(:,:NOCCT)   = 0
+    CMO_VIR%elms_0a(:,NOCCT+1:) = CMO%elms_0a(:,NOCCT+1:)
     ! closes SIRIFC
     if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
   end subroutine

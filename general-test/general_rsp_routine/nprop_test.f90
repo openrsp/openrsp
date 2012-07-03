@@ -29,10 +29,10 @@ module matrix_backend
      !> number of rows and columns (of each block)
      integer nrow, ncol
      !> pointers to blocks of elements (nrow,ncol). elms: main block,
-     !> elms_i: imaginary part, elms_b: beta part, elms_ib: imaginary of beta
-     real(8), pointer :: elms(:,:), elms_i(:,:), &
+     !> elms_ia: imaginary part, elms_b: beta part, elms_ib: imaginary of beta
+     real(8), pointer :: elms(:,:), elms_ia(:,:), &
                          elms_b(:,:), elms_ib(:,:)
-     !> flags for complex elements elms_i, closed shell (*2 on mat_dot),
+     !> flags for complex elements elms_ia, closed shell (*2 on mat_dot),
      !> open shell (beta elements elms_b)
      logical complex, closed_shell, open_shell
      !> tag used to spot accidental use of uninitialized and memory-corrupted
@@ -79,7 +79,7 @@ module matrix_backend
     A%nrow = huge(1)
     A%ncol = huge(1)
     nullify(A%elms)
-    nullify(A%elms_i)
+    nullify(A%elms_ia)
     nullify(A%elms_b)
     nullify(A%elms_ib)
     A%complex = .false.
@@ -139,7 +139,7 @@ if (matrix_backend_debug) print *, 'alloc'
     ! allocate elms*
     allocate(A%elms(A%nrow,A%ncol))
     if (A%complex) &
-       allocate(A%elms_i(A%nrow,A%ncol))
+       allocate(A%elms_ia(A%nrow,A%ncol))
     if (A%open_shell) &
        allocate(A%elms_b(A%nrow,A%ncol))
     if (A%complex .and. A%open_shell) &
@@ -164,7 +164,7 @@ if (matrix_backend_debug) print *, 'free'
     ! deallocate
     deallocate(A%elms)
     if (A%complex) &
-       deallocate(A%elms_i)
+       deallocate(A%elms_ia)
     if (A%open_shell) &
        deallocate(A%elms_b)
     if (A%complex .and. A%open_shell) &
@@ -322,7 +322,7 @@ print '(a,x,f4.1,x,l,x,l,x,l)', ' gemm f ta tb zc =', dreal(f), ta, tb, zc
     ! before the decimal point (including any minus sign)
     pre = pre_decimals(size(A%elms), A%elms)
     if (A%complex) &
-       pre = max(pre, pre_decimals(size(A%elms_i), A%elms_i))
+       pre = max(pre, pre_decimals(size(A%elms_ia), A%elms_ia))
     if (A%open_shell) &
        pre = max(pre, pre_decimals(size(A%elms_b), A%elms_b))
     if (A%complex .and. A%open_shell) &
@@ -349,7 +349,7 @@ print '(a,x,f4.1,x,l,x,l,x,l)', ' gemm f ta tb zc =', dreal(f), ta, tb, zc
     if (A%complex) then
        if (.not.A%open_shell) write (uni,'(a)') '(imaginary part)'
        if (     A%open_shell) write (uni,'(a)') '(imaginary alpha part)'
-       call subr(A%nrow, A%ncol, A%elms_i, wid, spr, fmt, uni)
+       call subr(A%nrow, A%ncol, A%elms_ia, wid, spr, fmt, uni)
        write (uni,'()')
     end if
     ! beta part
