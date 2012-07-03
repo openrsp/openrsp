@@ -414,7 +414,7 @@ contains
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
   if (any(f=='EL  ')) then
-     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))

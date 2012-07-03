@@ -271,7 +271,7 @@ contains
    if (any(f=='EL  ')) then
  
       do i = 1, product(nc)
-         call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
       end do
  
    else
@@ -296,7 +296,7 @@ contains
          do i = 0, nc(1)-1
             ! allocate, if needed
             if (.not.isdef(ovl(1+i))) then
-               call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+               call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
             end if
             ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
             if (present(w)) then
@@ -318,7 +318,7 @@ contains
        ! allocates matrices
        do i = 1, num_ints
          if (.not.isdef(ovl(i))) then
-           call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+           call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
          end if
        end do
        ! calculates the overlap matrix
@@ -368,7 +368,7 @@ contains
      type(matrix) :: A
  
    if (count(f=='EL  ') > 1) then
-      call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+      call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
       do i = 1, product(nc)
          if (iszero(oneint(i))) then
             call mat_ensure_alloc(oneint(i))
@@ -399,7 +399,7 @@ contains
        call quit("interface_1el_oneint>> only the first Cartesian multipole moments implemented!")
      do imat = 1, size(oneint)
        if (.not.isdef(oneint(imat))) then
-         call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
        end if
      end do
      ! electric perturbations

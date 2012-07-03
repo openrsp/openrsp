@@ -103,6 +103,7 @@ contains
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
+    integer                :: algebra
     real(8)                :: xc_energy
 
     call interface_molecule_init()
@@ -134,8 +135,13 @@ contains
                            openrsp_cfg_solver_thresh, &
                            openrsp_cfg_solver_optorb)
 
+    algebra = 1
+#ifdef PRG_DIRAC
+    algebra = 4 !fixme hardcoded
+#endif
+
     ! initialize and allocate overlap matrix
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true., algebra=algebra)
 
     ! get the overlap
     call interface_scf_get_s(S)

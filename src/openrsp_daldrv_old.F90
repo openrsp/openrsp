@@ -332,7 +332,7 @@
     call rsp_mosolver_splash( LUPRI )
 
     ! initialize and allocate matrices
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true., algebra=1)
 
     D  = mat_alloc_like(S)
     H1 = mat_alloc_like(S)
