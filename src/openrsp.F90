@@ -156,10 +156,11 @@ contains
     ! Fock matrix F = H1 + G
     F = H1 + G
 
+    print *, 'nr of electrons from dot(D, S) =', dot(D, S)
+    print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
+
     H1 = 0
     G  = 0
-
-    print *, 'nr of electrons from dot(D, S) =', dot(D, S)
 
 #ifdef PRG_DIRAC
 !   stop here, nothing below can work on the dirac side
