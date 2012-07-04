@@ -249,8 +249,8 @@ contains
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms_0a,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_0a,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
 #ifdef PRG_DIRAC
     print *, 'fix grcont call'
     stop 1
@@ -265,8 +265,8 @@ contains
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms_0a,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_0a,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
 #ifdef PRG_DIRAC
     print *, 'fix grcont call'
     stop 1
@@ -418,9 +418,9 @@ contains
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))
-           fock(i)%elms_0a = fock(i)%elms_0a + A%elms_0a
+           fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
         else
-           fock(i)%elms_0a = fock(i)%elms_0a + A%elms_0a
+           fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
         end if
      end do
   else
@@ -442,14 +442,14 @@ contains
 #else
              call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
                          f77_memory(:n*n*3), n*n*3, .true., .false., &
-                         1, (c(1)+i+2)/3, .false., .true., dens%elms_0a, 1)
+                         1, (c(1)+i+2)/3, .false., .true., dens%elms_alpha, 1)
 #endif
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
              call mat_ensure_alloc(fock(1+i))
-             fock(1+i)%elms_0a(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+             fock(1+i)%elms_alpha(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
-             fock(1+i)%elms_0a(:, :, 1) = fock(1+i)%elms_0a(:, :, 1) &
+             fock(1+i)%elms_alpha(:, :, 1) = fock(1+i)%elms_alpha(:, :, 1) &
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
        end do
@@ -461,7 +461,7 @@ contains
              ij = 1 + i + nc(1)*j
              if (iszero(fock(ij))) then
                 call mat_ensure_alloc(fock(ij))
-                fock(ij)%elms_0a = 0 !ajt FIXME use mat_axpy
+                fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
              end if
              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
                               ncor, dens, fock(ij), null_ptr)

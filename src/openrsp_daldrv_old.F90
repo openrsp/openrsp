@@ -365,7 +365,7 @@
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_0a, 1, xc_dmat, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_alpha, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
        call xc_integrate(                     &
                          xc_mat_dim=mat_dim,  &
@@ -374,7 +374,7 @@
                          xc_energy=xc_energy, &
                          xc_fmat=xc_fmat      &
                         )
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_0a, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if

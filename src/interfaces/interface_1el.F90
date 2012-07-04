@@ -372,9 +372,9 @@ contains
       do i = 1, product(nc)
          if (iszero(oneint(i))) then
             call mat_ensure_alloc(oneint(i))
-            oneint(i)%elms_0a = oneint(i)%elms_0a + A%elms_0a
+            oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
          else
-            oneint(i)%elms_0a = oneint(i)%elms_0a + A%elms_0a
+            oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
          end if
       end do
  
@@ -627,17 +627,17 @@ contains
       if (iszero(D)) then
          Dtri = 0
       else
-         if (.not.anti) call DGEFSP(D%nrow, D%elms_0a, Dtri)
-         if (     anti) call DGETAP(D%nrow, D%elms_0a, Dtri)
-         ! scale elms_0a by 4 if anti, 2 if symm
+         if (.not.anti) call DGEFSP(D%nrow, D%elms_alpha, Dtri)
+         if (     anti) call DGETAP(D%nrow, D%elms_alpha, Dtri)
+         ! scale elms_alpha by 4 if anti, 2 if symm
          Dtri = Dtri * merge(4,2,anti)
       end if
       if (iszero(DFD)) then
          DFDtri = 0
       else
-         if (.not.anti) call DGEFSP(D%nrow, DFD%elms_0a, DFDtri)
-         if (     anti) call DGETAP(D%nrow, DFD%elms_0a, DFDtri)
-         ! scale elms_0a by 4 if anti, 2 if symm
+         if (.not.anti) call DGEFSP(D%nrow, DFD%elms_alpha, DFDtri)
+         if (     anti) call DGETAP(D%nrow, DFD%elms_alpha, DFDtri)
+         ! scale elms_alpha by 4 if anti, 2 if symm
          DFDtri = DFDtri * merge(4,2,anti)
       end if
       ! write fo files
@@ -671,16 +671,16 @@ contains
     if (.not.present(D)) then
        Dtri = 0
     else if (anti) then
-       call DGETAP(D%nrow, D%elms_0a, Dtri)
+       call DGETAP(D%nrow, D%elms_alpha, Dtri)
     else !symm
-       call DGEFSP(D%nrow, D%elms_0a, Dtri)
+       call DGEFSP(D%nrow, D%elms_alpha, Dtri)
     end if
     if (.not.present(DFD)) then
        DFDtri = 0
     else if (anti) then
-       call DGETAP(DFD%nrow, DFD%elms_0a, DFDtri)
+       call DGETAP(DFD%nrow, DFD%elms_alpha, DFDtri)
     else !symm
-       call DGEFSP(DFD%nrow, DFD%elms_0a, DFDtri)
+       call DGEFSP(DFD%nrow, DFD%elms_alpha, DFDtri)
     end if
     ! write to files
 #ifdef PRG_DIRAC
@@ -724,7 +724,7 @@ contains
     intrep = 0 !call dzero(intrep,9*MXCENT)
     intadr = 0 !call dzero(intadr,9*MXCENT)
     ! create triangularly packed matrix from D
-    call DGEFSP(D%nrow, D%elms_0a, Dtri)
+    call DGEFSP(D%nrow, D%elms_alpha, Dtri)
     ncomp = 0
 !      SUBROUTINE GET1IN(SINTMA,WORD,NCOMP,WORK,LWORK,LABINT,INTREP,
 !     &                  INTADR,MPQUAD,TOFILE,KPATOM,TRIMAT,EXPVAL,
@@ -771,7 +771,7 @@ contains
       anti = .false. !radovan: was undefined, setting it to false
       call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
 #endif
-      call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_0a )
+      call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_alpha )
     else
       ! closes file AOPROPER first
       if ( LUPROP > 0 ) call GPCLOSE( LUPROP, 'KEEP' )
@@ -780,15 +780,15 @@ contains
       if ( FNDLB2( prop_lab, RTNLBL, LUPROP ) ) then
         ! square matrix
         if ( RTNLBL(2) == 'SQUARE' ) then
-          call READT( LUPROP, N2BASX, prop_int%elms_0a )
+          call READT( LUPROP, N2BASX, prop_int%elms_alpha )
         ! symmetric matrix
         else if ( RTNLBL(2) == 'SYMMETRI' ) then
           call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
-          call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_0a )
+          call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_alpha )
         ! anti-symmetric matrix
         else if ( RTNLBL(2) == 'ANTISYMM' ) then
           call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
-          call DAPTGE( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_0a )
+          call DAPTGE( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_alpha )
         else
           call QUIT( 'Error: No symmetry label on AOPROPER!' )
         end if

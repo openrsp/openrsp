@@ -541,7 +541,7 @@ contains
 
     do i = 1, size(Dg)
        do j = 1, size(Dg)
-          Ag(j)%elms_0a = 0.0d0
+          Ag(j)%elms_alpha = 0.0d0
        end do
        call rsp_twoint(S%nrow, 1, (/'GEO '/), (/1/), shape(Ag), Dg(i), Ag)
        call rsp_xcint(D=(/D, Dg(i)/), Fg=Ag)
@@ -550,7 +550,7 @@ contains
           Fgg(j, i) = Fgg(j, i) + Ag(j)
        end do
        do j = 1, i
-          A%elms_0a = 0.0d0
+          A%elms_alpha = 0.0d0
           call rsp_xcint(D=(/D, Dg(i), Dg(j)/), F=A)
           Fgg(i, j) = Fgg(i, j) + A
           if (i /= j) then

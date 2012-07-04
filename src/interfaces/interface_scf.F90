@@ -126,11 +126,11 @@ contains
     !   DV(*)   active part of one-electron density matrix (over MO's)
     ! Scratch:
     !   WRK(LFRSAV)
-    call FCKDEN( GETDC, GETDV, D%elms_0a, f77_memory(strt_dvao), f77_memory(strt_cmo), &
+    call FCKDEN( GETDC, GETDV, D%elms_alpha, f77_memory(strt_dvao), f77_memory(strt_cmo), &
                  f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! sums DCAO and DVAO
     if ( GETDV ) &
-      D%elms_0a(:, :, 1) = D%elms_0a(:, :, 1) + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
+      D%elms_alpha(:, :, 1) = D%elms_alpha(:, :, 1) + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
                                  (/D%nrow, D%ncol/) )
     ! clean
     call set_f77_memory_next(strt_cmo)
@@ -177,7 +177,7 @@ contains
       call genden(temp, mo_coef, 1, 0)
       deallocate(mo_coef)
 
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, D%elms_0a, 1)
+      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, D%elms_alpha, 1)
       call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, D%elms_ia, 1)
       call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, D%elms_ja, 1)
       call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, D%elms_ka, 1)
@@ -222,7 +222,7 @@ contains
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_gmat', get_f77_memory_next()-1, get_f77_memory_total() )
     ! sets the total density matrix
     !> \todo this may fail for unrestricted calculations
-    call DCOPY( N2BASX, D%elms_0a, 1, f77_memory(work_ao_dens), 1 )
+    call DCOPY( N2BASX, D%elms_alpha, 1, f77_memory(work_ao_dens), 1 )
     call DSCAL( N2BASX, two, f77_memory(work_ao_dens), 1 )
     ! outputs the total density matrix to check
     ! only one density matrix
@@ -231,7 +231,7 @@ contains
     !> \todo determines IFCTYP run-time
     IFCTYP = 3
     ! calculates two electron contribution by calling SIRFCK
-    call SIRFCK( G%elms_0a, f77_memory(work_ao_dens), NDMAT, &
+    call SIRFCK( G%elms_alpha, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! PCM two-electron contributions
     if ( get_is_pcm_calculation() ) then
@@ -248,9 +248,9 @@ contains
       call DSPTSI( NBAST, f77_memory(work_pcm), f77_memory(work_pcm2) )
 
       ! adds to G
-      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms_0a, 1 )
+      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms_alpha, 1 )
     end if
-    !N if ( .not. restrict_scf ) G%elms_0a = G%elms_0a
+    !N if ( .not. restrict_scf ) G%elms_alpha = G%elms_alpha
     ! cleans
     call set_f77_memory_next(work_ao_dens)
 #endif /* ifdef PRG_DALTON */
@@ -283,7 +283,7 @@ contains
     !fixme hardcoded
     integral_flag = 3
 
-    call dcopy(ntbas(0)*ntbas(0), D%elms_0a, 1, temp_in(1, 1, 1), 1)
+    call dcopy(ntbas(0)*ntbas(0), D%elms_alpha, 1, temp_in(1, 1, 1), 1)
     call dcopy(ntbas(0)*ntbas(0), D%elms_ia, 1, temp_in(1, 1, 2), 1)
     call dcopy(ntbas(0)*ntbas(0), D%elms_ja, 1, temp_in(1, 1, 3), 1)
     call dcopy(ntbas(0)*ntbas(0), D%elms_ka, 1, temp_in(1, 1, 4), 1)
@@ -300,7 +300,7 @@ contains
                   f77_memory(get_f77_memory_next()), &
                   get_f77_memory_left())
 
-    call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 1), 1, G%elms_0a, 1)
+    call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 1), 1, G%elms_alpha, 1)
     call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 2), 1, G%elms_ia, 1)
     call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 3), 1, G%elms_ja, 1)
     call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 4), 1, G%elms_ka, 1)
@@ -344,7 +344,7 @@ contains
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
-    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms_0a )
+    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms_alpha )
     ! clean
     call set_f77_memory_next(work_ovlp)
 #endif /* ifdef PRG_DALTON */
@@ -355,12 +355,12 @@ contains
 #include "dcbham.h"
       !fixme rather use gen1int
 
-      S%elms_0a = 0.0d0
+      S%elms_alpha = 0.0d0
       S%elms_ia = 0.0d0
       S%elms_ja = 0.0d0
       S%elms_ka = 0.0d0
 
-      call gtovlx(S%elms_0a, ssmtrc)
+      call gtovlx(S%elms_alpha, ssmtrc)
 
 #endif /* ifdef PRG_DIRAC */
 
@@ -415,7 +415,7 @@ contains
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
     ! gets H1
-    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms_0a )
+    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms_alpha )
     ! clean
     call set_f77_memory_next(work_ham1)
 #endif /* ifdef PRG_DALTON */
@@ -448,7 +448,7 @@ contains
 
       close(io, status = 'keep')
 
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, H1%elms_0a, 1)
+      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, H1%elms_alpha, 1)
       call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, H1%elms_ia, 1)
       call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, H1%elms_ja, 1)
       call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, H1%elms_ka, 1)
