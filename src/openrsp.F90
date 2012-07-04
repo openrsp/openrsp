@@ -163,6 +163,8 @@ contains
     F = H1 + G
 
     print *, 'nr of electrons from dot(D, S) =', dot(D, S)
+    print *, '1-el electronic energy =', dot(H1, D)
+    print *, '2-el electronic energy =', 0.5d0*dot(G, D)
     print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
 
     H1 = 0

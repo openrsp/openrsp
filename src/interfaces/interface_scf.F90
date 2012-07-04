@@ -173,14 +173,16 @@ contains
       close(io, status = 'keep')
 
       allocate(temp(ntbas(0), ntbas(0), nz))
-      temp = 0.0d0
-      call genden(temp, mo_coef, 1, 0)
+      D%elms_alpha = 0.0d0
+      call genden(D%elms_alpha, mo_coef, 1, 0)
       deallocate(mo_coef)
 
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, D%elms_alpha, 1)
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, D%elms_ia, 1)
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, D%elms_ja, 1)
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, D%elms_ka, 1)
+      D%elms_alpha = 2.0d0*D%elms_alpha
+
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, D%elms_alpha, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, D%elms_ia, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, D%elms_ja, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, D%elms_ka, 1)
 
       deallocate(temp)
 #endif /* ifdef PRG_DIRAC */
@@ -283,16 +285,18 @@ contains
     !fixme hardcoded
     integral_flag = 3
 
-    call dcopy(ntbas(0)*ntbas(0), D%elms_alpha, 1, temp_in(1, 1, 1), 1)
-    call dcopy(ntbas(0)*ntbas(0), D%elms_ia, 1, temp_in(1, 1, 2), 1)
-    call dcopy(ntbas(0)*ntbas(0), D%elms_ja, 1, temp_in(1, 1, 3), 1)
-    call dcopy(ntbas(0)*ntbas(0), D%elms_ka, 1, temp_in(1, 1, 4), 1)
+!   call dcopy(ntbas(0)*ntbas(0), D%elms_alpha, 1, temp_in(1, 1, 1), 1)
+!   call dcopy(ntbas(0)*ntbas(0), D%elms_ia, 1, temp_in(1, 1, 2), 1)
+!   call dcopy(ntbas(0)*ntbas(0), D%elms_ja, 1, temp_in(1, 1, 3), 1)
+!   call dcopy(ntbas(0)*ntbas(0), D%elms_ka, 1, temp_in(1, 1, 4), 1)
 
     call twofck((/1/),                               &
                 (/0/),                               &
                 (/1/),                               &
-                  temp_out,                          &
-                  temp_in,                           &
+!                 temp_out,                          &
+!                 temp_in,                           &
+                  G%elms_alpha,                      &
+                  D%elms_alpha,                      &
                   1,                                 &
                   npos,                              &
                   integral_flag,                     &
@@ -300,10 +304,10 @@ contains
                   f77_memory(get_f77_memory_next()), &
                   get_f77_memory_left())
 
-    call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 1), 1, G%elms_alpha, 1)
-    call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 2), 1, G%elms_ia, 1)
-    call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 3), 1, G%elms_ja, 1)
-    call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 4), 1, G%elms_ka, 1)
+!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 1), 1, G%elms_alpha, 1)
+!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 2), 1, G%elms_ia, 1)
+!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 3), 1, G%elms_ja, 1)
+!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 4), 1, G%elms_ka, 1)
 
     deallocate(temp_in)
     deallocate(temp_out)
@@ -356,10 +360,9 @@ contains
       !fixme rather use gen1int
 
       S%elms_alpha = 0.0d0
-      S%elms_ia = 0.0d0
-      S%elms_ja = 0.0d0
-      S%elms_ka = 0.0d0
-
+!     S%elms_ia = 0.0d0
+!     S%elms_ja = 0.0d0
+!     S%elms_ka = 0.0d0
       call gtovlx(S%elms_alpha, ssmtrc)
 
 #endif /* ifdef PRG_DIRAC */
@@ -443,15 +446,16 @@ contains
            access = 'sequential')
       rewind(io)
 
-      temp = 0.0d0
-      call reafck(io, temp, .true., 1)
+!     temp = 0.0d0
+      H1%elms_alpha = 0.0d0
+      call reafck(io, H1%elms_alpha, .true., 1)
 
       close(io, status = 'keep')
 
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, H1%elms_alpha, 1)
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, H1%elms_ia, 1)
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, H1%elms_ja, 1)
-      call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, H1%elms_ka, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, H1%elms_alpha, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, H1%elms_ia, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, H1%elms_ja, 1)
+!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, H1%elms_ka, 1)
 
       deallocate(temp)
 #endif /* ifdef PRG_DIRAC */
