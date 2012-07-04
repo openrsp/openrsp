@@ -139,7 +139,6 @@ contains
 #ifdef PRG_DIRAC
       integer, parameter   :: io = 66
       real(8), allocatable :: mo_coef(:)
-      real(8), allocatable :: temp(:, :, :)
 
 ! uses ntbas(0)
 #include "dcbbas.h"
@@ -159,6 +158,7 @@ contains
            form   = 'unformatted', &
            access = 'sequential')
       rewind(io)
+
       allocate(mo_coef(ncmotq))
       mo_coef = 0.0d0
 
@@ -172,19 +172,13 @@ contains
 
       close(io, status = 'keep')
 
-      allocate(temp(ntbas(0), ntbas(0), nz))
       D%elms_alpha = 0.0d0
       call genden(D%elms_alpha, mo_coef, 1, 0)
+
       deallocate(mo_coef)
 
       D%elms_alpha = 2.0d0*D%elms_alpha
 
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, D%elms_alpha, 1)
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, D%elms_ia, 1)
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, D%elms_ja, 1)
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, D%elms_ka, 1)
-
-      deallocate(temp)
 #endif /* ifdef PRG_DIRAC */
 
    end subroutine
@@ -261,8 +255,6 @@ contains
     integer              :: integral_flag
     integer              :: npos_nr
     integer, allocatable :: npos(:)
-    real(8), allocatable :: temp_in(:, :, :)
-    real(8), allocatable :: temp_out(:, :, :)
 
 ! uses ntbas(0)
 #include "dcbbas.h"
@@ -272,11 +264,6 @@ contains
     call get_npos(npos_nr)
     allocate(npos(npos_nr))
 
-    allocate(temp_in(ntbas(0), ntbas(0), nz))
-    allocate(temp_out(ntbas(0), ntbas(0), nz))
-    temp_in = 0.0d0
-    temp_out = 0.0d0
-
     if (nz /= 4) then
        print *, 'adapt interface_scf_get_g for nz /= 4'
        stop 1
@@ -285,16 +272,9 @@ contains
     !fixme hardcoded
     integral_flag = 3
 
-!   call dcopy(ntbas(0)*ntbas(0), D%elms_alpha, 1, temp_in(1, 1, 1), 1)
-!   call dcopy(ntbas(0)*ntbas(0), D%elms_ia, 1, temp_in(1, 1, 2), 1)
-!   call dcopy(ntbas(0)*ntbas(0), D%elms_ja, 1, temp_in(1, 1, 3), 1)
-!   call dcopy(ntbas(0)*ntbas(0), D%elms_ka, 1, temp_in(1, 1, 4), 1)
-
     call twofck((/1/),                               &
                 (/0/),                               &
                 (/1/),                               &
-!                 temp_out,                          &
-!                 temp_in,                           &
                   G%elms_alpha,                      &
                   D%elms_alpha,                      &
                   1,                                 &
@@ -304,13 +284,6 @@ contains
                   f77_memory(get_f77_memory_next()), &
                   get_f77_memory_left())
 
-!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 1), 1, G%elms_alpha, 1)
-!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 2), 1, G%elms_ia, 1)
-!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 3), 1, G%elms_ja, 1)
-!   call dcopy(ntbas(0)*ntbas(0), temp_out(1, 1, 4), 1, G%elms_ka, 1)
-
-    deallocate(temp_in)
-    deallocate(temp_out)
     deallocate(npos)
 #endif /* ifdef PRG_DIRAC */
 
@@ -425,7 +398,6 @@ contains
 
 #ifdef PRG_DIRAC
       integer, parameter   :: io = 66
-      real(8), allocatable :: temp(:, :, :)
 
 ! uses ntbas(0)
 #include "dcbbas.h"
@@ -437,8 +409,6 @@ contains
          stop 1
       end if
 
-      allocate(temp(ntbas(0), ntbas(0), nz))
-
       open(io,                     &
            file   = 'DFFCK1',      &
            status = 'unknown',     &
@@ -446,18 +416,11 @@ contains
            access = 'sequential')
       rewind(io)
 
-!     temp = 0.0d0
       H1%elms_alpha = 0.0d0
       call reafck(io, H1%elms_alpha, .true., 1)
 
       close(io, status = 'keep')
 
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 1), 1, H1%elms_alpha, 1)
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 2), 1, H1%elms_ia, 1)
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 3), 1, H1%elms_ja, 1)
-!     call dcopy(ntbas(0)*ntbas(0), temp(1, 1, 4), 1, H1%elms_ka, 1)
-
-      deallocate(temp)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
