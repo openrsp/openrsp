@@ -2258,7 +2258,7 @@ dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
 
     type(matrix) :: A, B
 
-    A%is_complex = B%is_complex
+    A%algebra = B%algebra
     A%is_closed_shell = B%is_closed_shell
     A%is_open_shell = B%is_open_shell
     A%ih_sym = B%ih_sym

@@ -346,10 +346,10 @@ contains
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
     !N if ( .not. restrict_scf ) CMO%elms_0a = CMO%elms_0a
     ! generates the occupied and virtual molecular orbitals
-    CMO_OCC%elms_0a(:,:NOCCT)   = CMO%elms_0a(:,:NOCCT)
-    CMO_OCC%elms_0a(:,NOCCT+1:) = 0
-    CMO_VIR%elms_0a(:,:NOCCT)   = 0
-    CMO_VIR%elms_0a(:,NOCCT+1:) = CMO%elms_0a(:,NOCCT+1:)
+    CMO_OCC%elms_0a(:,:NOCCT,1)   = CMO%elms_0a(:,:NOCCT,1)
+    CMO_OCC%elms_0a(:,NOCCT+1:,1) = 0
+    CMO_VIR%elms_0a(:,:NOCCT,1)   = 0
+    CMO_VIR%elms_0a(:,NOCCT+1:,1) = CMO%elms_0a(:,NOCCT+1:,1)
     ! closes SIRIFC
     if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
   end subroutine

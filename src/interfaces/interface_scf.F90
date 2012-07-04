@@ -130,7 +130,7 @@ contains
                  f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! sums DCAO and DVAO
     if ( GETDV ) &
-      D%elms_0a = D%elms_0a + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
+      D%elms_0a(:, :, 1) = D%elms_0a(:, :, 1) + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
                                  (/D%nrow, D%ncol/) )
     ! clean
     call set_f77_memory_next(strt_cmo)

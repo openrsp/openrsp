@@ -447,9 +447,9 @@ contains
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
              call mat_ensure_alloc(fock(1+i))
-             fock(1+i)%elms_0a = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+             fock(1+i)%elms_0a(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
-             fock(1+i)%elms_0a = fock(1+i)%elms_0a &
+             fock(1+i)%elms_0a(:, :, 1) = fock(1+i)%elms_0a(:, :, 1) &
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
        end do
