@@ -100,6 +100,7 @@ contains
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
     type(matrix)           :: G  !two electron Hamiltonian
+    type(matrix)           :: T  !temp
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
@@ -163,8 +164,11 @@ contains
     F = H1 + G
 
     print *, 'nr of electrons from dot(D, S) =', dot(D, S)
-    print *, '1-el electronic energy =', dot(H1, D)
-    print *, '2-el electronic energy =', 0.5d0*dot(G, D)
+    print *, '1-el electronic energy from dot(H1, D) =', dot(H1, D)
+    T = H1*D
+    print *, '1-el electronic energy from tr(H1*D) =', tr(T)
+    T = 0
+    print *, '2-el electronic energy from 0.5d0*dot(G, D)=', 0.5d0*dot(G, D)
     print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
 
     H1 = 0
