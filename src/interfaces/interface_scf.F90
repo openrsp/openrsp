@@ -3,6 +3,10 @@ module interface_scf
    use matrix_defop
    use interface_f77_memory
    use interface_pcm
+   use interface_io
+#ifdef PRG_DIRAC
+   use dirac_gen1int_interface
+#endif
 
    implicit none
 
@@ -327,7 +331,6 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-
 ! uses ssmtrc (small-small metric)
 #include "dcbham.h"
       !fixme rather use gen1int
@@ -337,6 +340,8 @@ contains
 !     S%elms_ja = 0.0d0
 !     S%elms_ka = 0.0d0
       call gtovlx(S%elms_alpha, ssmtrc)
+
+      call get_1el_integrals(io_viewer=get_print_unit())
 
 #endif /* ifdef PRG_DIRAC */
 
