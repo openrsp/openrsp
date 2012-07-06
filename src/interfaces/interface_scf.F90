@@ -5,7 +5,7 @@ module interface_scf
    use interface_pcm
    use interface_io
 #ifdef PRG_DIRAC
-   use dirac_gen1int_interface
+   use interface_dirac_gen1int
 #endif
 
    implicit none
@@ -331,18 +331,15 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-! uses ssmtrc (small-small metric)
-#include "dcbham.h"
-      !fixme rather use gen1int
-
-      S%elms_alpha = 0.0d0
-!     S%elms_ia = 0.0d0
-!     S%elms_ja = 0.0d0
-!     S%elms_ka = 0.0d0
-      call gtovlx(S%elms_alpha, ssmtrc)
-
-      call get_1el_integrals(io_viewer=get_print_unit())
-
+      call get_1el_integrals(                            &
+                             M=S,                        &
+                             prop_name="INT_OVERLAP",    &
+                             order_mom=0,                &
+                             order_geo_total=0,          &
+                             max_num_cent=0,             &
+                             print_unit=get_print_unit() &
+                            )
+!     call mat_print(S)
 #endif /* ifdef PRG_DIRAC */
 
    end subroutine

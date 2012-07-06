@@ -1,0 +1,49 @@
+module interface_dirac_gen1int
+
+#ifdef PRG_DIRAC
+   use gen1int_api
+
+   implicit none
+
+   public get_1el_integrals
+
+   private
+
+contains
+
+   subroutine get_1el_integrals(                 &
+                                M,               &
+                                prop_name,       &
+                                order_mom,       &
+                                order_geo_total, &
+                                max_num_cent,    &
+                                print_unit       &
+                               )
+
+      type(matrix), intent(inout) :: M
+      character(*), intent(in)    :: prop_name
+      integer,      intent(in)    :: order_mom
+      integer,      intent(in)    :: order_geo_total
+      integer,      intent(in)    :: max_num_cent
+      integer,      intent(in)    :: print_unit
+
+      logical,      parameter     :: write_integrals_to_file = .false.
+
+      call gen1int_host_get_int(non_lao, trim(prop_name),      &
+                                order_mom,                     &  !multipole moments
+                                0, 0, 0,                       &  !magnetic derivatives
+                                0, 0, 0,                       &  !derivatives w.r.t. total ram
+                                0, 0,                          &  !partial geometric derivatives
+                                max_num_cent, order_geo_total, &  !total geometric derivatives
+                                0, (/0/), redundant_geo,       &  !total geometric derivatives
+                                .false., .false., .false.,     &  !not implemented
+                                1, M,                          &
+                                write_integrals_to_file,       &
+                                print_unit, 0)
+
+   end subroutine
+#else
+   real(8) :: unused
+#endif
+
+end module
