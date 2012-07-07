@@ -38,7 +38,7 @@ contains
                                 .false., .false., .false.,     &  !not implemented
                                 1, M,                          &
                                 write_integrals_to_file,       &
-                                (/1, 1, 2, 2/),                &
+                                2, (/1, 1, 2, 2/),             &
                                 print_unit, 0)
 
    end subroutine
