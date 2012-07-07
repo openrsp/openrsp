@@ -4,9 +4,7 @@ module interface_scf
    use interface_f77_memory
    use interface_pcm
    use interface_io
-#ifdef PRG_DIRAC
    use interface_dirac_gen1int
-#endif
 
    implicit none
 

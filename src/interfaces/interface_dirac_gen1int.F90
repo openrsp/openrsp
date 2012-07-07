@@ -1,6 +1,5 @@
 module interface_dirac_gen1int
 
-#ifdef PRG_DIRAC
    use gen1int_api
 
    implicit none
@@ -39,11 +38,9 @@ contains
                                 .false., .false., .false.,     &  !not implemented
                                 1, M,                          &
                                 write_integrals_to_file,       &
+                                (/1, 1, 2, 2/),                &
                                 print_unit, 0)
 
    end subroutine
-#else
-   real(8) :: unused
-#endif
 
 end module
