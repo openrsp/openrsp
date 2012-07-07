@@ -124,6 +124,7 @@ contains
                                   .false., .false., .false.,  &  !not implemented yet
                                   1, (/DFD/), num_expt,       &  !expectation values
                                   val_expt, .false.,          &
+                                  1, (/1, 1/),                &
                                   get_print_unit(), 5)
        val_expt = -val_expt
        ! assigns the output average
@@ -206,6 +207,7 @@ contains
                                   .false., .false., .false.,   &  !not implemented yet
                                   1, (/D/), num_expt,          &  !expectation values
                                   val_expt, .false.,           &
+                                  1, (/1, 1/),                 &
                                   get_print_unit(), 5)
      ! only geometric perturbations
      else
@@ -221,6 +223,7 @@ contains
                                   .false., .false., .false., &  !not implemented yet
                                   1, (/D/), num_expt,        &  !expectation values
                                   val_expt, .false.,         &
+                                  1, (/1, 1/),               &
                                   get_print_unit(), 5)
      end if
      ! assigns the output average
@@ -333,6 +336,7 @@ contains
                                  REDUNDANT_GEO,              &
                                  .false., .false., .false.,  &  !not implemented yet
                                  num_ints, ovl, .false.,     &  !integral matrices
+                                 1, (/1, 1/),                &
                                  get_print_unit(), 5)
      end if
  
@@ -415,6 +419,7 @@ contains
                                  REDUNDANT_GEO,               &
                                  .false., .false., .false.,   &  !not implemented yet
                                  num_ints, oneint, .false.,   &  !integral matrices
+                                 1, (/1, 1/),                 &
                                  get_print_unit(), 5)
  
      ! only geometric perturbations
@@ -430,6 +435,7 @@ contains
                                  REDUNDANT_GEO,             &
                                  .false., .false., .false., &  !not implemented yet
                                  num_ints, oneint, .false., &  !integral matrices
+                                 1, (/1, 1/),               &
                                  get_print_unit(), 5)
      end if
  
