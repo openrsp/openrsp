@@ -244,13 +244,16 @@ contains
     else if (nf==1 .and. f(1)=='GEO ') then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
+!#define GRCONT_NOT_AVAILABLE
+#ifdef GRCONT_NOT_AVAILABLE
+       arg(1) = ctr_arg(1, -huge(1), ncor, D1, D2, &
+                        rank_one_pointer(ncor, tmp(:,1,1,1)))
+       call unopt_geodiff_loop(interface_basis_pointer, arg)
+       tmp = 2.0d0*tmp
+#else
        n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
-#ifdef PRG_DIRAC
-    print *, 'fix grcont call'
-    stop 1
-#else
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,1,1,1), ncor, .true., .false., &
                    1, 0, .true., .false., f77_memory(:n*n*2), 2)
@@ -260,13 +263,22 @@ contains
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
+#ifdef GRCONT_NOT_AVAILABLE
+       arg(1) = ctr_arg(2, -huge(1), ncor, D1, D2, &
+                        rank_one_pointer(ncor**2, tmp(:,:,1,1)))
+       call unopt_geodiff_loop(interface_basis_pointer, arg)
+       ! symmetrize
+       do j = 1, ncor
+          do i = 1, j
+             r = tmp(i, j, 1, 1) + tmp(j, i, 1, 1)
+             tmp(i, j, 1, 1) = 2.0d0*r
+             tmp(j, i, 1, 1) = 2.0d0*r
+          end do
+       end do
+#else
        n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
-#ifdef PRG_DIRAC
-    print *, 'fix grcont call'
-    stop 1
-#else
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,:,1,1), ncor**2, .true., .false., &
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
