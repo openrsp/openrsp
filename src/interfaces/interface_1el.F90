@@ -114,6 +114,7 @@ contains
        ! calculates the expectaion values of overlap matrix
        call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
                                   0,                          &  !multipole moments
+                                  0,                          &
                                   0, 0, 0,                    &  !magnetic derivatives
                                   0, 0, 0,                    &  !derivatives w.r.t. total RAM
                                   0, 0,                       &  !partial geometric derivatives
@@ -197,6 +198,7 @@ contains
      if (order_mom/=0) then
        call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
                                   order_mom,                   &  !multipole moments
+                                  0,                           &
                                   0, 0, 0,                     &  !magnetic derivatives
                                   0, 0, 0,                     &  !derivatives w.r.t. total RAM
                                   0, 0,                        &  !partial geometric derivatives
@@ -213,6 +215,7 @@ contains
      else
        call gen1int_host_get_expt(NON_LAO, INT_ONE_HAMIL,    &
                                   0,                         &  !multipole moments
+                                  0,                         &
                                   0, 0, 0,                   &  !magnetic derivatives
                                   0, 0, 0,                   &  !derivatives w.r.t. total RAM
                                   0, 0,                      &  !partial geometric derivatives
@@ -327,6 +330,7 @@ contains
        ! calculates the overlap matrix
        call gen1int_host_get_int(NON_LAO, INT_OVERLAP,       &
                                  0,                          &  !multipole moments
+                                 0,                          &
                                  0, 0, 0,                    &  !magnetic derivatives
                                  0, 0, 0,                    &  !derivatives w.r.t. total RAM
                                  0, 0,                       &  !partial geometric derivatives
@@ -410,6 +414,7 @@ contains
      if (order_mom/=0) then
        call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
                                  order_mom,                   &  !multipole moments
+                                 0,                           &
                                  0, 0, 0,                     &  !magnetic derivatives
                                  0, 0, 0,                     &  !derivatives w.r.t. total RAM
                                  0, 0,                        &  !partial geometric derivatives
@@ -426,6 +431,7 @@ contains
      else
        call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
                                  0,                         &  !multipole moments
+                                 0,                         &
                                  0, 0, 0,                   &  !magnetic derivatives
                                  0, 0, 0,                   &  !derivatives w.r.t. total RAM
                                  0, 0,                      &  !partial geometric derivatives
