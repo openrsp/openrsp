@@ -14,6 +14,7 @@ module interface_basis
    logical :: is_initialized = .false.
 
    type(cgto), pointer, public :: interface_basis_pointer(:)
+   real(8), allocatable :: exp_and_ctr(:)
 
 !  non-allocatables
    integer :: nr_ao
@@ -24,7 +25,6 @@ contains
 
       integer              :: num_cgto_blocks
       integer              :: num_exp_and_ctr
-      real(8), allocatable :: exp_and_ctr(:)
 
 #ifdef PRG_DALTON
 ! uses nbast
@@ -55,7 +55,8 @@ contains
                                exp_and_ctr,     &
                                interface_basis_pointer)
 
-      deallocate(exp_and_ctr)
+!     do not deallocate!!! otherwise exponents will point to nirvana
+!     deallocate(exp_and_ctr)
 
       is_initialized = .true.
 
