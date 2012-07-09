@@ -330,11 +330,14 @@ contains
 
 #ifdef PRG_DIRAC
       call get_1el_integrals(                            &
-                             M=S,                        &
+                             M=(/S/),                    &
                              prop_name="INT_OVERLAP",    &
+                             num_ints=1,                 &
                              order_mom=0,                &
+                             order_elec=1,               &
                              order_geo_total=0,          &
                              max_num_cent=0,             &
+                             blocks=(/1, 1, 2, 2/),      &
                              print_unit=get_print_unit() &
                             )
 !     call mat_print(S)
@@ -397,10 +400,9 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-      integer, parameter   :: io = 66
+      type(matrix)       :: T, TX, TY, TZ
+      real(8), parameter :: speed_of_light = 137.0359998d0
 
-! uses ntbas(0)
-#include "dcbbas.h"
 ! uses nz
 #include "dgroup.h"
 
@@ -409,17 +411,68 @@ contains
          stop 1
       end if
 
-      open(io,                     &
-           file   = 'DFFCK1',      &
-           status = 'unknown',     &
-           form   = 'unformatted', &
-           access = 'sequential')
-      rewind(io)
+      T  = mat_alloc_like(H1)
+      TX = mat_alloc_like(H1)
+      TY = mat_alloc_like(H1)
+      TZ = mat_alloc_like(H1)
+
+      call get_1el_integrals(                                &
+                             M=(/TX, TY, TZ/),               &
+                             prop_name="INT_CART_MULTIPOLE", &
+                             num_ints=3,                     &
+                             order_mom=0,                    &
+                             order_elec=1,                   &
+                             order_geo_total=0,              &
+                             max_num_cent=0,                 &
+                             blocks=(/1, 2, 2, 1/),          &
+                             print_unit=get_print_unit()     &
+                            )
+
+      T%elms_alpha = 0.0d0
+
+      call dcopy(H1%nrow*H1%ncol, TX%elms_alpha, 1, T%elms_alpha(1, 1, 4), 1)
+      call dcopy(H1%nrow*H1%ncol, TY%elms_alpha, 1, T%elms_alpha(1, 1, 3), 1)
+      call dcopy(H1%nrow*H1%ncol, TZ%elms_alpha, 1, T%elms_alpha(1, 1, 2), 1)
 
       H1%elms_alpha = 0.0d0
-      call reafck(io, H1%elms_alpha, .true., 1)
 
-      close(io, status = 'keep')
+      ! kinetic energy = c (\vec \alpha \cdot \vec p)
+      H1 = H1 - speed_of_light*T
+
+      call get_1el_integrals(                            &
+                             M=(/T/),                    &
+                             prop_name="INT_OVERLAP",    &
+                             num_ints=1,                 &
+                             order_mom=0,                &
+                             order_elec=1,               &
+                             order_geo_total=0,          &
+                             max_num_cent=0,             &
+                             blocks=(/2, 2/),            &
+                             print_unit=get_print_unit() &
+                            )
+
+      ! shifted rest mass energy = \beta' c*c
+      H1 = H1 - 2.0d0*speed_of_light*speed_of_light*T
+
+      call get_1el_integrals(                            &
+                             M=(/T/),                    &
+                             prop_name="INT_POT_ENERGY", &
+                             num_ints=1,                 &
+                             order_mom=0,                &
+                             order_elec=1,               &
+                             order_geo_total=0,          &
+                             max_num_cent=0,             &
+                             blocks=(/1, 1, 2, 2/),      &
+                             print_unit=get_print_unit() &
+                            )
+
+      ! electron-nuclei attraction energy
+      H1 = H1 + T
+
+      T  = 0
+      TX = 0
+      TY = 0
+      TZ = 0
 
 #endif /* ifdef PRG_DIRAC */
 
