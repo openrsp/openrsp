@@ -544,52 +544,110 @@ contains
 
 
 
-  !> Same as set_dsofso in fock-eval.f90, but pertrubed
-  !> Call ONEDRV in ABACUS
-
-
-
-  !> Find the reordering of type(rsp_field)s f(:) that puts them in "canonical"
-  !> order, sorted by:
-  !>    1) decreasing %label's index in all_known_fields (GEO before EL, etc.)
-  !>    2) decreasing number of components %ncomp, (=1 for equations)
-  !>    3) increasing starting component index %comp,
-  !>    4) decreasing absolute value of real part of %freq (- before +)
-  !>    5) decreasing absolute value of imaginary part of %freq (- before +)
-  !> Canonical order should be used in response equation solution caching,
-  !> and is due to 1) also the order delivered by the integral backends.
-  function rsp_field_ordering(f) result(o)
-    type(rsp_field), intent(in) :: f(:)
-    integer                     :: o(size(f))
-    integer i, j, k
-    o = (/(i, i=1, size(f))/)
+  ! determine 'canonical' ordering 'o' of fields 'f'. Also, validate fields%comp/ncomp
+  subroutine count_and_prepare(f, geo_first, bas_first, o, tot_ncomp, &
+                               nucpot, overlap, hamilt)
+    type(rsp_field),   intent(in)  :: f(:)
+    logical,           intent(in)  :: geo_first
+    logical,           intent(in)  :: bas_first
+    integer,           intent(out) :: o(size(f))
+    integer,           intent(out) :: tot_ncomp(size(f))
+    logical, optional, intent(out) :: nucpot, overlap, hamilt
+    integer i, j, k, jj, kk, nel, nmag, nbas, ngeo, fld_idx(size(f))
+    ! look up field indices
+    fld_idx(:) = (/(index_of_field(f(i)%label), i=1,size(f))/)
+    ! initialize order to unity
+    o(:) = (/(i,i=1,size(f))/)
+    ! selection sort, select field to be in i'th place from i:size(f)
     do i = 1, size(f)
-       !find perturbation after i, with highest idx (secondly highest %ncomp)
-       j = i
-       do k = j+1, size(f)
-          if (idx(f(o(k))%label) <  idx(f(o(j))%label)) cycle
-          if (idx(f(o(k))%label) == idx(f(o(j))%label)) then
-             if (f(o(k))%ncomp <  f(o(j))%ncomp) cycle
-             if (f(o(k))%ncomp == f(o(j))%ncomp) then
-                if (f(o(k))%comp >  f(o(j))%comp) cycle
-                if (f(o(k))%comp == f(o(j))%comp) then
-                   if (   abs(real(f(o(k))%freq)) &
-                       <  abs(real(f(o(j))%freq))) cycle
-                   if (   abs(real(f(o(k))%freq)) &
-                       == abs(real(f(o(j))%freq))) then
-                      if (   abs(aimag(f(o(k))%freq)) &
-                          <= abs(aimag(f(o(j))%freq))) cycle
+       jj = i
+       j  = o(i)
+       do kk = i+1, size(f)
+          k = o(kk)
+          ! firstly, if geo_first, select any 'GEO ' ahead of others
+          if (geo_first .and. f(k)%label /= 'GEO ' &
+                        .and. f(j)%label == 'GEO ') cycle
+          if (.not.geo_first .or. (f(k)%label == 'GEO ' &
+                             .eqv. f(j)%label == 'GEO ')) then
+             ! secondly, if bas_first, those with field_stats%bas
+             if (bas_first .and. .not.all_known_fields(fld_idx(k))%bas &
+                           .and.      all_known_fields(fld_idx(j))%bas) cycle
+             if (.not.bas_first .or. (all_known_fields(fld_idx(k))%bas &
+                                .eqv. all_known_fields(fld_idx(j))%bas)) then
+                ! thirdly, pick highest fld_idx
+                if (fld_idx(k) <  fld_idx(j)) cycle
+                if (fld_idx(k) == fld_idx(j)) then
+                   ! fourthly, choose field with highest ncomp
+                   if (f(k)%ncomp <  f(j)%ncomp) cycle
+                   if (f(k)%ncomp == f(j)%ncomp) then
+                      ! fifthly, lowest comp
+                      if (f(k)%comp >  f(j)%comp) cycle
+                      if (f(k)%comp == f(j)%comp) then
+                         ! sixthly, highest abs(re(freq))
+                         if (abs(real(f(k)%freq)) <  abs(real(f(j)%freq))) cycle
+                         if (abs(real(f(k)%freq)) == abs(real(f(j)%freq))) then
+                            ! seventhly, lowest sign(re(freq))
+                            if (real(f(k)%freq) >  real(f(j)%freq)) cycle
+                            if (real(f(k)%freq) == real(f(j)%freq)) then
+                               ! eigthly, highest abs(im(freq))
+                               if (abs(aimag(f(k)%freq)) <  abs(aimag(f(j)%freq))) cycle
+                               if (abs(aimag(f(k)%freq)) == abs(aimag(f(j)%freq))) then
+                                  ! ninethly, lowest sign(im(freq))
+                                  if (aimag(f(k)%freq) >  aimag(f(j)%freq)) cycle
+                                  if (aimag(f(k)%freq) == aimag(f(j)%freq)) then
+                                     ! tenthly, if fields j and k are *identical*, go for the
+                                     ! one with lowest input position
+                                     if (k > j) cycle
+                                  end if
+                               end if
+                            end if
+                         end if
+                      end if
                    end if
                 end if
              end if
           end if
-          j = k  !new minimum
+          jj = kk
+          j  = k  !new minimum
        end do
        !swap entries i and j
-       k    = o(i)
-       o(i) = o(j)
-       o(j) = k
+       k     = o(i)
+       o(i)  = j
+       o(jj) = k
     end do
+    ! place the full number of components in tot_ncomp
+    do i = 1, size(f)
+       tot_ncomp(i) = all_known_fields(fld_idx(o(i)))%ncomp
+    end do
+    ! if requested, determine whether the nuclear potential, the overlap
+    ! integrals, or the Hamiltonian, are preturbed by this tuple of fields
+    if (present(nucpot)) &
+       ngeo = count(f(:)%label == 'GEO ')
+    if (present(overlap) .or. present(hamilt)) &
+       nbas = count((/(all_known_fields(fld_idx(i))%bas, i=1,size(f))/))
+    if (present(nucpot) .or. present(hamilt)) then
+       nel  = count((/(all_known_fields(fld_idx(i))%lin,  i=1,size(f))/))
+       nmag = count((/(all_known_fields(fld_idx(i))%quad, i=1,size(f))/))
+    end if
+    if (present(nucpot)) &
+       nucpot = (((nel <= 1 .and. nmag == 0) &
+             .or. (nel == 0 .and. nmag <= 2)) &
+            .and. ngeo + nel + nmag == size(f))
+    if (present(overlap)) &
+       overlap = (nbas == size(f))
+    if (present(hamilt)) &
+       nucpot = (((nel <= 1 .and. nmag == 0) &
+             .or. (nel == 0 .and. nmag <= 2)) &
+            .and. nbas + nel + nmag == size(f))
+  end subroutine
+
+
+
+  function rsp_field_ordering(f) result(o)
+    type(rsp_field), intent(in) :: f(:)
+    integer                     :: o(size(f))
+    integer tc(size(f))
+    call count_and_prepare(f, .false., .false., o, tc)
   end function
 
 
