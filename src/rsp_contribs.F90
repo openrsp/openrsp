@@ -123,42 +123,38 @@ contains
     !> output tensor, to which nuclear contribution is *ADDED*
     complex(8),      intent(inout) :: rspfunc(product(fields%ncomp))
     !---------------------------------------------------------------
-    integer      ncor, ngeo, last_ncomp
-    character(4) last_field
-    ncor = 3 * get_nr_atoms()
-    ngeo = 0
-    last_field = 'NONE'
-    last_ncomp = 1
-    !ajt FIXME validate comp/ncomp ranges
-    !ajt FIXME determine sorting
-    if (any(fields(:)%label == 'EL  ')) then
-       if (size(fields) > 2) then
-          rspfunc = 0.0
-       end if
-    else
-       ! count the number of GEO
-       if (all(fields(:size(fields)-1)%label == 'GEO ')) then
-          ngeo = size(fields) - 1
-          if (fields(size(fields))%label == 'GEO ') then
-             ngeo = ngeo + 1
-          else
-             last_field = fields(size(fields))%label
-             last_ncomp = 3 !ajt FIXME
-          end if
-       else
-          call quit('rsp_nucpot error: failed to parse fields')
-       end if
-       call inner
+    integer      nf, ncor, ngeo, ext_ncomp, i
+    integer      order(size(fields)), tcomp(size(fields))
+    character(4) ext_label(2)
+    logical      nonz
+    ! prepare and determine ordering. This also validates comp/ncomp
+    call count_and_prepare(fields, .true., .false., order, tcomp, nucpot = nonz)
+    ! early return if zero
+    if (.not.nonz) return
+    ! find number of GEO, and two, one or none external fields
+    nf = size(fields)
+    ngeo = count(fields%label == 'GEO ')
+    ext_label(:) = (/'NONE','NONE'/)
+    ext_ncomp = 1
+    if (ngeo == nf-1) then
+       ext_label(1) = fields(order(nf))%label
+       ext_ncomp    = tcomp(nf)
+    else if (ngeo == nf-2) then
+       ext_label(1) = fields(order(nf-1))%label
+       ext_label(2) = fields(order(nf))%label
+       ext_ncomp    = tcomp(nf-1) * tcomp(nf)
     end if
+    ! use inner to avoid allocate'ing 'nucpot' below
+    ncor = 1
+    if (ngeo > 0) ncor = tcomp(1)
+    call inner
   contains
     subroutine inner
-      real(8) tmp(ncor**ngeo * last_ncomp)
-      call nuclear_potential(ngeo, ncor, last_field, last_ncomp, tmp)
-      ! add selected rectangle to rspfunc
-      !ajt FIXME reordering and range selection
-      if (ncor**ngeo * last_ncomp /= size(rspfunc)) &
-         call quit('rsp_nucpot error: only full ranges implemented')
-      rspfunc = rspfunc + tmp
+      real(8) nucpot(ncor**ngeo * ext_ncomp)
+      call nuclear_potential(ngeo, ncor, ext_label, ext_ncomp, nucpot)
+      ! add requested component ranges to rspfunc
+      call permute_selcomp_add((1d0,0d0), nf, order, fields(:)%comp, &
+                               tcomp, fields(:)%ncomp, nucpot, rspfunc)
     end subroutine
   end subroutine
 
@@ -480,13 +476,11 @@ contains
 
 
 
-
-
-  function idx(f)
+  function index_of_field(f) result(i)
     character(4) :: f
-    integer      :: idx
-    do idx = 1, size(all_known_fields)
-        if (all_known_fields(idx)%label == f) return
+    integer      :: i
+    do i = 1, size(all_known_fields)
+        if (all_known_fields(i)%label == f) return
     end do
     call quit('Field not found: ' // f)
   end function
@@ -496,7 +490,7 @@ contains
     character(4), intent(in) :: f(:)
     logical :: rsp_field_anti(size(f))
     integer :: i
-    rsp_field_anti = (/(all_known_fields(idx(f(i)))%anti, i=1,size(f))/)
+    rsp_field_anti = (/(all_known_fields(index_of_field(f(i)))%anti, i=1,size(f))/)
   end function
 
 
@@ -504,7 +498,7 @@ contains
   function rsp_field_dim(f)
     character(4),  intent(in) :: f(:)
     integer :: rsp_field_dim(size(f)), i
-    rsp_field_dim = (/(all_known_fields(idx(f(i)))%ncomp, i=1,size(f))/)
+    rsp_field_dim = (/(all_known_fields(index_of_field(f(i)))%ncomp, i=1,size(f))/)
     ! loop through mol-dependent
     do i = 1, size(f)
        if (rsp_field_dim(i) /= -1) then
@@ -523,7 +517,7 @@ contains
     character(4), intent(in) :: f(:)
     logical :: rsp_field_bas(size(f))
     integer :: i
-    rsp_field_bas = (/(all_known_fields(idx(f(i)))%bas, i=1,size(f))/)
+    rsp_field_bas = (/(all_known_fields(index_of_field(f(i)))%bas, i=1,size(f))/)
   end function
 
 
@@ -618,6 +612,13 @@ contains
     ! place the full number of components in tot_ncomp
     do i = 1, size(f)
        tot_ncomp(i) = all_known_fields(fld_idx(o(i)))%ncomp
+       ! ajt FIXME -1 means ncomp is uninitialized (molecule-dependent)
+       !           This init should be done in a separate routine, together
+       !           with all the other fields' ncomp
+       if (tot_ncomp(i) == -1 .and. f(o(i))%label == 'GEO ') then
+          tot_ncomp(i) = 3*get_nr_atoms()
+          all_known_fields(fld_idx(o(i)))%ncomp = tot_ncomp(i)
+       end if
     end do
     ! if requested, determine whether the nuclear potential, the overlap
     ! integrals, or the Hamiltonian, are preturbed by this tuple of fields

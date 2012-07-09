@@ -21,42 +21,54 @@ module nuc_contributions
 contains
 
   !> (derivatives of) nuclear repulsion and nuclei--field interaction
-  subroutine nuclear_potential(derv, ncor, field, ncomp, nucpot)
+  subroutine nuclear_potential(deriv, ncor, field, ncomp, nucpot)
     !> order of geometry derivative requested
-    integer,      intent(in)  :: derv
+    integer,      intent(in)  :: deriv
     !> number of geometry coordinates
     integer,      intent(in)  :: ncor
-    !> one external potential label, or 'NONE'
-    character(4), intent(in)  :: field
+    !> external potential labels, or 'NONE'
+    character(4), intent(in)  :: field(2)
     !> number of components of the field (must be all, ie. 1/3/6)
     integer,      intent(in)  :: ncomp
     !> output tensor
-    real(8),      intent(out) :: nucpot(ncor**derv * ncomp)
+    real(8),      intent(out) :: nucpot(ncor**deriv * ncomp)
     !-------------------------------------------------------
-    integer i, na
-    na = get_nr_atoms()
-    if (ncor /= 3*na) &
-       call quit('rsp_backend nuclear_potential error: expected ncor = 3*natom')
-    if ((field == 'NONE' .and. ncomp /= 1) .or. &
-        (field == 'EL  ' .and. ncomp /= 3)) &
-       call quit('rsp_backend nuclear_potential error: expected ncomp = 1 or 3')
-    ! switch
-    if (derv == 0 .and. field == 'NONE') then
-       call quit('rsp_ error: unperturbed nuc.rep. not implemented')
-    else if (derv == 0 .and. field == 'EL  ') then
+    integer i, j, na, charges(ncor/3)
+    real(8) coords(ncor)
+    ! early return if deriv higher than moment (zero)
+    if ((field(1) == 'EL  ' .and. deriv > 1) .or. &
+        (field(1) == 'ELGR' .and. deriv > 2)) then
+        nucpot(:) = 0
+        return
+    end if
+    ! nonzero, so fetch charges and coordinates
+    na = ncor/3
+    charges(:) = (/(get_nuc_charge(i), i=1,na)/)
+    coords(:)  = (/((get_nuc_xyz(i,j), i=1,3), j=1,na)/)
+    ! ---- switch by field(1), field(2) and deriv
+    ! all orders of nuclear repulsion
+    if (field(1) == 'NONE') then
+       call nucrep_deriv(ncor/3, charges, coords, deriv, nucpot)
+    ! minus dipole moment 
+    else if (field(1) == 'EL  ' .and. deriv == 0) then
        call DIPNUC_ifc(nucpot)
        nucpot = -nucpot !dip = -dE/dF
-    else if (derv == 1 .and. field == 'NONE') then
-       call gradient_nuc(na, nucpot)
-    else if (derv == 2 .and. field == 'NONE') then
-       call hessian_nuc(na, nucpot)
-    else if (derv == 3 .and. field == 'NONE') then
-       call cubicff_nuc(na, nucpot)
-    else if (derv == 4 .and. field == 'NONE') then
-       call quarticff_nuc(na, nucpot)
+    ! minus dipole moment gradient 
+    else if (field(1) == 'EL  ' .and. deriv == 1) then
+       call DPGNUC_ifc(na, nucpot)
+       nucpot = -nucpot !d/dR dip = -d2E/dR/dF
+    ! minus quadrupole moment
+    else if (field(1) == 'ELGR' .and. deriv == 0) then
+       call QDRNUC_ifc(nucpot)
+       nucpot = -nucpot !qua = -dE/dG
+    ! atomic axial tensor
+    else if (field(1) == 'MAG ' .and. field(2) == 'NONE' .and. deriv == 1) then
+       call AATNUC_ifc(na, nucpot)
+       ! change sign, transpose
+       nucpot(:) = (/-nucpot(1::3), -nucpot(2::3), -nucpot(3::3)/)
     else
-       print *,'rsp_backend nuclear_potential error: not implented, derv =', &
-               derv, '  field = ', field
+       print *,'rsp_backend nuclear_potential error: not implented, deriv =', &
+               deriv, '  field = ', field
        call quit('rsp_backend nuclear_potential error: not implented')
     end if
   end subroutine
@@ -226,6 +238,7 @@ contains
 
   ! derivatives of nuclear repulsion energy
   subroutine nucrep_deriv(na, charges, coords, deriv, nucrep)
+
     integer, intent(in)  :: na, deriv, charges(na)
     real(8), intent(in)  :: coords(3,na)
     real(8), intent(out) :: nucrep((3*na)**deriv)
