@@ -55,9 +55,6 @@ contains
                                exp_and_ctr,     &
                                interface_basis_pointer)
 
-!     do not deallocate!!! otherwise exponents will point to nirvana
-!     deallocate(exp_and_ctr)
-
       is_initialized = .true.
 
    end subroutine
@@ -66,6 +63,8 @@ contains
 
       deallocate(interface_basis_pointer)
       nullify(interface_basis_pointer)
+
+      deallocate(exp_and_ctr)
 
       is_initialized = .false.
 
