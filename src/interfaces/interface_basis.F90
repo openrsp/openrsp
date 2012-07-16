@@ -23,8 +23,9 @@ contains
 
    subroutine interface_basis_init()
 
-      integer              :: num_cgto_blocks
-      integer              :: num_exp_and_ctr
+      integer :: num_cgto_blocks
+      integer :: num_exp_and_ctr
+      integer :: i
 
 #ifdef PRG_DALTON
 ! uses nbast
@@ -54,6 +55,15 @@ contains
                                num_exp_and_ctr, &
                                exp_and_ctr,     &
                                interface_basis_pointer)
+
+#ifdef PRG_DIRAC
+      print *, 'raboof basis set'
+      do i = 1, num_cgto_blocks
+         print *, i, interface_basis_pointer(i)%mom, interface_basis_pointer(i)%nbas
+         print *, 'exp: ', interface_basis_pointer(i)%exp
+         print *, 'ctr: ', interface_basis_pointer(i)%ctr
+      end do
+#endif
 
       is_initialized = .true.
 
