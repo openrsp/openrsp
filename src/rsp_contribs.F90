@@ -244,7 +244,11 @@ contains
     else if (nf==1 .and. f(1)=='GEO ') then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
-!#define GRCONT_NOT_AVAILABLE
+
+#ifdef PRG_DIRAC
+#define GRCONT_NOT_AVAILABLE
+#endif
+
 #ifdef GRCONT_NOT_AVAILABLE
        arg(1) = ctr_arg(1, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor, tmp(:,1,1,1)))
