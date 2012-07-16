@@ -179,7 +179,7 @@ contains
     print *, '2-el electronic energy from 0.5d0*dot(G, D)=', 0.5d0*dot(G, D)
 
     arg(1) = ctr_arg(0, -huge(1), 1, D, D, temp)
-    call unopt_geodiff_loop(interface_basis_pointer, arg)
+    call unopt_geodiff_loop(basis_large, arg)
     print *, '2-el energy from cgto-diff-eri', temp
 
     print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)

@@ -13,7 +13,7 @@ module interface_basis
 !  if false the interface will refuse to be accessed
    logical :: is_initialized = .false.
 
-   type(cgto), pointer, public :: interface_basis_pointer(:)
+   type(cgto), pointer, public :: basis_large(:)
    real(8), allocatable :: exp_and_ctr(:)
 
 !  non-allocatables
@@ -47,21 +47,21 @@ contains
 
       call shells_find_sizes(num_cgto_blocks, num_exp_and_ctr)
 
-      nullify(interface_basis_pointer)
-      allocate(interface_basis_pointer(num_cgto_blocks))
+      nullify(basis_large)
+      allocate(basis_large(num_cgto_blocks))
       allocate(exp_and_ctr(num_exp_and_ctr))
 
       call shells_to_type_cgto(num_cgto_blocks, &
                                num_exp_and_ctr, &
                                exp_and_ctr,     &
-                               interface_basis_pointer)
+                               basis_large)
 
 #ifdef PRG_DIRAC
       print *, 'raboof basis set'
       do i = 1, num_cgto_blocks
-         print *, i, interface_basis_pointer(i)%mom, interface_basis_pointer(i)%nbas
-         print *, 'exp: ', interface_basis_pointer(i)%exp
-         print *, 'ctr: ', interface_basis_pointer(i)%ctr
+         print *, i, basis_large(i)%mom, basis_large(i)%nbas
+         print *, 'exp: ', basis_large(i)%exp
+         print *, 'ctr: ', basis_large(i)%ctr
       end do
 #endif
 
@@ -71,8 +71,8 @@ contains
 
    subroutine interface_basis_finalize()
 
-      deallocate(interface_basis_pointer)
-      nullify(interface_basis_pointer)
+      deallocate(basis_large)
+      nullify(basis_large)
 
       deallocate(exp_and_ctr)
 

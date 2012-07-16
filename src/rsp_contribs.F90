@@ -252,7 +252,7 @@ contains
 #ifdef GRCONT_NOT_AVAILABLE
        arg(1) = ctr_arg(1, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor, tmp(:,1,1,1)))
-       call unopt_geodiff_loop(interface_basis_pointer, arg)
+       call unopt_geodiff_loop(basis_large, arg)
        tmp = 2.0d0*tmp
 #else
        n = D1%nrow
@@ -270,7 +270,7 @@ contains
 #ifdef GRCONT_NOT_AVAILABLE
        arg(1) = ctr_arg(2, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**2, tmp(:,:,1,1)))
-       call unopt_geodiff_loop(interface_basis_pointer, arg)
+       call unopt_geodiff_loop(basis_large, arg)
        ! symmetrize
        do j = 1, ncor
           do i = 1, j
@@ -296,7 +296,7 @@ contains
        allocate(tmp(ncor,ncor,ncor,1))
        arg(1) = ctr_arg(3, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**3, tmp(:,:,:,1)))
-       call unopt_geodiff_loop(interface_basis_pointer, arg)
+       call unopt_geodiff_loop(basis_large, arg)
        ! symmetrize
        do k = 1, ncor
           do j = 1, k
@@ -319,7 +319,7 @@ contains
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
        arg(1) = ctr_arg(4, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**4, tmp))
-       call unopt_geodiff_loop(interface_basis_pointer, arg)
+       call unopt_geodiff_loop(basis_large, arg)
        ! symmetrize
        do l = 1, ncor
           do k = 1, l
@@ -477,7 +477,7 @@ contains
              end if
              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
                               ncor, dens, fock(ij), null_ptr)
-             call unopt_geodiff_loop(interface_basis_pointer, arg)
+             call unopt_geodiff_loop(basis_large, arg)
           end do
        end do
     else
