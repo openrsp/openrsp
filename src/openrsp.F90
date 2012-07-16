@@ -54,6 +54,8 @@ module openrsp
   use dalton_ifc
   use openrsp_cfg
   use matrix_defop
+  use eri_contractions, only: ctr_arg
+  use eri_basis_loops,  only: unopt_geodiff_loop
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -73,7 +75,7 @@ module openrsp
   ! overlap matrix
   type(matrix) S
   ! AO density matrix
-  type(matrix) D
+  type(matrix), target :: D
   ! Fock matrix
   type(matrix) F
 
@@ -106,6 +108,9 @@ contains
     integer                :: mat_dim
     integer                :: algebra
     real(8)                :: xc_energy
+    real(8), target        :: temp(1)
+
+    type(ctr_arg) :: arg(1)
 
     call interface_molecule_init()
     call interface_io_init()
@@ -163,12 +168,20 @@ contains
     ! Fock matrix F = H1 + G
     F = H1 + G
 
+!   radovan: the contributions below are extremely useful
+!            for debugging
+!            after i get dirac fully interfaced i will remove/clean it up
     print *, 'nr of electrons from dot(D, S) =', dot(D, S)
     print *, '1-el electronic energy from dot(H1, D) =', dot(H1, D)
     T = H1*D
     print *, '1-el electronic energy from tr(H1*D) =', tr(T)
     T = 0
     print *, '2-el electronic energy from 0.5d0*dot(G, D)=', 0.5d0*dot(G, D)
+
+    arg(1) = ctr_arg(0, -huge(1), 1, D, D, temp)
+    call unopt_geodiff_loop(interface_basis_pointer, arg)
+    print *, '2-el energy from cgto-diff-eri', temp
+
     print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
 
     H1 = 0
@@ -726,7 +739,6 @@ end subroutine
     write (lupri,*) '>> ** End of OpenRSP Section'
     write (lupri,*)
   end subroutine
-
 
 end module
 
