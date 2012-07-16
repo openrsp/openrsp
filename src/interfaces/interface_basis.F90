@@ -117,7 +117,6 @@ contains
   end subroutine
 
   subroutine SHELLS_to_type_cgto(ncgto, nectr, ectr, bas)
-    !radovan: fixme ugly dependency on basis_set
     use basis_set, only: cgto
     integer,          intent(in)  :: ncgto, nectr
     type(cgto),       intent(out) :: bas(ncgto)
