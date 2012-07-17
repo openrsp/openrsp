@@ -1,3 +1,7 @@
+#ifdef PRG_DIRAC
+#define GRCONT_NOT_AVAILABLE
+#endif
+
 ! Copyright 2012      Gao Bin
 !           2012      Radovan Bast
 !           2009-2012 Andreas J. Thorvaldsen
@@ -244,11 +248,6 @@ contains
     else if (nf==1 .and. f(1)=='GEO ') then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
-
-#ifdef PRG_DIRAC
-#define GRCONT_NOT_AVAILABLE
-#endif
-
 #ifdef GRCONT_NOT_AVAILABLE
        arg(1) = ctr_arg(1, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor, tmp(:,1,1,1)))
@@ -425,6 +424,9 @@ contains
     integer       i, j, n, ij, ncor
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
+
+    nullify(null_ptr) !because null() isn't f90
+
   if (any(f=='EL  ')) then
      call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
      do i = 1, product(nc)
@@ -446,28 +448,31 @@ contains
     else if (nf==1 .and. f(1)=='GEO ') then
        n = nr_ao
        do i = 0, nc(1)-1
-          ! if first or an x-coord, call GRCONT
-          if (i==0 .or. mod(c(1)+i,3) == 1) &
-#ifdef PRG_DIRAC
-    print *, 'fix grcont call'
-    stop 1
+          if (iszero(fock(i+1))) then
+             call mat_ensure_alloc(fock(i+1))
+          end if
+#ifdef GRCONT_NOT_AVAILABLE
+          arg(1) = ctr_arg(1, i+1, &
+                           ncor, dens, fock(i+1), null_ptr)
+          call unopt_geodiff_loop(basis_large, arg)
 #else
+          ! if first or an x-coord, call GRCONT
+          if (i==0 .or. mod(c(1)+i,3) == 1) then
              call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
                          f77_memory(:n*n*3), n*n*3, .true., .false., &
                          1, (c(1)+i+2)/3, .false., .true., dens%elms_alpha, 1)
-#endif
+          end if
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
-             call mat_ensure_alloc(fock(1+i))
              fock(1+i)%elms_alpha(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
              fock(1+i)%elms_alpha(:, :, 1) = fock(1+i)%elms_alpha(:, :, 1) &
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
+#endif
        end do
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
-       nullify(null_ptr) !because null() isn't f90
        do j = 0, nc(2)-1
           do i = 0, nc(1)-1
              ij = 1 + i + nc(1)*j
