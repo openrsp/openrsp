@@ -65,7 +65,7 @@ contains
    !> \date 2009-12-08
    !> \return D contains the AO density matrix
    subroutine interface_scf_get_d(D)
- 
+
       type(matrix), intent(inout) :: D
 
 #ifdef PRG_DALTON
@@ -457,5 +457,121 @@ contains
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
+
+#ifdef PRG_DIRAC
+   subroutine read_mo_coef(mo_coef)
+
+!     --------------------------------------------------------------------------
+      real(8)            :: mo_coef(*)
+!     --------------------------------------------------------------------------
+      integer, parameter :: file_unit = 66
+      real(8)            :: energy
+!     --------------------------------------------------------------------------
+
+      call opnfil(file_unit, 'DFCOEF', 'OLD', 'read_mo_coef')
+
+      call reacmo_no_work(file_unit, &
+                          'DFCOEF',  &
+                          mo_coef,   &
+                          (/0.0d0/), &
+                          (/0/),     &
+                          energy,    &
+                          2)
+
+      close(file_unit, status = 'keep')
+
+   end subroutine
+
+   subroutine get_C(C, cmo_from_file, i, s, g, u)
+
+!     --------------------------------------------------------------------------
+      type(matrix)        :: C
+      real(8), intent(in) :: cmo_from_file(*)
+      real(8), intent(in) :: i, s, g, u
+!     --------------------------------------------------------------------------
+      integer             :: nr_g_mo_ns
+      integer             :: nr_g_mo_pi
+      integer             :: nr_g_mo_ps
+      integer             :: nr_u_mo_ns
+      integer             :: nr_u_mo_pi
+      integer             :: nr_u_mo_ps
+      integer             :: nr_g_mo
+      integer             :: nr_u_mo
+      integer             :: nr_g_ao
+      integer             :: nr_u_ao
+      integer             :: k, l, m, n, ir, iw1, iw2, iz
+!     --------------------------------------------------------------------------
+
+#include "dcborb.h"
+#include "dcbbas.h"
+#include "dgroup.h"
+
+      nr_g_mo_ns = npsh(1)
+      nr_g_mo_pi = nish(1)
+      nr_g_mo_ps = nesh(1) - nr_g_mo_pi
+      nr_g_mo    = nr_g_mo_ns + nr_g_mo_pi + nr_g_mo_ps
+      nr_u_mo_ns = npsh(2)
+      nr_u_mo_pi = nish(2)
+      nr_u_mo_ps = nesh(2) - nr_u_mo_pi
+      nr_u_mo    = nr_u_mo_ns + nr_u_mo_pi + nr_u_mo_ps
+      nr_g_ao    = nfbas(1, 0)
+      nr_u_ao    = nfbas(2, 0)
+
+      ir = 0
+
+      do iz = 1, nz
+         k = 0
+         do m = 1, nr_g_mo_ns
+            k = k + 1
+            do n = 1, nr_g_ao
+               ir = ir + 1
+               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*g*s
+            end do
+         end do
+         do m = 1, nr_g_mo_pi
+            k = k + 1
+            do n = 1, nr_g_ao
+               ir = ir + 1
+               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*g*i
+            end do
+         end do
+         do m = 1, nr_g_mo_ps
+            k = k + 1
+            do n = 1, nr_g_ao
+               ir = ir + 1
+               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*g*s
+            end do
+         end do
+      end do
+
+      if (nfsym == 1) return
+
+      do iz = 1, nz
+         k = 0
+         do m = 1, nr_u_mo_ns
+            k = k + 1
+            do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
+               ir = ir + 1
+               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*u*s
+            end do
+         end do
+         do m = 1, nr_u_mo_pi
+            k = k + 1
+            do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
+               ir = ir + 1
+               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*u*i
+            end do
+         end do
+         do m = 1, nr_u_mo_ps
+            k = k + 1
+            do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
+               ir = ir + 1
+               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*u*s
+            end do
+         end do
+      end do
+
+   end subroutine
+#endif /* ifdef PRG_DIRAC */
 
 end module
