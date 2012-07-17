@@ -168,6 +168,7 @@ contains
     ! Fock matrix F = H1 + G
     F = H1 + G
 
+#ifdef PRG_DIRAC
 !   radovan: the contributions below are extremely useful
 !            for debugging
 !            after i get dirac fully interfaced i will remove/clean it up
@@ -179,8 +180,13 @@ contains
     print *, '2-el electronic energy from 0.5d0*dot(G, D)=', 0.5d0*dot(G, D)
 
     arg(1) = ctr_arg(0, -huge(1), 1, D, D, temp)
-    call unopt_geodiff_loop(basis_large, arg)
+
+    call unopt_geodiff_loop(basis_large, &
+                            arg,         &
+                            basis_small)
+
     print *, '2-el energy from cgto-diff-eri', temp
+#endif
 
     print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
 

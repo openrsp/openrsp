@@ -15,8 +15,10 @@ module interface_basis
 
    type(cgto), pointer, public :: basis_large(:)
    real(8), allocatable        :: exp_and_ctr_large(:)
+#ifdef PRG_DIRAC
    type(cgto), pointer, public :: basis_small(:)
    real(8), allocatable        :: exp_and_ctr_small(:)
+#endif
 
 !  non-allocatables
    integer :: nr_ao
@@ -25,9 +27,20 @@ contains
 
    subroutine interface_basis_init()
 
-      integer :: nr_blocks_large
-      integer :: nr_exp_ctr_large
+      integer :: nr_blocks_large  = 0
+      integer :: nr_exp_ctr_large = 0
+
+#ifdef PRG_DIRAC
+      integer :: nr_blocks_small  = 0
+      integer :: nr_exp_ctr_small = 0
+#endif
+
       integer :: i
+
+! need MXSHEL
+#include "maxorb.h"
+! uses NLRGSH, NSMLSH
+#include "shells.h"
 
 #ifdef PRG_DALTON
 ! uses nbast
@@ -47,7 +60,10 @@ contains
       nr_ao = ntbas(0)
 #endif
 
-      call shells_find_sizes(nr_blocks_large, nr_exp_ctr_large)
+      call shells_find_sizes(nr_blocks_large,  &
+                             nr_exp_ctr_large, &
+                             1,                &
+                             nlrgsh)
 
       nullify(basis_large)
       allocate(basis_large(nr_blocks_large))
@@ -56,14 +72,45 @@ contains
       call shells_to_type_cgto(nr_blocks_large,   &
                                nr_exp_ctr_large,  &
                                exp_and_ctr_large, &
-                               basis_large)
+                               basis_large,       &
+                               1,                 &
+                               nlrgsh)
 
 #ifdef PRG_DIRAC
+      call shells_find_sizes(nr_blocks_small,  &
+                             nr_exp_ctr_small, &
+                             nlrgsh + 1,       &
+                             nlrgsh + nsmlsh)
+
+      nullify(basis_small)
+      allocate(basis_small(nr_blocks_small))
+      allocate(exp_and_ctr_small(nr_exp_ctr_small))
+
+      call shells_to_type_cgto(nr_blocks_small,   &
+                               nr_exp_ctr_small,  &
+                               exp_and_ctr_small, &
+                               basis_small,       &
+                               nlrgsh + 1,        &
+                               nlrgsh + nsmlsh)
+
       print *, 'debug: large component basis set'
+      print *, '--------------------------------'
+      print *, 'nr blocks: ', nr_blocks_large
       do i = 1, nr_blocks_large
          print *, i, basis_large(i)%mom, basis_large(i)%nbas
-         print *, 'exp: ', basis_large(i)%exp
-         print *, 'ctr: ', basis_large(i)%ctr
+         print *, 'ibas: ', basis_large(i)%ibas
+         print *, 'exp:  ', basis_large(i)%exp
+         print *, 'ctr:  ', basis_large(i)%ctr
+      end do
+
+      print *, 'debug: small component basis set'
+      print *, '--------------------------------'
+      print *, 'nr blocks: ', nr_blocks_small
+      do i = 1, nr_blocks_small
+         print *, i, basis_small(i)%mom, basis_small(i)%nbas
+         print *, 'ibas: ', basis_small(i)%ibas
+         print *, 'exp:  ', basis_small(i)%exp
+         print *, 'ctr:  ', basis_small(i)%ctr
       end do
 #endif
 
@@ -75,8 +122,13 @@ contains
 
       deallocate(basis_large)
       nullify(basis_large)
-
       deallocate(exp_and_ctr_large)
+
+#ifdef PRG_DIRAC
+      deallocate(basis_small)
+      nullify(basis_small)
+      deallocate(exp_and_ctr_small)
+#endif
 
       is_initialized = .false.
 
@@ -98,11 +150,19 @@ contains
   !> Count the number of contracted Gaussian-type orbital shells
   !> \param ncgto, and number of exponents and contraction coefficents
   !> \param nectr, so that memory for data structures can be allocated
-  subroutine SHELLS_find_sizes(ncgto, nectr)
-    integer, intent(out) :: ncgto, nectr
+  subroutine SHELLS_find_sizes(ncgto,   &
+                               nectr,   &
+                               i_start, &
+                               i_end)
+
+    integer, intent(out) :: ncgto
+    integer, intent(out) :: nectr
+    integer, intent(in)  :: i_start
+    integer, intent(in)  :: i_end
+
     ! need MXSHEL
 #include "maxorb.h"
-    ! need NLRGSH NBCH NUCO NRCO
+    ! need NBCH NUCO NRCO
 #include "shells.h"
     logical haveit(MXSHEL)
     integer i, j
@@ -111,7 +171,7 @@ contains
     ncgto = 0
     nectr = 0
     haveit(:) = .false.
-    do i = 1, NLRGSH
+    do i = i_start, i_end
        ! if not the first contacted in this block, skip
        if (NUMCF(i) /= 1) cycle
        ! index of AO shell block
@@ -128,14 +188,22 @@ contains
     end do
   end subroutine
 
-  subroutine SHELLS_to_type_cgto(ncgto, nectr, ectr, bas)
+  subroutine SHELLS_to_type_cgto(ncgto,   &
+                                 nectr,   &
+                                 ectr,    &
+                                 bas,     &
+                                 i_start, &
+                                 i_end)
     use basis_set, only: cgto
-    integer,          intent(in)  :: ncgto, nectr
-    type(cgto),       intent(out) :: bas(ncgto)
+    integer,         intent(in)  :: ncgto
+    integer,         intent(in)  :: nectr
+    type(cgto),      intent(out) :: bas(ncgto)
     real(8), target, intent(out) :: ectr(nectr)
+    integer,         intent(in)  :: i_start
+    integer,         intent(in)  :: i_end
     ! need MXSHEL
 #include "maxorb.h"
-    ! need NLRGSH NBCH NUCO NRCO NUMCF CENT NHKT NSTRT
+    ! need NBCH NUCO NRCO NUMCF CENT NHKT NSTRT
 #include "shells.h"
     ! need MXCONT
 #include "aovec.h"
@@ -152,7 +220,7 @@ contains
     k = 0 !index in bas
     l = 0 !offset in ectr
     alreadyis(:) = 0
-    do i = 1, NLRGSH
+    do i = i_start, i_end
        if (NBCH(i) <= 0 .or. NBCH(i) > MXSHEL) &
           call quit('SHELLS_sizes error: unexpected NBCH<=0 or >MXSHEL')
        ! if not the first contracted in this block, skip
