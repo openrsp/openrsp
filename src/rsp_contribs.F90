@@ -454,7 +454,7 @@ contains
 #ifdef GRCONT_NOT_AVAILABLE
           arg(1) = ctr_arg(1, i+1, &
                            ncor, dens, fock(i+1), null_ptr)
-          call unopt_geodiff_loop(basis_large, arg)
+          call unopt_geodiff_loop(basis_large, arg, basis_small)
 #else
           ! if first or an x-coord, call GRCONT
           if (i==0 .or. mod(c(1)+i,3) == 1) then

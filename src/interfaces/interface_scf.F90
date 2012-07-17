@@ -4,7 +4,10 @@ module interface_scf
    use interface_f77_memory
    use interface_pcm
    use interface_io
+   use interface_basis
    use interface_dirac_gen1int
+   use eri_contractions, only: ctr_arg
+   use eri_basis_loops,  only: unopt_geodiff_loop
 
    implicit none
 
@@ -194,8 +197,8 @@ contains
   !> \return G contains the two electron contribution
   subroutine interface_scf_get_g(D, G)
 
-    type(matrix), intent(in)    :: D
-    type(matrix), intent(inout) :: G
+    type(matrix), intent(in),    target :: D
+    type(matrix), intent(inout), target :: G
 
 #ifdef PRG_DALTON
     ! uses NBAST, NNBAST, NNBASX, N2BASX
@@ -254,39 +257,14 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-    integer              :: integral_flag
-    integer              :: npos_nr
-    integer, allocatable :: npos(:)
+    real(8), pointer :: null_pointer(:)
+    type(ctr_arg)    :: arg(1)
+    nullify(null_pointer)
 
-! uses ntbas(0)
-#include "dcbbas.h"
-! uses nz
-#include "dgroup.h"
+    G%elms_alpha = 0.0d0
 
-    call get_npos(npos_nr)
-    allocate(npos(npos_nr))
-
-    if (nz /= 4) then
-       print *, 'adapt interface_scf_get_g for nz /= 4'
-       stop 1
-    end if
-
-    !fixme hardcoded
-    integral_flag = 3
-
-    call twofck((/1/),                               &
-                (/0/),                               &
-                (/1/),                               &
-                  G%elms_alpha,                      &
-                  D%elms_alpha,                      &
-                  1,                                 &
-                  npos,                              &
-                  integral_flag,                     &
-                  0,                                 &
-                  f77_memory(get_f77_memory_next()), &
-                  get_f77_memory_left())
-
-    deallocate(npos)
+    arg(1) = ctr_arg(0, 0, 0, D, G, null_pointer)
+    call unopt_geodiff_loop(basis_large, arg, basis_small)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
