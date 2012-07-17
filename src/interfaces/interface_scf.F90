@@ -456,13 +456,4 @@ contains
 
   end subroutine
 
-#ifdef PRG_DIRAC
-   subroutine get_npos(npos)
-      integer npos
-#include "dcbgen.h"
-      call settaskdistribflags((/.true., .true., .true., .true./))
-      call setinttaskarraydimension(npos, parcal)
-   end subroutine
-#endif /* ifdef PRG_DIRAC */
-
 end module
