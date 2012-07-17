@@ -49,6 +49,7 @@ module openrsp
   use interface_rsp_solver
   use interface_1el
   use interface_basis
+  use interface_dirac_gen1int
   use rsp_functions
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
@@ -109,6 +110,11 @@ contains
     integer                :: algebra
     real(8)                :: xc_energy
     real(8), target        :: temp(1)
+
+!#define DEBUG_RESPONSE
+#ifdef DEBUG_RESPONSE
+    type(matrix)           :: TX, TY, TZ, X(1), Dp
+#endif
 
     type(ctr_arg) :: arg(1)
 
@@ -186,9 +192,36 @@ contains
                             basis_small)
 
     print *, '2-el energy from cgto-diff-eri', temp
+    print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
 #endif
 
-    print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
+#ifdef DEBUG_RESPONSE
+    TX = mat_alloc_like(D)
+    TY = mat_alloc_like(D)
+    TZ = mat_alloc_like(D)
+    call get_1el_integrals(                                &
+                           M=(/TX, TY, TZ/),               &
+                           prop_name="INT_CART_MULTIPOLE", &
+                           num_ints=3,                     &
+                           order_mom=1,                    &
+                           order_elec=0,                   &
+                           order_geo_total=0,              &
+                           max_num_cent=0,                 &
+                           blocks=(/1, 1/),                &
+                           print_unit=get_print_unit()     &
+                          )
+
+    print *, 'debug mu_z', dot(TZ, D) + 0.0988560000d0*8.0d0*2.0d0 - 1.5688186800d0*2.0d0
+
+    TX = 0
+    TY = 0
+    TZ = 0
+#endif /* ifdef DEBUG_RESPONSE */
+
+
+
+
+
 
     H1 = 0
     G  = 0
