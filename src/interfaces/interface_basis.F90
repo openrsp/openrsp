@@ -14,7 +14,9 @@ module interface_basis
    logical :: is_initialized = .false.
 
    type(cgto), pointer, public :: basis_large(:)
-   real(8), allocatable :: exp_and_ctr(:)
+   real(8), allocatable        :: exp_and_ctr_large(:)
+   type(cgto), pointer, public :: basis_small(:)
+   real(8), allocatable        :: exp_and_ctr_small(:)
 
 !  non-allocatables
    integer :: nr_ao
@@ -23,8 +25,8 @@ contains
 
    subroutine interface_basis_init()
 
-      integer :: num_cgto_blocks
-      integer :: num_exp_and_ctr
+      integer :: nr_blocks_large
+      integer :: nr_exp_ctr_large
       integer :: i
 
 #ifdef PRG_DALTON
@@ -45,20 +47,20 @@ contains
       nr_ao = ntbas(0)
 #endif
 
-      call shells_find_sizes(num_cgto_blocks, num_exp_and_ctr)
+      call shells_find_sizes(nr_blocks_large, nr_exp_ctr_large)
 
       nullify(basis_large)
-      allocate(basis_large(num_cgto_blocks))
-      allocate(exp_and_ctr(num_exp_and_ctr))
+      allocate(basis_large(nr_blocks_large))
+      allocate(exp_and_ctr_large(nr_exp_ctr_large))
 
-      call shells_to_type_cgto(num_cgto_blocks, &
-                               num_exp_and_ctr, &
-                               exp_and_ctr,     &
+      call shells_to_type_cgto(nr_blocks_large,   &
+                               nr_exp_ctr_large,  &
+                               exp_and_ctr_large, &
                                basis_large)
 
 #ifdef PRG_DIRAC
-      print *, 'raboof basis set'
-      do i = 1, num_cgto_blocks
+      print *, 'debug: large component basis set'
+      do i = 1, nr_blocks_large
          print *, i, basis_large(i)%mom, basis_large(i)%nbas
          print *, 'exp: ', basis_large(i)%exp
          print *, 'ctr: ', basis_large(i)%ctr
@@ -74,7 +76,7 @@ contains
       deallocate(basis_large)
       nullify(basis_large)
 
-      deallocate(exp_and_ctr)
+      deallocate(exp_and_ctr_large)
 
       is_initialized = .false.
 
