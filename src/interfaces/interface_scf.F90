@@ -264,7 +264,9 @@ contains
     G%elms_alpha = 0.0d0
 
     arg(1) = ctr_arg(0, 0, 0, D, G, null_pointer)
-    call unopt_geodiff_loop(basis_large, arg, basis_small)
+    call unopt_geodiff_loop(basis_large, &
+                            basis_small, &
+                            arg)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine

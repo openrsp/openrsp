@@ -188,8 +188,8 @@ contains
     arg(1) = ctr_arg(0, -huge(1), 1, D, D, temp)
 
     call unopt_geodiff_loop(basis_large, &
-                            arg,         &
-                            basis_small)
+                            basis_small, &
+                            arg)
 
     print *, '2-el energy from cgto-diff-eri', temp
     print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
