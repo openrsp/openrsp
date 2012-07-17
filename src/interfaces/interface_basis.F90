@@ -15,10 +15,8 @@ module interface_basis
 
    type(cgto), pointer, public :: basis_large(:)
    real(8), allocatable        :: exp_and_ctr_large(:)
-#ifdef PRG_DIRAC
    type(cgto), pointer, public :: basis_small(:)
    real(8), allocatable        :: exp_and_ctr_small(:)
-#endif
 
 !  non-allocatables
    integer :: nr_ao
@@ -29,11 +27,8 @@ contains
 
       integer :: nr_blocks_large  = 0
       integer :: nr_exp_ctr_large = 0
-
-#ifdef PRG_DIRAC
       integer :: nr_blocks_small  = 0
       integer :: nr_exp_ctr_small = 0
-#endif
 
       integer :: i
 
@@ -60,12 +55,14 @@ contains
       nr_ao = ntbas(0)
 #endif
 
+      nullify(basis_large)
+      nullify(basis_small)
+
       call shells_find_sizes(nr_blocks_large,  &
                              nr_exp_ctr_large, &
                              1,                &
                              nlrgsh)
 
-      nullify(basis_large)
       allocate(basis_large(nr_blocks_large))
       allocate(exp_and_ctr_large(nr_exp_ctr_large))
 
@@ -82,7 +79,6 @@ contains
                              nlrgsh + 1,       &
                              nlrgsh + nsmlsh)
 
-      nullify(basis_small)
       allocate(basis_small(nr_blocks_small))
       allocate(exp_and_ctr_small(nr_exp_ctr_small))
 
