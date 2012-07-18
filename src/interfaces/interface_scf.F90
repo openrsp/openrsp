@@ -142,14 +142,14 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-      integer, parameter   :: io = 66
       real(8), allocatable :: mo_coef(:)
+      type(matrix)         :: C_i
 
 ! uses ntbas(0)
 #include "dcbbas.h"
 ! uses nz
 #include "dgroup.h"
-! uses ncmotq
+! uses ncmotq and norbt
 #include "dcborb.h"
 
       if (nz /= 4) then
@@ -157,33 +157,20 @@ contains
          stop 1
       end if
 
-      open(io,    &
-           file   = 'DFCOEF',      &
-           status = 'unknown',     &
-           form   = 'unformatted', &
-           access = 'sequential')
-      rewind(io)
-
       allocate(mo_coef(ncmotq))
-      mo_coef = 0.0d0
 
-      call reacmo_no_work(io,        &
-                          'DFCOEF',  &
-                          mo_coef,   &
-                          (/0.0d0/), &
-                          (/0/),     &
-                          (/0.0d0/), &
-                          2)
+      call mat_init(C_i, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
 
-      close(io, status = 'keep')
+      call read_mo_coef(mo_coef)
 
-      D%elms_alpha = 0.0d0
-      call genden(D%elms_alpha, mo_coef, 1, 0)
+      call get_C(C_i, mo_coef, i=1.0d0, s=0.0d0, g=1.0d0, u=1.0d0)
 
       deallocate(mo_coef)
 
-      D%elms_alpha = 2.0d0*D%elms_alpha
+      D = C_i*(trps(C_i))
+      D = 2.0d0*D
 
+      C_i     = 0
 #endif /* ifdef PRG_DIRAC */
 
    end subroutine
@@ -482,11 +469,11 @@ contains
 
    end subroutine
 
-   subroutine get_C(C, cmo_from_file, i, s, g, u)
+   subroutine get_C(C, mo_coef, i, s, g, u)
 
 !     --------------------------------------------------------------------------
       type(matrix)        :: C
-      real(8), intent(in) :: cmo_from_file(*)
+      real(8), intent(in) :: mo_coef(*)
       real(8), intent(in) :: i, s, g, u
 !     --------------------------------------------------------------------------
       integer             :: nr_g_mo_ns
@@ -525,21 +512,21 @@ contains
             k = k + 1
             do n = 1, nr_g_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*g*s
+               C%elms_alpha(n, k, iz) = mo_coef(ir)*g*s
             end do
          end do
          do m = 1, nr_g_mo_pi
             k = k + 1
             do n = 1, nr_g_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*g*i
+               C%elms_alpha(n, k, iz) = mo_coef(ir)*g*i
             end do
          end do
          do m = 1, nr_g_mo_ps
             k = k + 1
             do n = 1, nr_g_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*g*s
+               C%elms_alpha(n, k, iz) = mo_coef(ir)*g*s
             end do
          end do
       end do
@@ -552,21 +539,21 @@ contains
             k = k + 1
             do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*u*s
+               C%elms_alpha(n, k, iz) = mo_coef(ir)*u*s
             end do
          end do
          do m = 1, nr_u_mo_pi
             k = k + 1
             do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*u*i
+               C%elms_alpha(n, k, iz) = mo_coef(ir)*u*i
             end do
          end do
          do m = 1, nr_u_mo_ps
             k = k + 1
             do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = cmo_from_file(ir)*u*s
+               C%elms_alpha(n, k, iz) = mo_coef(ir)*u*s
             end do
          end do
       end do
