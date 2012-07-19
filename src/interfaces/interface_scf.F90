@@ -252,11 +252,22 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
+    real(8)           :: time_start
+    real(8)           :: time_stop
+    real(8), external :: second
+
     G%elms_alpha = 0.0d0
     call initialize_interest_eri_diff()
+
+    time_start = second()
     call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha, (/1, 1, 1, 1/))
+    time_stop = second()
+    print *, 'time spent in LL', time_stop - time_start
+    time_start = second()
     call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha, (/1, 1, 2, 2/))
     call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha, (/2, 2, 1, 1/))
+    time_stop = second()
+    print *, 'time spent in LS', time_stop - time_start
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
