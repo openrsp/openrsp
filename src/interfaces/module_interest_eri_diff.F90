@@ -178,7 +178,6 @@ CONTAINS
 
   END SUBROUTINE
 
-#ifdef PRG_DIRAC
 ! ------------------------------------------------------------------------------------
 !> note: on input G, P are assumed to be in cartesian GTOs
   SUBROUTINE interest_eri_diff(ndim, Gmat, Pmat, iblocks)
@@ -188,6 +187,7 @@ CONTAINS
     real(8), intent(out) :: Gmat(ndim, ndim, 4)
     integer, intent(in)  :: iblocks(4)
 
+#ifdef PRG_DIRAC
     !> local
     integer :: i, j, k, l
     integer :: li, ni, oi
@@ -304,10 +304,12 @@ CONTAINS
            enddo kloop
          enddo jloop
        enddo iloop
+#endif /* ifdef PRG_DIRAC */
 
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------
 !
+#ifdef PRG_DIRAC
   SUBROUTINE process_dG( ic, jc, kc, lc, io, jo, ko, lo, gout, dP, dG, n1, n2, doK, scaleK )
 
     !> input
