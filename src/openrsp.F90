@@ -103,7 +103,6 @@ contains
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
     type(matrix)           :: G  !two electron Hamiltonian
-    type(matrix)           :: T  !temp
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
@@ -178,21 +177,10 @@ contains
 !   radovan: the contributions below are extremely useful
 !            for debugging
 !            after i get dirac fully interfaced i will remove/clean it up
-    print *, 'nr of electrons from dot(D, S) =', dot(D, S)
-    print *, '1-el electronic energy from dot(H1, D) =', dot(H1, D)
-    T = H1*D
-    print *, '1-el electronic energy from tr(H1*D) =', tr(T)
-    T = 0
-    print *, '2-el electronic energy from 0.5d0*dot(G, D)=', 0.5d0*dot(G, D)
-
-    arg(1) = ctr_arg(0, -huge(1), 1, D, D, temp)
-
-    call unopt_geodiff_loop(basis_large, &
-                            basis_small, &
-                            arg)
-
-    print *, '2-el energy from cgto-diff-eri', temp
-    print *, 'electronic energy from dot(H1, D) + 0.5d0*dot(G, D) =', dot(H1, D) + 0.5d0*dot(G, D)
+    print *, 'nr of electrons   =', dot(D, S)
+    print *, '1-el energy       =', dot(H1, D)
+    print *, '2-el energy       =', 0.5d0*dot(G, D)
+    print *, 'electronic energy =', dot(H1, D) + 0.5d0*dot(G, D)
 #endif
 
 #ifdef DEBUG_RESPONSE
@@ -207,11 +195,13 @@ contains
                            order_elec=0,                   &
                            order_geo_total=0,              &
                            max_num_cent=0,                 &
-                           blocks=(/1, 1/),                &
+                           blocks=(/1, 1, 2, 2/),          &
                            print_unit=get_print_unit()     &
                           )
 
-    print *, 'debug mu_z', dot(TZ, D) + 0.0988560000d0*8.0d0*2.0d0 - 1.5688186800d0*2.0d0
+    print *, 'dipole z          =', dot(TZ, D)
+    call response_solver(0.0d0, TZ, Dp)
+    print *, 'polarizability zz =', dot(TZ, Dp)
 
     TX = 0
     TY = 0

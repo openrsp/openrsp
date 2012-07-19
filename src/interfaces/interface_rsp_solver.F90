@@ -498,8 +498,7 @@ contains
     real(8),      allocatable   :: response_vector_pnh(:, :, :)
     real(8),      allocatable   :: response_vector_pna(:, :, :)
 
-    real(8),      pointer       :: work(:)
-    integer                     :: lwork, kfree, lfree
+    integer                     :: kfree, lfree
 
     real(8),      allocatable   :: prop_gradient_pp(:, :)
     real(8),      allocatable   :: prop_gradient_pn(:, :)
@@ -584,7 +583,7 @@ contains
        call read_mo_coef(mo_coef)
        call read_ibeig(ibeig)
 
-       call init_mat(RHS_mo, norbt, norbt)
+       call mat_init(RHS_mo, nrow=norbt, ncol=norbt, closed_shell=.true., algebra=4)
        RHS_mo%elms_alpha = 0.0d0
        irep = RHS%pg_sym-1
 
@@ -628,8 +627,9 @@ contains
 #endif /* #ifdef FIX_SPINFREE_MODE */
     else
 
-       allocate(cmo_from_file(n2bbasxq))
+       allocate(cmo_from_file(ncmotq))
        call read_mo_coef(cmo_from_file)
+       call mat_init(C, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
        call get_C(C, cmo_from_file, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
        deallocate(cmo_from_file)
        RHS_mo = trps(C)*(RHS*C)
@@ -696,20 +696,6 @@ contains
 !   inherit shape
     Wp     = RHS_mo
     RHS_mo = 0
-
-!   fixme:
-!   call with proper limit
-!   at the moment i don't know the limit
-!   simply give entire work and hope for the best
-!   lwork = len_f77_work
-    lwork = 1000000 !fixme, use new work pointer framework
-    print *, 'adapt select work'
-    stop 1
-!   call di_select_wrk(work, lwork)
-
-    kfree = 1
-!   lfree = len_f77_work
-    lfree = lwork !fixme
 
     call set_orbital_rotation_indices(                             &
                                       include_pp_rotations,        &
@@ -789,23 +775,27 @@ contains
 
     eigval = freq
 
-    call xrsctl((/0.0d0/),        &
-                prop_gradient_pp, &
-                prop_gradient_pn, &
-                ibtyp,            &
-                (/0/),            &
-                ibtyp_pointer_pp, &
-                ibtyp_pointer_pn, &
-                convergence,      &
-                eigval,           &
-                eigvec,           &
-                work, kfree, lfree)
+    kfree = 1
+    lfree = get_f77_memory_left()
+
+    call xrsctl(                                   &
+                (/0.0d0/),                         &
+                prop_gradient_pp,                  &
+                prop_gradient_pn,                  &
+                ibtyp,                             &
+                (/0/),                             &
+                ibtyp_pointer_pp,                  &
+                ibtyp_pointer_pn,                  &
+                convergence,                       &
+                eigval,                            &
+                eigvec,                            &
+                f77_memory(get_f77_memory_next()), &
+                kfree,                             &
+                lfree                              &
+               )
 
     deallocate(convergence)
     deallocate(eigval)
-!   call di_deselect_wrk(work, lwork)
-    print *, 'adapt deselect work'
-    stop 1
 
 
 !   construct response vector
@@ -936,6 +926,8 @@ contains
 
     allocate(cmo_from_file(n2bbasxq))
     call read_mo_coef(cmo_from_file)
+    call mat_init(Cig, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
+    call mat_init(Csg, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
     call get_C(Cig, cmo_from_file, i=1.0d0, s=0.0d0, g=1.0d0, u=0.0d0)
     call get_C(Csg, cmo_from_file, i=0.0d0, s=1.0d0, g=1.0d0, u=0.0d0)
     if (nfsym == 2) then
