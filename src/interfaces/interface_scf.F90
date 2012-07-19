@@ -252,26 +252,9 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-    real(8), pointer :: null_pointer(:)
-    type(ctr_arg)    :: arg(1)
-    nullify(null_pointer)
-
     G%elms_alpha = 0.0d0
-
-    arg(1) = ctr_arg(0, 0, 0, D, G, null_pointer)
-    call unopt_geodiff_loop(basis_large, &
-                            basis_small, &
-                            arg)
-
-    print *, 'raboof G after cgto'
-    call mat_print(G)
-    G%elms_alpha = 0.0d0
-
     call initialize_interest_eri_diff()
     call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha)
-    print *, 'raboof G after interest'
-    call mat_print(G)
-
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
