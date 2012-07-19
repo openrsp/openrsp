@@ -183,14 +183,9 @@ CONTAINS
 !> note: on input G, P are assumed to be in cartesian GTOs
   SUBROUTINE interest_eri_diff(ndim, Gmat, Pmat)
 
-    !> input
-    !> note:  we assume nz=4 !!!
-    !> fixme: the case when nz!=4
-    integer, intent(in) :: ndim
-    real(8), intent(in) :: Pmat(ndim, ndim, *)
-
-    !> output
-    real(8), intent(out) :: Gmat(ndim, ndim, *)
+    integer, intent(in)  :: ndim
+    real(8), intent(in)  :: Pmat(ndim, ndim, 4)
+    real(8), intent(out) :: Gmat(ndim, ndim, 4)
 
     !> local
     integer :: i, j, k, l
@@ -200,6 +195,7 @@ CONTAINS
     integer :: ll, nl, ol
     integer :: nint, lmax, ibas
     integer :: nij, nkl, ij, kl
+    integer :: iz
     real(8) :: ei, ci, xi, yi, zi
     real(8) :: ej, cj, xj, yj, zj
     real(8) :: ek, ck, xk, yk, zk
@@ -208,8 +204,8 @@ CONTAINS
     real(8) :: gout(441*441)  !todo: better definition
     real(8) :: fij, fkl, fijkl
 
-    real(8), allocatable :: P(:,:)
-    real(8), allocatable :: G(:,:)
+    real(8), allocatable :: P(:,:,:)
+    real(8), allocatable :: G(:,:,:)
 
 
     !> InteRest interface
@@ -233,16 +229,18 @@ CONTAINS
 
 
     !> allocate working/temporary fields
-    allocate( P( nrow,ncol ) )
-    allocate( G( nrow,ncol ) )
+    allocate( P( nrow,ncol,4 ) )
+    allocate( G( nrow,ncol,4 ) )
 
     !> forward resorting of the density matrix elements
-    G(:,:)=0.0d0
-    do j=1,ncol
-      do i=1,nrow
-        P(i,j) = 0.5d0*Pmat(i,j,1)  !Re(A,LL)
-      enddo
-    enddo
+    G = 0.0d0
+    do iz = 1, 4
+       do j=1,ncol
+         do i=1,nrow
+           P(i,j,iz) = Pmat(i,j,iz)
+         enddo
+       enddo
+    end do
     call forward_ao_resorting( P )
 
 
@@ -312,10 +310,12 @@ lloop:       do l=1,nr_shells
 
     !> backward resorting of the Fock matrix
     call backward_ao_resorting( G )
-    do j=1,ncol
-      do i=1,nrow
-        Gmat(i,j,1) = G(i,j)  !Re(A,LL)
-      enddo
+    do iz = 1, 4
+       do j=1,ncol
+         do i=1,nrow
+           Gmat(i,j,iz) = G(i,j,iz)  !Re(A,LL)
+         enddo
+       enddo
     enddo
 
     deallocate( P )
@@ -351,7 +351,7 @@ lloop:       do l=1,nr_shells
         lbas=lo+l
         do k=1,kc
           kbas=ko+k
-          dPkl=dP(kbas,lbas,1)*2.0d0*2.0d0 !fixme magic fac 2
+          dPkl=dP(kbas,lbas,1)*2.0d0
           do j=1,jc
             jbas=jo+j
             do i=1,ic
@@ -392,32 +392,36 @@ lloop:       do l=1,nr_shells
   SUBROUTINE forward_ao_resorting( A )
 
     !> input/ouput
-    real(8), intent(inout) :: A(nrow,ncol)
+    real(8), intent(inout) :: A(nrow,ncol,4)
 
     !> local
-    real(8), allocatable :: B(:,:)
+    real(8), allocatable :: B(:, :, :)
     integer :: i, ii, ic, io_new, io_old
     integer :: j, jj, jc, jo_new, jo_old
+    integer :: iz
 
-
-    allocate( B(nrow,ncol) )
+    allocate( B(nrow,ncol,4) )
 
     B = A
-    do j=1,nr_shells
-      jc     = gto(j)%cdegen
-      jo_new = gto(j)%offset
-      jo_old = gto(j)%index
-      do i=1,nr_shells
-        ic     = gto(i)%cdegen
-        io_new = gto(i)%offset
-        io_old = gto(i)%index
-        do jj=1,jc
-          do ii=1,ic
-            A(io_new+ii,jo_new+jj) = B(io_old+ii,jo_old+jj)  !Re(A,LL)
-          enddo
-        enddo
-      enddo
-    enddo
+    do iz = 1, 4
+       do j=1,nr_shells
+         jc     = gto(j)%cdegen
+         jo_new = gto(j)%offset
+         jo_old = gto(j)%index
+         do i=1,nr_shells
+           ic     = gto(i)%cdegen
+           io_new = gto(i)%offset
+           io_old = gto(i)%index
+           do jj=1,jc
+             do ii=1,ic
+               A(io_new+ii,jo_new+jj, iz) = B(io_old+ii,jo_old+jj, iz)  !Re(A,LL)
+             enddo
+           enddo
+         enddo
+       enddo
+    end do
+
+    deallocate(B)
 
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------
@@ -427,32 +431,34 @@ lloop:       do l=1,nr_shells
   SUBROUTINE backward_ao_resorting( A )
 
     !> input/ouput
-    real(8), intent(inout) :: A(nrow,ncol)
+    real(8), intent(inout) :: A(nrow,ncol,4)
 
     !> local
-    real(8), allocatable :: B(:,:)
+    real(8), allocatable :: B(:,:,:)
     integer :: i, ii, ic, io_new, io_old
     integer :: j, jj, jc, jo_new, jo_old
+    integer :: iz
 
-
-    allocate( B(nrow,ncol) )
+    allocate( B(nrow,ncol,4) )
 
     B = A
-    do j=1,nr_shells
-      jc     = gto(j)%cdegen
-      jo_new = gto(j)%index
-      jo_old = gto(j)%offset
-      do i=1,nr_shells
-        ic     = gto(i)%cdegen
-        io_new = gto(i)%index
-        io_old = gto(i)%offset
-        do jj=1,jc
-          do ii=1,ic
-            A(io_new+ii,jo_new+jj) = B(io_old+ii,jo_old+jj)  !Re(A,LL)
-          enddo
-        enddo
-      enddo
-    enddo
+    do iz = 1, 4
+       do j=1,nr_shells
+         jc     = gto(j)%cdegen
+         jo_new = gto(j)%index
+         jo_old = gto(j)%offset
+         do i=1,nr_shells
+           ic     = gto(i)%cdegen
+           io_new = gto(i)%index
+           io_old = gto(i)%offset
+           do jj=1,jc
+             do ii=1,ic
+               A(io_new+ii,jo_new+jj,iz) = B(io_old+ii,jo_old+jj,iz)  !Re(A,LL)
+             enddo
+           enddo
+         enddo
+       enddo
+    end do
 
     deallocate( B )
 
