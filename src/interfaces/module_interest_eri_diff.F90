@@ -231,18 +231,10 @@ CONTAINS
     !> allocate working/temporary fields
     allocate( P( nrow,ncol,4 ) )
     allocate( G( nrow,ncol,4 ) )
+    G = 0.0d0
 
     !> forward resorting of the density matrix elements
-    G = 0.0d0
-    do iz = 1, 4
-       do j=1,ncol
-         do i=1,nrow
-           P(i,j,iz) = Pmat(i,j,iz)
-         enddo
-       enddo
-    end do
-    call forward_ao_resorting( P )
-
+    call sort(ndim, unsorted=Pmat, sorted=P, forward=.true.)
 
 iloop: do i=1,nr_shells
          li =       gto(i)%lvalue   !s=1, p=2, d=3 (l+1)
@@ -309,14 +301,7 @@ lloop:       do l=1,nr_shells
        enddo iloop
 
     !> backward resorting of the Fock matrix
-    call backward_ao_resorting( G )
-    do iz = 1, 4
-       do j=1,ncol
-         do i=1,nrow
-           Gmat(i,j,iz) = G(i,j,iz)  !Re(A,LL)
-         enddo
-       enddo
-    enddo
+    call sort(ndim, unsorted=Gmat, sorted=G, forward=.false.)
 
     deallocate( P )
     deallocate( G )
@@ -388,84 +373,44 @@ lloop:       do l=1,nr_shells
     endif
 
   END SUBROUTINE
-! ------------------------------------------------------------------------------------
-!>on input:  the matrix in "input"  AO order
-!>on output: the matrix in integral AO order
-!>fixme:     clsed-shell and LL-only case!!!
-  SUBROUTINE forward_ao_resorting( A )
 
-    !> input/ouput
-    real(8), intent(inout) :: A(nrow,ncol,4)
+   subroutine sort(ndim, unsorted, sorted, forward)
 
-    !> local
-    real(8), allocatable :: B(:, :, :)
-    integer :: i, ii, ic, io_new, io_old
-    integer :: j, jj, jc, jo_new, jo_old
-    integer :: iz
+      integer, intent(in) :: ndim 
+      real(8)             :: unsorted(ndim, ndim, 4)
+      real(8)             :: sorted(nrow, ncol, 4)
+      logical, intent(in) :: forward
 
-    allocate( B(nrow,ncol,4) )
+      integer             :: iz, i, j, ii, jj, ic, jc
+      integer             :: io_new, io_old, jo_new, jo_old
 
-    B = A
-    do iz = 1, 4
-       do j=1,nr_shells
-         jc     = gto(j)%cdegen
-         jo_new = gto(j)%offset
-         jo_old = gto(j)%index
-         do i=1,nr_shells
-           ic     = gto(i)%cdegen
-           io_new = gto(i)%offset
-           io_old = gto(i)%index
-           do jj=1,jc
-             do ii=1,ic
-               A(io_new+ii,jo_new+jj, iz) = B(io_old+ii,jo_old+jj, iz)  !Re(A,LL)
-             enddo
-           enddo
-         enddo
-       enddo
-    end do
+      do iz = 1, 4
+         do j = 1, nr_shells
+            jc     = gto(j)%cdegen
+            jo_new = gto(j)%offset
+            jo_old = gto(j)%index
+            do i = 1, nr_shells
+               ic     = gto(i)%cdegen
+               io_new = gto(i)%offset
+               io_old = gto(i)%index
+               if (forward) then
+                  do jj = 1, jc
+                     do ii = 1, ic
+                        sorted(io_new+ii, jo_new+jj, iz) = unsorted(io_old+ii, jo_old+jj, iz)
+                     end do
+                  end do
+               else
+                  do jj = 1, jc
+                     do ii = 1, ic
+                        unsorted(io_old+ii, jo_old+jj, iz) = sorted(io_new+ii, jo_new+jj, iz)
+                     end do
+                  end do
+               end if
+            end do
+         end do
+      end do
 
-    deallocate(B)
+   end subroutine
+#endif /* ifdef prg_dirac */
 
-  END SUBROUTINE
-! ------------------------------------------------------------------------------------
-!>on input:  the matrix in "integral" AO order
-!>on output: the matrix in "input"    AO order
-!>fixme:     clsed-shell and LL-only case!!!
-  SUBROUTINE backward_ao_resorting( A )
-
-    !> input/ouput
-    real(8), intent(inout) :: A(nrow,ncol,4)
-
-    !> local
-    real(8), allocatable :: B(:,:,:)
-    integer :: i, ii, ic, io_new, io_old
-    integer :: j, jj, jc, jo_new, jo_old
-    integer :: iz
-
-    allocate( B(nrow,ncol,4) )
-
-    B = A
-    do iz = 1, 4
-       do j=1,nr_shells
-         jc     = gto(j)%cdegen
-         jo_new = gto(j)%index
-         jo_old = gto(j)%offset
-         do i=1,nr_shells
-           ic     = gto(i)%cdegen
-           io_new = gto(i)%index
-           io_old = gto(i)%offset
-           do jj=1,jc
-             do ii=1,ic
-               A(io_new+ii,jo_new+jj,iz) = B(io_old+ii,jo_old+jj,iz)  !Re(A,LL)
-             enddo
-           enddo
-         enddo
-       enddo
-    end do
-
-    deallocate( B )
-
-  END SUBROUTINE
-#endif /* ifdef PRG_DIRAC */
-! ------------------------------------------------------------------------------------
-END MODULE
+end module
