@@ -254,7 +254,9 @@ contains
 #ifdef PRG_DIRAC
     G%elms_alpha = 0.0d0
     call initialize_interest_eri_diff()
-    call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha)
+    call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha, (/1, 1, 1, 1/))
+    call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha, (/1, 1, 2, 2/))
+    call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha, (/2, 2, 1, 1/))
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine

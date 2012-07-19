@@ -37,7 +37,6 @@
 ! Comments:
 !
 ! ------------------------------------------------------------------------------------
-!> note: by definition nrow, ncol refer to the number of cartesian GTOs
 MODULE MODULE_INTEREST_ERI_DIFF
 
   implicit none
@@ -66,9 +65,8 @@ MODULE MODULE_INTEREST_ERI_DIFF
        real(8) :: coefficient(1)
   end  type
 
-  integer, save :: nrow      = 0
-  integer, save :: ncol      = 0
-  integer, save :: nr_shells = 0
+  integer, save :: shell_end(2) = 0
+  integer, save :: shell_start(2) = 0
 
 ! type(type_constant)             :: constant
   type(type_atom),    allocatable :: atom(:)
@@ -120,7 +118,7 @@ CONTAINS
 
     !> interface basis set data
     !> fixme: contracted basis sets
-    allocate( gto(nlrgsh), stat=ier ); if( ier.ne.0 )stop ' Error in allocation: gto(:)'
+    allocate( gto(nlrgsh+nsmlsh), stat=ier ); if( ier.ne.0 )stop ' Error in allocation: gto(:)'
     i =0
     ij=0
     do while( i < size(gto) )
@@ -142,14 +140,15 @@ CONTAINS
     !> reorder basis functions to the angular momentum
     !> ascending order to increase the integral performance
     !> set the AO-vector offsets and shell-degeneracy
-    do i=1,size(gto)-1
-      do j=(i+1),size(gto)
-        if( gto(j)%lvalue >= gto(i)%lvalue )cycle
-        tmpgto = gto(i)
-        gto(i) = gto(j)
-        gto(j) = tmpgto
-      enddo
-    enddo
+!   do i=1,size(gto)-1
+!     do j=(i+1),size(gto)
+!       if( gto(j)%lvalue >= gto(i)%lvalue )cycle
+!       tmpgto = gto(i)
+!       gto(i) = gto(j)
+!       gto(j) = tmpgto
+!     enddo
+!   enddo
+
     do i=1,size(gto)-1
       gto(i+1)%offset = gto(i)%offset + gto(i)%cdegen
     enddo
@@ -165,9 +164,10 @@ CONTAINS
                                                ' coefficient = ',gto(i)%coefficient(1)
     enddo
 
-    nrow      = sum( gto(:)%cdegen)
-    ncol      = sum( gto(:)%cdegen)
-    nr_shells = size(gto)
+    shell_start(1) = 1
+    shell_end(1)   = nlrgsh
+    shell_start(2) = shell_end(1) + 1
+    shell_end(2)   = shell_end(1) + nsmlsh
 
     write(6,*)
     write(6,'(2x,a,i5  )') 'Total number of basis function shells:    ',size(gto)
@@ -181,11 +181,12 @@ CONTAINS
 #ifdef PRG_DIRAC
 ! ------------------------------------------------------------------------------------
 !> note: on input G, P are assumed to be in cartesian GTOs
-  SUBROUTINE interest_eri_diff(ndim, Gmat, Pmat)
+  SUBROUTINE interest_eri_diff(ndim, Gmat, Pmat, iblocks)
 
     integer, intent(in)  :: ndim
     real(8), intent(in)  :: Pmat(ndim, ndim, 4)
     real(8), intent(out) :: Gmat(ndim, ndim, 4)
+    integer, intent(in)  :: iblocks(4)
 
     !> local
     integer :: i, j, k, l
@@ -196,6 +197,10 @@ CONTAINS
     integer :: nint, lmax, ibas
     integer :: nij, nkl, ij, kl
     integer :: iz
+    integer :: i_start, i_end
+    integer :: j_start, j_end
+    integer :: k_start, k_end
+    integer :: l_start, l_end
     real(8) :: ei, ci, xi, yi, zi
     real(8) :: ej, cj, xj, yj, zj
     real(8) :: ek, ck, xk, yk, zk
@@ -203,9 +208,6 @@ CONTAINS
 
     real(8) :: gout(441*441)  !todo: better definition
     real(8) :: fij, fkl, fijkl
-
-    real(8), allocatable :: P(:,:,:)
-    real(8), allocatable :: G(:,:,:)
 
 
     !> InteRest interface
@@ -227,16 +229,19 @@ CONTAINS
       end subroutine
     end interface
 
+    i_start = shell_start(iblocks(1))
+    i_end   = shell_end(iblocks(1))
 
-    !> allocate working/temporary fields
-    allocate( P( nrow,ncol,4 ) )
-    allocate( G( nrow,ncol,4 ) )
-    G = 0.0d0
+    j_start = shell_start(iblocks(2))
+    j_end   = shell_end(iblocks(2))
 
-    !> forward resorting of the density matrix elements
-    call sort(ndim, unsorted=Pmat, sorted=P, forward=.true.)
+    k_start = shell_start(iblocks(3))
+    k_end   = shell_end(iblocks(3))
 
-iloop: do i=1,nr_shells
+    l_start = shell_start(iblocks(4))
+    l_end   = shell_end(iblocks(4))
+
+       iloop: do i = i_start, i_end
          li =       gto(i)%lvalue   !s=1, p=2, d=3 (l+1)
          oi =       gto(i)%offset   !example: two p functions, offsets are [0, 3]
          ni =       gto(i)%cdegen   !cartesian degenracy s=1, p=3, d=6, f=10
@@ -246,7 +251,7 @@ iloop: do i=1,nr_shells
          zi = atom( gto(i)%origin )%coordinate_z
          ci =       gto(i)%coefficient(1)
 
-jloop:   do j=1,nr_shells
+         jloop: do j = j_start, j_end
            lj =       gto(j)%lvalue
            oj =       gto(j)%offset
            nj =       gto(j)%cdegen
@@ -256,7 +261,7 @@ jloop:   do j=1,nr_shells
            zj = atom( gto(j)%origin )%coordinate_z
            cj =       gto(j)%coefficient(1)
 
-kloop:     do k=1,nr_shells
+           kloop: do k = k_start, k_end
              lk =       gto(k)%lvalue
              ok =       gto(k)%offset
              nk =       gto(k)%cdegen
@@ -266,7 +271,7 @@ kloop:     do k=1,nr_shells
              zk = atom( gto(k)%origin )%coordinate_z
              ck =       gto(k)%coefficient(1)
 
-lloop:       do l=1,nr_shells
+             lloop: do l = l_start, l_end
                ll   =       gto(l)%lvalue
                nl   =       gto(l)%cdegen
                ol   =       gto(l)%offset
@@ -291,38 +296,33 @@ lloop:       do l=1,nr_shells
                                        lk,ek,xk,yk,zk,ck,&
                                        ll,el,xl,yl,zl,cl )
 
-               !> process integral batch with the density matrix
+!              !> process integral batch with the density matrix
                call process_dG( ni, nj, nk, nl, oi, oj, ok, ol, gout, &
-                                P, G, nrow, .true., 1.0d0             )
+                                Pmat, Gmat, ndim, ndim, .true., 1.0d0             )
 
              enddo lloop
            enddo kloop
          enddo jloop
        enddo iloop
 
-    !> backward resorting of the Fock matrix
-    call sort(ndim, unsorted=Gmat, sorted=G, forward=.false.)
-
-    deallocate( P )
-    deallocate( G )
-
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------
 !
-  SUBROUTINE process_dG( ic, jc, kc, lc, io, jo, ko, lo, gout, dP, dG, idP, doK, scaleK )
+  SUBROUTINE process_dG( ic, jc, kc, lc, io, jo, ko, lo, gout, dP, dG, n1, n2, doK, scaleK )
 
     !> input
-    integer, intent(in) :: idP
+    integer, intent(in) :: n1
+    integer, intent(in) :: n2
     logical, intent(in) :: doK
     real(8), intent(in) :: scaleK
     integer, intent(in) :: ic, jc
     integer, intent(in) :: kc, lc
     integer, intent(in) :: io, jo, ko, lo
     real(8), intent(in) :: gout(kc,lc,ic,jc)
-    real(8), intent(in) :: dP(idP,idP,*)
+    real(8), intent(in) :: dP(n1,n1,*)
 
     !> output
-    real(8), intent(out) :: dG(idP,idP,*)
+    real(8), intent(out) :: dG(n2,n2,*)
 
     !> local
     integer :: n, ns
@@ -373,44 +373,6 @@ lloop:       do l=1,nr_shells
     endif
 
   END SUBROUTINE
-
-   subroutine sort(ndim, unsorted, sorted, forward)
-
-      integer, intent(in) :: ndim 
-      real(8)             :: unsorted(ndim, ndim, 4)
-      real(8)             :: sorted(nrow, ncol, 4)
-      logical, intent(in) :: forward
-
-      integer             :: iz, i, j, ii, jj, ic, jc
-      integer             :: io_new, io_old, jo_new, jo_old
-
-      do iz = 1, 4
-         do j = 1, nr_shells
-            jc     = gto(j)%cdegen
-            jo_new = gto(j)%offset
-            jo_old = gto(j)%index
-            do i = 1, nr_shells
-               ic     = gto(i)%cdegen
-               io_new = gto(i)%offset
-               io_old = gto(i)%index
-               if (forward) then
-                  do jj = 1, jc
-                     do ii = 1, ic
-                        sorted(io_new+ii, jo_new+jj, iz) = unsorted(io_old+ii, jo_old+jj, iz)
-                     end do
-                  end do
-               else
-                  do jj = 1, jc
-                     do ii = 1, ic
-                        unsorted(io_old+ii, jo_old+jj, iz) = sorted(io_new+ii, jo_new+jj, iz)
-                     end do
-                  end do
-               end if
-            end do
-         end do
-      end do
-
-   end subroutine
-#endif /* ifdef prg_dirac */
+#endif /* ifdef PRG_DIRAC */
 
 end module
