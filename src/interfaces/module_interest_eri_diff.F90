@@ -342,7 +342,7 @@ lloop:       do l=1,nr_shells
     !> local
     integer :: n, ns
     integer :: i, j, k, l
-    real(8) :: dPkl, dPkj
+    real(8) :: dPkl, dPkj(4)
     integer :: ibas, jbas, kbas, lbas
 
 
@@ -362,27 +362,30 @@ lloop:       do l=1,nr_shells
         enddo
       enddo
 
-#ifdef EXCHANGE_ON
     !> exchange part
     if( doK )then
-      do n=1,ns
         do l=1,lc
           lbas=lo+l
           do k=1,kc
             kbas=ko+k
             do j=1,jc
               jbas=jo+j
-              dPkj=dP(jbas,kbas,n)*scaleK   !P is symmetric
+              !P is symmetric
+              dPkj(1) = dP(jbas,kbas,1)*scaleK
+              dPkj(2) = dP(jbas,kbas,2)*scaleK
+              dPkj(3) = dP(jbas,kbas,3)*scaleK
+              dPkj(4) = dP(jbas,kbas,4)*scaleK
               do i=1,ic
                 ibas=io+i
-                dG(ibas,lbas,n) = dG(ibas,lbas,n) - gout(k,l,i,j)*dPkj
+                dG(ibas,lbas,1) = dG(ibas,lbas,1) - gout(k,l,i,j)*dPkj(1)
+                dG(ibas,lbas,2) = dG(ibas,lbas,2) - gout(k,l,i,j)*dPkj(2)
+                dG(ibas,lbas,3) = dG(ibas,lbas,3) - gout(k,l,i,j)*dPkj(3)
+                dG(ibas,lbas,4) = dG(ibas,lbas,4) - gout(k,l,i,j)*dPkj(4)
               enddo
             enddo
           enddo
         enddo
-      enddo
     endif
-#endif
 
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------
