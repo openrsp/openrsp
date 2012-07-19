@@ -465,8 +465,6 @@ contains
 
   subroutine response_solver(freq, RHS, Dp)
 
-    use orbital_rotation_indices
-
 !   1. RHS (AO) -> RHS (MO)
 !   2. RHS (MO) -> property gradient
 !   3. solve response equation, in:  property gradient
