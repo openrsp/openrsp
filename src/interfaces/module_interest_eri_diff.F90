@@ -1,30 +1,30 @@
 ! ------------------------------------------------------------------------------------
 !
-! Program:      Dirac 
+! Program:      Dirac
 !
 ! Module:       interest_eri_diff
 !
-! Description:  - interfacing basic data between Dirac & InteRest program 
-!               - providing four-center integrals and their analytical derivatives 
+! Description:  - interfacing basic data between Dirac & InteRest program
+!               - providing four-center integrals and their analytical derivatives
 !
-! Contains:     
+! Contains:
 !
 ! Licensing:    dirac_copyright_start
 !                     Copyright (c) 2010 by the authors of DIRAC.
 !                     All Rights Reserved.
-!                     
+!
 !                     This source code is part of the DIRAC program package.
 !                     It is provided under a written license and may be used,
 !                     copied, transmitted, or stored only in accordance to the
 !                     conditions of that written license.
-!                     
+!
 !                     In particular, no part of the source code or compiled modules may
 !                     be distributed outside the research group of the license holder.
 !                     This means also that persons (e.g. post-docs) leaving the research
 !                     group of the license holder may not take any part of Dirac,
 !                     including modified files, with him/her, unless that person has
 !                     obtained his/her own license.
-!                     
+!
 !                     For information on how to get a license, as well as the
 !                     author list and the complete list of contributors to the
 !                     DIRAC program, see: http://dirac.chem.vu.nl
@@ -32,30 +32,26 @@
 !
 ! Author:       Michal  Repisky (michal.repisky@uit.no)
 !
-! Logs:         
+! Logs:
 !
-! Comments:     
-!                            
+! Comments:
+!
 ! ------------------------------------------------------------------------------------
 !> note: by definition nrow, ncol refer to the number of cartesian GTOs
-MODULE MODULE_INTEREST_ERI_DIFF 
+MODULE MODULE_INTEREST_ERI_DIFF
 
   implicit none
 
-  public initialize_interest_eri_diff 
+  public initialize_interest_eri_diff
 
   private
 
-  type type_constant
-       real(8) :: alpha2      !=(1/c)^2 
-  end  type
-
   type type_atom
-       real(8) :: charge 
+       real(8) :: charge
        real(8) :: coordinate_x
        real(8) :: coordinate_y
        real(8) :: coordinate_z
-       real(8) :: gnu_exponent 
+       real(8) :: gnu_exponent
   end  type
 
   type type_gto
@@ -63,8 +59,8 @@ MODULE MODULE_INTEREST_ERI_DIFF
        integer :: offset
        integer :: lvalue
        integer :: origin
-       integer :: sdegen 
-       integer :: cdegen 
+       integer :: sdegen
+       integer :: cdegen
        real(8) :: exponent(1)
        real(8) :: coefficient(1)
   end  type
@@ -73,20 +69,18 @@ MODULE MODULE_INTEREST_ERI_DIFF
   integer, save :: nshl      = 1
   integer, save :: nrow      = 0
   integer, save :: ncol      = 0
-  integer, save :: nr_shells = 0 
+  integer, save :: nr_shells = 0
 
-  type(type_constant)             :: constant 
+! type(type_constant)             :: constant
   type(type_atom),    allocatable :: atom(:)
   type(type_gto),     allocatable :: gto(:)
 
 CONTAINS
 ! ------------------------------------------------------------------------------------
-!> 
+!>
   SUBROUTINE initialize_interest_eri_diff()
 
 #ifdef PRG_DIRAC
-  use codata
-
 #include "mxcent.h"
 #include "maxorb.h"
 #include "maxaqn.h"
@@ -103,9 +97,9 @@ CONTAINS
     integer :: ij
     integer :: ier
     type( type_gto ) :: tmpgto
-  
 
-    !> initialize InteRest integral package 
+
+    !> initialize InteRest integral package
     call interest_initialize()
 
     !> test if the large component basis is uncontracted
@@ -114,9 +108,6 @@ CONTAINS
       write(6,*) ' Note:  uncontracted basis sets are only supported'
       stop
     endif
-  
-    !> interface constants
-    constant = type_constant( alpha2 )
 
     !> interface molecular data
     allocate( atom(nucind), stat=ier ); if( ier.ne.0 )stop ' Error in allocation: atom(:)'
@@ -127,19 +118,19 @@ CONTAINS
                            cord(3,i), &
                            gnuexp(i)  )
     enddo
-  
+
     !> interface basis set data
     !> fixme: contracted basis sets
     allocate( gto(nlrgsh), stat=ier ); if( ier.ne.0 )stop ' Error in allocation: gto(:)'
     i =0
     ij=0
-    do while( i < size(gto) )  
+    do while( i < size(gto) )
       do j=1,nrco(i+1)
         i=i+1
         gto(i) = type_gto( ij,                      &
                            0,                       &
                            nhkt(i),                 &
-                           ncent(i),                & 
+                           ncent(i),                &
                            (2*nhkt(i)-1),           &
                            (nhkt(i)*(nhkt(i)+1))/2, &
                            priexp(i),               &
@@ -149,7 +140,7 @@ CONTAINS
       enddo
     enddo
 
-    !> reorder basis functions to the angular momentum 
+    !> reorder basis functions to the angular momentum
     !> ascending order to increase the integral performance
     !> set the AO-vector offsets and shell-degeneracy
     do i=1,size(gto)-1
@@ -164,7 +155,7 @@ CONTAINS
       gto(i+1)%offset = gto(i)%offset + gto(i)%cdegen
     enddo
 
-    !> temporary print ... 
+    !> temporary print ...
     do i=1,size(gto)
       write(6,'(1x,5(a,i3,3x),3(a,d15.5,3x))') ' i = ',i,                             &
                                                ' index  = ',     gto(i)%index,        &
@@ -179,19 +170,19 @@ CONTAINS
     ncol      = sum( gto(:)%cdegen)
     nr_shells = size(gto)
 
-    write(6,*) 
+    write(6,*)
     write(6,'(2x,a,i5  )') 'Total number of basis function shells:    ',size(gto)
     write(6,'(2x,a,i5  )') 'Total number of spherical basis functions:',sum(gto(:)%sdegen)
     write(6,'(2x,a,i5,a)') 'Total number of cartesian basis functions:',sum(gto(:)%cdegen),' (used for calculation)'
-    write(6,*) 
+    write(6,*)
 #endif /* ifdef PRG_DIRAC */
 
   END SUBROUTINE
 
 #ifdef PRG_DIRAC
 ! ------------------------------------------------------------------------------------
-!> note: on input G, P are assumed to be in cartesian GTOs 
-  SUBROUTINE interest_eri_diff( Gmat, Pmat ) 
+!> note: on input G, P are assumed to be in cartesian GTOs
+  SUBROUTINE interest_eri_diff( Gmat, Pmat )
 
     !> input
     !> note:  we assume nz=4 !!!
@@ -203,35 +194,35 @@ CONTAINS
 
     !> local
     integer :: i, j, k, l
-    integer :: li, ni, oi   
-    integer :: lj, nj, oj   
-    integer :: lk, nk, ok   
-    integer :: ll, nl, ol   
+    integer :: li, ni, oi
+    integer :: lj, nj, oj
+    integer :: lk, nk, ok
+    integer :: ll, nl, ol
     integer :: nint, lmax, ibas
     integer :: nij, nkl, ij, kl
-    real(8) :: ei, ci, xi, yi, zi 
-    real(8) :: ej, cj, xj, yj, zj 
-    real(8) :: ek, ck, xk, yk, zk 
-    real(8) :: el, cl, xl, yl, zl 
+    real(8) :: ei, ci, xi, yi, zi
+    real(8) :: ej, cj, xj, yj, zj
+    real(8) :: ek, ck, xk, yk, zk
+    real(8) :: el, cl, xl, yl, zl
 
-    real(8) :: gout(441*441)  !todo: better definition 
+    real(8) :: gout(441*441)  !todo: better definition
     real(8) :: fij, fkl, fijkl
 
     real(8), allocatable :: P(:,:)
-    real(8), allocatable :: G(:,:)  
+    real(8), allocatable :: G(:,:)
 
 
     !> InteRest interface
-    interface 
+    interface
       subroutine interest_eri_basic(factor,fint,nint,       &
                                     la,alpha,ax,ay,az,anorm,&
                                     lb,beta ,bx,by,bz,bnorm,&
                                     lc,gamma,cx,cy,cz,cnorm,&
                                     ld,delta,dx,dy,dz,dnorm )
-    
+
         integer, intent(out) :: nint
         real(8), intent(out) :: fint(*)
-        real(8), intent(in ) :: factor 
+        real(8), intent(in ) :: factor
         integer, intent(in ) :: la,lb,lc,ld
         real(8), intent(in ) :: alpha,ax,ay,az,anorm
         real(8), intent(in ) :: beta, bx,by,bz,bnorm
@@ -240,7 +231,7 @@ CONTAINS
       end subroutine
     end interface
 
-    
+
     !> allocate working/temporary fields
     allocate( P( nrow,ncol ) )
     allocate( G( nrow,ncol ) )
@@ -264,7 +255,7 @@ iloop: do i=1,nr_shells
          yi = atom( gto(i)%origin )%coordinate_y
          zi = atom( gto(i)%origin )%coordinate_z
          ci =       gto(i)%coefficient(1)
-     
+
 jloop:   do j=1,nr_shells
            lj =       gto(j)%lvalue
            oj =       gto(j)%offset
@@ -274,7 +265,7 @@ jloop:   do j=1,nr_shells
            yj = atom( gto(j)%origin )%coordinate_y
            zj = atom( gto(j)%origin )%coordinate_z
            cj =       gto(j)%coefficient(1)
-       
+
 kloop:     do k=1,nr_shells
              lk =       gto(k)%lvalue
              ok =       gto(k)%offset
@@ -284,7 +275,7 @@ kloop:     do k=1,nr_shells
              yk = atom( gto(k)%origin )%coordinate_y
              zk = atom( gto(k)%origin )%coordinate_z
              ck =       gto(k)%coefficient(1)
-       
+
 lloop:       do l=1,nr_shells
                ll   =       gto(l)%lvalue
                nl   =       gto(l)%cdegen
@@ -294,7 +285,7 @@ lloop:       do l=1,nr_shells
                yl   = atom( gto(l)%origin )%coordinate_y
                zl   = atom( gto(l)%origin )%coordinate_z
                cl   =       gto(l)%coefficient(1)
-               fijkl= 1.0d0 
+               fijkl= 1.0d0
 
                ! fijkl is scaling constant
                ! gout  is output (integrals)
@@ -309,7 +300,7 @@ lloop:       do l=1,nr_shells
                                        lj,ej,xj,yj,zj,cj,&
                                        lk,ek,xk,yk,zk,ck,&
                                        ll,el,xl,yl,zl,cl )
-       
+
                !> process integral batch with the density matrix
                call process_dG( ni, nj, nk, nl, oi, oj, ok, ol, gout, &
                                 P, G, nrow, .true., 1.0d0             )
@@ -336,7 +327,7 @@ lloop:       do l=1,nr_shells
   SUBROUTINE process_dG( ic, jc, kc, lc, io, jo, ko, lo, gout, dP, dG, idP, doK, scaleK )
 
     !> input
-    integer, intent(in) :: idP 
+    integer, intent(in) :: idP
     logical, intent(in) :: doK
     real(8), intent(in) :: scaleK
     integer, intent(in) :: ic, jc
@@ -371,7 +362,7 @@ lloop:       do l=1,nr_shells
           enddo
         enddo
       enddo
-    else 
+    else
       do l=1,lc
         lbas=lo+l
         do k=1,kc
@@ -389,7 +380,7 @@ lloop:       do l=1,nr_shells
       enddo
     endif
 
-    !> exchange part 
+    !> exchange part
     if( doK )then
       do n=1,ns
         do l=1,lc
@@ -411,13 +402,13 @@ lloop:       do l=1,nr_shells
 
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------
-!>on input:  the matrix in "input"  AO order 
-!>on output: the matrix in integral AO order 
+!>on input:  the matrix in "input"  AO order
+!>on output: the matrix in integral AO order
 !>fixme:     clsed-shell and LL-only case!!!
   SUBROUTINE forward_ao_resorting( A )
 
     !> input/ouput
-    real(8), intent(inout) :: A(nrow,ncol) 
+    real(8), intent(inout) :: A(nrow,ncol)
 
     !> local
     real(8), allocatable :: B(:,:)
@@ -431,28 +422,28 @@ lloop:       do l=1,nr_shells
     do j=1,nr_shells
       jc     = gto(j)%cdegen
       jo_new = gto(j)%offset
-      jo_old = gto(j)%index 
+      jo_old = gto(j)%index
       do i=1,nr_shells
         ic     = gto(i)%cdegen
         io_new = gto(i)%offset
-        io_old = gto(i)%index 
+        io_old = gto(i)%index
         do jj=1,jc
           do ii=1,ic
-            A(io_new+ii,jo_new+jj) = B(io_old+ii,jo_old+jj)  !Re(A,LL) 
+            A(io_new+ii,jo_new+jj) = B(io_old+ii,jo_old+jj)  !Re(A,LL)
           enddo
         enddo
       enddo
     enddo
-        
+
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------
-!>on input:  the matrix in "integral" AO order 
-!>on output: the matrix in "input"    AO order 
+!>on input:  the matrix in "integral" AO order
+!>on output: the matrix in "input"    AO order
 !>fixme:     clsed-shell and LL-only case!!!
   SUBROUTINE backward_ao_resorting( A )
 
     !> input/ouput
-    real(8), intent(inout) :: A(nrow,ncol) 
+    real(8), intent(inout) :: A(nrow,ncol)
 
     !> local
     real(8), allocatable :: B(:,:)
@@ -465,22 +456,22 @@ lloop:       do l=1,nr_shells
     B = A
     do j=1,nr_shells
       jc     = gto(j)%cdegen
-      jo_new = gto(j)%index 
+      jo_new = gto(j)%index
       jo_old = gto(j)%offset
       do i=1,nr_shells
         ic     = gto(i)%cdegen
-        io_new = gto(i)%index 
+        io_new = gto(i)%index
         io_old = gto(i)%offset
         do jj=1,jc
           do ii=1,ic
-            A(io_new+ii,jo_new+jj) = B(io_old+ii,jo_old+jj)  !Re(A,LL) 
+            A(io_new+ii,jo_new+jj) = B(io_old+ii,jo_old+jj)  !Re(A,LL)
           enddo
         enddo
       enddo
     enddo
 
     deallocate( B )
-        
+
   END SUBROUTINE
 #endif /* ifdef PRG_DIRAC */
 ! ------------------------------------------------------------------------------------
