@@ -88,26 +88,6 @@ contains
                                basis_small,       &
                                nlrgsh + 1,        &
                                nlrgsh + nsmlsh)
-
-      print *, 'debug: large component basis set'
-      print *, '--------------------------------'
-      print *, 'nr blocks: ', nr_blocks_large
-      do i = 1, nr_blocks_large
-         print *, i, basis_large(i)%mom, basis_large(i)%nbas
-         print *, 'ibas: ', basis_large(i)%ibas
-         print *, 'exp:  ', basis_large(i)%exp
-         print *, 'ctr:  ', basis_large(i)%ctr
-      end do
-
-      print *, 'debug: small component basis set'
-      print *, '--------------------------------'
-      print *, 'nr blocks: ', nr_blocks_small
-      do i = 1, nr_blocks_small
-         print *, i, basis_small(i)%mom, basis_small(i)%nbas
-         print *, 'ibas: ', basis_small(i)%ibas
-         print *, 'exp:  ', basis_small(i)%exp
-         print *, 'ctr:  ', basis_small(i)%ctr
-      end do
 #endif
 
       is_initialized = .true.
