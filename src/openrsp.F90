@@ -110,9 +110,8 @@ contains
     real(8)                :: xc_energy
     real(8), target        :: temp(1)
 
-!#define DEBUG_RESPONSE
-#ifdef DEBUG_RESPONSE
-    type(matrix)           :: TX, TY, TZ, X(1), Dp
+#ifdef PRG_DIRAC
+    type(matrix)           :: TX, TY, TZ, Dp(1)
 #endif
 
     type(ctr_arg) :: arg(1)
@@ -181,9 +180,7 @@ contains
     print *, '1-el energy       =', dot(H1, D)
     print *, '2-el energy       =', 0.5d0*dot(G, D)
     print *, 'electronic energy =', dot(H1, D) + 0.5d0*dot(G, D)
-#endif
 
-#ifdef DEBUG_RESPONSE
     TX = mat_alloc_like(D)
     TY = mat_alloc_like(D)
     TZ = mat_alloc_like(D)
@@ -200,13 +197,13 @@ contains
                           )
 
     print *, 'dipole z          =', dot(TZ, D)
-    call response_solver(0.0d0, TZ, Dp)
-    print *, 'polarizability zz =', dot(TZ, Dp)
+    call rsp_mosolver_exec((/TZ/), (/0.0d0/), Dp)
+    print *, 'polarizability zz =', -dot(TZ, Dp(1))
 
     TX = 0
     TY = 0
     TZ = 0
-#endif /* ifdef DEBUG_RESPONSE */
+#endif /* ifdef PRG_DIRAC */
 
 
 

@@ -158,8 +158,7 @@ contains
 
   end subroutine
 
-
-
+#ifdef PRG_DALTON
   !> \brief calls MO response solver in DALTON
   !> \author Bin Gao
   !> \date 2009-12-08
@@ -174,7 +173,6 @@ contains
     real(8),      intent(in)    :: eigval(*)
     type(matrix), intent(inout) :: eigvec(*)
 
-#ifdef PRG_DALTON
     ! right hand side vector (MO)
     type(matrix) :: RHS_MO
     ! for MO response solver of DALTON, 1 for real operator, -1 for imaginary operator
@@ -310,9 +308,9 @@ contains
       mo_eigvec(ISOL) = 0
     end do
     deallocate( mo_eigvec )
-#endif /* ifdef PRG_DALTON */
 
   end subroutine
+#endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DALTON
   !> \brief gets the coefficients of molecular orbitals
@@ -463,33 +461,36 @@ contains
 
   end subroutine
 
-  subroutine response_solver(freq, RHS, Dp)
+  subroutine rsp_mosolver_exec(RHS,    &
+                               eigval, &
+                               Dp)
+
+    type(matrix), intent(in)    :: RHS(*)
+    real(8),      intent(in)    :: eigval(*)
+    type(matrix), intent(inout) :: Dp(*)
 
 !   1. RHS (AO) -> RHS (MO)
 !   2. RHS (MO) -> property gradient
 !   3. solve response equation, in:  property gradient
 !                               out: response vector
 !   4. response vector -> Wp (MO)
-!   5. Wp (MO)         -> Dp (AO)
+!   5. Wp (MO)         -> Dp (pert dens mat; AO)
 
 !   ----------------------------------------------------------------------------
-    real(8),      intent(in)    :: freq
-    type(matrix), intent(inout) :: RHS
-    type(matrix), intent(inout) :: Dp
-!   ----------------------------------------------------------------------------
-    type(matrix)                :: RHS_mo, Wp
-    type(matrix)                :: C, Cig, Ciu, Csg, Csu
+    type(matrix)                :: RHS_mo
+    type(matrix)                :: Wp
+    type(matrix)                :: C
+    type(matrix)                :: Cig
+    type(matrix)                :: Ciu
+    type(matrix)                :: Csg
+    type(matrix)                :: Csu
 
-!                                  for sf calcs
-    integer,      allocatable   :: ibeig(:)
     real(8),      allocatable   :: mo_coef(:)
-    integer                     :: i1, i2, irep
 
     integer,      allocatable   :: ibtyp(:)
     integer,      allocatable   :: ibtyp_pointer_pp(:)
     integer,      allocatable   :: ibtyp_pointer_pn(:)
 
-    real(8),      allocatable   :: eigval(:)
     real(8),      allocatable   :: eigvec(:)
     real(8),      allocatable   :: convergence(:)
 
@@ -498,26 +499,26 @@ contains
     real(8),      allocatable   :: response_vector_pnh(:, :, :)
     real(8),      allocatable   :: response_vector_pna(:, :, :)
 
-    integer                     :: kfree, lfree
-
     real(8),      allocatable   :: prop_gradient_pp(:, :)
     real(8),      allocatable   :: prop_gradient_pn(:, :)
 
-    integer,      allocatable   :: orbrot_indices_pp(:, :)
-    integer,      allocatable   :: orbrot_indices_pn(:, :)
+    integer,      allocatable   :: kappa_pp(:, :)
+    integer,      allocatable   :: kappa_pn(:, :)
 
     integer                     :: length_pp
     integer                     :: length_pn
 
-    integer                     :: iz, k, i, s
+    integer                     :: iz
+    integer                     :: k
+    integer                     :: i
+    integer                     :: s
     integer                     :: nr_freq
+    integer                     :: kfree
 
     logical                     :: debug_me = .false.
 
-    real(8),      allocatable   :: cmo_from_file(:)
-
-    logical  :: include_pp_rotations = .true.
-    logical  :: include_pn_rotations = .true.
+    logical                     :: include_pp_rotations = .true.
+    logical                     :: include_pn_rotations = .true.
 !   ----------------------------------------------------------------------------
 
 #include "dcbbas.h"
@@ -528,7 +529,7 @@ contains
 
 !   fixme: nssh not always properly set, change to nesh minus nish
 
-    if (jbtof(RHS%pg_sym-1, 1) == 2) then
+    if (jbtof(RHS(1)%pg_sym-1, 1) == 2) then
 !     ungerade perturbation
       length_pp = nish(1)*nssh(2) + nish(2)*nssh(1)
       length_pn = nish(1)*npsh(2) + nish(2)*npsh(1)
@@ -555,96 +556,37 @@ contains
     nzvar   = nzxopt
     nzvarq  = nzxoptq
 
-    allocate(orbrot_indices_pp(2, length_pp))
+    allocate(kappa_pp(2, length_pp))
     if (length_pp > 0) then
-       call set_orbrot_indices(RHS%pg_sym-1,  &
+       call set_orbrot_indices(RHS(1)%pg_sym-1,  &
                                          length_pp, &
                                          2,         &
                                          3,         &
-                                         orbrot_indices_pp)
+                                         kappa_pp)
     end if
 
-    allocate(orbrot_indices_pn(2, length_pn))
+    allocate(kappa_pn(2, length_pn))
     if (length_pn > 0) then
-       call set_orbrot_indices(RHS%pg_sym-1,  &
+       call set_orbrot_indices(RHS(1)%pg_sym-1,  &
                                          length_pn, &
                                          2,         &
                                          1,         &
-                                         orbrot_indices_pn)
+                                         kappa_pn)
     end if
 
-    if (.false.) then
-#ifdef FIX_SPINFREE_MODE
-    if (openrsp_spinfree .and. (RHS%tr_sym == 1)) then
+!   fixme stop at spinfree
+!   see old interface to see how it is done
 
-       call alloc(mo_coef, ncmotq)
-       call alloc(ibeig, ntbas(0))
-
+       allocate(mo_coef(ncmotq))
        call read_mo_coef(mo_coef)
-       call read_ibeig(ibeig)
-
-       call mat_init(RHS_mo, nrow=norbt, ncol=norbt, closed_shell=.true., algebra=4)
-       RHS_mo%elms_alpha = 0.0d0
-       irep = RHS%pg_sym-1
-
-       lwork = len_f77_work
-       call di_select_wrk(work, lwork)
-
-       do i1 = 1, nfsym
-          i2 = mod(i1 + jbtof(irep, 1), 2) + 1
-          if (nfbas(i1, 0) > 0) then
-             if (nfbas(i2, 0) > 0) then
-                call qbtrans(irep,                                           &
-                             'AOMO',                                         &
-                             'S',                                            &
-                             0.0d0,                                          &
-!                            -------------------------------------------------
-                             nfbas(i1, 0), nfbas(i2, 0), norb(i1), norb(i2), &
-!                            -------------------------------------------------
-                             RHS%elms_alpha(i2basx(i1, i2) + 1),                   &
-                             ntbas(0), ntbas(0), nz, ipqtoq(1, irep),        &
-!                            -------------------------------------------------
-                             RHS_mo%elms_alpha(i2orbx(i1, i2) + 1),                &
-                             norbt, norbt, nz, ipqtoq(1, irep),              &
-!                            -------------------------------------------------
-                             mo_coef(icmoq(i1) + 1),                         &
-                             nfbas(i1, 0), norb(i1), nz, ipqtoq(1, 0),       &
-                             ibeig(iorb(i1) + 1),                            &
-!                            -------------------------------------------------
-                             mo_coef(icmoq(i2) + 1),                         &
-                             nfbas(i2, 0), norb(i2), nz, ipqtoq(1, 0),       &
-                             ibeig(iorb(i2) + 1),                            &
-!                            -------------------------------------------------
-                             work, lwork, 0)
-             end if
-          end if
-       end do
-
-       call di_deselect_wrk(work, lwork)
-       deallocate(mo_coef)
-       deallocate(ibeig)
-
-#endif /* #ifdef FIX_SPINFREE_MODE */
-    else
-
-       allocate(cmo_from_file(ncmotq))
-       call read_mo_coef(cmo_from_file)
        call mat_init(C, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
-       call get_C(C, cmo_from_file, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
-       deallocate(cmo_from_file)
-       RHS_mo = trps(C)*(RHS*C)
+       call get_C(C, mo_coef, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
+       deallocate(mo_coef)
+       RHS_mo = trps(C)*(RHS(1)*C)
        C = 0
 
-    end if
-
-    RHS_mo%ih_sym = RHS%ih_sym
-!   RHS_mo%tr_sym = RHS%tr_sym
-    RHS_mo%pg_sym = RHS%pg_sym
-
-!   if (debug_me) then
-!     call print_mat(RHS,    label = 'debug RHS in AO basis')
-!     call print_mat(RHS_mo, label = 'debug RHS in MO basis')
-!   end if
+    RHS_mo%ih_sym = RHS(1)%ih_sym
+    RHS_mo%pg_sym = RHS(1)%pg_sym
 
 
 !   get positive -> positive property gradient
@@ -656,8 +598,8 @@ contains
 
        do iz = 1, nz
           do k = 1, length_pp
-             i = orbrot_indices_pp(1, k)
-             s = orbrot_indices_pp(2, k)
+             i = kappa_pp(1, k)
+             s = kappa_pp(2, k)
              prop_gradient_pp(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
           end do
        end do
@@ -679,8 +621,8 @@ contains
 
        do iz = 1, nz
           do k = 1, length_pn
-             i = orbrot_indices_pn(1, k)
-             s = orbrot_indices_pn(2, k)
+             i = kappa_pn(1, k)
+             s = kappa_pn(2, k)
              prop_gradient_pn(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
           end do
        end do
@@ -702,8 +644,8 @@ contains
                                       include_pn_rotations,        &
                                       length_pp,                   &
                                       length_pn,                   &
-                                      orbrot_indices_pp, &
-                                      orbrot_indices_pn  &
+                                      kappa_pp, &
+                                      kappa_pn  &
                                      )
 
 
@@ -716,7 +658,7 @@ contains
 !   than frequency=0.0 with static=.true.
 !   it is important to correctly set static
     static = .true.
-    if (dabs(freq) > tiny(0.0d0)) then
+    if (dabs(eigval(1)) > tiny(0.0d0)) then
        static = .false.
     end if
 
@@ -749,10 +691,10 @@ contains
     e2chek    = .false.
 
 !   nr_freq   = size(freq)
-    jsymop    = RHS%pg_sym
+    jsymop    = RHS(1)%pg_sym
 !   jtimop    = RHS%tr_sym
-    jtimop    = RHS%ih_sym
-    jopsy     = jbtof(RHS%pg_sym-1, 1)
+    jtimop    = RHS(1)%ih_sym
+    jopsy     = jbtof(RHS(1)%pg_sym-1, 1)
     nfreq     = nr_freq
     nexsim    = nr_freq
     nexstv    = nr_freq
@@ -770,14 +712,9 @@ contains
     allocate(ibtyp_pointer_pp( nredm))
     allocate(ibtyp_pointer_pn( nredm))
     allocate(convergence(      nr_freq))
-    allocate(eigval(           nr_freq))
     allocate(eigvec(           nredm*nr_freq))
 
-    eigval = freq
-
     kfree = 1
-    lfree = get_f77_memory_left()
-
     call xrsctl(                                   &
                 (/0.0d0/),                         &
                 prop_gradient_pp,                  &
@@ -791,11 +728,10 @@ contains
                 eigvec,                            &
                 f77_memory(get_f77_memory_next()), &
                 kfree,                             &
-                lfree                              &
+                get_f77_memory_left()              &
                )
 
     deallocate(convergence)
-    deallocate(eigval)
 
 
 !   construct response vector
@@ -884,38 +820,38 @@ contains
 
     if (include_pp_rotations) then
       call scatter_vector(length_pp,                   &
-                          orbrot_indices_pp, &
+                          kappa_pp, &
                           1.0d0,                       &
                           response_vector_pph,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
       call scatter_vector(length_pp,                   &
-                          orbrot_indices_pp, &
+                          kappa_pp, &
                          -1.0d0,                       &
                           response_vector_ppa,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
 
-      deallocate(orbrot_indices_pp)
+      deallocate(kappa_pp)
       deallocate(response_vector_pph)
       deallocate(response_vector_ppa)
     end if
 
     if (include_pn_rotations) then
       call scatter_vector(length_pn,                   &
-                          orbrot_indices_pn, &
+                          kappa_pn, &
                           1.0d0,                       &
                           response_vector_pnh,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
       call scatter_vector(length_pn,                   &
-                          orbrot_indices_pn, &
+                          kappa_pn, &
                          -1.0d0,                       &
                           response_vector_pna,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
 
-      deallocate(orbrot_indices_pn)
+      deallocate(kappa_pn)
       deallocate(response_vector_pnh)
       deallocate(response_vector_pna)
     end if
@@ -924,17 +860,17 @@ contains
 !   get coefficients
 !   ================
 
-    allocate(cmo_from_file(n2bbasxq))
-    call read_mo_coef(cmo_from_file)
+    allocate(mo_coef(n2bbasxq))
+    call read_mo_coef(mo_coef)
     call mat_init(Cig, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
     call mat_init(Csg, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
-    call get_C(Cig, cmo_from_file, i=1.0d0, s=0.0d0, g=1.0d0, u=0.0d0)
-    call get_C(Csg, cmo_from_file, i=0.0d0, s=1.0d0, g=1.0d0, u=0.0d0)
+    call get_C(Cig, mo_coef, i=1.0d0, s=0.0d0, g=1.0d0, u=0.0d0)
+    call get_C(Csg, mo_coef, i=0.0d0, s=1.0d0, g=1.0d0, u=0.0d0)
     if (nfsym == 2) then
-      call get_C(Ciu, cmo_from_file, i=1.0d0, s=0.0d0, g=0.0d0, u=1.0d0)
-      call get_C(Csu, cmo_from_file, i=0.0d0, s=1.0d0, g=0.0d0, u=1.0d0)
+      call get_C(Ciu, mo_coef, i=1.0d0, s=0.0d0, g=0.0d0, u=1.0d0)
+      call get_C(Csu, mo_coef, i=0.0d0, s=1.0d0, g=0.0d0, u=1.0d0)
     end if
-    deallocate(cmo_from_file)
+    deallocate(mo_coef)
 
 
 !   construct perturbed AO density matrix
@@ -943,13 +879,13 @@ contains
     if (nfsym == 2) then
       if (jbtof(Wp%pg_sym-1, 1) == 2) then
 !       ungerade perturbation
-        Dp = (Cig*(Wp*trps(Csu))) &
+        Dp(1) = (Cig*(Wp*trps(Csu))) &
            + (Ciu*(Wp*trps(Csg))) &
            - (Csg*(Wp*trps(Ciu))) &
            - (Csu*(Wp*trps(Cig)))
       else
 !       gerade perturbation
-        Dp = (Cig*(Wp*trps(Csg))) &
+        Dp(1) = (Cig*(Wp*trps(Csg))) &
            + (Ciu*(Wp*trps(Csu))) &
            - (Csg*(Wp*trps(Cig))) &
            - (Csu*(Wp*trps(Ciu)))
@@ -957,25 +893,16 @@ contains
       Ciu = 0
       Csu = 0
     else
-      Dp = (Cig*(Wp*trps(Csg))) &
+      Dp(1) = (Cig*(Wp*trps(Csg))) &
          - (Csg*(Wp*trps(Cig)))
     end if
     Cig = 0
     Csg = 0
 
-    Dp%ih_sym = Wp%ih_sym
-!   Dp%tr_sym = Wp%tr_sym
-    Dp%pg_sym = Wp%pg_sym
-
-!   if (debug_me) then
-!      call print_mat(Wp, label = 'debug Wp')
-!   end if
+    Dp(1)%ih_sym = Wp%ih_sym
+    Dp(1)%pg_sym = Wp%pg_sym
 
     Wp = 0
-
-!   if (debug_me) then
-!      call print_mat(Dp, label = 'debug Dp')
-!   end if
 
   end subroutine
 
