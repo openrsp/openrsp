@@ -84,6 +84,7 @@ CONTAINS
 !> 
   SUBROUTINE initialize_interest_eri_diff()
 
+#ifdef PRG_DIRAC
   use codata
 
 #include "mxcent.h"
@@ -183,8 +184,11 @@ CONTAINS
     write(6,'(2x,a,i5  )') 'Total number of spherical basis functions:',sum(gto(:)%sdegen)
     write(6,'(2x,a,i5,a)') 'Total number of cartesian basis functions:',sum(gto(:)%cdegen),' (used for calculation)'
     write(6,*) 
+#endif /* ifdef PRG_DIRAC */
 
   END SUBROUTINE
+
+#ifdef PRG_DIRAC
 ! ------------------------------------------------------------------------------------
 !> note: on input G, P are assumed to be in cartesian GTOs 
   SUBROUTINE interest_eri_diff( Gmat, Pmat ) 
@@ -478,5 +482,6 @@ lloop:       do l=1,nr_shells
     deallocate( B )
         
   END SUBROUTINE
+#endif /* ifdef PRG_DIRAC */
 ! ------------------------------------------------------------------------------------
 END MODULE
