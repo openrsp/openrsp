@@ -43,6 +43,7 @@ MODULE MODULE_INTEREST_ERI_DIFF
   implicit none
 
   public initialize_interest_eri_diff
+  public interest_eri_diff
 
   private
 
@@ -65,8 +66,6 @@ MODULE MODULE_INTEREST_ERI_DIFF
        real(8) :: coefficient(1)
   end  type
 
-
-  integer, save :: nshl      = 1
   integer, save :: nrow      = 0
   integer, save :: ncol      = 0
   integer, save :: nr_shells = 0
@@ -182,15 +181,16 @@ CONTAINS
 #ifdef PRG_DIRAC
 ! ------------------------------------------------------------------------------------
 !> note: on input G, P are assumed to be in cartesian GTOs
-  SUBROUTINE interest_eri_diff( Gmat, Pmat )
+  SUBROUTINE interest_eri_diff(ndim, Gmat, Pmat)
 
     !> input
     !> note:  we assume nz=4 !!!
     !> fixme: the case when nz!=4
-    real(8), intent(in) :: Pmat(2*nrow,2*ncol,4)
+    integer, intent(in) :: ndim
+    real(8), intent(in) :: Pmat(ndim, ndim, *)
 
     !> output
-    real(8), intent(out) :: Gmat(2*nrow,2*ncol,4)
+    real(8), intent(out) :: Gmat(ndim, ndim, *)
 
     !> local
     integer :: i, j, k, l
@@ -311,7 +311,7 @@ lloop:       do l=1,nr_shells
        enddo iloop
 
     !> backward resorting of the Fock matrix
-    call forward_ao_resorting( G )
+    call backward_ao_resorting( G )
     do j=1,ncol
       do i=1,nrow
         Gmat(i,j,1) = G(i,j)  !Re(A,LL)
@@ -334,10 +334,10 @@ lloop:       do l=1,nr_shells
     integer, intent(in) :: kc, lc
     integer, intent(in) :: io, jo, ko, lo
     real(8), intent(in) :: gout(kc,lc,ic,jc)
-    real(8), intent(in) :: dP(idP,idP,nshl)
+    real(8), intent(in) :: dP(idP,idP,*)
 
     !> output
-    real(8), intent(out) :: dG(idP,idP,nshl)
+    real(8), intent(out) :: dG(idP,idP,*)
 
     !> local
     integer :: n, ns
@@ -347,12 +347,11 @@ lloop:       do l=1,nr_shells
 
 
     !> coulomb part
-    if( nshl == 1 )then
       do l=1,lc
         lbas=lo+l
         do k=1,kc
           kbas=ko+k
-          dPkl=dP(kbas,lbas,1)*2.0d0
+          dPkl=dP(kbas,lbas,1)*2.0d0*2.0d0 !fixme magic fac 2
           do j=1,jc
             jbas=jo+j
             do i=1,ic
@@ -362,24 +361,8 @@ lloop:       do l=1,nr_shells
           enddo
         enddo
       enddo
-    else
-      do l=1,lc
-        lbas=lo+l
-        do k=1,kc
-          kbas=ko+k
-          dPkl=dP(kbas,lbas,1)+dP(kbas,lbas,2)
-          do j=1,jc
-            jbas=jo+j
-            do i=1,ic
-              ibas=io+i
-              dG(ibas,jbas,1) = dG(ibas,jbas,1) + gout(k,l,i,j)*dPkl
-              dG(ibas,jbas,2) = dG(ibas,jbas,2) + gout(k,l,i,j)*dPkl
-            enddo
-          enddo
-        enddo
-      enddo
-    endif
 
+#ifdef EXCHANGE_ON
     !> exchange part
     if( doK )then
       do n=1,ns
@@ -399,6 +382,7 @@ lloop:       do l=1,nr_shells
         enddo
       enddo
     endif
+#endif
 
   END SUBROUTINE
 ! ------------------------------------------------------------------------------------

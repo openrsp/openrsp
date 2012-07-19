@@ -188,6 +188,10 @@ contains
   !> \return G contains the two electron contribution
   subroutine interface_scf_get_g(D, G)
 
+!#ifdef PRG_DIRAC
+    use module_interest_eri_diff
+!#endif
+
     type(matrix), intent(in),    target :: D
     type(matrix), intent(inout), target :: G
 
@@ -254,10 +258,14 @@ contains
 
     G%elms_alpha = 0.0d0
 
-    arg(1) = ctr_arg(0, 0, 0, D, G, null_pointer)
-    call unopt_geodiff_loop(basis_large, &
-                            basis_small, &
-                            arg)
+!   arg(1) = ctr_arg(0, 0, 0, D, G, null_pointer)
+!   call unopt_geodiff_loop(basis_large, &
+!                           basis_small, &
+!                           arg)
+
+    call initialize_interest_eri_diff()
+    call interest_eri_diff(G%nrow, G%elms_alpha, D%elms_alpha)
+
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
