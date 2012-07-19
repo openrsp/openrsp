@@ -510,7 +510,7 @@ contains
     integer                     :: length_pp
     integer                     :: length_pn
 
-    integer                     :: iz, k, i, s, off
+    integer                     :: iz, k, i, s
     integer                     :: nr_freq
 
     logical                     :: debug_me = .false.
@@ -556,7 +556,7 @@ contains
     nzvar   = nzxopt
     nzvarq  = nzxoptq
 
-    call alloc(orbital_rotation_indices_pp, 2, length_pp)
+    allocate(orbital_rotation_indices_pp(2, length_pp))
     if (length_pp > 0) then
        call set_orbrot_indices(RHS%pg_sym-1,  &
                                          length_pp, &
@@ -565,7 +565,7 @@ contains
                                          orbital_rotation_indices_pp)
     end if
 
-    call alloc(orbital_rotation_indices_pn, 2, length_pn)
+    allocate(orbital_rotation_indices_pn(2, length_pn))
     if (length_pn > 0) then
        call set_orbrot_indices(RHS%pg_sym-1,  &
                                          length_pn, &
@@ -574,8 +574,9 @@ contains
                                          orbital_rotation_indices_pn)
     end if
 
-!   if (openrsp_spinfree .and. (RHS%tr_sym == 1)) then
     if (.false.) then
+#ifdef FIX_SPINFREE_MODE
+    if (openrsp_spinfree .and. (RHS%tr_sym == 1)) then
 
        call alloc(mo_coef, ncmotq)
        call alloc(ibeig, ntbas(0))
@@ -621,9 +622,10 @@ contains
        end do
 
        call di_deselect_wrk(work, lwork)
-       call dealloc(mo_coef)
-       call dealloc(ibeig)
+       deallocate(mo_coef)
+       deallocate(ibeig)
 
+#endif /* #ifdef FIX_SPINFREE_MODE */
     else
 
        allocate(cmo_from_file(n2bbasxq))
@@ -650,14 +652,13 @@ contains
 
     if (include_pp_rotations) then
 
-       call alloc(prop_gradient_pp, length_pp, nz)
+       allocate(prop_gradient_pp(length_pp, nz))
 
        do iz = 1, nz
-          off = (iz - 1)*norbt*norbt
           do k = 1, length_pp
              i = orbital_rotation_indices_pp(1, k)
              s = orbital_rotation_indices_pp(2, k)
-             prop_gradient_pp(k, iz) = -2.0d0*RHS_mo%elms_alpha(off + (i - 1)*norbt + s)
+             prop_gradient_pp(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
           end do
        end do
 
@@ -674,14 +675,13 @@ contains
 
     if (include_pn_rotations) then
 
-       call alloc(prop_gradient_pn, length_pn, nz)
+       allocate(prop_gradient_pn(length_pn, nz))
 
        do iz = 1, nz
-          off = (iz - 1)*norbt*norbt
           do k = 1, length_pn
              i = orbital_rotation_indices_pn(1, k)
              s = orbital_rotation_indices_pn(2, k)
-             prop_gradient_pn(k, iz) = -2.0d0*RHS_mo%elms_alpha(off + (i - 1)*norbt + s)
+             prop_gradient_pn(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
           end do
        end do
 
@@ -701,11 +701,13 @@ contains
 !   call with proper limit
 !   at the moment i don't know the limit
 !   simply give entire work and hope for the best
-    lwork = len_f77_work
+!   lwork = len_f77_work
+    lwork = 1000000 !fixme, use new work pointer framework
     call di_select_wrk(work, lwork)
 
     kfree = 1
-    lfree = len_f77_work
+!   lfree = len_f77_work
+    lfree = lwork !fixme
 
     call set_orbital_rotation_indices(                             &
                                       include_pp_rotations,        &
@@ -736,7 +738,8 @@ contains
     tknorm    = .true.
     diaghe    = .true.
     iprxrs    = 0
-    thcxrs    = openrsp_cfg_threshold_response
+!   thcxrs    = openrsp_cfg_threshold_response
+    thcxrs    = 1.0d-8 !fixme hardcoded
     resfac    = 1.0d3
     maxitr    = 150
     nr_freq   = 1
@@ -751,7 +754,8 @@ contains
     cnvint(2) = 1.0d20
     itrint(1) = 1
     itrint(2) = 1
-    intdef    = integral_flag
+!   intdef    = integral_flag
+    intdef    = 3 !fixme hardcoded
     sternh    = .false.
     sternc    = .false.
     e2chek    = .false.
@@ -774,12 +778,12 @@ contains
 !   solve response equation in the reduced space spanned by the trial vectors
 !   =========================================================================
 
-    call alloc(ibtyp,            2*nredm)
-    call alloc(ibtyp_pointer_pp, nredm)
-    call alloc(ibtyp_pointer_pn, nredm)
-    call alloc(convergence,      nr_freq)
-    call alloc(eigval,           nr_freq)
-    call alloc(eigvec,           nredm*nr_freq)
+    allocate(ibtyp(            2*nredm))
+    allocate(ibtyp_pointer_pp( nredm))
+    allocate(ibtyp_pointer_pn( nredm))
+    allocate(convergence(      nr_freq))
+    allocate(eigval(           nr_freq))
+    allocate(eigvec(           nredm*nr_freq))
 
     eigval = freq
 
@@ -795,8 +799,8 @@ contains
                 eigvec,           &
                 work, kfree, lfree)
 
-    call dealloc(convergence)
-    call dealloc(eigval)
+    deallocate(convergence)
+    deallocate(eigval)
     call di_deselect_wrk(work, lwork)
 
 
@@ -805,8 +809,8 @@ contains
 
     if (include_pp_rotations) then
 
-      call alloc(response_vector_pph, length_pp, nz, nr_freq)
-      call alloc(response_vector_ppa, length_pp, nz, nr_freq)
+      allocate(response_vector_pph(length_pp, nz, nr_freq))
+      allocate(response_vector_ppa(length_pp, nz, nr_freq))
 
       response_vector_pph = 0.0d0
       response_vector_ppa = 0.0d0
@@ -840,8 +844,8 @@ contains
 
     if (include_pn_rotations) then
 
-      call alloc(response_vector_pnh, length_pn, nz, nr_freq)
-      call alloc(response_vector_pna, length_pn, nz, nr_freq)
+      allocate(response_vector_pnh(length_pn, nz, nr_freq))
+      allocate(response_vector_pna(length_pn, nz, nr_freq))
 
       response_vector_pnh = 0.0d0
       response_vector_pna = 0.0d0
@@ -873,10 +877,10 @@ contains
 
     end if
 
-    call dealloc(ibtyp)
-    call dealloc(ibtyp_pointer_pp)
-    call dealloc(ibtyp_pointer_pn)
-    call dealloc(eigvec)
+    deallocate(ibtyp)
+    deallocate(ibtyp_pointer_pp)
+    deallocate(ibtyp_pointer_pn)
+    deallocate(eigvec)
 
 
 !   scatter response vectors
@@ -898,9 +902,9 @@ contains
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
 
-      call dealloc(orbital_rotation_indices_pp)
-      call dealloc(response_vector_pph)
-      call dealloc(response_vector_ppa)
+      deallocate(orbital_rotation_indices_pp)
+      deallocate(response_vector_pph)
+      deallocate(response_vector_ppa)
     end if
 
     if (include_pn_rotations) then
@@ -917,9 +921,9 @@ contains
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
 
-      call dealloc(orbital_rotation_indices_pn)
-      call dealloc(response_vector_pnh)
-      call dealloc(response_vector_pna)
+      deallocate(orbital_rotation_indices_pn)
+      deallocate(response_vector_pnh)
+      deallocate(response_vector_pna)
     end if
 
 
@@ -1045,8 +1049,8 @@ contains
 
     close(file_unit, status = 'keep')
 
-    call dealloc(ivecs)
-    call dealloc(buffer)
+    deallocate(ivecs)
+    deallocate(buffer)
 
   end subroutine
 
