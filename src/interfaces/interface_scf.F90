@@ -22,6 +22,7 @@ module interface_scf
    public interface_scf_get_g
 #ifdef PRG_DIRAC
    public get_C
+   public read_mo_coef
 #endif
 
    private

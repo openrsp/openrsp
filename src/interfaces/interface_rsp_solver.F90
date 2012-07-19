@@ -465,6 +465,8 @@ contains
 
   subroutine response_solver(freq, RHS, Dp)
 
+    use orbital_rotation_indices
+
 !   1. RHS (AO) -> RHS (MO)
 !   2. RHS (MO) -> property gradient
 !   3. solve response equation, in:  property gradient
@@ -504,8 +506,8 @@ contains
     real(8),      allocatable   :: prop_gradient_pp(:, :)
     real(8),      allocatable   :: prop_gradient_pn(:, :)
 
-    integer,      allocatable   :: orbital_rotation_indices_pp(:, :)
-    integer,      allocatable   :: orbital_rotation_indices_pn(:, :)
+    integer,      allocatable   :: orbrot_indices_pp(:, :)
+    integer,      allocatable   :: orbrot_indices_pn(:, :)
 
     integer                     :: length_pp
     integer                     :: length_pn
@@ -556,22 +558,22 @@ contains
     nzvar   = nzxopt
     nzvarq  = nzxoptq
 
-    allocate(orbital_rotation_indices_pp(2, length_pp))
+    allocate(orbrot_indices_pp(2, length_pp))
     if (length_pp > 0) then
        call set_orbrot_indices(RHS%pg_sym-1,  &
                                          length_pp, &
                                          2,         &
                                          3,         &
-                                         orbital_rotation_indices_pp)
+                                         orbrot_indices_pp)
     end if
 
-    allocate(orbital_rotation_indices_pn(2, length_pn))
+    allocate(orbrot_indices_pn(2, length_pn))
     if (length_pn > 0) then
        call set_orbrot_indices(RHS%pg_sym-1,  &
                                          length_pn, &
                                          2,         &
                                          1,         &
-                                         orbital_rotation_indices_pn)
+                                         orbrot_indices_pn)
     end if
 
     if (.false.) then
@@ -656,8 +658,8 @@ contains
 
        do iz = 1, nz
           do k = 1, length_pp
-             i = orbital_rotation_indices_pp(1, k)
-             s = orbital_rotation_indices_pp(2, k)
+             i = orbrot_indices_pp(1, k)
+             s = orbrot_indices_pp(2, k)
              prop_gradient_pp(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
           end do
        end do
@@ -679,8 +681,8 @@ contains
 
        do iz = 1, nz
           do k = 1, length_pn
-             i = orbital_rotation_indices_pn(1, k)
-             s = orbital_rotation_indices_pn(2, k)
+             i = orbrot_indices_pn(1, k)
+             s = orbrot_indices_pn(2, k)
              prop_gradient_pn(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
           end do
        end do
@@ -703,7 +705,9 @@ contains
 !   simply give entire work and hope for the best
 !   lwork = len_f77_work
     lwork = 1000000 !fixme, use new work pointer framework
-    call di_select_wrk(work, lwork)
+    print *, 'adapt select work'
+    stop 1
+!   call di_select_wrk(work, lwork)
 
     kfree = 1
 !   lfree = len_f77_work
@@ -714,8 +718,8 @@ contains
                                       include_pn_rotations,        &
                                       length_pp,                   &
                                       length_pn,                   &
-                                      orbital_rotation_indices_pp, &
-                                      orbital_rotation_indices_pn  &
+                                      orbrot_indices_pp, &
+                                      orbrot_indices_pn  &
                                      )
 
 
@@ -801,7 +805,9 @@ contains
 
     deallocate(convergence)
     deallocate(eigval)
-    call di_deselect_wrk(work, lwork)
+!   call di_deselect_wrk(work, lwork)
+    print *, 'adapt deselect work'
+    stop 1
 
 
 !   construct response vector
@@ -890,38 +896,38 @@ contains
 
     if (include_pp_rotations) then
       call scatter_vector(length_pp,                   &
-                          orbital_rotation_indices_pp, &
+                          orbrot_indices_pp, &
                           1.0d0,                       &
                           response_vector_pph,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
       call scatter_vector(length_pp,                   &
-                          orbital_rotation_indices_pp, &
+                          orbrot_indices_pp, &
                          -1.0d0,                       &
                           response_vector_ppa,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
 
-      deallocate(orbital_rotation_indices_pp)
+      deallocate(orbrot_indices_pp)
       deallocate(response_vector_pph)
       deallocate(response_vector_ppa)
     end if
 
     if (include_pn_rotations) then
       call scatter_vector(length_pn,                   &
-                          orbital_rotation_indices_pn, &
+                          orbrot_indices_pn, &
                           1.0d0,                       &
                           response_vector_pnh,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
       call scatter_vector(length_pn,                   &
-                          orbital_rotation_indices_pn, &
+                          orbrot_indices_pn, &
                          -1.0d0,                       &
                           response_vector_pna,         &
                           Wp%elms_alpha,                     &
                           Wp%pg_sym-1)
 
-      deallocate(orbital_rotation_indices_pn)
+      deallocate(orbrot_indices_pn)
       deallocate(response_vector_pnh)
       deallocate(response_vector_pna)
     end if
@@ -1027,8 +1033,8 @@ contains
         call quit('error in construct_response_vector: unknown vector type')
     end select
 
-    call alloc(ivecs,  nr_freq)
-    call alloc(buffer, length*nz)
+    allocate(ivecs(  nr_freq))
+    allocate(buffer( length*nz))
 
     open(file_unit,              &
          file   = file_name,     &
