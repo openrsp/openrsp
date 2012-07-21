@@ -184,13 +184,15 @@ contains
       real(8), allocatable               :: xc_dmat(:)
 !     ---------------------------------------------------------------------------
 
-#ifndef PRG_DIRAC
       nr_atoms = get_nr_atoms()
       mat_dim  = D%nrow
 
       select case (pert)
          case ('g')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+#ifdef PRG_DIRAC
+            return
+#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                element = i
@@ -203,8 +205,12 @@ contains
                     )
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
+#endif
          case ('gg')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+#ifdef PRG_DIRAC
+            return
+#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
@@ -222,8 +228,12 @@ contains
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
+#endif
          case ('gf')
 !           res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+#ifdef PRG_DIRAC
+            return
+#else
             if (.not. get_is_ks_calculation()) return
             nr_dmat = 3
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
@@ -244,8 +254,12 @@ contains
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
+#endif
          case ('ggg')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+#ifdef PRG_DIRAC
+            return
+#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
@@ -267,8 +281,12 @@ contains
                   end do
                end do
             end do
+#endif
          case ('gggg')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
+#ifdef PRG_DIRAC
+            return
+#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
@@ -300,13 +318,13 @@ contains
                   end do
                end do
             end do
+#endif
          case default
             print *, 'error: perturbation not implemented in xcave'
             stop 1
       end select
 
       if (allocated(xc_dmat)) deallocate(xc_dmat)
-#endif
 
    end subroutine
 
