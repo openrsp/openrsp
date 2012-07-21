@@ -184,8 +184,10 @@ contains
       integer num_geom                       !number of total geometric derivatives
       integer num_expt                       !number of all expectation values
       real(8), allocatable :: val_expt(:, :) !expectation values, real numbers
-      real(8), allocatable :: temp(:, :)
+      real(8), allocatable :: temp(:)
       integer ierr                           !error information
+      type(matrix) :: T
+      integer :: ixyz, i
 
       ! gets the order of Cartesian multipole moments
       order_mom = count(f=='EL  ')
@@ -251,7 +253,9 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-            allocate(temp(num_expt, 1))
+            allocate(temp(num_expt*3))
+
+            ! nuclear attraction
             temp = 0.0d0
             call gen1int_host_get_expt(NON_LAO, INT_POT_ENERGY,   &
                                        0,                         &
@@ -268,7 +272,9 @@ contains
                                        temp, .false.,             &
                                        2, (/1, 1, 2, 2/),         &
                                        get_print_unit(), 5)
-            val_expt = val_expt + temp
+            val_expt(:, 1) = val_expt(:, 1) + temp(1:num_expt)
+
+            ! beta' matrix
             temp = 0.0d0
             call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,      &
                                        0,                         &
@@ -285,8 +291,37 @@ contains
                                        temp, .false.,             &
                                        1, (/2, 2/),               &
                                        get_print_unit(), 5)
-            val_expt = val_expt - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*temp
+            val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*temp(1:num_expt)
+
+            ! kinetic energy
+            T = mat_alloc_like(D)
+            do ixyz = 1, 3
+               T%elms_alpha = 0.0d0
+               call dcopy(D%nrow*D%ncol, D%elms_alpha(1, 1, 5-ixyz), 1, T%elms_alpha, 1)
+               temp = 0.0d0
+               call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
+                                          0,                           &
+                                          1,                           &
+                                          0, 0, 0,                     &
+                                          0, 0, 0,                     &
+                                          0, 0,                        &
+                                          min(3,order_geo,num_atom),   &
+                                          order_geo,                   &
+                                          0, (/0/),                    &
+                                          REDUNDANT_GEO,               &
+                                          .false., .false., .false.,   &
+                                          1, (/T/), num_expt*3,        &
+                                          temp, .false.,               &
+                                          2, (/1, 2, 2, 1/),           &
+                                          get_print_unit(), 5)
+               do i = 1, num_expt
+                  val_expt(i, 1) = val_expt(i, 1) + openrsp_const_speed_of_light*temp((i-1)*3 + ixyz)
+               end do
+            end do
+            T = 0
+
             deallocate(temp)
+
 #endif /* ifdef PRG_DIRAC */
 
          end if
