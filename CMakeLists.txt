@@ -78,6 +78,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_hrr.f90
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_osr.f90
     ${PROJECT_SOURCE_DIR}/src/interfaces/module_interest_eri_diff.F90
+    ${PROJECT_SOURCE_DIR}/src/openrsp_const.F90
     )
 
 include(ConfigCompilerFlags)

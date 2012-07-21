@@ -1,5 +1,6 @@
 module interface_1el
 
+   use openrsp_const
    use matrix_defop
    use interface_molecule
    use interface_basis
@@ -182,7 +183,8 @@ contains
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
       integer num_expt                       !number of all expectation values
-      real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
+      real(8), allocatable :: val_expt(:, :) !expectation values, real numbers
+      real(8), allocatable :: temp(:, :)
       integer ierr                           !error information
 
       ! gets the order of Cartesian multipole moments
@@ -249,6 +251,8 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
+            allocate(temp(num_expt, 1))
+            temp = 0.0d0
             call gen1int_host_get_expt(NON_LAO, INT_POT_ENERGY,   &
                                        0,                         &
                                        0,                         &
@@ -261,9 +265,28 @@ contains
                                        REDUNDANT_GEO,             &
                                        .false., .false., .false., &
                                        1, (/D/), num_expt,        &
-                                       val_expt, .false.,         &
+                                       temp, .false.,             &
                                        2, (/1, 1, 2, 2/),         &
                                        get_print_unit(), 5)
+            val_expt = val_expt + temp
+            temp = 0.0d0
+            call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,      &
+                                       0,                         &
+                                       0,                         &
+                                       0, 0, 0,                   &
+                                       0, 0, 0,                   &
+                                       0, 0,                      &
+                                       min(3,order_geo,num_atom), &
+                                       order_geo,                 &
+                                       0, (/0/),                  &
+                                       REDUNDANT_GEO,             &
+                                       .false., .false., .false., &
+                                       1, (/D/), num_expt,        &
+                                       temp, .false.,             &
+                                       1, (/2, 2/),               &
+                                       get_print_unit(), 5)
+            val_expt = val_expt - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*temp
+            deallocate(temp)
 #endif /* ifdef PRG_DIRAC */
 
          end if
