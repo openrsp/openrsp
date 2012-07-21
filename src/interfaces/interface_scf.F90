@@ -164,7 +164,7 @@ contains
 
       allocate(mo_coef(ncmotq))
 
-      call mat_init(C_i, nrow=ntbas(0), ncol=norbt, closed_shell=.true., algebra=4)
+      call mat_init(C_i, nrow=ntbas(0), ncol=norbt, closed_shell=.true.)
 
       call read_mo_coef(mo_coef)
 

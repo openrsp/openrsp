@@ -436,7 +436,7 @@ contains
     nullify(null_ptr) !because null() isn't f90
 
   if (any(f=='EL  ')) then
-     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))
