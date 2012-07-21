@@ -142,7 +142,7 @@ contains
 #else
                                        1, (/1, 1/),                &
 #endif
-                                       get_print_unit(), 5)
+                                       get_print_unit(), 0)
             val_expt = -val_expt
             ! assigns the output average
             if (order_geo==0) then
@@ -234,7 +234,7 @@ contains
                                        1, (/D/), num_expt,          &  !expectation values
                                        val_expt, .false.,           &
                                        1, (/1, 1/),                 &
-                                       get_print_unit(), 5)
+                                       get_print_unit(), 0)
          ! only geometric perturbations
          else
 
@@ -253,7 +253,7 @@ contains
                                        1, (/D/), num_expt,        &  !expectation values
                                        val_expt, .false.,         &
                                        1, (/1, 1/),               &
-                                       get_print_unit(), 5)
+                                       get_print_unit(), 0)
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
@@ -275,7 +275,7 @@ contains
                                        1, (/D/), num_expt,        &
                                        temp, .false.,             &
                                        2, (/1, 1, 2, 2/),         &
-                                       get_print_unit(), 5)
+                                       get_print_unit(), 0)
             val_expt(:, 1) = val_expt(:, 1) + temp(1:num_expt)
 
             ! beta' matrix
@@ -294,7 +294,7 @@ contains
                                        1, (/D/), num_expt,        &
                                        temp, .false.,             &
                                        1, (/2, 2/),               &
-                                       get_print_unit(), 5)
+                                       get_print_unit(), 0)
             val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*temp(1:num_expt)
 
             ! kinetic energy
@@ -317,7 +317,7 @@ contains
                                           1, (/T/), num_expt*3,        &
                                           temp, .false.,               &
                                           2, (/1, 2, 2, 1/),           &
-                                          get_print_unit(), 5)
+                                          get_print_unit(), 0)
                do i = 1, num_expt
                   val_expt(i, 1) = val_expt(i, 1) + openrsp_const_speed_of_light*temp((i-1)*3 + ixyz)
                end do
@@ -460,7 +460,7 @@ contains
 #else
                                      1, (/1, 1/),                &
 #endif
-                                     get_print_unit(), 5)
+                                     get_print_unit(), 0)
          end if
     
       end if
@@ -551,7 +551,7 @@ contains
                                       .false., .false., .false.,   &  !not implemented yet
                                       num_ints, oneint, .false.,   &  !integral matrices
                                       1, (/1, 1/),                 &
-                                      get_print_unit(), 5)
+                                      get_print_unit(), 0)
         
          ! only geometric perturbations
          else
@@ -571,7 +571,7 @@ contains
                                       .false., .false., .false., &  !not implemented yet
                                       num_ints, oneint, .false., &  !integral matrices
                                       1, (/1, 1/),               &
-                                      get_print_unit(), 5)
+                                      get_print_unit(), 0)
 #endif
          end if
     
