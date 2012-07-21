@@ -391,7 +391,7 @@ contains
       if (any(f=='EL  ')) then
     
          do i = 1, product(nc)
-            call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+            call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          end do
     
       else
@@ -422,7 +422,7 @@ contains
              do i = 0, nc(1)-1
                 ! allocate, if needed
                 if (.not.isdef(ovl(1+i))) then
-                   call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+                   call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
                 end if
                 ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
                 call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
@@ -439,7 +439,7 @@ contains
            ! allocates matrices
            do i = 1, num_ints
              if (.not.isdef(ovl(i))) then
-               call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+               call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
              end if
            end do
            ! calculates the overlap matrix
@@ -495,7 +495,7 @@ contains
       type(matrix) :: A
     
       if (count(f=='EL  ') > 1) then
-         call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+         call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          do i = 1, product(nc)
             if (iszero(oneint(i))) then
                call mat_ensure_alloc(oneint(i))
@@ -532,7 +532,7 @@ contains
 
          do imat = 1, size(oneint)
             if (.not.isdef(oneint(imat))) then
-               call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+               call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
             end if
          end do
 
@@ -557,8 +557,7 @@ contains
          else
 #ifdef PRG_DIRAC
             print *, 'error: adapt oneint, cannot work like this'
-            stop 1
-#endif
+#else
             call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
                                       0,                         &  !multipole moments
                                       0,                         &
@@ -573,6 +572,7 @@ contains
                                       num_ints, oneint, .false., &  !integral matrices
                                       1, (/1, 1/),               &
                                       get_print_unit(), 5)
+#endif
          end if
     
       end if
