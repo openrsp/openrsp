@@ -254,103 +254,121 @@ contains
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
    subroutine interface_1el_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
-     ! Gen1Int interface
+      ! Gen1Int interface
 #ifdef VAR_LINSCA
-     use gen1int_host
+      use gen1int_host
 #else
-     use gen1int_api
+      use gen1int_api
 #endif
-     integer, intent(in)          :: nr_ao
-     !> number of fields
-     integer,       intent(in)    :: nf
-     !> field labels in std order
-     character(4),  intent(in)    :: f(nf)
-     !> first and number of- components in each field
-     integer,       intent(in)    :: c(nf), nc(nf)
-     !> resulting overlap integral matrices (incoming content deleted)
-     type(matrix),  intent(inout) :: ovl(product(nc))
-     !> frequencies of each field
-     complex(8),    intent(in),    optional :: w(nf)
-     !> Fock matrices to which the half-differentiated overlap
-     !> contribution is ADDED
-     type(matrix),  intent(inout), optional :: fock(product(nc))
-     !------------------------------------------------
-     integer      i
-     integer order_geo  !order of total geometric derivatives
-     integer num_atom   !number of atoms
-     integer num_coord  !number of atomic coordinates
-     integer num_geom   !number of total geometric derivatives
-     integer num_ints   !number of integral matrices
-     if (present(w) .and. .not.present(fock))                                      &
-        call quit("error in interface_1el_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
-                  "must both be present or both absent")
- 
-   if (any(f=='EL  ')) then
- 
-      do i = 1, product(nc)
-         call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
-      end do
- 
-   else
- 
-     ! gets the order of total geometric derivatives
-     order_geo = count(f=='GEO ')
-     if (order_geo/=nf) &
-       call quit("interface_1el_ovlint>> only geometric derivatives implemented!")
-     ! sets the number of total geometric derivatives
-     num_atom = get_nr_atoms()
-     num_coord = 3*num_atom
-     num_geom = num_coord**order_geo
-     ! sets the number of integral matrices
-     num_ints = num_geom
-     if (num_ints/=size(ovl)) &
-       call quit("interface_1el_ovlint>> returning specific components not implemented!")
- !FIXME changes to call Gen1Int
-     ! with field frequencies
-     if (present(w)) then
-       if (order_geo==1) then
-         ! loop over nuclear coordinates
-         do i = 0, nc(1)-1
-            ! allocate, if needed
-            if (.not.isdef(ovl(1+i))) then
-               call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+      integer, intent(in)          :: nr_ao
+      !> number of fields
+      integer,       intent(in)    :: nf
+      !> field labels in std order
+      character(4),  intent(in)    :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: c(nf), nc(nf)
+      !> resulting overlap integral matrices (incoming content deleted)
+      type(matrix),  intent(inout) :: ovl(product(nc))
+      !> frequencies of each field
+      complex(8),    intent(in),    optional :: w(nf)
+      !> Fock matrices to which the half-differentiated overlap
+      !> contribution is ADDED
+      type(matrix),  intent(inout), optional :: fock(product(nc))
+      !------------------------------------------------
+      integer      i
+      integer order_geo  !order of total geometric derivatives
+      integer num_atom   !number of atoms
+      integer num_coord  !number of atomic coordinates
+      integer num_geom   !number of total geometric derivatives
+      integer num_ints   !number of integral matrices
+      logical :: all_frequencies_zero
+
+      if (present(w) .and. .not. present(fock)) then
+         call quit("error in interface_1el_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
+                   "must both be present or both absent")
+      end if
+
+      all_frequencies_zero = .true.
+      if (present(w)) then
+         do i = 1, nf
+            if ((dabs(real(w(i))) > tiny(0.0d0))) then
+               all_frequencies_zero = .false.
             end if
-            ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
-            call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
-            ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
-            fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
-            fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
-            ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
          end do
- !FIXME to Andreas: do we need higher order geometric derivatives of overlap integrals with frequencies?
-       else
-         call quit('interface_1el_ovlint>> GEO(>1) with freqencies not implemented!')
-       end if
-     else
-       ! allocates matrices
-       do i = 1, num_ints
-         if (.not.isdef(ovl(i))) then
-           call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
-         end if
-       end do
-       ! calculates the overlap matrix
-       call gen1int_host_get_int(NON_LAO, INT_OVERLAP,       &
-                                 0,                          &  !multipole moments
-                                 0,                          &
-                                 0, 0, 0,                    &  !magnetic derivatives
-                                 0, 0, 0,                    &  !derivatives w.r.t. total RAM
-                                 0, 0,                       &  !partial geometric derivatives
-                                 min(2,order_geo,num_atom),  &  !total geometric derivatives
-                                 order_geo,                  &
-                                 0, (/0/),                   &
-                                 REDUNDANT_GEO,              &
-                                 .false., .false., .false.,  &  !not implemented yet
-                                 num_ints, ovl, .false.,     &  !integral matrices
-                                 1, (/1, 1/),                &
-                                 get_print_unit(), 5)
-     end if
+      end if
  
-   end if
+      if (any(f=='EL  ')) then
+    
+         do i = 1, product(nc)
+            call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+         end do
+    
+      else
+    
+         ! gets the order of total geometric derivatives
+         order_geo = count(f=='GEO ')
+         if (order_geo/=nf) then
+           call quit("interface_1el_ovlint>> only geometric derivatives implemented!")
+         end if
+
+         ! sets the number of total geometric derivatives
+         num_atom = get_nr_atoms()
+         num_coord = 3*num_atom
+         num_geom = num_coord**order_geo
+
+         ! sets the number of integral matrices
+         num_ints = num_geom
+
+         if (num_ints/=size(ovl)) then
+            call quit("interface_1el_ovlint>> returning specific components not implemented!")
+         end if
+
+         !FIXME changes to call Gen1Int
+         ! with field frequencies
+         if (.not. all_frequencies_zero) then
+           if (order_geo==1) then
+             ! loop over nuclear coordinates
+             do i = 0, nc(1)-1
+                ! allocate, if needed
+                if (.not.isdef(ovl(1+i))) then
+                   call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+                end if
+                ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
+                call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
+                ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
+                fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
+                fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
+                ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
+             end do
+     !FIXME to Andreas: do we need higher order geometric derivatives of overlap integrals with frequencies?
+           else
+             call quit('interface_1el_ovlint>> GEO(>1) with freqencies not implemented!')
+           end if
+         else
+           ! allocates matrices
+           do i = 1, num_ints
+             if (.not.isdef(ovl(i))) then
+               call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+             end if
+           end do
+           ! calculates the overlap matrix
+           call gen1int_host_get_int(NON_LAO, INT_OVERLAP,       &
+                                     0,                          &  !multipole moments
+                                     0,                          &
+                                     0, 0, 0,                    &  !magnetic derivatives
+                                     0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                     0, 0,                       &  !partial geometric derivatives
+                                     min(2,order_geo,num_atom),  &  !total geometric derivatives
+                                     order_geo,                  &
+                                     0, (/0/),                   &
+                                     REDUNDANT_GEO,              &
+                                     .false., .false., .false.,  &  !not implemented yet
+                                     num_ints, ovl, .false.,     &  !integral matrices
+                                     1, (/1, 1/),                &
+                                     get_print_unit(), 5)
+         end if
+    
+      end if
    end subroutine
 
    subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
