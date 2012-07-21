@@ -229,6 +229,8 @@ contains
                                        get_print_unit(), 5)
          ! only geometric perturbations
          else
+
+#ifdef PRG_DALTON
             call gen1int_host_get_expt(NON_LAO, INT_ONE_HAMIL,    &
                                        0,                         &  !multipole moments
                                        0,                         &
@@ -244,6 +246,27 @@ contains
                                        val_expt, .false.,         &
                                        1, (/1, 1/),               &
                                        get_print_unit(), 5)
+#endif /* ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+            call gen1int_host_get_expt(NON_LAO, INT_POT_ENERGY,   &
+                                       0,                         &
+                                       0,                         &
+                                       0, 0, 0,                   &
+                                       0, 0, 0,                   &
+                                       0, 0,                      &
+                                       min(3,order_geo,num_atom), &
+                                       order_geo,                 &
+                                       0, (/0/),                  &
+                                       REDUNDANT_GEO,             &
+                                       .false., .false., .false., &
+                                       1, (/D/), num_expt,        &
+                                       val_expt, .false.,         &
+                                       1, (/1, 1, 2, 2/),         &
+                                       get_print_unit(), 5)
+            print *, 'raboof val expt', val_expt
+#endif /* ifdef PRG_DALTON */
+
          end if
 
          ! assigns the output average
@@ -467,6 +490,10 @@ contains
         
          ! only geometric perturbations
          else
+#ifdef PRG_DIRAC
+            print *, 'error: adapt oneint, cannot work like this'
+            stop 1
+#endif
             call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
                                       0,                         &  !multipole moments
                                       0,                         &
