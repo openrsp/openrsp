@@ -197,26 +197,16 @@ contains
                           )
 
     print *, 'dipole z          =', dot(TZ, D)
-    call rsp_mosolver_exec((/TZ/), (/0.0d0/), Dp)
-    print *, 'polarizability zz =', -dot(TZ, Dp(1))
+!   call rsp_mosolver_exec((/TZ/), (/0.0d0/), Dp)
+!   print *, 'polarizability zz =', -dot(TZ, Dp(1))
 
     TX = 0
     TY = 0
     TZ = 0
 #endif /* ifdef PRG_DIRAC */
 
-
-
-
-
-
     H1 = 0
     G  = 0
-
-#ifdef PRG_DIRAC
-!   stop here, nothing below can work on the dirac side
-    stop 1
-#endif
 
 #ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
@@ -240,7 +230,7 @@ contains
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if
-#endif
+#endif /* ifdef PRG_DIRAC */
 
     num_atoms = get_nr_atoms()
 
