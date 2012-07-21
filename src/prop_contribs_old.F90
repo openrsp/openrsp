@@ -1711,7 +1711,7 @@ contains
       ! if A is zero, get it allocated
       if (iszero(A)) call mat_ensure_alloc(A)
       ! read integrals from file into A
-      call di_read_operator_int(lab, A)
+      call legacy_read_integrals(lab, A)
    end subroutine
 
 

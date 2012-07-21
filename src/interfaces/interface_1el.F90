@@ -17,7 +17,7 @@ module interface_1el
    public oneint_ave
    public get1in_ave_ifc
    public onedrv_ave_ifc
-   public di_read_operator_int
+   public legacy_read_integrals
 
    private
 
@@ -110,7 +110,7 @@ contains
                ! loop over nuclear coordinates
                do i = 0, nc(1)-1
                   ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
-                  call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
+                  call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
                   A(1) = -A(1) !SQHDR is really -dS>/dg
                   A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
                   A(1) = A(1) + trps(A(1)) !=1DOVL
@@ -334,7 +334,7 @@ contains
                    call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
                 end if
                 ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
-                call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
+                call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
                 ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
                 fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
                 fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
@@ -783,7 +783,7 @@ contains
   !> \param prop_lab is the label of integral
   !> \param init_prop indicates if initialize the integral matrix
   !> \return prop_int contains the integral matrix
-  subroutine di_read_operator_int( prop_lab, prop_int )
+  subroutine legacy_read_integrals( prop_lab, prop_int )
     character*(8), intent(in) :: prop_lab
     type(matrix), intent(inout) :: prop_int
     ! uses NBAST, NNBAST, NNBASX, N2BASX
