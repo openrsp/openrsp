@@ -72,6 +72,8 @@ MODULE MODULE_INTEREST_ERI_DIFF
   type(type_atom),    allocatable :: atom(:)
   type(type_gto),     allocatable :: gto(:)
 
+  logical :: is_initialized = .false.
+
 CONTAINS
 ! ------------------------------------------------------------------------------------
 !>
@@ -95,6 +97,7 @@ CONTAINS
     integer :: ier
     type( type_gto ) :: tmpgto
 
+    if (is_initialized) return
 
     !> initialize InteRest integral package
     call interest_initialize()
@@ -174,6 +177,8 @@ CONTAINS
     write(6,'(2x,a,i5  )') 'Total number of spherical basis functions:',sum(gto(:)%sdegen)
     write(6,'(2x,a,i5,a)') 'Total number of cartesian basis functions:',sum(gto(:)%cdegen),' (used for calculation)'
     write(6,*)
+
+    is_initialized = .true.
 #endif /* ifdef PRG_DIRAC */
 
   END SUBROUTINE
