@@ -158,97 +158,104 @@ contains
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
    subroutine interface_1el_oneave(nf, f, c, nc, D, ave)
-     ! Gen1Int interface
+      ! Gen1Int interface
 #ifdef VAR_LINSCA
-     use gen1int_host
+      use gen1int_host
 #else
-     use gen1int_api
+      use gen1int_api
 #endif
-     !> number of fields
-     integer,       intent(in)  :: nf
-     !> field labels in std order
-     character(4),  intent(in)  :: f(nf)
-     !> first and number of- components in each field
-     integer,       intent(in)  :: c(nf), nc(nf)
-     !> density matrix to average over
-     type(matrix),  intent(in)  :: D
-     !> output average
-     complex(8),    intent(out) :: ave(product(nc))
-     !----------------------------------------------
-     integer order_mom                      !order of Cartesian multipole moments
-     integer num_mom                        !number of Cartesian multipole moments
-     integer order_geo                      !order of total geometric derivatives
-     integer num_atom                       !number of atoms
-     integer num_coord                      !number of atomic coordinates
-     integer num_geom                       !number of total geometric derivatives
-     integer num_expt                       !number of all expectation values
-     real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
-     integer ierr                           !error information
-     ! gets the order of Cartesian multipole moments
-     order_mom = count(f=='EL  ')
- 
-   if (order_mom > 1) then
-      ave = 0.0
-   else
- 
-     ! gets the order of total geometric derivatives
-     order_geo = count(f=='GEO ')
-     if (order_mom+order_geo/=nf) &
-       call quit("interface_1el_oneave>> only electric and geometric perturbations implemented!")
-     ! sets the number of operators and derivatives
-     num_mom = (order_mom+1)*(order_mom+2)/2
-     num_atom = get_nr_atoms()
-     num_coord = 3*num_atom
-     num_geom = num_coord**order_geo
-     ! allocates memory for expectation values
-     num_expt = num_mom*num_geom
-     allocate(val_expt(num_expt,1), stat=ierr)
-     if (ierr/=0) call quit("interface_1el_oneave>> failed to allocate val_expt!")
-     val_expt = 0.0
-     ! electric perturbations
-     if (order_mom/=0) then
-       call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
-                                  order_mom,                   &  !multipole moments
-                                  0,                           &
-                                  0, 0, 0,                     &  !magnetic derivatives
-                                  0, 0, 0,                     &  !derivatives w.r.t. total RAM
-                                  0, 0,                        &  !partial geometric derivatives
-                                  min(3,order_geo,num_atom),   &  !total geometric derivatives
-                                  order_geo,                   &
-                                  0, (/0/),                    &
-                                  REDUNDANT_GEO,               &
-                                  .false., .false., .false.,   &  !not implemented yet
-                                  1, (/D/), num_expt,          &  !expectation values
-                                  val_expt, .false.,           &
-                                  1, (/1, 1/),                 &
-                                  get_print_unit(), 5)
-     ! only geometric perturbations
-     else
-       call gen1int_host_get_expt(NON_LAO, INT_ONE_HAMIL,    &
-                                  0,                         &  !multipole moments
-                                  0,                         &
-                                  0, 0, 0,                   &  !magnetic derivatives
-                                  0, 0, 0,                   &  !derivatives w.r.t. total RAM
-                                  0, 0,                      &  !partial geometric derivatives
-                                  min(3,order_geo,num_atom), &  !total geometric derivatives
-                                  order_geo,                 &
-                                  0, (/0/),                  &
-                                  REDUNDANT_GEO,             &
-                                  .false., .false., .false., &  !not implemented yet
-                                  1, (/D/), num_expt,        &  !expectation values
-                                  val_expt, .false.,         &
-                                  1, (/1, 1/),               &
-                                  get_print_unit(), 5)
-     end if
-     ! assigns the output average
-     call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
-                          first_comp=c, num_comp=nc,                &
-                          order_mom=order_mom, order_geo=order_geo, &
-                          val_expect=val_expt(:,1), rsp_expect=ave)
-     ! frees space
-     deallocate(val_expt)
- 
-   end if
+      !> number of fields
+      integer,       intent(in)  :: nf
+      !> field labels in std order
+      character(4),  intent(in)  :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)  :: c(nf), nc(nf)
+      !> density matrix to average over
+      type(matrix),  intent(in)  :: D
+      !> output average
+      complex(8),    intent(out) :: ave(product(nc))
+      !----------------------------------------------
+      integer order_mom                      !order of Cartesian multipole moments
+      integer num_mom                        !number of Cartesian multipole moments
+      integer order_geo                      !order of total geometric derivatives
+      integer num_atom                       !number of atoms
+      integer num_coord                      !number of atomic coordinates
+      integer num_geom                       !number of total geometric derivatives
+      integer num_expt                       !number of all expectation values
+      real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
+      integer ierr                           !error information
+
+      ! gets the order of Cartesian multipole moments
+      order_mom = count(f=='EL  ')
+    
+      if (order_mom > 1) then
+         ave = 0.0
+      else
+    
+         ! gets the order of total geometric derivatives
+         order_geo = count(f=='GEO ')
+         if (order_mom+order_geo/=nf) then
+            call quit("interface_1el_oneave>> only electric and geometric perturbations implemented!")
+         end if
+
+         ! sets the number of operators and derivatives
+         num_mom = (order_mom+1)*(order_mom+2)/2
+         num_atom = get_nr_atoms()
+         num_coord = 3*num_atom
+         num_geom = num_coord**order_geo
+
+         ! allocates memory for expectation values
+         num_expt = num_mom*num_geom
+         allocate(val_expt(num_expt,1), stat=ierr)
+         if (ierr/=0) call quit("interface_1el_oneave>> failed to allocate val_expt!")
+         val_expt = 0.0
+
+         ! electric perturbations
+         if (order_mom/=0) then
+            call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
+                                       order_mom,                   &  !multipole moments
+                                       0,                           &
+                                       0, 0, 0,                     &  !magnetic derivatives
+                                       0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                       0, 0,                        &  !partial geometric derivatives
+                                       min(3,order_geo,num_atom),   &  !total geometric derivatives
+                                       order_geo,                   &
+                                       0, (/0/),                    &
+                                       REDUNDANT_GEO,               &
+                                       .false., .false., .false.,   &  !not implemented yet
+                                       1, (/D/), num_expt,          &  !expectation values
+                                       val_expt, .false.,           &
+                                       1, (/1, 1/),                 &
+                                       get_print_unit(), 5)
+         ! only geometric perturbations
+         else
+            call gen1int_host_get_expt(NON_LAO, INT_ONE_HAMIL,    &
+                                       0,                         &  !multipole moments
+                                       0,                         &
+                                       0, 0, 0,                   &  !magnetic derivatives
+                                       0, 0, 0,                   &  !derivatives w.r.t. total RAM
+                                       0, 0,                      &  !partial geometric derivatives
+                                       min(3,order_geo,num_atom), &  !total geometric derivatives
+                                       order_geo,                 &
+                                       0, (/0/),                  &
+                                       REDUNDANT_GEO,             &
+                                       .false., .false., .false., &  !not implemented yet
+                                       1, (/D/), num_expt,        &  !expectation values
+                                       val_expt, .false.,         &
+                                       1, (/1, 1/),               &
+                                       get_print_unit(), 5)
+         end if
+
+         ! assigns the output average
+         call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
+                              first_comp=c, num_comp=nc,                &
+                              order_mom=order_mom, order_geo=order_geo, &
+                              val_expect=val_expt(:,1), rsp_expect=ave)
+
+         ! frees space
+         deallocate(val_expt)
+    
+      end if
    end subroutine
 
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
@@ -372,104 +379,111 @@ contains
    end subroutine
 
    subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
-     ! Gen1Int interface
+      ! Gen1Int interface
 #ifdef VAR_LINSCA
-     use gen1int_host
+      use gen1int_host
 #else
-     use gen1int_api
+      use gen1int_api
 #endif
-     integer, intent(in)          :: nr_ao
-     !> number of fields
-     integer,       intent(in)    :: nf
-     !> field labels in std order
-     character(4),  intent(in)    :: f(nf)
-     !> first and number of- components in each field
-     integer,       intent(in)    :: c(nf), nc(nf)
-     !> output perturbed integrals
-     type(matrix),  intent(inout) :: oneint(product(nc))
-     !--------------------------------------------------
-     integer order_mom  !order of Cartesian multipole moments
-     integer num_mom    !number of Cartesian multipole moments
-     integer order_geo  !order of total geometric derivatives
-     integer num_atom   !number of atoms
-     integer num_coord  !number of atomic coordinates
-     integer num_geom   !number of total geometric derivatives
-     integer num_ints   !number of all integral matrices
-     integer imat       !incremental recorder over matrices
-     integer :: i
-     type(matrix) :: A
- 
-   if (count(f=='EL  ') > 1) then
-      call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
-      do i = 1, product(nc)
-         if (iszero(oneint(i))) then
-            call mat_ensure_alloc(oneint(i))
-            oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
-         else
-            oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+      integer, intent(in)          :: nr_ao
+      !> number of fields
+      integer,       intent(in)    :: nf
+      !> field labels in std order
+      character(4),  intent(in)    :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: c(nf), nc(nf)
+      !> output perturbed integrals
+      type(matrix),  intent(inout) :: oneint(product(nc))
+      !--------------------------------------------------
+      integer order_mom  !order of Cartesian multipole moments
+      integer num_mom    !number of Cartesian multipole moments
+      integer order_geo  !order of total geometric derivatives
+      integer num_atom   !number of atoms
+      integer num_coord  !number of atomic coordinates
+      integer num_geom   !number of total geometric derivatives
+      integer num_ints   !number of all integral matrices
+      integer imat       !incremental recorder over matrices
+      integer :: i
+      type(matrix) :: A
+    
+      if (count(f=='EL  ') > 1) then
+         call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+         do i = 1, product(nc)
+            if (iszero(oneint(i))) then
+               call mat_ensure_alloc(oneint(i))
+               oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+            else
+               oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+            end if
+         end do
+    
+      else
+    
+         ! gets the order of Cartesian multipole moments
+         order_mom = count(f=='EL  ')
+         ! gets the order of total geometric derivatives
+         order_geo = count(f=='GEO ')
+         if (order_mom+order_geo/=nf) then
+           call quit("interface_1el_oneint>> only electric and geometric perturbations implemented!")
          end if
-      end do
- 
-   else
- 
-     ! gets the order of Cartesian multipole moments
-     order_mom = count(f=='EL  ')
-     ! gets the order of total geometric derivatives
-     order_geo = count(f=='GEO ')
-     if (order_mom+order_geo/=nf) &
-       call quit("interface_1el_oneint>> only electric and geometric perturbations implemented!")
-     ! sets the number of operators and derivatives
-     num_mom = (order_mom+1)*(order_mom+2)/2
-     num_atom = get_nr_atoms()
-     num_coord = 3*num_atom
-     num_geom = num_coord**order_geo
-     num_ints = num_mom*num_geom
-     if (num_ints/=size(oneint)) &
-       call quit("interface_1el_oneint>> returning specific components is not implemented!")
- !FIXME: it is better that we use unique components for higher order
-     if (order_mom>1) &
-       call quit("interface_1el_oneint>> only the first Cartesian multipole moments implemented!")
-     do imat = 1, size(oneint)
-       if (.not.isdef(oneint(imat))) then
-         call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
-       end if
-     end do
-     ! electric perturbations
-     if (order_mom/=0) then
-       call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
-                                 order_mom,                   &  !multipole moments
-                                 0,                           &
-                                 0, 0, 0,                     &  !magnetic derivatives
-                                 0, 0, 0,                     &  !derivatives w.r.t. total RAM
-                                 0, 0,                        &  !partial geometric derivatives
-                                 min(3,order_geo,num_atom),   &  !total geometric derivatives
-                                 order_geo,                   &
-                                 0, (/0/),                    &
-                                 REDUNDANT_GEO,               &
-                                 .false., .false., .false.,   &  !not implemented yet
-                                 num_ints, oneint, .false.,   &  !integral matrices
-                                 1, (/1, 1/),                 &
-                                 get_print_unit(), 5)
- 
-     ! only geometric perturbations
-     else
-       call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
-                                 0,                         &  !multipole moments
-                                 0,                         &
-                                 0, 0, 0,                   &  !magnetic derivatives
-                                 0, 0, 0,                   &  !derivatives w.r.t. total RAM
-                                 0, 0,                      &  !partial geometric derivatives
-                                 min(3,order_geo,num_atom), &  !total geometric derivatives
-                                 order_geo,                 &
-                                 0, (/0/),                  &
-                                 REDUNDANT_GEO,             &
-                                 .false., .false., .false., &  !not implemented yet
-                                 num_ints, oneint, .false., &  !integral matrices
-                                 1, (/1, 1/),               &
-                                 get_print_unit(), 5)
-     end if
- 
-   end if
+
+         ! sets the number of operators and derivatives
+         num_mom = (order_mom+1)*(order_mom+2)/2
+         num_atom = get_nr_atoms()
+         num_coord = 3*num_atom
+         num_geom = num_coord**order_geo
+         num_ints = num_mom*num_geom
+         if (num_ints/=size(oneint)) then
+            call quit("interface_1el_oneint>> returning specific components is not implemented!")
+         end if
+
+         !FIXME: it is better that we use unique components for higher order
+         if (order_mom>1) then
+            call quit("interface_1el_oneint>> only the first Cartesian multipole moments implemented!")
+         end if
+
+         do imat = 1, size(oneint)
+            if (.not.isdef(oneint(imat))) then
+               call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
+            end if
+         end do
+
+         ! electric perturbations
+         if (order_mom/=0) then
+            call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
+                                      order_mom,                   &  !multipole moments
+                                      0,                           &
+                                      0, 0, 0,                     &  !magnetic derivatives
+                                      0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                      0, 0,                        &  !partial geometric derivatives
+                                      min(3,order_geo,num_atom),   &  !total geometric derivatives
+                                      order_geo,                   &
+                                      0, (/0/),                    &
+                                      REDUNDANT_GEO,               &
+                                      .false., .false., .false.,   &  !not implemented yet
+                                      num_ints, oneint, .false.,   &  !integral matrices
+                                      1, (/1, 1/),                 &
+                                      get_print_unit(), 5)
+        
+         ! only geometric perturbations
+         else
+            call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
+                                      0,                         &  !multipole moments
+                                      0,                         &
+                                      0, 0, 0,                   &  !magnetic derivatives
+                                      0, 0, 0,                   &  !derivatives w.r.t. total RAM
+                                      0, 0,                      &  !partial geometric derivatives
+                                      min(3,order_geo,num_atom), &  !total geometric derivatives
+                                      order_geo,                 &
+                                      0, (/0/),                  &
+                                      REDUNDANT_GEO,             &
+                                      .false., .false., .false., &  !not implemented yet
+                                      num_ints, oneint, .false., &  !integral matrices
+                                      1, (/1, 1/),               &
+                                      get_print_unit(), 5)
+         end if
+    
+      end if
    end subroutine
 
   !> \brief reorders and assigns the expectation values and/or integral matrices from
