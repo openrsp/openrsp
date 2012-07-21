@@ -1,5 +1,6 @@
 module interface_scf
 
+   use openrsp_const
    use matrix_defop
    use interface_f77_memory
    use interface_pcm
@@ -382,7 +383,6 @@ contains
 
 #ifdef PRG_DIRAC
       type(matrix)       :: T, TX, TY, TZ
-      real(8), parameter :: speed_of_light = 137.0359998d0
 
 ! uses nz
 #include "dgroup.h"
@@ -418,7 +418,7 @@ contains
       H1%elms_alpha = 0.0d0
 
       ! kinetic energy = c (\vec \alpha \cdot \vec p)
-      H1 = H1 - speed_of_light*T
+      H1 = H1 - openrsp_const_speed_of_light*T
 
       call get_1el_integrals(                            &
                              M=(/T/),                    &
@@ -433,7 +433,7 @@ contains
                             )
 
       ! shifted rest mass energy = \beta' c*c
-      H1 = H1 - 2.0d0*speed_of_light*speed_of_light*T
+      H1 = H1 - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*T
 
       call get_1el_integrals(                            &
                              M=(/T/),                    &
