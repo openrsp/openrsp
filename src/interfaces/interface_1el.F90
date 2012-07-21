@@ -26,122 +26,130 @@ contains
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
    subroutine interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
-     ! Gen1Int interface
+      ! Gen1Int interface
 #ifdef VAR_LINSCA
-     use gen1int_host
+      use gen1int_host
 #else
-     use gen1int_api
+      use gen1int_api
 #endif
-     !> number of fields
-     integer,       intent(in)  :: nf
-     !> field labels in std order
-     character(4),  intent(in)  :: f(nf)
-     !> first and number of- components in each field
-     integer,       intent(in)  :: c(nf), nc(nf)
-     !> energy-weighted density matrix
-     type(matrix),  intent(in)  :: DFD
-     !> output average
-     complex(8),    intent(out) :: ave(product(nc))
-     !> field frequencies corresponding to each field
-     complex(8),    intent(in), optional  :: w(nf)
-     !> density matrix to contract half-differentiated overlap against
-     type(matrix),  intent(in), optional  :: D
-     !----------------------------------------------
-     type(matrix) A(2)
-     real(8), parameter   :: fdistep = 2d0**(-25)
-     real(8), allocatable :: tmp(:,:,:)
-     real(8), allocatable :: fdi(:,:)
-     integer i
-     integer order_geo                      !order of total geometric derivatives
-     integer num_atom                       !number of atoms
-     integer num_coord                      !number of atomic coordinates
-     integer num_geom                       !number of total geometric derivatives
-     integer num_expt                       !number of all expectation values
-     real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
-     integer ierr                           !error information
-     if (present(w) .and. .not.present(D)) &
-        call quit("error in interface_1el_ovlave: frequencies 'w' and density 'D' " &
-               // 'must both be present or both absent')
- 
-   if (any(f=='EL  ')) then
-      ave = 0.0
-   else
- 
-     ! gets the order of total geometric derivatives
-     order_geo = count(f=='GEO ')
-     if (order_geo/=nf) &
-       call quit("interface_1el_ovlave>> only geometric derivatives implemented!")
-     ! sets the number of total geometric derivatives
-     num_atom = get_nr_atoms()
-     num_coord = 3*num_atom
-     num_geom = num_coord**order_geo
-     ! allocates memory for expectation values
-     num_expt = num_geom
-     allocate(val_expt(num_expt,1), stat=ierr)
-     if (ierr/=0) call quit("interface_1el_ovlave>> failed to allocate val_expt!")
-     val_expt = 0.0
- !FIXME changes to call Gen1Int
- !FIXME \sum_{j+k=n} (-\sum_{j}w_{j}+\sum_{k}w_{k})/2 S(>)^{j}(<)^{k}
- ! When it comes to w, I think it's a better idea to ask the integral program for S>> and S<>, and multiply the resulting average or integral by w afterwards, rather than to send w into the integral program.
-     ! with field frequencies
-     if (present(w)) then
-       if (order_geo==1) then
-         ! allocate matrices for integrals
-         A(1) = mat_alloc_like(DFD)
-         if (present(w)) then
-            A(2) = mat_alloc_like(DFD)
+      !> number of fields
+      integer,       intent(in)  :: nf
+      !> field labels in std order
+      character(4),  intent(in)  :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)  :: c(nf), nc(nf)
+      !> energy-weighted density matrix
+      type(matrix),  intent(in)  :: DFD
+      !> output average
+      complex(8),    intent(out) :: ave(product(nc))
+      !> field frequencies corresponding to each field
+      complex(8),    intent(in), optional  :: w(nf)
+      !> density matrix to contract half-differentiated overlap against
+      type(matrix),  intent(in), optional  :: D
+      !----------------------------------------------
+      type(matrix) A(2)
+      real(8), parameter   :: fdistep = 2d0**(-25)
+      real(8), allocatable :: tmp(:,:,:)
+      real(8), allocatable :: fdi(:,:)
+      integer i
+      integer order_geo                      !order of total geometric derivatives
+      integer num_atom                       !number of atoms
+      integer num_coord                      !number of atomic coordinates
+      integer num_geom                       !number of total geometric derivatives
+      integer num_expt                       !number of all expectation values
+      real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
+      integer ierr                           !error information
+      
+      if (present(w) .and. .not. present(D)) then
+         call quit("error in interface_1el_ovlave: frequencies 'w' and density 'D' " &
+                // 'must both be present or both absent')
+      end if
+      
+      if (any(f == 'EL  ')) then
+         ave = 0.0
+      else
+      
+         ! gets the order of total geometric derivatives
+         order_geo = count(f=='GEO ')
+      
+         if (order_geo /= nf) then
+            call quit("interface_1el_ovlave>> only geometric derivatives implemented!")
          end if
-         ! loop over nuclear coordinates
-         do i = 0, nc(1)-1
-            ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
-            if (present(w)) then !w=0 means no -i/2 Tg contribution
-               call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
-               A(1) = -A(1) !SQHDR is really -dS>/dg
-               A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
-               A(1) = A(1) + trps(A(1)) !=1DOVL
+      
+         ! sets the number of total geometric derivatives
+         num_atom = get_nr_atoms()
+         num_coord = 3*num_atom
+         num_geom = num_coord**order_geo
+      
+         ! allocates memory for expectation values
+         num_expt = num_geom
+         allocate(val_expt(num_expt, 1), stat=ierr)
+         if (ierr /= 0) call quit("interface_1el_ovlave>> failed to allocate val_expt!")
+         val_expt = 0.0
+      
+         !FIXME changes to call Gen1Int !FIXME \sum_{j+k=n}
+         ! (-\sum_{j}w_{j}+\sum_{k}w_{k})/2 S(>)^{j}(<)^{k} ! When it comes to w, I think
+         ! it's a better idea to ask the integral program for S>> and S<>, and multiply
+         ! the resulting average or integral by w afterwards, rather than to send w into
+         ! the integral program.  ! with field frequencies
+         if (present(w)) then
+            if (order_geo==1) then
+               ! allocate matrices for integrals
+               A(1) = mat_alloc_like(DFD)
+               if (present(w)) then
+                  A(2) = mat_alloc_like(DFD)
+               end if
+               ! loop over nuclear coordinates
+               do i = 0, nc(1)-1
+                  ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
+                  if (present(w)) then !w=0 means no -i/2 Tg contribution
+                     call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
+                     A(1) = -A(1) !SQHDR is really -dS>/dg
+                     A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
+                     A(1) = A(1) + trps(A(1)) !=1DOVL
+                  else
+                     call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), A(1))
+                     A(1) = -A(1) !1DOVL is really -dS/dg
+                  end if
+                  ave(1+i) = -tr(A(1),DFD)
+                  if (present(w)) ave(1+i) = ave(1+i) + tr(A(2),D)
+               end do
+               A(1:2) = 0 !deallocate
             else
-               call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), A(1))
-               A(1) = -A(1) !1DOVL is really -dS/dg
+               call quit('interface_1el_ovlave>> GEO(>1) with freqencies not implemented!')
             end if
-            ave(1+i) = -tr(A(1),DFD)
-            if (present(w)) ave(1+i) = ave(1+i) + tr(A(2),D)
-         end do
-         A(1:2) = 0 !deallocate
-       else
-         call quit('interface_1el_ovlave>> GEO(>1) with freqencies not implemented!')
-       end if
-     else
-       ! calculates the expectaion values of overlap matrix
-       call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
-                                  0,                          &  !multipole moments
-                                  0,                          &
-                                  0, 0, 0,                    &  !magnetic derivatives
-                                  0, 0, 0,                    &  !derivatives w.r.t. total RAM
-                                  0, 0,                       &  !partial geometric derivatives
-                                  min(2,order_geo,num_atom),  &  !total geometric derivatives
-                                  order_geo,                  &
-                                  0, (/0/),                   &
-                                  REDUNDANT_GEO,              &
-                                  .false., .false., .false.,  &  !not implemented yet
-                                  1, (/DFD/), num_expt,       &  !expectation values
-                                  val_expt, .false.,          &
-                                  1, (/1, 1/),                &
-                                  get_print_unit(), 5)
-       val_expt = -val_expt
-       ! assigns the output average
-       if (order_geo==0) then
-         ave = val_expt(:,1)
-       else
-         call gen1int_reorder(num_coord=num_coord, num_field=nf, &
-                              first_comp=c, num_comp=nc,         &
-                              order_mom=0, order_geo=order_geo,  &
-                              val_expect=val_expt(:,1), rsp_expect=ave)
-       end if
-     end if
-     ! frees space
-     deallocate(val_expt)
- 
-   end if
+         else
+            ! calculates the expectaion values of overlap matrix
+            call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
+                                       0,                          &  !multipole moments
+                                       0,                          &
+                                       0, 0, 0,                    &  !magnetic derivatives
+                                       0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                       0, 0,                       &  !partial geometric derivatives
+                                       min(2,order_geo,num_atom),  &  !total geometric derivatives
+                                       order_geo,                  &
+                                       0, (/0/),                   &
+                                       REDUNDANT_GEO,              &
+                                       .false., .false., .false.,  &  !not implemented yet
+                                       1, (/DFD/), num_expt,       &  !expectation values
+                                       val_expt, .false.,          &
+                                       1, (/1, 1/),                &
+                                       get_print_unit(), 5)
+            val_expt = -val_expt
+            ! assigns the output average
+            if (order_geo==0) then
+               ave = val_expt(:,1)
+            else
+               call gen1int_reorder(num_coord=num_coord, num_field=nf, &
+                                    first_comp=c, num_comp=nc,         &
+                                    order_mom=0, order_geo=order_geo,  &
+                                    val_expect=val_expt(:,1), rsp_expect=ave)
+            end if
+         end if
+         ! frees space
+         deallocate(val_expt)
+      
+      end if
    end subroutine
 
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
