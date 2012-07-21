@@ -262,10 +262,9 @@ contains
                                        .false., .false., .false., &
                                        1, (/D/), num_expt,        &
                                        val_expt, .false.,         &
-                                       1, (/1, 1, 2, 2/),         &
+                                       2, (/1, 1, 2, 2/),         &
                                        get_print_unit(), 5)
-            print *, 'raboof val expt', val_expt
-#endif /* ifdef PRG_DALTON */
+#endif /* ifdef PRG_DIRAC */
 
          end if
 
