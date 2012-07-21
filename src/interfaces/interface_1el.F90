@@ -59,10 +59,20 @@ contains
       integer num_expt                       !number of all expectation values
       real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
       integer ierr                           !error information
+      logical :: all_frequencies_zero
       
       if (present(w) .and. .not. present(D)) then
          call quit("error in interface_1el_ovlave: frequencies 'w' and density 'D' " &
                 // 'must both be present or both absent')
+      end if
+
+      all_frequencies_zero = .true.
+      if (present(w)) then
+         do i = 1, nf
+            if ((dabs(real(w(i))) > tiny(0.0d0))) then
+               all_frequencies_zero = .false.
+            end if
+         end do
       end if
       
       if (any(f == 'EL  ')) then
@@ -92,27 +102,20 @@ contains
          ! it's a better idea to ask the integral program for S>> and S<>, and multiply
          ! the resulting average or integral by w afterwards, rather than to send w into
          ! the integral program.  ! with field frequencies
-         if (present(w)) then
+         if (.not. all_frequencies_zero) then
             if (order_geo==1) then
                ! allocate matrices for integrals
                A(1) = mat_alloc_like(DFD)
-               if (present(w)) then
-                  A(2) = mat_alloc_like(DFD)
-               end if
+               A(2) = mat_alloc_like(DFD)
                ! loop over nuclear coordinates
                do i = 0, nc(1)-1
                   ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
-                  if (present(w)) then !w=0 means no -i/2 Tg contribution
-                     call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
-                     A(1) = -A(1) !SQHDR is really -dS>/dg
-                     A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
-                     A(1) = A(1) + trps(A(1)) !=1DOVL
-                  else
-                     call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), A(1))
-                     A(1) = -A(1) !1DOVL is really -dS/dg
-                  end if
+                  call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
+                  A(1) = -A(1) !SQHDR is really -dS>/dg
+                  A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
+                  A(1) = A(1) + trps(A(1)) !=1DOVL
                   ave(1+i) = -tr(A(1),DFD)
-                  if (present(w)) ave(1+i) = ave(1+i) + tr(A(2),D)
+                  ave(1+i) = ave(1+i) + tr(A(2),D)
                end do
                A(1:2) = 0 !deallocate
             else
@@ -313,16 +316,11 @@ contains
                call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true., algebra=1)
             end if
             ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
-            if (present(w)) then
-               call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
-               ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
-               fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
-               fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
-               ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
-            else
-               call di_read_operator_int('1DOVL' // prefix_zeros(c(1)+i,3), ovl(1+i))
-               ovl(1+i) = -ovl(1+i) !1DOVL is really -dS/dg
-            end if
+            call di_read_operator_int('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
+            ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
+            fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
+            fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
+            ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
          end do
  !FIXME to Andreas: do we need higher order geometric derivatives of overlap integrals with frequencies?
        else
