@@ -137,7 +137,11 @@ contains
                                        .false., .false., .false.,  &  !not implemented yet
                                        1, (/DFD/), num_expt,       &  !expectation values
                                        val_expt, .false.,          &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
                                        1, (/1, 1/),                &
+#endif
                                        get_print_unit(), 5)
             val_expt = -val_expt
             ! assigns the output average
@@ -451,7 +455,11 @@ contains
                                      REDUNDANT_GEO,              &
                                      .false., .false., .false.,  &  !not implemented yet
                                      num_ints, ovl, .false.,     &  !integral matrices
+#ifdef PRG_DIRAC
+                                     2, (/1, 1, 2, 2/),          &
+#else
                                      1, (/1, 1/),                &
+#endif
                                      get_print_unit(), 5)
          end if
     
