@@ -68,6 +68,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_rsp_solver.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_basis.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_dirac_gen1int.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_interest.F90
     ${PROJECT_SOURCE_DIR}/src/input/parse_input.F90
     ${PROJECT_SOURCE_DIR}/src/input/openrsp_cfg.F90
     ${PROJECT_SOURCE_DIR}/src/input/input_reader.F90
@@ -77,7 +78,6 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_eri_rkb.f90
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_hrr.f90
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_osr.f90
-    ${PROJECT_SOURCE_DIR}/src/interfaces/module_interest_eri_diff.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp_const.F90
     )
 
