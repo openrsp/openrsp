@@ -37,7 +37,6 @@ contains
 
    subroutine initialize_interest_eri_diff()
 
-#ifdef PRG_DIRAC
 #include "mxcent.h"
 #include "maxorb.h"
 #include "maxaqn.h"
@@ -45,8 +44,10 @@ contains
 #include "shells.h"
 #include "aovec.h"
 #include "primit.h"
+#ifdef PRG_DIRAC
 #include "dcbdhf.h"
 #include "nucdata.h"
+#endif
 
       integer        :: i
       integer        :: j
@@ -113,7 +114,6 @@ contains
       print *, 'total number of cartesian basis functions:', sum(gto(:)%cdegen)
 
       interface_is_initialized = .true.
-#endif /* ifdef PRG_DIRAC */
 
    end subroutine
 
@@ -138,7 +138,6 @@ contains
       real(8), intent(out) :: Gmat(ndim, ndim, 4)
       integer, intent(in)  :: iblocks(4)
 
-#ifdef PRG_DIRAC
       integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
 
       real(8) :: gout(max_nr_integrals)
@@ -250,11 +249,9 @@ contains
             end do kloop
          end do jloop
       end do iloop
-#endif /* ifdef PRG_DIRAC */
 
    end subroutine
 
-#ifdef PRG_DIRAC
    subroutine process_dG(n,    &
                          o,    &
                          gout, &
@@ -308,18 +305,19 @@ contains
                   bas(1) = o(1) + i
                   Gmat(bas(1), bas(4), 1) = Gmat(bas(1), bas(4), 1) &
                                           - gout(k, l, i, j)*pkj(1)
+#ifdef PRG_DIRAC
                   Gmat(bas(1), bas(4), 2) = Gmat(bas(1), bas(4), 2) &
                                           - gout(k, l, i, j)*pkj(2)
                   Gmat(bas(1), bas(4), 3) = Gmat(bas(1), bas(4), 3) &
                                           - gout(k, l, i, j)*pkj(3)
                   Gmat(bas(1), bas(4), 4) = Gmat(bas(1), bas(4), 4) &
                                           - gout(k, l, i, j)*pkj(4)
+#endif
                end do
             end do
          end do
       end do
 
   end subroutine
-#endif /* ifdef PRG_DIRAC */
 
 end module
