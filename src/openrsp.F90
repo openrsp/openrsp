@@ -232,10 +232,6 @@ end subroutine
 
   subroutine openrsp_calc()
 
-!   logical, intent(in) :: dryrun
-!   integer             :: LUCMD
-!   character(80) word
-!   integer       num_lines_read, err, l, i
     integer       :: kn(2)
     type(p_tuple) :: perturbation_tuple
 
