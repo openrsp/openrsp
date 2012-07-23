@@ -85,7 +85,7 @@ contains
            i = i + 1
            gto(i) = type_gto(ij,                      &
                              0,                       &
-                             nhkt(i),                 &
+                             nhkt(i)-1,               &
                              ncent(i),                &
                              (2*nhkt(i)-1),           &
                              (nhkt(i)*(nhkt(i)+1))/2, &
@@ -225,13 +225,13 @@ contains
                   ! limitation: up to h functions (incl)
 
                   !> call InteRest library routine for a given batch
-                  call interest_eri_basic(f,                                  &
-                                          gout,                               &
-                                          nr_integrals,                       &
-                                          l(1), e(1), x(1), y(1), z(1), c(1), &
-                                          l(2), e(2), x(2), y(2), z(2), c(2), &
-                                          l(3), e(3), x(3), y(3), z(3), c(3), &
-                                          l(4), e(4), x(4), y(4), z(4), c(4) )
+                  call interest_eri_basic(f,                                    &
+                                          gout,                                 &
+                                          nr_integrals,                         &
+                                          l(1)+1, e(1), x(1), y(1), z(1), c(1), &
+                                          l(2)+1, e(2), x(2), y(2), z(2), c(2), &
+                                          l(3)+1, e(3), x(3), y(3), z(3), c(3), &
+                                          l(4)+1, e(4), x(4), y(4), z(4), c(4) )
 
                   call process_dG(n,    &
                                   o,    &
