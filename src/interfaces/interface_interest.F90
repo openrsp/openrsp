@@ -2,7 +2,8 @@ module interface_interest
 
    implicit none
 
-   public interest_eri_diff
+   public interest_get_int
+   public interest_get_ave
 
    private
 
@@ -113,26 +114,44 @@ contains
 
    end subroutine
 
-   subroutine interest_eri_diff(ndim, Gmat, Pmat)
+   subroutine interest_get_int(ndim, dmat, gmat)
 
       integer, intent(in)  :: ndim
-      real(8), intent(in)  :: Pmat(ndim, ndim, 4)
-      real(8), intent(out) :: Gmat(ndim, ndim, 4)
+      real(8), intent(out) :: gmat(ndim, ndim, *)
+      real(8), intent(in)  :: dmat(ndim, ndim, *)
 
-      call interest_eri_diff_block(ndim, Gmat, Pmat, (/1, 1, 1, 1/))
+      call interest_eri_diff_block(ndim, dmat, gmat, (/1, 1, 1, 1/))
 #ifdef PRG_DIRAC
-      call interest_eri_diff_block(ndim, Gmat, Pmat, (/1, 1, 2, 2/))
-      call interest_eri_diff_block(ndim, Gmat, Pmat, (/2, 2, 1, 1/))
+      call interest_eri_diff_block(ndim, dmat, gmat, (/1, 1, 2, 2/))
+      call interest_eri_diff_block(ndim, dmat, gmat, (/2, 2, 1, 1/))
 #endif
 
    end subroutine
 
-   subroutine interest_eri_diff_block(ndim, Gmat, Pmat, iblocks)
+   subroutine interest_get_ave(ndim, dmat1, dmat2, ave)
 
       integer, intent(in)  :: ndim
-      real(8), intent(in)  :: Pmat(ndim, ndim, 4)
-      real(8), intent(out) :: Gmat(ndim, ndim, 4)
-      integer, intent(in)  :: iblocks(4)
+      real(8), intent(in)  :: dmat1(ndim, ndim, *)
+      real(8), intent(in)  :: dmat2(ndim, ndim, *)
+      real(8), intent(out) :: ave(*)
+
+      ave(1) = 0.0d0
+
+      call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 1, 1/), ave=ave)
+#ifdef PRG_DIRAC
+      call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 2, 2/), ave=ave)
+      call interest_eri_diff_block(ndim, dmat1, dmat1, (/2, 2, 1, 1/), ave=ave)
+#endif
+
+   end subroutine
+
+   subroutine interest_eri_diff_block(ndim, dmat, gmat, iblocks, ave)
+
+      integer, intent(in)              :: ndim
+      real(8)                          :: dmat(ndim, ndim, *)
+      real(8)                          :: gmat(ndim, ndim, *)
+      integer, intent(in)              :: iblocks(4)
+      real(8), intent(inout), optional :: ave(*)
 
       integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
 
@@ -149,6 +168,8 @@ contains
 
       integer :: ii, ij, ik, il
       integer :: nr_integrals
+      logical :: get_ave
+      real(8) :: average(1000) !fixme
 
       !> InteRest interface
       interface
@@ -169,6 +190,13 @@ contains
            real(8), intent(in)  :: ci, cj, ck, cl
          end subroutine
       end interface
+
+      if (present(ave)) then
+         get_ave = .true.
+         average = 0.0d0
+      else
+         get_ave = .false.
+      end if
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -233,12 +261,14 @@ contains
                                           l(3)+1, e(3), x(3), y(3), z(3), c(3), &
                                           l(4)+1, e(4), x(4), y(4), z(4), c(4) )
 
-                  call process_dG(n,    &
-                                  o,    &
-                                  gout, &
-                                  ndim, &
-                                  Pmat, &
-                                  Gmat, &
+                  call process_dG(n,       &
+                                  o,       &
+                                  gout,    &
+                                  ndim,    &
+                                  dmat,    &
+                                  gmat,    &
+                                  get_ave, &
+                                  average, &
                                   1.0d0)
 
                end do lloop
@@ -246,40 +276,52 @@ contains
          end do jloop
       end do iloop
 
+      if (get_ave) then
+         ave(1) = ave(1) + average(1)
+      end if
+
    end subroutine
 
-   subroutine process_dG(n,    &
-                         o,    &
-                         gout, &
-                         ndim, &
-                         Pmat, &
-                         Gmat, &
+   subroutine process_dG(n,        &
+                         o,        &
+                         gout,     &
+                         ndim,     &
+                         dmat,     &
+                         gmat,     &
+                         get_ave,  &
+                         average,  &
                          scale_exchange)
 
-      integer, intent(in)  :: n(4)
-      integer, intent(in)  :: o(4)
-      real(8), intent(in)  :: gout(n(3), n(4), n(1), n(2))
-      integer, intent(in)  :: ndim
-      real(8), intent(in)  :: Pmat(ndim, ndim, *)
-      real(8), intent(out) :: Gmat(ndim, ndim, *)
-      real(8), intent(in)  :: scale_exchange
+      integer, intent(in)    :: n(4)
+      integer, intent(in)    :: o(4)
+      real(8), intent(in)    :: gout(n(3), n(4), n(1), n(2))
+      integer, intent(in)    :: ndim
+      real(8), intent(in)    :: dmat(ndim, ndim, *)
+      real(8), intent(out)   :: gmat(ndim, ndim, *)
+      logical, intent(in)    :: get_ave
+      real(8), intent(inout) :: average(*)
+      real(8), intent(in)    :: scale_exchange
 
       integer :: i, j, k, l
       integer :: bas(4)
-      real(8) :: pkl, pkj(4)
+      real(8) :: pkl, pkj(4), g
 
       ! coulomb
       do l = 1, n(4)
          bas(4) = o(4) + l
          do k = 1, n(3)
             bas(3) = o(3) + k
-            pkl = 2.0d0*Pmat(bas(3), bas(4), 1)
+            pkl = 2.0d0*dmat(bas(3), bas(4), 1)
             do j = 1, n(2)
                bas(2) = o(2) + j
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  Gmat(bas(1), bas(2), 1) = Gmat(bas(1), bas(2), 1) &
-                                          + gout(k, l, i, j)*pkl
+                  g = gout(k, l, i, j)
+                  if (get_ave) then
+                     average(1) = average(1) + gmat(bas(1), bas(2), 1)*g*pkl
+                  else
+                     gmat(bas(1), bas(2), 1) = gmat(bas(1), bas(2), 1) + g*pkl
+                  end if
                end do
             end do
          end do
@@ -293,22 +335,31 @@ contains
             bas(3) = o(3) + k
             do j = 1, n(2)
                bas(2) = o(2) + j
-               pkj(1) = scale_exchange*Pmat(bas(2), bas(3), 1)
-               pkj(2) = scale_exchange*Pmat(bas(2), bas(3), 2)
-               pkj(3) = scale_exchange*Pmat(bas(2), bas(3), 3)
-               pkj(4) = scale_exchange*Pmat(bas(2), bas(3), 4)
+               pkj(1) = dmat(bas(2), bas(3), 1)
+#ifdef PRG_DIRAC
+               pkj(2) = dmat(bas(2), bas(3), 2)
+               pkj(3) = dmat(bas(2), bas(3), 3)
+               pkj(4) = dmat(bas(2), bas(3), 4)
+#endif
+               pkj = scale_exchange*pkj
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  Gmat(bas(1), bas(4), 1) = Gmat(bas(1), bas(4), 1) &
-                                          - gout(k, l, i, j)*pkj(1)
+                  g = gout(k, l, i, j)
+                  if (get_ave) then
+                     average(1) = average(1) - gmat(bas(1), bas(4), 1)*g*pkj(1)
 #ifdef PRG_DIRAC
-                  Gmat(bas(1), bas(4), 2) = Gmat(bas(1), bas(4), 2) &
-                                          - gout(k, l, i, j)*pkj(2)
-                  Gmat(bas(1), bas(4), 3) = Gmat(bas(1), bas(4), 3) &
-                                          - gout(k, l, i, j)*pkj(3)
-                  Gmat(bas(1), bas(4), 4) = Gmat(bas(1), bas(4), 4) &
-                                          - gout(k, l, i, j)*pkj(4)
+                     average(1) = average(1) - gmat(bas(1), bas(4), 2)*g*pkj(2)
+                     average(1) = average(1) - gmat(bas(1), bas(4), 3)*g*pkj(3)
+                     average(1) = average(1) - gmat(bas(1), bas(4), 4)*g*pkj(4)
 #endif
+                  else
+                     gmat(bas(1), bas(4), 1) = gmat(bas(1), bas(4), 1) - g*pkj(1)
+#ifdef PRG_DIRAC
+                     gmat(bas(1), bas(4), 2) = gmat(bas(1), bas(4), 2) - g*pkj(2)
+                     gmat(bas(1), bas(4), 3) = gmat(bas(1), bas(4), 3) - g*pkj(3)
+                     gmat(bas(1), bas(4), 4) = gmat(bas(1), bas(4), 4) - g*pkj(4)
+#endif
+                  end if
                end do
             end do
          end do
