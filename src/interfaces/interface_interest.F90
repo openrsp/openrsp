@@ -44,10 +44,6 @@ contains
 #include "shells.h"
 #include "aovec.h"
 #include "primit.h"
-#ifdef PRG_DIRAC
-#include "dcbdhf.h"
-#include "nucdata.h"
-#endif
 
       integer        :: i
       integer        :: j
