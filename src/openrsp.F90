@@ -50,6 +50,7 @@ module openrsp
   use interface_1el
   use interface_basis
   use interface_dirac_gen1int
+  use interface_interest
   use rsp_functions
   use rsp_general, only: p_tuple, rsp_prop
   use dalton_ifc
@@ -108,6 +109,7 @@ contains
     integer                :: mat_dim
     real(8)                :: xc_energy
     real(8), target        :: temp(1)
+    real(8)                :: ave(100)
 
 #ifdef PRG_DIRAC
     type(matrix)           :: TX, TY, TZ, Dp(1)
@@ -198,6 +200,14 @@ contains
     TY = 0
     TZ = 0
 #endif /* ifdef PRG_DIRAC */
+
+!#define DEBUG_INTEREST
+#ifdef DEBUG_INTEREST
+    print *, '2-el energy       =', 0.5d0*dot(G, D)
+    ave = 0.0d0
+    call interest_get_ave(D%nrow, D%elms_alpha, D%elms_alpha, ave)
+    print *, 'raboof ave', ave(1)
+#endif
 
     H1 = 0
     G  = 0
