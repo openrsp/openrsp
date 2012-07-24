@@ -154,42 +154,17 @@ contains
       real(8), intent(inout), optional :: ave(*)
 
       integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
+      integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
-      real(8) :: gout(max_nr_integrals)
-      real(8) :: f
-      real(8) :: e(4)
-      real(8) :: c(4)
-      real(8) :: x(4)
-      real(8) :: y(4)
-      real(8) :: z(4)
-      integer :: l(4)
-      integer :: n(4)
-      integer :: o(4)
+      real(8) :: gint(max_nr_integrals, max_ave_length)
+      real(8) :: gtmp(max_nr_integrals)
+      real(8) :: e(4), c(4), xyz(3, 4)
+      integer :: l(4), n(4), o(4)
 
       integer :: ii, ij, ik, il
       integer :: nr_integrals
       logical :: get_ave
-      real(8) :: average(1000) !fixme
-
-      !> InteRest interface
-      interface
-         subroutine interest_eri_basic(factor, fint, nr_integrals, &
-                                       li, ei, xi, yi, zi, ci,     &
-                                       lj, ej, xj, yj, zj, cj,     &
-                                       lk, ek, xk, yk, zk, ck,     &
-                                       ll, el, xl, yl, zl, cl)
-
-           real(8), intent(in)  :: factor
-           real(8), intent(out) :: fint(*)
-           integer, intent(out) :: nr_integrals
-           integer, intent(in)  :: li, lj, lk, ll
-           real(8), intent(in)  :: ei, ej, ek, el
-           real(8), intent(in)  :: xi, xj, xk, xl
-           real(8), intent(in)  :: yi, yj, yk, yl
-           real(8), intent(in)  :: zi, zj, zk, zl
-           real(8), intent(in)  :: ci, cj, ck, cl
-         end subroutine
-      end interface
+      real(8) :: average(max_ave_length)
 
       if (present(ave)) then
          get_ave = .true.
@@ -203,67 +178,58 @@ contains
       ! routine will return if already initialized
       call initialize_interest_eri_diff()
 
-      f = 1.0d0
-
       iloop: do ii = shell_start(iblocks(1)), shell_end(iblocks(1))
-         l(1) =      gto(ii)%lvalue
-         o(1) =      gto(ii)%offset
-         n(1) =      gto(ii)%cdegen
-         e(1) =      gto(ii)%ex(1)
-         x(1) = atom(gto(ii)%origin)%coordinate_x
-         y(1) = atom(gto(ii)%origin)%coordinate_y
-         z(1) = atom(gto(ii)%origin)%coordinate_z
-         c(1) =      gto(ii)%coefficient(1)
+              l(1) =      gto(ii)%lvalue
+              o(1) =      gto(ii)%offset
+              n(1) =      gto(ii)%cdegen
+              e(1) =      gto(ii)%ex(1)
+              c(1) =      gto(ii)%coefficient(1)
+         xyz(1, 1) = atom(gto(ii)%origin)%coordinate_x
+         xyz(2, 1) = atom(gto(ii)%origin)%coordinate_y
+         xyz(3, 1) = atom(gto(ii)%origin)%coordinate_z
 
          jloop: do ij = shell_start(iblocks(2)), shell_end(iblocks(2))
-            l(2) =      gto(ij)%lvalue
-            o(2) =      gto(ij)%offset
-            n(2) =      gto(ij)%cdegen
-            e(2) =      gto(ij)%ex(1)
-            x(2) = atom(gto(ij)%origin)%coordinate_x
-            y(2) = atom(gto(ij)%origin)%coordinate_y
-            z(2) = atom(gto(ij)%origin)%coordinate_z
-            c(2) =      gto(ij)%coefficient(1)
+                 l(2) =      gto(ij)%lvalue
+                 o(2) =      gto(ij)%offset
+                 n(2) =      gto(ij)%cdegen
+                 e(2) =      gto(ij)%ex(1)
+                 c(2) =      gto(ij)%coefficient(1)
+            xyz(1, 2) = atom(gto(ij)%origin)%coordinate_x
+            xyz(2, 2) = atom(gto(ij)%origin)%coordinate_y
+            xyz(3, 2) = atom(gto(ij)%origin)%coordinate_z
 
             kloop: do ik = shell_start(iblocks(3)), shell_end(iblocks(3))
-               l(3) =      gto(ik)%lvalue
-               o(3) =      gto(ik)%offset
-               n(3) =      gto(ik)%cdegen
-               e(3) =      gto(ik)%ex(1)
-               x(3) = atom(gto(ik)%origin)%coordinate_x
-               y(3) = atom(gto(ik)%origin)%coordinate_y
-               z(3) = atom(gto(ik)%origin)%coordinate_z
-               c(3) =      gto(ik)%coefficient(1)
+                    l(3) =      gto(ik)%lvalue
+                    o(3) =      gto(ik)%offset
+                    n(3) =      gto(ik)%cdegen
+                    e(3) =      gto(ik)%ex(1)
+                    c(3) =      gto(ik)%coefficient(1)
+               xyz(1, 3) = atom(gto(ik)%origin)%coordinate_x
+               xyz(2, 3) = atom(gto(ik)%origin)%coordinate_y
+               xyz(3, 3) = atom(gto(ik)%origin)%coordinate_z
 
                lloop: do il = shell_start(iblocks(4)), shell_end(iblocks(4))
-                  l(4) =      gto(il)%lvalue
-                  o(4) =      gto(il)%offset
-                  n(4) =      gto(il)%cdegen
-                  e(4) =      gto(il)%ex(1)
-                  x(4) = atom(gto(il)%origin)%coordinate_x
-                  y(4) = atom(gto(il)%origin)%coordinate_y
-                  z(4) = atom(gto(il)%origin)%coordinate_z
-                  c(4) =      gto(il)%coefficient(1)
+                       l(4) =      gto(il)%lvalue
+                       o(4) =      gto(il)%offset
+                       n(4) =      gto(il)%cdegen
+                       e(4) =      gto(il)%ex(1)
+                       c(4) =      gto(il)%coefficient(1)
+                  xyz(1, 4) = atom(gto(il)%origin)%coordinate_x
+                  xyz(2, 4) = atom(gto(il)%origin)%coordinate_y
+                  xyz(3, 4) = atom(gto(il)%origin)%coordinate_z
 
                   ! f is scaling constant
-                  ! gout  is output (integrals)
+                  ! gint  is output (integrals)
                   ! [ij|kl] [electron1|electron2]
-                  ! gout = (ncc(k), ncc(l), ncc(i), ncc(j))
+                  ! gint = (ncc(k), ncc(l), ncc(i), ncc(j))
                   ! example: [sp|df]: [6, 10, 1, 3] this is the layout in mem
                   ! limitation: up to h functions (incl)
 
-                  !> call InteRest library routine for a given batch
-                  call interest_eri_basic(f,                                    &
-                                          gout,                                 &
-                                          nr_integrals,                         &
-                                          l(1)+1, e(1), x(1), y(1), z(1), c(1), &
-                                          l(2)+1, e(2), x(2), y(2), z(2), c(2), &
-                                          l(3)+1, e(3), x(3), y(3), z(3), c(3), &
-                                          l(4)+1, e(4), x(4), y(4), z(4), c(4) )
+                  call get_integrals(gint, l, e, c, xyz)
 
                   call process_dG(n,       &
                                   o,       &
-                                  gout,    &
+                                  gint,    &
                                   ndim,    &
                                   dmat,    &
                                   gmat,    &
@@ -282,9 +248,57 @@ contains
 
    end subroutine
 
+   subroutine get_integrals(gint, &
+                            l,    &
+                            e,    &
+                            c,    &
+                            xyz)
+
+      real(8), intent(inout) :: gint(*)
+      integer, intent(in)    :: l(4)
+      real(8), intent(in)    :: e(4)
+      real(8), intent(in)    :: c(4)
+      real(8), intent(in)    :: xyz(3, 4)
+
+      real(8) :: f
+      integer :: nr_integrals
+
+      !> InteRest interface
+      interface
+         subroutine interest_eri_basic(f, gint, nr_integrals,  &
+                                       li, ei, xi, yi, zi, ci, &
+                                       lj, ej, xj, yj, zj, cj, &
+                                       lk, ek, xk, yk, zk, ck, &
+                                       ll, el, xl, yl, zl, cl)
+
+           real(8), intent(in)  :: f
+           real(8), intent(out) :: gint(*)
+           integer, intent(out) :: nr_integrals
+           integer, intent(in)  :: li, lj, lk, ll
+           real(8), intent(in)  :: ei, ej, ek, el
+           real(8), intent(in)  :: xi, xj, xk, xl
+           real(8), intent(in)  :: yi, yj, yk, yl
+           real(8), intent(in)  :: zi, zj, zk, zl
+           real(8), intent(in)  :: ci, cj, ck, cl
+         end subroutine
+      end interface
+
+      f = 1.0d0
+
+      !> call InteRest library routine for a given batch
+      call interest_eri_basic(f,                                                   &
+                              gint,                                                &
+                              nr_integrals,                                        &
+                              l(1)+1, e(1), xyz(1, 1), xyz(2, 1), xyz(3, 1), c(1), &
+                              l(2)+1, e(2), xyz(1, 2), xyz(2, 2), xyz(3, 2), c(2), &
+                              l(3)+1, e(3), xyz(1, 3), xyz(2, 3), xyz(3, 3), c(3), &
+                              l(4)+1, e(4), xyz(1, 4), xyz(2, 4), xyz(3, 4), c(4))
+
+   end subroutine
+
    subroutine process_dG(n,        &
                          o,        &
-                         gout,     &
+                         gint,     &
                          ndim,     &
                          dmat,     &
                          gmat,     &
@@ -294,7 +308,7 @@ contains
 
       integer, intent(in)    :: n(4)
       integer, intent(in)    :: o(4)
-      real(8), intent(in)    :: gout(n(3), n(4), n(1), n(2))
+      real(8), intent(in)    :: gint(n(3), n(4), n(1), n(2))
       integer, intent(in)    :: ndim
       real(8), intent(in)    :: dmat(ndim, ndim, *)
       real(8), intent(out)   :: gmat(ndim, ndim, *)
@@ -316,7 +330,7 @@ contains
                bas(2) = o(2) + j
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  g = gout(k, l, i, j)
+                  g = gint(k, l, i, j)
                   if (get_ave) then
                      average(1) = average(1) + gmat(bas(1), bas(2), 1)*g*pkl
                   else
@@ -344,7 +358,7 @@ contains
                pkj = scale_exchange*pkj
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  g = gout(k, l, i, j)
+                  g = gint(k, l, i, j)
                   if (get_ave) then
                      average(1) = average(1) - gmat(bas(1), bas(4), 1)*g*pkj(1)
 #ifdef PRG_DIRAC
