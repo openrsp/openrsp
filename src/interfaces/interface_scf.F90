@@ -255,8 +255,9 @@ contains
     G%elms_alpha = 0.0d0
     call interest_get_int(D%nrow, D%elms_alpha, G%elms_alpha)
 
-!   ave = 0.0d0
-!   call interest_get_ave(D%nrow, D%elms_alpha, D%elms_alpha, ave)
+    ave = 0.0d0
+    call interest_get_ave(D%nrow, D%elms_alpha, D%elms_alpha, ave)
+    print *, 'raboof ave', ave(1)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine

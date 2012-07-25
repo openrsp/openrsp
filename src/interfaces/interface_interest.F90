@@ -147,8 +147,8 @@ contains
 
       call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 1, 1/), ave=ave)
 #ifdef PRG_DIRAC
-      call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 2, 2/), ave=ave)
-      call interest_eri_diff_block(ndim, dmat1, dmat1, (/2, 2, 1, 1/), ave=ave)
+!     call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 2, 2/), ave=ave)
+!     call interest_eri_diff_block(ndim, dmat1, dmat1, (/2, 2, 1, 1/), ave=ave)
 #endif
 
    end subroutine
@@ -165,15 +165,19 @@ contains
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
       real(8) :: gint(max_nr_integrals, max_ave_length)
-      real(8) :: g_up(max_nr_integrals)
-      real(8) :: g_down(max_nr_integrals)
+      real(8) :: g_u(max_nr_integrals)
+      real(8) :: g_d(max_nr_integrals)
       real(8) :: e(4), c(4), xyz(3, 4), cent(4)
       integer :: l(4), m(4), n(4), o(4)
+      integer :: cw(4), ciw(4)
+      integer :: cr(4), cir(4)
+      integer :: ci, cj, ck, cl
+      integer :: ir, iw
 
       integer :: ii, ij, ik, il
       integer :: ifun, ic
       integer :: icent, ixyz
-      integer :: ijk(3), ijk_up(3), ijk_down(3)
+      integer :: ijk(3), ijk_u(3), ijk_d(3)
       integer :: nr_integrals
       logical :: get_ave
       real(8) :: average(max_ave_length)
@@ -241,46 +245,95 @@ contains
                   ! example: [sp|df]: [6, 10, 1, 3] this is the layout in mem
                   ! limitation: up to h functions (incl)
 
-                  call get_integrals(gint, l, e, c, xyz)
+
+
+           !      this deliveres undiff integrals
+           !      call get_integrals(gint, l, e, c, xyz)
+
+                        cw(1) = cdeg(l(1))
+                        cw(2) = cdeg(l(2))
+                        cw(3) = cdeg(l(3))
+                        cw(4) = cdeg(l(4))
+                        gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1) = 0.0d0
 
                   icent = 1
-                  ixyz  = 1
                   do ifun = 1, 4
                      if (cent(ifun) == icent) then
                         m = l
                         m(ifun) = m(ifun) + 1
-                        call get_integrals(g_up, m, e, c, xyz)
+                        call get_integrals(g_u, m, e, c, xyz)
                         if (l(ifun) > 0) then
                            m = l
                            m(ifun) = m(ifun) - 1
-                           call get_integrals(g_down, m, e, c, xyz)
+                           call get_integrals(g_d, m, e, c, xyz)
                         end if
 
-                        do ic = 1, cdeg(l(ifun))
-                           ijk = get_ijk(l(ifun), ic)
-                           ijk_up   = ijk
-                           ijk_down = ijk
-                           ijk_up(ixyz) = ijk_up(ixyz) + 1
-                           ijk_down(ixyz) = ijk_down(ixyz) - 1
-                    
-                          !ana(ic, ixyz) = ana(ic, ixyz) + gout_u(get_ic(ijk_up), 1, 1)*2*e(1)
-                          !if (ijk_down(ixyz) > -1) then
-                          !   ana(ic, ixyz) = ana(ic, ixyz) - gout_d(get_ic(ijk_down), 1, 1)*ijk(ixyz)
-                          !end if
+                        iw = 0
+                        do cj = 1, cw(2)
+                           ciw(2) = cj
+                           do ci = 1, cw(1)
+                              ciw(1) = ci
+                              do cl = 1, cw(4)
+                                 ciw(4) = cl
+                                 do ck = 1, cw(3)
+                                    ciw(3) = ck
+
+                                    iw = iw + 1
+
+                                    ijk = get_ijk(l(ifun), ciw(ifun))
+
+                                    do ixyz = 2, 2 !fixme
+
+                                       ijk_u       = ijk
+                                       ijk_u(ixyz) = ijk_u(ixyz) + 1
+                                       ijk_d       = ijk
+                                       ijk_d(ixyz) = ijk_d(ixyz) - 1
+
+                                       cr        = cw
+                                       cr(ifun)  = cdeg(l(ifun)+1)
+                                       cir       = ciw
+                                       cir(ifun) = get_ic(ijk_u)
+
+                                       ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
+                                          + (cir(1)-1)*cr(3)*cr(4)       &
+                                          + (cir(4)-1)*cr(3)             &
+                                          +  cir(3)
+
+                                       gint(iw, 1) = gint(iw, 1) + g_u(ir)*2.0d0*e(ifun)
+
+                                       if (ijk_d(ixyz) < 0) cycle
+
+                                       cr        = cw
+                                       cr(ifun)  = cdeg(l(ifun)-1)
+                                       cir       = ciw
+                                       cir(ifun) = get_ic(ijk_d)
+
+                                       ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
+                                          + (cir(1)-1)*cr(3)*cr(4)       &
+                                          + (cir(4)-1)*cr(3)             &
+                                          +  cir(3)
+
+                                       gint(iw, 1) = gint(iw, 1) - g_d(ir)*ijk(ixyz)
+
+                                    end do
+                                 end do
+                              end do
+                           end do
                         end do
 
                      end if
                   end do
 
-                  call process_dG(n,       &
-                                  o,       &
-                                  gint,    &
-                                  ndim,    &
-                                  dmat,    &
-                                  gmat,    &
-                                  get_ave, &
-                                  average, &
-                                  1.0d0)
+                        call process_dG(n,       &
+                                        o,       &
+                                        gint,    &
+                                        ndim,    &
+                                        dmat,    &
+                                        gmat,    &
+                                        get_ave, &
+                                        average, &
+                                        1.0d0)
+
 
                end do lloop
             end do kloop
