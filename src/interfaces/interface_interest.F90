@@ -24,6 +24,7 @@ module interface_interest
       integer :: cdegen
       real(8) :: ex(1)
       real(8) :: coefficient(1)
+      integer :: center
    end type
 
    integer, save :: shell_start(2) = 0
@@ -33,6 +34,10 @@ module interface_interest
    type(type_gto),  allocatable :: gto(:)
 
    logical :: interface_is_initialized = .false.
+
+   integer, allocatable :: cdeg(:)
+   integer, allocatable :: ijk_to_ic(:, :, :)
+   integer, allocatable :: ic_to_ijk(:, :, :)
 
 contains
 
@@ -53,6 +58,8 @@ contains
       type(type_gto) :: tmpgto
 
       if (interface_is_initialized) return
+
+      call init_arrays()
 
       !> initialize InteRest integral package
       call interest_initialize()
@@ -91,7 +98,8 @@ contains
                              (2*nhkt(i)-1),           &
                              (nhkt(i)*(nhkt(i)+1))/2, &
                              priexp(i),               &
-                             priccf(i,j))
+                             priccf(i,j),             &
+                             ncent(i))
            !> note: cartesian indexation
            ij = ij + (nhkt(i)*(nhkt(i)+1))/2
         end do
@@ -157,11 +165,15 @@ contains
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
       real(8) :: gint(max_nr_integrals, max_ave_length)
-      real(8) :: gtmp(max_nr_integrals)
-      real(8) :: e(4), c(4), xyz(3, 4)
-      integer :: l(4), n(4), o(4)
+      real(8) :: g_up(max_nr_integrals)
+      real(8) :: g_down(max_nr_integrals)
+      real(8) :: e(4), c(4), xyz(3, 4), cent(4)
+      integer :: l(4), m(4), n(4), o(4)
 
       integer :: ii, ij, ik, il
+      integer :: ifun, ic
+      integer :: icent, ixyz
+      integer :: ijk(3), ijk_up(3), ijk_down(3)
       integer :: nr_integrals
       logical :: get_ave
       real(8) :: average(max_ave_length)
@@ -184,6 +196,7 @@ contains
               n(1) =      gto(ii)%cdegen
               e(1) =      gto(ii)%ex(1)
               c(1) =      gto(ii)%coefficient(1)
+          cent(1) =      gto(ii)%center
          xyz(1, 1) = atom(gto(ii)%origin)%coordinate_x
          xyz(2, 1) = atom(gto(ii)%origin)%coordinate_y
          xyz(3, 1) = atom(gto(ii)%origin)%coordinate_z
@@ -194,6 +207,7 @@ contains
                  n(2) =      gto(ij)%cdegen
                  e(2) =      gto(ij)%ex(1)
                  c(2) =      gto(ij)%coefficient(1)
+             cent(2) =      gto(ij)%center
             xyz(1, 2) = atom(gto(ij)%origin)%coordinate_x
             xyz(2, 2) = atom(gto(ij)%origin)%coordinate_y
             xyz(3, 2) = atom(gto(ij)%origin)%coordinate_z
@@ -204,6 +218,7 @@ contains
                     n(3) =      gto(ik)%cdegen
                     e(3) =      gto(ik)%ex(1)
                     c(3) =      gto(ik)%coefficient(1)
+                cent(3) =      gto(ik)%center
                xyz(1, 3) = atom(gto(ik)%origin)%coordinate_x
                xyz(2, 3) = atom(gto(ik)%origin)%coordinate_y
                xyz(3, 3) = atom(gto(ik)%origin)%coordinate_z
@@ -214,6 +229,7 @@ contains
                        n(4) =      gto(il)%cdegen
                        e(4) =      gto(il)%ex(1)
                        c(4) =      gto(il)%coefficient(1)
+                   cent(4) =      gto(il)%center
                   xyz(1, 4) = atom(gto(il)%origin)%coordinate_x
                   xyz(2, 4) = atom(gto(il)%origin)%coordinate_y
                   xyz(3, 4) = atom(gto(il)%origin)%coordinate_z
@@ -226,6 +242,35 @@ contains
                   ! limitation: up to h functions (incl)
 
                   call get_integrals(gint, l, e, c, xyz)
+
+                  icent = 1
+                  ixyz  = 1
+                  do ifun = 1, 4
+                     if (cent(ifun) == icent) then
+                        m = l
+                        m(ifun) = m(ifun) + 1
+                        call get_integrals(g_up, m, e, c, xyz)
+                        if (l(ifun) > 0) then
+                           m = l
+                           m(ifun) = m(ifun) - 1
+                           call get_integrals(g_down, m, e, c, xyz)
+                        end if
+
+                        do ic = 1, cdeg(l(ifun))
+                           ijk = get_ijk(l(ifun), ic)
+                           ijk_up   = ijk
+                           ijk_down = ijk
+                           ijk_up(ixyz) = ijk_up(ixyz) + 1
+                           ijk_down(ixyz) = ijk_down(ixyz) - 1
+                    
+                          !ana(ic, ixyz) = ana(ic, ixyz) + gout_u(get_ic(ijk_up), 1, 1)*2*e(1)
+                          !if (ijk_down(ixyz) > -1) then
+                          !   ana(ic, ixyz) = ana(ic, ixyz) - gout_d(get_ic(ijk_down), 1, 1)*ijk(ixyz)
+                          !end if
+                        end do
+
+                     end if
+                  end do
 
                   call process_dG(n,       &
                                   o,       &
@@ -380,5 +425,53 @@ contains
       end do
 
   end subroutine
+
+   subroutine init_arrays()
+
+      integer :: il, ia, ib, ii, ij, ik, ip
+
+      integer, parameter :: maxl = 10
+
+      if (allocated(ijk_to_ic)) deallocate(ijk_to_ic)
+      if (allocated(ic_to_ijk)) deallocate(ic_to_ijk)
+      if (allocated(cdeg)) deallocate(cdeg)
+
+      allocate(ijk_to_ic(0:maxl, 0:maxl, 0:maxl))
+      allocate(ic_to_ijk(0:maxl, (maxl + 1)*(maxl + 2)/2, 3))
+      allocate(cdeg(0:maxl))
+
+      ijk_to_ic = 0
+      ic_to_ijk = 0
+      cdeg = 0
+
+      do il = 0, maxl
+         cdeg(il) = ((il + 1)*(il + 2))/2
+         ip = 0
+         do ia = 1, il + 1
+            do ib = 1, ia
+               ip = ip + 1
+               ii = il + 1 - ia
+               ij = ia - ib
+               ik = ib - 1
+               ijk_to_ic(ii, ij, ik) = ip
+               ic_to_ijk(il, ip, 1)  = ii
+               ic_to_ijk(il, ip, 2)  = ij
+               ic_to_ijk(il, ip, 3)  = ik
+            end do
+         end do
+      end do
+
+   end subroutine
+
+   function get_ijk(il, ic)
+      integer :: il, ic
+      integer :: get_ijk(3)
+      get_ijk(1:3) = ic_to_ijk(il, ic, 1:3)
+   end function
+
+   function get_ic(ijk)
+      integer :: get_ic, ijk(3)
+      get_ic = ijk_to_ic(ijk(1), ijk(2), ijk(3))
+   end function
 
 end module
