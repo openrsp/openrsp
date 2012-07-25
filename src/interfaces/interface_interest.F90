@@ -39,6 +39,8 @@ module interface_interest
    integer, allocatable :: ijk_to_ic(:, :, :)
    integer, allocatable :: ic_to_ijk(:, :, :)
 
+   integer :: nr_centers
+
 contains
 
    subroutine initialize_interest_eri_diff()
@@ -109,6 +111,12 @@ contains
          gto(i+1)%offset = gto(i)%offset + gto(i)%cdegen
       enddo
 
+      ! get total number of centers
+      nr_centers = 0
+      do i = 1, size(gto)
+         if (gto(i)%center > nr_centers) nr_centers = nr_centers + 1
+      enddo
+
       shell_start(1) = 1
       shell_end(1)   = nlrgsh
       shell_start(2) = shell_end(1) + 1
@@ -129,10 +137,10 @@ contains
       real(8), intent(in)  :: dmat(ndim, ndim, *)
       integer, intent(in)  :: order
 
-      call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 1, 1/))
+      call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 1, 1/), (/0.0d0/), .false.)
 #ifdef PRG_DIRAC
-!     call interest_eri_diff_block(ndim, dmat, gmat, (/1, 1, 2, 2/))
-!     call interest_eri_diff_block(ndim, dmat, gmat, (/2, 2, 1, 1/))
+      call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 2, 2/), (/0.0d0/), .false.)
+      call interest_eri_diff_block(ndim, dmat, gmat, order, (/2, 2, 1, 1/), (/0.0d0/), .false.)
 #endif
 
    end subroutine
@@ -147,22 +155,23 @@ contains
 
       ave(1) = 0.0d0
 
-      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 1, 1/), ave=ave)
+      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 1, 1/), ave, .true.)
 #ifdef PRG_DIRAC
-!     call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 2, 2/), ave=ave)
-!     call interest_eri_diff_block(ndim, dmat1, dmat1, (/2, 2, 1, 1/), ave=ave)
+      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 2, 2/), ave, .true.)
+      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/2, 2, 1, 1/), ave, .true.)
 #endif
 
    end subroutine
 
-   subroutine interest_eri_diff_block(ndim, dmat, gmat, order, iblocks, ave)
+   subroutine interest_eri_diff_block(ndim, dmat, gmat, order, iblocks, ave, get_ave)
 
-      integer, intent(in)              :: ndim
-      real(8)                          :: dmat(ndim, ndim, *)
-      real(8)                          :: gmat(ndim, ndim, *)
-      integer, intent(in)              :: order
-      integer, intent(in)              :: iblocks(4)
-      real(8), intent(inout), optional :: ave(*)
+      integer, intent(in)    :: ndim
+      real(8)                :: dmat(ndim, ndim, *)
+      real(8)                :: gmat(ndim, ndim, *)
+      integer, intent(in)    :: order
+      integer, intent(in)    :: iblocks(4)
+      real(8)                :: ave(*)
+      logical, intent(in)    :: get_ave
 
       integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
@@ -176,21 +185,13 @@ contains
       integer :: cr(4), cir(4)
       integer :: ci, cj, ck, cl
       integer :: ir, iw
+      integer :: iraboof, jraboof
 
       integer :: ii, ij, ik, il
       integer :: ifun, ic
       integer :: icent, ixyz
       integer :: ijk(3), ijk_u(3), ijk_d(3)
       integer :: nr_integrals
-      logical :: get_ave
-      real(8) :: average(max_ave_length)
-
-      if (present(ave)) then
-         get_ave = .true.
-         average = 0.0d0
-      else
-         get_ave = .false.
-      end if
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -254,6 +255,15 @@ contains
 
                   if (order == 0) then
                      call get_integrals(gint, l, e, c, xyz)
+                     call process_dG(n,       &
+                                     o,       &
+                                     gint,    &
+                                     ndim,    &
+                                     dmat,    &
+                                     gmat,    &
+                                     get_ave, &
+                                     ave,     &
+                                     1.0d0)
                   end if
 
                   if (order == 1) then
@@ -262,9 +272,9 @@ contains
                         cw(2) = cdeg(l(2))
                         cw(3) = cdeg(l(3))
                         cw(4) = cdeg(l(4))
-                        gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1) = 0.0d0
+                     gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1:3*nr_centers) = 0.0d0
 
-                  icent = 1
+                  do icent = 1, nr_centers
                   do ifun = 1, 4
                      if (cent(ifun) == icent) then
                         m = l
@@ -290,7 +300,8 @@ contains
 
                                     ijk = get_ijk(l(ifun), ciw(ifun))
 
-                                    do ixyz = 2, 2 !fixme
+                                    do ixyz = 1, 3
+                                       iraboof = (icent-1)*3 + ixyz
 
                                        ijk_u       = ijk
                                        ijk_u(ixyz) = ijk_u(ixyz) + 1
@@ -307,7 +318,7 @@ contains
                                           + (cir(4)-1)*cr(3)             &
                                           +  cir(3)
 
-                                       gint(iw, 1) = gint(iw, 1) + g_u(ir)*2.0d0*e(ifun)
+                                       gint(iw, iraboof) = gint(iw, iraboof) + g_u(ir)*2.0d0*e(ifun)
 
                                        if (ijk_d(ixyz) < 0) cycle
 
@@ -321,7 +332,7 @@ contains
                                           + (cir(4)-1)*cr(3)             &
                                           +  cir(3)
 
-                                       gint(iw, 1) = gint(iw, 1) - g_d(ir)*ijk(ixyz)
+                                       gint(iw, iraboof) = gint(iw, iraboof) - g_d(ir)*ijk(ixyz)
 
                                     end do
                                  end do
@@ -330,30 +341,29 @@ contains
                         end do
 
                      end if
-                  end do
+                  end do !ifun
+                  end do !icent
 
-
-                  end if  !order
-
+                  do jraboof = 1, iraboof
                         call process_dG(n,       &
                                         o,       &
-                                        gint,    &
+                                        gint(1, jraboof),    &
                                         ndim,    &
                                         dmat,    &
                                         gmat,    &
                                         get_ave, &
-                                        average, &
+                                        ave(jraboof),     &
                                         1.0d0)
+                  end do
+
+                  end if  !order
+
 
 
                end do lloop
             end do kloop
          end do jloop
       end do iloop
-
-      if (get_ave) then
-         ave(1) = ave(1) + average(1)
-      end if
 
    end subroutine
 
