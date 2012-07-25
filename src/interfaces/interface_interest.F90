@@ -185,191 +185,197 @@ contains
       real(8) :: gint(max_nr_integrals, max_ave_length)
       real(8) :: g_u(max_nr_integrals)
       real(8) :: g_d(max_nr_integrals)
-      real(8) :: e(4), c(4), xyz(3, 4), cent(4)
-      integer :: l(4), m(4), n(4), o(4)
+      real(8) :: ex(4), coef(4), xyz(3, 4), cent(4)
+      integer :: ang(4), ang_temp(4), deg(4), off(4)
       integer :: cw(4), ciw(4)
       integer :: cr(4), cir(4)
       integer :: ci, cj, ck, cl
       integer :: ir, iw
-      integer :: iraboof, jraboof
 
       integer :: ii, ij, ik, il
       integer :: ifun, ic
       integer :: icent, ixyz
       integer :: ijk(3), ijk_u(3), ijk_d(3)
       integer :: nr_integrals
+      integer :: icoor
 
       ! make sure it is initialized
       ! it does not cost anything
       ! routine will return if already initialized
       call initialize_interest_eri_diff()
 
-      iloop: do ii = shell_start(iblocks(1)), shell_end(iblocks(1))
-              l(1) =      gto(ii)%lvalue
-              o(1) =      gto(ii)%offset
-              n(1) =      gto(ii)%cdegen
-              e(1) =      gto(ii)%ex(1)
-              c(1) =      gto(ii)%coefficient(1)
-          cent(1) =      gto(ii)%center
+      i_function_loop: do ii = shell_start(iblocks(1)), shell_end(iblocks(1))
+         ang(1)    =      gto(ii)%lvalue
+         off(1)    =      gto(ii)%offset
+         deg(1)    =      gto(ii)%cdegen
+         ex(1)     =      gto(ii)%ex(1)
+         coef(1)   =      gto(ii)%coefficient(1)
+         cent(1)   =      gto(ii)%center
          xyz(1, 1) = atom(gto(ii)%origin)%coordinate_x
          xyz(2, 1) = atom(gto(ii)%origin)%coordinate_y
          xyz(3, 1) = atom(gto(ii)%origin)%coordinate_z
 
-         jloop: do ij = shell_start(iblocks(2)), shell_end(iblocks(2))
-                 l(2) =      gto(ij)%lvalue
-                 o(2) =      gto(ij)%offset
-                 n(2) =      gto(ij)%cdegen
-                 e(2) =      gto(ij)%ex(1)
-                 c(2) =      gto(ij)%coefficient(1)
-             cent(2) =      gto(ij)%center
-            xyz(1, 2) = atom(gto(ij)%origin)%coordinate_x
-            xyz(2, 2) = atom(gto(ij)%origin)%coordinate_y
-            xyz(3, 2) = atom(gto(ij)%origin)%coordinate_z
+      j_function_loop: do ij = shell_start(iblocks(2)), shell_end(iblocks(2))
+         ang(2)    =      gto(ij)%lvalue
+         off(2)    =      gto(ij)%offset
+         deg(2)    =      gto(ij)%cdegen
+         ex(2)     =      gto(ij)%ex(1)
+         coef(2)   =      gto(ij)%coefficient(1)
+         cent(2)   =      gto(ij)%center
+         xyz(1, 2) = atom(gto(ij)%origin)%coordinate_x
+         xyz(2, 2) = atom(gto(ij)%origin)%coordinate_y
+         xyz(3, 2) = atom(gto(ij)%origin)%coordinate_z
 
-            kloop: do ik = shell_start(iblocks(3)), shell_end(iblocks(3))
-                    l(3) =      gto(ik)%lvalue
-                    o(3) =      gto(ik)%offset
-                    n(3) =      gto(ik)%cdegen
-                    e(3) =      gto(ik)%ex(1)
-                    c(3) =      gto(ik)%coefficient(1)
-                cent(3) =      gto(ik)%center
-               xyz(1, 3) = atom(gto(ik)%origin)%coordinate_x
-               xyz(2, 3) = atom(gto(ik)%origin)%coordinate_y
-               xyz(3, 3) = atom(gto(ik)%origin)%coordinate_z
+      k_function_loop: do ik = shell_start(iblocks(3)), shell_end(iblocks(3))
+         ang(3)    =      gto(ik)%lvalue
+         off(3)    =      gto(ik)%offset
+         deg(3)    =      gto(ik)%cdegen
+         ex(3)     =      gto(ik)%ex(1)
+         coef(3)   =      gto(ik)%coefficient(1)
+         cent(3)   =      gto(ik)%center
+         xyz(1, 3) = atom(gto(ik)%origin)%coordinate_x
+         xyz(2, 3) = atom(gto(ik)%origin)%coordinate_y
+         xyz(3, 3) = atom(gto(ik)%origin)%coordinate_z
 
-               lloop: do il = shell_start(iblocks(4)), shell_end(iblocks(4))
-                       l(4) =      gto(il)%lvalue
-                       o(4) =      gto(il)%offset
-                       n(4) =      gto(il)%cdegen
-                       e(4) =      gto(il)%ex(1)
-                       c(4) =      gto(il)%coefficient(1)
-                   cent(4) =      gto(il)%center
-                  xyz(1, 4) = atom(gto(il)%origin)%coordinate_x
-                  xyz(2, 4) = atom(gto(il)%origin)%coordinate_y
-                  xyz(3, 4) = atom(gto(il)%origin)%coordinate_z
+      l_function_loop: do il = shell_start(iblocks(4)), shell_end(iblocks(4))
+         ang(4)    =      gto(il)%lvalue
+         off(4)    =      gto(il)%offset
+         deg(4)    =      gto(il)%cdegen
+         ex(4)     =      gto(il)%ex(1)
+         coef(4)   =      gto(il)%coefficient(1)
+         cent(4)   =      gto(il)%center
+         xyz(1, 4) = atom(gto(il)%origin)%coordinate_x
+         xyz(2, 4) = atom(gto(il)%origin)%coordinate_y
+         xyz(3, 4) = atom(gto(il)%origin)%coordinate_z
 
-                  ! f is scaling constant
-                  ! gint  is output (integrals)
-                  ! [ij|kl] [electron1|electron2]
-                  ! gint = (ncc(k), ncc(l), ncc(i), ncc(j))
-                  ! example: [sp|df]: [6, 10, 1, 3] this is the layout in mem
-                  ! limitation: up to h functions (incl)
+         select case (order)
 
+         case (0)
+!-------------------------------------------------------------------------------
+!           order 0
+!-------------------------------------------------------------------------------
 
+            call get_integrals(gint, ang, ex, coef, xyz)
+            call contract_integrals(deg,     &
+                                    off,     &
+                                    gint,    &
+                                    ndim,    &
+                                    dmat,    &
+                                    gmat,    &
+                                    get_ave, &
+                                    ave,     &
+                                    1.0d0)
 
-           !      this deliveres undiff integrals
+         case (1)
+!-------------------------------------------------------------------------------
+!           order 1
+!-------------------------------------------------------------------------------
+            cw(1) = deg(1)
+            cw(2) = deg(2)
+            cw(3) = deg(3)
+            cw(4) = deg(4)
 
-                  if (order == 0) then
-                     call get_integrals(gint, l, e, c, xyz)
-                     call process_dG(n,       &
-                                     o,       &
-                                     gint,    &
-                                     ndim,    &
-                                     dmat,    &
-                                     gmat,    &
-                                     get_ave, &
-                                     ave,     &
-                                     1.0d0)
-                  end if
+            gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1:3*nr_centers) = 0.0d0
 
-                  if (order == 1) then
+            icent_loop: do icent = 1, nr_centers
+               ifun_loop: do ifun = 1, 4
+                  if (cent(ifun) == icent) then
 
-                        cw(1) = cdeg(l(1))
-                        cw(2) = cdeg(l(2))
-                        cw(3) = cdeg(l(3))
-                        cw(4) = cdeg(l(4))
-                     gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1:3*nr_centers) = 0.0d0
+                     ang_temp = ang
+                     ang_temp(ifun) = ang_temp(ifun) + 1
+                     call get_integrals(g_u, ang_temp, ex, coef, xyz)
+                     if (ang(ifun) > 0) then
+                        ang_temp = ang
+                        ang_temp(ifun) = ang_temp(ifun) - 1
+                        call get_integrals(g_d, ang_temp, ex, coef, xyz)
+                     end if
 
-                  do icent = 1, nr_centers
-                  do ifun = 1, 4
-                     if (cent(ifun) == icent) then
-                        m = l
-                        m(ifun) = m(ifun) + 1
-                        call get_integrals(g_u, m, e, c, xyz)
-                        if (l(ifun) > 0) then
-                           m = l
-                           m(ifun) = m(ifun) - 1
-                           call get_integrals(g_d, m, e, c, xyz)
-                        end if
+                     ! the quintuple loop below can be optimized
+                     ! but i will do that later after having
+                     ! higher order derivatives
+                     ! now i prefer compact and readable code
+                     iw = 0
+                     do cj = 1, cw(2)
+                        ciw(2) = cj
+                        do ci = 1, cw(1)
+                           ciw(1) = ci
+                           do cl = 1, cw(4)
+                              ciw(4) = cl
+                              do ck = 1, cw(3)
+                                 ciw(3) = ck
+                                 iw = iw + 1
 
-                        iw = 0
-                        do cj = 1, cw(2)
-                           ciw(2) = cj
-                           do ci = 1, cw(1)
-                              ciw(1) = ci
-                              do cl = 1, cw(4)
-                                 ciw(4) = cl
-                                 do ck = 1, cw(3)
-                                    ciw(3) = ck
+                                 ijk = get_ijk(ang(ifun), ciw(ifun))
 
-                                    iw = iw + 1
+                                 do ixyz = 1, 3
+                                    icoor = (icent-1)*3 + ixyz
 
-                                    ijk = get_ijk(l(ifun), ciw(ifun))
+                                    ijk_u       = ijk
+                                    ijk_u(ixyz) = ijk_u(ixyz) + 1
+                                    ijk_d       = ijk
+                                    ijk_d(ixyz) = ijk_d(ixyz) - 1
 
-                                    do ixyz = 1, 3
-                                       iraboof = (icent-1)*3 + ixyz
+                                    cr        = cw
+                                    cr(ifun)  = cdeg(ang(ifun)+1)
+                                    cir       = ciw
+                                    cir(ifun) = get_ic(ijk_u)
 
-                                       ijk_u       = ijk
-                                       ijk_u(ixyz) = ijk_u(ixyz) + 1
-                                       ijk_d       = ijk
-                                       ijk_d(ixyz) = ijk_d(ixyz) - 1
+                                    ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
+                                       + (cir(1)-1)*cr(3)*cr(4)       &
+                                       + (cir(4)-1)*cr(3)             &
+                                       +  cir(3)
 
-                                       cr        = cw
-                                       cr(ifun)  = cdeg(l(ifun)+1)
-                                       cir       = ciw
-                                       cir(ifun) = get_ic(ijk_u)
+                                    gint(iw, icoor) = gint(iw, icoor) + g_u(ir)*2.0d0*ex(ifun)
 
-                                       ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
-                                          + (cir(1)-1)*cr(3)*cr(4)       &
-                                          + (cir(4)-1)*cr(3)             &
-                                          +  cir(3)
+                                    if (ijk_d(ixyz) < 0) cycle
 
-                                       gint(iw, iraboof) = gint(iw, iraboof) + g_u(ir)*2.0d0*e(ifun)
+                                    cr        = cw
+                                    cr(ifun)  = cdeg(ang(ifun)-1)
+                                    cir       = ciw
+                                    cir(ifun) = get_ic(ijk_d)
 
-                                       if (ijk_d(ixyz) < 0) cycle
+                                    ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
+                                       + (cir(1)-1)*cr(3)*cr(4)       &
+                                       + (cir(4)-1)*cr(3)             &
+                                       +  cir(3)
 
-                                       cr        = cw
-                                       cr(ifun)  = cdeg(l(ifun)-1)
-                                       cir       = ciw
-                                       cir(ifun) = get_ic(ijk_d)
+                                    gint(iw, icoor) = gint(iw, icoor) - g_d(ir)*ijk(ixyz)
 
-                                       ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
-                                          + (cir(1)-1)*cr(3)*cr(4)       &
-                                          + (cir(4)-1)*cr(3)             &
-                                          +  cir(3)
-
-                                       gint(iw, iraboof) = gint(iw, iraboof) - g_d(ir)*ijk(ixyz)
-
-                                    end do
                                  end do
                               end do
                            end do
                         end do
+                     end do
 
-                     end if
-                  end do !ifun
-                  end do !icent
+                  end if
+               end do ifun_loop
+            end do icent_loop
 
-                  do jraboof = 1, iraboof
-                        call process_dG(n,       &
-                                        o,       &
-                                        gint(1, jraboof),    &
-                                        ndim,    &
-                                        dmat,    &
-                                        gmat,    &
-                                        get_ave, &
-                                        ave(jraboof),     &
-                                        1.0d0)
-                  end do
+            do icoor = 1, 3*nr_centers
+               call contract_integrals(deg,            &
+                                       off,            &
+                                       gint(1, icoor), &
+                                       ndim,           &
+                                       dmat,           &
+                                       gmat,           &
+                                       get_ave,        &
+                                       ave(icoor),     &
+                                       1.0d0)
+            end do
 
-                  end if  !order
+         case default
+!-------------------------------------------------------------------------------
+!           order too high
+!-------------------------------------------------------------------------------
+            print *, 'error: order too high in interest interface'
+            stop 1
 
+         end select
 
-
-               end do lloop
-            end do kloop
-         end do jloop
-      end do iloop
+      end do l_function_loop
+      end do k_function_loop
+      end do j_function_loop
+      end do i_function_loop
 
    end subroutine
 
@@ -421,19 +427,19 @@ contains
 
    end subroutine
 
-   subroutine process_dG(n,        &
-                         o,        &
-                         gint,     &
-                         ndim,     &
-                         dmat,     &
-                         gmat,     &
-                         get_ave,  &
-                         average,  &
-                         scale_exchange)
+   subroutine contract_integrals(n,        &
+                                 o,        &
+                                 gint,     &
+                                 ndim,     &
+                                 dmat,     &
+                                 gmat,     &
+                                 get_ave,  &
+                                 average,  &
+                                 scale_exchange)
 
       integer, intent(in)    :: n(4)
       integer, intent(in)    :: o(4)
-      real(8), intent(in)    :: gint(n(3), n(4), n(1), n(2))
+      real(8), intent(in)    :: gint(n(3), n(4), n(1), n(2), *)
       integer, intent(in)    :: ndim
       real(8), intent(in)    :: dmat(ndim, ndim, *)
       real(8), intent(out)   :: gmat(ndim, ndim, *)
@@ -455,7 +461,7 @@ contains
                bas(2) = o(2) + j
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  g = gint(k, l, i, j)
+                  g = gint(k, l, i, j, 1)
                   if (get_ave) then
                      average(1) = average(1) + gmat(bas(1), bas(2), 1)*g*pkl
                   else
@@ -483,7 +489,7 @@ contains
                pkj = scale_exchange*pkj
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  g = gint(k, l, i, j)
+                  g = gint(k, l, i, j, 1)
                   if (get_ave) then
                      average(1) = average(1) - gmat(bas(1), bas(4), 1)*g*pkj(1)
 #ifdef PRG_DIRAC
