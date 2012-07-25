@@ -109,6 +109,14 @@
          end do
       end if
 
+      if (kw_matches(word, '.CVALUE')) then
+         call kw_read(word, openrsp_cfg_speed_of_light)
+      end if
+
+      if (kw_matches(word, '.NOLLSS')) then
+         openrsp_cfg_skip_llss = .true.
+      end if
+
       if (kw_matches(word, '.GRADIE')) then
          openrsp_cfg_gradient = .true.
       end if

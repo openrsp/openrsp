@@ -1,5 +1,7 @@
 module interface_interest
 
+   use openrsp_cfg
+
    implicit none
 
    public interest_get_int
@@ -139,8 +141,10 @@ contains
 
       call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 1, 1/), (/0.0d0/), .false.)
 #ifdef PRG_DIRAC
-      call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 2, 2/), (/0.0d0/), .false.)
-      call interest_eri_diff_block(ndim, dmat, gmat, order, (/2, 2, 1, 1/), (/0.0d0/), .false.)
+      if (.not. openrsp_cfg_skip_llss) then
+         call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 2, 2/), (/0.0d0/), .false.)
+         call interest_eri_diff_block(ndim, dmat, gmat, order, (/2, 2, 1, 1/), (/0.0d0/), .false.)
+      end if
 #endif
 
    end subroutine
@@ -157,8 +161,10 @@ contains
 
       call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 1, 1/), ave, .true.)
 #ifdef PRG_DIRAC
-      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 2, 2/), ave, .true.)
-      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/2, 2, 1, 1/), ave, .true.)
+      if (.not. openrsp_cfg_skip_llss) then
+         call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 2, 2/), ave, .true.)
+         call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/2, 2, 1, 1/), ave, .true.)
+      end if
 #endif
 
    end subroutine

@@ -1,6 +1,6 @@
 module interface_1el
 
-   use openrsp_const
+   use openrsp_cfg
    use matrix_defop
    use interface_molecule
    use interface_basis
@@ -295,7 +295,7 @@ contains
                                        temp, .false.,             &
                                        1, (/2, 2/),               &
                                        get_print_unit(), 0)
-            val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*temp(1:num_expt)
+            val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(1:num_expt)
 
             ! kinetic energy
             T = mat_alloc_like(D)
@@ -319,7 +319,7 @@ contains
                                           2, (/1, 2, 2, 1/),           &
                                           get_print_unit(), 0)
                do i = 1, num_expt
-                  val_expt(i, 1) = val_expt(i, 1) + openrsp_const_speed_of_light*temp((i-1)*3 + ixyz)
+                  val_expt(i, 1) = val_expt(i, 1) + openrsp_cfg_speed_of_light*temp((i-1)*3 + ixyz)
                end do
             end do
             T = 0

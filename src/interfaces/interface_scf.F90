@@ -1,6 +1,6 @@
 module interface_scf
 
-   use openrsp_const
+   use openrsp_cfg
    use matrix_defop
    use interface_f77_memory
    use interface_pcm
@@ -402,7 +402,7 @@ contains
       H1%elms_alpha = 0.0d0
 
       ! kinetic energy = c (\vec \alpha \cdot \vec p)
-      H1 = H1 - openrsp_const_speed_of_light*T
+      H1 = H1 - openrsp_cfg_speed_of_light*T
 
       call get_1el_integrals(                            &
                              M=(/T/),                    &
@@ -417,7 +417,7 @@ contains
                             )
 
       ! shifted rest mass energy = \beta' c*c
-      H1 = H1 - 2.0d0*(openrsp_const_speed_of_light**2.0d0)*T
+      H1 = H1 - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*T
 
       call get_1el_integrals(                            &
                              M=(/T/),                    &

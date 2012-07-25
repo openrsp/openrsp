@@ -17,6 +17,9 @@ module openrsp_cfg
    ! the frequency-dependent linear response equations
    logical :: openrsp_cfg_solver_optorb = .false.
 
+   real(8) :: openrsp_cfg_speed_of_light = 137.0359998d0
+   logical :: openrsp_cfg_skip_llss      = .false.
+
    integer              :: openrsp_cfg_nr_real_freqs = 1
    real(8), allocatable :: openrsp_cfg_real_freqs(:)
    integer              :: openrsp_cfg_nr_imag_freqs = 1
