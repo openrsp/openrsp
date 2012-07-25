@@ -122,30 +122,32 @@ contains
 
    end subroutine
 
-   subroutine interest_get_int(ndim, dmat, gmat)
+   subroutine interest_get_int(ndim, dmat, gmat, order)
 
       integer, intent(in)  :: ndim
       real(8), intent(out) :: gmat(ndim, ndim, *)
       real(8), intent(in)  :: dmat(ndim, ndim, *)
+      integer, intent(in)  :: order
 
-      call interest_eri_diff_block(ndim, dmat, gmat, (/1, 1, 1, 1/))
+      call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 1, 1/))
 #ifdef PRG_DIRAC
-      call interest_eri_diff_block(ndim, dmat, gmat, (/1, 1, 2, 2/))
-      call interest_eri_diff_block(ndim, dmat, gmat, (/2, 2, 1, 1/))
+!     call interest_eri_diff_block(ndim, dmat, gmat, (/1, 1, 2, 2/))
+!     call interest_eri_diff_block(ndim, dmat, gmat, (/2, 2, 1, 1/))
 #endif
 
    end subroutine
 
-   subroutine interest_get_ave(ndim, dmat1, dmat2, ave)
+   subroutine interest_get_ave(ndim, dmat1, dmat2, order, ave)
 
       integer, intent(in)  :: ndim
       real(8), intent(in)  :: dmat1(ndim, ndim, *)
       real(8), intent(in)  :: dmat2(ndim, ndim, *)
+      integer, intent(in)  :: order
       real(8), intent(out) :: ave(*)
 
       ave(1) = 0.0d0
 
-      call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 1, 1/), ave=ave)
+      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 1, 1/), ave=ave)
 #ifdef PRG_DIRAC
 !     call interest_eri_diff_block(ndim, dmat1, dmat1, (/1, 1, 2, 2/), ave=ave)
 !     call interest_eri_diff_block(ndim, dmat1, dmat1, (/2, 2, 1, 1/), ave=ave)
@@ -153,11 +155,12 @@ contains
 
    end subroutine
 
-   subroutine interest_eri_diff_block(ndim, dmat, gmat, iblocks, ave)
+   subroutine interest_eri_diff_block(ndim, dmat, gmat, order, iblocks, ave)
 
       integer, intent(in)              :: ndim
       real(8)                          :: dmat(ndim, ndim, *)
       real(8)                          :: gmat(ndim, ndim, *)
+      integer, intent(in)              :: order
       integer, intent(in)              :: iblocks(4)
       real(8), intent(inout), optional :: ave(*)
 
@@ -248,7 +251,12 @@ contains
 
 
            !      this deliveres undiff integrals
-           !      call get_integrals(gint, l, e, c, xyz)
+
+                  if (order == 0) then
+                     call get_integrals(gint, l, e, c, xyz)
+                  end if
+
+                  if (order == 1) then
 
                         cw(1) = cdeg(l(1))
                         cw(2) = cdeg(l(2))
@@ -323,6 +331,9 @@ contains
 
                      end if
                   end do
+
+
+                  end if  !order
 
                         call process_dG(n,       &
                                         o,       &

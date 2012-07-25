@@ -217,8 +217,11 @@ contains
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
   subroutine rsp_twoave(nf, f, c, nc, D1, D2, ave)
+
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
+    use interface_interest
+
     !> number of fields
     integer,              intent(in)  :: nf
     !> field labels in std order
@@ -230,6 +233,7 @@ contains
     !> output average
     complex(8),           intent(out) :: ave(product(nc))
     !----------------------------------------------
+    real(8), allocatable              :: real_ave(:)
     real(8), pointer :: tmp(:,:,:,:) !scratch
     type(matrix)  A(1) !scratch matrices
     type(ctr_arg) arg(1)
@@ -246,6 +250,8 @@ contains
        call interface_scf_get_g(D2, A(1)) !Coulomb and exchange
        ave(1) = tr(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
+
+#ifdef PRG_DALTON
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
 #ifdef GRCONT_NOT_AVAILABLE
@@ -265,6 +271,18 @@ contains
 #endif
        ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
        deallocate(tmp)
+#endif /* ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+       allocate(real_ave(size(ave)))
+       real_ave = 0.0
+       call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, real_ave)
+       do i = 1, size(ave)
+          ave(i) = 2.0d0*real_ave(i)
+       end do
+       deallocate(real_ave)
+#endif /* ifdef PRG_DIRAC */
+
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
