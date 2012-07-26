@@ -61,7 +61,7 @@ contains
       real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
       integer ierr                           !error information
       logical :: all_frequencies_zero
-      
+
       if (present(w) .and. .not. present(D)) then
          call quit("error in interface_1el_ovlave: frequencies 'w' and density 'D' " &
                 // 'must both be present or both absent')
@@ -75,29 +75,29 @@ contains
             end if
          end do
       end if
-      
+
       if (any(f == 'EL  ')) then
          ave = 0.0
       else
-      
+
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
-      
+
          if (order_geo /= nf) then
             call quit("interface_1el_ovlave>> only geometric derivatives implemented!")
          end if
-      
+
          ! sets the number of total geometric derivatives
          num_atom = get_nr_atoms()
          num_coord = 3*num_atom
          num_geom = num_coord**order_geo
-      
+
          ! allocates memory for expectation values
          num_expt = num_geom
          allocate(val_expt(num_expt, 1), stat=ierr)
          if (ierr /= 0) call quit("interface_1el_ovlave>> failed to allocate val_expt!")
          val_expt = 0.0
-      
+
          !FIXME changes to call Gen1Int !FIXME \sum_{j+k=n}
          ! (-\sum_{j}w_{j}+\sum_{k}w_{k})/2 S(>)^{j}(<)^{k} ! When it comes to w, I think
          ! it's a better idea to ask the integral program for S>> and S<>, and multiply
@@ -156,7 +156,7 @@ contains
          end if
          ! frees space
          deallocate(val_expt)
-      
+
       end if
    end subroutine
 
@@ -195,11 +195,11 @@ contains
 
       ! gets the order of Cartesian multipole moments
       order_mom = count(f=='EL  ')
-    
+
       if (order_mom > 1) then
          ave = 0.0
       else
-    
+
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
          if (order_mom+order_geo/=nf) then
@@ -338,7 +338,7 @@ contains
 
          ! frees space
          deallocate(val_expt)
-    
+
       end if
    end subroutine
 
@@ -387,15 +387,15 @@ contains
             end if
          end do
       end if
- 
+
       if (any(f=='EL  ')) then
-    
+
          do i = 1, product(nc)
             call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          end do
-    
+
       else
-    
+
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
          if (order_geo/=nf) then
@@ -462,7 +462,7 @@ contains
 #endif
                                      get_print_unit(), 0)
          end if
-    
+
       end if
    end subroutine
 
@@ -491,9 +491,10 @@ contains
       integer num_geom   !number of total geometric derivatives
       integer num_ints   !number of all integral matrices
       integer imat       !incremental recorder over matrices
-      integer :: i
+      integer :: i, ixyz
       type(matrix) :: A
-    
+      type(matrix), allocatable :: T(:)
+
       if (count(f=='EL  ') > 1) then
          call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          do i = 1, product(nc)
@@ -504,9 +505,9 @@ contains
                oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
             end if
          end do
-    
+
       else
-    
+
          ! gets the order of Cartesian multipole moments
          order_mom = count(f=='EL  ')
          ! gets the order of total geometric derivatives
@@ -552,11 +553,80 @@ contains
                                       num_ints, oneint, .false.,   &  !integral matrices
                                       1, (/1, 1/),                 &
                                       get_print_unit(), 0)
-        
+
          ! only geometric perturbations
          else
 #ifdef PRG_DIRAC
-            print *, 'error: adapt oneint, cannot work like this'
+            allocate(T(3*size(oneint)))
+            do i = 1, 3*size(oneint)
+               T(i) = mat_alloc_like(oneint(1))
+            end do
+
+            ! nuclear attraction
+            call gen1int_host_get_int(NON_LAO, INT_POT_ENERGY,   &
+                                      0,                         &
+                                      0,                         &
+                                      0, 0, 0,                   &
+                                      0, 0, 0,                   &
+                                      0, 0,                      &
+                                      min(3,order_geo,num_atom), &
+                                      order_geo,                 &
+                                      0, (/0/),                  &
+                                      REDUNDANT_GEO,             &
+                                      .false., .false., .false., &
+                                      num_ints, oneint, .false., &
+                                      2, (/1, 1, 2, 2/),         &
+                                      get_print_unit(), 0)
+
+            ! beta' matrix
+            call gen1int_host_get_int(NON_LAO, INT_OVERLAP,      &
+                                      0,                         &
+                                      0,                         &
+                                      0, 0, 0,                   &
+                                      0, 0, 0,                   &
+                                      0, 0,                      &
+                                      min(3,order_geo,num_atom), &
+                                      order_geo,                 &
+                                      0, (/0/),                  &
+                                      REDUNDANT_GEO,             &
+                                      .false., .false., .false., &
+                                      num_ints, T, .false.,      &
+                                      1, (/2, 2/),               &
+                                      get_print_unit(), 0)
+            do i = 1, size(oneint)
+               oneint(i) = oneint(i) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*T(i)
+            end do
+
+!           ! kinetic energy
+            call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
+                                      0,                           &
+                                      1,                           &
+                                      0, 0, 0,                     &
+                                      0, 0, 0,                     &
+                                      0, 0,                        &
+                                      min(3,order_geo,num_atom),   &
+                                      order_geo,                   &
+                                      0, (/0/),                    &
+                                      REDUNDANT_GEO,               &
+                                      .false., .false., .false.,   &
+                                      3*num_ints, T, .false.,      &
+                                      2, (/1, 2, 2, 1/),           &
+                                      get_print_unit(), 0)
+            do i = 1, size(oneint)
+               do ixyz = 1, 3
+                  call daxpy(T(1)%nrow*T(1)%ncol,                &
+                            -openrsp_cfg_speed_of_light,         &
+                             T((i-1)*3 + ixyz)%elms_alpha,       &
+                             1,                                  &
+                             oneint(i)%elms_alpha(1, 1, 5-ixyz), &
+                             1)
+               end do
+            end do
+
+            do i = 1, 3*size(oneint)
+               T(i) = 0
+            end do
+            deallocate(T)
 #else
             call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL,    &
                                       0,                         &  !multipole moments
@@ -574,7 +644,7 @@ contains
                                       get_print_unit(), 0)
 #endif
          end if
-    
+
       end if
    end subroutine
 
