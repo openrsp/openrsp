@@ -252,7 +252,7 @@ contains
 
 #ifdef PRG_DIRAC
     G%elms_alpha = 0.0d0
-    call interest_get_int(D%nrow, D%elms_alpha, G%elms_alpha, 0)
+    call interest_get_int(D%nrow, D%elms_alpha, G%elms_alpha, 0, 1)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine

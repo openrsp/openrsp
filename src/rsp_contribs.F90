@@ -434,6 +434,7 @@ contains
     ! work array to be passed to GRCONT
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
+    use interface_interest
     integer,              intent(in)    :: nr_ao
     !> number of fields
     integer,              intent(in)    :: nf
@@ -477,6 +478,8 @@ contains
           if (iszero(fock(i+1))) then
              call mat_ensure_alloc(fock(i+1))
           end if
+
+#ifdef PRG_DALTON
 #ifdef GRCONT_NOT_AVAILABLE
           arg(1) = ctr_arg(1, i+1, &
                            ncor, dens, fock(i+1), null_ptr)
@@ -498,6 +501,12 @@ contains
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
 #endif
+#endif /* ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1)
+#endif /* ifdef PRG_DIRAC */
+
        end do
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()

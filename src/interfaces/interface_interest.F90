@@ -132,18 +132,40 @@ contains
 
    end subroutine
 
-   subroutine interest_get_int(ndim, dmat, gmat, order)
+   subroutine interest_get_int(ndim, dmat, gmat, order, only_icoor)
 
       integer, intent(in)  :: ndim
       real(8), intent(out) :: gmat(ndim, ndim, *)
       real(8), intent(in)  :: dmat(ndim, ndim, *)
       integer, intent(in)  :: order
+      integer, intent(in)  :: only_icoor
 
-      call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 1, 1/), (/0.0d0/), .false.)
+      call interest_eri_diff_block(ndim,           &
+                                   dmat,           &
+                                   gmat,           &
+                                   order,          &
+                                   (/1, 1, 1, 1/), &
+                                   (/0.0d0/),      &
+                                   .false.,        &
+                                   only_icoor)
 #ifdef PRG_DIRAC
       if (.not. openrsp_cfg_skip_llss) then
-         call interest_eri_diff_block(ndim, dmat, gmat, order, (/1, 1, 2, 2/), (/0.0d0/), .false.)
-         call interest_eri_diff_block(ndim, dmat, gmat, order, (/2, 2, 1, 1/), (/0.0d0/), .false.)
+         call interest_eri_diff_block(ndim,           &
+                                      dmat,           &
+                                      gmat,           &
+                                      order,          &
+                                      (/1, 1, 2, 2/), &
+                                      (/0.0d0/),      &
+                                      .false.,        &
+                                      only_icoor)
+         call interest_eri_diff_block(ndim,           &
+                                      dmat,           &
+                                      gmat,           &
+                                      order,          &
+                                      (/2, 2, 1, 1/), &
+                                      (/0.0d0/),      &
+                                      .false.,        &
+                                      only_icoor)
       end if
 #endif
 
@@ -159,17 +181,45 @@ contains
 
       ave(1) = 0.0d0
 
-      call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 1, 1/), ave, .true.)
+      call interest_eri_diff_block(ndim,           &
+                                   dmat1,          &
+                                   dmat2,          &
+                                   order,          &
+                                   (/1, 1, 1, 1/), &
+                                   ave,            &
+                                   .true.,         &
+                                   0)
 #ifdef PRG_DIRAC
       if (.not. openrsp_cfg_skip_llss) then
-         call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/1, 1, 2, 2/), ave, .true.)
-         call interest_eri_diff_block(ndim, dmat1, dmat1, order, (/2, 2, 1, 1/), ave, .true.)
+         call interest_eri_diff_block(ndim,           &
+                                      dmat1,          &
+                                      dmat2,          &
+                                      order,          &
+                                      (/1, 1, 2, 2/), &
+                                      ave,            &
+                                      .true.,         &
+                                      0)
+         call interest_eri_diff_block(ndim,           &
+                                      dmat1,          &
+                                      dmat2,          &
+                                      order,          &
+                                      (/2, 2, 1, 1/), &
+                                      ave,            &
+                                      .true.,         &
+                                      0)
       end if
 #endif
 
    end subroutine
 
-   subroutine interest_eri_diff_block(ndim, dmat, gmat, order, iblocks, ave, get_ave)
+   subroutine interest_eri_diff_block(ndim,    &
+                                      dmat,    &
+                                      gmat,    &
+                                      order,   &
+                                      iblocks, &
+                                      ave,     &
+                                      get_ave, &
+                                      only_icoor)
 
       integer, intent(in)    :: ndim
       real(8)                :: dmat(ndim, ndim, *)
@@ -178,6 +228,7 @@ contains
       integer, intent(in)    :: iblocks(4)
       real(8)                :: ave(*)
       logical, intent(in)    :: get_ave
+      integer, intent(in)    :: only_icoor
 
       integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
@@ -198,11 +249,25 @@ contains
       integer :: ijk(3), ijk_u(3), ijk_d(3)
       integer :: nr_integrals
       integer :: icoor
+      integer :: icent_start, icent_end
+      integer :: ixyz_start,  ixyz_end
 
       ! make sure it is initialized
       ! it does not cost anything
       ! routine will return if already initialized
       call initialize_interest_eri_diff()
+
+      if (get_ave) then
+         icent_start = 1
+         icent_end   = nr_centers
+         ixyz_start  = 1
+         ixyz_end    = 3
+      else
+         icent_start = 1 + (only_icoor-1)/3
+         ixyz_start  = 1 + mod((only_icoor-1), 3)
+         icent_end   = icent_start
+         ixyz_end    = ixyz_start
+      end if
 
       i_function_loop: do ii = shell_start(iblocks(1)), shell_end(iblocks(1))
          ang(1)    =      gto(ii)%lvalue
@@ -277,7 +342,7 @@ contains
 
             gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1:3*nr_centers) = 0.0d0
 
-            icent_loop: do icent = 1, nr_centers
+            icent_loop: do icent = icent_start, icent_end
                ifun_loop: do ifun = 1, 4
                   if (cent(ifun) == icent) then
 
@@ -307,8 +372,13 @@ contains
 
                                  ijk = get_ijk(ang(ifun), ciw(ifun))
 
-                                 do ixyz = 1, 3
-                                    icoor = (icent-1)*3 + ixyz
+                                 do ixyz = ixyz_start, ixyz_end
+
+                                    if (get_ave) then
+                                       icoor = (icent-1)*3 + ixyz
+                                    else
+                                       icoor = 1
+                                    end if
 
                                     ijk_u       = ijk
                                     ijk_u(ixyz) = ijk_u(ixyz) + 1
@@ -351,17 +421,29 @@ contains
                end do ifun_loop
             end do icent_loop
 
-            do icoor = 1, 3*nr_centers
-               call contract_integrals(deg,            &
-                                       off,            &
-                                       gint(1, icoor), &
-                                       ndim,           &
-                                       dmat,           &
-                                       gmat,           &
-                                       get_ave,        &
-                                       ave(icoor),     &
+            if (get_ave) then
+               do icoor = 1, 3*nr_centers
+                  call contract_integrals(deg,            &
+                                          off,            &
+                                          gint(1, icoor), &
+                                          ndim,           &
+                                          dmat,           &
+                                          gmat,           &
+                                          get_ave,        &
+                                          ave(icoor),     &
+                                          1.0d0)
+               end do
+            else
+               call contract_integrals(deg,     &
+                                       off,     &
+                                       gint,    &
+                                       ndim,    &
+                                       dmat,    &
+                                       gmat,    &
+                                       get_ave, &
+                                       ave,     &
                                        1.0d0)
-            end do
+            end if
 
          case default
 !-------------------------------------------------------------------------------
