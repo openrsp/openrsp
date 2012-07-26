@@ -157,8 +157,12 @@ contains
        call rsp_mosolver_exec(FDSg(1), (/0d0/), X)
        FDSg(1) = 0
 
+#ifdef PRG_DIRAC
+       Dg(i) = Dg(i) + X(1)
+#else
        X(1) = -2.0d0*X(1)
        Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1)
+#endif
        X(1) = 0
 
        call rsp_twoint(S%nrow, 0, nof, noc, noc, Dg(i), Fg(i:i))
