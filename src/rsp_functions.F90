@@ -142,19 +142,28 @@ contains
 
 !   solve equations
     do i = 1, size(Dg)
-       FDSg(1) = F*D*Sg(i) - Sg(i)*D*F
+
        Dg(i) = -D*Sg(i)*D
+
+       FDSg(1) = F*D*Sg(i) - Sg(i)*D*F
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1) + Fg(i)
+
        call rsp_twoint(S%nrow, 0, nof, noc, noc, Dg(i), FDSg(1:1))
        call rsp_xcint(D=(/D, Dg(i)/), F=FDSg(1))
+
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1)
-       X(1) = 0*FDSg(1)
-       call mat_ensure_alloc(X(1))
+
+       X(1) = mat_alloc_like(D)
        call rsp_mosolver_exec(FDSg(1), (/0d0/), X)
-       X(1)=-2*X(1); FDSg(1)=0
-       Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1); X(1)=0
+       FDSg(1) = 0
+
+       X(1) = -2.0d0*X(1)
+       Dg(i) = Dg(i) + X(1)*S*D - D*S*X(1)
+       X(1) = 0
+
        call rsp_twoint(S%nrow, 0, nof, noc, noc, Dg(i), Fg(i:i))
        call rsp_xcint(D=(/D, Dg(i)/), F=Fg(i))
+
     end do
 
   end subroutine
