@@ -41,7 +41,7 @@ module interface_interest
    integer, allocatable :: ijk_to_ic(:, :, :)
    integer, allocatable :: ic_to_ijk(:, :, :)
 
-   integer, parameter   :: maxl = 3
+   integer, parameter   :: maxl = 10
    integer, allocatable :: imat_u(:, :)
    integer, allocatable :: imat_d(:, :, :)
    integer, allocatable :: imat_f(:, :, :)
@@ -343,6 +343,9 @@ contains
             gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1:3*nr_centers) = 0.0d0
 
             icent_loop: do icent = icent_start, icent_end
+
+
+
                ifun_loop: do ifun = 1, 4
                   if (cent(ifun) == icent) then
 
