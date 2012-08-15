@@ -41,6 +41,11 @@ module interface_interest
    integer, allocatable :: ijk_to_ic(:, :, :)
    integer, allocatable :: ic_to_ijk(:, :, :)
 
+   integer, parameter   :: maxl = 3
+   integer, allocatable :: imat_u(:, :)
+   integer, allocatable :: imat_d(:, :, :)
+   integer, allocatable :: imat_f(:, :, :)
+
    integer :: nr_centers
 
 contains
@@ -238,7 +243,7 @@ contains
       real(8) :: g_d(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4), cent(4)
       integer :: ang(4), ang_temp(4), deg(4), off(4)
-      integer :: cw(4), ciw(4)
+      integer :: ciw(4)
       integer :: cr(4), cir(4)
       integer :: ci, cj, ck, cl
       integer :: ir, iw
@@ -335,12 +340,7 @@ contains
 !-------------------------------------------------------------------------------
 !           order 1
 !-------------------------------------------------------------------------------
-            cw(1) = deg(1)
-            cw(2) = deg(2)
-            cw(3) = deg(3)
-            cw(4) = deg(4)
-
-            gint(1:cw(1)*cw(2)*cw(3)*cw(4), 1:3*nr_centers) = 0.0d0
+            gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1:3*nr_centers) = 0.0d0
 
             icent_loop: do icent = icent_start, icent_end
                ifun_loop: do ifun = 1, 4
@@ -360,13 +360,13 @@ contains
                      ! higher order derivatives
                      ! now i prefer compact and readable code
                      iw = 0
-                     do cj = 1, cw(2)
+                     do cj = 1, deg(2)
                         ciw(2) = cj
-                        do ci = 1, cw(1)
+                        do ci = 1, deg(1)
                            ciw(1) = ci
-                           do cl = 1, cw(4)
+                           do cl = 1, deg(4)
                               ciw(4) = cl
-                              do ck = 1, cw(3)
+                              do ck = 1, deg(3)
                                  ciw(3) = ck
                                  iw = iw + 1
 
@@ -385,7 +385,7 @@ contains
                                     ijk_d       = ijk
                                     ijk_d(ixyz) = ijk_d(ixyz) - 1
 
-                                    cr        = cw
+                                    cr        = deg
                                     cr(ifun)  = cdeg(ang(ifun)+1)
                                     cir       = ciw
                                     cir(ifun) = get_ic(ijk_u)
@@ -399,7 +399,7 @@ contains
 
                                     if (ijk_d(ixyz) < 0) cycle
 
-                                    cr        = cw
+                                    cr        = deg
                                     cr(ifun)  = cdeg(ang(ifun)-1)
                                     cir       = ciw
                                     cir(ifun) = get_ic(ijk_d)
@@ -597,8 +597,8 @@ contains
    subroutine init_arrays()
 
       integer :: il, ia, ib, ii, ij, ik, ip
-
-      integer, parameter :: maxl = 10
+      integer :: i, j, k, l, m
+      integer :: ndim
 
       if (allocated(ijk_to_ic)) deallocate(ijk_to_ic)
       if (allocated(ic_to_ijk)) deallocate(ic_to_ijk)
@@ -628,6 +628,100 @@ contains
             end do
          end do
       end do
+
+      ndim = (maxl+1)*(maxl+2)/2
+
+      ! construct up matrix
+
+      allocate(imat_u(ndim, ndim))
+      imat_u = 1
+
+      do i = 1, ndim
+         imat_u(i, 1) = i
+      end do
+
+      m = 2
+      do i = 1, maxl
+         l = 0
+         do j = 1, maxl+1
+            do k = 1, j
+               l = l + 1
+               imat_u(l, m) = j
+            end do
+         end do
+         m = m + i + 1
+      end do
+
+      do i = 2, ndim
+         do j = 1, ndim
+            imat_u(j, i) = imat_u(j, i-1) + imat_u(j, i)
+         end do
+      end do
+
+      ! construct down matrices
+
+      allocate(imat_d(ndim, 3, maxl))
+      allocate(imat_f(ndim, 3, maxl))
+      imat_d = 0
+      imat_f = 0
+
+      do l = 1, maxl
+         do k = 1, l*(l+1)/2
+            imat_d(k, 1, l) = k
+         end do
+      end do
+
+      do i = 1, maxl
+         k = 0
+         l = 0
+         do m = 1, i
+            do j = 1, m
+               k = k + 1
+               l = l + 1
+               imat_d(l+1, 2, i) = k
+               imat_d(l+2, 3, i) = k
+            end do
+            l = l + 1
+         end do
+      end do
+
+      do i = 1, maxl
+         l = 0
+         do m = 1, i
+            do j = 1, m
+               l = l + 1
+               imat_f(l, 1, i) = i - m + 1
+            end do
+         end do
+      end do
+
+      do i = 1, maxl
+         k = 0
+         l = 0
+         do m = 1, i
+            do j = 1, m
+               k = k + 1
+               l = l + 1
+               imat_f(l+1, 2, i) = m - j + 1
+               imat_f(l+2, 3, i) = j
+            end do
+            l = l + 1
+         end do
+      end do
+
+!     do i = 1, maxl
+!        print *, 'raboof down', i
+!        write(*, '(a, 10i3)') 'raboof', imat_d(1:ndim, 1, i)
+!        write(*, '(a, 10i3)') 'raboof', imat_d(1:ndim, 2, i)
+!        write(*, '(a, 10i3)') 'raboof', imat_d(1:ndim, 3, i)
+!     end do
+
+!     do i = 1, maxl
+!        print *, 'raboof fac', i
+!        write(*, '(a, 10i3)') 'raboof', imat_f(1:ndim, 1, i)
+!        write(*, '(a, 10i3)') 'raboof', imat_f(1:ndim, 2, i)
+!        write(*, '(a, 10i3)') 'raboof', imat_f(1:ndim, 3, i)
+!     end do
 
    end subroutine
 
