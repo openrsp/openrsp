@@ -12,7 +12,7 @@ module rsp_perturbed_matrices
   use matrix_defop
   use rsp_field_tuple
   use rsp_sdf_caching
-  use rsp_contribs, only: rsp_cfg
+!   use rsp_general, only: rsp_cfg
 
   implicit none
 
@@ -26,6 +26,12 @@ module rsp_perturbed_matrices
   public get_fds_data_index
   public frequency_zero_or_sum
 
+
+  type rsp_cfg
+
+     type(matrix) :: zeromat
+
+  end type
   contains
 
   recursive function derivative_superstructure_getsize(mol, pert, kn, &
@@ -179,21 +185,21 @@ module rsp_perturbed_matrices
     type(sdf) :: F, D, S
     type(matrix) :: W, A, B, C
 
-    W%elms = 0.0
+    W%elms_alpha = 0.0
 !     W = mat_zero_like(mol%zeromat)
 
     A = mat_alloc_like(mol%zeromat)
-    A%elms = 0.0
+    A%elms_alpha = 0.0
 !     A = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(A)
 
     B = mat_alloc_like(mol%zeromat)
-    B%elms = 0.0
+    B%elms_alpha = 0.0
 !     B = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(B)
 
     C = mat_alloc_like(mol%zeromat)
-    C%elms = 0.0
+    C%elms_alpha = 0.0
 !     C = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(C)
 
@@ -280,21 +286,21 @@ end if
     type(sdf) :: F, D, S
     type(matrix) :: Y, A, B, C
 
-    Y%elms = 0.0
+    Y%elms_alpha = 0.0
 !     Y = mat_zero_like(mol%zeromat)
 
     A = mat_alloc_like(mol%zeromat)
-    A%elms = 0.0
+    A%elms_alpha = 0.0
 !     A = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(A)
 
     B = mat_alloc_like(mol%zeromat)
-    B%elms = 0.0
+    B%elms_alpha = 0.0
 !     B = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(B)
 
     C = mat_alloc_like(mol%zeromat)
-    C%elms = 0.0
+    C%elms_alpha = 0.0
 !     C = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(C)
 
@@ -393,21 +399,21 @@ end if
     type(sdf) :: F, D, S
     type(matrix) :: Z, A, B, C
 
-    Z%elms = 0.0
+    Z%elms_alpha = 0.0
 !     Z = mat_zero_like(mol%zeromat)
 
     A = mat_alloc_like(mol%zeromat)
-    A%elms = 0.0
+    A%elms_alpha = 0.0
 !     A = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(A)
 
     B = mat_alloc_like(mol%zeromat)
-    B%elms = 0.0
+    B%elms_alpha = 0.0
 !     B = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(B)
 
     C = mat_alloc_like(mol%zeromat)
-    C%elms = 0.0
+    C%elms_alpha = 0.0
 !     C = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(C)
 
@@ -445,7 +451,7 @@ call p_tuple_deallocate(merged_p_tuple)
     B = 0
     C = 0
 
-!  write(*,*) 'end of function, returning', Z%elms
+!  write(*,*) 'end of function, returning', Z%elms_alpha
 
   end subroutine
 
@@ -464,21 +470,21 @@ call p_tuple_deallocate(merged_p_tuple)
     type(sdf) :: D, S
     type(matrix) :: L, A, B, C
 
-    L%elms = 0.0
+    L%elms_alpha = 0.0
 !     L = mat_zero_like(mol%zeromat)
 
     A = mat_alloc_like(mol%zeromat)
-    A%elms = 0.0
+    A%elms_alpha = 0.0
 !     A = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(A)
 
     B = mat_alloc_like(mol%zeromat)
-    B%elms = 0.0
+    B%elms_alpha = 0.0
 !     B = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(B)
 
     C = mat_alloc_like(mol%zeromat)
-    C%elms = 0.0
+    C%elms_alpha = 0.0
 !     C = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(C)
 
@@ -535,21 +541,21 @@ call p_tuple_deallocate(merged_B)
     type(sdf) :: F, D, S
     type(matrix) :: Zeta, A, B, C
 
-    Zeta%elms = 0.0
+    Zeta%elms_alpha = 0.0
 !     Zeta = mat_zero_like(mol%zeromat)
 
     A = mat_alloc_like(mol%zeromat)
-    A%elms = 0.0
+    A%elms_alpha = 0.0
 !     A = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(A)
 
     B = mat_alloc_like(mol%zeromat)
-    B%elms = 0.0
+    B%elms_alpha = 0.0
 !     B = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(B)
 
     C = mat_alloc_like(mol%zeromat)
-    C%elms = 0.0
+    C%elms_alpha = 0.0
 !     C = mat_zero_like(mol%zeromat)
     call mat_ensure_alloc(C)
 

@@ -22,6 +22,7 @@ module rsp_general
 
   implicit none
 
+public rsp_cfg
   public rsp_prop
   public get_prop
   public rsp_energy
@@ -37,9 +38,19 @@ module rsp_general
   public print_rsp_tensor
   public print_rsp_tensor_stdout
 
+!   type rsp_cfg
+! 
+!      type(matrix) :: zeromat
+! 
+!   end type
+
+
+
   contains
 
-  subroutine rsp_prop(mol, pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
+
+
+  subroutine rsp_prop(pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
 
     implicit none
 
@@ -1081,8 +1092,9 @@ deallocate(blk_sizes_merged)
 ! write(*,*) 'got W at i = ', i
 ! write(*,*) W%elms
 
-       call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
-                      (/ (j/j, j = 1, p12(1)%n_perturbations) /), p12(1)%pdim, W, tmp)
+!MR: TEMPORARILY DISABLED
+!        call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
+!                       (/ (j/j, j = 1, p12(1)%n_perturbations) /), p12(1)%pdim, W, tmp)
 
        do j = 1, size(inner_indices, 1)
 
@@ -1270,9 +1282,10 @@ deallocate(blk_sizes_merged)
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
-       call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
-                       (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
-                       p12(1)%pdim, W, tmp)
+!MR: TEMPORARILY DISABLED
+!        call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
+!                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
+!                        p12(1)%pdim, W, tmp)
 
        do j = 1, size(inner_indices, 1)
 
