@@ -37,14 +37,10 @@ module interface_interest
 
    logical :: interface_is_initialized = .false.
 
-   integer, allocatable :: cdeg(:)
-   integer, allocatable :: ijk_to_ic(:, :, :)
-   integer, allocatable :: ic_to_ijk(:, :, :)
-
    integer, parameter   :: maxl = 10
    integer, allocatable :: imat_u(:, :)
    integer, allocatable :: imat_d(:, :, :)
-   integer, allocatable :: imat_f(:, :, :)
+   real(8), allocatable :: imat_f(:, :, :)
 
    integer :: nr_centers
 
@@ -238,10 +234,11 @@ contains
       integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
-      real(8) :: gint(max_nr_integrals, max_ave_length)
+      real(8) :: gint(max_nr_integrals)
       real(8) :: g_u(max_nr_integrals)
       real(8) :: g_d(max_nr_integrals)
-      real(8) :: ex(4), coef(4), xyz(3, 4), cent(4)
+      real(8) :: ex(4), coef(4), xyz(3, 4)
+      real(8) :: f
       integer :: ang(4), ang_temp(4), deg(4), off(4)
       integer :: ciw(4)
       integer :: cr(4), cir(4)
@@ -249,10 +246,14 @@ contains
       integer :: ir, iw
 
       integer :: ii, ij, ik, il
+      integer :: pi, pj, pk, pl
       integer :: ifun, ic
+      integer :: cent(4)
       integer :: icent, ixyz
+      integer :: ideg
       integer :: ijk(3), ijk_u(3), ijk_d(3)
       integer :: nr_integrals
+      integer :: nr_elements
       integer :: icoor
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
@@ -327,7 +328,9 @@ contains
 
             call get_integrals(gint, ang, ex, coef, xyz)
             call contract_integrals(deg,     &
+                                    deg,     &
                                     off,     &
+                                    1, 2, 3, 4, &
                                     gint,    &
                                     ndim,    &
                                     dmat,    &
@@ -340,113 +343,95 @@ contains
 !-------------------------------------------------------------------------------
 !           order 1
 !-------------------------------------------------------------------------------
-            gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1:3*nr_centers) = 0.0d0
 
             icent_loop: do icent = icent_start, icent_end
 
+!              ijkl is in memory (k, l, i, j)
+!              we will always differentiate on the slowest index
 
+               !fixme: if ave, avoid multiple calls and scale by 4.0
 
-               ifun_loop: do ifun = 1, 4
-                  if (cent(ifun) == icent) then
+               call first_order(1, 2, 3, 4, &
+                                ixyz_start, &
+                                ixyz_end,   &
+                                deg,        &
+                                off,        &
+                                ang,        &
+                                coef,       &
+                                ex,         &
+                                xyz,        &
+                                cent,       &
+                                g_u,        &
+                                g_d,        &
+                                gint,       &
+                                dmat,       &
+                                gmat,       &
+                                ave,        &
+                                get_ave,    &
+                                icent,      &
+                                ndim)
 
-                     ang_temp = ang
-                     ang_temp(ifun) = ang_temp(ifun) + 1
-                     call get_integrals(g_u, ang_temp, ex, coef, xyz)
-                     if (ang(ifun) > 0) then
-                        ang_temp = ang
-                        ang_temp(ifun) = ang_temp(ifun) - 1
-                        call get_integrals(g_d, ang_temp, ex, coef, xyz)
-                     end if
+               call first_order(2, 1, 4, 3, &
+                                ixyz_start, &
+                                ixyz_end,   &
+                                deg,        &
+                                off,        &
+                                ang,        &
+                                coef,       &
+                                ex,         &
+                                xyz,        &
+                                cent,       &
+                                g_u,        &
+                                g_d,        &
+                                gint,       &
+                                dmat,       &
+                                gmat,       &
+                                ave,        &
+                                get_ave,    &
+                                icent,      &
+                                ndim)
 
-                     ! the quintuple loop below can be optimized
-                     ! but i will do that later after having
-                     ! higher order derivatives
-                     ! now i prefer compact and readable code
-                     iw = 0
-                     do cj = 1, deg(2)
-                        ciw(2) = cj
-                        do ci = 1, deg(1)
-                           ciw(1) = ci
-                           do cl = 1, deg(4)
-                              ciw(4) = cl
-                              do ck = 1, deg(3)
-                                 ciw(3) = ck
-                                 iw = iw + 1
+               call first_order(3, 4, 1, 2, &
+                                ixyz_start, &
+                                ixyz_end,   &
+                                deg,        &
+                                off,        &
+                                ang,        &
+                                coef,       &
+                                ex,         &
+                                xyz,        &
+                                cent,       &
+                                g_u,        &
+                                g_d,        &
+                                gint,       &
+                                dmat,       &
+                                gmat,       &
+                                ave,        &
+                                get_ave,    &
+                                icent,      &
+                                ndim)
 
-                                 ijk = get_ijk(ang(ifun), ciw(ifun))
+               call first_order(4, 3, 2, 1, &
+                                ixyz_start, &
+                                ixyz_end,   &
+                                deg,        &
+                                off,        &
+                                ang,        &
+                                coef,       &
+                                ex,         &
+                                xyz,        &
+                                cent,       &
+                                g_u,        &
+                                g_d,        &
+                                gint,       &
+                                dmat,       &
+                                gmat,       &
+                                ave,        &
+                                get_ave,    &
+                                icent,      &
+                                ndim)
 
-                                 do ixyz = ixyz_start, ixyz_end
-
-                                    if (get_ave) then
-                                       icoor = (icent-1)*3 + ixyz
-                                    else
-                                       icoor = 1
-                                    end if
-
-                                    ijk_u       = ijk
-                                    ijk_u(ixyz) = ijk_u(ixyz) + 1
-                                    ijk_d       = ijk
-                                    ijk_d(ixyz) = ijk_d(ixyz) - 1
-
-                                    cr        = deg
-                                    cr(ifun)  = cdeg(ang(ifun)+1)
-                                    cir       = ciw
-                                    cir(ifun) = get_ic(ijk_u)
-
-                                    ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
-                                       + (cir(1)-1)*cr(3)*cr(4)       &
-                                       + (cir(4)-1)*cr(3)             &
-                                       +  cir(3)
-
-                                    gint(iw, icoor) = gint(iw, icoor) + g_u(ir)*2.0d0*ex(ifun)
-
-                                    if (ijk_d(ixyz) < 0) cycle
-
-                                    cr        = deg
-                                    cr(ifun)  = cdeg(ang(ifun)-1)
-                                    cir       = ciw
-                                    cir(ifun) = get_ic(ijk_d)
-
-                                    ir = (cir(2)-1)*cr(3)*cr(4)*cr(1) &
-                                       + (cir(1)-1)*cr(3)*cr(4)       &
-                                       + (cir(4)-1)*cr(3)             &
-                                       +  cir(3)
-
-                                    gint(iw, icoor) = gint(iw, icoor) - g_d(ir)*ijk(ixyz)
-
-                                 end do
-                              end do
-                           end do
-                        end do
-                     end do
-
-                  end if
-               end do ifun_loop
             end do icent_loop
-
-            if (get_ave) then
-               do icoor = 1, 3*nr_centers
-                  call contract_integrals(deg,            &
-                                          off,            &
-                                          gint(1, icoor), &
-                                          ndim,           &
-                                          dmat,           &
-                                          gmat,           &
-                                          get_ave,        &
-                                          ave(icoor),     &
-                                          1.0d0)
-               end do
-            else
-               call contract_integrals(deg,     &
-                                       off,     &
-                                       gint,    &
-                                       ndim,    &
-                                       dmat,    &
-                                       gmat,    &
-                                       get_ave, &
-                                       ave,     &
-                                       1.0d0)
-            end if
 
          case default
 !-------------------------------------------------------------------------------
@@ -512,19 +497,23 @@ contains
 
    end subroutine
 
-   subroutine contract_integrals(n,        &
-                                 o,        &
-                                 gint,     &
-                                 ndim,     &
-                                 dmat,     &
-                                 gmat,     &
-                                 get_ave,  &
-                                 average,  &
+   subroutine contract_integrals(n,              &
+                                 m,              &
+                                 o,              &
+                                 pi, pj, pk, pl, &
+                                 gint,           &
+                                 ndim,           &
+                                 dmat,           &
+                                 gmat,           &
+                                 get_ave,        &
+                                 average,        &
                                  scale_exchange)
 
       integer, intent(in)    :: n(4)
+      integer, intent(in)    :: m(4)
       integer, intent(in)    :: o(4)
-      real(8), intent(in)    :: gint(n(3), n(4), n(1), n(2), *)
+      integer, intent(in)    :: pi, pj, pk, pl
+      real(8), intent(in)    :: gint(m(3), m(4), m(1), m(2))
       integer, intent(in)    :: ndim
       real(8), intent(in)    :: dmat(ndim, ndim, *)
       real(8), intent(out)   :: gmat(ndim, ndim, *)
@@ -533,6 +522,7 @@ contains
       real(8), intent(in)    :: scale_exchange
 
       integer :: i, j, k, l
+      integer :: idx(4)
       integer :: bas(4)
       real(8) :: pkl, pkj(4), g
 
@@ -546,7 +536,11 @@ contains
                bas(2) = o(2) + j
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  g = gint(k, l, i, j, 1)
+                  idx(1) = i
+                  idx(2) = j
+                  idx(3) = k
+                  idx(4) = l
+                  g = gint(idx(pk), idx(pl), idx(pi), idx(pj))
                   if (get_ave) then
                      average(1) = average(1) + gmat(bas(1), bas(2), 1)*g*pkl
                   else
@@ -574,7 +568,11 @@ contains
                pkj = scale_exchange*pkj
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  g = gint(k, l, i, j, 1)
+                  idx(1) = i
+                  idx(2) = j
+                  idx(3) = k
+                  idx(4) = l
+                  g = gint(idx(pk), idx(pl), idx(pi), idx(pj))
                   if (get_ave) then
                      average(1) = average(1) - gmat(bas(1), bas(4), 1)*g*pkj(1)
 #ifdef PRG_DIRAC
@@ -603,39 +601,11 @@ contains
       integer :: i, j, k, l, m
       integer :: ndim
 
-      if (allocated(ijk_to_ic)) deallocate(ijk_to_ic)
-      if (allocated(ic_to_ijk)) deallocate(ic_to_ijk)
-      if (allocated(cdeg)) deallocate(cdeg)
-
-      allocate(ijk_to_ic(0:maxl, 0:maxl, 0:maxl))
-      allocate(ic_to_ijk(0:maxl, (maxl + 1)*(maxl + 2)/2, 3))
-      allocate(cdeg(0:maxl))
-
-      ijk_to_ic = 0
-      ic_to_ijk = 0
-      cdeg = 0
-
-      do il = 0, maxl
-         cdeg(il) = ((il + 1)*(il + 2))/2
-         ip = 0
-         do ia = 1, il + 1
-            do ib = 1, ia
-               ip = ip + 1
-               ii = il + 1 - ia
-               ij = ia - ib
-               ik = ib - 1
-               ijk_to_ic(ii, ij, ik) = ip
-               ic_to_ijk(il, ip, 1)  = ii
-               ic_to_ijk(il, ip, 2)  = ij
-               ic_to_ijk(il, ip, 3)  = ik
-            end do
-         end do
-      end do
-
       ndim = (maxl+1)*(maxl+2)/2
 
       ! construct up matrix
 
+      if (allocated(imat_u)) deallocate(imat_u)
       allocate(imat_u(ndim, ndim))
       imat_u = 1
 
@@ -663,10 +633,12 @@ contains
 
       ! construct down matrices
 
+      if (allocated(imat_d)) deallocate(imat_d)
+      if (allocated(imat_f)) deallocate(imat_f)
       allocate(imat_d(ndim, 3, maxl))
       allocate(imat_f(ndim, 3, maxl))
       imat_d = 0
-      imat_f = 0
+      imat_f = 0.0d0
 
       do l = 1, maxl
          do k = 1, l*(l+1)/2
@@ -693,7 +665,7 @@ contains
          do m = 1, i
             do j = 1, m
                l = l + 1
-               imat_f(l, 1, i) = i - m + 1
+               imat_f(l, 1, i) = real(i - m + 1)
             end do
          end do
       end do
@@ -705,38 +677,123 @@ contains
             do j = 1, m
                k = k + 1
                l = l + 1
-               imat_f(l+1, 2, i) = m - j + 1
-               imat_f(l+2, 3, i) = j
+               imat_f(l+1, 2, i) = real(m - j + 1)
+               imat_f(l+2, 3, i) = real(j)
             end do
             l = l + 1
          end do
       end do
 
-!     do i = 1, maxl
-!        print *, 'raboof down', i
-!        write(*, '(a, 10i3)') 'raboof', imat_d(1:ndim, 1, i)
-!        write(*, '(a, 10i3)') 'raboof', imat_d(1:ndim, 2, i)
-!        write(*, '(a, 10i3)') 'raboof', imat_d(1:ndim, 3, i)
-!     end do
-
-!     do i = 1, maxl
-!        print *, 'raboof fac', i
-!        write(*, '(a, 10i3)') 'raboof', imat_f(1:ndim, 1, i)
-!        write(*, '(a, 10i3)') 'raboof', imat_f(1:ndim, 2, i)
-!        write(*, '(a, 10i3)') 'raboof', imat_f(1:ndim, 3, i)
-!     end do
-
    end subroutine
 
-   function get_ijk(il, ic)
-      integer :: il, ic
-      integer :: get_ijk(3)
-      get_ijk(1:3) = ic_to_ijk(il, ic, 1:3)
-   end function
+   subroutine first_order(pi, pj, pk, pl, &
+                          ixyz_start,     &
+                          ixyz_end,       &
+                          deg,            &
+                          off,            &
+                          ang,            &
+                          coef,           &
+                          ex,             &
+                          xyz,            &
+                          cent,           &
+                          g_u,            &
+                          g_d,            &
+                          gint,           &
+                          dmat,           &
+                          gmat,           &
+                          ave,            &
+                          get_ave,        &
+                          icent,          &
+                          ndim)
 
-   function get_ic(ijk)
-      integer :: get_ic, ijk(3)
-      get_ic = ijk_to_ic(ijk(1), ijk(2), ijk(3))
-   end function
+      integer :: pi, pj, pk, pl
+      integer :: ixyz_start
+      integer :: ixyz_end
+      integer :: deg(4)
+      integer :: off(4)
+      integer :: ang(4)
+      real(8) :: coef(4)
+      real(8) :: ex(4)
+      real(8) :: xyz(3, 4)
+      integer :: cent(4)
+      real(8) :: g_u(*)
+      real(8) :: g_d(*)
+      real(8) :: gint(*)
+      real(8) :: dmat(*)
+      real(8) :: gmat(*)
+      real(8) :: ave(*)
+      logical :: get_ave
+      integer :: icent
+      integer :: ndim
+
+      integer :: ixyz
+      integer :: nr_elements
+      integer :: icoor
+      integer :: ideg
+
+      if (cent(pj) /= icent) return
+
+      call get_integrals(g_u,                                                        &
+                         (/     ang(pi),      ang(pj)+1,    ang(pk),      ang(pl)/), &
+                         (/      ex(pi),       ex(pj),       ex(pk),       ex(pl)/), &
+                         (/    coef(pi),     coef(pj),     coef(pk),     coef(pl)/), &
+                         (/xyz(1:3, pi), xyz(1:3, pj), xyz(1:3, pk), xyz(1:3, pl)/))
+      if (ang(pj) > 0) then
+         call get_integrals(g_d,                                                        &
+                            (/     ang(pi),      ang(pj)-1,    ang(pk),      ang(pl)/), &
+                            (/      ex(pi),       ex(pj),       ex(pk),       ex(pl)/), &
+                            (/    coef(pi),     coef(pj),     coef(pk),     coef(pl)/), &
+                            (/xyz(1:3, pi), xyz(1:3, pj), xyz(1:3, pk), xyz(1:3, pl)/))
+      end if
+
+      nr_elements = deg(pk)*deg(pl)*deg(pi)
+
+      do ixyz = ixyz_start, ixyz_end
+
+         gint(1:deg(1)*deg(2)*deg(3)*deg(4)) = 0.0d0
+
+         if (get_ave) then
+            icoor = (icent-1)*3 + ixyz
+         else
+            icoor = 1
+         end if
+
+         do ideg = 1, deg(pj)
+            call daxpy(nr_elements,                                   &
+                       2.0d0*ex(pj),                                  &
+                       g_u(1 + nr_elements*(imat_u(ideg, ixyz) - 1)), &
+                       1,                                             &
+                       gint(1 + nr_elements*(ideg - 1)),              &
+                       1)
+         end do
+
+         if (ang(pj) > 0) then
+            do ideg = 1, deg(pj)
+               if (imat_f(ideg, ixyz, ang(pj)) > 0.0d0) then
+                  call daxpy(nr_elements,                                            &
+                             -1.0d0*imat_f(ideg, ixyz, ang(pj)),                     &
+                             g_d(1 + nr_elements*(imat_d(ideg, ixyz, ang(pj)) - 1)), &
+                             1,                                                      &
+                             gint(1 + nr_elements*(ideg - 1)),                       &
+                             1)
+               end if
+            end do
+         end if
+
+         call contract_integrals(deg, &
+                                 (/deg(pi), deg(pj), deg(pk), deg(pl)/), &
+                                 off, &
+                                 pi, pj, pk, pl, &
+                                 gint,                                   &
+                                 ndim,                                   &
+                                 dmat,                                   &
+                                 gmat,                                   &
+                                 get_ave,                                &
+                                 ave(icoor),                             &
+                                 1.0d0)
+
+      end do
+
+   end subroutine
 
 end module
