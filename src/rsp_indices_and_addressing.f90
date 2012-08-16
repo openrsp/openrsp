@@ -1,0 +1,1056 @@
+! Copyright 2012 Magnus Ringholm
+!
+! This file is made available under the terms of the
+! GNU Lesser General Public License version 3.
+
+! Contains routines and associated functions/definitions for the
+! creation of indices and addressing of elements of the (collapsed)
+! arrays used throughout the rsp_general calculation
+
+module rsp_indices_and_addressing
+
+  use rsp_field_tuple
+
+  implicit none
+
+  public get_one_tensor_offset
+  public test_making_triangulated_indices
+  public get_num_blks
+  public get_blk_info
+  public get_triang_blks_tuple_offset
+  public get_triang_blks_offset
+  public get_triang_offset
+  public sort_triangulated_indices
+  public make_triangulated_tuples_indices
+  public make_triangulated_indices
+  public index_blks_direct_product
+  public make_one_triang_index_blk
+  public get_triangular_sizes
+  public get_triangulated_size
+  public get_one_triangular_size
+  public fact_terminate_lower
+  public make_one_index_tuple
+  public get_ncarray
+  public kn_skip
+  public nc_only
+  public nc_onlysmall
+  public make_indices
+  public make_outerwhichpert
+  public get_pidoutersmall
+  public sortdimbypid
+
+
+  ! Define triangulated index block datatype
+
+  type triangulated_index_block
+
+     integer, allocatable, dimension(:,:) :: t_ind
+
+  end type
+
+  contains
+
+  function get_one_tensor_offset(total_num_perturbations, indices, pids, dims)
+
+    implicit none
+
+    integer :: total_num_perturbations, i, get_one_tensor_offset
+    integer, dimension(total_num_perturbations) ::  indices, pids, dims
+
+    get_one_tensor_offset = 1
+
+    do i = 1, total_num_perturbations
+
+       get_one_tensor_offset = get_one_tensor_offset + &
+       (indices(i)- 1)*product(dims(pids(i):total_num_perturbations))/dims(pids(i))
+
+    end do
+
+  end function
+
+
+  subroutine test_making_triangulated_indices(fields)
+
+    implicit none
+
+    type(p_tuple) :: fields
+    integer :: i, num_blks, triangulated_size
+    integer, allocatable, dimension(:,:) :: blk_info, indices
+
+
+    num_blks = get_num_blks(fields)
+
+!     write(*,*) 'num_blks is', num_blks    
+
+    allocate(blk_info(num_blks, 3))
+
+    blk_info = get_blk_info(num_blks, fields)
+
+!     write(*,*) 'blk_info is', blk_info
+
+    triangulated_size = get_triangulated_size(num_blks, blk_info)
+
+!     write(*,*) 'triang_size is', triangulated_size
+
+    allocate(indices(triangulated_size, sum(blk_info(:,2))))
+
+    call make_triangulated_indices(num_blks, blk_info, triangulated_size, indices)
+
+!     do i = 1, size(indices, 1)
+! 
+!        write(*,*) 'indices at i =', i, ' :', indices(i,:)
+!        
+!     end do
+
+    deallocate(blk_info)
+    deallocate(indices)
+
+  end subroutine
+
+
+
+
+ ! Assumes fields is sorted
+  function get_num_blks(fields)
+
+    implicit none
+
+    integer :: i, curr_blk_start, get_num_blks
+    type(p_tuple) :: fields
+    type(p_tuple), allocatable, dimension(:) :: each_field
+
+    allocate(each_field(fields%n_perturbations))
+
+    do i = 1, fields%n_perturbations
+
+! write(*,*) 'i', i
+! write(*,*) 'n pert', fields%n_perturbations
+! write(*,*) 'dim', fields%pdim
+! write(*,*) 'lab', fields%plab
+! write(*,*) 'id', fields%pid
+! write(*,*) 'freq', fields%freq
+
+       each_field(i) = p_tuple_getone(fields, i)
+
+    end do
+
+    curr_blk_start = 1
+    get_num_blks = 1
+
+    do i = 1, fields%n_perturbations
+
+       if (p_tuple_p1_lt_p2(each_field(curr_blk_start),each_field(i)) .EQV. .TRUE.) then
+
+          curr_blk_start = i
+          get_num_blks = get_num_blks + 1
+
+       end if
+
+    end do
+
+    deallocate(each_field)
+
+  end function
+
+! Return array of size (nblks, 3) where row 1 is curr_blk_start, row 2 is block_len
+! row 3 is pdim
+
+  function get_blk_info(nblks, fields)
+
+    implicit none
+
+    integer :: nblks, i, this_blk, curr_blk_start
+    integer, dimension(nblks,3) :: get_blk_info   
+    type(p_tuple) :: fields
+    type(p_tuple), allocatable, dimension(:) :: each_field
+
+    allocate(each_field(fields%n_perturbations))
+
+    if (fields%n_perturbations > 0) then
+
+       do i = 1, fields%n_perturbations
+
+          each_field(i) = p_tuple_getone(fields, i)
+
+       end do
+
+       this_blk = 1
+       curr_blk_start = 1
+       get_blk_info(1, 1) = 1
+       get_blk_info(1, 3) = each_field(1)%pdim(1)
+
+
+       do i = 1, fields%n_perturbations
+
+          if (p_tuple_p1_lt_p2(each_field(curr_blk_start),each_field(i)) &
+             .EQV. .TRUE.) then
+
+             curr_blk_start = i
+             this_blk = this_blk + 1
+             get_blk_info(this_blk, 1) = i
+             get_blk_info(this_blk - 1, 2) = i - get_blk_info(this_blk - 1, 1)
+             get_blk_info(this_blk, 3) = each_field(i)%pdim(1)
+
+          end if
+
+       end do
+
+       if (nblks > 1) then
+
+          get_blk_info(nblks, 2) = fields%n_perturbations - get_blk_info(nblks, 1) + 1
+
+       elseif (nblks == 1) then
+
+! write(*,*) 'one block', fields%n_perturbations
+          get_blk_info(1, 2) = fields%n_perturbations
+
+       end if
+
+       do i = 1, fields%n_perturbations
+
+          call p_tuple_deallocate(each_field(i))
+
+       end do
+
+    else
+
+       get_blk_info(1, 1) = 1
+       get_blk_info(1, 2) = 1
+       get_blk_info(1, 3) = 1
+
+    end if
+
+    deallocate(each_field)
+
+! do i = 1, nblks
+! 
+! write(*,*) 'row 1', get_blk_info(i,1)
+! write(*,*) 'row 2', get_blk_info(i,2)
+! write(*,*) 'row 3', get_blk_info(i,3)
+! 
+! end do
+
+
+  end function
+
+  function get_triang_blks_tuple_offset(ntuple, total_num_perturbations, nblks_tuple, &
+                                        nfields, blks_info, &
+                                        blk_sizes, blks_sizes, inds) result(offset)
+
+    implicit none
+
+    integer :: ntuple, offset, total_num_perturbations, i, k
+    integer, dimension(ntuple) :: nblks_tuple, nfields, blks_sizes
+    integer, dimension(ntuple, total_num_perturbations, 3) :: blks_info
+    integer, dimension(ntuple, total_num_perturbations) :: blk_sizes
+    integer, dimension(sum(nfields)) :: inds
+
+    offset = 0
+    k = 1
+! 
+! write(*,*) 'number of tuples', ntuple
+! write(*,*) 'inds', inds
+
+
+
+
+    do i = 1, ntuple - 1
+! write(*,*) 'block info tuple', blks_info(:,:,:)
+! write(*,*) 'just this block info tuple', blks_info(i,1:nblks_tuple(i),:)
+! write(*,*) ' nfields', nfields
+          offset = offset + (get_triang_blks_offset(nblks_tuple(i), nfields(i), &
+                            blks_info(i,1:nblks_tuple(i),:), &
+ blk_sizes(i, 1:nblks_tuple(i)),  &
+                            inds(k:k + nfields(i) - 1))  - 1 )* &
+                            product(blks_sizes(i:ntuple))/blks_sizes(i)
+! write(*,*) 'tuple offset', i, ' is', offset
+          k = k + nfields(i)
+
+    end do
+! write(*,*) 'nblks tuple', nblks_tuple(:)
+! do i = 1, nblks_tuple(1)
+! write(*,*) 'block info tuple after', i, ':', blks_info(ntuple,1:nblks_tuple(ntuple),:)
+! end do
+          offset = offset + get_triang_blks_offset(nblks_tuple(ntuple), nfields(ntuple), &
+                            blks_info(ntuple,1:nblks_tuple(ntuple),:), &
+blk_sizes(ntuple, 1:nblks_tuple(ntuple)),  &
+                            inds(k:k + nfields(ntuple) - 1))
+
+! write(*,*) 'final tuple offset', ntuple, ' is', offset
+
+  end function
+
+  function get_triang_blks_offset(nblks, nfield, blk_info, blk_sizes, ind_unsorted) &
+           result(offset)
+
+    implicit none
+
+    integer :: nblks, nfield, i, offset
+    integer, dimension(nblks) :: blk_sizes
+    integer, dimension(nblks, 3) :: blk_info
+    integer, dimension(nfield) :: ind, ind_unsorted
+
+    offset = 0
+
+
+  ind = sorted_triangulated_indices(nfield, nblks, blk_info, ind_unsorted)
+
+    do i = 1, nblks - 1
+! write(*,*) 'block', i
+! write(*,*) 'block info blks', blk_info(i, :)
+! write(*,*) 'ind', ind
+! write(*,*) 'product', product(blk_sizes(i:nblks))
+! write(*,*) 'blk sizes i', blk_sizes(i)
+! write(*,*) 'all blk sizes', blk_sizes
+       offset = offset + (get_triang_offset(blk_info(i,2), &
+       ind(blk_info(i,1): blk_info(i,1) + blk_info(i,2) - 1), blk_info(i,3)) - 1)* &
+                            product(blk_sizes(i:nblks))/blk_sizes(i)
+! write(*,*) 'end block', i
+! write(*,*) 'offset in get_triang_blks_offset is now', offset
+    end do
+
+! write(*,*) 'nblks info', blk_info(nblks, :)
+! write(*,*) 'ind before low-level call', ind
+
+       offset = offset + get_triang_offset(blk_info(nblks,2), &
+       ind(blk_info(nblks,1): blk_info(nblks,1) + blk_info(nblks,2) - 1), &
+       blk_info(nblks,3))
+! write(*,*) 'final offset in get_triang_blks_offset is now', offset
+
+  end function
+
+
+  function get_triang_offset(nfield, ind, pdim) result(offset)
+
+    implicit none
+
+    integer :: i, offset, nfield, pdim
+    integer, dimension(nfield) :: ind
+
+    offset = 1
+
+! write(*,*) 'field', nfield
+! write(*,*) 'ind', ind
+! write(*,*) 'pdim', pdim
+
+if (nfield > 1) then
+
+
+offset = offset + get_one_way_triang_offset(nfield - 1, ind(1) - 1, pdim)
+
+! write(*,*) 'first offset from get triang offset is now', offset
+
+    do i = 2, nfield - 1
+! write(*,*) 'field', i
+
+offset = offset + get_one_way_triang_offset(nfield - i, ind(i) - ind(i - 1), &
+         pdim - ind(i - 1) + 1)
+
+!        offset = offset + get_one_triangular_size(nfield - i, pdim - ind(i) + 1)
+! write(*,*) 'end field', i
+! write(*,*) 'offset from get triang offset is now', offset
+
+    end do
+
+
+
+offset = offset + ind(nfield) - ind(nfield - 1)
+
+! write(*,*) 'final offset from get triang offset is now', offset
+
+else 
+
+offset = ind(1)
+
+end if
+
+
+!     offset = offset + ind(nfield)
+
+
+
+  end function
+
+function get_one_way_triang_offset(remaining, ind, pdim) result(offset)
+
+implicit none
+
+
+
+
+integer :: remaining, ind, pdim, offset, i
+
+offset = 0
+! write(*,*) 'rem', remaining
+! write(*,*) 'ind', ind
+! write(*,*) 'pdim', pdim
+
+
+do i = 0, ind - 1
+! write(*,*) 'i', i
+offset = offset + fact_terminate_lower(pdim - i + remaining - 1, pdim - i) / &
+                  fact_terminate_lower(remaining, 1)
+! write(*,*) 'offset at lowest level', offset
+end do
+
+end function
+
+
+  function sorted_triangulated_indices(nfield, nblks, blk_info, indices)
+
+    implicit none
+
+    integer :: nfield, nblks, i, j, k, m, current_way, current_blk_start
+    integer :: current_minimum_index_position, current_minimum_index, ind_tmp
+    integer, dimension(nblks, 3) :: blk_info
+    integer, dimension(nfield) :: indices, sorted_triangulated_indices
+
+    current_blk_start = 1
+
+! write(*,*) 'nblks', nblks
+! write(*,*) 'blk info 1', blk_info(1, :)
+
+m = 0
+    do i = 1, nblks
+! write(*,*) 'i is', i
+       do j = 1, blk_info(i, 2)
+! write(*,*) 'j is', j
+! write(*,*) 'indices are', indices
+!           current_blk_start = j
+! write(*,*) 'cmip', j + m - 1
+! write(*,*) 'cmi', indices(j + m - 1)
+          current_minimum_index_position = j + m
+          current_minimum_index = indices(j + m)
+
+          do k = j + 1, blk_info(i, 2)
+! write(*,*) 'k is', k
+   
+             if (indices(k + m) < current_minimum_index) then
+
+
+! write(*,*) 'new cmip', j + m - 1
+! write(*,*) 'new cmi', indices(j + m - 1)
+
+                current_minimum_index = indices(k + m)
+                current_minimum_index_position = k + m
+
+             end if
+
+
+
+          end do
+! write(*,*) 'it', indices(j + m - 1)
+! write(*,*) 'put into pos', indices(j + m), ':', current_minimum_index
+! write(*,*) 'put into pos', indices(current_minimum_index_position), ':', ind_tmp
+
+                ind_tmp = indices(j + m)
+                indices(j + m) = current_minimum_index
+                indices(current_minimum_index_position) = ind_tmp      
+
+       end do
+m = m + blk_info(i, 2)
+! write(*,*) 'added to m', blk_info(i,2)
+
+    end do
+
+sorted_triangulated_indices = indices
+
+  end function
+
+
+
+
+  subroutine sort_triangulated_indices(nfield, nblks, blk_info, indices)
+
+    implicit none
+
+    integer :: nfield, nblks, i, j, k, m, current_way, current_blk_start
+    integer :: current_minimum_index_position, current_minimum_index, ind_tmp
+    integer, dimension(nblks, 3) :: blk_info
+    integer, dimension(nfield) :: indices, sorted_indices
+
+    current_blk_start = 1
+
+! write(*,*) 'nblks', nblks
+! write(*,*) 'blk info 1', blk_info(1, :)
+
+m = 0
+    do i = 1, nblks
+! write(*,*) 'i is', i
+       do j = 1, blk_info(i, 2)
+! write(*,*) 'j is', j
+! write(*,*) 'indices are', indices
+!           current_blk_start = j
+! write(*,*) 'cmip', j + m - 1
+! write(*,*) 'cmi', indices(j + m - 1)
+          current_minimum_index_position = j + m
+          current_minimum_index = indices(j + m)
+
+          do k = j + 1, blk_info(i, 2)
+! write(*,*) 'k is', k
+   
+             if (indices(k + m) < current_minimum_index) then
+
+
+! write(*,*) 'new cmip', j + m - 1
+! write(*,*) 'new cmi', indices(j + m - 1)
+
+                current_minimum_index = indices(k + m)
+                current_minimum_index_position = k + m
+
+             end if
+
+
+
+          end do
+! write(*,*) 'it', indices(j + m - 1)
+! write(*,*) 'put into pos', indices(j + m), ':', current_minimum_index
+! write(*,*) 'put into pos', indices(current_minimum_index_position), ':', ind_tmp
+
+                ind_tmp = indices(j + m)
+                indices(j + m) = current_minimum_index
+                indices(current_minimum_index_position) = ind_tmp      
+
+       end do
+m = m + blk_info(i, 2)
+! write(*,*) 'added to m', blk_info(i,2)
+
+    end do
+
+
+  end subroutine
+
+subroutine make_triangulated_tuples_indices(ntuples, total_num_perturbations, &
+           nblks_tuple, blks_tuple_info, &
+           blks_tuple_triang_size, indices)
+
+implicit none
+
+integer :: i, ntuples, total_num_perturbations
+integer, dimension(ntuples) :: nblks_tuple, blks_tuple_triang_size
+integer, dimension(ntuples, total_num_perturbations, 3) :: blks_tuple_info
+integer, dimension(product(blks_tuple_triang_size), & 
+         total_num_perturbations) :: indices
+type(triangulated_index_block), allocatable, &
+         dimension(:) :: individual_block_tuple_indices
+
+allocate(individual_block_tuple_indices(ntuples))
+! write(*,*) '1, dimension', ntuples, total_num_perturbations
+do i = 1, ntuples
+
+allocate(individual_block_tuple_indices(i)%t_ind(blks_tuple_triang_size(i), &
+         sum(blks_tuple_info(i,1:nblks_tuple(i),2))))
+
+! write(*,*) 'the sum is', sum((/ (blks_tuple_info(i,1:nblks_tuple(i),2), i = 1, ntuples) /))
+! write(*,*) '2'
+! write(*,*) 'blks_tuple_info 2', blks_tuple_info(1, :, :)
+! write(*,*) 'blks_tuple_info 3', blks_tuple_info(1, &
+!                1:nblks_tuple(1), :)
+call make_triangulated_indices(nblks_tuple(i), blks_tuple_info(i,1:nblks_tuple(i),:), &
+     blks_tuple_triang_size(i), individual_block_tuple_indices(i)%t_ind)
+
+end do
+! write(*,*) ' reached stage 3'
+! write(*,*) 'size 1 , 2:', size(indices,1), size(indices, 2)
+call index_blks_direct_product(ntuples, blks_tuple_triang_size, &
+     individual_block_tuple_indices, indices, &
+     sum((/ (blks_tuple_info(i,1:nblks_tuple(i),2), i = 1, ntuples) /)), &
+     1, 1, 1)
+! write(*,*) ' reached stage 4'
+
+do i = 1, ntuples
+
+
+deallocate(individual_block_tuple_indices(i)%t_ind)
+! write(*,*) 'deallocation done at i = ', i
+end do
+
+! do i = 1, size(indices,1)
+! 
+! write(*,*) indices(i, :)
+! 
+! end do
+! write(*,*) 'size of individual indices', size(individual_block_tuple_indices)
+
+deallocate(individual_block_tuple_indices)
+! write(*,*) 'Final deallocation done'
+
+
+
+
+end subroutine
+
+
+
+  subroutine make_triangulated_indices(nblks, blk_info, triangulated_size, indices)
+
+    implicit none
+
+    integer :: nblks, i, triangulated_size, j
+    integer, dimension(nblks) :: triang_sizes
+    integer, dimension(nblks, 3) :: blk_info
+    integer, dimension(triangulated_size, sum(blk_info(:,2))) :: indices
+    type(triangulated_index_block), allocatable, dimension(:) :: blks
+
+! write(*,*) 'indices have dimensions', size(indices, 1),  'and', size(indices,2)
+
+allocate(blks(nblks))
+
+    do i = 1, nblks
+! write(*,*) 'a'
+       triang_sizes(i) = get_one_triangular_size(blk_info(i, 2), blk_info(i,3))
+! write(*,*) 'a2'
+       allocate(blks(i)%t_ind(triang_sizes(i), blk_info(i, 2)))
+
+       call make_one_triang_index_blk(blk_info(i, 2), blk_info(i, 3), 1, 1, 1, &
+                                      triang_sizes(i), blks(i)%t_ind)
+! write(*,*) 'end of block', i
+! write(*,*) 'made indices', blks(i)%t_ind
+
+    end do
+
+    call index_blks_direct_product(nblks, triang_sizes, blks, indices, &
+                                   sum(blk_info(:,2)), 1, 1, 1)
+! write(*,*) 'c'
+    do i = 1, nblks
+
+       deallocate(blks(i)%t_ind)
+
+    end do
+
+deallocate(blks)
+
+  end subroutine
+
+  recursive subroutine index_blks_direct_product(nblks, blk_sizes, blks, indices, &
+                       nways, current_way, lvl, offset)
+
+    implicit none
+
+    integer :: nblks, current_way, lvl, i, j, offset, increment, nways, new_offset
+    integer, dimension(nblks) :: blk_sizes
+    type(triangulated_index_block), dimension(nblks) :: blks
+    integer, dimension(product(blk_sizes), nways) :: indices
+
+    if (lvl < nblks) then
+
+       increment = product(blk_sizes(lvl:nblks))/blk_sizes(lvl)
+
+       do i = 0, blk_sizes(lvl) - 1
+
+          do j = 0, increment - 1
+
+             indices(offset + i * increment + j, &
+                     current_way:current_way + size(blks(lvl)%t_ind, 2) - 1) = &
+                     blks(lvl)%t_ind(i + 1, :)
+
+          end do
+
+          new_offset = offset + i * increment
+          call index_blks_direct_product(nblks, blk_sizes, blks, indices, &
+               nways, current_way + size(blks(lvl)%t_ind, 2), lvl + 1, new_offset)
+
+       end do
+
+
+    elseif (lvl == nblks) then
+
+       do i = 0, blk_sizes(lvl) - 1
+
+          indices(offset + i, current_way:current_way + size(blks(lvl)%t_ind, 2) - 1) = &
+          blks(lvl)%t_ind(i + 1, :)
+
+       end do
+
+    end if
+
+
+  end subroutine
+
+
+  recursive subroutine make_one_triang_index_blk(blk_size, pdim, st_ind, lvl, offset, &
+                                                   triang_size, index_blk)
+
+    implicit none
+
+    integer :: blk_size, pdim, st_ind, lvl, i, j, offset, &
+               triang_size, new_offset, increment
+    integer, dimension(triang_size, blk_size) :: index_blk
+
+    if (lvl < blk_size) then
+
+       new_offset = offset
+! write(*,*) 'aa'
+       do i = 0, pdim - st_ind
+! write(*,*) 'i is', i, ' at lvl ', lvl
+! write(*,*) 'st_ind is ', st_ind, ' and new offset is ', new_offset
+          increment = get_one_triangular_size(blk_size - lvl, pdim - st_ind - i + 1)
+          index_blk(new_offset:new_offset + increment - 1, lvl) = & 
+          (i + st_ind) * (/ (j/j, j = 1, increment)/)
+! write(*,*) 'ab'
+          call make_one_triang_index_blk(blk_size, pdim, st_ind + i, lvl + 1, &
+                                         new_offset, triang_size, index_blk)
+! write(*,*) 'ac'
+          new_offset = new_offset + increment
+
+       end do
+
+    elseif (lvl == blk_size) then
+! write(*,*) 'ba'
+       do i = 0, pdim - st_ind
+
+          index_blk(offset + i, lvl) = i + st_ind
+
+       end do
+
+! write(*,*) 'bb'
+    end if
+! write(*,*) 'cc'
+
+  end subroutine
+
+  function get_triangular_sizes(nblks, blk_nfield, pdims) result(blk_sizes)
+
+    implicit none
+
+    integer :: i, nblks
+    integer, dimension(nblks) :: blk_nfield, pdims, blk_sizes
+
+    do i = 1, nblks
+! write(*,*) 'i is', i
+       blk_sizes(i) = get_one_triangular_size(blk_nfield(i), pdims(i))
+
+    end do 
+
+! write(*,*) 'finished'
+
+  end function
+
+
+  function get_triangulated_size(nblks, blk_info)
+
+    implicit none
+
+    integer :: nblks, i, get_triangulated_size
+    integer, dimension(nblks, 3) :: blk_info
+
+    get_triangulated_size = 1
+
+! write(*,*) 'blk_info', blk_info(:,:)
+
+    do i = 1, nblks
+
+       get_triangulated_size = get_triangulated_size * & 
+                               get_one_triangular_size(blk_info(i, 2), blk_info(i, 3))
+
+    end do
+
+  end function
+
+
+  function get_one_triangular_size(blk_size, pdim)
+
+    implicit none
+
+    integer :: get_one_triangular_size, blk_size, pdim
+! write(*,*) 'getting one triangular size', blk_size, pdim
+    get_one_triangular_size = fact_terminate_lower(pdim + blk_size - 1, pdim) / &
+                              fact_terminate_lower(blk_size,  1)
+! write(*,*) 'got one triangular size', get_one_triangular_size
+  end function
+
+
+  recursive function fact_terminate_lower(highest, lowest) result(ftl)
+
+    implicit none
+
+    integer :: ftl, highest, lowest
+
+    if (highest == lowest) then
+
+       ftl = highest   
+
+    else
+
+       ftl = highest * fact_terminate_lower(highest - 1, lowest)
+
+    end if
+
+  end function
+
+
+
+  function make_one_index_tuple(n_perturbations, pdim, icomp_in)
+
+    implicit none
+
+    integer :: n_perturbations, icomp, i, icomp_in
+    integer, dimension(n_perturbations) :: pdim, make_one_index_tuple
+
+    icomp = icomp_in - 1
+
+    do i = 1, n_perturbations
+
+       ! The integer division (rounding to nearest lower integer) should make this work
+       make_one_index_tuple(i) = icomp/(product(pdim(i:n_perturbations))/pdim(i)) + 1
+       icomp = icomp - (make_one_index_tuple(i) - 1) * &
+                       (product(pdim(i:n_perturbations))/pdim(i))
+
+    end do
+
+  end function
+
+
+  function get_ncarray(total_order, num_p_tuples, p_tuples)
+
+    implicit none
+
+    integer :: total_order, num_p_tuples, i, j, k
+    integer, dimension(total_order) :: get_ncarray
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples
+
+    do i = 1, total_order
+       do j = 1, num_p_tuples
+          do k = 1, p_tuples(j)%n_perturbations
+
+             if (p_tuples(j)%pid(k) == i) then
+                get_ncarray(i) = p_tuples(j)%pdim(k)
+             end if
+
+          end do
+       end do
+
+    end do
+
+  end function
+
+
+  ! Find out if kn rules say that this term should be skipped
+  function kn_skip(n_perturbations, pertid, kn)
+
+    implicit none
+
+    logical :: kn_skip, p_tuple_hasfirst
+    integer :: n_perturbations, i
+    integer, dimension(n_perturbations) :: pertid
+    integer, dimension(2) :: kn
+
+    kn_skip = .FALSE.
+    p_tuple_hasfirst = .FALSE.
+
+    do i = 1, size(pertid)
+       if (pertid(i) == 1) then
+          p_tuple_hasfirst = .TRUE.
+       end if
+    end do
+
+   
+    if (p_tuple_hasfirst .eqv. .TRUE.) then
+
+       if (kn(1) < size(pertid)) then
+
+          kn_skip = .TRUE.
+
+       end if
+
+    else
+
+       if (kn(2) < size(pertid)) then
+
+          kn_skip = .TRUE.
+
+       end if
+
+    end if
+
+  end function
+
+
+  function nc_only(total_order, thisorder, num_p_tuples, p_tuples, ncarray)
+
+    implicit none
+
+    integer :: i, j, total_order, thisorder, num_p_tuples
+    integer, dimension(total_order) :: ncarray
+    integer, dimension(total_order) :: nc_only
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples
+
+    do i = 1, size(ncarray)
+       nc_only(i) = 1
+    end do
+
+    do i = 1, num_p_tuples
+       do j = 1, p_tuples(i)%n_perturbations
+          nc_only(p_tuples(i)%pid(j)) = ncarray(p_tuples(i)%pid(j))
+       end do
+    end do
+
+  end function
+
+
+  function nc_onlysmall(total_order, thisorder, num_p_tuples, p_tuples, ncarray)
+
+    implicit none
+
+    integer :: i, j, k, total_order, thisorder, num_p_tuples
+    integer, dimension(total_order) :: ncarray
+    integer, dimension(thisorder) :: nc_onlysmall
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples
+
+    k = 1
+
+    do i = 1, num_p_tuples
+       do j = 1, p_tuples(i)%n_perturbations
+
+          nc_onlysmall(k) = ncarray(p_tuples(i)%pid(j))
+          k = k + 1
+
+       end do
+    end do
+
+  end function
+
+
+  recursive subroutine make_indices(tot_outer, lvl, ncarray, offset, outer_indices)
+
+    implicit none
+
+    integer :: i, j, k, tot_outer, lvl, offset
+    integer, dimension(tot_outer) :: ncarray
+    integer, dimension(product(ncarray), tot_outer) :: outer_indices
+
+    k = 1
+
+    if (tot_outer > 0) then
+       do i = 1, ncarray(lvl)
+
+          if (lvl < tot_outer) then
+
+             call make_indices(tot_outer, lvl + 1, ncarray, &
+             k + offset - 1, outer_indices)
+
+          end if
+
+          if (lvl <= tot_outer) then
+
+             do j = 1, product(ncarray(lvl:size(ncarray)))/ncarray(lvl)
+
+                outer_indices(k + offset, lvl) = i
+                k = k + 1
+
+             end do
+
+          end if
+
+       end do
+
+    else
+
+    end if
+
+  end subroutine
+
+
+  function make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
+
+    implicit none
+
+    integer :: i, j, k, total_num_perturbations, num_p_tuples
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples
+    integer, dimension(total_num_perturbations) :: make_outerwhichpert
+
+    do i = 1, total_num_perturbations
+
+       make_outerwhichpert(i) = 0
+
+    end do
+
+    k = 1
+
+    do i = 2, num_p_tuples
+       do j = 1, p_tuples(i)%n_perturbations
+
+          make_outerwhichpert(p_tuples(i)%pid(j)) = k
+          k = k + 1
+
+       end do
+    end do
+
+  end function
+
+
+  function get_pidoutersmall(totouter, len_outer, o_orders)
+
+    implicit none
+
+    integer :: totouter, len_outer, i, j, k
+    integer, dimension(totouter) :: get_pidoutersmall
+    type(p_tuple), dimension(len_outer) :: o_orders
+
+    k = 1
+
+    do i = 1, len_outer
+       do j = 1, o_orders(i)%n_perturbations
+
+          get_pidoutersmall(k) = o_orders(i)%pid(j)
+          k = k + 1
+
+       end do
+    end do
+
+  end function
+
+
+  subroutine sortdimbypid(total_num_perturbations, totouter, pids, &
+                          dims, dimsouter, whichs)
+
+    implicit none
+
+    integer :: totouter, total_num_perturbations, s, i, j, whichmax, whatmax
+    integer, dimension(totouter) :: b, d, pids, dimsouter
+    integer, dimension(total_num_perturbations) :: whichs, dims
+
+    do i = 1, total_num_perturbations
+
+       whichs(i) = 0
+
+    end do
+
+    s = totouter
+    j = totouter
+    d = pids
+
+    do while (j > 0)
+
+       whatmax = 0
+
+       ! At which index is the pid largest?
+
+       do i = 1, s
+          if (d(i) > whatmax) then
+
+             ! It is currently largest at index i
+             whatmax = d(i)
+             whichmax = i
+
+          end if
+       end do
+
+       ! Then, put the dimension of that pid at the current end of the array to be returned
+
+       b(j) = dims(whatmax)
+
+       ! j is the (current) highest outer index
+
+       whichs(j) = whatmax
+       j = j - 1
+       d(whichmax) = 0
+
+    end do
+
+    dimsouter = b
+
+  end subroutine
+
+
+end module
