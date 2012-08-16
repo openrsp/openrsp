@@ -804,9 +804,10 @@ contains
     !> field descriptors (label freq comp ncomp)
     type(rsp_field), intent(in)    :: fields(:)
     !> output tensor, to which nuclear contribution is *ADDED*
+    integer                        :: propsize
     complex(8),      intent(inout) :: rspfunc(propsize)
     !---------------------------------------------------------------
-    integer      ncor, ngeo, last_ncomp, propsize
+    integer      ncor, ngeo, last_ncomp
     character(4) last_field
 
 ! 
