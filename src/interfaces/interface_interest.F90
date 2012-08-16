@@ -601,10 +601,24 @@ contains
       allocate(imat_u(ndim, ndim))
       imat_u = 1
 
+      ! first row is just like this:
+      ! 1 2 3 4 5 6 ...
       do i = 1, ndim
          imat_u(i, 1) = i
       end do
 
+      ! construct rows 2 to ndim
+      ! they look like this:
+      ! 1 2 2 3 3 3 4 4 4 4 ...
+      ! 1 1 1 1 1 1 1 1 1 1 ...
+      ! 1 2 2 3 3 3 4 4 4 4 ...
+      ! 1 1 1 1 1 1 1 1 1 1 ...
+      ! 1 1 1 1 1 1 1 1 1 1 ...
+      ! 1 2 2 3 3 3 4 4 4 4 ...
+      ! 1 1 1 1 1 1 1 1 1 1 ...
+      ! 1 1 1 1 1 1 1 1 1 1 ...
+      ! 1 1 1 1 1 1 1 1 1 1 ...
+      ! ...
       m = 2
       do i = 1, maxl
          l = 0
@@ -617,6 +631,8 @@ contains
          m = m + i + 1
       end do
 
+      ! construct rows 2 to ndim
+      ! by adding row N to row N-1
       do i = 2, ndim
          do j = 1, ndim
             imat_u(j, i) = imat_u(j, i-1) + imat_u(j, i)
@@ -632,13 +648,10 @@ contains
       imat_d = 0
       imat_f = 0.0d0
 
-      do l = 1, maxl
-         do k = 1, l*(l+1)/2
-            imat_d(k, 1, l) = k
-         end do
-      end do
-
       do i = 1, maxl
+         do k = 1, i*(i+1)/2
+            imat_d(k, 1, i) = k
+         end do
          k = 0
          l = 0
          do m = 1, i
@@ -647,28 +660,7 @@ contains
                l = l + 1
                imat_d(l+1, 2, i) = k
                imat_d(l+2, 3, i) = k
-            end do
-            l = l + 1
-         end do
-      end do
-
-      do i = 1, maxl
-         l = 0
-         do m = 1, i
-            do j = 1, m
-               l = l + 1
-               imat_f(l, 1, i) = real(i - m + 1)
-            end do
-         end do
-      end do
-
-      do i = 1, maxl
-         k = 0
-         l = 0
-         do m = 1, i
-            do j = 1, m
-               k = k + 1
-               l = l + 1
+               imat_f(k,   1, i) = real(i - m + 1)
                imat_f(l+1, 2, i) = real(m - j + 1)
                imat_f(l+2, 3, i) = real(j)
             end do
@@ -722,6 +714,7 @@ contains
       integer :: nr_elements
       integer :: icoor
       integer :: ideg
+      integer :: i
 
       if (cent(pj) /= icent) return
 
