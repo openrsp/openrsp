@@ -246,7 +246,6 @@ contains
       integer :: icent, ixyz
       integer :: nr_integrals
       integer :: nr_elements
-      integer :: icoor
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
 
@@ -715,6 +714,7 @@ contains
       integer :: icoor
       integer :: ideg
       integer :: i
+      real(8) :: f
 
       if (cent(pj) /= icent) return
 
@@ -735,34 +735,26 @@ contains
 
       do ixyz = ixyz_start, ixyz_end
 
-         gint(1:deg(1)*deg(2)*deg(3)*deg(4)) = 0.0d0
-
-         if (get_ave) then
-            icoor = (icent-1)*3 + ixyz
-         else
-            icoor = 1
-         end if
-
          do ideg = 1, deg(pj)
-            call daxpy(nr_elements,                                   &
-                       2.0d0*ex(pj),                                  &
-                       g_u(1 + nr_elements*(imat_u(ideg, ixyz) - 1)), &
-                       1,                                             &
-                       gint(1 + nr_elements*(ideg - 1)),              &
-                       1)
+            do i = 1, nr_elements
+               gint(i + nr_elements*(ideg - 1)) = 2.0d0*ex(pj)*g_u(i + nr_elements*(imat_u(ideg, ixyz) - 1))
+            end do
          end do
 
          if (ang(pj) > 0) then
             do ideg = 1, deg(pj)
-               if (imat_f(ideg, ixyz, ang(pj)) > 0.0d0) then
-                  call daxpy(nr_elements,                                            &
-                             -1.0d0*imat_f(ideg, ixyz, ang(pj)),                     &
-                             g_d(1 + nr_elements*(imat_d(ideg, ixyz, ang(pj)) - 1)), &
-                             1,                                                      &
-                             gint(1 + nr_elements*(ideg - 1)),                       &
-                             1)
+               f = imat_f(ideg, ixyz, ang(pj))
+               if (f > 0.0d0) then
+                  do i = 1, nr_elements
+                     gint(i + nr_elements*(ideg - 1)) = gint(i + nr_elements*(ideg - 1)) &
+                                                      - f*g_d(i + nr_elements*(imat_d(ideg, ixyz, ang(pj)) - 1))
+                  end do
                end if
             end do
+         end if
+
+         if (get_ave) then
+            icoor = (icent-1)*3 + ixyz
          end if
 
          call contract_integrals(deg, &
