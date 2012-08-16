@@ -24,6 +24,12 @@ module rsp_perturbed_sdf
   public rsp_fock_lowerorder
   public get_fock_lowerorder
 
+!   type rsp_cfg
+! 
+!      type(matrix) :: zeromat
+! 
+!   end type
+
   contains
 
   recursive subroutine rsp_fds(mol, pert, kn, F, D, S)
@@ -204,7 +210,7 @@ module rsp_perturbed_sdf
 ! do i = 1, perturbed_matrix_size
 ! 
 ! write(*,*) 'Fp', i
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_alpha
 ! 
 ! end do
 
@@ -214,7 +220,7 @@ module rsp_perturbed_sdf
 ! do i = 1, perturbed_matrix_size
 ! 
 ! write(*,*) 'Fp again', i
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_alpha
 ! 
 ! end do
 
@@ -257,19 +263,19 @@ module rsp_perturbed_sdf
        ind = indices(i, :)
 
 ! write(*,*) 'index is', ind
-!         write(*,*) 'Dp before z', Dp(i)%elms
+!         write(*,*) 'Dp before z', Dp(i)%elms_alpha
 
        call rsp_get_matrix_z(mol, superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
 
-! write(*,*) 'got z', Dp(i)%elms
+! write(*,*) 'got z', Dp(i)%elms_alpha
 
        Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
 
 ! write(*,*) 'projected dp'
-!        write(*,*) 'Dp at projection', Dp(i)%elms
+!        write(*,*) 'Dp at projection', Dp(i)%elms_alpha
 
        call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
@@ -280,7 +286,7 @@ module rsp_perturbed_sdf
        ! THE IF CRITERION HERE NEEDS ANOTHER LOOK
 
 
-! write(*,*) 'F particular before', Fp(i)%elms
+! write(*,*) 'F particular before', Fp(i)%elms_alpha
 
 !        if (pert%n_perturbations <=2) then
 ! 
@@ -292,12 +298,12 @@ module rsp_perturbed_sdf
 
 
 
-! write(*,*) 'did twoint_tr', Fp(i)%elms
+! write(*,*) 'did twoint_tr', Fp(i)%elms_alpha
 
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
 
 
-! write(*,*) 'F particular after', Fp(i)%elms
+! write(*,*) 'F particular after', Fp(i)%elms_alpha
 
        ! 4. Make right-hand side using Dp
 
@@ -315,7 +321,7 @@ module rsp_perturbed_sdf
        X(1) = mat_zero_like(mol%zeromat)
        call mat_ensure_alloc(X(1))
 
-! write(*,*) 'made rhs', RHS(1)%elms
+! write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
        call rsp_mosolver_exec(RHS(1), (/0d0/), X)
@@ -353,10 +359,10 @@ module rsp_perturbed_sdf
 
 
 ! write(*,*) 'Finally, Dp is', i, ' at indices', ind 
-! write(*,*) Dp(i)%elms
+! write(*,*) Dp(i)%elms_alpha
 ! 
 ! write(*,*) 'Finally, Fp is', i
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_alpha
 
     end do
 
@@ -377,10 +383,10 @@ module rsp_perturbed_sdf
 ! call sdf_getdata_s(F, pert, indices(i,:), B)
 ! 
 ! write(*,*) 'Finally, in cache, Dp is', i
-! write(*,*) A%elms
+! write(*,*) A%elms_alpha
 ! 
 ! write(*,*) 'Finally, in cache, Fp is', i
-! write(*,*) B%elms
+! write(*,*) B%elms_alpha
 ! 
 ! end do
 
@@ -525,7 +531,7 @@ end do
 
 ! do i = 1, property_size
 ! write(*,*) 'LOF contrib. at i = ', i
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_alpha
 ! 
 ! 
 ! end do
@@ -539,7 +545,7 @@ end do
 
 ! do i = 1, property_size
 ! write(*,*) 'LOF contrib. at i = ', i
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_alpha
 ! 
 ! 
 ! end do
@@ -770,7 +776,7 @@ end if
           do j = 1, size(tmp)
 
              tmp(j) = mat_alloc_like(mol%zeromat)
-             tmp(j)%elms = 0.0
+             tmp(j)%elms_alpha = 0.0
              call mat_ensure_alloc(tmp(j))
 
           end do
@@ -828,7 +834,7 @@ offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, nbl
 ! write(*,*) 'offset is', offset
 
 lower_order_contribution(offset) = mat_alloc_like(mol%zeromat)
-lower_order_contribution(offset)%elms = 0.0
+lower_order_contribution(offset)%elms_alpha = 0.0
 call mat_ensure_alloc(lower_order_contribution(offset))
 
 
@@ -848,7 +854,7 @@ offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations,
          (/outer_indices(i, :) /)) 
 
 lower_order_contribution(offset) = mat_alloc_like(mol%zeromat)
-lower_order_contribution(offset)%elms = 0.0
+lower_order_contribution(offset)%elms_alpha = 0.0
 call mat_ensure_alloc(lower_order_contribution(offset))
 
 lower_order_contribution(offset) = tmp(1)
@@ -987,7 +993,7 @@ deallocate(triang_indices_fp)
 ! do i = 1, p_tuples(1)%pdim(1)
 ! 
 ! write(*,*) 'for element ', i
-! write(*,*) Fp(i)%elms
+! write(*,*) Fp(i)%elms_alpha
 ! 
 ! end do
 
