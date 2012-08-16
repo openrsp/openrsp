@@ -238,20 +238,12 @@ contains
       real(8) :: g_u(max_nr_integrals)
       real(8) :: g_d(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4)
+      integer :: ang(4), deg(4), off(4)
       real(8) :: f
-      integer :: ang(4), ang_temp(4), deg(4), off(4)
-      integer :: ciw(4)
-      integer :: cr(4), cir(4)
-      integer :: ci, cj, ck, cl
-      integer :: ir, iw
 
       integer :: ii, ij, ik, il
-      integer :: pi, pj, pk, pl
-      integer :: ifun, ic
       integer :: cent(4)
       integer :: icent, ixyz
-      integer :: ideg
-      integer :: ijk(3), ijk_u(3), ijk_d(3)
       integer :: nr_integrals
       integer :: nr_elements
       integer :: icoor
@@ -349,7 +341,7 @@ contains
 !              ijkl is in memory (k, l, i, j)
 !              we will always differentiate on the slowest index
 
-               !fixme: if ave, avoid multiple calls and scale by 4.0
+               !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
 
                call first_order(1, 2, 3, 4, &
                                 ixyz_start, &
@@ -597,7 +589,7 @@ contains
 
    subroutine init_arrays()
 
-      integer :: il, ia, ib, ii, ij, ik, ip
+!     integer :: il, ia, ib, ii, ij, ik, ip
       integer :: i, j, k, l, m
       integer :: ndim
 
