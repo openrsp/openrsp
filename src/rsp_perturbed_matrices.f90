@@ -34,13 +34,13 @@ module rsp_perturbed_matrices
   end type
   contains
 
-  recursive function derivative_superstructure_getsize(mol, pert, kn, &
+  recursive function derivative_superstructure_getsize(pert, kn, &
                      primed, current_derivative_term) result(superstructure_size)
 
     implicit none
 
     logical :: primed
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     integer, dimension(2) :: kn
@@ -51,18 +51,18 @@ module rsp_perturbed_matrices
     if (pert%n_perturbations > 0) then
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
-                             mol,p_tuple_remove_first(pert), kn, primed, &
+                             p_tuple_remove_first(pert), kn, primed, &
                              (/p_tuple_extend(current_derivative_term(1), &
                              p_tuple_getone(pert, 1)), current_derivative_term(2:3)/))
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
-                             mol, p_tuple_remove_first(pert), kn, primed, &
+                             p_tuple_remove_first(pert), kn, primed, &
                              (/current_derivative_term(1), &
                              p_tuple_extend(current_derivative_term(2), &
                              p_tuple_getone(pert,1)), current_derivative_term(3)/))
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
-                             mol, p_tuple_remove_first(pert), kn, primed, &
+                             p_tuple_remove_first(pert), kn, primed, &
                              (/current_derivative_term(1:2), &
                              p_tuple_extend(current_derivative_term(3), &
                              p_tuple_getone(pert, 1))/))
@@ -105,7 +105,7 @@ module rsp_perturbed_matrices
   end function
 
 
-  recursive subroutine derivative_superstructure(mol, pert, kn, primed, &
+  recursive subroutine derivative_superstructure(pert, kn, primed, &
                        current_derivative_term, superstructure_size, & 
                        new_element_position, derivative_structure)
 
@@ -114,24 +114,24 @@ module rsp_perturbed_matrices
     logical :: primed
     integer :: i, superstructure_size, new_element_position
     integer, dimension(2) :: kn    
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     type(p_tuple), dimension(superstructure_size, 3) :: derivative_structure
 
     if (pert%n_perturbations > 0) then
 
-       call derivative_superstructure(mol, p_tuple_remove_first(pert), kn, primed, &
+       call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/p_tuple_extend(current_derivative_term(1), p_tuple_getone(pert, 1)), &
             current_derivative_term(2:3)/), superstructure_size, new_element_position, &
             derivative_structure)
 
-       call derivative_superstructure(mol, p_tuple_remove_first(pert), kn, primed, &
+       call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/current_derivative_term(1), p_tuple_extend(current_derivative_term(2), &
             p_tuple_getone(pert, 1)), current_derivative_term(3)/), &
             superstructure_size, new_element_position, derivative_structure)
 
-       call derivative_superstructure(mol, p_tuple_remove_first(pert), kn, primed, &
+       call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/current_derivative_term(1:2), p_tuple_extend(current_derivative_term(3), &
             p_tuple_getone(pert, 1))/), superstructure_size, new_element_position, &
             derivative_structure)
@@ -171,14 +171,14 @@ module rsp_perturbed_matrices
   end subroutine
 
 
-  subroutine rsp_get_matrix_w(mol, superstructure_size, &
+  subroutine rsp_get_matrix_w(zeromat, superstructure_size, &
            deriv_struct, total_num_perturbations, which_index_is_pid, &
            indices_len, ind, F, D, S, W)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
@@ -186,28 +186,28 @@ module rsp_perturbed_matrices
     type(matrix) :: W, A, B, C
 
     W%elms_alpha = 0.0
-!     W = mat_zero_like(mol%zeromat)
+!     W = mat_zero_like(zeromat)
 
-    A = mat_alloc_like(mol%zeromat)
+    A = mat_alloc_like(zeromat)
     A%elms_alpha = 0.0
-!     A = mat_zero_like(mol%zeromat)
+!     A = mat_zero_like(zeromat)
     call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(mol%zeromat)
+    B = mat_alloc_like(zeromat)
     B%elms_alpha = 0.0
-!     B = mat_zero_like(mol%zeromat)
+!     B = mat_zero_like(zeromat)
     call mat_ensure_alloc(B)
 
-    C = mat_alloc_like(mol%zeromat)
+    C = mat_alloc_like(zeromat)
     C%elms_alpha = 0.0
-!     C = mat_zero_like(mol%zeromat)
+!     C = mat_zero_like(zeromat)
     call mat_ensure_alloc(C)
 
     do i = 1, superstructure_size
 
-!     A = mat_zero_like(mol%zeromat)
-!     B = mat_zero_like(mol%zeromat)
-!     C = mat_zero_like(mol%zeromat)
+!     A = mat_zero_like(zeromat)
+!     B = mat_zero_like(zeromat)
+!     C = mat_zero_like(zeromat)
 
        call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -272,14 +272,14 @@ end if
   end subroutine
 
 
-  subroutine rsp_get_matrix_y(mol, superstructure_size, deriv_struct, &
+  subroutine rsp_get_matrix_y(zeromat, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S, Y)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
@@ -287,21 +287,21 @@ end if
     type(matrix) :: Y, A, B, C
 
     Y%elms_alpha = 0.0
-!     Y = mat_zero_like(mol%zeromat)
+!     Y = mat_zero_like(zeromat)
 
-    A = mat_alloc_like(mol%zeromat)
+    A = mat_alloc_like(zeromat)
     A%elms_alpha = 0.0
-!     A = mat_zero_like(mol%zeromat)
+!     A = mat_zero_like(zeromat)
     call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(mol%zeromat)
+    B = mat_alloc_like(zeromat)
     B%elms_alpha = 0.0
-!     B = mat_zero_like(mol%zeromat)
+!     B = mat_zero_like(zeromat)
     call mat_ensure_alloc(B)
 
-    C = mat_alloc_like(mol%zeromat)
+    C = mat_alloc_like(zeromat)
     C%elms_alpha = 0.0
-!     C = mat_zero_like(mol%zeromat)
+!     C = mat_zero_like(zeromat)
     call mat_ensure_alloc(C)
 
 ! write(*,*) 'ind is', ind
@@ -383,14 +383,14 @@ end if
   end subroutine
 
 
-  subroutine rsp_get_matrix_z(mol, superstructure_size, deriv_struct, kn, &
+  subroutine rsp_get_matrix_z(zeromat, superstructure_size, deriv_struct, kn, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S, Z)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     type(p_tuple) :: merged_p_tuple
     integer, dimension(2) :: kn
@@ -400,21 +400,21 @@ end if
     type(matrix) :: Z, A, B, C
 
     Z%elms_alpha = 0.0
-!     Z = mat_zero_like(mol%zeromat)
+!     Z = mat_zero_like(zeromat)
 
-    A = mat_alloc_like(mol%zeromat)
+    A = mat_alloc_like(zeromat)
     A%elms_alpha = 0.0
-!     A = mat_zero_like(mol%zeromat)
+!     A = mat_zero_like(zeromat)
     call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(mol%zeromat)
+    B = mat_alloc_like(zeromat)
     B%elms_alpha = 0.0
-!     B = mat_zero_like(mol%zeromat)
+!     B = mat_zero_like(zeromat)
     call mat_ensure_alloc(B)
 
-    C = mat_alloc_like(mol%zeromat)
+    C = mat_alloc_like(zeromat)
     C%elms_alpha = 0.0
-!     C = mat_zero_like(mol%zeromat)
+!     C = mat_zero_like(zeromat)
     call mat_ensure_alloc(C)
 
 
@@ -436,7 +436,7 @@ end if
 
     if (kn_skip(total_num_perturbations, merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-    A = mat_zero_like(mol%zeromat)
+    A = mat_zero_like(zeromat)
 
         call sdf_getdata_s(D, merged_p_tuple, get_fds_data_index(merged_p_tuple, &
         total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -456,13 +456,13 @@ call p_tuple_deallocate(merged_p_tuple)
   end subroutine
 
 
-  subroutine rsp_get_matrix_lambda(mol, p_tuple_a, superstructure_size, deriv_struct, &
+  subroutine rsp_get_matrix_lambda(zeromat, p_tuple_a, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple) :: p_tuple_a, merged_A, merged_B
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
@@ -471,21 +471,21 @@ call p_tuple_deallocate(merged_p_tuple)
     type(matrix) :: L, A, B, C
 
     L%elms_alpha = 0.0
-!     L = mat_zero_like(mol%zeromat)
+!     L = mat_zero_like(zeromat)
 
-    A = mat_alloc_like(mol%zeromat)
+    A = mat_alloc_like(zeromat)
     A%elms_alpha = 0.0
-!     A = mat_zero_like(mol%zeromat)
+!     A = mat_zero_like(zeromat)
     call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(mol%zeromat)
+    B = mat_alloc_like(zeromat)
     B%elms_alpha = 0.0
-!     B = mat_zero_like(mol%zeromat)
+!     B = mat_zero_like(zeromat)
     call mat_ensure_alloc(B)
 
-    C = mat_alloc_like(mol%zeromat)
+    C = mat_alloc_like(zeromat)
     C%elms_alpha = 0.0
-!     C = mat_zero_like(mol%zeromat)
+!     C = mat_zero_like(zeromat)
     call mat_ensure_alloc(C)
 
 
@@ -525,14 +525,14 @@ call p_tuple_deallocate(merged_B)
 !MR: ZETA ROUTINE STILL NOT OPTIMIZED
 
 
-  subroutine rsp_get_matrix_zeta(mol, p_tuple_a, kn, superstructure_size, deriv_struct, &
+  subroutine rsp_get_matrix_zeta(zeromat, p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S, Zeta)
 
     implicit none
 
     integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(rsp_cfg) :: mol
+    type(matrix) :: zeromat
     type(p_tuple) :: p_tuple_a, merged_p_tuple, merged_A, merged_B
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(2) :: kn
@@ -542,21 +542,21 @@ call p_tuple_deallocate(merged_B)
     type(matrix) :: Zeta, A, B, C
 
     Zeta%elms_alpha = 0.0
-!     Zeta = mat_zero_like(mol%zeromat)
+!     Zeta = mat_zero_like(zeromat)
 
-    A = mat_alloc_like(mol%zeromat)
+    A = mat_alloc_like(zeromat)
     A%elms_alpha = 0.0
-!     A = mat_zero_like(mol%zeromat)
+!     A = mat_zero_like(zeromat)
     call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(mol%zeromat)
+    B = mat_alloc_like(zeromat)
     B%elms_alpha = 0.0
-!     B = mat_zero_like(mol%zeromat)
+!     B = mat_zero_like(zeromat)
     call mat_ensure_alloc(B)
 
-    C = mat_alloc_like(mol%zeromat)
+    C = mat_alloc_like(zeromat)
     C%elms_alpha = 0.0
-!     C = mat_zero_like(mol%zeromat)
+!     C = mat_zero_like(zeromat)
     call mat_ensure_alloc(C)
 
     do i = 1, superstructure_size
@@ -682,7 +682,7 @@ call p_tuple_deallocate(merged_B)
     if (kn_skip(merged_p_tuple%n_perturbations, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-    A = mat_zero_like(mol%zeromat)
+    A = mat_zero_like(zeromat)
 
        call sdf_getdata_s(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, & 
        total_num_perturbations, which_index_is_pid, indices_len, ind), A)

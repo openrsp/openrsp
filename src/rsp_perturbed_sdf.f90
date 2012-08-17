@@ -32,16 +32,17 @@ module rsp_perturbed_sdf
 
   contains
 
-  recursive subroutine rsp_fds(mol, pert, kn, F, D, S)
+  recursive subroutine rsp_fds(zeromat, pert, kn, F, D, S)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+    
     type(p_tuple) :: pert
     type(p_tuple), dimension(pert%n_perturbations) :: psub
     integer, dimension(2) :: kn
     integer :: i, j, k
     type(SDF) :: F, D, S
+    type(matrix) :: zeromat
 
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
@@ -53,7 +54,7 @@ module rsp_perturbed_sdf
 
        do i = 1, size(psub)
 
-          call rsp_fds(mol, psub(i), kn, F, D, S)
+          call rsp_fds(zeromat, psub(i), kn, F, D, S)
 
        end do       
 
@@ -79,7 +80,7 @@ module rsp_perturbed_sdf
 
           end do
 
-          call get_fds(mol, p_tuple_standardorder(pert), F, D, S)
+          call get_fds(zeromat, p_tuple_standardorder(pert), F, D, S)
 
        else
 
@@ -103,13 +104,13 @@ module rsp_perturbed_sdf
 
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
-  subroutine get_fds(mol, pert, F, D, S)
+  subroutine get_fds(zeromat, pert, F, D, S)
 
     use interface_rsp_solver, only: rsp_mosolver_exec
 
     implicit none
 
-    type(rsp_cfg) :: mol
+    
     integer :: sstr_incr, i, j, superstructure_size, nblks, perturbed_matrix_size
     integer, allocatable, dimension(:) :: ind
     integer, allocatable, dimension(:,:) :: blk_info, indices
@@ -118,16 +119,16 @@ module rsp_perturbed_sdf
     type(p_tuple) :: pert
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(SDF) :: F, D, S
-    type(matrix) :: X(1), RHS(1), A, B
+    type(matrix) :: X(1), RHS(1), A, B, zeromat
     type(matrix), allocatable, dimension(:) :: Fp, Dp, Sp, Dh
     type(f_l_cache), pointer :: fock_lowerorder_cache
 
-    A = mat_alloc_like(mol%zeromat)
-    A = mat_zero_like(mol%zeromat)
+    A = mat_alloc_like(zeromat)
+    A = mat_zero_like(zeromat)
     call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(mol%zeromat)
-    B = mat_zero_like(mol%zeromat)
+    B = mat_alloc_like(zeromat)
+    B = mat_zero_like(zeromat)
     call mat_ensure_alloc(B)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
@@ -152,7 +153,7 @@ module rsp_perturbed_sdf
 
     ! 1. Call ovlint and store perturbed overlap matrix
 
-    call rsp_ovlint_tr(mol, pert%n_perturbations, pert%plab, &
+    call rsp_ovlint_tr(zeromat%nrow, pert%n_perturbations, pert%plab, &
                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
                        perturbed_matrix_size, Sp)
     call sdf_add(S, pert, perturbed_matrix_size, Sp)
@@ -169,19 +170,19 @@ module rsp_perturbed_sdf
 
 !  write(*,*) '1'
 
-       Dp(i) = mat_alloc_like(mol%zeromat)
-       Dp(i) = mat_zero_like(mol%zeromat)
+       Dp(i) = mat_alloc_like(zeromat)
+       Dp(i) = mat_zero_like(zeromat)
        call mat_ensure_alloc(Dp(i))
 
 ! write(*,*) '2'
-       Dh(i) = mat_alloc_like(mol%zeromat)
-       Dh(i) = mat_zero_like(mol%zeromat)
+       Dh(i) = mat_alloc_like(zeromat)
+       Dh(i) = mat_zero_like(zeromat)
        call mat_ensure_alloc(Dh(i))
 
 ! write(*,*) '3'
-       Fp(i) = mat_alloc_like(mol%zeromat)
+       Fp(i) = mat_alloc_like(zeromat)
 ! write(*,*) '3a'
-       Fp(i) = mat_zero_like(mol%zeromat)
+       Fp(i) = mat_zero_like(zeromat)
 ! write(*,*) '3b'
        call mat_ensure_alloc(Fp(i))
 ! write(*,*) '3c'
@@ -202,7 +203,7 @@ module rsp_perturbed_sdf
 
 !  write(*,*) 'allocated f l cache'
 
-    call rsp_fock_lowerorder(mol, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
+    call rsp_fock_lowerorder(zeromat, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          0, D, perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
 !  write(*,*) 'got fock lowerorder'
@@ -232,7 +233,7 @@ module rsp_perturbed_sdf
     ! b) For Dp: Create differentiation superstructure: First dryrun for size, and
     ! then the actual superstructure call
 
-    superstructure_size = derivative_superstructure_getsize(mol, pert, &
+    superstructure_size = derivative_superstructure_getsize(pert, &
                           (/pert%n_perturbations, pert%n_perturbations/), .FALSE., &
                           (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
@@ -244,7 +245,7 @@ module rsp_perturbed_sdf
     allocate(indices(perturbed_matrix_size, pert%n_perturbations))
     allocate(ind(pert%n_perturbations))
 
-    call derivative_superstructure(mol, pert, (/pert%n_perturbations, &
+    call derivative_superstructure(pert, (/pert%n_perturbations, &
          pert%n_perturbations/), .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          superstructure_size, sstr_incr, derivative_structure)
@@ -265,7 +266,7 @@ module rsp_perturbed_sdf
 ! write(*,*) 'index is', ind
 !         write(*,*) 'Dp before z', Dp(i)%elms_alpha
 
-       call rsp_get_matrix_z(mol, superstructure_size, derivative_structure, &
+       call rsp_get_matrix_z(zeromat, superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
@@ -290,7 +291,7 @@ module rsp_perturbed_sdf
 
 !        if (pert%n_perturbations <=2) then
 ! 
-          call rsp_twoint_tr(mol, 0, nof, noc, pert%pdim, Dp(i), &
+          call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                              1, Fp(i:i))
 ! 
 !        end if
@@ -307,18 +308,18 @@ module rsp_perturbed_sdf
 
        ! 4. Make right-hand side using Dp
 
-       RHS(1) = mat_alloc_like(mol%zeromat)
-       RHS(1) = mat_zero_like(mol%zeromat)
+       RHS(1) = mat_alloc_like(zeromat)
+       RHS(1) = mat_zero_like(zeromat)
        call mat_ensure_alloc(RHS(1))
 
-       call rsp_get_matrix_y(mol, superstructure_size, derivative_structure, &
+       call rsp_get_matrix_y(zeromat, superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
 
 
      
-       X(1) = mat_alloc_like(mol%zeromat)
-       X(1) = mat_zero_like(mol%zeromat)
+       X(1) = mat_alloc_like(zeromat)
+       X(1) = mat_zero_like(zeromat)
        call mat_ensure_alloc(X(1))
 
 ! write(*,*) 'made rhs', RHS(1)%elms_alpha
@@ -341,7 +342,7 @@ module rsp_perturbed_sdf
 
 !        if (pert%n_perturbations <=2) then
 
-          call rsp_twoint_tr(mol, 0, nof, noc, pert%pdim, Dh(i), &
+          call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
 
 !        end if
@@ -349,7 +350,7 @@ module rsp_perturbed_sdf
 
        ! 'NOTE (MaR): XCINT CALL SKIPPED FOR NOW'
 
-       ! call rsp_xcint(mol, 0, nof, noc, pert%pdim, 2, &
+       ! call rsp_xcint(zeromat%nrow, 0, nof, noc, pert%pdim, 2, &
        ! (/sdf_getdata(D, get_emptypert(), (/1/)), Dh(i)/), Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
@@ -419,18 +420,19 @@ end do
   end subroutine
 
 
-  recursive subroutine rsp_fock_lowerorder(mol, pert, total_num_perturbations, &
+  recursive subroutine rsp_fock_lowerorder(zeromat, pert, total_num_perturbations, &
                        num_p_tuples, p_tuples, density_order, D, property_size, Fp, &
                        fock_lowerorder_cache)
 
     implicit none
 
     logical :: density_order_skip
-    type(rsp_cfg) :: mol
+    
     type(p_tuple) :: pert
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(SDF) :: D
+    type(matrix) :: zeromat
     type(matrix), dimension(property_size) :: Fp
     type(f_l_cache) :: fock_lowerorder_cache
 
@@ -442,14 +444,14 @@ end do
 
        if (p_tuples(1)%n_perturbations == 0) then
 
-          call rsp_fock_lowerorder(mol, p_tuple_remove_first(pert), & 
+          call rsp_fock_lowerorder(zeromat, p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
                density_order, D, property_size, Fp, fock_lowerorder_cache)
 
        else
 
-          call rsp_fock_lowerorder(mol, p_tuple_remove_first(pert), &
+          call rsp_fock_lowerorder(zeromat, p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
                p_tuples(2:size(p_tuples))/), &
@@ -473,7 +475,7 @@ end do
 
           end if
 
-          call rsp_fock_lowerorder(mol, p_tuple_remove_first(pert), &
+          call rsp_fock_lowerorder(zeromat, p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
                t_new, density_order + 1, D, property_size, Fp, fock_lowerorder_cache)
 
@@ -482,7 +484,7 @@ end do
        ! 3. Chain rule differentiate w.r.t. the density (giving 
        ! a(nother) pert D contraction)
 
-       call rsp_fock_lowerorder(mol, p_tuple_remove_first(pert), &
+       call rsp_fock_lowerorder(zeromat, p_tuple_remove_first(pert), &
             total_num_perturbations, num_p_tuples + 1, &
             (/p_tuples(:), p_tuple_getone(pert, 1)/), &
             density_order + 1, D, property_size, Fp, fock_lowerorder_cache)
@@ -522,7 +524,7 @@ end do
           if (f_l_cache_already(fock_lowerorder_cache, &
           num_p_tuples, p_tuples) .EQV. .FALSE.) then
 
-             call get_fock_lowerorder(mol, num_p_tuples, total_num_perturbations, &
+             call get_fock_lowerorder(zeromat, num_p_tuples, total_num_perturbations, &
                                       p_tuples, density_order, D, property_size, Fp, &
                                       fock_lowerorder_cache)
 
@@ -568,13 +570,13 @@ end do
 
 
 
-  subroutine get_fock_lowerorder(mol, num_p_tuples, total_num_perturbations, p_tuples, &
+  subroutine get_fock_lowerorder(zeromat, num_p_tuples, total_num_perturbations, p_tuples, &
                                  density_order, D, property_size, Fp, &
                                  fock_lowerorder_cache)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+    
     type(p_tuple) :: merged_p_tuple
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
@@ -591,6 +593,7 @@ end do
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     integer, allocatable, dimension(:,:) :: triang_indices_fp, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
+    type(matrix) :: zeromat
     type(matrix), allocatable, dimension(:) :: tmp, lower_order_contribution
     type(matrix), dimension(property_size) :: Fp
     type(f_l_cache) :: fock_lowerorder_cache
@@ -716,16 +719,16 @@ end if
 
       do j = 1, size(lower_order_contribution)
 
-          lower_order_contribution(j) = mat_alloc_like(mol%zeromat)
-          lower_order_contribution(j) = mat_zero_like(mol%zeromat)
+          lower_order_contribution(j) = mat_alloc_like(zeromat)
+          lower_order_contribution(j) = mat_zero_like(zeromat)
           call mat_ensure_alloc(lower_order_contribution(j))
 
        end do
 
       do j = 1, size(tmp)
 
-          tmp(j) = mat_alloc_like(mol%zeromat)
-          tmp(j) = mat_zero_like(mol%zeromat)
+          tmp(j) = mat_alloc_like(zeromat)
+          tmp(j) = mat_zero_like(zeromat)
           call mat_ensure_alloc(tmp(j))
 
        end do
@@ -733,8 +736,8 @@ end if
        do i = 2, num_p_tuples
 ! write(*,*) 'i is', i
 ! write(*,*) 'size of dens tuple', size(dens_tuple)
-          dens_tuple(i) = mat_alloc_like(mol%zeromat)
-          dens_tuple(i) = mat_zero_like(mol%zeromat)
+          dens_tuple(i) = mat_alloc_like(zeromat)
+          dens_tuple(i) = mat_zero_like(zeromat)
           call mat_ensure_alloc(dens_tuple(i))
 
 
@@ -775,7 +778,7 @@ end if
 
           do j = 1, size(tmp)
 
-             tmp(j) = mat_alloc_like(mol%zeromat)
+             tmp(j) = mat_alloc_like(zeromat)
              tmp(j)%elms_alpha = 0.0
              call mat_ensure_alloc(tmp(j))
 
@@ -784,7 +787,7 @@ end if
 ! write(*,*) '5'
           if (num_p_tuples <= 1) then
 
-             call rsp_oneint_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, size(tmp), tmp)
 
@@ -793,7 +796,7 @@ end if
 
           if (num_p_tuples <= 2) then
 
-             call rsp_twoint_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
 
@@ -803,7 +806,7 @@ end if
 
 !              write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 !
-!              call rsp_xcint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!              call rsp_xcint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                            p_tuples(1)%pdim, density_order, &
 !                            (/ sdf_getdata(D, get_emptypert(), (/1/)), &
@@ -833,7 +836,7 @@ offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, nbl
 ! write(*,*) 'full index tuple is', (/inner_indices(j, :), outer_indices(i, :) /)
 ! write(*,*) 'offset is', offset
 
-lower_order_contribution(offset) = mat_alloc_like(mol%zeromat)
+lower_order_contribution(offset) = mat_alloc_like(zeromat)
 lower_order_contribution(offset)%elms_alpha = 0.0
 call mat_ensure_alloc(lower_order_contribution(offset))
 
@@ -853,7 +856,7 @@ offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations,
          blks_tuple_triang_size(2:num_p_tuples), &
          (/outer_indices(i, :) /)) 
 
-lower_order_contribution(offset) = mat_alloc_like(mol%zeromat)
+lower_order_contribution(offset) = mat_alloc_like(zeromat)
 lower_order_contribution(offset)%elms_alpha = 0.0
 call mat_ensure_alloc(lower_order_contribution(offset))
 
@@ -968,14 +971,14 @@ deallocate(triang_indices_fp)
 
        if (num_p_tuples <= 1) then
 
-          call rsp_oneint_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, property_size, Fp)
 ! Waiting for developments in rsp_contribs
 ! NOTE: Find out if necessary ovlint/oneint in "outer indices case" above
 ! NOTE: Add (a) corresponding call(s) for the energy term contributions (see e.g. eqn.
 ! 209 in ajt_rsp)
-!           call rsp_ovlint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!           call rsp_ovlint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                           p_tuples(1)%pdim, w = p_tuples(1)%freq, fock = Fp)
 
@@ -983,7 +986,7 @@ deallocate(triang_indices_fp)
 
        if (num_p_tuples <= 2) then
 
-          call rsp_twoint_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/) ), &
                property_size, Fp)
@@ -999,7 +1002,7 @@ deallocate(triang_indices_fp)
 
 !        write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 
-!        call rsp_xcint(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!        call rsp_xcint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                       (/product(p_tuples(1)%pdim)/), 1, &
 !                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &

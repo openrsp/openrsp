@@ -44,7 +44,7 @@ public rsp_cfg
 ! 
 !   end type
 
-
+  type(matrix) :: zeromat
 
   contains
 
@@ -54,7 +54,7 @@ public rsp_cfg
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, pert_unordered
     type(matrix) :: F_unperturbed, D_unperturbed, S_unperturbed
     type(SDF), pointer :: F, D, S
@@ -82,6 +82,11 @@ public rsp_cfg
    write(*,*) ' '
    write(*,*) 'Choice of k, n is ', kn(1), ' and ', kn(2)
    write(*,*) ' '
+
+
+zeromat = mat_alloc_like(S_unperturbed)
+zeromat%elms_alpha = 0.0
+call mat_ensure_alloc(zeromat)
 
     allocate(S)
     S%next => S
@@ -132,7 +137,7 @@ public rsp_cfg
     allocate(prop(product(pert%pdim)))
     prop = 0.0
 
-    call get_prop(mol, pert, kn, property_size, prop, F, D, S)
+    call get_prop(pert, kn, property_size, prop, F, D, S)
 
     write(*,*) 'Property was calculated and printed to rsp_tensor'
     write(*,*) ' '
@@ -158,12 +163,12 @@ public rsp_cfg
 
 
 
-  subroutine get_prop(mol, pert, kn, property_size, prop, F, D, S)
+  subroutine get_prop(pert, kn, property_size, prop, F, D, S)
 
     implicit none
 
     type(SDF) :: F, D, S
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: emptyp_tuples
     integer :: property_size
@@ -183,14 +188,14 @@ public rsp_cfg
     ! Get all necessary F, D, S derivatives as dictated by
     ! number of perturbations and kn
 
-    call rsp_fds(mol, pert, kn, F, D, S)
+    call rsp_fds(zeromat, pert, kn, F, D, S)
  
     write(*,*) ' '
     write(*,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
     write(*,*) ' '
 
     call property_cache_allocate(energy_cache)
-    call rsp_energy(mol, pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, &
+    call rsp_energy(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, &
                   property_size, energy_cache, prop)
 
     write(*,*) ' '
@@ -199,61 +204,61 @@ public rsp_cfg
 
     deallocate(energy_cache)
 
-!     call property_cache_allocate(pulay_kn_cache)
-!     call rsp_pulay_kn(mol, pert, kn, (/emptypert, emptypert/), S, D, F, &
-!                       property_size, pulay_kn_cache, prop)
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating Pulay k-n type contributions'
-!     write(*,*) ' '
-! 
-!     deallocate(pulay_kn_cache)
-! 
-!     call property_cache_allocate(pulay_lag_cache)
-!     call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
-!                        (/p_tuple_getone(pert,1), emptypert/), &
-!                        S, D, F, property_size, pulay_lag_cache, prop)
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating Pulay lagrangian type contributions' 
-!     write(*,*) ' '
-! 
-!     deallocate(pulay_lag_cache)
-! 
-!     call property_cache_allocate(idem_cache)
-!     call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
-!                       (/p_tuple_getone(pert,1), emptypert/), &
-!                       S, D, F, property_size, idem_cache, prop)
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating idempotency lagrangian type contributions'
-!     write(*,*) ' '
-! 
-!     deallocate(idem_cache)
-! 
-!     call property_cache_allocate(scfe_cache)
-!     call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
-!                       (/p_tuple_getone(pert,1), emptypert/), &
-!                       S, D, F, property_size, scfe_cache, prop)
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating SCF lagrangian type contributions'
-!     write(*,*) ' '
-! 
-!     deallocate(scfe_cache)
+    call property_cache_allocate(pulay_kn_cache)
+    call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
+                      property_size, pulay_kn_cache, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating Pulay k-n type contributions'
+    write(*,*) ' '
+
+    deallocate(pulay_kn_cache)
+
+    call property_cache_allocate(pulay_lag_cache)
+    call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
+                       (/p_tuple_getone(pert,1), emptypert/), &
+                       S, D, F, property_size, pulay_lag_cache, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating Pulay lagrangian type contributions' 
+    write(*,*) ' '
+
+    deallocate(pulay_lag_cache)
+
+    call property_cache_allocate(idem_cache)
+    call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
+                      (/p_tuple_getone(pert,1), emptypert/), &
+                      S, D, F, property_size, idem_cache, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating idempotency lagrangian type contributions'
+    write(*,*) ' '
+
+    deallocate(idem_cache)
+
+    call property_cache_allocate(scfe_cache)
+    call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
+                      (/p_tuple_getone(pert,1), emptypert/), &
+                      S, D, F, property_size, scfe_cache, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating SCF lagrangian type contributions'
+    write(*,*) ' '
+
+    deallocate(scfe_cache)
 
   end subroutine
 
 
   ! Calculate and add all the energy contributions
 
-  recursive subroutine rsp_energy(mol, pert, total_num_perturbations, kn, num_p_tuples, &
+  recursive subroutine rsp_energy(pert, total_num_perturbations, kn, num_p_tuples, &
                                 p_tuples, density_order, D, property_size, cache, prop)
 
     implicit none
 
     logical :: e_knskip
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     integer, dimension(2) :: kn
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
@@ -269,14 +274,14 @@ public rsp_cfg
 
     if (p_tuples(1)%n_perturbations == 0) then
 
-       call rsp_energy(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+       call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
        kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
        density_order, D, property_size, cache, prop)
 
     else
 
 
-       call rsp_energy(mol, p_tuple_remove_first(pert), total_num_perturbations,  &
+       call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations,  &
        kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
        p_tuples(2:size(p_tuples))/), density_order, D, property_size, cache, prop)
 
@@ -300,7 +305,7 @@ public rsp_cfg
 
           end if
 
-          call rsp_energy(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+          call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, property_size, cache, prop)
 
        end do
@@ -309,7 +314,7 @@ public rsp_cfg
        ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
        ! a(nother) pert D contraction)
 
-       call rsp_energy(mol, p_tuple_remove_first(pert), total_num_perturbations, &
+       call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
        kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
        density_order + 1, D, property_size, cache, prop)
 
@@ -374,7 +379,7 @@ public rsp_cfg
        
           else
 
-             call get_energy(mol, num_p_tuples, total_num_perturbations, & 
+             call get_energy(num_p_tuples, total_num_perturbations, & 
                   (/ (p_tuple_standardorder(p_tuples(i)) , i = 1, num_p_tuples ) /), &
                   density_order, D, property_size, cache, prop)
 
@@ -397,12 +402,12 @@ public rsp_cfg
 
 ! MR: WORKING ON IMPLEMENTING TRIANGULATED INDICES AND STORAGE HERE
 
-  subroutine get_energy(mol, num_p_tuples, total_num_perturbations, &
+  subroutine get_energy(num_p_tuples, total_num_perturbations, &
                         p_tuples, density_order, D, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(p_tuple) :: merged_p_tuple
     type(SDF) :: D
@@ -566,8 +571,8 @@ end if
 
     do i = 1, num_p_tuples
 
-       dens_tuple(i) = mat_alloc_like(mol%zeromat)
-       dens_tuple(i) = mat_zero_like(mol%zeromat)
+       dens_tuple(i) = mat_alloc_like(zeromat)
+       dens_tuple(i) = mat_zero_like(zeromat)
        call mat_ensure_alloc(dens_tuple(i))
 
     end do
@@ -623,14 +628,14 @@ end if
 
        if (num_p_tuples == 1) then
 
-          call rsp_oneave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
                          p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
                          inner_indices_size, contrib)
 
        elseif (num_p_tuples == 2) then
 
-          call rsp_oneave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                          p_tuples(1)%pdim, dens_tuple(2), inner_indices_size, contrib)
 
@@ -648,7 +653,7 @@ end if
 
        if (num_p_tuples == 1) then
 
-          call rsp_twoave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), &
                           (/1/)), sdf_getdata(D, get_emptypert(), (/1/)) , &
@@ -656,7 +661,7 @@ end if
 
        elseif (num_p_tuples == 2) then
 
-          call rsp_twoave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, dens_tuple(2), &
                           sdf_getdata(D, get_emptypert(), (/1/)) , &
@@ -664,7 +669,7 @@ end if
 
        elseif (num_p_tuples == 3) then
 
-          call rsp_twoave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, dens_tuple(2), dens_tuple(3), &
                           inner_indices_size, contrib)
@@ -683,7 +688,7 @@ end if
 ! 
 !        contrib = 0.0
 ! 
-!        call rsp_xcave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!        call rsp_xcave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                      num_p_tuples, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
 !                      (dens_tuple(k), k = 2, num_p_tuples) /), contrib)
@@ -857,7 +862,7 @@ deallocate(triang_indices_pr)
 
        contrib = 0.0
 
-       call rsp_oneave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
 
@@ -867,7 +872,7 @@ deallocate(triang_indices_pr)
 
        contrib = 0.0
 
-       call rsp_twoave_tr(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        sdf_getdata(D, get_emptypert(), (/1/)) , &
                        sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
@@ -880,7 +885,7 @@ deallocate(triang_indices_pr)
  
 !        contrib = 0.0
 !
-!        call rsp_xcave(mol, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!        call rsp_xcave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                      1, (/ sdf_getdata(D, get_emptypert(), (/1/)) /), contrib)
 ! 
@@ -924,11 +929,11 @@ deallocate(blk_sizes_merged)
 
 
 
-  recursive subroutine rsp_pulay_kn(mol, pert, kn, p12, S, D, F, property_size, cache, prop)
+  recursive subroutine rsp_pulay_kn(pert, kn, p12, S, D, F, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -939,11 +944,11 @@ deallocate(blk_sizes_merged)
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_pulay_kn(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_kn(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, property_size, &
        cache, prop)
 
-       call rsp_pulay_kn(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_kn(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, property_size, &
        cache, prop)
 
@@ -975,7 +980,7 @@ deallocate(blk_sizes_merged)
        
           else
 
-             call get_pulay_kn(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
+             call get_pulay_kn((/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated Pulay k-n contribution'
@@ -997,11 +1002,11 @@ deallocate(blk_sizes_merged)
   end subroutine
 
 
-  subroutine get_pulay_kn(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_pulay_kn(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
@@ -1026,14 +1031,14 @@ deallocate(blk_sizes_merged)
 
     prop_forcache = 0.0
 
-    d_supsize = derivative_superstructure_getsize(mol, p12(2), kn, .FALSE., &
+    d_supsize = derivative_superstructure_getsize(p12(2), kn, .FALSE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(deriv_structb(d_supsize, 3))
 
     sstr_incr = 0
 
-    call derivative_superstructure(mol, p12(2), kn, .FALSE., &
+    call derivative_superstructure(p12(2), kn, .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize, sstr_incr, deriv_structb)
 
@@ -1060,14 +1065,14 @@ deallocate(blk_sizes_merged)
     call make_indices(p12(1)%n_perturbations, 1, p12(1)%pdim, 0, inner_indices)
     call make_indices(p12(2)%n_perturbations, 1, p12(2)%pdim, 0, outer_indices)
 
-    W = mat_alloc_like(mol%zeromat)
-    W = mat_zero_like(mol%zeromat)
+    W = mat_alloc_like(zeromat)
+    W = mat_zero_like(zeromat)
     call mat_ensure_alloc(W)
 
     do i = 1, size(outer_indices, 1)
 
        tmp = 0.0
-       W = mat_zero_like(mol%zeromat)
+       W = mat_zero_like(zeromat)
 
 ! call sdf_getdata_s(D, deriv_structb(1,1), get_fds_data_index(deriv_structb(1,1), &
 !      p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid, &
@@ -1085,7 +1090,7 @@ deallocate(blk_sizes_merged)
 
 
 
-       call rsp_get_matrix_w(mol, d_supsize, deriv_structb, p12(1)%n_perturbations + &
+       call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
@@ -1093,7 +1098,7 @@ deallocate(blk_sizes_merged)
 ! write(*,*) W%elms
 
 !MR: TEMPORARILY DISABLED
-!        call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
+!        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
 !                       (/ (j/j, j = 1, p12(1)%n_perturbations) /), p12(1)%pdim, W, tmp)
 
        do j = 1, size(inner_indices, 1)
@@ -1133,11 +1138,11 @@ deallocate(blk_sizes_merged)
 
 
 
-  recursive subroutine rsp_pulay_lag(mol, pert, kn, p12, S, D, F, property_size, cache, prop)
+  recursive subroutine rsp_pulay_lag(pert, kn, p12, S, D, F, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -1148,10 +1153,10 @@ deallocate(blk_sizes_merged)
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
        S, D, F, property_size, cache, prop)
-       call rsp_pulay_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
        S, D, F, property_size, cache, prop)
 
@@ -1182,7 +1187,7 @@ deallocate(blk_sizes_merged)
 
           else
 
-             call get_pulay_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+             call get_pulay_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated Pulay lagrange contribution'
@@ -1204,11 +1209,11 @@ deallocate(blk_sizes_merged)
   end subroutine
 
 
-  subroutine get_pulay_lag(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_pulay_lag(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
@@ -1234,14 +1239,14 @@ deallocate(blk_sizes_merged)
 
     prop_forcache = 0.0
 
-    d_supsize = derivative_superstructure_getsize(mol, p12(2), kn, .TRUE., &
+    d_supsize = derivative_superstructure_getsize(p12(2), kn, .TRUE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
    
     allocate(deriv_structb(d_supsize, 3))
 
     incr = 0
 
-    call derivative_superstructure(mol, p12(2), kn, .TRUE., &
+    call derivative_superstructure(p12(2), kn, .TRUE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize, incr, deriv_structb)
 
@@ -1269,21 +1274,21 @@ deallocate(blk_sizes_merged)
     call make_indices(p12(2)%n_perturbations, 1, p12(2)%pdim, 0, outer_indices)
     call make_indices(p12(1)%n_perturbations, 1, p12(1)%pdim, 0, inner_indices)
 
-    W = mat_alloc_like(mol%zeromat)
-    W = mat_zero_like(mol%zeromat)
+    W = mat_alloc_like(zeromat)
+    W = mat_zero_like(zeromat)
     call mat_ensure_alloc(W)
 
     do i = 1, size(outer_indices, 1)
 
        tmp = 0.0
-       W = mat_zero_like(mol%zeromat)
+       W = mat_zero_like(zeromat)
 
-       call rsp_get_matrix_w(mol, d_supsize, deriv_structb, p12(1)%n_perturbations + &
+       call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
 !MR: TEMPORARILY DISABLED
-!        call rsp_ovlave(mol, p12(1)%n_perturbations, p12(1)%plab, &
+!        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
 !                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
 !                        p12(1)%pdim, W, tmp)
 
@@ -1323,12 +1328,12 @@ deallocate(blk_sizes_merged)
 
 
 
-  recursive subroutine rsp_idem_lag(mol, pert, kn, p12, S, D, F, &
+  recursive subroutine rsp_idem_lag(pert, kn, p12, S, D, F, &
                                     property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -1339,10 +1344,10 @@ deallocate(blk_sizes_merged)
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, property_size, &
        cache, prop)
-       call rsp_idem_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, property_size, &
        cache, prop)
 
@@ -1374,7 +1379,7 @@ deallocate(blk_sizes_merged)
           else
 
              ! At lowest level:
-             call get_idem_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+             call get_idem_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
                                kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated idempotency lagrange contribution'
@@ -1396,11 +1401,11 @@ deallocate(blk_sizes_merged)
   end subroutine
 
 
-  subroutine get_idem_lag(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_idem_lag(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
@@ -1426,9 +1431,9 @@ deallocate(blk_sizes_merged)
 
     d_supsize = 0
 
-    d_supsize(1) = derivative_superstructure_getsize(mol, p_tuple_remove_first(p12(1)), &
+    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
                    kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-    d_supsize(2) = derivative_superstructure_getsize(mol, p12(2), &
+    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
                    kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(deriv_structa(d_supsize(1), 3))
@@ -1437,10 +1442,10 @@ deallocate(blk_sizes_merged)
     incr1 = 0
     incr2 = 0
 
-    call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., & 
+    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., & 
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize(1), incr1, deriv_structa)
-    call derivative_superstructure(mol, p12(2), kn, .TRUE., &
+    call derivative_superstructure(p12(2), kn, .TRUE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          d_supsize(2), incr2, deriv_structb)
 
@@ -1486,28 +1491,28 @@ deallocate(blk_sizes_merged)
 
     offset = 0.0
 
-    Z = mat_alloc_like(mol%zeromat)
-    Z = mat_zero_like(mol%zeromat)
+    Z = mat_alloc_like(zeromat)
+    Z = mat_zero_like(zeromat)
     call mat_ensure_alloc(Z)
 
-    Zeta = mat_alloc_like(mol%zeromat)
-    Zeta = mat_zero_like(mol%zeromat)
+    Zeta = mat_alloc_like(zeromat)
+    Zeta = mat_zero_like(zeromat)
     call mat_ensure_alloc(Zeta)
 
     do i = 1, size(outer_indices_a, 1)
 
-       Zeta = mat_zero_like(mol%zeromat)
+       Zeta = mat_zero_like(zeromat)
 
-       call rsp_get_matrix_zeta(mol, p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
+       call rsp_get_matrix_zeta(zeromat, p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
             deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
             which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), &
             F, D, S, Zeta)
 
        do j = 1, size(outer_indices_b, 1)
 
-          Z = mat_zero_like(mol%zeromat)
+          Z = mat_zero_like(zeromat)
 
-          call rsp_get_matrix_z(mol, d_supsize(2), deriv_structb, kn, &
+          call rsp_get_matrix_z(zeromat, d_supsize(2), deriv_structb, kn, &
                p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
                p12(2)%n_perturbations, outer_indices_b(j,:), F, D, S, Z)
 
@@ -1548,12 +1553,12 @@ deallocate(blk_sizes_merged)
 
 
 
-  recursive subroutine rsp_scfe_lag(mol, pert, kn, p12, S, D, F, &
+  recursive subroutine rsp_scfe_lag(pert, kn, p12, S, D, F, &
                                     property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
     type(SDF) :: S, D, F
@@ -1564,10 +1569,10 @@ deallocate(blk_sizes_merged)
     
     if (pert%n_perturbations > 0) then
 
-       call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
             (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
             S, D, F, property_size, cache, prop)
-       call rsp_scfe_lag(mol, p_tuple_remove_first(pert), kn, &
+       call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
             (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
             S, D, F, property_size, cache, prop)
 
@@ -1599,7 +1604,7 @@ deallocate(blk_sizes_merged)
           else
 
              ! At lowest level:
-             call get_scfe_lag(mol, (/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
+             call get_scfe_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
              kn, F, D, S, property_size, cache, prop)
 
              write(*,*) 'Calculated scfe lagrange contribution'
@@ -1623,11 +1628,11 @@ deallocate(blk_sizes_merged)
 
 
 
-  subroutine get_scfe_lag(mol, p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_scfe_lag(p12, kn, F, D, S, property_size, cache, prop)
 
     implicit none
 
-    type(rsp_cfg) :: mol
+!     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
@@ -1650,9 +1655,9 @@ deallocate(blk_sizes_merged)
     prop_forcache = 0.0
     d_supsize = 0
 
-    d_supsize(1) = derivative_superstructure_getsize(mol, p_tuple_remove_first(p12(1)), &
+    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
                    kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-    d_supsize(2) = derivative_superstructure_getsize(mol, p12(2), &
+    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
                    kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(deriv_structa(d_supsize(1), 3))
@@ -1661,10 +1666,10 @@ deallocate(blk_sizes_merged)
     incr1 = 0
     incr2 = 0
 
-    call derivative_superstructure(mol, p_tuple_remove_first(p12(1)), kn, .FALSE., &
+    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., &
                     (/get_emptypert(), get_emptypert(), get_emptypert()/), & 
                     d_supsize(1), incr1, deriv_structa)
-    call derivative_superstructure(mol, p12(2), kn, .TRUE., &
+    call derivative_superstructure(p12(2), kn, .TRUE., &
                     (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                     d_supsize(2), incr2, deriv_structb)
 
@@ -1702,27 +1707,27 @@ deallocate(blk_sizes_merged)
 
     offset = 0
 
-    Y = mat_alloc_like(mol%zeromat)
-    Y = mat_zero_like(mol%zeromat)
+    Y = mat_alloc_like(zeromat)
+    Y = mat_zero_like(zeromat)
     call mat_ensure_alloc(Y)
 
-    L = mat_alloc_like(mol%zeromat)
-    L = mat_zero_like(mol%zeromat)
+    L = mat_alloc_like(zeromat)
+    L = mat_zero_like(zeromat)
     call mat_ensure_alloc(L)
 
     do i = 1, size(outer_indices_a, 1)
 
-       L = mat_zero_like(mol%zeromat)
+       L = mat_zero_like(zeromat)
 
-       call rsp_get_matrix_lambda(mol, p_tuple_getone(p12(1), 1), d_supsize(1), &
+       call rsp_get_matrix_lambda(zeromat, p_tuple_getone(p12(1), 1), d_supsize(1), &
             deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
             which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), D, S, L)
 
        do j = 1, size(outer_indices_b, 1)
 
-          Y = mat_zero_like(mol%zeromat)
+          Y = mat_zero_like(zeromat)
 
-          call rsp_get_matrix_y(mol, d_supsize(2), deriv_structb, &
+          call rsp_get_matrix_y(zeromat, d_supsize(2), deriv_structb, &
                p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
                p12(2)%n_perturbations, outer_indices_b(j,:), F, D, S, Y)
 

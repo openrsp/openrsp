@@ -804,10 +804,9 @@ contains
     !> field descriptors (label freq comp ncomp)
     type(rsp_field), intent(in)    :: fields(:)
     !> output tensor, to which nuclear contribution is *ADDED*
-    integer                        :: propsize
     complex(8),      intent(inout) :: rspfunc(propsize)
     !---------------------------------------------------------------
-    integer      ncor, ngeo, last_ncomp
+    integer      ncor, ngeo, last_ncomp, propsize
     character(4) last_field
 
 ! 
@@ -862,12 +861,12 @@ contains
 ! MR: NOT FULLY UPDATED
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
-  subroutine rsp_ovlave_tr(mol, nf, f, c, nc, DFD, ave, w, propsize, D)
+  subroutine rsp_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface
 !     use gen1int_api
     !> structure containing integral program settings
-    type(rsp_cfg), intent(in)  :: mol
+!     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
     integer,       intent(in)  :: nf
     !> field labels in std order
@@ -997,12 +996,12 @@ contains
 
 ! radovan: there is code repetition in ave and int setup
 
-  subroutine rsp_oneave_tr(mol, nf, f, c, nc, D, propsize, ave)
+  subroutine rsp_oneave_tr(nf, f, c, nc, D, propsize, ave)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface in Dalton
 !     use gen1int_api
     !> structure containing integral program settings
-    type(rsp_cfg), intent(in)  :: mol
+!     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
     integer,       intent(in)  :: nf
     !> field labels in std order
@@ -1100,11 +1099,11 @@ contains
 
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
-  subroutine rsp_twoave_tr(mol, nf, f, c, nc, D1, D2, propsize, ave)
+  subroutine rsp_twoave_tr(nf, f, c, nc, D1, D2, propsize, ave)
 !     use eri_contractions, only: ctr_arg
 !     use eri_basis_loops,  only: unopt_geodiff_loop
     !> structure containing integral program settings
-    type(rsp_cfg),        intent(in)  :: mol
+!     type(rsp_cfg),        intent(in)  :: mol
     !> number of fields
     integer,              intent(in)  :: nf
     !> field labels in std order
@@ -1269,11 +1268,11 @@ contains
 
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
-  subroutine rsp_ovlint_tr(mol, nf, f, c, nc, propsize, ovl, w, fock)
+  subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
     ! Gen1Int interface in Dalton
 !     use gen1int_api
     !> structure containing integral program settings
-    type(rsp_cfg), intent(in)    :: mol
+!     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
     integer,       intent(in)    :: nf, propsize
     !> field labels in std order
@@ -1288,7 +1287,7 @@ contains
     !> contribution is ADDED
     type(matrix),  intent(inout), optional :: fock(propsize)
     !------------------------------------------------
-    integer      i
+    integer      i, nr_ao
     integer order_geo  !order of total geometric derivatives
     integer num_atom   !number of atoms
     integer num_coord  !number of atomic coordinates
@@ -1390,11 +1389,11 @@ contains
 
 
 
-  subroutine rsp_oneint_tr(mol, nf, f, c, nc, propsize, oneint)
+  subroutine rsp_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
     ! Gen1Int interface in Dalton
 !     use gen1int_api
     !> structure containing integral program settings
-    type(rsp_cfg), intent(in)    :: mol
+!     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
     integer,       intent(in)    :: nf, propsize
     !> field labels in std order
@@ -1412,7 +1411,7 @@ contains
     integer num_geom   !number of total geometric derivatives
     integer num_ints   !number of all integral matrices
     integer imat       !incremental recorder over matrices
-    integer :: i
+    integer :: i, nr_ao
     type(matrix) :: A
 
 ! MR: DUMMY PLACEHOLDER MOL DECLARATION
@@ -1504,12 +1503,12 @@ contains
   !> Contract 2-electron integrals perturbed by fields 'f' with density
   !> matrix 'dens', and add to Fock matrices 'fock' Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
-  subroutine rsp_twoint_tr(mol, nf, f, c, nc, dens, propsize, fock)
+  subroutine rsp_twoint_tr(nr_ao, nf, f, c, nc, dens, propsize, fock)
     ! work array to be passed to GRCONT
 !     use eri_contractions, only: ctr_arg
 !     use eri_basis_loops,  only: unopt_geodiff_loop
     !> structure containing integral program settings
-    type(rsp_cfg),        intent(in)    :: mol
+!     type(rsp_cfg),        intent(in)    :: mol
     !> number of fields
     integer,              intent(in)    :: nf, propsize
     !> field labels in std order
@@ -1522,7 +1521,7 @@ contains
     type(matrix), target, intent(inout) :: fock(propsize)
     !--------------------------------------------------
     real(8), pointer :: null_ptr(:) !because null() isn't f90
-    integer       i, j, n, ij, ncor
+    integer       i, j, n, ij, ncor, nr_ao
 ! MR: FIX NEXT (ctr_arg) LINE
 !     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
