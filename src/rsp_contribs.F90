@@ -195,11 +195,12 @@ contains
     !> field descriptors (label freq comp ncomp)
     type(rsp_field), intent(in)    :: fields(:)
     !> output tensor, to which nuclear contribution is *ADDED*
+    integer                        :: propsize
     complex(8),      intent(inout) :: rspfunc_output(propsize)
     !> tmp tensor, to which nuclear contribution is *ADDED*
     complex(8) :: rspfunc(product(fields%ncomp))
     !---------------------------------------------------------------
-    integer      nf, ncor, ngeo, ext_ncomp, i, propsize
+    integer      nf, ncor, ngeo, ext_ncomp, i
     integer      order(size(fields)), tcomp(size(fields))
     character(4) ext_label(2)
     logical      nonz
