@@ -153,13 +153,16 @@
     real(8)              :: xc_energy
     real(8), allocatable :: eigval(:)
 
+#ifdef VAR_LSDALTON
+    STOP 'openrsp_daldrv_old'
+#else
     call interface_molecule_init()
     call interface_io_init()
     call interface_xc_init()
     call interface_scf_init()
     call interface_pcm_init(wavpcm)
     call interface_basis_init()
-
+#endif
     nbast = get_nr_ao()
     lupri = get_print_unit()
     lucmd = get_input_unit()

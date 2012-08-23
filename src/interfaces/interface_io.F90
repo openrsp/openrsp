@@ -24,16 +24,25 @@ module interface_io
 
 contains
 
-   subroutine interface_io_init()
-
-#include "priunit.h"
-
+#ifdef VAR_LSDALTON
+  !A proper interface that recieves info as primitve arguments to subroutine
+  !and is therefore independent on the Host program. TK
+   subroutine interface_io_init(lupri,lucmd)
+     implicit none
+     integer,intent(in) :: lupri,lucmd
       print_unit = lupri
       input_unit = lucmd
-
       is_initialized = .true.
-
    end subroutine
+#else
+  !Crappy interrface that uses host specific commen blocks. 
+   subroutine interface_io_init()
+#include "priunit.h"
+      print_unit = lupri
+      input_unit = lucmd
+      is_initialized = .true.
+   end subroutine
+#endif
 
    subroutine interface_io_finalize()
       is_initialized = .false.

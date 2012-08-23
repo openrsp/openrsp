@@ -116,13 +116,16 @@ contains
 #endif
 
     type(ctr_arg) :: arg(1)
-
+#ifdef VAR_LSDALTON
+    STOP 'openrsp_setup'
+#else
     call interface_molecule_init()
     call interface_io_init()
     call interface_xc_init()
     call interface_pcm_init(wavpcm)
     call interface_scf_init()
     call interface_basis_init()
+#endif
 
     nbast = get_nr_ao()
     lupri = get_print_unit()

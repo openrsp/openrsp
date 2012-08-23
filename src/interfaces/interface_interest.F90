@@ -53,6 +53,66 @@ module interface_interest
 
 contains
 
+#ifdef VAR_LSDALTON
+   subroutine initialize_interest_eri_diff(nplrg,nucind,nlarge,natom,nlrgsh,&
+        & nsmlsh,charge,cord,gnuexp,priexp,nrco,nhkt,priccf,ncent)
+     implicit none
+     integer,intent(in) :: nplrg,nucind,nlarge,natom,nlrgsh,nsmlsh,nhkt(natom)
+     real(8),intent(in) :: charge(natom),cord(3,natom),gnuexp(natom)
+     real(8),intent(in) :: priexp(natom),priccf(:,:)
+     integer,intent(in) :: nrco(:),ncent(natom)
+!
+     integer        :: i,j,ij,ier
+     type(type_gto) :: tmpgto
+      if (interface_is_initialized) return
+      call init_arrays()
+      !> initialize InteRest integral package
+      call interest_initialize()
+      !> test if the large component basis is uncontracted
+      if (nplrg /= nlarge) then
+         print *, ' Error: contracted basis set found => stop!'
+         print *, ' Note:  uncontracted basis sets are only supported'
+         stop 1
+      endif
+      !> interface molecular data
+      allocate(atom(nucind), stat=ier)
+      if (ier /= 0) stop 'Error in allocation: atom(:)'
+      do i = 1, size(atom)
+         atom(i) = type_atom(charge(i),cord(1,i),cord(2,i),cord(3,i),gnuexp(i))
+      enddo
+      !> interface basis set data
+      !> fixme: contracted basis sets
+      allocate(gto(nlrgsh+nsmlsh), stat=ier)
+      if (ier /= 0) stop 'Error in allocation: gto(:)'
+      i  = 0
+      ij = 0
+      do while (i < size(gto))
+        do j = 1, nrco(i+1)
+           i = i + 1
+           gto(i) = type_gto(ij,0,nhkt(i)-1,ncent(i),(2*nhkt(i)-1), &
+                & (nhkt(i)*(nhkt(i)+1))/2, priexp(i), priccf(i,j), ncent(i))
+           !> note: cartesian indexation
+           ij = ij + (nhkt(i)*(nhkt(i)+1))/2
+        end do
+     end do
+     do i = 1, size(gto)-1
+        gto(i+1)%offset = gto(i)%offset + gto(i)%cdegen
+     enddo
+     ! get total number of centers
+     nr_centers = 0
+     do i = 1, size(gto)
+        if (gto(i)%center > nr_centers) nr_centers = nr_centers + 1
+     enddo
+     shell_start(1) = 1
+     shell_end(1)   = nlrgsh
+     shell_start(2) = shell_end(1) + 1
+     shell_end(2)   = shell_end(1) + nsmlsh     
+     print *, 'total number of basis function shells:    ', size(gto)
+     print *, 'total number of spherical basis functions:', sum(gto(:)%sdegen)
+     print *, 'total number of cartesian basis functions:', sum(gto(:)%cdegen)
+     interface_is_initialized = .true.     
+   end subroutine
+#else
    subroutine initialize_interest_eri_diff()
 
 #include "mxcent.h"
@@ -139,6 +199,7 @@ contains
       interface_is_initialized = .true.
 
    end subroutine
+#endif
 
    subroutine interest_get_int(ndim, dmat, gmat, order, only_icoor)
 
@@ -257,7 +318,12 @@ contains
       ! make sure it is initialized
       ! it does not cost anything
       ! routine will return if already initialized
+#ifdef VAR_LSDALTON
+      STOP 'LSDALTON require more input arguments call to initialize_interest_eri_diff'
+!      call initialize_interest_eri_diff()
+#else
       call initialize_interest_eri_diff()
+#endif
 
       if (get_ave) then
          icent_start = 1

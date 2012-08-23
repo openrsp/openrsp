@@ -1,5 +1,6 @@
 module interface_dirac_gen1int
 
+#ifndef VAR_LSDALTON
    use gen1int_api
 
    implicit none
@@ -9,7 +10,6 @@ module interface_dirac_gen1int
    private
 
 contains
-
    subroutine get_1el_integrals(                 &
                                 M,               &
                                 prop_name,       &
@@ -54,5 +54,5 @@ contains
                                 print_unit, 0)
 
    end subroutine
-
+#endif
 end module

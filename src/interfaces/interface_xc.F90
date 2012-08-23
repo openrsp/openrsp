@@ -38,7 +38,9 @@ module interface_xc
 contains
 
    subroutine interface_xc_init()
-
+#ifdef VAR_LSDALTON
+     STOP 'interface_xc_init'
+#else
 #include "mxcent.h"
 #include "nuclei.h"
 #include "inforb.h"
@@ -48,7 +50,7 @@ contains
       is_ks_calculation = dodft
 
       is_initialized = .true.
-
+#endif
    end subroutine
 
    subroutine interface_xc_finalize()

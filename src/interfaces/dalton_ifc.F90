@@ -14,6 +14,21 @@ module dalton_ifc
 
   contains
 
+#ifdef VAR_LSDALTON
+  !> \brief unknown function
+  !> \author Thomas Kjaergaard
+  !> \date 2012-08-23
+  subroutine VIBCTL_ifc( nc, w, ALPHA, GPRIME, THETA, DIPGRAD, &
+                         dALPHAdR, dGPRIMEdR, dTHETAdR )
+    implicit none
+    integer :: nc
+    real(8) :: w
+    real(8) :: ALPHA(3,3), GPRIME(3,3), THETA(3,6)
+    real(8) :: DIPGRAD(3,nc), dALPHAdR(3,3,nc)
+    real(8) :: dGPRIMEdR(3,3,nc), dTHETAdR(3,6,nc)
+    stop 'VIBCTL_ifc not implemented in LSDALTON interface. TK'
+  end subroutine VIBCTL_ifc
+#else
   !> \brief gets the
   !> \author Bin Gao
   !> \date 2009-12-12
@@ -77,5 +92,6 @@ module dalton_ifc
     call VIBCTL( f77_memory(get_f77_memory_next()), get_f77_memory_left() )
 #endif
   end subroutine
+#endif
 
 end module

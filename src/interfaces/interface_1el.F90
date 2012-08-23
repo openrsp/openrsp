@@ -28,15 +28,34 @@ module interface_1el
 
 contains
 
+#ifdef VAR_LSDALTON
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
    subroutine interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
       use gen1int_host
+      !> number of fields
+      integer,       intent(in)  :: nf
+      !> field labels in std order
+      character(4),  intent(in)  :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)  :: c(nf), nc(nf)
+      !> energy-weighted density matrix
+      type(matrix),  intent(in)  :: DFD
+      !> output average
+      complex(8),    intent(out) :: ave(product(nc))
+      !> field frequencies corresponding to each field
+      complex(8),    intent(in), optional  :: w(nf)
+      !> density matrix to contract half-differentiated overlap against
+      type(matrix),  intent(in), optional  :: D
+      STOP 'interface_1el_ovlave not implemted in LSDALTON. TK'      
+   end subroutine
 #else
+   !> \brief host program routine to get the average f-perturbed overlap integrals
+   !>        with perturbed density D and energy-weighted density DFD
+   subroutine interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
+      ! Gen1Int interface
       use gen1int_api
-#endif
       !> number of fields
       integer,       intent(in)  :: nf
       !> field labels in std order
@@ -163,18 +182,43 @@ contains
 
       end if
    end subroutine
+#endif
 
 
 
 
-
+#ifdef VAR_LSDALTON
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
    subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+      use gen1int_host
+      !> number of fields
+      integer,       intent(in)  :: nf, propsize
+      !> field labels in std order
+      character(4),  intent(in)  :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)  :: c(nf), nc(nf)
+      !> energy-weighted density matrix
+      type(matrix),  intent(in)  :: DFD
+      !> output average
+      complex(8),    intent(out) :: ave(product(nc))
+      !> field frequencies corresponding to each field
+      complex(8),    intent(in), optional  :: w(nf)
+      !> density matrix to contract half-differentiated overlap against
+      type(matrix),  intent(in), optional  :: D
+      STOP 'interface_1el_ovlave_tr not implemented for VAR_LSDALTON'
+   end subroutine
+#else
+! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+! MR: DOES NOT WORK YET
+   !> \brief host program routine to get the average f-perturbed overlap integrals
+   !>        with perturbed density D and energy-weighted density DFD
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -307,15 +351,35 @@ contains
 
       end if
    end subroutine
+#endif
 
 
 
 
+#ifdef VAR_LSDALTON
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
    subroutine interface_1el_oneave(nf, f, c, nc, D, ave)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+      use gen1int_host
+      !> number of fields
+      integer,       intent(in)  :: nf
+      !> field labels in std order
+      character(4),  intent(in)  :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)  :: c(nf), nc(nf)
+      !> density matrix to average over
+      type(matrix),  intent(in)  :: D
+      !> output average
+      complex(8),    intent(out) :: ave(product(nc))
+      STOP 'interface_1el_oneave not implemented for LSDALTON'
+   end subroutine
+#else
+   !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
+   !>        with the (perturbed) density matrix D
+   subroutine interface_1el_oneave(nf, f, c, nc, D, ave)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -492,15 +556,36 @@ contains
 
       end if
    end subroutine
+#endif
 
-
+#ifdef VAR_LSDALTON
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
    subroutine interface_1el_oneave_tr(nf, f, c, nc, D, propsize, ave)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+      use gen1int_host
+      !> number of fields
+      integer,       intent(in)  :: nf, propsize
+      !> field labels in std order
+      character(4),  intent(in)  :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)  :: c(nf), nc(nf)
+      !> density matrix to average over
+      type(matrix),  intent(in)  :: D
+      !> output average
+      complex(8),    intent(out) :: ave(product(nc))
+      STOP 'interface_1el_oneave_tr not implemented for LSDALTON'
+   end subroutine
+#else
+! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+! MR: DOES NOT WORK YET
+   !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
+   !>        with the (perturbed) density matrix D
+   subroutine interface_1el_oneave_tr(nf, f, c, nc, D, propsize, ave)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -680,18 +765,40 @@ contains
 
       end if
    end subroutine
+#endif
 
 
 
 
 
-
-
+#ifdef VAR_LSDALTON
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
    subroutine interface_1el_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+      use gen1int_host
+      integer, intent(in)          :: nr_ao
+      !> number of fields
+      integer,       intent(in)    :: nf
+      !> field labels in std order
+      character(4),  intent(in)    :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: c(nf), nc(nf)
+      !> resulting overlap integral matrices (incoming content deleted)
+      type(matrix),  intent(inout) :: ovl(product(nc))
+      !> frequencies of each field
+      complex(8),    intent(in),    optional :: w(nf)
+      !> Fock matrices to which the half-differentiated overlap
+      !> contribution is ADDED
+      type(matrix),  intent(inout), optional :: fock(product(nc))
+      STOP 'interface_1el_ovlint not implemented for LSDALTON'
+   end subroutine
+#else
+   !> \brief host program routine to compute differentiated overlap matrices, and optionally
+   !>        add half-differentiated overlap contribution to Fock matrices
+   subroutine interface_1el_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -810,16 +917,38 @@ contains
 
       end if
    end subroutine
+#endif
 
 
-
-
+#ifdef VAR_LSDALTON
+! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+   !> \brief host program routine to compute differentiated overlap matrices, and optionally
+   !>        add half-differentiated overlap contribution to Fock matrices
+   subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
+      use gen1int_host
+      integer, intent(in)          :: nr_ao
+      !> number of fields
+      integer,       intent(in)    :: nf, propsize
+      !> field labels in std order
+      character(4),  intent(in)    :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: c(nf), nc(nf)
+      !> resulting overlap integral matrices (incoming content deleted)
+      type(matrix),  intent(inout) :: ovl(product(nc))
+      !> frequencies of each field
+      complex(8),    intent(in),    optional :: w(nf)
+      !> Fock matrices to which the half-differentiated overlap
+      !> contribution is ADDED
+      type(matrix),  intent(inout), optional :: fock(propsize)
+      STOP 'interface_1el_ovlint_tr not implemented for LSDALTON. TK'
+   end subroutine
+#else
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
    subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -940,14 +1069,29 @@ contains
 
       end if
    end subroutine
+#endif
 
 
 
-
-
+#ifdef VAR_LSDALTON
    subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+      use gen1int_host
+      integer, intent(in)          :: nr_ao
+      !> number of fields
+      integer,       intent(in)    :: nf
+      !> field labels in std order
+      character(4),  intent(in)    :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: c(nf), nc(nf)
+      !> output perturbed integrals
+      type(matrix),  intent(inout) :: oneint(product(nc))
+      STOP 'interface_1el_oneint not implemented for LSDALTON. TK'
+   end subroutine
+#else
+   subroutine interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -1126,17 +1270,33 @@ contains
 
       end if
    end subroutine
+#endif
 
 
 
 
 
-
-
+#ifdef VAR_LSDALTON
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
    subroutine interface_1el_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
       ! Gen1Int interface
-#ifdef VAR_LINSCA
+      use gen1int_host
+      integer, intent(in)          :: nr_ao, propsize
+      !> number of fields
+      integer,       intent(in)    :: nf
+      !> field labels in std order
+      character(4),  intent(in)    :: f(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: c(nf), nc(nf)
+      !> output perturbed integrals
+      type(matrix),  intent(inout) :: oneint(product(nc))
+      STOP 'interface_1el_oneint_tr not implemented for LSDALTON. TK'
+   end subroutine
+#else
+! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+   subroutine interface_1el_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
       use gen1int_host
 #else
       use gen1int_api
@@ -1317,9 +1477,7 @@ contains
 
       end if
    end subroutine
-
-
-
+#endif
 
 
 
@@ -1478,13 +1636,13 @@ contains
       character(*),      intent(in)  :: what
       type(matrix),      intent(in)  :: D, DFD
       real(8),           intent(out) :: R(:)
-#ifndef LSDALTON_ONLY
+#ifndef VAR_LSDALTON
 #include "mxcent.h"
 #include "taymol.h"
 #endif
       real(8), pointer :: wrk(:)
       integer          :: lwrk
-#ifdef LSDALTON_ONLY
+#ifdef VAR_LSDALTON
       call quit('Cannot run oneint_ave, only new integral code is compiled',-1)
 #else
       call save_D_and_DFD_for_ABACUS(.false., D, DFD)
@@ -1528,22 +1686,32 @@ contains
          DFDtri = DFDtri * merge(4,2,anti)
       end if
       ! write fo files
-#if defined(LSDALTON_ONLY) || defined(PRG_DIRAC)
+#if defined(VAR_LSDALTON) || defined(PRG_DIRAC)
       call quit('Cannot call write_dsofso, only new integral code is compiled',-1)
 #else
       call write_dsofso(Dtri,DFDtri)
 #endif
    end subroutine
 
+#ifdef VAR_LSDALTON
+  subroutine ONEDRV_ave_ifc(fld, siz, ave, D, DFD)
+    character(4),           intent(in)  :: fld(:)
+    integer,                intent(in)  :: siz
+    real(8),                intent(out) :: ave(siz)
+    type(matrix), optional, intent(in)  :: D, DFD
+    STOP 'ONEDRV_ave_ifc not implemented for LSDALTON'
+  end subroutine
+#else
   subroutine ONEDRV_ave_ifc(fld, siz, ave, D, DFD)
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
     real(8),                intent(out) :: ave(siz)
     type(matrix), optional, intent(in)  :: D, DFD
     !--------------------------------------------
+#ifndef VAR_LSDALTON
 #include "mxcent.h"
 #include "taymol.h"
-
+#endif
     real(8), allocatable :: Dtri(:)
     real(8), allocatable :: DFDtri(:)
 
@@ -1592,8 +1760,18 @@ contains
     deallocate(Dtri)
     deallocate(DFDtri)
   end subroutine
+#endif
 
   !> Call GET1IN in ABACUS
+#ifdef VAR_LSDALTON
+  subroutine GET1IN_ave_ifc(fld, siz, ave, D)
+    character(4),           intent(in)  :: fld(:)
+    integer,                intent(in)  :: siz
+    real(8),                intent(out) :: ave(siz)
+    type(matrix),           intent(in)  :: D
+    STOP 'GET1IN_ave_ifc(fld, siz, ave, D) NOT implemented in LSDALTON'
+  end subroutine
+#else
   subroutine GET1IN_ave_ifc(fld, siz, ave, D)
     character(4),           intent(in)  :: fld(:)
     integer,                intent(in)  :: siz
@@ -1626,8 +1804,15 @@ contains
 #endif
     deallocate(Dtri)
   end subroutine
+#endif
 
-
+#ifdef VAR_LSDALTON
+  subroutine legacy_read_integrals( prop_lab, prop_int )
+    character*(8), intent(in) :: prop_lab
+    type(matrix), intent(inout) :: prop_int
+    STOP 'legacy_read_integrals not implemented in LSDALTON'
+  end subroutine
+#else
   !> \brief gets property integrals from file AOPROPER
   !> \author Bin Gao
   !> \date 2009-12-08
@@ -1637,10 +1822,12 @@ contains
   subroutine legacy_read_integrals( prop_lab, prop_int )
     character*(8), intent(in) :: prop_lab
     type(matrix), intent(inout) :: prop_int
+#ifndef VAR_LSDALTON
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
 #include "inftap.h"
+#endif
     ! external DALTON function finding the corresponding label
     logical FNDLB2
     ! information when calling subroutine FNDLB2
@@ -1688,7 +1875,7 @@ contains
       end if
     end if
   end subroutine
-
+#endif
   function prefix_zeros(n, l)
     integer, intent(in) :: n, l !number, length
     character(l)        :: prefix_zeros !resulting n in ascii

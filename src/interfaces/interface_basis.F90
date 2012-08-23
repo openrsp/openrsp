@@ -23,6 +23,33 @@ module interface_basis
 
 contains
 
+#ifdef VAR_LSDALTON
+  !A proper interface where the required info is provided as primitive
+  !Arguments to the subroutine (NOT through common block specific for the 
+  !host program). TK
+   subroutine interface_basis_init(nbast,nlrgsh)
+     implicit none
+     integer,intent(in) :: nbast,nlrgsh
+     integer :: nr_blocks_large
+     integer :: nr_exp_ctr_large
+     integer :: nr_blocks_small
+     integer :: nr_exp_ctr_small
+     integer :: i
+     nr_blocks_large  = 0
+     nr_exp_ctr_large = 0
+     nr_blocks_small  = 0
+     nr_exp_ctr_small = 0
+     nr_ao = nbast
+     nullify(basis_large)
+     nullify(basis_small)
+     call shells_find_sizes(nr_blocks_large, nr_exp_ctr_large, 1, nlrgsh)
+     allocate(basis_large(nr_blocks_large))
+     allocate(exp_and_ctr_large(nr_exp_ctr_large))
+     call shells_to_type_cgto(nr_blocks_large, nr_exp_ctr_large, &
+          & exp_and_ctr_large, basis_large, 1, nlrgsh)     
+     is_initialized = .true.
+   end subroutine
+#else
    subroutine interface_basis_init()
 
       integer :: nr_blocks_large  = 0
@@ -93,6 +120,7 @@ contains
       is_initialized = .true.
 
    end subroutine
+#endif
 
    subroutine interface_basis_finalize()
 
@@ -123,6 +151,25 @@ contains
       get_nr_ao = nr_ao
    end function
 
+#ifdef VAR_LSDALTON
+  !> Count the number of contracted Gaussian-type orbital shells
+  !> \param ncgto, and number of exponents and contraction coefficents
+  !> \param nectr, so that memory for data structures can be allocated
+  subroutine SHELLS_find_sizes(ncgto,nectr,i_start,i_end)!,mxshel,NBCH,NUCO,NRCO)
+    implicit none    
+    integer, intent(out) :: ncgto
+    integer, intent(out) :: nectr
+    integer, intent(in)  :: i_start
+    integer, intent(in)  :: i_end
+    stop 'SHELLS_find_sizes NOT Implemented for LSDALTON' 
+!    integer, intent(in)  :: mxshel 
+!    logical,pointer :: haveit(:)
+!    integer,intent(in) :: NBCH(i_end),NUCO(i_end),NRCO(i_end)
+!    integer i, j
+!    allocate(haveit(MXSHEL))
+!    deallocate(haveit)
+  end subroutine
+#else
   !> Count the number of contracted Gaussian-type orbital shells
   !> \param ncgto, and number of exponents and contraction coefficents
   !> \param nectr, so that memory for data structures can be allocated
@@ -163,7 +210,20 @@ contains
        nectr = nectr + NUCO(i)*(NRCO(i)+1)
     end do
   end subroutine
+#endif
 
+#ifdef VAR_LSDALTON
+  subroutine SHELLS_to_type_cgto(ncgto,nectr,ectr,bas,i_start,i_end)
+    use basis_set, only: cgto
+    integer,         intent(in)  :: ncgto
+    integer,         intent(in)  :: nectr
+    type(cgto),      intent(out) :: bas(ncgto)
+    real(8), target, intent(out) :: ectr(nectr)
+    integer,         intent(in)  :: i_start
+    integer,         intent(in)  :: i_end
+    STOP 'SHELLS_to_type_cgto not implemented for LSDALTON. TK'
+  end subroutine
+#else
   subroutine SHELLS_to_type_cgto(ncgto,   &
                                  nectr,   &
                                  ectr,    &
@@ -242,5 +302,6 @@ contains
       ctr_pt => ctr
     end subroutine
   end subroutine
+#endif
 
 end module
