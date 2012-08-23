@@ -41,8 +41,15 @@ module interface_interest
    integer, allocatable :: imat_u(:, :)
    integer, allocatable :: imat_d(:, :, :)
    real(8), allocatable :: imat_f(:, :, :)
+   integer, allocatable :: ic_to_ijk(:, :, :)
+   integer, allocatable :: ijk_to_ic(:, :, :)
+   integer, allocatable :: ijk(:, :, :)
+   integer, allocatable :: ijk_temp(:, :, :)
+   real(8), allocatable :: prefactor(:, :)
+   integer, allocatable :: cdeg(:)
 
    integer :: nr_centers
+      integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
 
 contains
 
@@ -231,12 +238,10 @@ contains
       logical, intent(in)    :: get_ave
       integer, intent(in)    :: only_icoor
 
-      integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
-      real(8) :: gint(max_nr_integrals)
-      real(8) :: g_u(max_nr_integrals)
-      real(8) :: g_d(max_nr_integrals)
+      real(8) :: gint(max_nr_integrals, 100) !fixme hardcoded
+      real(8) :: gint_temp(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4)
       integer :: ang(4), deg(4), off(4)
       real(8) :: f
@@ -245,9 +250,9 @@ contains
       integer :: cent(4)
       integer :: icent, ixyz
       integer :: nr_integrals
-      integer :: nr_elements
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
+      integer :: icoor
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -319,9 +324,7 @@ contains
 
             call get_integrals(gint, ang, ex, coef, xyz)
             call contract_integrals(deg,     &
-                                    deg,     &
                                     off,     &
-                                    1, 2, 3, 4, &
                                     gint,    &
                                     ndim,    &
                                     dmat,    &
@@ -341,8 +344,15 @@ contains
 !              we will always differentiate on the slowest index
 
                !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
+               if (get_ave) then
+                  do icoor = 1, 3*nr_centers
+                     gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
+                  end do
+               else
+                  gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
+               end if
 
-               call first_order(1, 2, 3, 4, &
+               call first_order(1, &
                                 ixyz_start, &
                                 ixyz_end,   &
                                 deg,        &
@@ -352,8 +362,7 @@ contains
                                 ex,         &
                                 xyz,        &
                                 cent,       &
-                                g_u,        &
-                                g_d,        &
+                                gint_temp,        &
                                 gint,       &
                                 dmat,       &
                                 gmat,       &
@@ -362,7 +371,7 @@ contains
                                 icent,      &
                                 ndim)
 
-               call first_order(2, 1, 4, 3, &
+               call first_order(2, &
                                 ixyz_start, &
                                 ixyz_end,   &
                                 deg,        &
@@ -372,8 +381,7 @@ contains
                                 ex,         &
                                 xyz,        &
                                 cent,       &
-                                g_u,        &
-                                g_d,        &
+                                gint_temp,        &
                                 gint,       &
                                 dmat,       &
                                 gmat,       &
@@ -382,7 +390,7 @@ contains
                                 icent,      &
                                 ndim)
 
-               call first_order(3, 4, 1, 2, &
+               call first_order(3, &
                                 ixyz_start, &
                                 ixyz_end,   &
                                 deg,        &
@@ -392,8 +400,7 @@ contains
                                 ex,         &
                                 xyz,        &
                                 cent,       &
-                                g_u,        &
-                                g_d,        &
+                                gint_temp,        &
                                 gint,       &
                                 dmat,       &
                                 gmat,       &
@@ -402,7 +409,7 @@ contains
                                 icent,      &
                                 ndim)
 
-               call first_order(4, 3, 2, 1, &
+               call first_order(4, &
                                 ixyz_start, &
                                 ixyz_end,   &
                                 deg,        &
@@ -412,8 +419,7 @@ contains
                                 ex,         &
                                 xyz,        &
                                 cent,       &
-                                g_u,        &
-                                g_d,        &
+                                gint_temp,        &
                                 gint,       &
                                 dmat,       &
                                 gmat,       &
@@ -421,6 +427,31 @@ contains
                                 get_ave,    &
                                 icent,      &
                                 ndim)
+
+         if (get_ave) then
+            do icoor = 1, 3*nr_centers
+               call contract_integrals(deg, &
+                                       off, &
+                                       gint(1, icoor),                         &
+                                       ndim,                                   &
+                                       dmat,                                   &
+                                       gmat,                                   &
+                                       get_ave,                                &
+                                       ave(icoor),                             &
+                                       1.0d0)
+            end do
+         else
+               call contract_integrals(deg, &
+                                       off, &
+                                       gint(1, 1),                                &
+                                       ndim,                                   &
+                                       dmat,                                   &
+                                       gmat,                                   &
+                                       get_ave,                                &
+                                       ave,                                    &
+                                       1.0d0)
+         end if
+
 
             end do icent_loop
 
@@ -489,9 +520,7 @@ contains
    end subroutine
 
    subroutine contract_integrals(n,              &
-                                 m,              &
                                  o,              &
-                                 pi, pj, pk, pl, &
                                  gint,           &
                                  ndim,           &
                                  dmat,           &
@@ -501,10 +530,8 @@ contains
                                  scale_exchange)
 
       integer, intent(in)    :: n(4)
-      integer, intent(in)    :: m(4)
       integer, intent(in)    :: o(4)
-      integer, intent(in)    :: pi, pj, pk, pl
-      real(8), intent(in)    :: gint(m(3), m(4), m(1), m(2))
+      real(8), intent(in)    :: gint(n(3), n(4), n(1), n(2))
       integer, intent(in)    :: ndim
       real(8), intent(in)    :: dmat(ndim, ndim, *)
       real(8), intent(out)   :: gmat(ndim, ndim, *)
@@ -513,7 +540,6 @@ contains
       real(8), intent(in)    :: scale_exchange
 
       integer :: i, j, k, l
-      integer :: idx(4)
       integer :: bas(4)
       real(8) :: pkl, pkj(4), g
 
@@ -527,11 +553,7 @@ contains
                bas(2) = o(2) + j
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  idx(1) = i
-                  idx(2) = j
-                  idx(3) = k
-                  idx(4) = l
-                  g = gint(idx(pk), idx(pl), idx(pi), idx(pj))
+                  g = gint(k, l, i, j)
                   if (get_ave) then
                      average(1) = average(1) + gmat(bas(1), bas(2), 1)*g*pkl
                   else
@@ -559,11 +581,7 @@ contains
                pkj = scale_exchange*pkj
                do i = 1, n(1)
                   bas(1) = o(1) + i
-                  idx(1) = i
-                  idx(2) = j
-                  idx(3) = k
-                  idx(4) = l
-                  g = gint(idx(pk), idx(pl), idx(pi), idx(pj))
+                  g = gint(k, l, i, j)
                   if (get_ave) then
                      average(1) = average(1) - gmat(bas(1), bas(4), 1)*g*pkj(1)
 #ifdef PRG_DIRAC
@@ -589,7 +607,7 @@ contains
    subroutine init_arrays()
 
 !     integer :: il, ia, ib, ii, ij, ik, ip
-      integer :: i, j, k, l, m
+      integer :: i, j, k, l, m, n
       integer :: ndim
 
       ndim = (maxl+1)*(maxl+2)/2
@@ -647,6 +665,23 @@ contains
       imat_d = 0
       imat_f = 0.0d0
 
+      if (allocated(ic_to_ijk)) deallocate(ic_to_ijk)
+      if (allocated(ijk_to_ic)) deallocate(ijk_to_ic)
+      if (allocated(ijk))       deallocate(ijk)
+      if (allocated(ijk_temp))     deallocate(ijk_temp)
+      if (allocated(prefactor))    deallocate(prefactor)
+      if (allocated(cdeg))    deallocate(cdeg)
+
+      allocate(ic_to_ijk(ndim, 3, 0:maxl))
+      allocate(ijk_to_ic(0:maxl, 0:maxl, 0:maxl))
+      allocate(ijk(ndim, 3, 4))
+      allocate(ijk_temp(ndim, 3, 4))
+      allocate(prefactor(ndim, 4))
+      allocate(cdeg(0:maxl))
+
+      ic_to_ijk = 0
+      ijk_to_ic = 0
+
       do i = 1, maxl
          do k = 1, i*(i+1)/2
             imat_d(k, 1, i) = k
@@ -667,9 +702,34 @@ contains
          end do
       end do
 
+      do i = 0, maxl
+         k = 0
+         l = 0
+         do m = 1, i
+            do j = 1, m
+               k = k + 1
+               l = l + 1
+               ic_to_ijk(k,   1, i) = i - m + 1
+               ic_to_ijk(l+1, 2, i) = m - j + 1
+               ic_to_ijk(l+2, 3, i) = j
+               ijk_to_ic(i - m, m - j, j - 1) = k
+            end do
+            l = l + 1
+         end do
+         cdeg(i) = (i+1)*(i+2)/2
+      end do
+
+!     do l = 0, maxl
+!        print *, 'raboof l', l
+!        n = (l+1)*(l+2)/2
+!        do k = 1, n
+!           print *, ic_to_ijk(k, 1:3, l), ijk_to_ic(ic_to_ijk(k, 1, l), ic_to_ijk(k, 2, l), ic_to_ijk(k, 3, l))
+!        end do
+!     end do
+
    end subroutine
 
-   subroutine first_order(pi, pj, pk, pl, &
+   subroutine first_order(ifd, &
                           ixyz_start,     &
                           ixyz_end,       &
                           deg,            &
@@ -679,8 +739,7 @@ contains
                           ex,             &
                           xyz,            &
                           cent,           &
-                          g_u,            &
-                          g_d,            &
+                          gint_temp,            &
                           gint,           &
                           dmat,           &
                           gmat,           &
@@ -689,7 +748,7 @@ contains
                           icent,          &
                           ndim)
 
-      integer :: pi, pj, pk, pl
+      integer :: ifd
       integer :: ixyz_start
       integer :: ixyz_end
       integer :: deg(4)
@@ -699,9 +758,8 @@ contains
       real(8) :: ex(4)
       real(8) :: xyz(3, 4)
       integer :: cent(4)
-      real(8) :: g_u(*)
-      real(8) :: g_d(*)
-      real(8) :: gint(*)
+      real(8) :: gint_temp(*)
+      real(8) :: gint(max_nr_integrals, *)
       real(8) :: dmat(*)
       real(8) :: gmat(*)
       real(8) :: ave(*)
@@ -709,66 +767,165 @@ contains
       integer :: icent
       integer :: ndim
 
-      integer :: ixyz
-      integer :: nr_elements
+      integer :: ixyz, jxyz
       integer :: icoor
       integer :: ideg
+      integer :: ifun, jfun, kfun, lfun
       integer :: i
-      real(8) :: f
+      integer :: ang_temp(4)
 
-      if (cent(pj) /= icent) return
+      if (cent(ifd) /= icent) return
 
-      call get_integrals(g_u,                                                        &
-                         (/     ang(pi),      ang(pj)+1,    ang(pk),      ang(pl)/), &
-                         (/      ex(pi),       ex(pj),       ex(pk),       ex(pl)/), &
-                         (/    coef(pi),     coef(pj),     coef(pk),     coef(pl)/), &
-                         (/xyz(1:3, pi), xyz(1:3, pj), xyz(1:3, pk), xyz(1:3, pl)/))
-      if (ang(pj) > 0) then
-         call get_integrals(g_d,                                                        &
-                            (/     ang(pi),      ang(pj)-1,    ang(pk),      ang(pl)/), &
-                            (/      ex(pi),       ex(pj),       ex(pk),       ex(pl)/), &
-                            (/    coef(pi),     coef(pj),     coef(pk),     coef(pl)/), &
-                            (/xyz(1:3, pi), xyz(1:3, pj), xyz(1:3, pk), xyz(1:3, pl)/))
-      end if
+      do ifun = 1, 4
+         do ixyz = 1, 3
+            ijk(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
+         end do
+      end do
 
-      nr_elements = deg(pk)*deg(pl)*deg(pi)
+!     up contribution
+
+      ang_temp = ang
+      ang_temp(ifd) = ang_temp(ifd) + 1
+      call get_integrals(gint_temp, ang_temp, ex, coef, xyz)
+
+      do ifun = 1, 4
+         prefactor(1:deg(ifun), ifun) = 1.0d0
+      end do
+      do ideg = 1, deg(ifd)
+         prefactor(ideg, ifd) = ex(ifd)*2.0d0
+      end do
 
       do ixyz = ixyz_start, ixyz_end
 
-         do ideg = 1, deg(pj)
-            do i = 1, nr_elements
-               gint(i + nr_elements*(ideg - 1)) = 2.0d0*ex(pj)*g_u(i + nr_elements*(imat_u(ideg, ixyz) - 1))
-            end do
-         end do
-
-         if (ang(pj) > 0) then
-            do ideg = 1, deg(pj)
-               f = imat_f(ideg, ixyz, ang(pj))
-               if (f > 0.0d0) then
-                  do i = 1, nr_elements
-                     gint(i + nr_elements*(ideg - 1)) = gint(i + nr_elements*(ideg - 1)) &
-                                                      - f*g_d(i + nr_elements*(imat_d(ideg, ixyz, ang(pj)) - 1))
-                  end do
-               end if
-            end do
-         end if
-
          if (get_ave) then
             icoor = (icent-1)*3 + ixyz
+         else
+            icoor = 1
          end if
 
-         call contract_integrals(deg, &
-                                 (/deg(pi), deg(pj), deg(pk), deg(pl)/), &
-                                 off, &
-                                 pi, pj, pk, pl, &
-                                 gint,                                   &
-                                 ndim,                                   &
-                                 dmat,                                   &
-                                 gmat,                                   &
-                                 get_ave,                                &
-                                 ave(icoor),                             &
-                                 1.0d0)
+         do ifun = 1, 4
+            do jxyz = 1, 3
+               ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
+            end do
+         end do
+         do ideg = 1, deg(ifd)
+            ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) + 1
+         end do
 
+         call add_integrals(gint(1, icoor), &
+                            gint_temp,      &
+                            deg,            &
+                            ang_temp,       &
+                            ijk_temp,       &
+                            prefactor)
+
+      end do
+
+!     down contribution
+
+      ang_temp = ang
+      if (ang_temp(ifd) > 0) then
+         ang_temp(ifd) = ang_temp(ifd) - 1
+         call get_integrals(gint_temp, ang_temp, ex, coef, xyz)
+
+         do ixyz = ixyz_start, ixyz_end
+
+            if (get_ave) then
+               icoor = (icent-1)*3 + ixyz
+            else
+               icoor = 1
+            end if
+
+            do ifun = 1, 4
+               prefactor(1:deg(ifun), ifun) = 1.0d0
+            end do
+
+            do ifun = 1, 4
+               do jxyz = 1, 3
+                  ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
+               end do
+            end do
+            do ideg = 1, deg(ifd)
+               if (ijk_temp(ideg, ixyz, ifd) > 0) then
+                  prefactor(ideg, ifd) = -real(ijk_temp(ideg, ixyz, ifd))
+               else
+                  prefactor(ideg, ifd) = 0.0d0
+               end if
+               ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) - 1
+            end do
+
+            call add_integrals(gint(1, icoor), &
+                               gint_temp,      &
+                               deg,            &
+                               ang_temp,       &
+                               ijk_temp,       &
+                               prefactor)
+
+         end do
+      end if
+
+   end subroutine
+
+   subroutine add_integrals(g_out,   &
+                            g_in,    &
+                            deg_out, &
+                            ang_in,  &
+                            ijk_in,  &
+                            prefactor_in)
+
+!     ijkl is in memory (k, l, i, j)
+
+      real(8), intent(inout) :: g_out(*)
+      real(8), intent(in)    :: g_in(*)
+      integer, intent(in)    :: deg_out(4)
+      integer, intent(in)    :: ang_in(4)
+      integer, intent(in)    :: ijk_in(:, :, :)
+      real(8), intent(in)    :: prefactor_in(:, :)
+
+      integer :: pr,   pw
+      integer :: ifun, jfun, kfun, lfun
+      integer :: ir,   jr,   kr,   lr
+      integer :: iw,   jw,   kw,   lw
+      real(8) :: fi,   fj,   fk,   fl
+      real(8) :: ldi,  ldj,  ldk,  ldl
+      real(8) :: offi, offj, offk, offl
+
+      ifun = 1
+      jfun = 2
+      kfun = 3
+      lfun = 4
+
+      ldk = 0
+      ldl = cdeg(ang_in(kfun))
+      ldi = cdeg(ang_in(lfun))*ldl
+      ldj = cdeg(ang_in(ifun))*ldi
+
+      pw = 0
+      do jw = 1, deg_out(jfun)
+         fj = prefactor_in(jw, jfun)
+      !  if (fj == 0.0d0) cycle
+         jr = ijk_to_ic(ijk_in(jw, 1, jfun), ijk_in(jw, 2, jfun), ijk_in(jw, 3, jfun))
+         offj = (jr - 1)*ldj
+         do iw = 1, deg_out(ifun)
+            fi = prefactor_in(iw, ifun)*fj
+      !     if (fi == 0.0d0) cycle
+            ir = ijk_to_ic(ijk_in(iw, 1, ifun), ijk_in(iw, 2, ifun), ijk_in(iw, 3, ifun))
+            offi = (ir - 1)*ldi + offj
+            do lw = 1, deg_out(lfun)
+               fl = prefactor_in(lw, lfun)*fi
+      !        if (fl == 0.0d0) cycle
+               lr = ijk_to_ic(ijk_in(lw, 1, lfun), ijk_in(lw, 2, lfun), ijk_in(lw, 3, lfun))
+               offl = (lr - 1)*ldl + offi
+               do kw = 1, deg_out(kfun)
+                  fk = prefactor_in(kw, kfun)*fl
+      !           if (fk == 0.0d0) cycle
+                  kr = ijk_to_ic(ijk_in(kw, 1, kfun), ijk_in(kw, 2, kfun), ijk_in(kw, 3, kfun))
+                  pw = pw + 1
+                  pr = offl + kr
+                  g_out(pw) = g_out(pw) + fk*g_in(pr)
+               end do
+            end do
+         end do
       end do
 
    end subroutine
