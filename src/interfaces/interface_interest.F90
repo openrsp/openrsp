@@ -106,11 +106,11 @@ contains
      shell_start(1) = 1
      shell_end(1)   = nlrgsh
      shell_start(2) = shell_end(1) + 1
-     shell_end(2)   = shell_end(1) + nsmlsh     
+     shell_end(2)   = shell_end(1) + nsmlsh
      print *, 'total number of basis function shells:    ', size(gto)
      print *, 'total number of spherical basis functions:', sum(gto(:)%sdegen)
      print *, 'total number of cartesian basis functions:', sum(gto(:)%cdegen)
-     interface_is_initialized = .true.     
+     interface_is_initialized = .true.
    end subroutine
 #else
    subroutine initialize_interest_eri_diff()
@@ -301,20 +301,25 @@ contains
 
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
-      real(8) :: gint(max_nr_integrals, 100) !fixme hardcoded
-      real(8) :: gint_temp(max_nr_integrals)
+      real(8) :: gint(max_nr_integrals)
+      real(8) :: gint_u(max_nr_integrals)
+      real(8) :: gint_d(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4)
       integer :: ang(4), deg(4), off(4)
       real(8) :: f
 
       integer :: ii, ij, ik, il
       integer :: cent(4)
-      integer :: icent, ixyz
+      integer :: icent
       integer :: nr_integrals
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
       integer :: icoor
-      integer :: ifun
+      integer :: ifd
+      integer :: ixyz, jxyz
+      integer :: ifun, jfun, kfun, lfun
+      integer :: ang_temp(4)
+      integer :: ideg
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -408,59 +413,110 @@ contains
             icent_loop: do icent = icent_start, icent_end
 
                !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
-               do ifun = 1, 4
-                  if (cent(ifun) /= icent) cycle
+               do ifd = 1, 4
+                  ! skip if the differentiated function not on this center
+                  if (cent(ifd) /= icent) cycle
 
-                  if (get_ave) then
-                     do icoor = 1, 3*nr_centers
-                        gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
-                     end do
-                  else
-                     gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
+                  ! get integrals that we will need
+                  ang_temp = ang
+                  ang_temp(ifd) = ang_temp(ifd) + 1
+                  call get_integrals(gint_u, ang_temp, ex, coef, xyz)
+                  if (ang(ifd) > 0) then
+                     ang_temp = ang
+                     ang_temp(ifd) = ang_temp(ifd) - 1
+                     call get_integrals(gint_d, ang_temp, ex, coef, xyz)
                   end if
 
-                  call first_order(ifun, &
-                                   ixyz_start, &
-                                   ixyz_end,   &
-                                   deg,        &
-                                   off,        &
-                                   ang,        &
-                                   coef,       &
-                                   ex,         &
-                                   xyz,        &
-                                   cent,       &
-                                   gint_temp,        &
-                                   gint,       &
-                                   dmat,       &
-                                   gmat,       &
-                                   ave,        &
-                                   get_ave,    &
-                                   icent,      &
-                                   ndim)
-
-                  if (get_ave) then
-                     do icoor = 1, 3*nr_centers
-                        call contract_integrals(deg,            &
-                                                off,            &
-                                                gint(1, icoor), &
-                                                ndim,           &
-                                                dmat,           &
-                                                gmat,           &
-                                                get_ave,        &
-                                                ave(icoor),     &
-                                                1.0d0)
+                  do ifun = 1, 4
+                     do ixyz = 1, 3
+                        ijk(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
                      end do
-                  else
+                  end do
+
+                  do ixyz = ixyz_start, ixyz_end
+
+                     gint(1:deg(1)*deg(2)*deg(3)*deg(4)) = 0.0d0
+
+                     if (get_ave) then
+                        icoor = (icent-1)*3 + ixyz
+                     else
+                        icoor = 1
+                     end if
+
+!                    up contribution
+
+                     ang_temp = ang
+                     ang_temp(ifd) = ang_temp(ifd) + 1
+
+                     do ifun = 1, 4
+                        prefactor(1:deg(ifun), ifun) = 1.0d0
+                     end do
+                     do ideg = 1, deg(ifd)
+                        prefactor(ideg, ifd) = ex(ifd)*2.0d0
+                     end do
+
+                     do ifun = 1, 4
+                        do jxyz = 1, 3
+                           ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
+                        end do
+                     end do
+                     do ideg = 1, deg(ifd)
+                        ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) + 1
+                     end do
+
+                     call add_integrals(gint,     &
+                                        gint_u,   &
+                                        deg,      &
+                                        ang_temp, &
+                                        ijk_temp, &
+                                        prefactor)
+
+!                    down contribution
+
+                     if (ang(ifd) > 0) then
+                        ang_temp = ang
+                        ang_temp(ifd) = ang_temp(ifd) - 1
+                        call get_integrals(gint_d, ang_temp, ex, coef, xyz)
+
+                        do ifun = 1, 4
+                           prefactor(1:deg(ifun), ifun) = 1.0d0
+                        end do
+
+                        do ifun = 1, 4
+                           do jxyz = 1, 3
+                              ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
+                           end do
+                        end do
+                        do ideg = 1, deg(ifd)
+                           if (ijk_temp(ideg, ixyz, ifd) > 0) then
+                              prefactor(ideg, ifd) = -real(ijk_temp(ideg, ixyz, ifd))
+                           else
+                              prefactor(ideg, ifd) = 0.0d0
+                           end if
+                           ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) - 1
+                        end do
+
+                        call add_integrals(gint,     &
+                                           gint_d,   &
+                                           deg,      &
+                                           ang_temp, &
+                                           ijk_temp, &
+                                           prefactor)
+
+                     end if
+
+                     !fixme do this outside of icent_loop
                      call contract_integrals(deg,        &
                                              off,        &
-                                             gint(1, 1), &
+                                             gint,       &
                                              ndim,       &
                                              dmat,       &
                                              gmat,       &
                                              get_ave,    &
-                                             ave,        &
+                                             ave(icoor), &
                                              1.0d0)
-                  end if
+                  end do
+
                end do
 
             end do icent_loop
@@ -728,149 +784,6 @@ contains
          end do
          cdeg(i) = (i+1)*(i+2)/2
       end do
-
-!     do l = 0, maxl
-!        print *, 'raboof l', l
-!        n = (l+1)*(l+2)/2
-!        do k = 1, n
-!           print *, ic_to_ijk(k, 1:3, l), ijk_to_ic(ic_to_ijk(k, 1, l), ic_to_ijk(k, 2, l), ic_to_ijk(k, 3, l))
-!        end do
-!     end do
-
-   end subroutine
-
-   subroutine first_order(ifd, &
-                          ixyz_start,     &
-                          ixyz_end,       &
-                          deg,            &
-                          off,            &
-                          ang,            &
-                          coef,           &
-                          ex,             &
-                          xyz,            &
-                          cent,           &
-                          gint_temp,            &
-                          gint,           &
-                          dmat,           &
-                          gmat,           &
-                          ave,            &
-                          get_ave,        &
-                          icent,          &
-                          ndim)
-
-      integer :: ifd
-      integer :: ixyz_start
-      integer :: ixyz_end
-      integer :: deg(4)
-      integer :: off(4)
-      integer :: ang(4)
-      real(8) :: coef(4)
-      real(8) :: ex(4)
-      real(8) :: xyz(3, 4)
-      integer :: cent(4)
-      real(8) :: gint_temp(*)
-      real(8) :: gint(max_nr_integrals, *)
-      real(8) :: dmat(*)
-      real(8) :: gmat(*)
-      real(8) :: ave(*)
-      logical :: get_ave
-      integer :: icent
-      integer :: ndim
-
-      integer :: ixyz, jxyz
-      integer :: icoor
-      integer :: ideg
-      integer :: ifun, jfun, kfun, lfun
-      integer :: i
-      integer :: ang_temp(4)
-
-      do ifun = 1, 4
-         do ixyz = 1, 3
-            ijk(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
-         end do
-      end do
-
-!     up contribution
-
-      ang_temp = ang
-      ang_temp(ifd) = ang_temp(ifd) + 1
-      call get_integrals(gint_temp, ang_temp, ex, coef, xyz)
-
-      do ifun = 1, 4
-         prefactor(1:deg(ifun), ifun) = 1.0d0
-      end do
-      do ideg = 1, deg(ifd)
-         prefactor(ideg, ifd) = ex(ifd)*2.0d0
-      end do
-
-      do ixyz = ixyz_start, ixyz_end
-
-         if (get_ave) then
-            icoor = (icent-1)*3 + ixyz
-         else
-            icoor = 1
-         end if
-
-         do ifun = 1, 4
-            do jxyz = 1, 3
-               ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
-            end do
-         end do
-         do ideg = 1, deg(ifd)
-            ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) + 1
-         end do
-
-         call add_integrals(gint(1, icoor), &
-                            gint_temp,      &
-                            deg,            &
-                            ang_temp,       &
-                            ijk_temp,       &
-                            prefactor)
-
-      end do
-
-!     down contribution
-
-      ang_temp = ang
-      if (ang_temp(ifd) > 0) then
-         ang_temp(ifd) = ang_temp(ifd) - 1
-         call get_integrals(gint_temp, ang_temp, ex, coef, xyz)
-
-         do ixyz = ixyz_start, ixyz_end
-
-            if (get_ave) then
-               icoor = (icent-1)*3 + ixyz
-            else
-               icoor = 1
-            end if
-
-            do ifun = 1, 4
-               prefactor(1:deg(ifun), ifun) = 1.0d0
-            end do
-
-            do ifun = 1, 4
-               do jxyz = 1, 3
-                  ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
-               end do
-            end do
-            do ideg = 1, deg(ifd)
-               if (ijk_temp(ideg, ixyz, ifd) > 0) then
-                  prefactor(ideg, ifd) = -real(ijk_temp(ideg, ixyz, ifd))
-               else
-                  prefactor(ideg, ifd) = 0.0d0
-               end if
-               ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) - 1
-            end do
-
-            call add_integrals(gint(1, icoor), &
-                               gint_temp,      &
-                               deg,            &
-                               ang_temp,       &
-                               ijk_temp,       &
-                               prefactor)
-
-         end do
-      end if
 
    end subroutine
 
