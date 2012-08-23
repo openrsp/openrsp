@@ -314,6 +314,7 @@ contains
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
       integer :: icoor
+      integer :: ifun
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -406,118 +407,61 @@ contains
 
             icent_loop: do icent = icent_start, icent_end
 
-!              ijkl is in memory (k, l, i, j)
-!              we will always differentiate on the slowest index
-
                !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
-               if (get_ave) then
-                  do icoor = 1, 3*nr_centers
-                     gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
-                  end do
-               else
-                  gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
-               end if
+               do ifun = 1, 4
+                  if (cent(ifun) /= icent) cycle
 
-               call first_order(1, &
-                                ixyz_start, &
-                                ixyz_end,   &
-                                deg,        &
-                                off,        &
-                                ang,        &
-                                coef,       &
-                                ex,         &
-                                xyz,        &
-                                cent,       &
-                                gint_temp,        &
-                                gint,       &
-                                dmat,       &
-                                gmat,       &
-                                ave,        &
-                                get_ave,    &
-                                icent,      &
-                                ndim)
+                  if (get_ave) then
+                     do icoor = 1, 3*nr_centers
+                        gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
+                     end do
+                  else
+                     gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
+                  end if
 
-               call first_order(2, &
-                                ixyz_start, &
-                                ixyz_end,   &
-                                deg,        &
-                                off,        &
-                                ang,        &
-                                coef,       &
-                                ex,         &
-                                xyz,        &
-                                cent,       &
-                                gint_temp,        &
-                                gint,       &
-                                dmat,       &
-                                gmat,       &
-                                ave,        &
-                                get_ave,    &
-                                icent,      &
-                                ndim)
+                  call first_order(ifun, &
+                                   ixyz_start, &
+                                   ixyz_end,   &
+                                   deg,        &
+                                   off,        &
+                                   ang,        &
+                                   coef,       &
+                                   ex,         &
+                                   xyz,        &
+                                   cent,       &
+                                   gint_temp,        &
+                                   gint,       &
+                                   dmat,       &
+                                   gmat,       &
+                                   ave,        &
+                                   get_ave,    &
+                                   icent,      &
+                                   ndim)
 
-               call first_order(3, &
-                                ixyz_start, &
-                                ixyz_end,   &
-                                deg,        &
-                                off,        &
-                                ang,        &
-                                coef,       &
-                                ex,         &
-                                xyz,        &
-                                cent,       &
-                                gint_temp,        &
-                                gint,       &
-                                dmat,       &
-                                gmat,       &
-                                ave,        &
-                                get_ave,    &
-                                icent,      &
-                                ndim)
-
-               call first_order(4, &
-                                ixyz_start, &
-                                ixyz_end,   &
-                                deg,        &
-                                off,        &
-                                ang,        &
-                                coef,       &
-                                ex,         &
-                                xyz,        &
-                                cent,       &
-                                gint_temp,        &
-                                gint,       &
-                                dmat,       &
-                                gmat,       &
-                                ave,        &
-                                get_ave,    &
-                                icent,      &
-                                ndim)
-
-         if (get_ave) then
-            do icoor = 1, 3*nr_centers
-               call contract_integrals(deg, &
-                                       off, &
-                                       gint(1, icoor),                         &
-                                       ndim,                                   &
-                                       dmat,                                   &
-                                       gmat,                                   &
-                                       get_ave,                                &
-                                       ave(icoor),                             &
-                                       1.0d0)
-            end do
-         else
-               call contract_integrals(deg, &
-                                       off, &
-                                       gint(1, 1),                                &
-                                       ndim,                                   &
-                                       dmat,                                   &
-                                       gmat,                                   &
-                                       get_ave,                                &
-                                       ave,                                    &
-                                       1.0d0)
-         end if
-
+                  if (get_ave) then
+                     do icoor = 1, 3*nr_centers
+                        call contract_integrals(deg,            &
+                                                off,            &
+                                                gint(1, icoor), &
+                                                ndim,           &
+                                                dmat,           &
+                                                gmat,           &
+                                                get_ave,        &
+                                                ave(icoor),     &
+                                                1.0d0)
+                     end do
+                  else
+                     call contract_integrals(deg,        &
+                                             off,        &
+                                             gint(1, 1), &
+                                             ndim,       &
+                                             dmat,       &
+                                             gmat,       &
+                                             get_ave,    &
+                                             ave,        &
+                                             1.0d0)
+                  end if
+               end do
 
             end do icent_loop
 
@@ -840,8 +784,6 @@ contains
       integer :: i
       integer :: ang_temp(4)
 
-      if (cent(ifd) /= icent) return
-
       do ifun = 1, 4
          do ixyz = 1, 3
             ijk(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
@@ -953,41 +895,50 @@ contains
       integer :: ir,   jr,   kr,   lr
       integer :: iw,   jw,   kw,   lw
       real(8) :: fi,   fj,   fk,   fl
-      real(8) :: ldi,  ldj,  ldk,  ldl
-      real(8) :: offi, offj, offk, offl
+      real(8) :: ldri, ldrj, ldrk, ldrl
+      real(8) :: ldwi, ldwj, ldwk, ldwl
+      real(8) :: ofri, ofrj, ofrk, ofrl
+      real(8) :: ofwi, ofwj, ofwk, ofwl
 
       ifun = 1
       jfun = 2
       kfun = 3
       lfun = 4
 
-      ldk = 0
-      ldl = cdeg(ang_in(kfun))
-      ldi = cdeg(ang_in(lfun))*ldl
-      ldj = cdeg(ang_in(ifun))*ldi
+      ldrk = 0
+      ldrl = cdeg(ang_in(kfun))
+      ldri = cdeg(ang_in(lfun))*ldrl
+      ldrj = cdeg(ang_in(ifun))*ldri
 
-      pw = 0
+      ldwk = 0
+      ldwl = deg_out(kfun)
+      ldwi = deg_out(lfun)*ldwl
+      ldwj = deg_out(ifun)*ldwi
+
       do jw = 1, deg_out(jfun)
          fj = prefactor_in(jw, jfun)
-      !  if (fj == 0.0d0) cycle
+         if (fj == 0.0d0) cycle
          jr = ijk_to_ic(ijk_in(jw, 1, jfun), ijk_in(jw, 2, jfun), ijk_in(jw, 3, jfun))
-         offj = (jr - 1)*ldj
+         ofrj = (jr - 1)*ldrj
+         ofwj = (jw - 1)*ldwj
          do iw = 1, deg_out(ifun)
             fi = prefactor_in(iw, ifun)*fj
-      !     if (fi == 0.0d0) cycle
+            if (fi == 0.0d0) cycle
             ir = ijk_to_ic(ijk_in(iw, 1, ifun), ijk_in(iw, 2, ifun), ijk_in(iw, 3, ifun))
-            offi = (ir - 1)*ldi + offj
+            ofri = (ir - 1)*ldri + ofrj
+            ofwi = (iw - 1)*ldwi + ofwj
             do lw = 1, deg_out(lfun)
                fl = prefactor_in(lw, lfun)*fi
-      !        if (fl == 0.0d0) cycle
+               if (fl == 0.0d0) cycle
                lr = ijk_to_ic(ijk_in(lw, 1, lfun), ijk_in(lw, 2, lfun), ijk_in(lw, 3, lfun))
-               offl = (lr - 1)*ldl + offi
+               ofrl = (lr - 1)*ldrl + ofri
+               ofwl = (lw - 1)*ldwl + ofwi
                do kw = 1, deg_out(kfun)
                   fk = prefactor_in(kw, kfun)*fl
-      !           if (fk == 0.0d0) cycle
+                  if (fk == 0.0d0) cycle
                   kr = ijk_to_ic(ijk_in(kw, 1, kfun), ijk_in(kw, 2, kfun), ijk_in(kw, 3, kfun))
-                  pw = pw + 1
-                  pr = offl + kr
+                  pr = ofrl + kr
+                  pw = ofwl + kw
                   g_out(pw) = g_out(pw) + fk*g_in(pr)
                end do
             end do
