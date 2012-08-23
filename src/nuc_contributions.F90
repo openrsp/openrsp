@@ -11,11 +11,12 @@ module nuc_contributions
    public cubicff_nuc
    public quarticff_nuc
    public nucrep_deriv
+#ifndef VAR_LSDALTON
    public dipnuc_ifc
    public qdrnuc_ifc
    public dpgnuc_ifc
    public aatnuc_ifc
-
+#endif
    private
 
 contains
@@ -352,7 +353,7 @@ contains
 
   end subroutine
 
-
+#ifndef VAR_LSDALTON
   !> \brief gets the nuclear contribution to electric dipole moment
   !> \author Bin Gao
   !> \date 2009-12-10
@@ -430,5 +431,5 @@ contains
          AATN(:,:) = AATNUC( :, :3*na )
 #endif
   end subroutine
-
+#endif
 end module

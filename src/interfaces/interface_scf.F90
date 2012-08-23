@@ -37,13 +37,15 @@ module interface_scf
 contains
 
    subroutine interface_scf_init()
-
+#ifdef VAR_LSDALTON
+     STOP 'interface_scf_init'
+#else
 #include "inforb.h"
 
       is_restricted_scf_calculation = (nasht == 0)
 
       is_initialized = .true.
-
+#endif
    end subroutine
 
    subroutine interface_scf_finalize()

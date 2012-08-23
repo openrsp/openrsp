@@ -34,6 +34,27 @@ module interface_molecule
 
 contains
 
+#ifdef VAR_LSDALTON
+  !A proper interface that is independent of the host program. TK
+   subroutine interface_molecule_init(natoms,namn,charge,cord,diporg,isotop)
+     implicit none
+     integer      :: natoms
+     character(4) :: namn(natoms)
+     real(8)      :: charge(natoms),cord(3,natoms),diporg(3)
+     integer      :: isotop(natoms)
+     nr_atoms = natoms
+     allocate(nuc_name(nr_atoms))
+     nuc_name = namn(:nr_atoms)
+     allocate(nuc_charge(nr_atoms))
+     nuc_charge = charge(:nr_atoms)
+     allocate(nuc_isotope(nr_atoms))
+     nuc_isotope = isotop(:nr_atoms)
+     allocate(nuc_xyz(3, nr_atoms))
+     nuc_xyz = cord(:, :nr_atoms)
+     dipole_origin = diporg
+     is_initialized = .true.
+   end subroutine
+#else
    subroutine interface_molecule_init()
 
 #include "mxcent.h"
@@ -69,6 +90,7 @@ contains
       is_initialized = .true.
 
    end subroutine
+#endif
 
    subroutine interface_molecule_finalize()
 

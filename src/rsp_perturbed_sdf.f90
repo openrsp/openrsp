@@ -105,9 +105,9 @@ module rsp_perturbed_sdf
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(zeromat, pert, F, D, S)
-
+#ifdef PRG_DALTON
     use interface_rsp_solver, only: rsp_mosolver_exec
-
+#endif
     implicit none
 
     
@@ -325,7 +325,11 @@ module rsp_perturbed_sdf
 ! write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
+#ifdef PRG_DALTON
        call rsp_mosolver_exec(RHS(1), (/0d0/), X)
+#else
+       STOP 'NOT DALTON'
+#endif
        ! Note (MaR): Why multiply by -2 like below?
        X(1) = -2d0*X(1)
        RHS(1) = 0
