@@ -9,7 +9,7 @@ module interface_rsp_solver
 
    public rsp_mosolver_init
    public rsp_mosolver_splash
-#ifdef PRG_DALTON
+#ifndef VAR_LSDALTON
    public rsp_mosolver_exec
 #endif
    public rsp_mosolver_finalize
