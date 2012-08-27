@@ -212,11 +212,9 @@ contains
     end do
     hes = hes + temp; call print_tensor(shape(temp), temp, 'HaDb')
 
-#ifndef PRG_DIRAC
     ! 2-electron contribution
     call rsp_twoave(2, (/'GEO ','GEO '/), (/1,1/), shape(temp), D, D, temp)
     hes = hes + temp/2; call print_tensor(shape(temp), temp/2, 'Gab(D)D/2')
-#endif
 
     do i = 1, size(Dg)
        call rsp_twoave(1, (/'GEO '/), (/1/), shape(temp(:,i)), D, Dg(i), temp(:,i))

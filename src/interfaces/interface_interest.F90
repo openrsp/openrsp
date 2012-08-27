@@ -311,11 +311,12 @@ contains
 
       integer :: ii, ij, ik, il
       integer :: cent(4)
-      integer :: icent
+      integer :: icent, jcent, kcent
       integer :: nr_integrals
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
-      integer :: icoor
+      integer :: icoor, jcoor
+      integer :: k
       integer :: ixyz, jxyz
       integer :: ifun, jfun, kfun, lfun
       integer :: ang_temp(4)
@@ -420,8 +421,6 @@ contains
                gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
             end if
 
-
-
             do icent = icent_start, icent_end
                do ifun = 1, 4
                   if (cent(ifun) /= icent) cycle
@@ -495,6 +494,165 @@ contains
                                        1.0d0)
             end if
 
+         case (2)
+!-------------------------------------------------------------------------------
+!           order 2
+!-------------------------------------------------------------------------------
+
+            ! zero out integrals
+            do icent = 1, nr_centers
+               do jcent = 1, nr_centers
+                  do ixyz = 1, 3
+                     icoor = (icent-1)*3 + ixyz
+                     do jxyz = 1, 3
+                        jcoor = (jcent-1)*3 + jxyz
+                        if (jcoor >= icoor) then
+                           k = (icoor - 1)*nr_centers*3 &
+                             +  jcoor
+                           gint(1:deg(1)*deg(2)*deg(3)*deg(4), k) = 0.0d0
+                        end if
+                     end do
+                  end do
+               end do
+            end do
+
+            do icent = 1, nr_centers
+               do ifun = 1, 4
+                  if (cent(ifun) /= icent) cycle
+                  do jcent = 1, nr_centers
+                     do jfun = 1, 4
+                        if (cent(jfun) /= jcent) cycle
+
+                        ! uu contribution
+                        recalc_integrals = .true.
+                        do ixyz = 1, 3
+                           icoor = (icent-1)*3 + ixyz
+                           do jxyz = 1, 3
+                              jcoor = (jcent-1)*3 + jxyz
+                              if (jcoor >= icoor) then
+                                 k = (icoor - 1)*nr_centers*3 &
+                                   +  jcoor
+                                 call init_lists(deg, ang, ang_temp)
+                                 call form_u(ang_temp, deg, ex, ifun, ixyz)
+                                 call form_u(ang_temp, deg, ex, jfun, jxyz)
+                                 call get_integral_contribution(gint,      &
+                                                                gint_temp, &
+                                                                deg,       &
+                                                                ang_temp,  &
+                                                                ex,        &
+                                                                coef,      &
+                                                                xyz,       &
+                                                                k,         &
+                                                                recalc_integrals)
+                              end if
+                           end do
+                        end do
+
+                        ! ud contribution
+                        recalc_integrals = .true.
+                        do ixyz = 1, 3
+                           icoor = (icent-1)*3 + ixyz
+                           do jxyz = 1, 3
+                              jcoor = (jcent-1)*3 + jxyz
+                              if (jcoor >= icoor) then
+                                 k = (icoor - 1)*nr_centers*3 &
+                                   +  jcoor
+                                 call init_lists(deg, ang, ang_temp)
+                                 call form_u(ang_temp, deg, ex, ifun, ixyz)
+                                 call form_d(ang_temp, deg, ex, jfun, jxyz)
+                                 call get_integral_contribution(gint,      &
+                                                                gint_temp, &
+                                                                deg,       &
+                                                                ang_temp,  &
+                                                                ex,        &
+                                                                coef,      &
+                                                                xyz,       &
+                                                                k,         &
+                                                                recalc_integrals)
+                              end if
+                           end do
+                        end do
+
+                        ! du contribution
+                        recalc_integrals = .true.
+                        do ixyz = 1, 3
+                           icoor = (icent-1)*3 + ixyz
+                           do jxyz = 1, 3
+                              jcoor = (jcent-1)*3 + jxyz
+                              if (jcoor >= icoor) then
+                                 k = (icoor - 1)*nr_centers*3 &
+                                   +  jcoor
+                                 call init_lists(deg, ang, ang_temp)
+                                 call form_d(ang_temp, deg, ex, ifun, ixyz)
+                                 call form_u(ang_temp, deg, ex, jfun, jxyz)
+                                 call get_integral_contribution(gint,      &
+                                                                gint_temp, &
+                                                                deg,       &
+                                                                ang_temp,  &
+                                                                ex,        &
+                                                                coef,      &
+                                                                xyz,       &
+                                                                k,         &
+                                                                recalc_integrals)
+                              end if
+                           end do
+                        end do
+
+                        ! dd contribution
+                        recalc_integrals = .true.
+                        do ixyz = 1, 3
+                           icoor = (icent-1)*3 + ixyz
+                           do jxyz = 1, 3
+                              jcoor = (jcent-1)*3 + jxyz
+                              if (jcoor >= icoor) then
+                                 k = (icoor - 1)*nr_centers*3 &
+                                   +  jcoor
+                                 call init_lists(deg, ang, ang_temp)
+                                 call form_d(ang_temp, deg, ex, ifun, ixyz)
+                                 call form_d(ang_temp, deg, ex, jfun, jxyz)
+                                 call get_integral_contribution(gint,      &
+                                                                gint_temp, &
+                                                                deg,       &
+                                                                ang_temp,  &
+                                                                ex,        &
+                                                                coef,      &
+                                                                xyz,       &
+                                                                k,         &
+                                                                recalc_integrals)
+                              end if
+                           end do
+                        end do
+
+                     end do
+                  end do
+               end do
+            end do
+
+            ! contract integrals
+            do icent = 1, nr_centers
+               do jcent = 1, nr_centers
+                  do ixyz = 1, 3
+                     icoor = (icent-1)*3 + ixyz
+                     do jxyz = 1, 3
+                        jcoor = (jcent-1)*3 + jxyz
+                        if (jcoor >= icoor) then
+                           k = (icoor - 1)*nr_centers*3 &
+                             +  jcoor
+                           call contract_integrals(deg,        &
+                                                   off,        &
+                                                   gint(1, k), &
+                                                   ndim,       &
+                                                   dmat,       &
+                                                   gmat,       &
+                                                   get_ave,    &
+                                                   ave(k),     &
+                                                   1.0d0)
+                        end if
+                     end do
+                  end do
+               end do
+            end do
+
          case default
 !-------------------------------------------------------------------------------
 !           order too high
@@ -559,14 +717,14 @@ contains
 
    end subroutine
 
-   subroutine contract_integrals(n,              &
-                                 o,              &
-                                 gint,           &
-                                 ndim,           &
-                                 dmat,           &
-                                 gmat,           &
-                                 get_ave,        &
-                                 average,        &
+   subroutine contract_integrals(n,       &
+                                 o,       &
+                                 gint,    &
+                                 ndim,    &
+                                 dmat,    &
+                                 gmat,    &
+                                 get_ave, &
+                                 average, &
                                  scale_exchange)
 
       integer, intent(in)    :: n(4)
