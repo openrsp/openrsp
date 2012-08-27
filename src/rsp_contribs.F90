@@ -561,6 +561,8 @@ end if
 #endif /* ifdef PRG_DIRAC */
 
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
+
+#ifdef PRG_DALTON
        ! contract FULL cubic in tmp, unsymmetrized divided by six
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,1))
@@ -585,6 +587,18 @@ end if
                              c(2):c(2)+nc(2)-1, &
                              c(3):c(3)+nc(3)-1, 1), shape(ave))
        deallocate(tmp)
+#endif /* ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+!      allocate(real_ave(size(ave)))
+!      real_ave = 0.0
+!      call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 3, real_ave)
+!      do i = 1, size(ave)
+!         ave(i) = 2.0d0*real_ave(i)
+!      end do
+!      deallocate(real_ave)
+#endif /* ifdef PRG_DIRAC */
+
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,ncor))
@@ -1007,13 +1021,13 @@ end do
        fock(1) = fock(1) + A
        A = 0
     else if (nf==1 .and. f(1)=='GEO ') then
+
+#ifdef PRG_DALTON
        n = nr_ao
        do i = 0, nc(1)-1
           if (iszero(fock(i+1))) then
              call mat_ensure_alloc(fock(i+1))
           end if
-
-#ifdef PRG_DALTON
 #ifdef GRCONT_NOT_AVAILABLE
           arg(1) = ctr_arg(1, i+1, &
                            ncor, dens, fock(i+1), null_ptr)
@@ -1035,14 +1049,23 @@ end do
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
 #endif
+       end do
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1)
+       do i = 1, nc(1)
+          if (iszero(fock(i))) then
+             call mat_ensure_alloc(fock(i))
+          end if
+       end do
+       do i = 1, nc(1)
+          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i)%elms_alpha, 1, i)
+       end do
 #endif /* ifdef PRG_DIRAC */
 
-       end do
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
+
+#ifdef PRG_DALTON
        ncor = 3 * get_nr_atoms()
        do j = 0, nc(2)-1
           do i = 0, nc(1)-1
@@ -1058,6 +1081,13 @@ end do
                                      arg)
           end do
        end do
+#endif /* ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+       print *, 'error: the 2nd order twoint contribution is not available in DIRAC'
+       stop 1
+#endif /* ifdef PRG_DIRAC */
+
     else
        print *, 'error in rsp_oneave: not implented or in wrong order - ', &
                 (' ' // f(i), i=1,nf)
