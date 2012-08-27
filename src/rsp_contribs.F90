@@ -572,13 +572,13 @@ end if
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-!      allocate(real_ave(size(ave)))
-!      real_ave = 0.0
-!      call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 3, real_ave)
-!      do i = 1, size(ave)
-!         ave(i) = 2.0d0*real_ave(i)
-!      end do
-!      deallocate(real_ave)
+       allocate(real_ave(size(ave)))
+       real_ave = 0.0
+       call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 3, real_ave)
+       do i = 1, size(ave)
+          ave(i) = 2.0d0*real_ave(i)
+       end do
+       deallocate(real_ave)
 #endif /* ifdef PRG_DIRAC */
 
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
