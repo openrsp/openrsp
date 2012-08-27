@@ -574,7 +574,11 @@ contains
                         end do
 
                         ! du contribution
-                        recalc_integrals = .true.
+                        if (ifun /= jfun) then
+                           ! if ifun == jfun then du raw integrals
+                           ! are the same as ud, in this case do not recalculate
+                           recalc_integrals = .true.
+                        end if
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
