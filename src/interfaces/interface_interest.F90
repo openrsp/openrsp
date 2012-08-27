@@ -301,7 +301,7 @@ contains
 
       integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
-      real(8) :: gint(max_nr_integrals)
+      real(8) :: gint(max_nr_integrals, max_ave_length)
       real(8) :: gint_u(max_nr_integrals)
       real(8) :: gint_d(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4)
@@ -410,6 +410,14 @@ contains
 !           order 1
 !-------------------------------------------------------------------------------
 
+            if (get_ave) then
+               do icoor = 1, 3*nr_centers
+                  gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
+               end do
+            else
+               gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
+            end if
+
             icent_loop: do icent = icent_start, icent_end
 
                !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
@@ -434,8 +442,6 @@ contains
                   end do
 
                   do ixyz = ixyz_start, ixyz_end
-
-                     gint(1:deg(1)*deg(2)*deg(3)*deg(4)) = 0.0d0
 
                      if (get_ave) then
                         icoor = (icent-1)*3 + ixyz
@@ -464,7 +470,7 @@ contains
                         ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) + 1
                      end do
 
-                     call add_integrals(gint,     &
+                     call add_integrals(gint(1, icoor),     &
                                         gint_u,   &
                                         deg,      &
                                         ang_temp, &
@@ -496,7 +502,7 @@ contains
                            ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) - 1
                         end do
 
-                        call add_integrals(gint,     &
+                        call add_integrals(gint(1, icoor),     &
                                            gint_d,   &
                                            deg,      &
                                            ang_temp, &
@@ -505,21 +511,45 @@ contains
 
                      end if
 
-                     !fixme do this outside of icent_loop
-                     call contract_integrals(deg,        &
-                                             off,        &
-                                             gint,       &
-                                             ndim,       &
-                                             dmat,       &
-                                             gmat,       &
-                                             get_ave,    &
-                                             ave(icoor), &
-                                             1.0d0)
+           !         !fixme do this outside of icent_loop
+           !         call contract_integrals(deg,        &
+           !                                 off,        &
+           !                                 gint,       &
+           !                                 ndim,       &
+           !                                 dmat,       &
+           !                                 gmat,       &
+           !                                 get_ave,    &
+           !                                 ave(icoor), &
+           !                                 1.0d0)
                   end do
 
                end do
 
             end do icent_loop
+
+            if (get_ave) then
+               do icoor = 1, 3*nr_centers
+                  call contract_integrals(deg,            &
+                                          off,            &
+                                          gint(1, icoor), &
+                                          ndim,           &
+                                          dmat,           &
+                                          gmat,           &
+                                          get_ave,        &
+                                          ave(icoor),     &
+                                          1.0d0)
+               end do
+            else
+               call contract_integrals(deg,     &
+                                       off,     &
+                                       gint,    &
+                                       ndim,    &
+                                       dmat,    &
+                                       gmat,    &
+                                       get_ave, &
+                                       ave,     &
+                                       1.0d0)
+            end if
 
          case default
 !-------------------------------------------------------------------------------
