@@ -105,9 +105,9 @@ module rsp_perturbed_sdf
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(zeromat, pert, F, D, S)
-#ifdef PRG_DALTON
+
     use interface_rsp_solver, only: rsp_mosolver_exec
-#endif
+
     implicit none
 
     
@@ -123,13 +123,20 @@ module rsp_perturbed_sdf
     type(matrix), allocatable, dimension(:) :: Fp, Dp, Sp, Dh
     type(f_l_cache), pointer :: fock_lowerorder_cache
 
-    A = mat_alloc_like(zeromat)
-    A = mat_zero_like(zeromat)
-    call mat_ensure_alloc(A)
 
-    B = mat_alloc_like(zeromat)
-    B = mat_zero_like(zeromat)
-    call mat_ensure_alloc(B)
+! ASSUME CLOSED SHELL
+call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+
+! ASSUME CLOSED SHELL
+call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+
+!     A = mat_alloc_like(zeromat)
+!     A = mat_zero_like(zeromat)
+!     call mat_ensure_alloc(A)
+! 
+!     B = mat_alloc_like(zeromat)
+!     B = mat_zero_like(zeromat)
+!     call mat_ensure_alloc(B)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
     call sdf_getdata_s(S, get_emptypert(), (/1/), B)
@@ -170,29 +177,37 @@ module rsp_perturbed_sdf
 
 !  write(*,*) '1'
 
-       Dp(i) = mat_alloc_like(zeromat)
-       Dp(i) = mat_zero_like(zeromat)
-       call mat_ensure_alloc(Dp(i))
+! ASSUME CLOSED SHELL
+call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, .true.)
 
+!        Dp(i) = mat_alloc_like(zeromat)
+!        Dp(i) = mat_zero_like(zeromat)
+!        call mat_ensure_alloc(Dp(i))
+! write(*,*) 'Dp tag 1', Dp(i)%magic_tag
 ! write(*,*) '2'
-       Dh(i) = mat_alloc_like(zeromat)
-       Dh(i) = mat_zero_like(zeromat)
-       call mat_ensure_alloc(Dh(i))
 
-! write(*,*) '3'
-       Fp(i) = mat_alloc_like(zeromat)
-! write(*,*) '3a'
-       Fp(i) = mat_zero_like(zeromat)
-! write(*,*) '3b'
-       call mat_ensure_alloc(Fp(i))
-! write(*,*) '3c'
+! ASSUME CLOSED SHELL
+call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, .true.)
+
+!        Dh(i) = mat_alloc_like(zeromat)
+!        Dh(i) = mat_zero_like(zeromat)
+!        call mat_ensure_alloc(Dh(i))
+call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
+
+! ! write(*,*) '3'
+!        Fp(i) = mat_alloc_like(zeromat)
+! ! write(*,*) '3a'
+!        Fp(i) = mat_zero_like(zeromat)
+! ! write(*,*) '3b'
+!        call mat_ensure_alloc(Fp(i))
+! ! write(*,*) '3c'
 
     end do
 
 !  write(*,*) 'zeroed'
-
+! write(*,*) 'Dp tag 2', Dp(1)%magic_tag
     call sdf_add(D, pert, perturbed_matrix_size, Dp)
-
+! write(*,*) 'Dp tag 3', Dp(1)%magic_tag
 !  write(*,*) 'zeroed Dp'
 
     ! 2. Construct Dp and the initial part of Fp
@@ -200,11 +215,15 @@ module rsp_perturbed_sdf
     ! oneint, twoint, and xcint calls as needed
 
     call f_l_cache_allocate(fock_lowerorder_cache)
+! write(*,*) 'Dp tag 3b', Dp(1)%magic_tag
 
 !  write(*,*) 'allocated f l cache'
 
     call rsp_fock_lowerorder(zeromat, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          0, D, perturbed_matrix_size, Fp, fock_lowerorder_cache)
+
+
+! write(*,*) 'Dp tag 4', Dp(1)%magic_tag
 
 !  write(*,*) 'got fock lowerorder'
 ! 
@@ -228,7 +247,7 @@ module rsp_perturbed_sdf
     call sdf_add(F, pert, perturbed_matrix_size, Fp)
 
 !  write(*,*) 'added to Fp'
-
+! write(*,*) 'Dp tag 5', Dp(1)%magic_tag
 
     ! b) For Dp: Create differentiation superstructure: First dryrun for size, and
     ! then the actual superstructure call
@@ -250,7 +269,7 @@ module rsp_perturbed_sdf
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          superstructure_size, sstr_incr, derivative_structure)
 
-
+! write(*,*) 'Dp tag 6', Dp(1)%magic_tag
 ! write(*,*) 'sstr'
 
     call make_triangulated_indices(nblks, blk_info, perturbed_matrix_size, indices)
@@ -265,6 +284,7 @@ module rsp_perturbed_sdf
 
 ! write(*,*) 'index is', ind
 !         write(*,*) 'Dp before z', Dp(i)%elms_alpha
+! write(*,*) 'Dp tag', Dp(i)%magic_tag
 
        call rsp_get_matrix_z(zeromat, superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
@@ -308,28 +328,29 @@ module rsp_perturbed_sdf
 
        ! 4. Make right-hand side using Dp
 
-       RHS(1) = mat_alloc_like(zeromat)
-       RHS(1) = mat_zero_like(zeromat)
-       call mat_ensure_alloc(RHS(1))
+! ASSUME CLOSED SHELL
+call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, .true.)
+
+!        RHS(1) = mat_alloc_like(zeromat)
+!        RHS(1) = mat_zero_like(zeromat)
+!        call mat_ensure_alloc(RHS(1))
 
        call rsp_get_matrix_y(zeromat, superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
 
 
+! ASSUME CLOSED SHELL
+call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
      
-       X(1) = mat_alloc_like(zeromat)
-       X(1) = mat_zero_like(zeromat)
-       call mat_ensure_alloc(X(1))
+!        X(1) = mat_alloc_like(zeromat)
+!        X(1) = mat_zero_like(zeromat)
+!        call mat_ensure_alloc(X(1))
 
 ! write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
-#ifdef PRG_DALTON
        call rsp_mosolver_exec(RHS(1), (/0d0/), X)
-#else
-       STOP 'NOT DALTON'
-#endif
        ! Note (MaR): Why multiply by -2 like below?
        X(1) = -2d0*X(1)
        RHS(1) = 0
@@ -362,6 +383,7 @@ module rsp_perturbed_sdf
        Dp(i) = Dp(i) + Dh(i)
 
 
+write(*,*) 'Finished component', i
 
 ! write(*,*) 'Finally, Dp is', i, ' at indices', ind 
 ! write(*,*) Dp(i)%elms_alpha
@@ -721,34 +743,52 @@ end if
   
        end do
 
+
+! write(*,*) '1a'
       do j = 1, size(lower_order_contribution)
 
-          lower_order_contribution(j) = mat_alloc_like(zeromat)
-          lower_order_contribution(j) = mat_zero_like(zeromat)
-          call mat_ensure_alloc(lower_order_contribution(j))
+! ASSUME CLOSED SHELL
+call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, .true.)
+
+!           lower_order_contribution(j) = mat_alloc_like(zeromat)
+!           lower_order_contribution(j) = mat_zero_like(zeromat)
+!           call mat_ensure_alloc(lower_order_contribution(j))
 
        end do
 
+
+! write(*,*) '1b'
       do j = 1, size(tmp)
 
-          tmp(j) = mat_alloc_like(zeromat)
-          tmp(j) = mat_zero_like(zeromat)
-          call mat_ensure_alloc(tmp(j))
+! ASSUME CLOSED SHELL
+call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
+
+
+!           tmp(j) = mat_alloc_like(zeromat)
+!           tmp(j) = mat_zero_like(zeromat)
+!           call mat_ensure_alloc(tmp(j))
 
        end do
+
+
+! write(*,*) '1c'
 
        do i = 2, num_p_tuples
 ! write(*,*) 'i is', i
 ! write(*,*) 'size of dens tuple', size(dens_tuple)
-          dens_tuple(i) = mat_alloc_like(zeromat)
-          dens_tuple(i) = mat_zero_like(zeromat)
-          call mat_ensure_alloc(dens_tuple(i))
+
+! ASSUME CLOSED SHELL
+call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
+
+!           dens_tuple(i) = mat_alloc_like(zeromat)
+!           dens_tuple(i) = mat_zero_like(zeromat)
+!           call mat_ensure_alloc(dens_tuple(i))
 
 
        end do
 
  
-
+! write(*,*) '1d'
        allocate(outer_indices(outer_indices_size,size(ncoutersmall)))
        allocate(inner_indices(inner_indices_size,size(ncinnersmall)))
 ! write(*,*) '1'
@@ -782,9 +822,12 @@ end if
 
           do j = 1, size(tmp)
 
-             tmp(j) = mat_alloc_like(zeromat)
-             tmp(j)%elms_alpha = 0.0
-             call mat_ensure_alloc(tmp(j))
+! ASSUME CLOSED SHELL
+call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
+
+!              tmp(j) = mat_alloc_like(zeromat)
+!              tmp(j)%elms_alpha = 0.0
+!              call mat_ensure_alloc(tmp(j))
 
           end do
 
@@ -840,9 +883,13 @@ offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, nbl
 ! write(*,*) 'full index tuple is', (/inner_indices(j, :), outer_indices(i, :) /)
 ! write(*,*) 'offset is', offset
 
-lower_order_contribution(offset) = mat_alloc_like(zeromat)
-lower_order_contribution(offset)%elms_alpha = 0.0
-call mat_ensure_alloc(lower_order_contribution(offset))
+! ASSUME CLOSED SHELL
+call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, .true.)
+
+
+! lower_order_contribution(offset) = mat_alloc_like(zeromat)
+! lower_order_contribution(offset)%elms_alpha = 0.0
+! call mat_ensure_alloc(lower_order_contribution(offset))
 
 
 lower_order_contribution(offset) = tmp(j)
@@ -860,9 +907,13 @@ offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations,
          blks_tuple_triang_size(2:num_p_tuples), &
          (/outer_indices(i, :) /)) 
 
-lower_order_contribution(offset) = mat_alloc_like(zeromat)
-lower_order_contribution(offset)%elms_alpha = 0.0
-call mat_ensure_alloc(lower_order_contribution(offset))
+! ASSUME CLOSED SHELL
+call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, .true.)
+
+
+! lower_order_contribution(offset) = mat_alloc_like(zeromat)
+! lower_order_contribution(offset)%elms_alpha = 0.0
+! call mat_ensure_alloc(lower_order_contribution(offset))
 
 lower_order_contribution(offset) = tmp(1)
 
@@ -885,9 +936,9 @@ merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
 end do
 ! write(*,*) '7'
 else
-
+! write(*,*) '7a'
 call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
-
+! write(*,*) '7b'
 do i = 3, num_p_tuples
 
 ! This can be problematic - consider rewriting merge_p_tuple as subroutine
@@ -965,7 +1016,7 @@ end do
 call f_l_cache_add_element(fock_lowerorder_cache, num_p_tuples, p_tuples, &
      inner_indices_size * outer_indices_size, lower_order_contribution)
 
-! write(*,*) '10'
+! ! write(*,*) '10'
 deallocate(merged_blk_info)
 deallocate(triang_indices_fp)
     deallocate(outer_indices)
@@ -974,7 +1025,7 @@ deallocate(triang_indices_fp)
     else
 
        if (num_p_tuples <= 1) then
-
+! write(*,*) '10'
           call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, property_size, Fp)
@@ -987,16 +1038,16 @@ deallocate(triang_indices_fp)
 !                           p_tuples(1)%pdim, w = p_tuples(1)%freq, fock = Fp)
 
        end if
-
+! write(*,*) '11'
        if (num_p_tuples <= 2) then
-
+! write(*,*) '12'
           call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/) ), &
                property_size, Fp)
 
        end if
-
+! write(*,*) '13'
 ! do i = 1, p_tuples(1)%pdim(1)
 ! 
 ! write(*,*) 'for element ', i
