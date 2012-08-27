@@ -40,9 +40,6 @@ module interface_interest
    logical :: interface_is_initialized = .false.
 
    integer, parameter   :: maxl = 10
-   integer, allocatable :: imat_u(:, :)
-   integer, allocatable :: imat_d(:, :, :)
-   real(8), allocatable :: imat_f(:, :, :)
    integer, allocatable :: ic_to_ijk(:, :, :)
    integer, allocatable :: ijk_to_ic(:, :, :)
    integer, allocatable :: ijk_list(:, :, :)
@@ -1149,59 +1146,6 @@ contains
 
       ndim = (maxl+1)*(maxl+2)/2
 
-      ! construct up matrix
-
-      if (allocated(imat_u)) deallocate(imat_u)
-      allocate(imat_u(ndim, ndim))
-      imat_u = 1
-
-      ! first row is just like this:
-      ! 1 2 3 4 5 6 ...
-      do i = 1, ndim
-         imat_u(i, 1) = i
-      end do
-
-      ! construct rows 2 to ndim
-      ! they look like this:
-      ! 1 2 2 3 3 3 4 4 4 4 ...
-      ! 1 1 1 1 1 1 1 1 1 1 ...
-      ! 1 2 2 3 3 3 4 4 4 4 ...
-      ! 1 1 1 1 1 1 1 1 1 1 ...
-      ! 1 1 1 1 1 1 1 1 1 1 ...
-      ! 1 2 2 3 3 3 4 4 4 4 ...
-      ! 1 1 1 1 1 1 1 1 1 1 ...
-      ! 1 1 1 1 1 1 1 1 1 1 ...
-      ! 1 1 1 1 1 1 1 1 1 1 ...
-      ! ...
-      m = 2
-      do i = 1, maxl
-         l = 0
-         do j = 1, maxl+1
-            do k = 1, j
-               l = l + 1
-               imat_u(l, m) = j
-            end do
-         end do
-         m = m + i + 1
-      end do
-
-      ! construct rows 2 to ndim
-      ! by adding row N to row N-1
-      do i = 2, ndim
-         do j = 1, ndim
-            imat_u(j, i) = imat_u(j, i-1) + imat_u(j, i)
-         end do
-      end do
-
-      ! construct down matrices
-
-      if (allocated(imat_d)) deallocate(imat_d)
-      if (allocated(imat_f)) deallocate(imat_f)
-      allocate(imat_d(ndim, 3, maxl))
-      allocate(imat_f(ndim, 3, maxl))
-      imat_d = 0
-      imat_f = 0.0d0
-
       if (allocated(ic_to_ijk)) deallocate(ic_to_ijk)
       if (allocated(ijk_to_ic)) deallocate(ijk_to_ic)
       if (allocated(ijk_list))       deallocate(ijk_list)
@@ -1216,26 +1160,6 @@ contains
 
       ic_to_ijk = 0
       ijk_to_ic = 0
-
-      do i = 1, maxl
-         do k = 1, i*(i+1)/2
-            imat_d(k, 1, i) = k
-         end do
-         k = 0
-         l = 0
-         do m = 1, i
-            do j = 1, m
-               k = k + 1
-               l = l + 1
-               imat_d(l+1, 2, i) = k
-               imat_d(l+2, 3, i) = k
-               imat_f(k,   1, i) = real(i - m + 1)
-               imat_f(l+1, 2, i) = real(m - j + 1)
-               imat_f(l+2, 3, i) = real(j)
-            end do
-            l = l + 1
-         end do
-      end do
 
       do i = 0, maxl
          k = 0
