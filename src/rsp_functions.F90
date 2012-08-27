@@ -952,6 +952,8 @@ contains
     type(matrix) FDSgf, DSDgf, DFDgf
     complex(8)   dip(3), pol(3,3), gra(ng), tm1(ng)
     complex(8)   Eggf(ng,ng,3), tmp(ng,ng,3)
+    complex(8)   temp_gf(ng, 3)
+    complex(8)   temp_ggf(ng, ng, 3)
     character(4) nof(0) !no-field
     integer      i, j, k, noc(0) !no-comp
     geo2_el(:2) = rsp_field('GEO ', (0d0,0d0), 1, ng)
@@ -978,7 +980,7 @@ contains
     gra = gra + tm1/2; call print_tensor(shape(tm1), tm1/2, 'Gg(D)D/2')
     ! Kohn-Sham exchange correlation average
 !   call rsp_xcave(mol, 1, (/'GEO '/), (/1/), shape(tm1), 1, (/D/), tm1)
-    gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'Exc_g(D)')
+!   gra = gra + tm1; call print_tensor(shape(tm1), tm1, 'Exc_g(D)')
     ! print
     call print_tensor(shape(gra), gra, 'gradient = Eg')
     ! print formatted to file gradient
@@ -988,7 +990,9 @@ contains
     ! test dipole gradient average
     call rsp_oneave(2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(:,1,:)), &
                        D, tmp(:,1,:))
-    call print_tensor(shape(tmp(:,1,:)), tmp(:,1,:), 'dpgave form rsp_oneave')
+    ! radovan: rsp_oneave returns in "wrong" ordering, resort
+    call resort_gf(tmp(:, 1, :), temp_gf, ng)
+    call print_tensor(shape(temp_gf), temp_gf, 'dpgave form rsp_oneave')
 
 ! density independent contribution to Ff
     call rsp_oneint(S%nrow, 1, (/'EL  '/), (/1/), shape(Ff), Ff)
@@ -1045,6 +1049,9 @@ contains
     ! 1-electron contribution
     ! fixme: finite field calculation in rsp_oneave
     call rsp_oneave(3, (/'GEO ','GEO ','EL  '/), (/1,1,1/), shape(tmp), D, tmp)
+    ! radovan: rsp_oneave returns in "wrong" ordering, resort
+    call resort_ggf(tmp, temp_ggf, ng)
+    tmp = temp_ggf
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, 'HabfD')
     do i = 1, size(Df)
        call rsp_oneave(2, (/'GEO ','GEO '/), (/1,1/), shape(tmp(:,:,i)), &
@@ -1055,10 +1062,12 @@ contains
        tmp = 0.0d0
        call rsp_oneave(2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(i,:,:)), &
                        Dg(i), tmp(i,:,:))
+       ! radovan: rsp_oneave returns in "wrong" ordering, resort
+       call resort_gf(tmp(i,:,:), temp_gf, ng)
        do j = 1, size(Dg)
           do k = 1, size(Df)
-             Eggf(i, j, k) = Eggf(i, j, k) + tmp(i, j, k)
-             Eggf(j, i, k) = Eggf(j, i, k) + tmp(i, j, k)
+             Eggf(i, j, k) = Eggf(i, j, k) + temp_gf(j, k)
+             Eggf(j, i, k) = Eggf(j, i, k) + temp_gf(j, k)
           end do
        end do
     end do
@@ -1178,5 +1187,38 @@ contains
     end subroutine
   end subroutine
 
+   subroutine resort_gf(temp_fg, temp_gf, ng)
+
+      complex(8) :: temp_fg(3, ng)
+      complex(8) :: temp_gf(ng, 3)
+      integer    :: ng
+
+      integer    :: i, j
+
+      do i = 1, 3
+         do j = 1, ng
+            temp_gf(j, i) = temp_fg(i, j)
+         end do
+      end do
+
+   end subroutine
+
+   subroutine resort_ggf(temp_fgg, temp_ggf, ng)
+
+      complex(8) :: temp_fgg(3, ng, ng)
+      complex(8) :: temp_ggf(ng, ng, 3)
+      integer    :: ng
+
+      integer    :: i, j, k
+
+      do i = 1, 3
+         do j = 1, ng
+            do k = 1, ng
+               temp_ggf(j, k, i) = temp_fgg(i, j, k)
+            end do
+         end do
+      end do
+
+   end subroutine
 
 end module
