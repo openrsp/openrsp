@@ -195,11 +195,12 @@ contains
     !> field descriptors (label freq comp ncomp)
     type(rsp_field), intent(in)    :: fields(:)
     !> output tensor, to which nuclear contribution is *ADDED*
+    integer                        :: propsize
     complex(8),      intent(inout) :: rspfunc_output(propsize)
     !> tmp tensor, to which nuclear contribution is *ADDED*
     complex(8) :: rspfunc(product(fields%ncomp))
     !---------------------------------------------------------------
-    integer      nf, ncor, ngeo, ext_ncomp, i, propsize
+    integer      nf, ncor, ngeo, ext_ncomp, i
     integer      order(size(fields)), tcomp(size(fields))
     character(4) ext_label(2)
     logical      nonz
@@ -295,26 +296,8 @@ end if
 
 else if (ngeo == (nf - 1)) then
 
-if (nf == 2) then
-
-write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 2 yet'
-call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 2 yet')
-
-
-else if (nf == 1) then
-
-write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 1 yet'
-call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 1 yet')
-
-
-
-else
-
-rspfunc_output = 0.0
-
-end if
-
-
+write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field yet'
+       call quit('rsp_nucpot_tr error: No support for one non-geometrical field yet')
 
 else
 
@@ -359,7 +342,7 @@ end if
 ! MR: NOT SURE IF WORKING PROPERLY
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
-  subroutine rsp_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
+  subroutine rsp_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface
 !     use gen1int_api
@@ -380,10 +363,9 @@ end if
     !> density matrix to contract half-differentiated overlap against
     type(matrix),  intent(in), optional  :: D
     !----------------------------------------------
-    call interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
+    call interface_1el_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
 
   end subroutine
-
 
 
 
@@ -756,8 +738,8 @@ end do
 
 
 
-!        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
-!                          c(2):c(2)+nc(2)-1,1,1), shape(ave))
+       ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
+                         c(2):c(2)+nc(2)-1,1,1), shape(ave))
        deallocate(tmp)
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
        ! contract FULL cubic in tmp, unsymmetrized divided by six
@@ -794,9 +776,9 @@ end do
 
 
        ! extract requested block
-!        ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
-!                              c(2):c(2)+nc(2)-1, &
-!                              c(3):c(3)+nc(3)-1, 1), shape(ave))
+       ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
+                             c(2):c(2)+nc(2)-1, &
+                             c(3):c(3)+nc(3)-1, 1), shape(ave))
        deallocate(tmp)
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
@@ -841,10 +823,10 @@ end do
 
 
        ! extract requested block
-!        ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
-!                              c(2):c(2)+nc(2)-1, &
-!                              c(3):c(3)+nc(3)-1, &
-!                              c(4):c(4)+nc(4)-1), shape(ave))
+       ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
+                             c(2):c(2)+nc(2)-1, &
+                             c(3):c(3)+nc(3)-1, &
+                             c(4):c(4)+nc(4)-1), shape(ave))
        deallocate(tmp)
     else
        print *, 'rsp_twoave_tr error: not implented or in wrong order - ', &

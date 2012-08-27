@@ -73,15 +73,11 @@ module rsp_sdf_caching
 ! write(*,*) 'first alloc'
 !        new_element%data(i)%complex = .FALSE.
 !        new_element%data(i)%open_shell = .FALSE.
-
-! ASSUME CLOSED SHELL
-call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
-
-!        new_element%data(i) = mat_alloc_like(data(i))
+       new_element%data(i) = mat_alloc_like(data(i))
 ! write(*,*) 'alloc'
-!        new_element%data(i) = mat_zero_like(data(i))
+       new_element%data(i) = mat_zero_like(data(i))
 ! write(*,*) 'zero'
-!        call mat_ensure_alloc(new_element%data(i))
+       call mat_ensure_alloc(new_element%data(i))
 ! write(*,*) 'ensure'
        new_element%data(i) = data(i)
 ! write(*,*) 'assign'
@@ -265,17 +261,9 @@ ind = ind_unsorted
 
     if (found .eqv. .TRUE.) then
 
-
-! ASSUME CLOSED SHELL
-call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
-              next_element%data(offset)%ncol, .true.)
-
-
-
-! 
-!        sdf_getdata = mat_alloc_like(next_element%data(offset))
-!        sdf_getdata = mat_zero_like(next_element%data(offset))
-!        call mat_ensure_alloc(sdf_getdata)
+       sdf_getdata = mat_alloc_like(next_element%data(offset))
+       sdf_getdata = mat_zero_like(next_element%data(offset))
+       call mat_ensure_alloc(sdf_getdata)
 
        sdf_getdata = next_element%data(offset)
 
@@ -307,14 +295,10 @@ integer :: perturbed_matrix_size, i
 type(matrix), dimension(perturbed_matrix_size) :: data
 
     do i = 1, perturbed_matrix_size
-
-
-! ASSUME CLOSED SHELL
-call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
     
-!        current_element%data(i) = mat_alloc_like(data(i))
-!        current_element%data(i) = mat_zero_like(data(i))
-!        call mat_ensure_alloc(current_element%data(i))
+       current_element%data(i) = mat_alloc_like(data(i))
+       current_element%data(i) = mat_zero_like(data(i))
+       call mat_ensure_alloc(current_element%data(i))
 
        current_element%data(i) = data(i)
 

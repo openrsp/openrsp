@@ -365,11 +365,6 @@ blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
 
 end do
 
-
-! write(*,*) 'pids for current contrib', pids_current_contribution
-! write(*,*) 'pids for merged pert', pids_merged_pert
-
-
        do i = 1, size(indices, 1)
 
 
@@ -382,17 +377,12 @@ end do
           (/merged_triang_size/), &
           (/indices(i, : )/) )
 
-
-
 do j = 1, total_num_perturbations
 
 translated_index(j) = indices(i,pids_current_contribution(j))
 
 end do
 
-
-! write(*,*) 'regular index', indices(i, :)
-! write(*,*) 'translated index', translated_index
 
 if (p_tuples(1)%n_perturbations > 0) then
 
@@ -409,13 +399,26 @@ else
 
 end if
 
-! write(*,*) 'prop offset', pr_offset
-! write(*,*) 'cache offset', cache_offset
-! write(*,*) 'data added', next_element%data(cache_offset)
 
           prop(pr_offset) = &
           prop(pr_offset) + &
           next_element%data(cache_offset) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

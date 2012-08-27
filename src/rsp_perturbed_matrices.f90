@@ -188,26 +188,20 @@ module rsp_perturbed_matrices
     W%elms_alpha = 0.0
 !     W = mat_zero_like(zeromat)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    A = mat_alloc_like(zeromat)
+    A%elms_alpha = 0.0
+!     A = mat_zero_like(zeromat)
+    call mat_ensure_alloc(A)
 
+    B = mat_alloc_like(zeromat)
+    B%elms_alpha = 0.0
+!     B = mat_zero_like(zeromat)
+    call mat_ensure_alloc(B)
 
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    C = mat_alloc_like(zeromat)
+    C%elms_alpha = 0.0
+!     C = mat_zero_like(zeromat)
+    call mat_ensure_alloc(C)
 
     do i = 1, superstructure_size
 
@@ -295,26 +289,20 @@ end if
     Y%elms_alpha = 0.0
 !     Y = mat_zero_like(zeromat)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    A = mat_alloc_like(zeromat)
+    A%elms_alpha = 0.0
+!     A = mat_zero_like(zeromat)
+    call mat_ensure_alloc(A)
 
+    B = mat_alloc_like(zeromat)
+    B%elms_alpha = 0.0
+!     B = mat_zero_like(zeromat)
+    call mat_ensure_alloc(B)
 
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    C = mat_alloc_like(zeromat)
+    C%elms_alpha = 0.0
+!     C = mat_zero_like(zeromat)
+    call mat_ensure_alloc(C)
 
 ! write(*,*) 'ind is', ind
     
@@ -411,33 +399,23 @@ end if
     type(sdf) :: F, D, S
     type(matrix) :: Z, A, B, C
 
-! write(*,*) 'Z tag', Z%magic_tag
     Z%elms_alpha = 0.0
 !     Z = mat_zero_like(zeromat)
-! write(*,*) 'Z tag again', Z%magic_tag
 
+    A = mat_alloc_like(zeromat)
+    A%elms_alpha = 0.0
+!     A = mat_zero_like(zeromat)
+    call mat_ensure_alloc(A)
 
+    B = mat_alloc_like(zeromat)
+    B%elms_alpha = 0.0
+!     B = mat_zero_like(zeromat)
+    call mat_ensure_alloc(B)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
-
-
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    C = mat_alloc_like(zeromat)
+    C%elms_alpha = 0.0
+!     C = mat_zero_like(zeromat)
+    call mat_ensure_alloc(C)
 
 
     do i = 1, superstructure_size
@@ -450,12 +428,7 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
 
-! write(*,*) 'Z tag yet again', Z%magic_tag
-
        Z = Z + A*B*C
-
-
-! write(*,*) 'Z tag finally', Z%magic_tag
 
     end do
 
@@ -500,27 +473,20 @@ call p_tuple_deallocate(merged_p_tuple)
     L%elms_alpha = 0.0
 !     L = mat_zero_like(zeromat)
 
+    A = mat_alloc_like(zeromat)
+    A%elms_alpha = 0.0
+!     A = mat_zero_like(zeromat)
+    call mat_ensure_alloc(A)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    B = mat_alloc_like(zeromat)
+    B%elms_alpha = 0.0
+!     B = mat_zero_like(zeromat)
+    call mat_ensure_alloc(B)
 
-
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    C = mat_alloc_like(zeromat)
+    C%elms_alpha = 0.0
+!     C = mat_zero_like(zeromat)
+    call mat_ensure_alloc(C)
 
 
     do i = 1, superstructure_size
@@ -578,27 +544,20 @@ call p_tuple_deallocate(merged_B)
     Zeta%elms_alpha = 0.0
 !     Zeta = mat_zero_like(zeromat)
 
+    A = mat_alloc_like(zeromat)
+    A%elms_alpha = 0.0
+!     A = mat_zero_like(zeromat)
+    call mat_ensure_alloc(A)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    B = mat_alloc_like(zeromat)
+    B%elms_alpha = 0.0
+!     B = mat_zero_like(zeromat)
+    call mat_ensure_alloc(B)
 
-! 
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    C = mat_alloc_like(zeromat)
+    C%elms_alpha = 0.0
+!     C = mat_zero_like(zeromat)
+    call mat_ensure_alloc(C)
 
     do i = 1, superstructure_size
 
