@@ -252,7 +252,7 @@ module rsp_indices_and_addressing
 ! write(*,*) 'inds', inds
 
 
-
+! write(*,*) 'nblks_tuple', nblks_tuple
 
     do i = 1, ntuple - 1
 ! write(*,*) 'block info tuple', blks_info(:,:,:)
@@ -594,12 +594,21 @@ end subroutine
 
 ! write(*,*) 'indices have dimensions', size(indices, 1),  'and', size(indices,2)
 
+! write(*,*) 'making indices'
+! write(*,*) 'nblks', nblks
+! do i = 1, nblks
+! write(*,*) 'blk_info', i,' is',  blk_info(i,:)
+! end do
+! write(*,*) 'triangulated_size', triangulated_size
+
+
+
 allocate(blks(nblks))
 
     do i = 1, nblks
 ! write(*,*) 'a'
        triang_sizes(i) = get_one_triangular_size(blk_info(i, 2), blk_info(i,3))
-! write(*,*) 'a2'
+! write(*,*) 'triang size', i,' is', triang_sizes(i)
        allocate(blks(i)%t_ind(triang_sizes(i), blk_info(i, 2)))
 
        call make_one_triang_index_blk(blk_info(i, 2), blk_info(i, 3), 1, 1, 1, &
@@ -609,6 +618,8 @@ allocate(blks(nblks))
 
     end do
 
+
+! write(*,*) 'triang sizes', triang_sizes
     call index_blks_direct_product(nblks, triang_sizes, blks, indices, &
                                    sum(blk_info(:,2)), 1, 1, 1)
 ! write(*,*) 'c'
@@ -619,6 +630,9 @@ allocate(blks(nblks))
     end do
 
 deallocate(blks)
+
+
+! write(*,*) 'subroutine is ended'
 
   end subroutine
 
@@ -631,6 +645,9 @@ deallocate(blks)
     integer, dimension(nblks) :: blk_sizes
     type(triangulated_index_block), dimension(nblks) :: blks
     integer, dimension(product(blk_sizes), nways) :: indices
+
+! write(*,*) 'the block sizes at lvl', lvl, 'are', blk_sizes
+! write(*,*) '
 
     if (lvl < nblks) then
 
@@ -646,6 +663,11 @@ deallocate(blks)
 
           end do
 
+
+! write(*,*) 'at lvl', lvl, ', i is', i, ' and the blk sizes are', blk_sizes
+! write(*,*) 'assigned indices row', offset + i * increment + j
+! write(*,*) 'assigned indices col', current_way, 'to', current_way + size(blks(lvl)%t_ind, 2) - 1
+
           new_offset = offset + i * increment
           call index_blks_direct_product(nblks, blk_sizes, blks, indices, &
                nways, current_way + size(blks(lvl)%t_ind, 2), lvl + 1, new_offset)
@@ -654,9 +676,15 @@ deallocate(blks)
 
 
     elseif (lvl == nblks) then
-
+! write(*,*) 'the block sizes are', blk_sizes
        do i = 0, blk_sizes(lvl) - 1
-
+! write(*,*) 'blk size', i, 'is', size(blks(lvl)%t_ind, 1)
+! write(*,*) 'lvl is', lvl
+! write(*,*) 'blks here is ', blks(lvl)%t_ind(i + 1, :)
+! write(*,*) 'ind addr is', offset + i,' ,', current_way,' and', &
+!            current_way + size(blks(lvl)%t_ind, 2) - 1
+! write(*,*) 'blks here again is ', blks(lvl)%t_ind(i + 1, :)
+! write(*,*) 'size of indices is', size(indices, 1), 'and', size(indices,2)
           indices(offset + i, current_way:current_way + size(blks(lvl)%t_ind, 2) - 1) = &
           blks(lvl)%t_ind(i + 1, :)
 
