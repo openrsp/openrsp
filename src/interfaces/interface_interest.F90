@@ -1,5 +1,7 @@
 module interface_interest
 
+   !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
+
    use openrsp_cfg
 
    implicit none
@@ -43,13 +45,13 @@ module interface_interest
    real(8), allocatable :: imat_f(:, :, :)
    integer, allocatable :: ic_to_ijk(:, :, :)
    integer, allocatable :: ijk_to_ic(:, :, :)
-   integer, allocatable :: ijk(:, :, :)
-   integer, allocatable :: ijk_temp(:, :, :)
-   real(8), allocatable :: prefactor(:, :)
+   integer, allocatable :: ijk_list(:, :, :)
+   real(8), allocatable :: prefactor_list(:, :)
    integer, allocatable :: cdeg(:)
 
    integer :: nr_centers
-      integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
+   integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
+   integer, parameter :: max_ave_length   = 100    !fixme hardcoded
 
 contains
 
@@ -65,7 +67,7 @@ contains
      integer        :: i,j,ij,ier
      type(type_gto) :: tmpgto
       if (interface_is_initialized) return
-      call init_arrays()
+      call init_permanent_arrays()
       !> initialize InteRest integral package
       call interest_initialize()
       !> test if the large component basis is uncontracted
@@ -131,7 +133,7 @@ contains
 
       if (interface_is_initialized) return
 
-      call init_arrays()
+      call init_permanent_arrays()
 
       !> initialize InteRest integral package
       call interest_initialize()
@@ -299,11 +301,10 @@ contains
       logical, intent(in)    :: get_ave
       integer, intent(in)    :: only_icoor
 
-      integer, parameter :: max_ave_length   = 100    !fixme hardcoded
-
       real(8) :: gint(max_nr_integrals, max_ave_length)
       real(8) :: gint_u(max_nr_integrals)
       real(8) :: gint_d(max_nr_integrals)
+      real(8) :: gint_temp(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4)
       integer :: ang(4), deg(4), off(4)
       real(8) :: f
@@ -315,11 +316,11 @@ contains
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
       integer :: icoor
-      integer :: ifd
       integer :: ixyz, jxyz
       integer :: ifun, jfun, kfun, lfun
       integer :: ang_temp(4)
       integer :: ideg
+      logical :: recalc_integrals
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -410,6 +411,7 @@ contains
 !           order 1
 !-------------------------------------------------------------------------------
 
+            ! zero out integrals
             if (get_ave) then
                do icoor = 1, 3*nr_centers
                   gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
@@ -418,114 +420,56 @@ contains
                gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
             end if
 
-            icent_loop: do icent = icent_start, icent_end
 
-               !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
-               do ifd = 1, 4
-                  ! skip if the differentiated function not on this center
-                  if (cent(ifd) /= icent) cycle
 
-                  ! get integrals that we will need
-                  ang_temp = ang
-                  ang_temp(ifd) = ang_temp(ifd) + 1
-                  call get_integrals(gint_u, ang_temp, ex, coef, xyz)
-                  if (ang(ifd) > 0) then
-                     ang_temp = ang
-                     ang_temp(ifd) = ang_temp(ifd) - 1
-                     call get_integrals(gint_d, ang_temp, ex, coef, xyz)
-                  end if
+            do icent = icent_start, icent_end
+               do ifun = 1, 4
+                  if (cent(ifun) /= icent) cycle
 
-                  do ifun = 1, 4
-                     do ixyz = 1, 3
-                        ijk(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
-                     end do
-                  end do
-
+                  ! u contribution
+                  recalc_integrals = .true.
                   do ixyz = ixyz_start, ixyz_end
-
                      if (get_ave) then
                         icoor = (icent-1)*3 + ixyz
                      else
                         icoor = 1
                      end if
+                     call init_lists(deg, ang, ang_temp)
+                     call form_u(ang_temp, deg, ex, ifun, ixyz)
+                     call get_integral_contribution(gint,      &
+                                                    gint_temp, &
+                                                    deg,       &
+                                                    ang_temp,  &
+                                                    ex,        &
+                                                    coef,      &
+                                                    xyz,       &
+                                                    icoor,     &
+                                                    recalc_integrals)
+                  end do
 
-!                    up contribution
-
-                     ang_temp = ang
-                     ang_temp(ifd) = ang_temp(ifd) + 1
-
-                     do ifun = 1, 4
-                        prefactor(1:deg(ifun), ifun) = 1.0d0
-                     end do
-                     do ideg = 1, deg(ifd)
-                        prefactor(ideg, ifd) = ex(ifd)*2.0d0
-                     end do
-
-                     do ifun = 1, 4
-                        do jxyz = 1, 3
-                           ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
-                        end do
-                     end do
-                     do ideg = 1, deg(ifd)
-                        ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) + 1
-                     end do
-
-                     call add_integrals(gint(1, icoor),     &
-                                        gint_u,   &
-                                        deg,      &
-                                        ang_temp, &
-                                        ijk_temp, &
-                                        prefactor)
-
-!                    down contribution
-
-                     if (ang(ifd) > 0) then
-                        ang_temp = ang
-                        ang_temp(ifd) = ang_temp(ifd) - 1
-                        call get_integrals(gint_d, ang_temp, ex, coef, xyz)
-
-                        do ifun = 1, 4
-                           prefactor(1:deg(ifun), ifun) = 1.0d0
-                        end do
-
-                        do ifun = 1, 4
-                           do jxyz = 1, 3
-                              ijk_temp(1:deg(ifun), jxyz, ifun) = ijk(1:deg(ifun), jxyz, ifun)
-                           end do
-                        end do
-                        do ideg = 1, deg(ifd)
-                           if (ijk_temp(ideg, ixyz, ifd) > 0) then
-                              prefactor(ideg, ifd) = -real(ijk_temp(ideg, ixyz, ifd))
-                           else
-                              prefactor(ideg, ifd) = 0.0d0
-                           end if
-                           ijk_temp(ideg, ixyz, ifd) = ijk_temp(ideg, ixyz, ifd) - 1
-                        end do
-
-                        call add_integrals(gint(1, icoor),     &
-                                           gint_d,   &
-                                           deg,      &
-                                           ang_temp, &
-                                           ijk_temp, &
-                                           prefactor)
-
+                  ! d contribution
+                  recalc_integrals = .true.
+                  do ixyz = ixyz_start, ixyz_end
+                     if (get_ave) then
+                        icoor = (icent-1)*3 + ixyz
+                     else
+                        icoor = 1
                      end if
-
-           !         !fixme do this outside of icent_loop
-           !         call contract_integrals(deg,        &
-           !                                 off,        &
-           !                                 gint,       &
-           !                                 ndim,       &
-           !                                 dmat,       &
-           !                                 gmat,       &
-           !                                 get_ave,    &
-           !                                 ave(icoor), &
-           !                                 1.0d0)
+                     call init_lists(deg, ang, ang_temp)
+                     call form_d(ang_temp, deg, ex, ifun, ixyz)
+                     call get_integral_contribution(gint,      &
+                                                    gint_temp, &
+                                                    deg,       &
+                                                    ang_temp,  &
+                                                    ex,        &
+                                                    coef,      &
+                                                    xyz,       &
+                                                    icoor,     &
+                                                    recalc_integrals)
                   end do
 
                end do
-
-            end do icent_loop
+            end do
 
             if (get_ave) then
                do icoor = 1, 3*nr_centers
@@ -700,9 +644,8 @@ contains
 
   end subroutine
 
-   subroutine init_arrays()
+   subroutine init_permanent_arrays()
 
-!     integer :: il, ia, ib, ii, ij, ik, ip
       integer :: i, j, k, l, m, n
       integer :: ndim
 
@@ -763,16 +706,14 @@ contains
 
       if (allocated(ic_to_ijk)) deallocate(ic_to_ijk)
       if (allocated(ijk_to_ic)) deallocate(ijk_to_ic)
-      if (allocated(ijk))       deallocate(ijk)
-      if (allocated(ijk_temp))     deallocate(ijk_temp)
-      if (allocated(prefactor))    deallocate(prefactor)
+      if (allocated(ijk_list))       deallocate(ijk_list)
+      if (allocated(prefactor_list))    deallocate(prefactor_list)
       if (allocated(cdeg))    deallocate(cdeg)
 
       allocate(ic_to_ijk(ndim, 3, 0:maxl))
       allocate(ijk_to_ic(0:maxl, 0:maxl, 0:maxl))
-      allocate(ijk(ndim, 3, 4))
-      allocate(ijk_temp(ndim, 3, 4))
-      allocate(prefactor(ndim, 4))
+      allocate(ijk_list(ndim, 3, 4))
+      allocate(prefactor_list(ndim, 4))
       allocate(cdeg(0:maxl))
 
       ic_to_ijk = 0
@@ -887,6 +828,126 @@ contains
             end do
          end do
       end do
+
+   end subroutine
+
+   subroutine init_lists(deg, ang, ang_temp)
+
+      integer, intent(in)    :: deg(4)
+      integer, intent(in)    :: ang(4)
+      integer, intent(inout) :: ang_temp(4)
+
+      integer                :: ifun
+      integer                :: ixyz
+
+      ang_temp = ang
+      do ifun = 1, 4
+         do ixyz = 1, 3
+            ijk_list(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
+         end do
+         prefactor_list(1:deg(ifun), ifun) = 1.0d0
+      end do
+
+   end subroutine
+
+   subroutine form_u(ang,  &
+                     deg,  &
+                     ex,   &
+                     ifun, &
+                     ixyz)
+
+      integer, intent(inout) :: ang(4)
+      integer, intent(in)    :: deg(4)
+      real(8), intent(in)    :: ex(4)
+      integer, intent(in)    :: ifun
+      integer, intent(in)    :: ixyz
+
+      integer                :: ideg
+
+      ang(ifun) = ang(ifun) + 1
+
+      do ideg = 1, deg(ifun)
+         prefactor_list(ideg, ifun) = ex(ifun)*2.0d0*prefactor_list(ideg, ifun)
+         ijk_list(ideg, ixyz, ifun) = ijk_list(ideg, ixyz, ifun) + 1
+      end do
+
+   end subroutine
+
+   subroutine form_d(ang,  &
+                     deg,  &
+                     ex,   &
+                     ifun, &
+                     ixyz)
+
+      integer, intent(inout) :: ang(4)
+      integer, intent(in)    :: deg(4)
+      real(8), intent(in)    :: ex(4)
+      integer, intent(in)    :: ifun
+      integer, intent(in)    :: ixyz
+
+      integer                :: ideg
+
+      ang(ifun) = ang(ifun) - 1
+
+      do ideg = 1, deg(ifun)
+         if (ijk_list(ideg, ixyz, ifun) > 0) then
+            prefactor_list(ideg, ifun) = -real(ijk_list(ideg, ixyz, ifun))*prefactor_list(ideg, ifun)
+         else
+            prefactor_list(ideg, ifun) = 0.0d0
+         end if
+         ijk_list(ideg, ixyz, ifun) = ijk_list(ideg, ixyz, ifun) - 1
+      end do
+
+   end subroutine
+
+   logical function all_ang_nonnegative(ang)
+
+      integer, intent(in) :: ang(4)
+
+      integer             :: ifun
+
+      all_ang_nonnegative = .false.
+
+      do ifun = 1, 4
+         if (ang(ifun) < 0) return
+      end do
+
+      all_ang_nonnegative = .true.
+
+   end function
+
+   subroutine get_integral_contribution(gint,      &
+                                        gint_temp, &
+                                        deg,       &
+                                        ang_temp,  &
+                                        ex,        &
+                                        coef,      &
+                                        xyz,       &
+                                        icoor,     &
+                                        recalc_integrals)
+
+      real(8), intent(inout) :: gint(max_nr_integrals, max_ave_length)
+      real(8), intent(inout) :: gint_temp(max_nr_integrals)
+      integer, intent(in)    :: deg(4)
+      integer, intent(in)    :: ang_temp(4)
+      real(8), intent(in)    :: ex(4)
+      real(8), intent(in)    :: coef(4)
+      real(8), intent(in)    :: xyz(3, 4)
+      integer, intent(in)    :: icoor
+      logical, intent(inout) :: recalc_integrals
+
+      if (all_ang_nonnegative(ang_temp)) then
+         if (recalc_integrals) then
+            call get_integrals(gint_temp, ang_temp, ex, coef, xyz)
+            recalc_integrals = .false.
+         end if
+         call add_integrals(gint(1, icoor), &
+                            gint_temp,      &
+                            deg,            &
+                            ang_temp,       &
+                            ijk_list,       &
+                            prefactor_list)
+      end if
 
    end subroutine
 
