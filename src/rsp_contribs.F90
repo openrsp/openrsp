@@ -195,12 +195,11 @@ contains
     !> field descriptors (label freq comp ncomp)
     type(rsp_field), intent(in)    :: fields(:)
     !> output tensor, to which nuclear contribution is *ADDED*
-    integer                        :: propsize
     complex(8),      intent(inout) :: rspfunc_output(propsize)
     !> tmp tensor, to which nuclear contribution is *ADDED*
     complex(8) :: rspfunc(product(fields%ncomp))
     !---------------------------------------------------------------
-    integer      nf, ncor, ngeo, ext_ncomp, i
+    integer      nf, ncor, ngeo, ext_ncomp, i, propsize
     integer      order(size(fields)), tcomp(size(fields))
     character(4) ext_label(2)
     logical      nonz
@@ -367,7 +366,7 @@ end if
     !> structure containing integral program settings
 !     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
-    integer,       intent(in)  :: nf
+    integer,       intent(in)  :: nf, propsize
     !> field labels in std order
     character(4),  intent(in)  :: f(nf)
     !> first and number of- components in each field
@@ -375,19 +374,13 @@ end if
     !> energy-weighted density matrix
     type(matrix),  intent(in)  :: DFD
     !> output average
-    integer                    :: propsize
     complex(8),    intent(out) :: ave(propsize)
     !> field frequencies corresponding to each field
     complex(8),    intent(in), optional  :: w(nf)
     !> density matrix to contract half-differentiated overlap against
     type(matrix),  intent(in), optional  :: D
     !----------------------------------------------
-!   call interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
-    ! radovan: there is no frequency in the called routine
-    !          and it does not compile on ifort
-    !          can't be right
-    print *, 'ERROR: fix call in routine rsp_ovlave_tr'
-    stop 1
+    call interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
 
   end subroutine
 
