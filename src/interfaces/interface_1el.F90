@@ -192,7 +192,7 @@ contains
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
       ! Gen1Int interface
       use gen1int_host
       !> number of fields
@@ -204,7 +204,7 @@ contains
       !> energy-weighted density matrix
       type(matrix),  intent(in)  :: DFD
       !> output average
-      complex(8),    intent(out) :: ave(product(nc))
+      complex(8),    intent(out) :: ave(propsize)
       !> field frequencies corresponding to each field
       complex(8),    intent(in), optional  :: w(nf)
       !> density matrix to contract half-differentiated overlap against
@@ -216,7 +216,7 @@ contains
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, ave, w, propsize, D)
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -232,7 +232,7 @@ contains
       !> energy-weighted density matrix
       type(matrix),  intent(in)  :: DFD
       !> output average
-      complex(8),    intent(out) :: ave(product(nc))
+      complex(8),    intent(out) :: ave(propsize)
       !> field frequencies corresponding to each field
       complex(8),    intent(in), optional  :: w(nf)
       !> density matrix to contract half-differentiated overlap against
@@ -340,10 +340,11 @@ contains
                ave = val_expt(:,1)
             else
 ! MR: THIS CALL OR THE gen1int_reorder ROUTINE MAY NEED ADAPTATION
-               call gen1int_reorder(num_coord=num_coord, num_field=nf, &
+               call gen1int_reorder_tr(num_coord=num_coord, num_field=nf, &
                                     first_comp=c, num_comp=nc,         &
                                     order_mom=0, order_geo=order_geo,  &
-                                    val_expect=val_expt(:,1), rsp_expect=ave)
+                                    val_expect=val_expt(:,1), rsp_expect=ave, &
+                                    propsize=propsize)
             end if
          end if
          ! frees space
@@ -575,7 +576,7 @@ contains
       !> density matrix to average over
       type(matrix),  intent(in)  :: D
       !> output average
-      complex(8),    intent(out) :: ave(product(nc))
+      complex(8),    intent(out) :: ave(propsize)
       STOP 'interface_1el_oneave_tr not implemented for LSDALTON'
    end subroutine
 #else
@@ -599,7 +600,7 @@ contains
       !> density matrix to average over
       type(matrix),  intent(in)  :: D
       !> output average
-      complex(8),    intent(out) :: ave(product(nc))
+      complex(8),    intent(out) :: ave(propsize)
       !----------------------------------------------
       integer order_mom                      !order of Cartesian multipole moments
       integer num_mom                        !number of Cartesian multipole moments
@@ -755,10 +756,10 @@ contains
 
 ! MR: THIS CALL OR THE gen1int_reorder ROUTINE MAY NEED ADAPTATION
          ! assigns the output average
-         call gen1int_reorder(num_coord=num_coord, num_field=nf,        &
+         call gen1int_reorder_tr(num_coord=num_coord, num_field=nf,        &
                               first_comp=c, num_comp=nc,                &
                               order_mom=order_mom, order_geo=order_geo, &
-                              val_expect=val_expt(:,1), rsp_expect=ave)
+                              val_expect=val_expt(:,1), propsize=propsize, rsp_expect=ave)
 
          ! frees space
          deallocate(val_expt)
@@ -934,7 +935,7 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> resulting overlap integral matrices (incoming content deleted)
-      type(matrix),  intent(inout) :: ovl(product(nc))
+      type(matrix),  intent(inout) :: ovl(propsize)
       !> frequencies of each field
       complex(8),    intent(in),    optional :: w(nf)
       !> Fock matrices to which the half-differentiated overlap
@@ -961,7 +962,7 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> resulting overlap integral matrices (incoming content deleted)
-      type(matrix),  intent(inout) :: ovl(product(nc))
+      type(matrix),  intent(inout) :: ovl(propsize)
       !> frequencies of each field
       complex(8),    intent(in),    optional :: w(nf)
       !> Fock matrices to which the half-differentiated overlap
@@ -1289,7 +1290,7 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> output perturbed integrals
-      type(matrix),  intent(inout) :: oneint(product(nc))
+      type(matrix),  intent(inout) :: oneint(propsize)
       STOP 'interface_1el_oneint_tr not implemented for LSDALTON. TK'
    end subroutine
 #else
@@ -1309,7 +1310,7 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> output perturbed integrals
-      type(matrix),  intent(inout) :: oneint(product(nc))
+      type(matrix),  intent(inout) :: oneint(propsize)
       !--------------------------------------------------
       integer order_mom  !order of Cartesian multipole moments
       integer num_mom    !number of Cartesian multipole moments
@@ -1630,6 +1631,161 @@ contains
     deallocate(last_comp)
     deallocate(idx_comp)
   end subroutine
+
+
+
+  !> \brief reorders and assigns the expectation values and/or integral matrices from
+  !>        Gen1int to OpenRsp (modified by MaR for tensor symmetry nonredundancy
+  !>        support. Does not work well yet but will not cause memory problems elsewhere)
+  !> \author Bin Gao (small modifications by MaR)
+  !> \date 2012-04-25
+  !> \param num_coord is the number of atomic coordinates
+  !> \param num_field is the number of fields
+  !> \param first_comp constains the first component in each field ("GEO", "EL")
+  !> \param num_comp contains the number of components in each field ("GEO", "EL")
+  !> \param order_mom is the order of Cartesian multipole moments
+  !> \param order_geo is the order of total geometric derivatives
+  !> \param val_expect contains the redudant expectation values from Gen1Int
+  !> \param val_ints contains the redudant integral matrices from Gen1Int
+  !> \return rsp_expect contains the redudant expectation values for OpenRsp
+  !> \return rsp_ints contains the redudant integral matrices for OpenRsp
+  !> \note all the expectation values and integral matrices are in the order ("EL", "GEO")
+  !>       in memory; this routine is implemented temporarily since it will cost much memory
+  !>       for assigning integral matrices, it would be better that the integral
+  !>       code returns the required integral matrices by itself
+  subroutine gen1int_reorder_tr(num_coord, num_field, first_comp, num_comp, &
+                             order_mom, order_geo, propsize, val_expect, val_ints, &
+                             rsp_expect, rsp_ints)
+    integer, intent(in) :: num_coord
+    integer, intent(in) :: num_field
+    integer, intent(in) :: first_comp(num_field)
+    integer, intent(in) :: num_comp(num_field)
+    integer, intent(in) :: order_mom
+    integer, intent(in) :: order_geo
+    integer :: propsize
+    real(8), optional, intent(in)  :: val_expect(:)
+    type(matrix), optional, intent(in) :: val_ints(:)
+    complex(8), optional, intent(out) :: rsp_expect(propsize)
+    type(matrix), optional, intent(inout) :: rsp_ints(propsize)
+    logical assign_expect                   !if assigning expectation values
+    logical assign_ints                     !if assigning integral matrices
+    integer size_rsp_comp                   !size of all components for OpenRsp
+    integer, allocatable :: offset_geom(:)  !offset of total geometric derivatives
+    integer, allocatable :: last_comp(:)    !last component in each field
+    integer, allocatable :: idx_comp(:)     !indices of specific components
+    integer addr_rsp                        !address of specific components in the results for OpenRsp
+    integer addr_gen1int                    !address of specific components in the results from Gen1Int
+    integer icomp                           !incremental recorder over components
+    integer ymom, zmom                      !orders of yz components of Cartesian multipole moments
+    logical not_found                       !indicates the next specific components are not found
+    integer ierr                            !error information
+    ! sets what jobs are going to do
+    assign_expect = present(val_expect) .and. present(rsp_expect)
+    assign_ints = present(val_ints) .and. present(rsp_ints)
+    ! sets the size of all components in the fields
+    if (assign_expect) then
+      size_rsp_comp = size(rsp_expect)
+      if (assign_ints) then
+        if (size_rsp_comp/=size(rsp_ints)) &
+          call quit("gen1int_reorder>> requires the same size of expectation "// &
+                    "values and integral matrices!")
+      end if
+    else if (assign_ints) then
+      size_rsp_comp = size(rsp_ints)
+    else
+      return
+    end if
+    ! sets the offset of total geometric derivatives if there are
+    if (order_geo>0) then
+      allocate(offset_geom(order_geo), stat=ierr)
+      if (ierr/=0) call quit("gen1int_reorder>> failed to allocate offset_geom!")
+      offset_geom(order_geo) = (order_mom+1)*(order_mom+2)/2  !Cartesian multipole moments come first in memory
+      do icomp = order_geo-1, 1, -1
+        offset_geom(icomp) = num_coord*offset_geom(icomp+1)
+      end do
+    end if
+    ! sets the last component in each field
+    allocate(last_comp(num_field), stat=ierr)
+    if (ierr/=0) call quit("gen1int_reorder>> failed to allocate last_comp!")
+    do icomp = 1, num_field
+      last_comp(icomp) = first_comp(icomp)+num_comp(icomp)-1
+    end do
+    ! indices of specific components
+    allocate(idx_comp(num_field), stat=ierr)
+    if (ierr/=0) call quit("gen1int_reorder>> failed to allocate idx_comp!")
+    idx_comp = first_comp
+    ! gets the orders of yz components of Cartesian multipole moments
+    ymom = 0
+    zmom = 0
+    do icomp = num_field, order_geo+1, -1
+      select case(idx_comp(icomp))
+      case(1)
+      case(2)
+        ymom = ymom+1
+      case(3)
+        zmom = zmom+1
+      case default
+        call quit("gen1int_reorder>> unknown components for Cartesian multipole moments!")
+      end select
+    end do
+    ! the address of x^{l}y^{m}z^{n} with l+m+n=order_mom is 1+m+(2*order_mom+3-n)*n/2
+    addr_gen1int = 1+ymom+(2*order_mom+3-zmom)*zmom/2
+    ! gets the address of total geometric derivatives in the results from Gen1Int
+    do icomp = order_geo, 1, -1
+      addr_gen1int = addr_gen1int+(idx_comp(icomp)-1)*offset_geom(icomp)
+    end do
+    ! assigns the expectation values
+    if (assign_expect) rsp_expect(1) = val_expect(addr_gen1int)
+    ! assigns the integral matrices
+    if (assign_ints) rsp_ints(1) = val_ints(addr_gen1int)
+    ! sets other components
+    do addr_rsp = 2, size_rsp_comp
+      ! generates new specific components
+      not_found = .true.
+      do icomp = num_field, 1, -1
+        ! we walk to the next component in this field, the new specific components are found
+        if (idx_comp(icomp)<last_comp(icomp)) then
+          idx_comp(icomp) = idx_comp(icomp)+1
+          not_found = .false.
+          exit
+        ! we have walked to the last component of this field, back to the first component
+        else
+          idx_comp(icomp) = first_comp(icomp)
+        end if
+      end do
+      ! we could not find new specific components
+      if (not_found) call quit("gen1int_reorder>> can not find next components!")
+      ! gets the orders of yz components of Cartesian multipole moments
+      ymom = 0
+      zmom = 0
+    do icomp = num_field, order_geo+1, -1
+        select case(idx_comp(icomp))
+        case(1)
+        case(2)
+          ymom = ymom+1
+        case(3)
+          zmom = zmom+1
+        case default
+          call quit("gen1int_reorder>> unknown components for Cartesian multipole moments!")
+        end select
+      end do
+      ! the address of x^{l}y^{m}z^{n} with l+m+n=order_mom is 1+m+(2*order_mom+3-n)*n/2
+      addr_gen1int = 1+ymom+(2*order_mom+3-zmom)*zmom/2
+      ! gets the address of total geometric derivatives in the results from Gen1Int
+      do icomp = order_geo, 1, -1
+        addr_gen1int = addr_gen1int+(idx_comp(icomp)-1)*offset_geom(icomp)
+      end do
+      ! assigns the expectation values
+      if (assign_expect) rsp_expect(addr_rsp) = val_expect(addr_gen1int)
+      ! assigns the integral matrices
+      if (assign_ints) rsp_ints(addr_rsp) = val_ints(addr_gen1int)
+    end do
+    ! frees space
+    if (allocated(offset_geom)) deallocate(offset_geom)
+    deallocate(last_comp)
+    deallocate(idx_comp)
+  end subroutine
+
 
    subroutine oneint_ave(nr_atoms, what, D, DFD, R)
       integer,           intent(in)  :: nr_atoms
