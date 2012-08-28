@@ -1023,7 +1023,6 @@ contains
 
     Egf = 0.0d0
 
-    DFD = D*F*D
     temp_gf = 0.0d0
     do i = 1, size(Df)
        DFDf = Df(i)*F*D + D*Ff(i)*D + D*F*Df(i)
@@ -1040,7 +1039,6 @@ contains
     temp_gf = 0.0d0
     do i = 1, size(Df)
        call rsp_oneave(1, (/'GEO '/), (/1/), shape(temp_gf(:, i)), Df(i), temp_gf(:, i))
-       DFDf = 0
     end do
     Egf = Egf + temp_gf
 
