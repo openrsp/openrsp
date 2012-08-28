@@ -1,12 +1,20 @@
 module interface_basis
 
    use basis_set, only: cgto
-
+   use matrix_backend, only : matrix, mat_really_zero_out_data, mat_alloc, mat_nullify,mat_magic_setup
+   use eri_contractions, only: ctr_arg
+   use eri_basis_loops, only: unopt_geodiff_loop
    implicit none
 
+#ifndef VAR_LSDALTON
+   !dependent on dalton/dirac commonblocks
    public interface_basis_init
-   public interface_basis_finalize
+#endif
+   public interface_basis_init_general
+   public interface_basis_main_general
+   public interface_basis_init_argument_general
    public get_nr_ao
+   public interface_basis_finalize
 
    private
 
@@ -17,39 +25,132 @@ module interface_basis
    real(8), allocatable        :: exp_and_ctr_large(:)
    type(cgto), pointer, public :: basis_small(:)
    real(8), allocatable        :: exp_and_ctr_small(:)
-
+   type(ctr_arg) :: ctr_arg_item(1)
 !  non-allocatables
    integer :: nr_ao
 
 contains
 
-#ifdef VAR_LSDALTON
   !A proper interface where the required info is provided as primitive
   !Arguments to the subroutine (NOT through common block specific for the 
   !host program). TK
-   subroutine interface_basis_init(nbast,nlrgsh)
+  subroutine interface_basis_init_general(nbast,nr_blocks_large,nEXPSIZE,nCCSIZE,nCC,&
+       & ANGMOM,CCINDEX,ICHARGE,IBASIS,nPrim,nCont,start_exponents,start_CC,&
+       & CENTER,exponents,ContC,MAXMOM,AMOM)
      implicit none
-     integer,intent(in) :: nbast,nlrgsh
-     integer :: nr_blocks_large
-     integer :: nr_exp_ctr_large
-     integer :: nr_blocks_small
-     integer :: nr_exp_ctr_small
-     integer :: i
-     nr_blocks_large  = 0
-     nr_exp_ctr_large = 0
-     nr_blocks_small  = 0
-     nr_exp_ctr_small = 0
+     integer,intent(in) :: nbast,nr_blocks_large,nEXPSIZE,nCCSIZE,nCC,MAXMOM
+     integer,intent(in) :: ANGMOM(nr_blocks_large),CCINDEX(nr_blocks_large)
+     integer,intent(in) :: ICHARGE(nr_blocks_large),IBASIS(nr_blocks_large),AMOM(nCC)
+     integer,intent(in) :: nPrim(nCC),nCont(nCC),start_exponents(nCC),start_CC(nCC)
+     real(8),intent(in) :: CENTER(3,nr_blocks_large)
+     real(8),target :: exponents(nEXPSIZE),ContC(nCCSIZE)
+     integer :: i,maxm,nelms,istartCC,istart,nrow,ncont1,j
+     real(8) :: rescal(MAXMOM+1),factor,TMPContC(nCCSIZE)
+     ! coefficient rescaling factors
+     maxm = 0
+     rescal(maxm+1) = 2*sqrt(acos(-1d0))
+     do I=1,MAXMOM
+        maxm = maxm + 1
+        rescal(maxm+1) = rescal(maxm) / sqrt(2*maxm+1.d0)
+     end do
+     do i=1,nCC
+        nelms = nPrim(CCINDEX(I))*nCont(CCINDEX(I))
+        istartCC = start_CC(CCINDEX(I))
+        factor = rescal(amom(i)+1)
+        do j=istartCC,istartCC+nelms-1
+           TMPContC(j) = factor*ContC(j)
+        enddo
+     enddo
+     do i=1,nCCSIZE
+        ContC(i) = TMPContC(i)
+     enddo
+
      nr_ao = nbast
      nullify(basis_large)
      nullify(basis_small)
-     call shells_find_sizes(nr_blocks_large, nr_exp_ctr_large, 1, nlrgsh)
      allocate(basis_large(nr_blocks_large))
-     allocate(exp_and_ctr_large(nr_exp_ctr_large))
-     call shells_to_type_cgto(nr_blocks_large, nr_exp_ctr_large, &
-          & exp_and_ctr_large, basis_large, 1, nlrgsh)     
+     allocate(exp_and_ctr_large(1)) !not used.
+     do I = 1,nr_blocks_large
+        basis_large(I)%CENT(1) = CENTER(1,I)
+        basis_large(I)%CENT(2) = CENTER(2,I)
+        basis_large(I)%CENT(3) = CENTER(3,I)
+        basis_large(I)%MOM = ANGMOM(I)
+        istart = start_exponents(CCINDEX(I))
+        nrow = nPrim(CCINDEX(I))
+        basis_large(I)%exp => exponents(istart:istart+nrow-1)
+        istartCC = start_CC(CCINDEX(I))
+        ncont1 = nCont(CCINDEX(I))
+        nelms = nrow*nCont1
+        basis_large(I)%nbas   = nCont1 * (2*basis_large(I)%mom + 1)
+        call point(ContC(istartCC:istartCC+nelms-1), basis_large(I)%ctr,nrow,nCont1)
+        basis_large(I)%CHARGE = ICHARGE(I)
+        basis_large(I)%iBAS = IBASIS(I)
+        basis_large(I)%iCENT = -1 ! I do not think this should be used
+     enddo
      is_initialized = .true.
+  contains
+    ! point to re-ranked array
+    subroutine point(ctr, ctr_pt,ne,nc)
+     implicit none
+      integer,  intent(in) :: ne,nc
+      real(8), target,  intent(in)  :: ctr(nc,ne)
+      real(8), pointer, intent(out) :: ctr_pt(:,:)
+      ctr_pt => ctr
+    end subroutine
    end subroutine
-#else
+
+   subroutine interface_basis_init_argument_general(Dfull,Gfull,average,ncor,geo,nbast)
+     implicit none
+     integer,intent(in) :: ncor,geo,nbast
+!     type(matrix),intent(in) :: Dmat
+!     type(matrix),intent(inout) :: Gmat
+     real(8),intent(in) :: Dfull(nbast,nbast)
+     real(8),intent(inout) :: Gfull(nbast,nbast)
+     real(8),target,intent(inout)  :: average(ncor)
+     ctr_arg_item(1)%geo = geo
+     ctr_arg_item(1)%comp = -huge(1)
+     ctr_arg_item(1)%ncor = ncor
+     nullify(ctr_arg_item(1)%dens)
+     allocate(ctr_arg_item(1)%dens)
+     call mat_nullify(ctr_arg_item(1)%dens)
+
+     ctr_arg_item(1)%dens%ncol=nbast
+     ctr_arg_item(1)%dens%nrow=nbast
+     ctr_arg_item(1)%dens%is_closed_shell = .TRUE.
+     ctr_arg_item(1)%dens%is_open_shell   = .FALSE.
+     ctr_arg_item(1)%dens%algebra = 1
+     ctr_arg_item(1)%dens%ih_sym = 1
+     ctr_arg_item(1)%dens%pg_sym = 1
+     ctr_arg_item(1)%dens%magic_tag = mat_magic_setup
+     call mat_alloc(ctr_arg_item(1)%dens)
+     CALL DCOPY(NBAST*NBAST,Dfull, 1,  ctr_arg_item(1)%dens%elms_alpha, 1)
+     !
+     nullify(ctr_arg_item(1)%fock_or_dens)
+     allocate(ctr_arg_item(1)%fock_or_dens)
+     call mat_nullify(ctr_arg_item(1)%fock_or_dens)
+     ctr_arg_item(1)%fock_or_dens%ncol=nbast
+     ctr_arg_item(1)%fock_or_dens%nrow=nbast
+     ctr_arg_item(1)%fock_or_dens%is_closed_shell = .TRUE.
+     ctr_arg_item(1)%fock_or_dens%is_open_shell   = .FALSE.
+     ctr_arg_item(1)%fock_or_dens%algebra = 1
+     ctr_arg_item(1)%fock_or_dens%ih_sym = 1
+     ctr_arg_item(1)%fock_or_dens%pg_sym = 1
+     ctr_arg_item(1)%fock_or_dens%magic_tag = mat_magic_setup
+     call mat_alloc(ctr_arg_item(1)%fock_or_dens)
+     call mat_really_zero_out_data(ctr_arg_item(1)%fock_or_dens)
+!     ctr_arg_item(1)%dens = Dmat
+!     ctr_arg_item(1)%fock_or_dens = Gmat
+     ctr_arg_item(1)%average => average
+   end subroutine 
+
+   subroutine interface_basis_main_general()
+     implicit none
+     call unopt_geodiff_loop(basis_large, basis_small, ctr_arg_item)
+   end subroutine 
+
+
+#ifndef VAR_LSDALTON
+   !dependent on dalton/dirac commonblocks
    subroutine interface_basis_init()
 
       integer :: nr_blocks_large  = 0
@@ -151,25 +252,8 @@ contains
       get_nr_ao = nr_ao
    end function
 
-#ifdef VAR_LSDALTON
-  !> Count the number of contracted Gaussian-type orbital shells
-  !> \param ncgto, and number of exponents and contraction coefficents
-  !> \param nectr, so that memory for data structures can be allocated
-  subroutine SHELLS_find_sizes(ncgto,nectr,i_start,i_end)!,mxshel,NBCH,NUCO,NRCO)
-    implicit none    
-    integer, intent(out) :: ncgto
-    integer, intent(out) :: nectr
-    integer, intent(in)  :: i_start
-    integer, intent(in)  :: i_end
-    stop 'SHELLS_find_sizes NOT Implemented for LSDALTON' 
-!    integer, intent(in)  :: mxshel 
-!    logical,pointer :: haveit(:)
-!    integer,intent(in) :: NBCH(i_end),NUCO(i_end),NRCO(i_end)
-!    integer i, j
-!    allocate(haveit(MXSHEL))
-!    deallocate(haveit)
-  end subroutine
-#else
+#ifndef VAR_LSDALTON
+   !dependent on dalton/dirac commonblocks
   !> Count the number of contracted Gaussian-type orbital shells
   !> \param ncgto, and number of exponents and contraction coefficents
   !> \param nectr, so that memory for data structures can be allocated
@@ -212,18 +296,8 @@ contains
   end subroutine
 #endif
 
-#ifdef VAR_LSDALTON
-  subroutine SHELLS_to_type_cgto(ncgto,nectr,ectr,bas,i_start,i_end)
-    use basis_set, only: cgto
-    integer,         intent(in)  :: ncgto
-    integer,         intent(in)  :: nectr
-    type(cgto),      intent(out) :: bas(ncgto)
-    real(8), target, intent(out) :: ectr(nectr)
-    integer,         intent(in)  :: i_start
-    integer,         intent(in)  :: i_end
-    STOP 'SHELLS_to_type_cgto not implemented for LSDALTON. TK'
-  end subroutine
-#else
+#ifndef VAR_LSDALTON
+  !dependent on dalton/dirac commonblocks
   subroutine SHELLS_to_type_cgto(ncgto,   &
                                  nectr,   &
                                  ectr,    &
