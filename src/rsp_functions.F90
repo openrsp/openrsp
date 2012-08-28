@@ -1002,12 +1002,19 @@ contains
        Df(i) = 0d0*D
        FDSf(1) = Ff(i)*D*S
        FDSf(1) = FDSf(1) - S*D*Ff(i)
-       X(1) = 0*FDSf(1)
-       call mat_ensure_alloc(X(1))
+
+       X(1) = mat_alloc_like(D)
        call rsp_mosolver_exec(FDSf(1), (/0d0/), X)
-       X(1)=-2d0*X(1); FDSf(1)=0
-       Df(i) = Df(i) + X(1)*S*D
-       Df(i) = Df(i) - D*S*X(1); X(1)=0
+       FDSf(1) = 0
+
+#ifdef PRG_DIRAC
+       Df(i) = Df(i) + X(1)
+#else
+       X(1) = -2.0d0*X(1)
+       Df(i) = Df(i) + X(1)*S*D - D*S*X(1)
+#endif
+       X(1) = 0
+
        ! Df contribution to Ff
        call rsp_twoint(S%nrow, 0, nof, noc, noc, Df(i), Ff(i:i))
        !polarzability
@@ -1098,7 +1105,7 @@ contains
        do j = 1, size(Dg)
           DSDgf = Df(k)*(Sg(j)*D + S*Dg(j))+ (Dg(j)*S + D*Sg(j))*Df(k)
           do i = 1, size(Dg)
-             tmp(i,j,k) = -tr(FgDS(i),DSDgf)
+             tmp(i,j,k) = -dot(FgDS(i),DSDgf)
           end do; DSDgf=0
        end do
     end do; FgDS=0;
