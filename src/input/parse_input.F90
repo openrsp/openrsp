@@ -117,6 +117,10 @@
          openrsp_cfg_skip_llss = .true.
       end if
 
+      if (kw_matches(word, '.DOSSSS')) then
+         openrsp_cfg_skip_ssss = .false.
+      end if
+
       if (kw_matches(word, '.GRADIE')) then
          openrsp_cfg_gradient = .true.
       end if
