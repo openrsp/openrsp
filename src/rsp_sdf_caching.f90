@@ -186,6 +186,7 @@ ind = ind_unsorted
     if (found .eqv. .TRUE.) then
 
 ! write(*,*) 'size of data', size(next_element%data)
+! write(*,*) 'offset', offset
 
        M = next_element%data(offset)
 

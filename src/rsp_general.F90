@@ -587,15 +587,23 @@ end if
     allocate(outer_indices(outer_indices_size,size(ncoutersmall)))
     allocate(inner_indices(inner_indices_size,size(ncinnersmall)))
 
-    do i = 1, size(o_whichpert)
+k = 1
 
-       if (.NOT.(o_whichpert(i) == 0)) then
+do i = 2, num_p_tuples
 
-       o_wh_forave(o_whichpert(i)) = i
+do j = 1, p_tuples(i)%n_perturbations
 
-       end if
-  
-    end do
+
+o_wh_forave(p_tuples(i)%pid(j)) = k
+
+k = k + 1
+
+
+end do
+
+
+
+end do
 
     k = 1
 

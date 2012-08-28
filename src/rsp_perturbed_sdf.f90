@@ -551,7 +551,8 @@ end do
           num_p_tuples, p_tuples) .EQV. .FALSE.) then
 
              call get_fock_lowerorder(zeromat, num_p_tuples, total_num_perturbations, &
-                                      p_tuples, density_order, D, property_size, Fp, &
+                                      p_tuples_standardorder(num_p_tuples, p_tuples), &
+                                      density_order, D, property_size, Fp, &
                                       fock_lowerorder_cache)
 
              write(*,*) 'Calculated perturbed Fock matrix lower order contribution'
@@ -566,7 +567,8 @@ end do
 
           else
 
-             call f_l_cache_getdata(fock_lowerorder_cache, num_p_tuples, p_tuples, &
+             call f_l_cache_getdata(fock_lowerorder_cache, num_p_tuples, &
+                                    p_tuples_standardorder(num_p_tuples, p_tuples), &
                                     property_size, Fp)
 
              write(*,*) ' '
@@ -625,6 +627,13 @@ end do
     type(f_l_cache) :: fock_lowerorder_cache
     
 ! write(*,*) 'start'
+! 
+! do i = 1, num_p_tuples
+! 
+! write(*,*) 'tuple', i, ':', p_tuples(i)%plab
+! 
+! 
+! end do
 
 
     ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
@@ -722,29 +731,51 @@ end if
 
     o_whichpert = make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
 
-! write(*,*) 'more alloc'
 
 
     call sortdimbypid(total_num_perturbations, total_num_perturbations - &
                       p_tuples(1)%n_perturbations, pidoutersmall, &
                       ncarray, ncoutersmall, o_whichpert)
 
+! write(*,*) 'o_whichpert', o_whichpert
+
 ! write(*,*) 'near index loop'
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
-       do i = 1, size(o_whichpert)
+k = 1
 
-          if (.NOT.(o_whichpert(i) == 0)) then
+do i = 2, num_p_tuples
 
-             o_wh_forave(o_whichpert(i)) = i
-
-          end if
-  
-       end do
+do j = 1, p_tuples(i)%n_perturbations
 
 
-! write(*,*) '1a'
+o_wh_forave(p_tuples(i)%pid(j)) = k
+
+k = k + 1
+
+
+end do
+
+
+
+end do
+
+
+
+
+!        do i = 1, size(o_whichpert)
+! 
+!           if (.NOT.(o_whichpert(i) == 0)) then
+! 
+!              o_wh_forave(o_whichpert(i)) = i
+! 
+!           end if
+!   
+!        end do
+
+
+!  write(*,*) 'o_wh_forave', o_wh_forave
       do j = 1, size(lower_order_contribution)
 
 ! ASSUME CLOSED SHELL
@@ -809,6 +840,8 @@ call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
 !        allocate(inner_offsets(product(ncinner)))
 
        do i = 1, size(outer_indices, 1)
+
+! write(*,*) 'current outer index', outer_indices(i, :)
 
           do j = 2, num_p_tuples
 
