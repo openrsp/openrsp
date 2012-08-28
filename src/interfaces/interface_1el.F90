@@ -449,7 +449,11 @@ contains
                                        .false., .false., .false.,   &  !not implemented yet
                                        1, (/D/), num_expt,          &  !expectation values
                                        val_expt, .false.,           &
-                                       1, (/1, 1/),                 &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
+                                       1, (/1, 1/),                &
+#endif
                                        get_print_unit(), 0)
          ! only geometric perturbations
          else
@@ -656,7 +660,11 @@ contains
                                        .false., .false., .false.,   &  !not implemented yet
                                        1, (/D/), propsize,          &  !expectation values
                                        val_expt, .false.,           &
-                                       1, (/1, 1/),                 &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
+                                       1, (/1, 1/),                &
+#endif
                                        get_print_unit(), 0)
          ! only geometric perturbations
          else
@@ -1175,7 +1183,11 @@ contains
                                       REDUNDANT_GEO,               &
                                       .false., .false., .false.,   &  !not implemented yet
                                       num_ints, oneint, .false.,   &  !integral matrices
-                                      1, (/1, 1/),                 &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
+                                       1, (/1, 1/),                &
+#endif
                                       get_print_unit(), 0)
 
          ! only geometric perturbations
@@ -1382,7 +1394,11 @@ contains
                                       UNIQUE_GEO,                  &
                                       .false., .false., .false.,   &  !not implemented yet
                                       num_ints, oneint, .false.,   &  !integral matrices
-                                      1, (/1, 1/),                 &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
+                                       1, (/1, 1/),                &
+#endif
                                       get_print_unit(), 0)
 
          ! only geometric perturbations
