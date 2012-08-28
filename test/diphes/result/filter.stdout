@@ -5,6 +5,6 @@ Nlines 13:hessian = Egg
 $ERROR 1.E-6
 Nlines 37:diphes = Eggf
 $ERROR 1.E-6
-Nlines 4:dpgave form rsp_oneave
+Nlines 4:dipole gradient Egf
 $ERROR 1.E-6
 Nlines 4:polarizability

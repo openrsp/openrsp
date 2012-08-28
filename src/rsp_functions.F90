@@ -951,6 +951,7 @@ contains
     type(matrix) X(1), FgDS(ng), DgSD(ng)
     type(matrix) FDSgf, DSDgf, DFDgf
     complex(8)   dip(3), pol(3,3), gra(ng), tm1(ng)
+    complex(8)   Egf(ng,3)
     complex(8)   Eggf(ng,ng,3), tmp(ng,ng,3)
     complex(8)   temp_gf(ng, 3)
     complex(8)   temp_ggf(ng, ng, 3)
@@ -987,12 +988,6 @@ contains
     open (unit=iounit, file='gradient', status='replace', action='write')
     call print_tensor(shape(gra), gra, unit=iounit)
     close (iounit)
-    ! test dipole gradient average
-    call rsp_oneave(2, (/'GEO ','EL  '/), (/1,1/), shape(tmp(:,1,:)), &
-                       D, tmp(:,1,:))
-    ! radovan: rsp_oneave returns in "wrong" ordering, resort
-    call resort_gf(tmp(:, 1, :), temp_gf, ng)
-    call print_tensor(shape(temp_gf), temp_gf, 'dpgave form rsp_oneave')
 
 ! density independent contribution to Ff
     call rsp_oneint(S%nrow, 1, (/'EL  '/), (/1/), shape(Ff), Ff)
@@ -1023,6 +1018,39 @@ contains
     call print_tensor(shape(pol), -pol, 'polarizability')
 
 
+    ! dipole gradient code
+    ! --------------------
+
+    Egf = 0.0d0
+
+    DFD = D*F*D
+    temp_gf = 0.0d0
+    do i = 1, size(Df)
+       DFDf = Df(i)*F*D + D*Ff(i)*D + D*F*Df(i)
+       call rsp_ovlave(1, (/'GEO '/), (/1/), shape(temp_gf(:, i)), DFDf, temp_gf(:, i))
+       DFDf = 0
+    end do
+    Egf = Egf + temp_gf
+
+    call rsp_oneave(2, (/'GEO ', 'EL  '/), (/1, 1/), shape(tmp(:, 1, :)), D, tmp(:,1,:))
+    ! radovan: rsp_oneave returns in "wrong" ordering, resort
+    call resort_gf(tmp(:, 1, :), temp_gf, ng)
+    Egf = Egf + temp_gf
+
+    temp_gf = 0.0d0
+    do i = 1, size(Df)
+       call rsp_oneave(1, (/'GEO '/), (/1/), shape(temp_gf(:, i)), Df(i), temp_gf(:, i))
+       DFDf = 0
+    end do
+    Egf = Egf + temp_gf
+
+    temp_gf = 0.0d0
+    do i = 1, size(Df)
+       call rsp_twoave(1, (/'GEO '/), (/1/), shape(temp_gf(:, i)), D, Df(i), temp_gf(:, i))
+    end do
+    Egf = Egf + temp_gf
+
+    call print_tensor(shape(Egf), Egf, 'dipole gradient Egf')
 
     call get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
     call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
