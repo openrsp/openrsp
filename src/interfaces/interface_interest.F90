@@ -239,6 +239,17 @@ contains
                                       .false.,        &
                                       only_icoor)
       end if
+
+      if (.not. openrsp_cfg_skip_ssss) then
+         call interest_eri_diff_block(ndim,           &
+                                      dmat,           &
+                                      gmat,           &
+                                      order,          &
+                                      (/2, 2, 2, 2/), &
+                                      (/0.0d0/),      &
+                                      .false.,        &
+                                      only_icoor)
+      end if
 #endif
 
    end subroutine
@@ -276,6 +287,17 @@ contains
                                       dmat2,          &
                                       order,          &
                                       (/2, 2, 1, 1/), &
+                                      ave,            &
+                                      .true.,         &
+                                      0)
+      end if
+
+      if (.not. openrsp_cfg_skip_ssss) then
+         call interest_eri_diff_block(ndim,           &
+                                      dmat1,          &
+                                      dmat2,          &
+                                      order,          &
+                                      (/2, 2, 2, 2/), &
                                       ave,            &
                                       .true.,         &
                                       0)
