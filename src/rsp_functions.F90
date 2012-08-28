@@ -396,7 +396,7 @@ contains
           DSDgg = Dg(k)*(Sg(j)*D + S*Dg(j)) + D*Sg(k)*Dg(j) &
                 + Dg(j)*(Sg(k)*D + S*Dg(k)) + D*Sg(j)*Dg(k)
           do i = 1, size(Dg)
-             tmp(i,j,k) = -tr(FgDS(i),DSDgg)
+             tmp(i,j,k) = -dot(FgDS(i),DSDgg)
           end do; DSDgg=0
        end do
     end do; FgDS=0;
