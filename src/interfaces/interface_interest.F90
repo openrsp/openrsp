@@ -11,6 +11,13 @@ module interface_interest
 
    private
 
+   ! max angular momentum (s = 0, p = 1, ...)
+   integer, parameter :: maxl = 7
+   ! max nr of integrals ((maxl+1)*(maxl+2)/2)**4
+   integer, parameter :: max_nr_integrals = 1679616
+   ! 3*3*3
+   integer, parameter :: max_ave_length   = 27
+
    type type_atom
       real(8) :: charge
       real(8) :: coordinate_x
@@ -39,7 +46,6 @@ module interface_interest
 
    logical :: interface_is_initialized = .false.
 
-   integer, parameter   :: maxl = 10
    integer, allocatable :: ic_to_ijk(:, :, :)
    integer, allocatable :: ijk_to_ic(:, :, :)
    integer, allocatable :: ijk_list(:, :, :)
@@ -47,8 +53,6 @@ module interface_interest
    integer, allocatable :: cdeg(:)
 
    integer :: nr_centers
-   integer, parameter :: max_nr_integrals = 194481 !fixme hardcoded
-   integer, parameter :: max_ave_length   = 1000   !fixme hardcoded
 
 contains
 
@@ -312,7 +316,7 @@ contains
       integer :: nr_integrals
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
-      integer :: k
+      integer :: k, l
       integer :: icoor, jcoor, kcoor, lcoor
       integer :: ixyz,  jxyz,  kxyz,  lxyz
       integer :: ifun,  jfun,  kfun,  lfun
@@ -409,16 +413,17 @@ contains
 !           order 1
 !-------------------------------------------------------------------------------
 
-            ! zero out integrals
-            if (get_ave) then
-               do icoor = 1, 3*nr_centers
-                  gint(1:deg(1)*deg(2)*deg(3)*deg(4), icoor) = 0.0d0
-               end do
-            else
-               gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
-            end if
-
             do icent = icent_start, icent_end
+
+               ! zero out integrals
+               if (get_ave) then
+                  do ixyz = 1, 3
+                     gint(1:deg(1)*deg(2)*deg(3)*deg(4), ixyz) = 0.0d0
+                  end do
+               else
+                  gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
+               end if
+
                do ifun = 1, 4
                   if (cent(ifun) /= icent) cycle
 
@@ -426,9 +431,9 @@ contains
                   recalc_integrals = .true.
                   do ixyz = ixyz_start, ixyz_end
                      if (get_ave) then
-                        icoor = (icent-1)*3 + ixyz
+                        k = ixyz
                      else
-                        icoor = 1
+                        k = 1
                      end if
                      call init_lists(deg, ang, ang_temp)
                      call form_u(ang_temp, deg, ex, ifun, ixyz)
@@ -439,7 +444,7 @@ contains
                                                     ex,        &
                                                     coef,      &
                                                     xyz,       &
-                                                    icoor,     &
+                                                    k,         &
                                                     recalc_integrals)
                   end do
 
@@ -447,9 +452,9 @@ contains
                   recalc_integrals = .true.
                   do ixyz = ixyz_start, ixyz_end
                      if (get_ave) then
-                        icoor = (icent-1)*3 + ixyz
+                        k = ixyz
                      else
-                        icoor = 1
+                        k = 1
                      end if
                      call init_lists(deg, ang, ang_temp)
                      call form_d(ang_temp, deg, ex, ifun, ixyz)
@@ -460,75 +465,70 @@ contains
                                                     ex,        &
                                                     coef,      &
                                                     xyz,       &
-                                                    icoor,     &
+                                                    k,         &
                                                     recalc_integrals)
                   end do
 
                end do
-            end do
 
-            if (get_ave) then
-               do icoor = 1, 3*nr_centers
-                  call contract_integrals(deg,            &
-                                          off,            &
-                                          gint(1, icoor), &
-                                          ndim,           &
-                                          dmat,           &
-                                          gmat,           &
-                                          get_ave,        &
-                                          ave(icoor),     &
+               if (get_ave) then
+                  do ixyz = 1, 3
+                     k = (icent - 1)*3 + ixyz
+                     call contract_integrals(deg,           &
+                                             off,           &
+                                             gint(1, ixyz), &
+                                             ndim,          &
+                                             dmat,          &
+                                             gmat,          &
+                                             get_ave,       &
+                                             ave(k),        &
+                                             1.0d0)
+                  end do
+               else
+                  call contract_integrals(deg,     &
+                                          off,     &
+                                          gint,    &
+                                          ndim,    &
+                                          dmat,    &
+                                          gmat,    &
+                                          get_ave, &
+                                          ave,     &
                                           1.0d0)
-               end do
-            else
-               call contract_integrals(deg,     &
-                                       off,     &
-                                       gint,    &
-                                       ndim,    &
-                                       dmat,    &
-                                       gmat,    &
-                                       get_ave, &
-                                       ave,     &
-                                       1.0d0)
-            end if
+               end if
+
+            end do
 
          case (2)
 !-------------------------------------------------------------------------------
 !           order 2
 !-------------------------------------------------------------------------------
 
-            ! zero out integrals
             do icent = 1, nr_centers
-               do jcent = 1, nr_centers
+               do jcent = icent, nr_centers
+
+                  ! zero out integrals
+                  k = 0
                   do ixyz = 1, 3
-                     icoor = (icent-1)*3 + ixyz
                      do jxyz = 1, 3
-                        jcoor = (jcent-1)*3 + jxyz
-                        if (jcoor >= icoor) then
-                           k = (icoor - 1)*nr_centers*3 &
-                             +  jcoor
-                           gint(1:deg(1)*deg(2)*deg(3)*deg(4), k) = 0.0d0
-                        end if
+                        k = k + 1
+                        gint(1:deg(1)*deg(2)*deg(3)*deg(4), k) = 0.0d0
                      end do
                   end do
-               end do
-            end do
 
-            do icent = 1, nr_centers
-               do ifun = 1, 4
-                  if (cent(ifun) /= icent) cycle
-                  do jcent = 1, nr_centers
+                  do ifun = 1, 4
+                     if (cent(ifun) /= icent) cycle
                      do jfun = 1, 4
                         if (cent(jfun) /= jcent) cycle
 
                         ! uu contribution
                         recalc_integrals = .true.
+                        k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
+                              k = k + 1
                               if (jcoor >= icoor) then
-                                 k = (icoor - 1)*nr_centers*3 &
-                                   +  jcoor
                                  call init_lists(deg, ang, ang_temp)
                                  call form_u(ang_temp, deg, ex, ifun, ixyz)
                                  call form_u(ang_temp, deg, ex, jfun, jxyz)
@@ -547,13 +547,13 @@ contains
 
                         ! ud contribution
                         recalc_integrals = .true.
+                        k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
+                              k = k + 1
                               if (jcoor >= icoor) then
-                                 k = (icoor - 1)*nr_centers*3 &
-                                   +  jcoor
                                  call init_lists(deg, ang, ang_temp)
                                  call form_u(ang_temp, deg, ex, ifun, ixyz)
                                  call form_d(ang_temp, deg, ex, jfun, jxyz)
@@ -576,13 +576,13 @@ contains
                            ! are the same as ud, in this case do not recalculate
                            recalc_integrals = .true.
                         end if
+                        k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
+                              k = k + 1
                               if (jcoor >= icoor) then
-                                 k = (icoor - 1)*nr_centers*3 &
-                                   +  jcoor
                                  call init_lists(deg, ang, ang_temp)
                                  call form_d(ang_temp, deg, ex, ifun, ixyz)
                                  call form_u(ang_temp, deg, ex, jfun, jxyz)
@@ -601,13 +601,13 @@ contains
 
                         ! dd contribution
                         recalc_integrals = .true.
+                        k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
+                              k = k + 1
                               if (jcoor >= icoor) then
-                                 k = (icoor - 1)*nr_centers*3 &
-                                   +  jcoor
                                  call init_lists(deg, ang, ang_temp)
                                  call form_d(ang_temp, deg, ex, ifun, ixyz)
                                  call form_d(ang_temp, deg, ex, jfun, jxyz)
@@ -626,18 +626,16 @@ contains
 
                      end do
                   end do
-               end do
-            end do
 
-            ! contract integrals
-            do icent = 1, nr_centers
-               do jcent = 1, nr_centers
+                  ! contract integrals
+                  k = 0
                   do ixyz = 1, 3
                      icoor = (icent-1)*3 + ixyz
                      do jxyz = 1, 3
                         jcoor = (jcent-1)*3 + jxyz
+                        k = k + 1
                         if (jcoor >= icoor) then
-                           k = (icoor - 1)*nr_centers*3 &
+                           l = (icoor - 1)*nr_centers*3 &
                              +  jcoor
                            call contract_integrals(deg,        &
                                                    off,        &
@@ -646,11 +644,12 @@ contains
                                                    dmat,       &
                                                    gmat,       &
                                                    get_ave,    &
-                                                   ave(k),     &
+                                                   ave(l),     &
                                                    1.0d0)
                         end if
                      end do
                   end do
+
                end do
             end do
 
@@ -659,54 +658,40 @@ contains
 !           order 3
 !-------------------------------------------------------------------------------
 
-            ! zero out integrals
             do icent = 1, nr_centers
-               do jcent = 1, nr_centers
-                  do kcent = 1, nr_centers
+               do jcent = icent, nr_centers
+                  do kcent = jcent, nr_centers
+
+                     ! zero out integrals
+                     k = 0
                      do ixyz = 1, 3
-                        icoor = (icent-1)*3 + ixyz
                         do jxyz = 1, 3
-                           jcoor = (jcent-1)*3 + jxyz
                            do kxyz = 1, 3
-                              kcoor = (kcent-1)*3 + kxyz
-                              if (jcoor >= icoor) then
-                                 if (kcoor >= jcoor) then
-                                    k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                      + (jcoor - 1)*nr_centers*3              &
-                                      +  kcoor
-                                    gint(1:deg(1)*deg(2)*deg(3)*deg(4), k) = 0.0d0
-                                 end if
-                              end if
+                              k = k + 1
+                              gint(1:deg(1)*deg(2)*deg(3)*deg(4), k) = 0.0d0
                            end do
                         end do
                      end do
-                  end do
-               end do
-            end do
 
-            do icent = 1, nr_centers
-               do ifun = 1, 4
-                  if (cent(ifun) /= icent) cycle
-                  do jcent = 1, nr_centers
-                     do jfun = 1, 4
-                        if (cent(jfun) /= jcent) cycle
-                        do kcent = 1, nr_centers
+                     do ifun = 1, 4
+                        if (cent(ifun) /= icent) cycle
+                        do jfun = 1, 4
+                           if (cent(jfun) /= jcent) cycle
                            do kfun = 1, 4
                               if (cent(kfun) /= kcent) cycle
 
                               ! uuu contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_u(ang_temp, deg, ex, ifun, ixyz)
                                              call form_u(ang_temp, deg, ex, jfun, jxyz)
@@ -728,17 +713,16 @@ contains
 
                               ! duu contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_d(ang_temp, deg, ex, ifun, ixyz)
                                              call form_u(ang_temp, deg, ex, jfun, jxyz)
@@ -760,17 +744,16 @@ contains
 
                               ! udu contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_u(ang_temp, deg, ex, ifun, ixyz)
                                              call form_d(ang_temp, deg, ex, jfun, jxyz)
@@ -792,17 +775,16 @@ contains
 
                               ! uud contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_u(ang_temp, deg, ex, ifun, ixyz)
                                              call form_u(ang_temp, deg, ex, jfun, jxyz)
@@ -824,17 +806,16 @@ contains
 
                               ! udd contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_u(ang_temp, deg, ex, ifun, ixyz)
                                              call form_d(ang_temp, deg, ex, jfun, jxyz)
@@ -856,17 +837,16 @@ contains
 
                               ! dud contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_d(ang_temp, deg, ex, ifun, ixyz)
                                              call form_u(ang_temp, deg, ex, jfun, jxyz)
@@ -888,17 +868,16 @@ contains
 
                               ! ddu contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_d(ang_temp, deg, ex, ifun, ixyz)
                                              call form_d(ang_temp, deg, ex, jfun, jxyz)
@@ -920,17 +899,16 @@ contains
 
                               ! ddd contribution
                               recalc_integrals = .true.
+                              k = 0
                               do ixyz = 1, 3
                                  icoor = (icent-1)*3 + ixyz
                                  do jxyz = 1, 3
                                     jcoor = (jcent-1)*3 + jxyz
                                     do kxyz = 1, 3
                                        kcoor = (kcent-1)*3 + kxyz
+                                       k = k + 1
                                        if (jcoor >= icoor) then
                                           if (kcoor >= jcoor) then
-                                             k = (icoor - 1)*nr_centers*3*nr_centers*3 &
-                                               + (jcoor - 1)*nr_centers*3              &
-                                               +  kcoor
                                              call init_lists(deg, ang, ang_temp)
                                              call form_d(ang_temp, deg, ex, ifun, ixyz)
                                              call form_d(ang_temp, deg, ex, jfun, jxyz)
@@ -953,23 +931,19 @@ contains
                            end do
                         end do
                      end do
-                  end do
-               end do
-            end do
 
-            ! contract integrals
-            do icent = 1, nr_centers
-               do jcent = 1, nr_centers
-                  do kcent = 1, nr_centers
+                     ! contract integrals
+                     k = 0
                      do ixyz = 1, 3
                         icoor = (icent-1)*3 + ixyz
                         do jxyz = 1, 3
                            jcoor = (jcent-1)*3 + jxyz
                            do kxyz = 1, 3
                               kcoor = (kcent-1)*3 + kxyz
+                              k = k + 1
                               if (jcoor >= icoor) then
                                  if (kcoor >= jcoor) then
-                                    k = (icoor - 1)*nr_centers*3*nr_centers*3 &
+                                    l = (icoor - 1)*nr_centers*3*nr_centers*3 &
                                       + (jcoor - 1)*nr_centers*3              &
                                       +  kcoor
                                     call contract_integrals(deg,        &
@@ -979,13 +953,14 @@ contains
                                                             dmat,       &
                                                             gmat,       &
                                                             get_ave,    &
-                                                            ave(k),     &
+                                                            ave(l),     &
                                                             1.0d0)
                                  end if
                               end if
                            end do
                         end do
                      end do
+
                   end do
                end do
             end do
