@@ -18,39 +18,41 @@ module fermi_contact
 
 contains
 
-   subroutine get_fc_integrals(           &
-                               M,         &
-                               center,    &
-                               component  &
+   subroutine get_fc_integrals(            &
+                               M,          &
+                               center_pnc, &
+                               component   &
                               )
 
 !     --------------------------------------------------------------------------
       type(matrix)                  :: M
-      integer, intent(in)           :: center
+      integer, intent(in)           :: center_pnc
       integer, intent(in), optional :: component
 !     --------------------------------------------------------------------------
-      logical                       :: take_derv
-      integer                       :: center_d
       integer                       :: ixyz_d
       real(8), allocatable          :: ao(:, :)
       real(8), allocatable          :: buffer(:, :)
       integer                       :: i, j, iblock
       integer                       :: nr1, nr2, st1, st2
       real(8)                       :: d
+      integer                       :: order
+      integer                       :: center_i
+      integer                       :: center_j
+      integer                       :: center_d1
+      logical                       :: ij_different_center
 !     --------------------------------------------------------------------------
 
       M%elms_alpha = 0.0d0
 
 !     if you have 4 atoms, then there are 12 components
 !     code below figures out the center and direction based on component
+      order = 0
       if (present(component)) then
-         center_d = (component + 2)/3
+         center_d1 = (component + 2)/3
          if (mod(component, 3) == 1) ixyz_d = 1
          if (mod(component, 3) == 2) ixyz_d = 2
          if (mod(component, 3) == 0) ixyz_d = 3
-         take_derv = .true.
-      else
-         take_derv = .false.
+         order = 1
       end if
 
       call interface_ao_read(.false.)
@@ -61,42 +63,75 @@ contains
       allocate(buffer(1, nr_ao_slices*nr_ao_cartesian))
       buffer = 0.0d0
 
-      call get_ao(1, center_xyz(center, 1), center_xyz(center, 2), center_xyz(center, 3), ao, buffer)
+      call get_ao(1,                         &
+                  center_xyz(center_pnc, 1), &
+                  center_xyz(center_pnc, 2), &
+                  center_xyz(center_pnc, 3), &
+                  ao,                        &
+                  buffer)
 
-      do iblock = 1, nr_ao_blocks
-         nr1 = ao_block_nr(iblock)
-         st1 = ao_block_start(iblock)
-         nr2 = ao_block_nr(lssl_block_partner(iblock, 0, 0))
-         st2 = ao_block_start(lssl_block_partner(iblock, 0, 0))
-         do i = st1, st1 + nr1 - 1
-            do j = st2, st2 + nr2 - 1
-               if (take_derv) then
-                  d = 0.0d0
-                  if (ao_center(i) == center_d) then
-                     if (ao_center(i) /= center) then
-                        d = d - ao(1, ao_off_g1_m0(ixyz_d, 0) + i)*ao(1, j)
-                     else
-                        if (ao_center(i) /= ao_center(j)) then
-                           d = d + ao(1, ao_off_g1_m0(ixyz_d, 0) + j)*ao(1, i)
-                        end if
-                     end if
-                  end if
-                  if (ao_center(j) == center_d) then
-                     if (ao_center(j) /= center) then
-                        d = d - ao(1, ao_off_g1_m0(ixyz_d, 0) + j)*ao(1, i)
-                     else
-                        if (ao_center(i) /= ao_center(j)) then
-                           d = d + ao(1, ao_off_g1_m0(ixyz_d, 0) + i)*ao(1, j)
-                        end if
-                     end if
-                  end if
-               else
-                  d = ao(1, i)*ao(1, j)
+      select case (order)
+
+         case (0)
+            do iblock = 1, nr_ao_blocks
+               nr1 = ao_block_nr(iblock)
+               st1 = ao_block_start(iblock)
+               nr2 = ao_block_nr(lssl_block_partner(iblock, 0, 0))
+               st2 = ao_block_start(lssl_block_partner(iblock, 0, 0))
+               if (st1 < st2) then
+                  do i = st1, st1 + nr1 - 1
+                     do j = st2, st2 + nr2 - 1
+                        d = ao(1, i)*ao(1, j)
+                        M%elms_alpha(j, i, 1) = d
+                        M%elms_alpha(i, j, 1) = d
+                     end do
+                  end do
                end if
-               M%elms_alpha(j, i, 1) = d
             end do
-         end do
-      end do
+
+         case (1)
+            do iblock = 1, nr_ao_blocks
+               nr1 = ao_block_nr(iblock)
+               st1 = ao_block_start(iblock)
+               nr2 = ao_block_nr(lssl_block_partner(iblock, 0, 0))
+               st2 = ao_block_start(lssl_block_partner(iblock, 0, 0))
+               if (st1 < st2) then
+                  do i = st1, st1 + nr1 - 1
+                     center_i = ao_center(i)
+                     do j = st2, st2 + nr2 - 1
+                        center_j = ao_center(j)
+                        ij_different_center = (center_i /= center_j)
+                        d = 0.0d0
+                        if (center_i == center_d1) then
+                           if (center_i == center_pnc) then
+                              if (ij_different_center) then
+                                 d = d + ao(1, ao_off_g1_m0(ixyz_d, 0) + j)*ao(1, i)
+                              end if
+                           else
+                              d = d - ao(1, ao_off_g1_m0(ixyz_d, 0) + i)*ao(1, j)
+                           end if
+                        end if
+                        if (center_j == center_d1) then
+                           if (center_j == center_pnc) then
+                              if (ij_different_center) then
+                                 d = d + ao(1, ao_off_g1_m0(ixyz_d, 0) + i)*ao(1, j)
+                              end if
+                           else
+                              d = d - ao(1, ao_off_g1_m0(ixyz_d, 0) + j)*ao(1, i)
+                           end if
+                        end if
+                        M%elms_alpha(j, i, 1) = d
+                        M%elms_alpha(i, j, 1) = d
+                     end do
+                  end do
+               end if
+            end do
+
+         case default
+            print *, 'error: order too hight in fermi_contact'
+            stop 1
+
+      end select
 
       deallocate(ao)
       deallocate(buffer)
