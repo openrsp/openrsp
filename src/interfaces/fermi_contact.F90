@@ -42,10 +42,13 @@ contains
       integer                       :: order
       integer                       :: center_i
       integer                       :: center_j
-      integer                       :: center_k
       integer                       :: center_d1
       integer                       :: center_d2
+      integer                       :: center_k
+      integer                       :: center_l
       logical                       :: ij_different_center
+
+      integer, parameter :: pos(9) = (/1, 2, 3, 2, 4, 5, 3, 5, 6/)
 !     --------------------------------------------------------------------------
 
       M%elms_alpha = 0.0d0
@@ -167,11 +170,75 @@ contains
 
                         d = 0.0d0
 
+                        k = i
+                        l = j
                         ! i_12 j
+                        center_k = center_i
+                        center_l = center_i
+                        if (center_d1 == center_k) then
+                           if (center_d2 == center_l) then
+                              if (center_d1 == center_pnc) then
+                                 if (ij_different_center) then
+                                    d = d - ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + l)*ao(1, k)
+                                 end if
+                              else
+                                 d = d + ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + k)*ao(1, l)
+                              end if
+                           end if
+                        end if
                         ! i_1  j_2
+                        center_k = center_i
+                        center_l = center_j
+                        if (center_d1 == center_k) then
+                           if (center_d2 == center_l) then
+                            ! if ((center_d1 == center_pnc) .and. (center_d2 == center_pnc)) then
+                            ! end if
+                              if ((center_d1 == center_pnc) .and. (center_d2 /= center_pnc)) then
+                                 d = d - ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + l)*ao(1, k)
+                              end if
+                              if ((center_d1 /= center_pnc) .and. (center_d2 == center_pnc)) then
+                                 d = d - ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + k)*ao(1, l)
+                              end if
+                              if ((center_d1 /= center_pnc) .and. (center_d2 /= center_pnc)) then
+                                 d = d + ao(1, ao_off_g1_m0(ixyz, 0) + k)*ao(1, ao_off_g1_m0(jxyz, 0) + l)
+                              end if
+                           end if
+                        end if
 
+                        k = j
+                        l = i
                         ! j_12 i
+                        center_k = center_j
+                        center_l = center_j
+                        if (center_d1 == center_k) then
+                           if (center_d2 == center_l) then
+                              if (center_d1 == center_pnc) then
+                                 if (ij_different_center) then
+                                    d = d - ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + l)*ao(1, k)
+                                 end if
+                              else
+                                 d = d + ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + k)*ao(1, l)
+                              end if
+                           end if
+                        end if
                         ! j_1  i_2
+                        center_k = center_j
+                        center_l = center_i
+                        if (center_d1 == center_k) then
+                           if (center_d2 == center_l) then
+                            ! if ((center_d1 == center_pnc) .and. (center_d2 == center_pnc)) then
+                            ! end if
+                              if ((center_d1 == center_pnc) .and. (center_d2 /= center_pnc)) then
+                                 d = d - ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + l)*ao(1, k)
+                              end if
+                              if ((center_d1 /= center_pnc) .and. (center_d2 == center_pnc)) then
+                                 d = d - ao(1, ao_off_g2_m0(pos((ixyz-1)*3 + jxyz), 0) + k)*ao(1, l)
+                              end if
+                              if ((center_d1 /= center_pnc) .and. (center_d2 /= center_pnc)) then
+                                 d = d + ao(1, ao_off_g1_m0(ixyz, 0) + k)*ao(1, ao_off_g1_m0(jxyz, 0) + l)
+                              end if
+                           end if
+                        end if
 
                         M%elms_alpha(j, i, 1) = d
                         M%elms_alpha(i, j, 1) = d
