@@ -69,7 +69,7 @@ contains
       end if
 
       call interface_ao_read(.false.)
-      call ao_eval_init(1, 0, .false.)
+      call ao_eval_init(order, 0, .false.)
 
       allocate(ao(1,     nr_ao_slices*nr_ao_cartesian))
       ao = 0.0d0
@@ -114,14 +114,15 @@ contains
                      do j = st2, st2 + nr2 - 1
                         center_j = ao_center(j)
                         ij_different_center = (center_i /= center_j)
+
                         d = 0.0d0
 
                         ! i_1 j
                         k = i
                         l = j
                         center_k = center_i
-                        if (center_k == center_d1) then
-                           if (center_k == center_pnc) then
+                        if (center_d1 == center_k) then
+                           if (center_d1 == center_pnc) then
                               if (ij_different_center) then
                                  d = d + ao(1, ao_off_g1_m0(ixyz, 0) + l)*ao(1, k)
                               end if
@@ -134,8 +135,8 @@ contains
                         k = j
                         l = i
                         center_k = center_j
-                        if (center_k == center_d1) then
-                           if (center_k == center_pnc) then
+                        if (center_d1 == center_k) then
+                           if (center_d1 == center_pnc) then
                               if (ij_different_center) then
                                  d = d + ao(1, ao_off_g1_m0(ixyz, 0) + l)*ao(1, k)
                               end if
@@ -163,6 +164,7 @@ contains
                      do j = st2, st2 + nr2 - 1
                         center_j = ao_center(j)
                         ij_different_center = (center_i /= center_j)
+
                         d = 0.0d0
 
                         ! i_12 j
