@@ -21,24 +21,30 @@ contains
    subroutine get_fc_integrals(            &
                                M,          &
                                center_pnc, &
-                               component   &
+                               component1, &
+                               component2  &
                               )
 
 !     --------------------------------------------------------------------------
       type(matrix)                  :: M
       integer, intent(in)           :: center_pnc
-      integer, intent(in), optional :: component
+      integer, intent(in), optional :: component1
+      integer, intent(in), optional :: component2
 !     --------------------------------------------------------------------------
-      integer                       :: ixyz_d
+      integer                       :: ixyz
+      integer                       :: jxyz
       real(8), allocatable          :: ao(:, :)
       real(8), allocatable          :: buffer(:, :)
-      integer                       :: i, j, iblock
+      integer                       :: iblock
+      integer                       :: i, j, k, l
       integer                       :: nr1, nr2, st1, st2
       real(8)                       :: d
       integer                       :: order
       integer                       :: center_i
       integer                       :: center_j
+      integer                       :: center_k
       integer                       :: center_d1
+      integer                       :: center_d2
       logical                       :: ij_different_center
 !     --------------------------------------------------------------------------
 
@@ -47,12 +53,19 @@ contains
 !     if you have 4 atoms, then there are 12 components
 !     code below figures out the center and direction based on component
       order = 0
-      if (present(component)) then
-         center_d1 = (component + 2)/3
-         if (mod(component, 3) == 1) ixyz_d = 1
-         if (mod(component, 3) == 2) ixyz_d = 2
-         if (mod(component, 3) == 0) ixyz_d = 3
-         order = 1
+      if (present(component1)) then
+         center_d1 = (component1 + 2)/3
+         if (mod(component1, 3) == 1) ixyz = 1
+         if (mod(component1, 3) == 2) ixyz = 2
+         if (mod(component1, 3) == 0) ixyz = 3
+         order = order + 1
+      end if
+      if (present(component2)) then
+         center_d2 = (component2 + 2)/3
+         if (mod(component2, 3) == 1) jxyz = 1
+         if (mod(component2, 3) == 2) jxyz = 2
+         if (mod(component2, 3) == 0) jxyz = 3
+         order = order + 1
       end if
 
       call interface_ao_read(.false.)
@@ -102,24 +115,62 @@ contains
                         center_j = ao_center(j)
                         ij_different_center = (center_i /= center_j)
                         d = 0.0d0
-                        if (center_i == center_d1) then
-                           if (center_i == center_pnc) then
+
+                        ! i_1 j
+                        k = i
+                        l = j
+                        center_k = center_i
+                        if (center_k == center_d1) then
+                           if (center_k == center_pnc) then
                               if (ij_different_center) then
-                                 d = d + ao(1, ao_off_g1_m0(ixyz_d, 0) + j)*ao(1, i)
+                                 d = d + ao(1, ao_off_g1_m0(ixyz, 0) + l)*ao(1, k)
                               end if
                            else
-                              d = d - ao(1, ao_off_g1_m0(ixyz_d, 0) + i)*ao(1, j)
+                              d = d - ao(1, ao_off_g1_m0(ixyz, 0) + k)*ao(1, l)
                            end if
                         end if
-                        if (center_j == center_d1) then
-                           if (center_j == center_pnc) then
+
+                        ! j_1 i
+                        k = j
+                        l = i
+                        center_k = center_j
+                        if (center_k == center_d1) then
+                           if (center_k == center_pnc) then
                               if (ij_different_center) then
-                                 d = d + ao(1, ao_off_g1_m0(ixyz_d, 0) + i)*ao(1, j)
+                                 d = d + ao(1, ao_off_g1_m0(ixyz, 0) + l)*ao(1, k)
                               end if
                            else
-                              d = d - ao(1, ao_off_g1_m0(ixyz_d, 0) + j)*ao(1, i)
+                              d = d - ao(1, ao_off_g1_m0(ixyz, 0) + k)*ao(1, l)
                            end if
                         end if
+
+                        M%elms_alpha(j, i, 1) = d
+                        M%elms_alpha(i, j, 1) = d
+                     end do
+                  end do
+               end if
+            end do
+
+         case (2)
+            do iblock = 1, nr_ao_blocks
+               nr1 = ao_block_nr(iblock)
+               st1 = ao_block_start(iblock)
+               nr2 = ao_block_nr(lssl_block_partner(iblock, 0, 0))
+               st2 = ao_block_start(lssl_block_partner(iblock, 0, 0))
+               if (st1 < st2) then
+                  do i = st1, st1 + nr1 - 1
+                     center_i = ao_center(i)
+                     do j = st2, st2 + nr2 - 1
+                        center_j = ao_center(j)
+                        ij_different_center = (center_i /= center_j)
+                        d = 0.0d0
+
+                        ! i_12 j
+                        ! i_1  j_2
+
+                        ! j_12 i
+                        ! j_1  i_2
+
                         M%elms_alpha(j, i, 1) = d
                         M%elms_alpha(i, j, 1) = d
                      end do
