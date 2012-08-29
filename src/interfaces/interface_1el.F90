@@ -1127,7 +1127,13 @@ contains
       type(matrix) :: A
       type(matrix), allocatable :: T(:)
 
-      if (count(f=='EL  ') > 1) then
+      if (count(f == 'PNC ') > 0) then
+         ! pnc integrals
+
+      else if (count(f == 'EL  ') > 1) then
+
+         ! radovan: this code does not make sense to me
+         !          what is it supposed to do?
          call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          do i = 1, product(nc)
             if (iszero(oneint(i))) then
