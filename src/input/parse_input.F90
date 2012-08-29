@@ -144,11 +144,13 @@
 !     --------------------------------------------------------------------------
 
       if (kw_matches(word, '.GP    ')) then
-         openrsp_cfg_gp = .true.
+         call kw_read(word, openrsp_cfg_pnc_center)
+         openrsp_cfg_pnc_gradient = .true.
       end if
 
       if (kw_matches(word, '.GGP   ')) then
-         openrsp_cfg_ggp = .true.
+         call kw_read(word, openrsp_cfg_pnc_center)
+         openrsp_cfg_pnc_hessian = .true.
       end if
 
 !     --------------------------------------------------------------------------
