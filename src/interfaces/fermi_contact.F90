@@ -8,7 +8,7 @@ module fermi_contact
 
    use interface_ao
    use ao_eval
-   use matrix_defop_old
+   use matrix_defop
 
    implicit none
 
@@ -41,7 +41,7 @@ contains
 #include "dcbbas.h"
 
       call init_mat(M, ntbas(0), ntbas(0))
-      M%elms = 0.0d0
+      M%elms_alpha = 0.0d0
 
 !     if you have 4 atoms, then there are 12 components
 !     code below figures out the center and direction based on component
@@ -95,7 +95,7 @@ contains
                else
                   d = ao(1, i)*ao(1, j)
                end if
-               M%elms((i-1)*M%nrow + j) = d
+               M%elms_alpha(j, i, 1) = d
             end do
          end do
       end do
