@@ -77,7 +77,6 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_basis.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_dirac_gen1int.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_interest.F90
-    ${PROJECT_SOURCE_DIR}/src/interfaces/fermi_contact.F90
     ${PROJECT_SOURCE_DIR}/src/input/parse_input.F90
     ${PROJECT_SOURCE_DIR}/src/input/openrsp_cfg.F90
     ${PROJECT_SOURCE_DIR}/src/input/input_reader.F90
