@@ -7,6 +7,7 @@ module interface_1el
    use interface_f77_memory
    use interface_pcm
    use interface_io
+   use fermi_contact
 
    implicit none
 
@@ -407,15 +408,34 @@ contains
       real(8), allocatable :: temp(:)
       integer ierr                           !error information
       type(matrix) :: T
+      type(matrix) :: P
       integer :: ixyz, i
 
-      ! gets the order of Cartesian multipole moments
-      order_mom = count(f=='EL  ')
+      if (count(f == 'PNC ') > 0) then
 
-      if (order_mom > 1) then
-         ave = 0.0
+         order_geo = count(f == 'GEO ')
+         if (order_geo > 1) then
+            print *, 'error in oneave: pnc int geo > 1 not implemented'
+            stop 1
+         end if
+
+         ave = 0.0d0
+
+         P = mat_alloc_like(D)
+         do i = 1, nc(1)
+            call get_fc_integrals(P, openrsp_cfg_pnc_center, i)
+            ave(i) = dot(P, D)
+         end do
+         P = 0
+
+      else if (count(f == 'EL  ') > 1) then
+
+         ave = 0.0d0
+
       else
 
+         ! gets the order of Cartesian multipole moments
+         order_mom = count(f=='EL  ')
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
          if (order_mom+order_geo/=nf) then
@@ -1128,7 +1148,17 @@ contains
       type(matrix), allocatable :: T(:)
 
       if (count(f == 'PNC ') > 0) then
-         ! pnc integrals
+
+         order_geo = count(f == 'GEO ')
+         if (order_geo > 0) then
+            print *, 'error in oneint: pnc int geo > 0 not implemented'
+            stop 1
+         end if
+
+         if (.not. isdef(oneint(1))) then
+            call mat_init(oneint(1), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         end if
+         call get_fc_integrals(oneint(1), openrsp_cfg_pnc_center)
 
       else if (count(f == 'EL  ') > 1) then
 
