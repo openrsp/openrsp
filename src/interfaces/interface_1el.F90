@@ -413,6 +413,7 @@ contains
 
       if (count(f == 'PNC ') > 0) then
 
+#ifdef PRG_DIRAC
          order_geo = count(f == 'GEO ')
          if (order_geo > 1) then
             print *, 'error in oneave: pnc int geo > 1 not implemented'
@@ -427,6 +428,7 @@ contains
             ave(i) = dot(P, D)
          end do
          P = 0
+#endif /* ifdef PRG_DIRAC */
 
       else if (count(f == 'EL  ') > 1) then
 
@@ -1149,6 +1151,7 @@ contains
 
       if (count(f == 'PNC ') > 0) then
 
+#ifdef PRG_DIRAC
          order_geo = count(f == 'GEO ')
          if (order_geo > 0) then
             print *, 'error in oneint: pnc int geo > 0 not implemented'
@@ -1159,6 +1162,7 @@ contains
             call mat_init(oneint(1), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          end if
          call get_fc_integrals(oneint(1), openrsp_cfg_pnc_center)
+#endif /* ifdef PRG_DIRAC */
 
       else if (count(f == 'EL  ') > 1) then
 
