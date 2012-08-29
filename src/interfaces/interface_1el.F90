@@ -7,7 +7,6 @@ module interface_1el
    use interface_f77_memory
    use interface_pcm
    use interface_io
-   use fermi_contact
 
    implicit none
 
@@ -424,7 +423,7 @@ contains
 
          P = mat_alloc_like(D)
          do i = 1, nc(1)
-            call get_fc_integrals(P, openrsp_cfg_pnc_center, i)
+            call get_fc_integrals(P%nrow, P%elms_alpha, openrsp_cfg_pnc_center, i)
             ave(i) = dot(P, D)
          end do
          P = 0
@@ -1161,7 +1160,7 @@ contains
          if (.not. isdef(oneint(1))) then
             call mat_init(oneint(1), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          end if
-         call get_fc_integrals(oneint(1), openrsp_cfg_pnc_center)
+         call get_fc_integrals(oneint(1)%nrow, oneint(1)%elms_alpha, openrsp_cfg_pnc_center)
 #endif /* ifdef PRG_DIRAC */
 
       else if (count(f == 'EL  ') > 1) then
