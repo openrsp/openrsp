@@ -1272,8 +1272,9 @@ contains
       character(4)             :: nof(0)
       integer                  :: noc(0)
 
-      complex(8), allocatable  :: Ep(:)
+      complex(8)               :: Ep
       complex(8), allocatable  :: Epg(:, :)
+      complex(8), allocatable  :: Epg_temp(:, :)
       integer                  :: i, iatom, ix, iy, iz
       integer                  :: icharge, imass, nproton, nneutron
       real(8), external        :: disotp
@@ -1292,11 +1293,8 @@ contains
 
       dfac = 2.22255d-14/(2.0d0*sqrt(2.0d0))
 
-      allocate(Ep(nc))
       allocate(Epg(ng, nc))
-
-      Ep          = 0.0d0
-      Epg = 0.0d0
+      allocate(Epg_temp(ng, nc))
 
 #ifdef UNMERGED_CODE
       call prop_oneave(mol, S, (/'PNC'/), (/D/), (/nc/), Ep)
@@ -1311,6 +1309,9 @@ contains
 
       call rsp_oneint(S%nrow, 1, (/'PNC '/), (/1/), shape(Fp), Fp)
 
+      Ep  = dot(D, Fp(1))
+      Epg = 0.0d0
+
       FDSp(1) = Fp(1)*D*S - S*D*Fp(1)
       Dp(1)   = mat_alloc_like(D)
       call rsp_mosolver_exec(FDSp(1), (/0.0d0/), Dp)
@@ -1318,13 +1319,17 @@ contains
       call rsp_twoint(S%nrow, 0, nof, noc, noc, Dp(1), Fp(1))
 
       DFDp = Dp(1)*F*D + D*Fp(1)*D + D*F*Dp(1)
-      call rsp_ovlave(1, (/'GEO '/), (/1/), shape(Epg(:, 1)), DFDp, Epg(:, 1))
+      call rsp_ovlave(1, (/'GEO '/), (/1/), shape(Epg_temp(:, 1)), DFDp, Epg_temp(:, 1))
+      Epg = Epg + Epg_temp
       DFDp = 0
       Fp   = 0
 
-      call rsp_oneave(2, (/'GEO ', 'PNC '/), (/1, 1/), shape(Epg), D, Epg)
-      call rsp_oneave(1, (/'GEO '/), (/1/), shape(Epg(:, 1)), Dp(1), Epg(:, 1))
-      call rsp_twoave(1, (/'GEO '/), (/1/), shape(Epg(:, 1)), D, Dp(1), Epg(:, 1))
+      call rsp_oneave(2, (/'GEO ', 'PNC '/), (/1, 1/), shape(Epg_temp), D, Epg_temp)
+      Epg = Epg + Epg_temp
+      call rsp_oneave(1, (/'GEO '/), (/1/), shape(Epg_temp(:, 1)), Dp(1), Epg_temp(:, 1))
+      Epg = Epg + Epg_temp
+      call rsp_twoave(1, (/'GEO '/), (/1/), shape(Epg_temp(:, 1)), D, Dp(1), Epg_temp(:, 1))
+      Epg = Epg + Epg_temp
       Dp = 0
 
       icharge  = nint(charge(openrsp_cfg_pnc_center))
@@ -1375,8 +1380,8 @@ contains
 
       call prsymb(io, '-', 46, 0)
 
-      deallocate(Ep)
       deallocate(Epg)
+      deallocate(Epg_temp)
 
 #endif /* ifdef PRG_DIRAC */
    end subroutine

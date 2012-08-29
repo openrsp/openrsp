@@ -38,9 +38,7 @@ contains
       integer                       :: nr1, nr2, st1, st2
       real(8)                       :: d
 !     --------------------------------------------------------------------------
-#include "dcbbas.h"
 
-      call init_mat(M, ntbas(0), ntbas(0))
       M%elms_alpha = 0.0d0
 
 !     if you have 4 atoms, then there are 12 components
