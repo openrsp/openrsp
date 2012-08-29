@@ -32,6 +32,9 @@ module openrsp_cfg
    logical :: openrsp_cfg_cubic_ff       = .false.
    logical :: openrsp_cfg_quartic_ff     = .false.
 
+   logical :: openrsp_cfg_gp             = .false.
+   logical :: openrsp_cfg_ggp            = .false.
+
    logical :: openrsp_cfg_general_f      = .false.
    logical :: openrsp_cfg_general_g      = .false.
    logical :: openrsp_cfg_general_ff     = .false.

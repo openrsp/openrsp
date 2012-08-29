@@ -143,6 +143,16 @@
 
 !     --------------------------------------------------------------------------
 
+      if (kw_matches(word, '.GP    ')) then
+         openrsp_cfg_gp = .true.
+      end if
+
+      if (kw_matches(word, '.GGP   ')) then
+         openrsp_cfg_ggp = .true.
+      end if
+
+!     --------------------------------------------------------------------------
+
       if (kw_matches(word, '.F     ')) then
          openrsp_cfg_general_f = .true.
       end if
