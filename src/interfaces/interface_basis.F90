@@ -57,7 +57,7 @@ contains
         nelms = nPrim(CCINDEX(I))*nCont(CCINDEX(I))
         istartCC = start_CC(CCINDEX(I))
         factor = rescal(amom(i)+1)
-        do j=istartCC,istartCC+nelms-1
+        do j=istartCC+1,istartCC+nelms
            TMPContC(j) = factor*ContC(j)
         enddo
      enddo
@@ -77,12 +77,13 @@ contains
         basis_large(I)%MOM = ANGMOM(I)
         istart = start_exponents(CCINDEX(I))
         nrow = nPrim(CCINDEX(I))
-        basis_large(I)%exp => exponents(istart:istart+nrow-1)
+        basis_large(I)%exp => exponents(istart+1:istart+nrow)
+        print*,'basis_large(',I,')%exp)',basis_large(I)%exp
         istartCC = start_CC(CCINDEX(I))
         ncont1 = nCont(CCINDEX(I))
         nelms = nrow*nCont1
         basis_large(I)%nbas   = nCont1 * (2*basis_large(I)%mom + 1)
-        call point(ContC(istartCC:istartCC+nelms-1), basis_large(I)%ctr,nrow,nCont1)
+        call point(ContC(istartCC+1:istartCC+nelms), basis_large(I)%ctr,nrow,nCont1)
         basis_large(I)%CHARGE = ICHARGE(I)
         basis_large(I)%iBAS = IBASIS(I)
         basis_large(I)%iCENT = -1 ! I do not think this should be used
@@ -123,7 +124,7 @@ contains
      ctr_arg_item(1)%dens%pg_sym = 1
      ctr_arg_item(1)%dens%magic_tag = mat_magic_setup
      call mat_alloc(ctr_arg_item(1)%dens)
-     CALL DCOPY(NBAST*NBAST,Dfull, 1,  ctr_arg_item(1)%dens%elms_alpha, 1)
+     CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%dens%elms_alpha,1)
      !
      nullify(ctr_arg_item(1)%fock_or_dens)
      allocate(ctr_arg_item(1)%fock_or_dens)
@@ -137,7 +138,8 @@ contains
      ctr_arg_item(1)%fock_or_dens%pg_sym = 1
      ctr_arg_item(1)%fock_or_dens%magic_tag = mat_magic_setup
      call mat_alloc(ctr_arg_item(1)%fock_or_dens)
-     call mat_really_zero_out_data(ctr_arg_item(1)%fock_or_dens)
+    CALL DCOPY(NBAST*NBAST,Gfull,1,ctr_arg_item(1)%fock_or_dens%elms_alpha,1)
+ !     call mat_really_zero_out_data(ctr_arg_item(1)%fock_or_dens)
 !     ctr_arg_item(1)%dens = Dmat
 !     ctr_arg_item(1)%fock_or_dens = Gmat
      ctr_arg_item(1)%average => average
