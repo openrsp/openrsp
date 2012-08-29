@@ -269,6 +269,10 @@ end subroutine
        call prop_test_quarticff(3*num_atoms, S, D, F)
     end if
 
+    if (openrsp_cfg_pnc_gradient) then
+       call prop_test_pnc_gradient(3*num_atoms, S, D, F)
+    end if
+
     if (openrsp_cfg_general_f) then
        kn = (/0, 0/)
 

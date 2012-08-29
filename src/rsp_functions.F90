@@ -17,6 +17,8 @@ module rsp_functions
   use interface_molecule
   use interface_rsp_solver
   use interface_xc
+  use interface_io
+  use openrsp_cfg
 
   implicit none
 
@@ -25,6 +27,7 @@ module rsp_functions
   public prop_test_cubicff
   public prop_test_quarticff
   public prop_test_diphes
+  public prop_test_pnc_gradient
 
   private
 
@@ -1252,6 +1255,112 @@ contains
          end do
       end do
 
+   end subroutine
+
+   subroutine prop_test_pnc_gradient(ng, S, D, F)
+
+      integer,      intent(in)  :: ng
+      type(matrix), intent(in)  :: S
+      type(matrix), intent(in)  :: D
+      type(matrix), intent(in)  :: F
+
+#ifdef PRG_DIRAC
+      integer, parameter             :: nc = 1
+      type(matrix)                   :: Dp(nc), DFDp(nc), Fp(nc)
+
+      complex(8), allocatable        :: epnc(:)
+      complex(8), allocatable        :: epnc_gradient(:,:)
+      integer                        :: i, iatom, ix, iy, iz
+      integer                        :: icharge, imass, nproton, nneutron
+      real(8), external              :: disotp
+      real(8)                        :: qw
+
+      real(8), parameter             :: sthetaw2 = 0.2319d0
+      real(8)                        :: dfac
+      real(8), parameter             :: hartree2hz = 6.579683920721d15
+
+      integer                        :: io
+
+#include "mxcent.h"
+#include "nuclei.h"
+
+      io = get_print_unit()
+
+      dfac = 2.22255d-14/(2.0d0*sqrt(2.0d0))
+
+      allocate(epnc(nc))
+      allocate(epnc_gradient(ng, nc))
+
+      epnc          = 0
+      epnc_gradient = 0
+
+#ifdef UNMERGED_CODE
+      call prop_oneave(mol, S, (/'PNC'/), (/D/), (/nc/), epnc)
+      call pert_dens(mol, S, (/'PNC'/), (/nc/), (/D/), (/F/), Dp(:), Fp(:))
+      call prop_oneave(mol, S, (/'GEO', 'PNC'/), (/D/), (/ng, nc/), epnc_gradient(:, :))
+      call prop_twoave(mol, (/'GEO'/), (/D, Dp(:)/), (/ng, nc/), epnc_gradient(:, :))
+      do i = 1, nc
+         DFDp(i) = Dp(i)*F*D + D*Fp(i)*D + D*F*Dp(i)
+      end do
+      call prop_oneave(mol, S, (/'GEO'/), (/Dp(:)/), (/ng, nc/), epnc_gradient(:, :), DFD = (/DFDp/))
+#endif /* ifdef UNMERGED_CODE */
+
+      Dp   = 0
+      Fp   = 0
+      DFDp = 0
+
+      icharge  = nint(charge(openrsp_cfg_pnc_center))
+      imass    = nint(disotp(icharge, 1, 'MASS'))
+      nproton  = icharge
+      nneutron = imass - icharge
+      qw = (1.0d0 - 4.0d0*sthetaw2)*nproton - 1.0d0*nneutron
+
+      print *, 'center', openrsp_cfg_pnc_center
+      print *, 'E_pnc (bare integrals in a.u.)', real(epnc)
+      print *, 'E_pnc (in hartree)', real(epnc)*qw*dfac
+      print *, 'E_pnc (in Hz)', real(epnc)*qw*dfac*hartree2hz
+
+      call header('E_pnc gradient (bare integrals in a.u.)', -1)
+      do iatom = 1, ng/3
+         ix = 3*(iatom - 1) + 1
+         iy = 3*(iatom - 1) + 2
+         iz = 3*(iatom - 1) + 3
+         write(*, '(i6, 3e26.16)') iatom,                      &
+                                   real(epnc_gradient(ix, 1)), &
+                                   real(epnc_gradient(iy, 1)), &
+                                   real(epnc_gradient(iz, 1))
+      end do
+
+      epnc_gradient = epnc_gradient*qw*dfac
+      call header('E_pnc gradient (in hartree)', -1)
+      do iatom = 1, ng/3
+         ix = 3*(iatom - 1) + 1
+         iy = 3*(iatom - 1) + 2
+         iz = 3*(iatom - 1) + 3
+         write(*, '(i6, 3e26.16)') iatom,                      &
+                                   real(epnc_gradient(ix, 1)), &
+                                   real(epnc_gradient(iy, 1)), &
+                                   real(epnc_gradient(iz, 1))
+      end do
+
+      epnc_gradient = epnc_gradient*hartree2hz
+      call header('E_pnc gradient (in Hz)', -1)
+      do iatom = 1, ng/3
+         ix = 3*(iatom - 1) + 1
+         iy = 3*(iatom - 1) + 2
+         iz = 3*(iatom - 1) + 3
+         write(*, '(i6, 3e26.16)') iatom,                      &
+                                   real(epnc_gradient(ix, 1)), &
+                                   real(epnc_gradient(iy, 1)), &
+                                   real(epnc_gradient(iz, 1))
+      end do
+
+      call prsymb(io, '-', 46, 0)
+
+      deallocate(epnc)
+      deallocate(epnc_gradient)
+
+#endif /* ifdef PRG_DIRAC */
    end subroutine
 
 end module
