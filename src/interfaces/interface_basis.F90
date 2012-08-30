@@ -183,6 +183,11 @@ contains
 
 #ifdef PRG_DIRAC
       nr_ao = ntbas(0)
+
+!radovan: code below fails on our cluster
+!         for the moment skip (structure is not used)
+      is_initialized = .true.
+      return
 #endif
 
       nullify(basis_large)
