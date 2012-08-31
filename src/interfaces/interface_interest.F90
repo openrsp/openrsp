@@ -338,7 +338,7 @@ contains
       integer :: nr_integrals
       integer :: icent_start, icent_end
       integer :: ixyz_start,  ixyz_end
-      integer :: k, l
+      integer :: i, j, k, l
       integer :: icoor, jcoor, kcoor, lcoor
       integer :: ixyz,  jxyz,  kxyz,  lxyz
       integer :: ifun,  jfun,  kfun,  lfun
@@ -435,21 +435,30 @@ contains
 !           order 1
 !-------------------------------------------------------------------------------
 
+            nr_integrals = deg(1)*deg(2)*deg(3)*deg(4)
+            call init_ijk(deg, ang)
+
             do icent = icent_start, icent_end
 
                ! zero out integrals
                if (get_ave) then
                   do ixyz = 1, 3
-                     gint(1:deg(1)*deg(2)*deg(3)*deg(4), ixyz) = 0.0d0
+                     do i = 1, nr_integrals
+                        gint(i, ixyz) = 0.0d0
+                     end do
                   end do
                else
-                  gint(1:deg(1)*deg(2)*deg(3)*deg(4), 1) = 0.0d0
+                  do i = 1, nr_integrals
+                     gint(i, 1) = 0.0d0
+                  end do
                end if
 
                do ifun = 1, 4
                   if (cent(ifun) /= icent) cycle
 
                   ! u contribution
+                  ang_temp = ang
+                  ang_temp(ifun) = ang_temp(ifun) + 1
                   recalc_integrals = .true.
                   do ixyz = ixyz_start, ixyz_end
                      if (get_ave) then
@@ -457,8 +466,9 @@ contains
                      else
                         k = 1
                      end if
-                     call init_lists(deg, ang, ang_temp)
-                     call form_u(ang_temp, deg, ex, ifun, ixyz)
+                     call init_prefactors(deg)
+                     call fac_u(deg, ex, ifun, ixyz)
+                     call ijk_u(deg, ifun, ixyz)
                      call get_integral_contribution(gint,      &
                                                     gint_temp, &
                                                     deg,       &
@@ -468,9 +478,12 @@ contains
                                                     xyz,       &
                                                     k,         &
                                                     recalc_integrals)
+                     call ijk_d(deg, ifun, ixyz)
                   end do
 
                   ! d contribution
+                  ang_temp = ang
+                  ang_temp(ifun) = ang_temp(ifun) - 1
                   recalc_integrals = .true.
                   do ixyz = ixyz_start, ixyz_end
                      if (get_ave) then
@@ -478,8 +491,9 @@ contains
                      else
                         k = 1
                      end if
-                     call init_lists(deg, ang, ang_temp)
-                     call form_d(ang_temp, deg, ex, ifun, ixyz)
+                     call init_prefactors(deg)
+                     call fac_d(deg, ex, ifun, ixyz)
+                     call ijk_d(deg, ifun, ixyz)
                      call get_integral_contribution(gint,      &
                                                     gint_temp, &
                                                     deg,       &
@@ -489,6 +503,7 @@ contains
                                                     xyz,       &
                                                     k,         &
                                                     recalc_integrals)
+                     call ijk_u(deg, ifun, ixyz)
                   end do
 
                end do
@@ -520,6 +535,7 @@ contains
 
             end do
 
+#ifdef UNMERGED
          case (2)
 !-------------------------------------------------------------------------------
 !           order 2
@@ -986,6 +1002,7 @@ contains
                   end do
                end do
             end do
+#endif /* ifdef UNMERGED */
 
          case default
 !-------------------------------------------------------------------------------
@@ -1250,71 +1267,121 @@ contains
 
    end subroutine
 
-   subroutine init_lists(deg, ang, ang_temp)
+   subroutine init_ijk(deg, ang)
 
-      integer, intent(in)    :: deg(4)
-      integer, intent(in)    :: ang(4)
-      integer, intent(inout) :: ang_temp(4)
+      integer, intent(in) :: deg(4)
+      integer, intent(in) :: ang(4)
 
-      integer                :: ifun
-      integer                :: ixyz
+      integer             :: ifun
+      integer             :: ixyz
+      integer             :: iang
+      integer             :: ideg
+      integer             :: ideg_max
 
-      ang_temp = ang
       do ifun = 1, 4
+         ideg_max = deg(ifun)
+         iang = ang(ifun)
          do ixyz = 1, 3
-            ijk_list(1:deg(ifun), ixyz, ifun) = ic_to_ijk(1:deg(ifun), ixyz, ang(ifun))
+            do ideg = 1, ideg_max
+               ijk_list(ideg, ixyz, ifun) = ic_to_ijk(ideg, ixyz, iang)
+            end do
          end do
-         prefactor_list(1:deg(ifun), ifun) = 1.0d0
       end do
 
    end subroutine
 
-   subroutine form_u(ang,  &
-                     deg,  &
-                     ex,   &
-                     ifun, &
-                     ixyz)
+   subroutine init_prefactors(deg)
 
-      integer, intent(inout) :: ang(4)
+      integer, intent(in) :: deg(4)
+
+      integer             :: ifun
+      integer             :: ideg
+      integer             :: ideg_max
+
+      do ifun = 1, 4
+         ideg_max = deg(ifun)
+         do ideg = 1, ideg_max
+            prefactor_list(ideg, ifun) = 1.0d0
+         end do
+      end do
+
+   end subroutine
+
+   subroutine fac_u(deg,  &
+                    ex,   &
+                    ifun, &
+                    ixyz)
+
       integer, intent(in)    :: deg(4)
       real(8), intent(in)    :: ex(4)
       integer, intent(in)    :: ifun
       integer, intent(in)    :: ixyz
 
       integer                :: ideg
+      integer                :: ideg_max
+      real(8)                :: f
 
-      ang(ifun) = ang(ifun) + 1
+      f = 2.0d0*ex(ifun)
 
-      do ideg = 1, deg(ifun)
-         prefactor_list(ideg, ifun) = ex(ifun)*2.0d0*prefactor_list(ideg, ifun)
+      ideg_max = deg(ifun)
+      do ideg = 1, ideg_max
+         prefactor_list(ideg, ifun) = f*prefactor_list(ideg, ifun)
+      end do
+
+   end subroutine
+
+   subroutine ijk_u(deg, ifun, ixyz)
+
+      integer, intent(in) :: deg(4)
+      integer, intent(in) :: ifun
+      integer, intent(in) :: ixyz
+
+      integer             :: ideg
+      integer             :: ideg_max
+
+      ideg_max = deg(ifun)
+      do ideg = 1, ideg_max
          ijk_list(ideg, ixyz, ifun) = ijk_list(ideg, ixyz, ifun) + 1
       end do
 
    end subroutine
 
-   subroutine form_d(ang,  &
-                     deg,  &
-                     ex,   &
-                     ifun, &
-                     ixyz)
+   subroutine ijk_d(deg, ifun, ixyz)
 
-      integer, intent(inout) :: ang(4)
+      integer, intent(in) :: deg(4)
+      integer, intent(in) :: ifun
+      integer, intent(in) :: ixyz
+
+      integer             :: ideg
+      integer             :: ideg_max
+
+      ideg_max = deg(ifun)
+      do ideg = 1, ideg_max
+         ijk_list(ideg, ixyz, ifun) = ijk_list(ideg, ixyz, ifun) - 1
+      end do
+
+   end subroutine
+
+   subroutine fac_d(deg,  &
+                    ex,   &
+                    ifun, &
+                    ixyz)
+
       integer, intent(in)    :: deg(4)
       real(8), intent(in)    :: ex(4)
       integer, intent(in)    :: ifun
       integer, intent(in)    :: ixyz
 
       integer                :: ideg
+      integer                :: ideg_max
 
-      ang(ifun) = ang(ifun) - 1
-
-      do ideg = 1, deg(ifun)
+      ideg_max = deg(ifun)
+      do ideg = 1, ideg_max
          if (ijk_list(ideg, ixyz, ifun) > 0) then
             prefactor_list(ideg, ifun) = -real(ijk_list(ideg, ixyz, ifun))*prefactor_list(ideg, ifun)
          else
             prefactor_list(ideg, ifun) = 0.0d0
          end if
-         ijk_list(ideg, ixyz, ifun) = ijk_list(ideg, ixyz, ifun) - 1
       end do
 
    end subroutine
