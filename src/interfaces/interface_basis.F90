@@ -2,7 +2,7 @@ module interface_basis
 
    use basis_set, only: cgto
    use matrix_backend, only : matrix, mat_really_zero_out_data, mat_alloc, mat_nullify,mat_magic_setup
-   use eri_contractions, only: ctr_arg
+   use eri_contractions, only: ctr_arg, set_eri_contractions_xfac
    use eri_basis_loops, only: unopt_geodiff_loop
    implicit none
 
@@ -12,6 +12,7 @@ module interface_basis
 #endif
    public interface_basis_init_general
    public interface_basis_main_general
+   public interface_basis_xfac_general
    public interface_basis_init_argument_general
    public get_nr_ao
    public interface_basis_finalize
@@ -78,7 +79,6 @@ contains
         istart = start_exponents(CCINDEX(I))
         nrow = nPrim(CCINDEX(I))
         basis_large(I)%exp => exponents(istart+1:istart+nrow)
-        print*,'basis_large(',I,')%exp)',basis_large(I)%exp
         istartCC = start_CC(CCINDEX(I))
         ncont1 = nCont(CCINDEX(I))
         nelms = nrow*nCont1
@@ -100,13 +100,12 @@ contains
     end subroutine
    end subroutine
 
-   subroutine interface_basis_init_argument_general(Dfull,Gfull,average,ncor,geo,nbast)
+   subroutine interface_basis_init_argument_general(Dfull,average,ncor,geo,nbast)
      implicit none
      integer,intent(in) :: ncor,geo,nbast
 !     type(matrix),intent(in) :: Dmat
 !     type(matrix),intent(inout) :: Gmat
      real(8),intent(in) :: Dfull(nbast,nbast)
-     real(8),intent(inout) :: Gfull(nbast,nbast)
      real(8),target,intent(inout)  :: average(ncor)
      ctr_arg_item(1)%geo = geo
      ctr_arg_item(1)%comp = -huge(1)
@@ -138,8 +137,7 @@ contains
      ctr_arg_item(1)%fock_or_dens%pg_sym = 1
      ctr_arg_item(1)%fock_or_dens%magic_tag = mat_magic_setup
      call mat_alloc(ctr_arg_item(1)%fock_or_dens)
-    CALL DCOPY(NBAST*NBAST,Gfull,1,ctr_arg_item(1)%fock_or_dens%elms_alpha,1)
- !     call mat_really_zero_out_data(ctr_arg_item(1)%fock_or_dens)
+    CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%fock_or_dens%elms_alpha,1)
 !     ctr_arg_item(1)%dens = Dmat
 !     ctr_arg_item(1)%fock_or_dens = Gmat
      ctr_arg_item(1)%average => average
@@ -148,6 +146,12 @@ contains
    subroutine interface_basis_main_general()
      implicit none
      call unopt_geodiff_loop(basis_large, basis_small, ctr_arg_item)
+   end subroutine 
+
+   subroutine interface_basis_xfac_general(ExchangeFactor)
+     implicit none
+     real(8) :: ExchangeFactor
+     call set_eri_contractions_xfac(ExchangeFactor)
    end subroutine 
 
 
