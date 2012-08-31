@@ -116,7 +116,7 @@ module rsp_perturbed_sdf
     integer, allocatable, dimension(:) :: ind
     integer, allocatable, dimension(:,:) :: blk_info, indices
     integer, dimension(0) :: noc
-    character, dimension(0) :: nof
+    character(4), dimension(0) :: nof
     type(p_tuple) :: pert
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(SDF) :: F, D, S
