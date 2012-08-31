@@ -204,14 +204,6 @@ contains
     TZ = 0
 #endif /* ifdef PRG_DIRAC */
 
-!#define DEBUG_INTEREST
-#ifdef DEBUG_INTEREST
-    print *, '2-el energy       =', 0.5d0*dot(G, D)
-    ave = 0.0d0
-    call interest_get_ave(D%nrow, D%elms_alpha, D%elms_alpha, ave)
-    print *, 'raboof ave', ave(1)
-#endif
-
     H1 = 0
     G  = 0
 

@@ -407,15 +407,36 @@ contains
       real(8), allocatable :: temp(:)
       integer ierr                           !error information
       type(matrix) :: T
+      type(matrix) :: P
       integer :: ixyz, i
 
-      ! gets the order of Cartesian multipole moments
-      order_mom = count(f=='EL  ')
+      if (count(f == 'PNC ') > 0) then
 
-      if (order_mom > 1) then
-         ave = 0.0
+#ifdef PRG_DIRAC
+         order_geo = count(f == 'GEO ')
+         if (order_geo > 1) then
+            print *, 'error in oneave: pnc int geo > 1 not implemented'
+            stop 1
+         end if
+
+         ave = 0.0d0
+
+         P = mat_alloc_like(D)
+         do i = 1, nc(1)
+            call get_fc_integrals(P%nrow, P%elms_alpha, openrsp_cfg_pnc_center, i, 0)
+            ave(i) = dot(P, D)
+         end do
+         P = 0
+#endif /* ifdef PRG_DIRAC */
+
+      else if (count(f == 'EL  ') > 1) then
+
+         ave = 0.0d0
+
       else
 
+         ! gets the order of Cartesian multipole moments
+         order_mom = count(f=='EL  ')
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
          if (order_mom+order_geo/=nf) then
@@ -1127,7 +1148,25 @@ contains
       type(matrix) :: A
       type(matrix), allocatable :: T(:)
 
-      if (count(f=='EL  ') > 1) then
+      if (count(f == 'PNC ') > 0) then
+
+#ifdef PRG_DIRAC
+         order_geo = count(f == 'GEO ')
+         if (order_geo > 0) then
+            print *, 'error in oneint: pnc int geo > 0 not implemented'
+            stop 1
+         end if
+
+         if (.not. isdef(oneint(1))) then
+            call mat_init(oneint(1), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         end if
+         call get_fc_integrals(nr_ao, oneint(1)%elms_alpha, openrsp_cfg_pnc_center, 0, 0)
+#endif /* ifdef PRG_DIRAC */
+
+      else if (count(f == 'EL  ') > 1) then
+
+         ! radovan: this code does not make sense to me
+         !          what is it supposed to do?
          call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
          do i = 1, product(nc)
             if (iszero(oneint(i))) then
