@@ -105,9 +105,10 @@ module rsp_perturbed_sdf
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(zeromat, pert, F, D, S)
-
+#ifndef VAR_LSDALTON
+    !host program specific solver
     use interface_rsp_solver, only: rsp_mosolver_exec
-
+#endif
     implicit none
 
     
@@ -350,7 +351,10 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
 ! write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
+#ifndef VAR_LSDALTON
+    !host program specific solver
        call rsp_mosolver_exec(RHS(1), (/0d0/), X)
+#endif
        ! Note (MaR): Why multiply by -2 like below?
        X(1) = -2d0*X(1)
        RHS(1) = 0
