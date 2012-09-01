@@ -1026,6 +1026,8 @@ contains
                             c,    &
                             xyz)
 
+      use module_interest_eri
+
       real(8), intent(inout) :: gint(*)
       integer, intent(in)    :: l(4)
       real(8), intent(in)    :: e(4)
@@ -1035,36 +1037,17 @@ contains
       real(8) :: f
       integer :: nr_integrals
 
-      !> InteRest interface
-      interface
-         subroutine interest_eri_basic(f, gint, nr_integrals,  &
-                                       li, ei, xi, yi, zi, ci, &
-                                       lj, ej, xj, yj, zj, cj, &
-                                       lk, ek, xk, yk, zk, ck, &
-                                       ll, el, xl, yl, zl, cl)
-
-           real(8), intent(in)  :: f
-           real(8), intent(out) :: gint(*)
-           integer, intent(out) :: nr_integrals
-           integer, intent(in)  :: li, lj, lk, ll
-           real(8), intent(in)  :: ei, ej, ek, el
-           real(8), intent(in)  :: xi, xj, xk, xl
-           real(8), intent(in)  :: yi, yj, yk, yl
-           real(8), intent(in)  :: zi, zj, zk, zl
-           real(8), intent(in)  :: ci, cj, ck, cl
-         end subroutine
-      end interface
 
       f = 1.0d0
 
       !> call InteRest library routine for a given batch
-      call interest_eri_basic(f,                                                   &
-                              gint,                                                &
-                              nr_integrals,                                        &
-                              l(1)+1, e(1), xyz(1, 1), xyz(2, 1), xyz(3, 1), c(1), &
-                              l(2)+1, e(2), xyz(1, 2), xyz(2, 2), xyz(3, 2), c(2), &
-                              l(3)+1, e(3), xyz(1, 3), xyz(2, 3), xyz(3, 3), c(3), &
-                              l(4)+1, e(4), xyz(1, 4), xyz(2, 4), xyz(3, 4), c(4))
+      call interest_eri(f,                                                   &
+                        gint,                                                &
+                        nr_integrals,                                        &
+                        l(1)+1, e(1), xyz(1, 1), xyz(2, 1), xyz(3, 1), c(1), &
+                        l(2)+1, e(2), xyz(1, 2), xyz(2, 2), xyz(3, 2), c(2), &
+                        l(3)+1, e(3), xyz(1, 3), xyz(2, 3), xyz(3, 3), c(3), &
+                        l(4)+1, e(4), xyz(1, 4), xyz(2, 4), xyz(3, 4), c(4))
 
    end subroutine
 
