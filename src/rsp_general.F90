@@ -244,27 +244,27 @@ blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
 
     deallocate(energy_cache)
 
-!     call property_cache_allocate(pulay_kn_cache)
-!     call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
-!                       property_size, pulay_kn_cache, prop)
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating Pulay k-n type contributions'
-!     write(*,*) ' '
-! 
-!     deallocate(pulay_kn_cache)
-! 
-!     call property_cache_allocate(pulay_lag_cache)
-!     call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
-!                        (/p_tuple_getone(pert,1), emptypert/), &
-!                        S, D, F, property_size, pulay_lag_cache, prop)
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating Pulay lagrangian type contributions' 
-!     write(*,*) ' '
-! 
-!     deallocate(pulay_lag_cache)
-! 
+    call property_cache_allocate(pulay_kn_cache)
+    call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
+                      property_size, pulay_kn_cache, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating Pulay k-n type contributions'
+    write(*,*) ' '
+
+    deallocate(pulay_kn_cache)
+
+    call property_cache_allocate(pulay_lag_cache)
+    call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
+                       (/p_tuple_getone(pert,1), emptypert/), &
+                       S, D, F, property_size, pulay_lag_cache, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating Pulay lagrangian type contributions' 
+    write(*,*) ' '
+
+    deallocate(pulay_lag_cache)
+
     call property_cache_allocate(idem_cache)
     call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
@@ -678,22 +678,22 @@ call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
        tmp = 0.0
        contrib = 0.0
 
-!        if (num_p_tuples == 1) then
-! 
-!           call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
-!                          p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
-!                          inner_indices_size, contrib)
-! 
-!        elseif (num_p_tuples == 2) then
-! 
-!           call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-!                          p_tuples(1)%pdim, dens_tuple(2), inner_indices_size, contrib)
-! 
-!        end if
-! 
-!        tmp = tmp + contrib
+       if (num_p_tuples == 1) then
+
+          call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
+                         p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
+                         inner_indices_size, contrib)
+
+       elseif (num_p_tuples == 2) then
+
+          call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                         p_tuples(1)%pdim, dens_tuple(2), inner_indices_size, contrib)
+
+       end if
+
+       tmp = tmp + contrib
 
 ! if (i == 1) then
 ! write(*,*) 'AFTER ONEAVE'
@@ -954,11 +954,11 @@ deallocate(triang_indices_pr)
 
        contrib = 0.0
 
-!        call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
-!                        sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
-! 
-!        tmp = tmp + contrib
+       call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
+                       sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
+
+       tmp = tmp + contrib
 
 !  write(*,*) 'AFTER ONEAVE'
 
