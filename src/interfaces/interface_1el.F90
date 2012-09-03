@@ -336,16 +336,17 @@ contains
                                        get_print_unit(), 0)
             val_expt = -val_expt
             ! assigns the output average
-            if (order_geo==0) then
+! MR: REMOVED THE order_geo CONDITION TO MAKE ave ALWAYS CONTAIN val_expt(:,1)
+!             if (order_geo==0) then
                ave = val_expt(:,1)
-            else
+!             else
 ! MR: THIS CALL OR THE gen1int_reorder ROUTINE MAY NEED ADAPTATION
-               call gen1int_reorder_tr(num_coord=num_coord, num_field=nf, &
-                                    first_comp=c, num_comp=nc,         &
-                                    order_mom=0, order_geo=order_geo,  &
-                                    val_expect=val_expt(:,1), rsp_expect=ave, &
-                                    propsize=propsize)
-            end if
+!                call gen1int_reorder_tr(num_coord=num_coord, num_field=nf, &
+!                                     first_comp=c, num_comp=nc,         &
+!                                     order_mom=0, order_geo=order_geo,  &
+!                                     val_expect=val_expt(:,1), rsp_expect=ave, &
+!                                     propsize=propsize)
+!             end if
          end if
          ! frees space
          deallocate(val_expt)
@@ -783,12 +784,17 @@ contains
 
          end if
 
+
+! MR: ASSIGN DATA TO ave
+
+ave = val_expt(:,1)
+
 ! MR: THIS CALL OR THE gen1int_reorder ROUTINE MAY NEED ADAPTATION
          ! assigns the output average
-         call gen1int_reorder_tr(num_coord=num_coord, num_field=nf,        &
-                              first_comp=c, num_comp=nc,                &
-                              order_mom=order_mom, order_geo=order_geo, &
-                              val_expect=val_expt(:,1), propsize=propsize, rsp_expect=ave)
+!          call gen1int_reorder_tr(num_coord=num_coord, num_field=nf,        &
+!                               first_comp=c, num_comp=nc,                &
+!                               order_mom=order_mom, order_geo=order_geo, &
+!                               val_expect=val_expt(:,1), propsize=propsize, rsp_expect=ave)
 
          ! frees space
          deallocate(val_expt)
