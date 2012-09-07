@@ -251,11 +251,13 @@ contains
 
     ! print
     call print_tensor(shape(hes), hes, 'hessian = Egg')
+
     ! print formatted to file hessian
     open (unit=iounit, file='hessian', status='replace', action='write')
     call print_tensor(shape(hes), hes, unit=iounit)
     close (iounit)
-!   !------------------------------------
+    call write_molecular_hessian_to_file(ng, hes)
+
   end subroutine
 
   subroutine contract_cubicff(ng, S, D, F, Sg, Dg, Fg)
@@ -1404,6 +1406,25 @@ contains
       write(iounit, *)
       do i = 1, 3
          do j = 1, ng
+            write(iounit, *) i, j, real(tensor(j, i))
+         end do
+      end do
+      close(iounit)
+
+   end subroutine
+
+   subroutine write_molecular_hessian_to_file(ng, tensor)
+
+      integer,    intent(in) :: ng
+      complex(8), intent(in) :: tensor(ng, ng)
+
+      integer                :: i, j
+
+      open(unit=iounit, file='tensor_egg', status='replace', action='write')
+      write(iounit, *) ng, ng
+      write(iounit, *)
+      do i = 1, ng
+         do j = i, ng
             write(iounit, *) i, j, real(tensor(j, i))
          end do
       end do
