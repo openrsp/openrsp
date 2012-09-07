@@ -196,6 +196,8 @@ contains
     type(matrix), intent(in),    target :: D
     type(matrix), intent(inout), target :: G
 
+    real(8)                             :: dummy(1)
+
 #ifdef PRG_DALTON
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
@@ -254,7 +256,8 @@ contains
 
 #ifdef PRG_DIRAC
     G%elms_alpha = 0.0d0
-    call interest_get_int(D%nrow, D%elms_alpha, G%elms_alpha, 0, 1)
+    call interest_mpi_wake_up()
+    call interest_get_int(D%nrow, D%elms_alpha, G%elms_alpha, 0, 1, 0, dummy)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
