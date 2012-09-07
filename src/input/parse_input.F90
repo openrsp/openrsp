@@ -129,6 +129,10 @@
          openrsp_cfg_hessian = .true.
       end if
 
+      if (kw_matches(word, '.DIPGRA')) then
+         openrsp_cfg_dipole_gradient = .true.
+      end if
+
       if (kw_matches(word, '.DIPHES')) then
          openrsp_cfg_dipole_hessian = .true.
       end if

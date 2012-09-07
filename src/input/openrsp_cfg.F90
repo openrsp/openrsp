@@ -26,11 +26,12 @@ module openrsp_cfg
    integer              :: openrsp_cfg_nr_imag_freqs = 1
    real(8), allocatable :: openrsp_cfg_imag_freqs(:)
 
-   logical :: openrsp_cfg_gradient       = .false.
-   logical :: openrsp_cfg_hessian        = .false.
-   logical :: openrsp_cfg_dipole_hessian = .false.
-   logical :: openrsp_cfg_cubic_ff       = .false.
-   logical :: openrsp_cfg_quartic_ff     = .false.
+   logical :: openrsp_cfg_gradient        = .false.
+   logical :: openrsp_cfg_hessian         = .false.
+   logical :: openrsp_cfg_dipole_gradient = .false.
+   logical :: openrsp_cfg_dipole_hessian  = .false.
+   logical :: openrsp_cfg_cubic_ff        = .false.
+   logical :: openrsp_cfg_quartic_ff      = .false.
 
    logical :: openrsp_cfg_pnc_gradient   = .false.
    logical :: openrsp_cfg_pnc_hessian    = .false.
