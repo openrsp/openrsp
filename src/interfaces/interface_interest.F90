@@ -403,8 +403,6 @@ contains
       integer, intent(in)    :: only_icoor
 
       real(8) :: gint(max_nr_integrals, max_ave_length)
-      real(8) :: gint_u(max_nr_integrals)
-      real(8) :: gint_d(max_nr_integrals)
       real(8) :: gint_temp(max_nr_integrals)
       real(8) :: ex(4), coef(4), xyz(3, 4)
       integer :: ang(4), deg(4), off(4)
@@ -468,6 +466,11 @@ contains
          xyz(2, 1) = atom(gto(ii)%origin)%coordinate_y
          xyz(3, 1) = atom(gto(ii)%origin)%coordinate_z
 
+         ! this is the parallelization
+         ! node 1 will do all quadruples with ii=1
+         ! node 2 will do all quadruples with ii=2
+         ! node 3 will do all quadruples with ii=3
+         ! ...
          if (mod(ii, nr_proc) /= proc_rank) cycle
 
       j_function_loop: do ij = shell_start(iblocks(2)), shell_end(iblocks(2))
@@ -626,11 +629,13 @@ contains
 
             end do
 
-#ifdef UNMERGED
          case (2)
 !-------------------------------------------------------------------------------
 !           order 2
 !-------------------------------------------------------------------------------
+
+            nr_integrals = deg(1)*deg(2)*deg(3)*deg(4)
+            call init_ijk(deg, ang)
 
             do icent = 1, nr_centers
                do jcent = icent, nr_centers
@@ -638,9 +643,15 @@ contains
                   ! zero out integrals
                   k = 0
                   do ixyz = 1, 3
+                     icoor = (icent-1)*3 + ixyz
                      do jxyz = 1, 3
-                        k = k + 1
-                        gint(1:deg(1)*deg(2)*deg(3)*deg(4), k) = 0.0d0
+                        jcoor = (jcent-1)*3 + jxyz
+                        if (jcoor >= icoor) then
+                           k = k + 1
+                           do i = 1, nr_integrals
+                              gint(i, k) = 0.0d0
+                           end do
+                        end if
                      end do
                   end do
 
@@ -651,16 +662,21 @@ contains
 
                         ! uu contribution
                         recalc_integrals = .true.
+                        ang_temp = ang
+                        ang_temp(ifun) = ang_temp(ifun) + 1
+                        ang_temp(jfun) = ang_temp(jfun) + 1
                         k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
-                              k = k + 1
                               if (jcoor >= icoor) then
-                                 call init_lists(deg, ang, ang_temp)
-                                 call form_u(ang_temp, deg, ex, ifun, ixyz)
-                                 call form_u(ang_temp, deg, ex, jfun, jxyz)
+                                 k = k + 1
+                                 call init_prefactors(deg)
+                                 call fac_u(deg, ex, ifun, ixyz)
+                                 call ijk_u(deg, ifun, ixyz)
+                                 call fac_u(deg, ex, jfun, jxyz)
+                                 call ijk_u(deg, jfun, jxyz)
                                  call get_integral_contribution(gint,      &
                                                                 gint_temp, &
                                                                 deg,       &
@@ -670,22 +686,29 @@ contains
                                                                 xyz,       &
                                                                 k,         &
                                                                 recalc_integrals)
+                                 call ijk_d(deg, ifun, ixyz)
+                                 call ijk_d(deg, jfun, jxyz)
                               end if
                            end do
                         end do
 
                         ! ud contribution
                         recalc_integrals = .true.
+                        ang_temp = ang
+                        ang_temp(ifun) = ang_temp(ifun) + 1
+                        ang_temp(jfun) = ang_temp(jfun) - 1
                         k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
-                              k = k + 1
                               if (jcoor >= icoor) then
-                                 call init_lists(deg, ang, ang_temp)
-                                 call form_u(ang_temp, deg, ex, ifun, ixyz)
-                                 call form_d(ang_temp, deg, ex, jfun, jxyz)
+                                 k = k + 1
+                                 call init_prefactors(deg)
+                                 call fac_u(deg, ex, ifun, ixyz)
+                                 call ijk_u(deg, ifun, ixyz)
+                                 call fac_d(deg, ex, jfun, jxyz)
+                                 call ijk_d(deg, jfun, jxyz)
                                  call get_integral_contribution(gint,      &
                                                                 gint_temp, &
                                                                 deg,       &
@@ -695,6 +718,8 @@ contains
                                                                 xyz,       &
                                                                 k,         &
                                                                 recalc_integrals)
+                                 call ijk_d(deg, ifun, ixyz)
+                                 call ijk_u(deg, jfun, jxyz)
                               end if
                            end do
                         end do
@@ -705,16 +730,21 @@ contains
                            ! are the same as ud, in this case do not recalculate
                            recalc_integrals = .true.
                         end if
+                        ang_temp = ang
+                        ang_temp(ifun) = ang_temp(ifun) - 1
+                        ang_temp(jfun) = ang_temp(jfun) + 1
                         k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
-                              k = k + 1
                               if (jcoor >= icoor) then
-                                 call init_lists(deg, ang, ang_temp)
-                                 call form_d(ang_temp, deg, ex, ifun, ixyz)
-                                 call form_u(ang_temp, deg, ex, jfun, jxyz)
+                                 k = k + 1
+                                 call init_prefactors(deg)
+                                 call fac_d(deg, ex, ifun, ixyz)
+                                 call ijk_d(deg, ifun, ixyz)
+                                 call fac_u(deg, ex, jfun, jxyz)
+                                 call ijk_u(deg, jfun, jxyz)
                                  call get_integral_contribution(gint,      &
                                                                 gint_temp, &
                                                                 deg,       &
@@ -724,22 +754,29 @@ contains
                                                                 xyz,       &
                                                                 k,         &
                                                                 recalc_integrals)
+                                 call ijk_u(deg, ifun, ixyz)
+                                 call ijk_d(deg, jfun, jxyz)
                               end if
                            end do
                         end do
 
                         ! dd contribution
                         recalc_integrals = .true.
+                        ang_temp = ang
+                        ang_temp(ifun) = ang_temp(ifun) - 1
+                        ang_temp(jfun) = ang_temp(jfun) - 1
                         k = 0
                         do ixyz = 1, 3
                            icoor = (icent-1)*3 + ixyz
                            do jxyz = 1, 3
                               jcoor = (jcent-1)*3 + jxyz
-                              k = k + 1
                               if (jcoor >= icoor) then
-                                 call init_lists(deg, ang, ang_temp)
-                                 call form_d(ang_temp, deg, ex, ifun, ixyz)
-                                 call form_d(ang_temp, deg, ex, jfun, jxyz)
+                                 k = k + 1
+                                 call init_prefactors(deg)
+                                 call fac_d(deg, ex, ifun, ixyz)
+                                 call ijk_d(deg, ifun, ixyz)
+                                 call fac_d(deg, ex, jfun, jxyz)
+                                 call ijk_d(deg, jfun, jxyz)
                                  call get_integral_contribution(gint,      &
                                                                 gint_temp, &
                                                                 deg,       &
@@ -749,6 +786,8 @@ contains
                                                                 xyz,       &
                                                                 k,         &
                                                                 recalc_integrals)
+                                 call ijk_u(deg, ifun, ixyz)
+                                 call ijk_u(deg, jfun, jxyz)
                               end if
                            end do
                         end do
@@ -762,8 +801,8 @@ contains
                      icoor = (icent-1)*3 + ixyz
                      do jxyz = 1, 3
                         jcoor = (jcent-1)*3 + jxyz
-                        k = k + 1
                         if (jcoor >= icoor) then
+                           k = k + 1
                            l = (icoor - 1)*nr_centers*3 &
                              +  jcoor
                            call contract_integrals(deg,        &
@@ -782,6 +821,7 @@ contains
                end do
             end do
 
+#ifdef UNMERGED
          case (3)
 !-------------------------------------------------------------------------------
 !           order 3
