@@ -249,8 +249,12 @@ end subroutine
        call prop_test_hessian(3*num_atoms, S, D, F)
     end if
 
+    if (openrsp_cfg_dipole_gradient) then
+       call prop_test_diphes(3*num_atoms, S, D, F, .true.)
+    end if
+
     if (openrsp_cfg_dipole_hessian) then
-       call prop_test_diphes(3*num_atoms, S, D, F)
+       call prop_test_diphes(3*num_atoms, S, D, F, .false.)
     end if
 
     if (openrsp_cfg_cubic_ff) then

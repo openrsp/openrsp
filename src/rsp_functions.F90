@@ -944,10 +944,11 @@ contains
 
   end subroutine
 
-  subroutine prop_test_diphes(ng, S, D, F)
+  subroutine prop_test_diphes(ng, S, D, F, only_gradient)
 
     integer,       intent(in) :: ng
     type(matrix),  intent(in) :: S, D, F
+    logical,       intent(in) :: only_gradient
     type(rsp_field) geo2_el(3)
     type(matrix) DFD, Sg(ng), Dg(ng), Fg(ng)
     type(matrix) Df(3), Ff(3), FDSf(1), DFDf
@@ -1052,6 +1053,10 @@ contains
     Egf = Egf + temp_gf
 
     call print_tensor(shape(Egf), Egf, 'dipole gradient Egf')
+
+    if (only_gradient) then
+       return
+    end if
 
     call get_fo_geo_perturbed_matrices(ng, S, D, F, Sg, Dg, Fg)
     call contract_hessian(ng, S, D, F, Sg, Dg, Fg)
