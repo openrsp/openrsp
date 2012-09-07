@@ -1053,6 +1053,7 @@ contains
     Egf = Egf + temp_gf
 
     call print_tensor(shape(Egf), Egf, 'dipole gradient Egf')
+    call write_dipole_gradient_to_file(ng, Egf)
 
     if (only_gradient) then
        return
@@ -1389,6 +1390,25 @@ contains
       deallocate(Epg_temp)
 
 #endif /* ifdef PRG_DIRAC */
+   end subroutine
+
+   subroutine write_dipole_gradient_to_file(ng, tensor)
+
+      integer,    intent(in) :: ng
+      complex(8), intent(in) :: tensor(ng, 3)
+
+      integer                :: i, j
+
+      open(unit=iounit, file='tensor_egf', status='replace', action='write')
+      write(iounit, *) 3, ng
+      write(iounit, *)
+      do i = 1, 3
+         do j = 1, ng
+            write(iounit, *) i, j, real(tensor(j, i))
+         end do
+      end do
+      close(iounit)
+
    end subroutine
 
 end module
