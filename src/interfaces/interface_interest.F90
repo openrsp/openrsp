@@ -7,9 +7,14 @@ module interface_interest
    implicit none
 
    public interest_get_int
-   public interest_get_ave
+   public interest_mpi_wake_up
+   public interest_mpi_launch_slave_process
 
    private
+
+#ifdef VAR_MPI
+#include "mpif.h"
+#endif
 
    ! max angular momentum (s = 0, p = 1, ...)
    integer, parameter :: maxl = 7
@@ -204,105 +209,178 @@ contains
    end subroutine
 #endif
 
-   subroutine interest_get_int(ndim, dmat, gmat, order, only_icoor)
+   subroutine interest_mpi_wake_up()
 
-      integer, intent(in)  :: ndim
-      real(8), intent(out) :: gmat(ndim, ndim, *)
-      real(8), intent(in)  :: dmat(ndim, ndim, *)
-      integer, intent(in)  :: order
-      integer, intent(in)  :: only_icoor
+#ifdef VAR_MPI
+      integer :: nr_proc
+      integer :: ierr
+
+      call mpi_comm_size(MPI_COMM_WORLD, nr_proc, ierr)
+      if (nr_proc > 1) then
+         call dirac_parctl(8)
+      end if
+#endif
+
+   end subroutine
+
+   subroutine interest_mpi_launch_slave_process()
+
+      integer :: ndim
+      real(8) :: array_dmat(1)
+      real(8) :: array_gmat(1)
+      integer :: order
+      integer :: only_icoor
+      integer :: ave_length
+      real(8) :: array_ave(1)
+
+      call interest_get_int(ndim, array_dmat, array_gmat, order, only_icoor, ave_length, array_ave)
+
+   end subroutine
+
+   subroutine interest_get_int(ndim, array_dmat, array_gmat, order, only_icoor, ave_length, array_ave)
+
+      integer                      :: ndim
+      real(8), target              :: array_dmat(*)
+      real(8), target              :: array_gmat(*)
+      integer                      :: order
+      integer                      :: only_icoor
+      integer                      :: ave_length
+      real(8), target              :: array_ave(*)
+
+      logical                      :: get_ave
+      integer                      :: nr_proc
+      integer                      :: proc_rank
+      integer                      :: ierr
+
+      real(8), pointer             :: dmat(:)
+      real(8), pointer             :: gmat(:)
+      real(8), pointer             :: ave(:)
+
+      real(8), allocatable, target :: dmat_container(:)
+      real(8), allocatable, target :: gmat_container(:)
+      real(8), allocatable, target :: ave_container(:)
+
+#ifdef VAR_MPI
+      call mpi_comm_size(MPI_COMM_WORLD, nr_proc, ierr)
+      call mpi_comm_rank(MPI_COMM_WORLD, proc_rank, ierr)
+#else
+      nr_proc   = 1
+      proc_rank = 0
+#endif
+
+#ifdef VAR_MPI
+      if (nr_proc > 1) then
+         call mpi_bcast(ndim,       1, MPI_INTEGER4, 0, MPI_COMM_WORLD, ierr)
+         call mpi_bcast(order,      1, MPI_INTEGER4, 0, MPI_COMM_WORLD, ierr)
+         call mpi_bcast(only_icoor, 1, MPI_INTEGER4, 0, MPI_COMM_WORLD, ierr)
+         call mpi_bcast(ave_length, 1, MPI_INTEGER4, 0, MPI_COMM_WORLD, ierr)
+      end if
+#endif
+
+      nullify(dmat)
+      nullify(gmat)
+      nullify(ave)
+
+      if (proc_rank == 0) then
+         dmat => array_dmat(1:ndim*ndim*4)
+         gmat => array_gmat(1:ndim*ndim*4)
+         ave  => array_ave(1:ave_length)
+      else
+         allocate(dmat_container(ndim*ndim*4))
+         allocate(gmat_container(ndim*ndim*4))
+         gmat_container = 0.0d0
+         allocate(ave_container(ave_length))
+         dmat => dmat_container
+         gmat => gmat_container
+         ave  => ave_container
+      end if
+
+      if (ave_length > 0) then
+         ave(1:ave_length) = 0.0d0
+         get_ave = .true.
+      else
+         get_ave = .false.
+      end if
+
+#ifdef VAR_MPI
+      if (nr_proc > 1) then
+         call mpi_bcast(dmat, ndim*ndim*4, MPI_REAL8, 0, MPI_COMM_WORLD, ierr)
+         if (get_ave) then
+            call mpi_bcast(gmat, ndim*ndim*4, MPI_REAL8, 0, MPI_COMM_WORLD, ierr)
+         end if
+         call mpi_bcast(openrsp_cfg_skip_llss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+         call mpi_bcast(openrsp_cfg_skip_ssss, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
+      end if
+#endif
 
       call interest_eri_diff_block(ndim,           &
                                    dmat,           &
                                    gmat,           &
                                    order,          &
                                    (/1, 1, 1, 1/), &
-                                   (/0.0d0/),      &
-                                   .false.,        &
-                                   only_icoor)
-#ifdef PRG_DIRAC
-      if (.not. openrsp_cfg_skip_llss) then
-         call interest_eri_diff_block(ndim,           &
-                                      dmat,           &
-                                      gmat,           &
-                                      order,          &
-                                      (/1, 1, 2, 2/), &
-                                      (/0.0d0/),      &
-                                      .false.,        &
-                                      only_icoor)
-         call interest_eri_diff_block(ndim,           &
-                                      dmat,           &
-                                      gmat,           &
-                                      order,          &
-                                      (/2, 2, 1, 1/), &
-                                      (/0.0d0/),      &
-                                      .false.,        &
-                                      only_icoor)
-      end if
-
-      if (.not. openrsp_cfg_skip_ssss) then
-         call interest_eri_diff_block(ndim,           &
-                                      dmat,           &
-                                      gmat,           &
-                                      order,          &
-                                      (/2, 2, 2, 2/), &
-                                      (/0.0d0/),      &
-                                      .false.,        &
-                                      only_icoor)
-      end if
-#endif
-
-   end subroutine
-
-   subroutine interest_get_ave(ndim, dmat1, dmat2, order, ave)
-
-      integer, intent(in)  :: ndim
-      real(8), intent(in)  :: dmat1(ndim, ndim, *)
-      real(8), intent(in)  :: dmat2(ndim, ndim, *)
-      integer, intent(in)  :: order
-      real(8), intent(out) :: ave(*)
-
-      ave(1) = 0.0d0
-
-      call interest_eri_diff_block(ndim,           &
-                                   dmat1,          &
-                                   dmat2,          &
-                                   order,          &
-                                   (/1, 1, 1, 1/), &
                                    ave,            &
-                                   .true.,         &
-                                   0)
+                                   get_ave,        &
+                                   only_icoor)
+
 #ifdef PRG_DIRAC
       if (.not. openrsp_cfg_skip_llss) then
          call interest_eri_diff_block(ndim,           &
-                                      dmat1,          &
-                                      dmat2,          &
+                                      dmat,           &
+                                      gmat,           &
                                       order,          &
                                       (/1, 1, 2, 2/), &
                                       ave,            &
-                                      .true.,         &
-                                      0)
+                                      get_ave,        &
+                                      only_icoor)
          call interest_eri_diff_block(ndim,           &
-                                      dmat1,          &
-                                      dmat2,          &
+                                      dmat,           &
+                                      gmat,           &
                                       order,          &
                                       (/2, 2, 1, 1/), &
                                       ave,            &
-                                      .true.,         &
-                                      0)
+                                      get_ave,        &
+                                      only_icoor)
       end if
 
       if (.not. openrsp_cfg_skip_ssss) then
          call interest_eri_diff_block(ndim,           &
-                                      dmat1,          &
-                                      dmat2,          &
+                                      dmat,           &
+                                      gmat,           &
                                       order,          &
                                       (/2, 2, 2, 2/), &
                                       ave,            &
-                                      .true.,         &
-                                      0)
+                                      get_ave,        &
+                                      only_icoor)
       end if
 #endif
+
+#ifdef VAR_MPI
+      if (nr_proc > 1) then
+         if (get_ave) then
+            if (proc_rank == 0) then
+               call mpi_reduce(MPI_IN_PLACE, ave, ave_length, MPI_REAL8, mpi_sum, 0, MPI_COMM_WORLD, ierr)
+            else
+               call mpi_reduce(ave, MPI_IN_PLACE, ave_length, MPI_REAL8, mpi_sum, 0, MPI_COMM_WORLD, ierr)
+            end if
+         else
+            if (proc_rank == 0) then
+               call mpi_reduce(MPI_IN_PLACE, gmat, ndim*ndim*4, MPI_REAL8, mpi_sum, 0, MPI_COMM_WORLD, ierr)
+            else
+               call mpi_reduce(gmat, MPI_IN_PLACE, ndim*ndim*4, MPI_REAL8, mpi_sum, 0, MPI_COMM_WORLD, ierr)
+            end if
+         end if
+      end if
+#endif
+
+      nullify(dmat)
+      nullify(gmat)
+      nullify(ave)
+
+      if (proc_rank /= 0) then
+         deallocate(dmat_container)
+         deallocate(gmat_container)
+         deallocate(ave_container)
+      end if
 
    end subroutine
 
@@ -345,6 +423,9 @@ contains
       integer :: ang_temp(4)
       integer :: ideg
       logical :: recalc_integrals
+      integer :: nr_proc
+      integer :: proc_rank
+      integer :: ierr
 
       ! make sure it is initialized
       ! it does not cost anything
@@ -354,6 +435,14 @@ contains
 !      call initialize_interest_eri_diff()
 #else
       call initialize_interest_eri_diff()
+#endif
+
+#ifdef VAR_MPI
+      call mpi_comm_size(MPI_COMM_WORLD, nr_proc, ierr)
+      call mpi_comm_rank(MPI_COMM_WORLD, proc_rank, ierr)
+#else
+      nr_proc   = 1
+      proc_rank = 0
 #endif
 
       if (get_ave) then
@@ -378,6 +467,8 @@ contains
          xyz(1, 1) = atom(gto(ii)%origin)%coordinate_x
          xyz(2, 1) = atom(gto(ii)%origin)%coordinate_y
          xyz(3, 1) = atom(gto(ii)%origin)%coordinate_z
+
+         if (mod(ii, nr_proc) /= proc_rank) cycle
 
       j_function_loop: do ij = shell_start(iblocks(2)), shell_end(iblocks(2))
          ang(2)    =      gto(ij)%lvalue

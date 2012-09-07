@@ -511,7 +511,8 @@ end if
 #ifdef PRG_DIRAC
        allocate(real_ave(size(ave)))
        real_ave = 0.0
-       call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, real_ave)
+       call interest_mpi_wake_up()
+       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -553,7 +554,8 @@ end if
 #ifdef PRG_DIRAC
        allocate(real_ave(size(ave)))
        real_ave = 0.0
-       call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 2, real_ave)
+       call interest_mpi_wake_up()
+       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 2, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -592,7 +594,8 @@ end if
 #ifdef PRG_DIRAC
        allocate(real_ave(size(ave)))
        real_ave = 0.0
-       call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 3, real_ave)
+       call interest_mpi_wake_up()
+       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 3, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -713,7 +716,8 @@ end if
 #ifdef PRG_DIRAC
        allocate(real_ave(size(ave)))
        real_ave = 0.0
-       call interest_get_ave(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, real_ave)
+       call interest_mpi_wake_up()
+       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -1000,6 +1004,7 @@ end do
     integer       i, j, n, ij, ncor
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
+    real(8)          :: dummy(1)
 
     nullify(null_ptr) !because null() isn't f90
 
@@ -1060,7 +1065,8 @@ end do
           end if
        end do
        do i = 1, nc(1)
-          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i)%elms_alpha, 1, i)
+          call interest_mpi_wake_up()
+          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i)%elms_alpha, 1, i, 0, dummy)
        end do
 #endif /* ifdef PRG_DIRAC */
 
@@ -1125,6 +1131,7 @@ end do
     integer       i, j, n, ij, ncor, nr_ao
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
+    real(8)          :: dummy(1)
 
 ! MR: DUMMY PLACEHOLDER MOL DECLARATION
 
@@ -1180,7 +1187,8 @@ end do
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1)
+          call interest_mpi_wake_up()
+          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1, 0, dummy)
 #endif /* ifdef PRG_DIRAC */
 
        end do
