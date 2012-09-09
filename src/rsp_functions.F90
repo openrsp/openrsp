@@ -962,7 +962,7 @@ contains
     complex(8)   temp_gf(ng, 3)
     complex(8)   temp_ggf(ng, ng, 3)
     character(4) nof(0) !no-field
-    integer      i, j, k, noc(0) !no-comp
+    integer      i, j, k, l, noc(0) !no-comp
     geo2_el(:2) = rsp_field('GEO ', (0d0,0d0), 1, ng)
     geo2_el(3)  = rsp_field('EL  ', (0d0,0d0), 1, 3)
     !-------------------------------------------------
@@ -1037,6 +1037,7 @@ contains
     end do
     Egf = Egf + temp_gf
 
+    tmp = 0.0d0
     call rsp_oneave(2, (/'GEO ', 'EL  '/), (/1, 1/), shape(tmp(:, 1, :)), D, tmp(:,1,:))
     ! radovan: rsp_oneave returns in "wrong" ordering, resort
     call resort_gf(tmp(:, 1, :), temp_gf, ng)
@@ -1053,6 +1054,21 @@ contains
        call rsp_twoave(1, (/'GEO '/), (/1/), shape(temp_gf(:, i)), D, Df(i), temp_gf(:, i))
     end do
     Egf = Egf + temp_gf
+
+    ! reverse sign
+    Egf = -Egf
+    ! add nuclear contribution
+    do i = 1, 3
+       l = 0
+       do j = 1, ng/3
+          do k = 1, 3
+             l = l + 1
+             if (i == k) then
+                Egf(l, i) = Egf(l, i) + real(get_nuc_charge(j))
+             end if
+          end do
+       end do
+    end do
 
     call print_tensor(shape(Egf), Egf, 'dipole gradient Egf')
     call write_dipole_gradient_to_file(ng, Egf)
@@ -1399,14 +1415,17 @@ contains
       integer,    intent(in) :: ng
       complex(8), intent(in) :: tensor(ng, 3)
 
-      integer                :: i, j
+      integer                :: iatom, i_g, i_f, ic
 
       open(unit=iounit, file='tensor_egf', status='replace', action='write')
       write(iounit, *) 3, ng
       write(iounit, *)
-      do i = 1, 3
-         do j = 1, ng
-            write(iounit, *) i, j, real(tensor(j, i))
+      do iatom = 1, ng/3
+         do i_g = 1, 3
+            ic = (iatom - 1)*3 + i_g
+            do i_f = 1, 3
+               write(iounit, *) ic, i_f, real(tensor(ic, i_f))
+            end do
          end do
       end do
       close(iounit)
