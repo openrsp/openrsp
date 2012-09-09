@@ -1,6 +1,8 @@
 module interface_interest
 
-   !fixme: if ave and unp D, avoid multiple calls and scale by 4.0
+   !fixme: * if ave and unp D, avoid loop over ifun and scale by 4.0
+   !       * parallel code relies on the fact that common blocks are broadcast
+   !         before this module is called, better would be to sync basis set info here
 
    use openrsp_cfg
 
@@ -134,10 +136,17 @@ contains
       integer        :: i
       integer        :: j
       integer        :: ij
-      integer        :: ier
+      integer        :: ierr
+      integer        :: proc_rank
       type(type_gto) :: tmpgto
 
       if (interface_is_initialized) return
+
+#ifdef VAR_MPI
+      call mpi_comm_rank(MPI_COMM_WORLD, proc_rank, ierr)
+#else
+      proc_rank = 0
+#endif
 
       call init_permanent_arrays()
 
@@ -152,8 +161,8 @@ contains
       endif
 
       !> interface molecular data
-      allocate(atom(nucind), stat=ier)
-      if (ier /= 0) stop 'Error in allocation: atom(:)'
+      allocate(atom(nucind), stat=ierr)
+      if (ierr /= 0) stop 'Error in allocation: atom(:)'
       do i = 1, size(atom)
          atom(i) = type_atom(charge(i), &
                              cord(1,i), &
@@ -164,8 +173,8 @@ contains
 
       !> interface basis set data
       !> fixme: contracted basis sets
-      allocate(gto(nlrgsh+nsmlsh), stat=ier)
-      if (ier /= 0) stop 'Error in allocation: gto(:)'
+      allocate(gto(nlrgsh+nsmlsh), stat=ierr)
+      if (ierr /= 0) stop 'Error in allocation: gto(:)'
       i  = 0
       ij = 0
       do while (i < size(gto))
@@ -200,9 +209,11 @@ contains
       shell_start(2) = shell_end(1) + 1
       shell_end(2)   = shell_end(1) + nsmlsh
 
-      print *, 'total number of basis function shells:    ', size(gto)
-      print *, 'total number of spherical basis functions:', sum(gto(:)%sdegen)
-      print *, 'total number of cartesian basis functions:', sum(gto(:)%cdegen)
+      if (proc_rank == 0) then
+         print *, 'total number of basis function shells:    ', size(gto)
+         print *, 'total number of spherical basis functions:', sum(gto(:)%sdegen)
+         print *, 'total number of cartesian basis functions:', sum(gto(:)%cdegen)
+      end if
 
       interface_is_initialized = .true.
 
