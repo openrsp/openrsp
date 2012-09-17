@@ -683,13 +683,16 @@ call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
           call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
                          p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
-                         inner_indices_size, contrib)
+                         nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                         blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, contrib)
 
        elseif (num_p_tuples == 2) then
 
           call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                          (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                         p_tuples(1)%pdim, dens_tuple(2), inner_indices_size, contrib)
+                         p_tuples(1)%pdim, dens_tuple(2), &
+                         nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                         blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, contrib)
 
        end if
 
@@ -956,7 +959,9 @@ deallocate(triang_indices_pr)
 
        call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
-                       sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
+                       sdf_getdata(D, get_emptypert(), (/1/)) , &
+                       nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                       blk_sizes(1, 1:nblks_tuple(1)), property_size, contrib)
 
        tmp = tmp + contrib
 
@@ -1310,7 +1315,9 @@ call mat_init(W, zeromat%nrow, zeromat%ncol, .true.)
 
        call rsp_ovlave_tr(p12(1)%n_perturbations, p12(1)%plab, &
                       (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
-                      p12(1)%pdim, W, size(tmp), tmp)
+                      p12(1)%pdim, W, nblks_tuple(1), blks_tuple_info(1, &
+                      1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
+                      size(tmp), tmp)
 
        do j = 1, size(inner_indices, 1)
 
@@ -1719,7 +1726,9 @@ call mat_init(W, zeromat%nrow, zeromat%ncol, .true.)
 !MR: TEMPORARILY DISABLED
        call rsp_ovlave_tr(p12(1)%n_perturbations, p12(1)%plab, &
                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
-                       p12(1)%pdim, W, size(tmp), tmp)
+                       p12(1)%pdim, W, nblks_tuple(1), blks_tuple_info(1, &
+                       1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
+                       size(tmp), tmp)
 
        do j = 1, size(inner_indices, 1)
 

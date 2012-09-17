@@ -360,7 +360,8 @@ end if
 ! MR: NOT SURE IF WORKING PROPERLY
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
-  subroutine rsp_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
+  subroutine rsp_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave, w, D)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface
 !     use gen1int_api
@@ -368,6 +369,9 @@ end if
 !     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
     integer,       intent(in)  :: nf, propsize
+    integer :: nblks
+    integer, dimension(nblks) :: blk_sizes
+    integer, dimension(nblks, 3) :: blk_info
     !> field labels in std order
     character(4),  intent(in)  :: f(nf)
     !> first and number of- components in each field
@@ -381,7 +385,8 @@ end if
     !> density matrix to contract half-differentiated overlap against
     type(matrix),  intent(in), optional  :: D
     !----------------------------------------------
-    call interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
+    call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave, w, D)
 
   end subroutine
 
@@ -416,7 +421,7 @@ end if
 
 ! radovan: there is code repetition in ave and int setup
 
-  subroutine rsp_oneave_tr(nf, f, c, nc, D, propsize, ave)
+  subroutine rsp_oneave_tr(nf, f, c, nc, D, nblks, blk_info, blk_sizes, propsize, ave)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface in Dalton
 !     use gen1int_api
@@ -424,6 +429,9 @@ end if
 !     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
     integer,       intent(in)  :: nf
+    integer :: nblks
+    integer, dimension(nblks) :: blk_sizes
+    integer, dimension(nblks, 3) :: blk_info
     !> field labels in std order
     character(4),  intent(in)  :: f(nf)
     !> first and number of- components in each field
@@ -432,7 +440,8 @@ end if
     type(matrix),  intent(in)  :: D
     !> output average
     complex(8),    intent(out) :: ave(propsize)
-    call interface_1el_oneave_tr(nf, f, c, nc, D, propsize, ave)
+    call interface_1el_oneave_tr(nf, f, c, nc, D, nblks, blk_info, & 
+                                 blk_sizes, propsize, ave)
 
   end subroutine
 
@@ -894,13 +903,17 @@ end do
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
   !> Compute differentiated overlap matrices, and optionally
   !> add half-differentiated overlap contribution to Fock matrices
-  subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
+  subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ovl, w, fock)
     ! Gen1Int interface in Dalton
 !     use gen1int_api
     !> structure containing integral program settings
 !     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
     integer,       intent(in)    :: nf, propsize
+    integer :: nblks
+    integer, dimension(nblks) :: blk_sizes
+    integer, dimension(nblks, 3) :: blk_info
     !> field labels in std order
     character(4),  intent(in)    :: f(nf)
     !> first and number of- components in each field
@@ -915,7 +928,8 @@ end do
     !------------------------------------------------
     integer      i, nr_ao
 
-    call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
+    call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ovl, w, fock)
 
   end subroutine
 
@@ -945,13 +959,17 @@ end do
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
 
 
-  subroutine rsp_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
+  subroutine rsp_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, oneint)
     ! Gen1Int interface in Dalton
 !     use gen1int_api
     !> structure containing integral program settings
 !     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
     integer,       intent(in)    :: nf, propsize
+    integer :: nblks
+    integer, dimension(nblks) :: blk_sizes
+    integer, dimension(nblks, 3) :: blk_info
     !> field labels in std order
     character(4),  intent(in)    :: f(nf)
     !> first and number of- components in each field
@@ -970,7 +988,8 @@ end do
     integer :: i, nr_ao
     type(matrix) :: A
 
-    call interface_1el_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
+    call interface_1el_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, oneint)
 
   end subroutine
 

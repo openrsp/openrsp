@@ -113,7 +113,7 @@ module rsp_perturbed_sdf
 
     
     integer :: sstr_incr, i, j, superstructure_size, nblks, perturbed_matrix_size
-    integer, allocatable, dimension(:) :: ind
+    integer, allocatable, dimension(:) :: ind, blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info, indices
     integer, dimension(0) :: noc
     character(4), dimension(0) :: nof
@@ -145,10 +145,16 @@ call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
 
     nblks = get_num_blks(pert)
     allocate(blk_info(nblks, 3))
+allocate(blk_sizes(pert%n_perturbations))
+
 
     blk_info = get_blk_info(nblks, pert)
     
     perturbed_matrix_size = get_triangulated_size(nblks, blk_info)
+
+
+blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
+
 ! write(*,*) 'perturbed matrix size', perturbed_matrix_size
 
 
@@ -163,8 +169,19 @@ call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
 
     call rsp_ovlint_tr(zeromat%nrow, pert%n_perturbations, pert%plab, &
                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
+                       nblks, blk_info, blk_sizes, &
                        perturbed_matrix_size, Sp)
     call sdf_add(S, pert, perturbed_matrix_size, Sp)
+
+! write(*,*) 'Got Sp'
+! do i = 1, perturbed_matrix_size
+! 
+! write(*,*) 'Sp at', i
+!        write(*,*) Sp(i)%elms_alpha
+! 
+! end do
+
+deallocate(blk_sizes)
 
     ! INITIALIZE AND STORE D INSTANCE WITH ZEROES
     ! THE ZEROES WILL ENSURE THAT TERMS INVOLVING THE HIGHEST ORDER DENSITY MATRICES
@@ -873,7 +890,8 @@ call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
 
              call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                             p_tuples(1)%pdim, size(tmp), tmp)
+                             p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
+                   1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), size(tmp), tmp)
 
           end if
 
@@ -1065,7 +1083,8 @@ deallocate(triang_indices_fp)
 ! write(*,*) '10'
           call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                          p_tuples(1)%pdim, property_size, Fp)
+                          p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
+                   1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), property_size, Fp)
 ! Waiting for developments in rsp_contribs
 ! NOTE: Find out if necessary ovlint/oneint in "outer indices case" above
 ! NOTE: Add (a) corresponding call(s) for the energy term contributions (see e.g. eqn.

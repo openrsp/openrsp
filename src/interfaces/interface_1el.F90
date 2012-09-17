@@ -7,6 +7,7 @@ module interface_1el
    use interface_f77_memory
    use interface_pcm
    use interface_io
+   use rsp_indices_and_addressing, only: get_triang_blks_offset
 
    implicit none
 
@@ -192,11 +193,15 @@ contains
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
+                                      blk_sizes,  propsize, ave, w, D)
       ! Gen1Int interface
       use gen1int_host
       !> number of fields
       integer,       intent(in)  :: nf, propsize
+integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
       !> field labels in std order
       character(4),  intent(in)  :: f(nf)
       !> first and number of- components in each field
@@ -216,7 +221,8 @@ contains
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, propsize, ave, w, D)
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave, w, D)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -225,6 +231,11 @@ contains
 #endif
       !> number of fields
       integer,       intent(in)  :: nf, propsize
+integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
+      integer :: num_derv, j, k, ave_offset
+      integer, allocatable, dimension(:) :: order_derv, tmp_index
       !> field labels in std order
       character(4),  intent(in)  :: f(nf)
       !> first and number of- components in each field
@@ -248,6 +259,8 @@ contains
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
       integer num_expt                       !number of all expectation values
+integer :: num_addr, num_order
+integer, allocatable :: address_list(:,:)
       real(8), allocatable :: val_expt(:,:)  !expectation values, real numbers
       integer ierr                           !error information
       logical :: all_frequencies_zero
@@ -269,6 +282,28 @@ contains
       if (any(f == 'EL  ')) then
          ave = 0.0
       else
+
+
+! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
+
+      if (count(f=='EL  ') > 0) then
+
+         ! THIS CASE SHOULD NOT BE ENCOUNTERED IN OVLAVE
+
+         num_derv = 1
+
+         allocate(order_derv(num_derv))
+         order_derv = (/count(f=='EL  ')/)
+
+      else
+
+         num_derv = 0
+         allocate(order_derv(1))
+         order_derv = (/0/)
+
+      end if
+
+
 
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
@@ -336,9 +371,77 @@ contains
                                        get_print_unit(), 0)
             val_expt = -val_expt
             ! assigns the output average
+
+
+! MR: ASSIGN DATA TO ave
+
+    num_order = sum(order_derv)+order_geo
+    ! gets the number of unique total geometric derivatives
+    if (order_geo/=0) then
+      call geom_total_num_derv(order_geo, min(num_atom, order_geo), num_atom, num_addr)
+    else
+      num_addr = 1
+    end if
+    ! gets the number of derivatives/powers/moments
+    do ierr = 1, num_derv
+      num_addr = num_addr*(order_derv(ierr)+1)*(order_derv(ierr)+2)/2
+    end do
+! write(*,*), num_order, num_addr
+    allocate(address_list(num_order,num_addr), stat=ierr)
+    if (ierr/=0) stop "failed to allocate address_list!"
+    ! gets the list of addresses
+    call get_address_list(num_derv, order_derv,                     &
+                          num_atom, order_geo, min(num_atom, order_geo), &
+                          num_order, num_addr, address_list)
+!     do ierr = 1, num_addr
+!       write(6,*) address_list(:,ierr)
+!     end do
+    
+
+allocate(tmp_index(nf))
+
+! write(*,*) 'num_addr is', num_addr
+! write(*,*) 'size of val expt', size(val_expt, 1)
+
+do i = 1, num_addr
+
+! write(*,*) 'i is', i
+! write(*,*) 'unordered index: ', address_list(:, i)
+
+
+
+
+
+
+tmp_index(:) = address_list(:, i)
+
+
+! write(*,*) 'reordered index', tmp_index
+
+
+ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+
+
+! write(*,*) 'ave offset', ave_offset
+
+ave(ave_offset) = val_expt(i,1)
+
+
+end do
+
+deallocate(address_list)
+deallocate(tmp_index)
+
+
+
+
+
+
+
+
 ! MR: REMOVED THE order_geo CONDITION TO MAKE ave ALWAYS CONTAIN val_expt(:,1)
 !             if (order_geo==0) then
-               ave = val_expt(:,1)
+!                ave = val_expt(:,1)
 !             else
 ! MR: THIS CALL OR THE gen1int_reorder ROUTINE MAY NEED ADAPTATION
 !                call gen1int_reorder_tr(num_coord=num_coord, num_field=nf, &
@@ -590,11 +693,15 @@ contains
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
-   subroutine interface_1el_oneave_tr(nf, f, c, nc, D, propsize, ave)
+   subroutine interface_1el_oneave_tr(nf, f, c, nc, D, blk_info, & 
+                                      blk_sizes, propsize, ave)
       ! Gen1Int interface
       use gen1int_host
       !> number of fields
       integer,       intent(in)  :: nf, propsize
+      integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
       !> field labels in std order
       character(4),  intent(in)  :: f(nf)
       !> first and number of- components in each field
@@ -610,7 +717,8 @@ contains
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average 1-electron integrals perturbed by fields f
    !>        with the (perturbed) density matrix D
-   subroutine interface_1el_oneave_tr(nf, f, c, nc, D, propsize, ave)
+   subroutine interface_1el_oneave_tr(nf, f, c, nc, D, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -619,6 +727,11 @@ contains
 #endif
       !> number of fields
       integer,       intent(in)  :: nf, propsize
+      integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
+      integer :: num_derv, j, k, ave_offset
+      integer, allocatable, dimension(:) :: order_derv, tmp_index
       !> field labels in std order
       character(4),  intent(in)  :: f(nf)
       !> first and number of- components in each field
@@ -635,6 +748,8 @@ contains
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
       integer num_expt                       !number of all expectation values
+integer :: num_addr, num_order
+integer, allocatable :: address_list(:,:)
       real(8), allocatable :: val_expt(:, :) !expectation values, real numbers
       real(8), allocatable :: temp(:)
       integer ierr                           !error information
@@ -643,6 +758,27 @@ contains
 
       ! gets the order of Cartesian multipole moments
       order_mom = count(f=='EL  ')
+
+! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
+
+      if (count(f=='EL  ') > 0) then
+
+         num_derv = 1
+
+         allocate(order_derv(num_derv))
+         order_derv = (/count(f=='EL  ')/)
+
+      else
+
+         num_derv = 0
+         allocate(order_derv(1))
+         order_derv = (/0/)
+
+      end if
+
+
+
+
 
       if (order_mom > 1) then
          ave = 0.0
@@ -779,6 +915,7 @@ contains
             T = 0
 
             deallocate(temp)
+            deallocate(num_derv)
 
 #endif /* ifdef PRG_DIRAC */
 
@@ -787,7 +924,75 @@ contains
 
 ! MR: ASSIGN DATA TO ave
 
-ave = val_expt(:,1)
+    num_order = sum(order_derv)+order_geo
+    ! gets the number of unique total geometric derivatives
+    if (order_geo/=0) then
+      call geom_total_num_derv(order_geo, min(num_atom, order_geo), num_atom, num_addr)
+    else
+      num_addr = 1
+    end if
+    ! gets the number of derivatives/powers/moments
+    do ierr = 1, num_derv
+      num_addr = num_addr*(order_derv(ierr)+1)*(order_derv(ierr)+2)/2
+    end do
+! write(*,*), num_order, num_addr
+    allocate(address_list(num_order,num_addr), stat=ierr)
+    if (ierr/=0) stop "failed to allocate address_list!"
+    ! gets the list of addresses
+    call get_address_list(num_derv, order_derv,                     &
+                          num_atom, order_geo, min(num_atom, order_geo), &
+                          num_order, num_addr, address_list)
+!     do ierr = 1, num_addr
+!       write(6,*) address_list(:,ierr)
+!     end do
+    
+
+allocate(tmp_index(nf))
+
+! write(*,*) 'num_addr is', num_addr
+! write(*,*) 'size of val expt', size(val_expt, 1)
+
+do i = 1, num_addr
+
+! write(*,*) 'i is', i
+! write(*,*) 'unordered index: ', address_list(:, i)
+
+
+k = 1
+
+
+do j = order_mom + 1, order_mom + order_geo
+
+tmp_index(k) = address_list(j, i)
+
+k = k + 1
+
+end do
+
+do j = 1, order_mom
+
+tmp_index(k) = address_list(j, i)
+
+k = k + 1
+
+end do
+! write(*,*) 'reordered index', tmp_index
+
+
+ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+
+
+! write(*,*) 'ave offset', ave_offset
+
+ave(ave_offset) = val_expt(i,1)
+
+
+end do
+
+deallocate(address_list)
+deallocate(tmp_index)
+
+
 
 ! MR: THIS CALL OR THE gen1int_reorder ROUTINE MAY NEED ADAPTATION
          ! assigns the output average
@@ -960,11 +1165,15 @@ ave = val_expt(:,1)
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
-   subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
+   subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ovl, w, fock)
       use gen1int_host
       integer, intent(in)          :: nr_ao
       !> number of fields
       integer,       intent(in)    :: nf, propsize
+      integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
       !> field labels in std order
       character(4),  intent(in)    :: f(nf)
       !> first and number of- components in each field
@@ -982,7 +1191,8 @@ ave = val_expt(:,1)
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
-   subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, propsize, ovl, w, fock)
+   subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ovl, w, fock)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -992,12 +1202,18 @@ ave = val_expt(:,1)
       integer, intent(in)          :: nr_ao
       !> number of fields
       integer,       intent(in)    :: nf, propsize
+      integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
+      integer :: num_derv, j, k, ave_offset, ierr
+      integer, allocatable, dimension(:) :: order_derv, tmp_index
       !> field labels in std order
       character(4),  intent(in)    :: f(nf)
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> resulting overlap integral matrices (incoming content deleted)
       type(matrix),  intent(inout) :: ovl(propsize)
+      type(matrix)   :: ovl_tmp(propsize)
       !> frequencies of each field
       complex(8),    intent(in),    optional :: w(nf)
       !> Fock matrices to which the half-differentiated overlap
@@ -1010,12 +1226,36 @@ ave = val_expt(:,1)
       integer num_coord  !number of atomic coordinates
       integer num_geom   !number of total geometric derivatives
       integer num_ints   !number of integral matrices
+integer :: num_addr, num_order
+integer, allocatable :: address_list(:,:)
       logical :: all_frequencies_zero
 
       if (present(w) .and. .not. present(fock)) then
          call quit("error in interface_1el_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
                    "must both be present or both absent")
       end if
+
+
+! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
+
+      if (count(f=='EL  ') > 0) then
+
+         ! THIS CASE SHOULD NOT BE ENCOUNTERED IN OVLINT
+
+         num_derv = 1
+
+         allocate(order_derv(num_derv))
+         order_derv = (/count(f=='EL  ')/)
+
+      else
+
+         num_derv = 0
+         allocate(order_derv(1))
+         order_derv = (/0/)
+
+      end if
+
+
 
       all_frequencies_zero = .true.
       if (present(w)) then
@@ -1080,6 +1320,9 @@ ave = val_expt(:,1)
              if (.not.isdef(ovl(i))) then
                call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
              end if
+             if (.not.isdef(ovl_tmp(i))) then
+                call mat_init(ovl_tmp(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             end if
            end do
 ! MR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
            ! calculates the overlap matrix
@@ -1094,14 +1337,85 @@ ave = val_expt(:,1)
                                      0, (/0/),                   &
                                      UNIQUE_GEO,                 &
                                      .false., .false., .false.,  &  !not implemented yet
-                                     num_ints, ovl, .false.,     &  !integral matrices
+                                     num_ints, ovl_tmp, .false.,     &  !integral matrices
 #ifdef PRG_DIRAC
                                      2, (/1, 1, 2, 2/),          &
 #else
                                      1, (/1, 1/),                &
 #endif
                                      get_print_unit(), 0)
+
+
+
+
+! MR: ASSIGN DATA TO ave
+
+    num_order = sum(order_derv)+order_geo
+    ! gets the number of unique total geometric derivatives
+    if (order_geo/=0) then
+      call geom_total_num_derv(order_geo, min(num_atom, order_geo), num_atom, num_addr)
+    else
+      num_addr = 1
+    end if
+    ! gets the number of derivatives/powers/moments
+    do ierr = 1, num_derv
+      num_addr = num_addr*(order_derv(ierr)+1)*(order_derv(ierr)+2)/2
+    end do
+! write(*,*), num_order, num_addr
+    allocate(address_list(num_order,num_addr), stat=ierr)
+    if (ierr/=0) stop "failed to allocate address_list!"
+    ! gets the list of addresses
+    call get_address_list(num_derv, order_derv,                     &
+                          num_atom, order_geo, min(num_atom, order_geo), &
+                          num_order, num_addr, address_list)
+!     do ierr = 1, num_addr
+!       write(6,*) address_list(:,ierr)
+!     end do
+
+allocate(tmp_index(nf))
+
+! write(*,*) 'num_addr is', num_addr
+! write(*,*) 'size of val expt', size(val_expt, 1)
+
+do i = 1, num_addr
+
+! write(*,*) 'i is', i
+! write(*,*) 'unordered index: ', address_list(:, i)
+
+
+
+tmp_index(:) = address_list(:, i)
+
+
+
+
+! write(*,*) 'reordered index', tmp_index
+
+
+ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+
+
+! write(*,*) 'ave offset', ave_offset
+
+ovl(ave_offset) = ovl_tmp(i)
+
+
+end do
+
+deallocate(address_list)
+deallocate(tmp_index)
+
+
+
          end if
+
+
+
+
+
+
+
+
 
       end if
    end subroutine
@@ -1336,10 +1650,16 @@ ave = val_expt(:,1)
 
 #ifdef VAR_LSDALTON
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-   subroutine interface_1el_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
+   subroutine interface_1el_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, oneint)
       ! Gen1Int interface
       use gen1int_host
       integer, intent(in)          :: nr_ao, propsize
+      integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
+      integer :: num_derv, j, k, ave_offset
+      integer, allocatable, dimension(:) :: order_derv, tmp_index
       !> number of fields
       integer,       intent(in)    :: nf
       !> field labels in std order
@@ -1352,7 +1672,8 @@ ave = val_expt(:,1)
    end subroutine
 #else
 ! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-   subroutine interface_1el_oneint_tr(nr_ao, nf, f, c, nc, propsize, oneint)
+   subroutine interface_1el_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, oneint)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -1360,6 +1681,11 @@ ave = val_expt(:,1)
       use gen1int_api
 #endif
       integer, intent(in)          :: nr_ao, propsize
+      integer :: nblks
+integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks, 3) :: blk_info
+      integer :: num_derv, j, k, ave_offset, ierr
+      integer, allocatable, dimension(:) :: order_derv, tmp_index
       !> number of fields
       integer,       intent(in)    :: nf
       !> field labels in std order
@@ -1368,6 +1694,7 @@ ave = val_expt(:,1)
       integer,       intent(in)    :: c(nf), nc(nf)
       !> output perturbed integrals
       type(matrix),  intent(inout) :: oneint(propsize)
+      type(matrix)   :: oneint_tmp(propsize)
       !--------------------------------------------------
       integer order_mom  !order of Cartesian multipole moments
       integer num_mom    !number of Cartesian multipole moments
@@ -1376,10 +1703,34 @@ ave = val_expt(:,1)
       integer num_coord  !number of atomic coordinates
       integer num_geom   !number of total geometric derivatives
       integer num_ints   !number of all integral matrices
+integer :: num_addr, num_order
+integer, allocatable :: address_list(:,:)
       integer imat       !incremental recorder over matrices
       integer :: i, ixyz
       type(matrix) :: A
       type(matrix), allocatable :: T(:)
+
+
+! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
+
+      if (count(f=='EL  ') > 0) then
+
+         num_derv = 1
+
+         allocate(order_derv(num_derv))
+         order_derv = (/count(f=='EL  ')/)
+
+      else
+
+         num_derv = 0
+         allocate(order_derv(1))
+         order_derv = (/0/)
+
+      end if
+
+
+
+
 
       if (count(f=='EL  ') > 1) then
          call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
@@ -1422,9 +1773,14 @@ ave = val_expt(:,1)
             if (.not.isdef(oneint(imat))) then
                call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
             end if
+             if (.not.isdef(oneint_tmp(imat))) then
+                call mat_init(oneint_tmp(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             end if
          end do
 
 ! MR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALLS BELOW
+! MR: NOTE THAT NOTHING HAS BEEN DONE FOR REORDERING THE EXCLUSIVELY DIRAC CASES BELOW
+! MR: THERE MAY BE NEED FOR REORDERING OUTPUT FROM THOSE CALLS IF USING GENERAL RSP CODE
          ! electric perturbations
          if (order_mom/=0) then
             call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
@@ -1438,7 +1794,7 @@ ave = val_expt(:,1)
                                       0, (/0/),                    &
                                       UNIQUE_GEO,                  &
                                       .false., .false., .false.,   &  !not implemented yet
-                                      num_ints, oneint, .false.,   &  !integral matrices
+                                      num_ints, oneint_tmp, .false.,   &  !integral matrices
 #ifdef PRG_DIRAC
                                        2, (/1, 1, 2, 2/),          &
 #else
@@ -1531,11 +1887,85 @@ ave = val_expt(:,1)
                                       0, (/0/),                  &
                                       UNIQUE_GEO,                &
                                       .false., .false., .false., &  !not implemented yet
-                                      num_ints, oneint, .false., &  !integral matrices
+                                      num_ints, oneint_tmp, .false., &  !integral matrices
                                       1, (/1, 1/),               &
                                       get_print_unit(), 0)
 #endif
          end if
+
+! MR: ASSIGN DATA TO ave
+
+    num_order = sum(order_derv)+order_geo
+    ! gets the number of unique total geometric derivatives
+    if (order_geo/=0) then
+      call geom_total_num_derv(order_geo, min(num_atom, order_geo), num_atom, num_addr)
+    else
+      num_addr = 1
+    end if
+    ! gets the number of derivatives/powers/moments
+    do ierr = 1, num_derv
+      num_addr = num_addr*(order_derv(ierr)+1)*(order_derv(ierr)+2)/2
+    end do
+! write(*,*), num_order, num_addr
+    allocate(address_list(num_order,num_addr), stat=ierr)
+    if (ierr/=0) stop "failed to allocate address_list!"
+    ! gets the list of addresses
+    call get_address_list(num_derv, order_derv,                     &
+                          num_atom, order_geo, min(num_atom, order_geo), &
+                          num_order, num_addr, address_list)
+!     do ierr = 1, num_addr
+!       write(6,*) address_list(:,ierr)
+!     end do
+    
+
+allocate(tmp_index(nf))
+
+! write(*,*) 'num_addr is', num_addr
+! write(*,*) 'size of val expt', size(val_expt, 1)
+
+do i = 1, num_addr
+
+! write(*,*) 'i is', i
+! write(*,*) 'unordered index: ', address_list(:, i)
+
+
+k = 1
+
+
+do j = order_mom + 1, order_mom + order_geo
+
+tmp_index(k) = address_list(j, i)
+
+k = k + 1
+
+end do
+
+do j = 1, order_mom
+
+tmp_index(k) = address_list(j, i)
+
+k = k + 1
+
+end do
+! write(*,*) 'reordered index', tmp_index
+
+
+ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+
+
+! write(*,*) 'ave offset', ave_offset
+
+oneint(ave_offset) = oneint_tmp(i)
+
+
+end do
+
+deallocate(address_list)
+deallocate(tmp_index)
+
+
+
+
 
       end if
    end subroutine
