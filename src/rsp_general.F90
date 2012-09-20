@@ -62,7 +62,7 @@ public rsp_cfg
     type(SDF), pointer :: F, D, S
     integer, dimension(2) :: kn
     real :: timing_start, timing_end
-    integer :: i, j, num_blks, property_size
+    integer :: i, j, num_blks, property_size, nr_ao
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
     complex(8), allocatable, dimension(:) :: prop
@@ -148,7 +148,7 @@ blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
 
 
 
-
+nr_ao = D_unperturbed%nrow
 
     allocate(prop(property_size))
     prop = 0.0
@@ -158,7 +158,7 @@ blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
    call cpu_time(timing_start)
 
 
-    call get_prop(pert, kn, property_size, prop, F, D, S)
+    call get_prop(pert, kn, nr_ao, property_size, prop, F, D, S)
 
    call cpu_time(timing_end)
    write(*,*) 'Clock stopped: Property was calculated'
@@ -203,7 +203,7 @@ blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
 
 
 
-  subroutine get_prop(pert, kn, property_size, prop, F, D, S)
+  subroutine get_prop(pert, kn, nr_ao, property_size, prop, F, D, S)
 
     implicit none
 
@@ -211,7 +211,7 @@ blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
 !     type(rsp_cfg) :: mol
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: emptyp_tuples
-    integer :: property_size
+    integer :: property_size, nr_ao
     integer, dimension(2) :: kn
     complex(8), dimension(property_size) :: prop
     type(property_cache), pointer :: energy_cache, pulay_kn_cache, &
@@ -239,10 +239,16 @@ blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
                   property_size, energy_cache, prop)
 
     write(*,*) ' '
-    write(*,*) 'Finished calculating energy-type contributions'
+    write(*,*) 'Finished calculating HF energy-type contributions'
     write(*,*) ' '
 
     deallocate(energy_cache)
+
+    call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
+
+    write(*,*) ' '
+    write(*,*) 'Finished calculating exchange/correlation contributions'
+    write(*,*) ' '
 
     call property_cache_allocate(pulay_kn_cache)
     call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
