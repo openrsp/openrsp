@@ -904,6 +904,7 @@ end do
 
 
     allocate(tmp_ave(pert%pdim(1), pert%pdim(1), pert%pdim(1), pert%pdim(1)))
+tmp_ave = 0.0
 
     if (pert%n_perturbations == 0) then
        
@@ -921,7 +922,7 @@ end do
 
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
-          call rsp_xcave(xcave_pert_label, tmp_ave(:, 1, 1, 1), D=D)
+          call rsp_xcave('g', tmp_ave(:, 1, 1, 1), D=D)
 
           do i = 1, pert%pdim(1)
 
@@ -960,15 +961,15 @@ end do
 
           end do
 
-          call rsp_xcave(xcave_pert_label, tmp_ave(:, :, 1, 1), D=D, Dg=Dg)
-
-          n = 1
+          call rsp_xcave('gg', tmp_ave(:, :, 1, 1), D=D, Dg=Dg)
 
           do i = 1, pert%pdim(1)
              do j = 1, i
 
+                n = get_triang_blks_offset(1, 2, (/1, 2, pert%pdim(1)/), &
+                                           (/propsize/), (/i, j/))
+
                 ave(n) = ave(n) + tmp_ave(i, j, 1, 1)
-                n = n + 1
 
              end do
           end do
@@ -994,27 +995,34 @@ end do
           call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
+! write(*,*) 'elms of D', d%elms_alpha
+
           pg = p_tuple_getone(pert, 1)
-
+! write(*,*) 'pg plab:', pg%plab
           do i = 1, pert%pdim(1)
-
+! write(*,*) 'i', i
              ! MR: ASSUME CLOSED SHELL
              call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
+! write(*,*) 'Dg(i)', Dg(i)%elms_alpha
           end do
 
-          call rsp_xcave(xcave_pert_label, tmp_ave(:, :, :, 1), D=D, Dg=Dg)
+          call rsp_xcave('ggg', tmp_ave(:, :, :, 1), D=D, Dg=Dg)
 
-          n = 1
-
+! write(*,*) 'ave size', size(ave)
+! write(*,*) 'full ave', tmp_ave(:,:,:,1)
           do i = 1, pert%pdim(1)
              do j = 1, i
                 do k = 1, j
 
-                   ave(n) = ave(n) + tmp_ave(i, j, k, 1)
 
-                   n = n + 1
+                   n = get_triang_blks_offset(1, 3, (/1, 3, pert%pdim(1)/), &
+                                              (/propsize/), (/i, j, k/))
+
+write(*,*) 'n is', n
+
+                   ave(n) = ave(n) + tmp_ave(i, j, k, 1)
 
                 end do
              end do
@@ -1047,6 +1055,9 @@ end do
           pgg = p_tuple_remove_first(pgg)
           pgg = p_tuple_remove_first(pgg)
 
+
+write(*,*) 'pgg plab:', pgg%plab
+
           do i = 1, pert%pdim(1)
 
              ! MR: ASSUME CLOSED SHELL
@@ -1055,6 +1066,7 @@ end do
 
              do j = 1, pert%pdim(1)
 
+
                 ! MR: ASSUME CLOSED SHELL
                 call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
                 call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
@@ -1062,17 +1074,20 @@ end do
              end do
           end do
 
-          call rsp_xcave(xcave_pert_label, tmp_ave, D=D, Dg=Dg, Dgg=Dgg)
+          call rsp_xcave('gggg', tmp_ave, D=D, Dg=Dg, Dgg=Dgg)
 
-          n = 1
 
           do i = 1, pert%pdim(1)
              do j = 1, i
                 do k = 1, j
                    do m = 1, k
 
+                       n = get_triang_blks_offset(1, 4, (/1, 4, pert%pdim(1)/), &
+                                                  (/propsize/), (/i, j, k, m/))
+
+
                       ave(n) = ave(n) + tmp_ave(i, j, k, m)
-                      n = n + 1
+
 
                    end do
                 end do
@@ -1527,14 +1542,14 @@ end do
 
           call rsp_xcint(D, Fgg=tmp_xcint)
 
-          k = 1
 
           do i = 1, nc(1)
              do j = 1, i
 
-! write(*,*) 'size and k', size(xcint), k
+                k = get_triang_blks_offset(1, 2, (/1, 2, nc(1)/), &
+                                           (/propsize/), (/i, j/))
+
                 xcint(k) = tmp_xcint(i,j)
-                k = k + 1
                 tmp_xcint(i, j) = 0
 
              end do

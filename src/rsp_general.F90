@@ -213,7 +213,7 @@ nr_ao = D_unperturbed%nrow
     type(p_tuple), dimension(2) :: emptyp_tuples
     integer :: property_size, nr_ao
     integer, dimension(2) :: kn
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(property_size) :: prop, p_diff
     type(property_cache), pointer :: energy_cache, pulay_kn_cache, &
                                      pulay_lag_cache, idem_cache, scfe_cache
 
@@ -227,6 +227,10 @@ nr_ao = D_unperturbed%nrow
 
     ! Get all necessary F, D, S derivatives as dictated by
     ! number of perturbations and kn
+
+! prop = 0.0
+
+! p_diff = prop
 
     call rsp_fds(zeromat, pert, kn, F, D, S)
  
@@ -243,6 +247,11 @@ nr_ao = D_unperturbed%nrow
     write(*,*) ' '
 
     deallocate(energy_cache)
+! 
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
+
+! p_diff = prop
 
     call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
 
@@ -250,6 +259,9 @@ nr_ao = D_unperturbed%nrow
     write(*,*) 'Finished calculating exchange/correlation contributions'
     write(*,*) ' '
 
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
+! 
     call property_cache_allocate(pulay_kn_cache)
     call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
                       property_size, pulay_kn_cache, prop)
