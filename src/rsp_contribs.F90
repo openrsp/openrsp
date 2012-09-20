@@ -26,8 +26,13 @@ module rsp_contribs
   use dalton_ifc
   use nuc_contributions
   use basis_set,  only: cgto
+
+use rsp_field_tuple
+use rsp_sdf_caching
+
 ! MR: QUICK-FIX USE STATEMENT TO GET SUPPORT FOR DUMMY rsp_cfg TYPE
 use rsp_perturbed_matrices
+
 
 
   implicit none
@@ -51,10 +56,11 @@ use rsp_perturbed_matrices
   public rsp_ovlave_tr
   public rsp_oneave_tr
   public rsp_twoave_tr
+public rsp_xcave_tr_adapt
   public rsp_ovlint_tr
   public rsp_oneint_tr
   public rsp_twoint_tr
-
+public rsp_xcint_tr_adapt
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -444,6 +450,11 @@ end if
                                  blk_sizes, propsize, ave)
 
   end subroutine
+
+
+
+
+
 
 
 
@@ -870,6 +881,223 @@ end do
   end subroutine
 
 
+! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+! ADAPTED FROM rsp_oneave_tr
+
+  subroutine rsp_xcave_tr_adapt(nr_ao, pert, D_sdf, propsize, ave)
+
+    integer :: i, j, k, m, n, nr_ao, propsize
+    type(p_tuple) :: pert, pg, pgg    
+! integer,       intent(in)  :: nf
+!     !> field labels in std order
+!     character(4),  intent(in)  :: f(nf)
+!     !> first and number of- components in each field
+!     integer,       intent(in)  :: c(nf), nc(nf), propsize
+    type(SDF)  :: D_sdf
+    type(matrix) :: D
+    type(matrix), allocatable, dimension(:) :: Dg
+    type(matrix), allocatable, dimension(:,:) :: Dgg
+    character :: xcave_pert_label
+    !> output average
+    complex(8),    intent(out) :: ave(propsize)
+    complex(8), allocatable, dimension(:,:,:,:) :: tmp_ave
+
+
+    allocate(tmp_ave(pert%pdim(1), pert%pdim(1), pert%pdim(1), pert%pdim(1)))
+
+    if (pert%n_perturbations == 0) then
+       
+       write(*,*) 'rsp_xcave_tr_adapt CALLED WITH NO PERTURBATION'
+
+    else if (pert%n_perturbations == 1) then
+
+       if (all(pert%plab==(/'GEO '/))) then
+
+!           allocate(xcave_pert_label(1))
+          xcave_pert_label = 'g'
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+          call rsp_xcave(xcave_pert_label, tmp_ave(:, 1, 1, 1), D=D)
+
+          do i = 1, pert%pdim(1)
+
+             ave(i) = ave(i) + tmp_ave(i, 1, 1, 1)
+
+          end do
+
+!           deallocate(xcave_pert_label)
+
+       else
+
+          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else if (pert%n_perturbations == 2) then
+
+       if (all(pert%plab==(/'GEO ','GEO '/))) then
+
+!           allocate(xcave_pert_label(2))
+          xcave_pert_label = 'gg'
+          allocate(Dg(pert%pdim(1)))
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+          pg = p_tuple_getone(pert, 1)
+          
+          do i = 1, pert%pdim(1)
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
+
+          end do
+
+          call rsp_xcave(xcave_pert_label, tmp_ave(:, :, 1, 1), D=D, Dg=Dg)
+
+          n = 1
+
+          do i = 1, pert%pdim(1)
+             do j = 1, i
+
+                ave(n) = ave(n) + tmp_ave(i, j, 1, 1)
+                n = n + 1
+
+             end do
+          end do
+
+          deallocate(Dg)
+!           deallocate(xcave_pert_label)
+
+       else
+
+          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else if (pert%n_perturbations == 3) then
+
+       if (all(pert%plab==(/'GEO ','GEO ','GEO '/))) then
+
+!           allocate(xcave_pert_label(3))
+          xcave_pert_label = 'ggg'
+          allocate(Dg(pert%pdim(1)))
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+          pg = p_tuple_getone(pert, 1)
+
+          do i = 1, pert%pdim(1)
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
+
+          end do
+
+          call rsp_xcave(xcave_pert_label, tmp_ave(:, :, :, 1), D=D, Dg=Dg)
+
+          n = 1
+
+          do i = 1, pert%pdim(1)
+             do j = 1, i
+                do k = 1, j
+
+                   ave(n) = ave(n) + tmp_ave(i, j, k, 1)
+
+                   n = n + 1
+
+                end do
+             end do
+          end do
+
+          deallocate(Dg)
+!           deallocate(xcave_pert_label)
+
+       else
+
+          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else if (pert%n_perturbations == 4) then
+
+       if (all(pert%plab==(/'GEO ','GEO ','GEO ','GEO '/))) then
+
+!           allocate(xcave_pert_label(4))
+          xcave_pert_label = 'gggg'
+          allocate(Dg(pert%pdim(1)))
+          allocate(Dgg(pert%pdim(1), pert%pdim(1)))
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+          pg = p_tuple_getone(pert, 1)
+          call p_tuple_p1_cloneto_p2(pert, pgg)
+          pgg = p_tuple_remove_first(pgg)
+          pgg = p_tuple_remove_first(pgg)
+
+          do i = 1, pert%pdim(1)
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
+
+             do j = 1, pert%pdim(1)
+
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
+
+             end do
+          end do
+
+          call rsp_xcave(xcave_pert_label, tmp_ave, D=D, Dg=Dg, Dgg=Dgg)
+
+          n = 1
+
+          do i = 1, pert%pdim(1)
+             do j = 1, i
+                do k = 1, j
+                   do m = 1, k
+
+                      ave(n) = ave(n) + tmp_ave(i, j, k, m)
+                      n = n + 1
+
+                   end do
+                end do
+             end do
+          end do
+
+          deallocate(Dgg)
+          deallocate(Dg)
+!           deallocate(xcave_pert_label)
+
+       else
+
+          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else
+
+       write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
+
+    end if
+
+    deallocate(tmp_ave)
+
+  end subroutine
 
 
 
@@ -1241,6 +1469,92 @@ end do
 
 
 
+
+
+! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+! ADAPTED FROM rsp_oneint_tr
+
+
+  subroutine rsp_xcint_tr_adapt(nr_ao, nf, f, c, nc, D, propsize, xcint)
+
+    integer :: i, j, k, nr_ao, propsize
+    !> number of fields
+    integer,       intent(in)    :: nf
+    !> field labels in std order
+    character(4),  intent(in)    :: f(nf)
+    !> first and number of- components in each field
+    integer,       intent(in)    :: c(nf), nc(nf)
+    !> output perturbed integrals
+    type(matrix),  intent(inout) :: xcint(propsize)
+    type(matrix), allocatable, dimension(:,:) :: tmp_xcint
+    type(matrix), dimension(:) :: D
+    !--------------------------------------------------
+
+
+    ! MR: ONLY GEOMETRICAL PERTURBATIONS SUPPORTED SO FAR
+
+
+    if (nf == 0) then
+
+      call rsp_xcint(D, F=xcint(1))
+
+    else if (nf == 1) then
+
+       if (all(f==(/'GEO '/))) then
+
+          call rsp_xcint(D, Fg=xcint)
+
+       else
+
+          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else if (nf == 2) then
+
+       if (all(f==(/'GEO ','GEO '/))) then
+
+          allocate(tmp_xcint(nc(1), nc(1)))
+
+          do i = 1, nc(1)
+             do j = 1, nc(1)
+
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(tmp_xcint(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+
+             end do
+          end do
+
+          call rsp_xcint(D, Fgg=tmp_xcint)
+
+          k = 1
+
+          do i = 1, nc(1)
+             do j = 1, i
+
+! write(*,*) 'size and k', size(xcint), k
+                xcint(k) = tmp_xcint(i,j)
+                k = k + 1
+                tmp_xcint(i, j) = 0
+
+             end do
+          end do
+
+          deallocate(tmp_xcint)
+
+       else
+
+          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else
+
+       write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
+
+    end if
+
+  end subroutine
 
 
 

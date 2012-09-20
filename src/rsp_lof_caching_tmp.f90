@@ -59,10 +59,12 @@ module rsp_lof_caching
     allocate(new_element%data(property_size))
 !     write(*,*) 'fl propsize is', property_size
     do i = 1, property_size
+! ASSUME CLOSED SHELL
+       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
 !     write(*,*) 'i is', i
-       new_element%data(i) = mat_alloc_like(data(i))
-       new_element%data(i) = mat_zero_like(data(i))
-       call mat_ensure_alloc(new_element%data(i))
+!        new_element%data(i) = mat_alloc_like(data(i))
+!        new_element%data(i) = mat_zero_like(data(i))
+!        call mat_ensure_alloc(new_element%data(i))
 
        new_element%data(i) = data(i)
 

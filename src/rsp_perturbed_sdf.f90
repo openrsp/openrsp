@@ -331,6 +331,10 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 ! 
           call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                              1, Fp(i:i))
+
+          call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+               (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , &
+                             1, Fp(i:i))
 ! 
 !        end if
 
@@ -391,13 +395,11 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
           call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
 
+          call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+               (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , &
+                             1, Fp(i:i))
+
 !        end if
-
-
-       ! 'NOTE (MaR): XCINT CALL SKIPPED FOR NOW'
-
-       ! call rsp_xcint(zeromat%nrow, 0, nof, noc, pert%pdim, 2, &
-       ! (/sdf_getdata(D, get_emptypert(), (/1/)), Dh(i)/), Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
 
@@ -908,12 +910,12 @@ call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
 
 !              write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 !
-!              call rsp_xcint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-!                            p_tuples(1)%pdim, density_order, &
-!                            (/ sdf_getdata(D, get_emptypert(), (/1/)), &
-!                            (dens_tuple(k), k = 2, num_p_tuples) /), &
-!                            tmp)
+             call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
+                           p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                           p_tuples(1)%pdim, &
+                           (/ sdf_getdata(D, get_emptypert(), (/1/)), &
+                           (dens_tuple(k), k = 2, num_p_tuples) /), &
+                           property_size, tmp)
 
 
 ! Make tmp the correct ("inner-triangulated") size
@@ -1113,11 +1115,11 @@ deallocate(triang_indices_fp)
 
 !        write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 
-!        call rsp_xcint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-!                       (/product(p_tuples(1)%pdim)/), 1, &
-!                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
-!                       Fp)
+       call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                      p_tuples(1)%pdim, &
+                      (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
+                      property_size, Fp)
 
 
        ! NOTE: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
@@ -1125,8 +1127,6 @@ deallocate(triang_indices_fp)
        ! even with the extra complexity from the triangularization 
 
     end if
-
-
 
 deallocate(nfields)
 deallocate(nblks_tuple)
