@@ -5,14 +5,14 @@
 
    Dalton Release DALTON2011 (DEVELOPMENT VERSION)
 
-   Invocation: /home/bast/dalton/develop/external/openrsp/../../build/dalton -d -nobackup -noarch blyp.dal h2o2.mol
+   Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch blyp.dal h2o2.mol
 
-   Sat Apr 28 15:49:54 CEST 2012
+   Fri Sep 21 12:52:02 CEST 2012
 
    Calculation: blyp_h2o2  (input files: blyp.dal and h2o2.mol)
-   PID        : 14718
-   Input dir  : /home/bast/dalton/develop/external/openrsp/test/molecular_gradient
-   Scratch dir: /scratch/DALTON_scratch/bast/blyp_h2o2
+   PID        : 28946
+   Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
+   Scratch dir: /scratch/DALTON_scratch_bast/bast/blyp_h2o2
 
 
 
@@ -26,7 +26,6 @@ DFT grid generator
  Rotational invariance of grid points: random rotation
  Gauss-Chebyshev(I) radial quadrature
  Radial grid points mapping:  Becke
- Screening 1.d-10
 
  Atom   1 has   11640 grid points
  Atom   2 has   11640 grid points
@@ -37,96 +36,84 @@ DFT grid generator
 
 
 
- nr electrons from xc =    18.000007789825833     
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.092452132463 -0.210459885830  0.203276862442 -0.092452048431  0.210459707969  0.203277279189 -0.081082628215 -0.030139528850 -0.203276285857  0.081082544184  0.030139706711 -0.203277855774
+  0.092451719038 -0.210459912012  0.203276433371 -0.092451772509  0.210459809535  0.203277479822 -0.081082459835 -0.030139639518 -0.203276233298  0.081082513306  0.030139741995 -0.203277679895
 
 oneave
-  -1.77989644392  17.31478367996  -5.24129483647   1.77989644393 -17.31478367997  -5.24129483651   2.04900577171   1.85182258062   5.24129483648  -2.04900577172  -1.85182258061   5.24129483650
+  -1.77989644393  17.31478367996  -5.24129483650   1.77989644392 -17.31478367996  -5.24129483648   2.04900577172   1.85182258061   5.24129483649  -2.04900577171  -1.85182258062   5.24129483648
 
 twoave
-  1.021138731303 -9.092004333376  2.855309563423 -1.021138731314  9.092004333386  2.855309563462 -1.036493271075 -0.872039540400 -2.855309563431  1.036493271086  0.872039540390 -2.855309563454
+  1.021138731311 -9.092004333382  2.855309563451 -1.021138731306  9.092004333378  2.855309563434 -1.036493271083 -0.872039540393 -2.855309563447  1.036493271078  0.872039540397 -2.855309563437
 
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 
 
 
 
- nr electrons from xc =    18.000007789825833     
 xcave
- -0.090707011521  0.163131117821 -0.226363435388  0.090616434813 -0.163031294942 -0.226449102163  0.084413476288  0.045981824398  0.226383462548 -0.084412068129 -0.045979950577  0.226384878159
+ -0.090740144253  0.163056269288 -0.226324379444  0.090542115271 -0.162891089916 -0.226455897093  0.084410481155  0.045980885625  0.226383507252 -0.084411241114 -0.045980341733  0.226384669542
 
 gradient = Eg
-  0.023603479799 -0.013556900647  0.039423208889 -0.023693972476  0.013656545664  0.039337958860 -0.025288546994 -0.015009484872 -0.039402605143  0.025289871121  0.015011536555 -0.039402759450
+  0.023569933643 -0.013631775361  0.039461835762 -0.023768016095  0.013796852257  0.039331364564 -0.025291373746 -0.015010534314 -0.039402507881  0.025290667258  0.015011180683 -0.039402792188
 
- sum of gradient elements =  (-3.16686927915865724E-005,  0.0000000000000000     )
-blyp_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/develop/external/openrsp/test/molecular_gradient
+total force =    0.199E-03  -0.166E-03   0.121E-04
+total torque =    0.199E-03   0.183E-04  -0.718E-04
+blyp_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
-- THEREFORE scratch directory /scratch/DALTON_scratch/bast/blyp_h2o2 is not deleted
+- THEREFORE scratch directory /scratch/DALTON_scratch_bast/bast/blyp_h2o2 is not deleted
   by this script so you may restart the calculation, if possible
-  ( /scratch/DALTON_scratch/bast/blyp_h2o2 may be deleted by your queueing system )
-- REMEMBER to delete /scratch/DALTON_scratch/bast/blyp_h2o2 yourself !!!
+  ( /scratch/DALTON_scratch_bast/bast/blyp_h2o2 may be deleted by your queueing system )
+- REMEMBER to delete /scratch/DALTON_scratch_bast/bast/blyp_h2o2 yourself !!!
 
 Output from 'grep -n ERROR' :
-142:.MAX ERROR                                        
+151:.MAX ERROR                                        
 
-   Sat Apr 28 15:50:13 CEST 2012
+   Fri Sep 21 12:52:09 CEST 2012
    ***************************************** 
