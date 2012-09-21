@@ -417,3 +417,43 @@ contains
    end subroutine
 
 end module
+
+   subroutine external_rsp_xcint(nr_ao, dmat, fmat, xc_energy)
+
+      use interface_ao_specific
+      use xcint_main
+
+      integer      :: nr_ao
+      real(8)      :: dmat(nr_ao, nr_ao)
+      real(8)      :: fmat(*)
+      real(8)      :: xc_energy
+
+      integer      :: i, j, k
+
+      real(8), allocatable :: xcmat(:, :)
+      allocate(xcmat(nr_ao, nr_ao))
+      xcmat = 0.0d0
+
+      xc_energy = 0.0d0
+
+      call interface_ao_write()
+      call xc_integrate(                     &
+                        xc_mat_dim=nr_ao,    &
+                        xc_nr_dmat=1,        &
+                        xc_dmat=0.5d0*dmat,  &
+                        xc_energy=xc_energy, &
+                        xc_fmat=xcmat        &
+                       )
+
+      k = 0
+      do i = 1, nr_ao
+         do j = 1, i
+            k = k + 1
+            fmat(k) = fmat(k) + xcmat(j, i)
+         end do
+      end do
+
+      print *, 'raboof xc energy', xc_energy
+      deallocate(xcmat)
+
+   end subroutine
