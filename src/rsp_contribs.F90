@@ -210,6 +210,7 @@ contains
     integer      order(size(fields)), tcomp(size(fields))
     character(4) ext_label(2)
     logical      nonz
+    rspfunc = 0.0
     ! prepare and determine ordering. This also validates comp/ncomp
     call count_and_prepare(fields, .true., .false., order, tcomp, nucpot = nonz)
     ! early return if zero
@@ -714,6 +715,7 @@ end if
 #ifdef PRG_DALTON
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,1,1,1))
+       tmp = 0.0
 #ifdef GRCONT_NOT_AVAILABLE
        arg(1) = ctr_arg(1, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor, tmp(:,1,1,1)))
@@ -747,6 +749,7 @@ end if
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,1,1))
+       tmp = 0.0
 #ifdef GRCONT_NOT_AVAILABLE
        arg(1) = ctr_arg(2, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**2, tmp(:,:,1,1)))
@@ -787,6 +790,7 @@ end do
        ! contract FULL cubic in tmp, unsymmetrized divided by six
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,1))
+       tmp = 0.0
        arg(1) = ctr_arg(3, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**3, tmp(:,:,:,1)))
        call unopt_geodiff_loop(basis_large, &
@@ -825,6 +829,7 @@ end do
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,ncor))
+       tmp = 0.0
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
        arg(1) = ctr_arg(4, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**4, tmp))
@@ -913,7 +918,7 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 1) then
 
        if (all(pert%plab==(/'GEO '/))) then
-
+write(*,*) 'case g'
 !           allocate(xcave_pert_label(1))
           xcave_pert_label = 'g'
 
@@ -941,7 +946,7 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 2) then
 
        if (all(pert%plab==(/'GEO ','GEO '/))) then
-
+write(*,*) 'case gg'
 !           allocate(xcave_pert_label(2))
           xcave_pert_label = 'gg'
           allocate(Dg(pert%pdim(1)))
@@ -986,7 +991,7 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 3) then
 
        if (all(pert%plab==(/'GEO ','GEO ','GEO '/))) then
-
+write(*,*) 'case ggg'
 !           allocate(xcave_pert_label(3))
           xcave_pert_label = 'ggg'
           allocate(Dg(pert%pdim(1)))
@@ -1040,7 +1045,7 @@ write(*,*) 'n is', n
     else if (pert%n_perturbations == 4) then
 
        if (all(pert%plab==(/'GEO ','GEO ','GEO ','GEO '/))) then
-
+write(*,*) 'case gggg'
 !           allocate(xcave_pert_label(4))
           xcave_pert_label = 'gggg'
           allocate(Dg(pert%pdim(1)))
@@ -1049,6 +1054,8 @@ write(*,*) 'n is', n
           ! MR: ASSUME CLOSED SHELL
           call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+write(*,*) 'elms of D', D%elms_alpha
 
           pg = p_tuple_getone(pert, 1)
           call p_tuple_p1_cloneto_p2(pert, pgg)
@@ -1064,12 +1071,18 @@ write(*,*) 'pgg plab:', pgg%plab
              call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
+write(*,*) 'got Dg density data', Dg(i)%elms_alpha
+
              do j = 1, pert%pdim(1)
 
+
+                write(*,*) 'i and j', i, j
 
                 ! MR: ASSUME CLOSED SHELL
                 call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
                 call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
+
+write(*,*) 'got Dgg density data', Dgg(i,j)%elms_alpha
 
              end do
           end do
@@ -1082,12 +1095,19 @@ write(*,*) 'pgg plab:', pgg%plab
                 do k = 1, j
                    do m = 1, k
 
-                       n = get_triang_blks_offset(1, 4, (/1, 4, pert%pdim(1)/), &
-                                                  (/propsize/), (/i, j, k, m/))
+write(*,*) 'indices i j k m are', i, j, k, m
 
+                      n = get_triang_blks_offset(1, 4, (/1, 4, pert%pdim(1)/), &
+                                                 (/propsize/), (/i, j, k, m/))
+
+write(*,*) 'found offset', n
+
+write(*,*) 'ave before', ave(n)
+write(*,*) 'tmp_ave before', tmp_ave(i, j, k, m)
 
                       ave(n) = ave(n) + tmp_ave(i, j, k, m)
 
+write(*,*) 'ave after', ave(n)
 
                    end do
                 end do
@@ -1546,12 +1566,19 @@ write(*,*) 'pgg plab:', pgg%plab
           do i = 1, nc(1)
              do j = 1, i
 
+
+write(*,*) 'i, j', i, j
                 k = get_triang_blks_offset(1, 2, (/1, 2, nc(1)/), &
                                            (/propsize/), (/i, j/))
 
-                xcint(k) = tmp_xcint(i,j)
+write(*,*) 'offset', k
+
+                xcint(k) = xcint(k) + tmp_xcint(i,j)
+write(*,*) 'element', xcint(k)%elms_alpha
+
                 tmp_xcint(i, j) = 0
 
+write(*,*) 'el2ndtm', xcint(k)%elms_alpha
              end do
           end do
 
