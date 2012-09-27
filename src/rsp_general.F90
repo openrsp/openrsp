@@ -228,9 +228,9 @@ nr_ao = D_unperturbed%nrow
     ! Get all necessary F, D, S derivatives as dictated by
     ! number of perturbations and kn
 
-! prop = 0.0
+prop = 0.0
 
-! p_diff = prop
+p_diff = prop
 
     call rsp_fds(zeromat, pert, kn, F, D, S)
  
@@ -248,10 +248,10 @@ nr_ao = D_unperturbed%nrow
 
     deallocate(energy_cache)
 ! 
-! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
 
-! p_diff = prop
+p_diff = prop
 
     call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
 
@@ -259,9 +259,10 @@ nr_ao = D_unperturbed%nrow
     write(*,*) 'Finished calculating exchange/correlation contributions'
     write(*,*) ' '
 
-! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
-! 
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
+p_diff = prop
+
     call property_cache_allocate(pulay_kn_cache)
     call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
                       property_size, pulay_kn_cache, prop)
@@ -271,7 +272,9 @@ nr_ao = D_unperturbed%nrow
     write(*,*) ' '
 
     deallocate(pulay_kn_cache)
-
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
+p_diff = prop
     call property_cache_allocate(pulay_lag_cache)
     call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
                        (/p_tuple_getone(pert,1), emptypert/), &
@@ -282,7 +285,9 @@ nr_ao = D_unperturbed%nrow
     write(*,*) ' '
 
     deallocate(pulay_lag_cache)
-
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
+p_diff = prop
     call property_cache_allocate(idem_cache)
     call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
@@ -293,7 +298,9 @@ nr_ao = D_unperturbed%nrow
     write(*,*) ' '
 
     deallocate(idem_cache)
-
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
+p_diff = prop
     call property_cache_allocate(scfe_cache)
     call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
@@ -304,7 +311,9 @@ nr_ao = D_unperturbed%nrow
     write(*,*) ' '
 
     deallocate(scfe_cache)
-
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
+p_diff = prop
   end subroutine
 
 
@@ -969,9 +978,9 @@ deallocate(triang_indices_pr)
        call rsp_nucpot_tr(nucpot_pert, property_size, contrib) 
        tmp = tmp + contrib
 
-! write(*,*) 'AFTER NUCPOT'
-! write(*,*) real(contrib(1))
-! write(*,*) ' '
+write(*,*) 'AFTER NUCPOT'
+write(*,*) tmp
+
 
        contrib = 0.0
 
@@ -983,7 +992,7 @@ deallocate(triang_indices_pr)
 
        tmp = tmp + contrib
 
-!  write(*,*) 'AFTER ONEAVE'
+ write(*,*) 'AFTER ONEAVE', tmp
 
        contrib = 0.0
 
@@ -994,7 +1003,7 @@ deallocate(triang_indices_pr)
 
        tmp = tmp + 0.5*(contrib)
 
-! write(*,*) 'AFTER TWOAVE'
+write(*,*) 'AFTER TWOAVE', prop
 
 ! NOTE (MaR): XCAVE CALL REMOVED FOR NOW
  

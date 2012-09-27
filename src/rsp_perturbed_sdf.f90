@@ -193,47 +193,22 @@ deallocate(blk_sizes)
 
     do i = 1, perturbed_matrix_size
 
-!  write(*,*) '1'
 
 ! ASSUME CLOSED SHELL
 call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, .true.)
-
-!        Dp(i) = mat_alloc_like(zeromat)
-!        Dp(i) = mat_zero_like(zeromat)
-!        call mat_ensure_alloc(Dp(i))
-! write(*,*) 'Dp tag 1', Dp(i)%magic_tag
-! write(*,*) '2'
-
-! ASSUME CLOSED SHELL
 call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, .true.)
-
-!        Dh(i) = mat_alloc_like(zeromat)
-!        Dh(i) = mat_zero_like(zeromat)
-!        call mat_ensure_alloc(Dh(i))
 call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
-
-! ! write(*,*) '3'
-!        Fp(i) = mat_alloc_like(zeromat)
-! ! write(*,*) '3a'
-!        Fp(i) = mat_zero_like(zeromat)
-! ! write(*,*) '3b'
-!        call mat_ensure_alloc(Fp(i))
-! ! write(*,*) '3c'
 
     end do
 
-!  write(*,*) 'zeroed'
-! write(*,*) 'Dp tag 2', Dp(1)%magic_tag
+
     call sdf_add(D, pert, perturbed_matrix_size, Dp)
-! write(*,*) 'Dp tag 3', Dp(1)%magic_tag
-!  write(*,*) 'zeroed Dp'
 
     ! 2. Construct Dp and the initial part of Fp
     ! a) For the initial part of Fp: Make the initial recursive (lower order) 
     ! oneint, twoint, and xcint calls as needed
 
     call f_l_cache_allocate(fock_lowerorder_cache)
-! write(*,*) 'Dp tag 3b', Dp(1)%magic_tag
 
 !  write(*,*) 'allocated f l cache'
 
@@ -243,14 +218,14 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 
 ! write(*,*) 'Dp tag 4', Dp(1)%magic_tag
 
-!  write(*,*) 'got fock lowerorder'
+ write(*,*) 'got fock lowerorder'
 ! 
-! do i = 1, perturbed_matrix_size
-! 
-! write(*,*) 'Fp', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! end do
+do i = 1, perturbed_matrix_size
+
+write(*,*) 'Fp', i
+write(*,*) Fp(i)%elms_alpha
+
+end do
 
     deallocate(fock_lowerorder_cache)
 
@@ -296,7 +271,7 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 
     do i = 1, size(indices, 1)
 
-! write(*,*) 'i is', i
+write(*,*) 'i is', i
 
        ind = indices(i, :)
 
@@ -309,12 +284,12 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
 
-! write(*,*) 'got z', Dp(i)%elms_alpha
+write(*,*) 'got z', Dp(i)%elms_alpha
 
        Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
 
 ! write(*,*) 'projected dp'
-!        write(*,*) 'Dp at projection', Dp(i)%elms_alpha
+       write(*,*) 'Dp at projection', Dp(i)%elms_alpha
 
        call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
@@ -341,7 +316,7 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 
 
 
-! write(*,*) 'did twoint_tr', Fp(i)%elms_alpha
+write(*,*) 'did twoint_tr and xcint_tr', Fp(i)%elms_alpha
 
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
 
@@ -369,7 +344,7 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
 !        X(1) = mat_zero_like(zeromat)
 !        call mat_ensure_alloc(X(1))
 
-! write(*,*) 'made rhs', RHS(1)%elms_alpha
+write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
 #ifndef VAR_LSDALTON
@@ -386,6 +361,8 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
 
        Dh(i) = X(1) * B * A - A * B * X(1)
 
+write(*,*) 'Dh with rsp equation solution', Dh(i)%elms_alpha
+
        ! 6. Make homogeneous contribution to Fock matrix
 
        ! THE IF CRITERION HERE NEEDS ANOTHER LOOK
@@ -399,6 +376,8 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
                (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , &
                              1, Fp(i:i))
 
+write(*,*) 'Fp after homogeneous contribution', Fp(i)%elms_alpha
+
 !        end if
 
        ! 7. Complete perturbed D with homogeneous part
@@ -408,11 +387,15 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
 
 write(*,*) 'Finished component', i
 
-! write(*,*) 'Finally, Dp is', i, ' at indices', ind 
-! write(*,*) Dp(i)%elms_alpha
-! 
-! write(*,*) 'Finally, Fp is', i
-! write(*,*) Fp(i)%elms_alpha
+write(*,*) 'Finally, Dp is', i, ' at indices', ind 
+write(*,*) Dp(i)%elms_alpha
+
+write(*,*) 'Finally, Fp is', i
+write(*,*) Fp(i)%elms_alpha
+
+
+write(*,*) 'Finally, Sp is', i
+write(*,*) Sp(i)%elms_alpha
 
     end do
 
@@ -804,10 +787,6 @@ end do
 ! ASSUME CLOSED SHELL
 call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, .true.)
 
-!           lower_order_contribution(j) = mat_alloc_like(zeromat)
-!           lower_order_contribution(j) = mat_zero_like(zeromat)
-!           call mat_ensure_alloc(lower_order_contribution(j))
-
        end do
 
 
@@ -816,11 +795,6 @@ call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, .true.)
 
 ! ASSUME CLOSED SHELL
 call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
-
-
-!           tmp(j) = mat_alloc_like(zeromat)
-!           tmp(j) = mat_zero_like(zeromat)
-!           call mat_ensure_alloc(tmp(j))
 
        end do
 
@@ -833,11 +807,6 @@ call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
 
 ! ASSUME CLOSED SHELL
 call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
-
-!           dens_tuple(i) = mat_alloc_like(zeromat)
-!           dens_tuple(i) = mat_zero_like(zeromat)
-!           call mat_ensure_alloc(dens_tuple(i))
-
 
        end do
 
