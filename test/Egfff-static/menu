@@ -1,6 +1,7 @@
-# hf.dal  h2o2+p.mol -put DALTON.HES
-# hf.dal  h2o2-p.mol -put DALTON.HES
-hf.dal  h2o2.mol   -put DALTON.HES
+  hf.dal  fh.mol   -put DALTON.HES
+  hf.dal  fh+p.mol -put DALTON.HES
+  hf.dal  fh-p.mol -put DALTON.HES
 
-# no reference yet
-# lda.dal h2o2.mol   -put DALTON.HES
+  lda.dal fh.mol   -put DALTON.HES
+  lda.dal fh+p.mol -put DALTON.HES
+  lda.dal fh-p.mol -put DALTON.HES

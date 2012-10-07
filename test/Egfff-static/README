@@ -1,4 +1,7 @@
-method derv     gf          gff        gfff
+method derv     gf         gff       gfff
 
-HF     FF       -0.22440367 -0.9712308 2.139227
-.      analytic -0.22440371 -0.9712307 2.139226
+HF     analytic 0.2045125  4.2814426
+.      FF       0.2045124  4.2814425
+
+LDA    analytic
+.      FF       0.22793132
