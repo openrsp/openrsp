@@ -1614,7 +1614,8 @@ contains
             call twofck('  ', D(pd1-pd+1+i), A(1:1))
             F(i+1) = F(i+1) + A(1)
             ! Kohn-Sham exchange-correlation
-            call twofck_ks(1, (/D(1),D(pd1-pd+1+i)/), F(1+i))
+          ! call twofck_ks(1, (/D(1),D(pd1-pd+1+i)/), F(1+i))
+            call rsp_xcint(D=(/D(1), D(pd1-pd+1+i)/), F=F(1+i))
          end do
          if (nd==0 .or. nd==1 .or. .not.do_dft()) then
             ! nothing more
