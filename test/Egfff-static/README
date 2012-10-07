@@ -3,5 +3,15 @@ method derv     gf         gff       gfff
 HF     analytic 0.2045125  4.2814426
 .      FF       0.2045124  4.2814425
 
-LDA    analytic
+LDA    analytic 0.22791251
 .      FF       0.22793132
+
+
+status DFT
+
+Ef     correct
+Efg    correct, tensor symmetry is not right
+Eff    correct
+Effg   wrong
+Efff   wrong
+Efffg  wrong
