@@ -1599,21 +1599,32 @@ contains
             ! Kohn-Sham exchange-correlation
             call rsp_xcint(D=(/D(1), D(pd1-pd+1+i)/), F=F(1+i))
          end do
-         if (nd==0 .or. nd==1 .or. .not.do_dft()) then
-            ! nothing more
-         else if (nd==2) then
-            if (iszero(A(1))) call mat_ensure_alloc(A(1))
-            do j = 0, df(2)-1
-               do i = 0, df(1)-1
-                  A(1)%elms_alpha = 0.0d0
-                  call rsp_xcint(D=(/D(1), D(2+i), D(2+df(1)+j)/), F=A(1))
-                  F(1+i+df(1)*j) = F(1+i+df(1)*j) + A(1)
-               end do
-            end do
-         else
-            call quit('prop_twoint: nd > 2 not implemented with DFT',-1)
+
+         if (do_dft()) then
+            select case (nd)
+               case (0)
+                  ! nothing to do
+               case (1)
+                  ! nothing to do
+               case (2)
+                  ii = 0
+                  do j = 1, df(2)
+                     do i = 1, df(1)
+                        ii = ii + 1
+                        A(1)%elms_alpha = 0.0d0
+                        call rsp_xcint(D=(/D(1), D(1+i), D(1+df(1)+j)/), F=A(1))
+                        F(ii) = F(ii) + A(1)
+                     end do
+                  end do
+               case (3)
+               case default
+                  print *, 'ERROR: prop_twoint: order not implemented'
+                  stop 1
+            end select
          end if
-         A(1) = 0 !free
+
+         A(1) = 0
+
       else if (np==1 .and. p(1)=='MAG') then
          do j = 0, pd-1
             if (iszero(D(pd1-pd+1+j))) cycle
