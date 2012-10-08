@@ -850,7 +850,7 @@ contains
                ! Coulomb and exchange
                call twofck('  ', D(2+i), A(1:1))
                ! Kohn-Sham exchange-correlation
-               call twofck_ks(1, (/D(1),D(2+i)/), A(1))
+             ! call twofck_ks(1, (/D(1),D(2+i)/), A(1))
                ! trace with first density matrix
                do j = 0, de(2)-1
                   E(1+i+de(1)*j) = tr(A(1),D(2+de(1)+j))
@@ -860,11 +860,11 @@ contains
             ! contract two of first-order densities to Fock, then trace with third
             do j = 0, de(2)-1
                do i = 0, de(1)-1
-                  call twofck_ks(2, (/D(1),D(2+i),D(2+de(1)+j)/), A(1))
-                  do k = 0, de(3)-1
-                     E(1+i+de(1)*(j+de(2)*k)) = tr(A(1),D(2+de(1)+de(2)+k))
-                  end do
-                  A(1) = 0*A(1)
+                ! call twofck_ks(2, (/D(1),D(2+i),D(2+de(1)+j)/), A(1))
+                ! do k = 0, de(3)-1
+                !    E(1+i+de(1)*(j+de(2)*k)) = tr(A(1),D(2+de(1)+de(2)+k))
+                ! end do
+                ! A(1) = 0*A(1)
                end do
             end do
             ! contract first-order densities to Fock, then trace with second-order
@@ -1597,15 +1597,17 @@ contains
             call twofck('  ', D(pd1-pd+1+i), A(1:1))
             F(i+1) = F(i+1) + A(1)
             ! Kohn-Sham exchange-correlation
-          ! call twofck_ks(1, (/D(1),D(pd1-pd+1+i)/), F(1+i))
             call rsp_xcint(D=(/D(1), D(pd1-pd+1+i)/), F=F(1+i))
          end do
          if (nd==0 .or. nd==1 .or. .not.do_dft()) then
             ! nothing more
          else if (nd==2) then
+            if (iszero(A(1))) call mat_ensure_alloc(A(1))
             do j = 0, df(2)-1
                do i = 0, df(1)-1
-                  call twofck_ks(2, (/D(1),D(2+i),D(2+df(1)+j)/), F(1+i+df(1)*j))
+                  A(1)%elms_alpha = 0.0d0
+                  call rsp_xcint(D=(/D(1), D(2+i), D(2+df(1)+j)/), F=A(1))
+                  F(1+i+df(1)*j) = F(1+i+df(1)*j) + A(1)
                end do
             end do
          else
@@ -1766,53 +1768,6 @@ contains
          type(matrix), intent(inout) :: F(nf)
       end subroutine
    end subroutine
-
-
-
-   subroutine twofck_ks(n, D, F)
-
-#ifndef PRG_DIRAC
-      use xcint_main
-#endif
-
-      integer,      intent(in)    :: n
-      type(matrix)                :: D(n+1)
-      type(matrix), intent(inout) :: F
-      type(matrix) :: A
-      integer      :: i
-
-      if (.not. do_dft()) then
-!        we want no xc
-         return
-      end if
-
-      !radovan: this is not correct for CR and higher
-      !         there you can have nonzero integral with one or more
-      !         density matrices zero
-      !ajt: twofck_ks is only supposed to return a single multilinear
-      !     contribution Exc[D1]^n D2 D3 D4...Dn+1, so zero when either of
-      !     D(2:) are zero.
-      if (any((/(iszero(D(i)), i = 2, n+1)/))) then
-         ! at least one of the density matrices is zero
-         return
-      end if
-
-      A = tiny(0.0d0)*D(1)
-
-      select case (n)
-         case (1)
-            ! nothing to be done
-         case (2)
-!           call xc_integrate(xc_mat_dim=D(1)%nrow, D=D, xc_nr_dmat=3, F=(/A/))
-!           F = F + A
-         case default
-            call quit('prop_contribs_old/twofck_ks error: contrib not implemented',-1)
-      end select
-
-      A = 0
-
-   end subroutine
-
 
 
    !> what=G : 3*natoms geometric

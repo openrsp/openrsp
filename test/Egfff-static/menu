@@ -1,7 +1,7 @@
-  hf.dal  fh.mol   -put DALTON.HES
+# hf.dal  fh.mol   -put DALTON.HES
 # hf.dal  fh+p.mol -put DALTON.HES
 # hf.dal  fh-p.mol -put DALTON.HES
 
   lda.dal fh.mol   -put DALTON.HES
-# lda.dal fh+p.mol -put DALTON.HES
-# lda.dal fh-p.mol -put DALTON.HES
+  lda.dal fh+p.mol -put DALTON.HES
+  lda.dal fh-p.mol -put DALTON.HES
