@@ -4,14 +4,14 @@ HF     analytic 0.2045125  4.2814426
 .      FF       0.2045124  4.2814425
 
 LDA    analytic 0.22791251
-.      FF       0.22793132
+.      FF       0.22793132 3.577011
 
 
 status DFT
 
-Ef     correct
-Efg    correct, tensor symmetry is not right
-Eff    correct
+Ef     ok
+Efg    ok
+Eff    ok
 Effg   wrong
 Efff   wrong
 Efffg  wrong
