@@ -18,9 +18,6 @@ module interface_xc
 
    public di_get_MagDeriv_FxD_DFT
    public di_get_MagDeriv_GxD_DFT
-   public di_get_geomDeriv_FxD_DFT
-   public di_get_geomDeriv_GxD_DFT
-   public di_get_geomDeriv_molgrad_DFT
 
    public rsp_xcave
    public rsp_xcint
@@ -98,73 +95,6 @@ contains
    end subroutine
 
 
-   subroutine di_get_geomDeriv_FxD_DFT(res, nr_atoms, D, Dp)
-
-!    ---------------------------------------------------------------------------
-     complex(8),   intent(out) :: res(*)
-     integer,      intent(in)  :: nr_atoms
-     type(matrix), intent(in)  :: D
-     type(matrix), intent(in)  :: Dp
-!    ---------------------------------------------------------------------------
-     integer                   :: i
-     integer                   :: mat_dim
-     real(8)                   :: xc_energy
-     type(matrix)              :: T, N
-!    ---------------------------------------------------------------------------
-
-     res(1:nr_atoms*3) = 0.0d0
-
-     mat_dim = D%nrow
-     T = 1.0d0*Dp
-     N = tiny(0.0d0)*D
-
-#ifndef PRG_DIRAC
-     do i = 1, nr_atoms*3
-        call xc_integrate(           &
-                xc_mat_dim=mat_dim,  &
-                xc_nr_dmat=3,        &
-                xc_dmat=(/D%elms_alpha,    &
-                          N%elms_alpha,    &
-                          T%elms_alpha/),  &
-                xc_energy=xc_energy, &
-                xc_geo_coor=(/i, 0/) &
-             )
-        res(i) = cmplx(xc_energy, 0.0d0)
-     end do
-#endif
-
-   end subroutine
-
-
-   !> \brief calculates the exchange correlation part of the geometric derivative of the F^ks matrix
-   !> \author Bin Gao
-   !> \date 2009-12-10
-   !> \param natoms is the number of atoms
-   !> \param D
-   !> \return gradient contains the exchange correlation part of the geometric derivative of the F^ks matrix
-   subroutine di_get_geomDeriv_GxD_DFT( gradient, natoms, D, A, B )
-     type(matrix), intent(in) :: D
-     type(matrix), intent(in) :: A
-     type(matrix), intent(in) :: B
-     real(8), intent(out) :: gradient( 3*natoms )
-     integer, intent(in) :: natoms
-     call QUIT( 'di_get_geomDeriv_GxD_DFT is not implemented!' )
-   end subroutine
-
-
-   !> \brief calculates the exchange correlation part of the geometric derivative of the F^ks matrix
-   !> \author Bin Gao
-   !> \date 2009-12-10
-   !> \param natoms is the number of atoms
-   !> \param D
-   !> \return gradient contains the exchange correlation part of the geometric derivative of the F^ks matrix
-   subroutine di_get_geomDeriv_molgrad_DFT( gradient, natoms, D )
-     type(matrix), intent(in) :: D
-     real(8), intent(out) :: gradient( 3*natoms )
-     integer, intent(in) :: natoms
-     call QUIT( 'di_get_geomDeriv_molgrad_DFT is not implemented!' )
-   end subroutine
-
    !> Exchange-correlation perturbed by fields f, averaged over densities D
    subroutine rsp_xcave(pert, res, D, Dg, Dgg, Df, Dff)
 
@@ -192,9 +122,6 @@ contains
       select case (pert)
          case ('g')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-#ifdef PRG_DIRAC
-            return
-#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                element = i
@@ -207,12 +134,8 @@ contains
                     )
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
-#endif
          case ('gg')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-#ifdef PRG_DIRAC
-            return
-#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
@@ -230,12 +153,8 @@ contains
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
-#endif
          case ('gf')
 !           res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-#ifdef PRG_DIRAC
-            return
-#else
             if (.not. get_is_ks_calculation()) return
             nr_dmat = 3
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
@@ -243,7 +162,7 @@ contains
             call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
             do j = 1, 3
                call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
-               do i = 1, 1
+               do i = 1, nr_atoms*3
                   element = i &
                           + (j-1)*nr_atoms*3
                   call xc_integrate(           &
@@ -256,12 +175,10 @@ contains
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
-#endif
+         case ('gff')
+            ! nothing done so far
          case ('ggg')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-#ifdef PRG_DIRAC
-            return
-#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
@@ -283,12 +200,8 @@ contains
                   end do
                end do
             end do
-#endif
          case ('gggg')
             res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-#ifdef PRG_DIRAC
-            return
-#else
             if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
@@ -320,7 +233,6 @@ contains
                   end do
                end do
             end do
-#endif
          case default
             print *, 'error: perturbation not implemented in xcave'
             stop 1

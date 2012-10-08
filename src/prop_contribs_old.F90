@@ -939,18 +939,6 @@ contains
             call twoctr('G', D(1), D(pd1-pd+1+j), RR(:3*na))
             ! for molgra (nd==0), factor 1/2 on these integrals
             if (nd==0) RR(:3*na) = RR(:3*na)/2
-            if (do_dft()) then
-               if (nd == 0) then
-                  call di_get_geomDeriv_molgrad_DFT( &
-                                  RR(3*na+1:3*na*2), &
-                                  na, D(1))
-                  RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
-               else
-                 !call di_get_geomDeriv_FxD_DFT(     &
-                 !                RR(3*na+1:3*na*2), &
-                 !                na, D(1), D(pd1-pd+1+j))
-               end if
-            end if
             E( 1+de(1)*j : de(1)*(j+1) ) = RR(c(1):c(1)+de(1)-1)
          end do
          if (nd==0 .or. nd==1) then
@@ -963,11 +951,6 @@ contains
                   if (iszero(D(2+j))) cycle
                   ! Coulomb-exchange
                   call twoctr('G', D(2+j), D(2+de(2)+k), RR(:3*na))
-                  if (do_dft()) then
-                     call di_get_geomDeriv_GxD_DFT(RR(3*na+1:3*na*2), &
-                                                   na, D(1), D(2+j), D(2+de(2)+k))
-                     RR(:3*na) = RR(:3*na) + RR(3*na+1:3*na*2)
-                  end if
                   E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
                             = E( 1+de(1)*(j+de(2)*k) : de(1)*(1+j+de(2)*k) ) &
                             + RR(c(1):c(1)+de(1)-1)

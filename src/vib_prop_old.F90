@@ -1084,6 +1084,7 @@ contains
       integer      :: nij, nik, njk, njl, nkl, mij, mik, mjk
       logical      :: exists
       complex(8)   :: Egf_xc(ng, 3)
+      complex(8)   :: Egff_xc(ng, 3, 3)
       ! verify that frequencies sum to zero
       if (abs(sum(freq)) > 1d-15) &
          call quit('vibgam_shyp_dipg_polg_hypg: sum(freq) should be zero!',-1)
@@ -1214,6 +1215,11 @@ contains
          ! call print_tensor((/ng,3,3/), Egff(:,:,:,n), 'E1gfDe'); Egff(:,:,:,n)=0
          call prop_twoave((/'GEO'/), (/D,Df(:,ni),Df(:,nj),Dff(:,:,n)/), &
                           (/ng,3,3/), Egff(:,:,:,n))
+
+         ! XC contribution will fail with nonzero frequency
+         call rsp_xcave(pert='gff', res=Egff_xc, D=D, Df=Df(:, ni), Dff=Dff(:, :, n))
+         Egff(:, :, :, n) = Egff(:, :, :, n) + Egff_xc(:, :, :)
+
          ! prepare DFDff
          FD0 = (F + (freq(ni)+freq(nj))/2 * S) * D
          do j=1,3
