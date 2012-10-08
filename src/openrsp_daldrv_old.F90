@@ -374,6 +374,8 @@
                          xc_mat_dim=mat_dim,  &
                          xc_nr_dmat=1,        &
                          xc_dmat=xc_dmat,     &
+                         xc_nr_geo_pert=0,    &
+                         xc_nr_fld_pert=0,    &
                          xc_energy=xc_energy, &
                          xc_fmat=xc_fmat      &
                         )
