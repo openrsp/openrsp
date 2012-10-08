@@ -96,7 +96,7 @@ contains
 
 
    !> Exchange-correlation perturbed by fields f, averaged over densities D
-   subroutine rsp_xcave(pert, res, D, Dg, Dgg, Df, Dff)
+   subroutine rsp_xcave(pert, res, D, Dg, Dgg, Df, Dff, Dfff)
 
 !     ---------------------------------------------------------------------------
       character(*), intent(in)           :: pert
@@ -106,6 +106,7 @@ contains
       type(matrix), intent(in), optional :: Dgg(:, :)
       type(matrix), intent(in), optional :: Df(:)
       type(matrix), intent(in), optional :: Dff(:, :)
+      type(matrix), intent(in), optional :: Dfff(:, :, :)
 !     ---------------------------------------------------------------------------
       integer                            :: i, j, k, l
       integer                            :: element
@@ -221,6 +222,44 @@ contains
                              xc_geo_coor=(/i, 0, 0/) &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
+                  end do
+               end do
+            end do
+         case ('gfff')
+            nr_dmat = 8
+            allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+            xc_dmat = 0.0d0
+            call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
+          ! do i = 1, 3
+            do i = 1, 1
+               call dcopy(mat_dim*mat_dim, Df(i)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
+             ! do j = 1, 3
+               do j = 1, 1
+                  call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
+                  call dcopy(mat_dim*mat_dim, Dff(i, j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
+                ! do k = 1, 3
+                  do k = 1, 1
+                     call dcopy(mat_dim*mat_dim, Df(k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*4 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Dff(i, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*5 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Dff(j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*6 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Dfff(i, j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*7 + 1), 1)
+                   ! do l = 1, nr_atoms*3
+                     do l = 1, 1
+                        element = i                    &
+                                + (j-1)*nr_atoms*3     &
+                                + (k-1)*(nr_atoms*3)*3 &
+                                + (l-1)*(nr_atoms*3)*3*3
+                        call xc_integrate(                 &
+                                xc_mat_dim=mat_dim,        &
+                                xc_nr_dmat=nr_dmat,        &
+                                xc_dmat=xc_dmat,           &
+                                xc_nr_geo_pert=1,          &
+                                xc_nr_fld_pert=3,          &
+                                xc_energy=xc_energy,       &
+                                xc_geo_coor=(/l, 0, 0, 0/) &
+                             )
+                        res(element) = cmplx(xc_energy, 0.0d0)
+                     end do
                   end do
                end do
             end do

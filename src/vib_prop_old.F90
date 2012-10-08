@@ -1085,6 +1085,7 @@ contains
       logical      :: exists
       complex(8)   :: Egf_xc(ng, 3)
       complex(8)   :: Egff_xc(ng, 3, 3)
+      complex(8)   :: Egfff_xc(ng, 3, 3, 3)
       ! verify that frequencies sum to zero
       if (abs(sum(freq)) > 1d-15) &
          call quit('vibgam_shyp_dipg_polg_hypg: sum(freq) should be zero!',-1)
@@ -1416,6 +1417,11 @@ contains
          call prop_twoave((/'GEO'/), (/D,Df(:,nk),Dff(:,:,nij), &
                           (zeromat,i=1,3*3*3)/), (/ng,3*3,3/),   &
                           Egfff(:,:,:,:,n), perm=(/1,3,2/))
+
+         ! XC contribution will fail with nonzero frequency
+         call rsp_xcave(pert='gfff', res=Egfff_xc, D=D, Df=Df(:, ni), Dff=Dff(:, :, nij), Dfff=Dfff(:, :, :))
+         Egfff(:, :, :, :, n) = Egfff(:, :, :, :, n) + Egfff_xc(:, :, :, :)
+
          ! call print_tensor((/ng,3,3,3/), Egfff(:,:,:,:,n), 'E2gDfDde'); Egfff(:,:,:,:,n)=0
          ! --- one-electron contribution
          ! reorth matrices DFDfff, to be contracted with perturbed overlap Sg
