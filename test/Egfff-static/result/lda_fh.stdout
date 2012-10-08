@@ -1,0 +1,105 @@
+
+   ***************************************** 
+   **** OUTPUT FROM DALTON SHELL SCRIPT **** 
+   ***************************************** 
+
+   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+
+   Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -put DALTON.HES -nobackup -noarch lda.dal fh.mol
+
+   Mon Oct  8 17:32:16 CEST 2012
+
+   Calculation: lda_fh  (input files: lda.dal and fh.mol)
+   PID        : 18346
+   Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/Egfff-static
+   Scratch dir: /scratch/DALTON_scratch_bast/bast/lda_fh
+
+copying DALTON.HES to scratch directory
+
+
+DFT grid generator
+------------------
+::
+
+ Becke atomic partitioning scheme
+ Lebedev angular quadrature (fixed size)
+ Rotational invariance of grid points: random rotation
+ Gauss-Chebyshev(I) radial quadrature
+ Radial grid points mapping:  Becke
+ Grid weight derivatives up to first order
+
+ Atom   1 has    2500 grid points
+ Atom   2 has    2500 grid points
+ Total           5000 grid points
+dipmom = -Ef
+ -0.495304318292  0.000000000000  0.000000000000
+
+ before response solver: norm(RHS) =    1.40903667793267     
+ before response solver: norm(RHS) =   2.025298742787741E-002
+ before response solver: norm(RHS) =   2.025298742787741E-002
+ 
+Alpha = -Eff w: 0.000 0.000
+  2.858149706836 -0.000002937696 -0.000001347895
+ -0.000002937694  0.001647862376  0.000000013032
+ -0.000001347896  0.000000013032  0.001647764863
+
+ 
+d/dg dipmom = -Egf w: 0.000 0.000
+  0.228487883226  0.001621351723  0.000108710969 -0.227910701648  0.000290521348 -0.000052157715
+ -0.000074437045 -0.291423767987 -0.000022704726 -0.000012065905  0.291349699903  0.000005949341
+ -0.000005564055 -0.000022704571 -0.291308853427 -0.000006306804  0.000005948911  0.291364898557
+
+ before response solver: norm(RHS) =    1.35069067362725     
+ 
+ before response solver: norm(RHS) =   0.129721186523489     
+ before response solver: norm(RHS) =   4.833680454252227E-002
+ 
+ before response solver: norm(RHS) =   0.129719735879825     
+ before response solver: norm(RHS) =   9.840861388981011E-007
+ before response solver: norm(RHS) =   4.833379622205430E-002
+ 
+Beta = -Efff w: 0.000 0.000 0.000
+  5.341977739668  0.000026708207  0.000009383223
+  0.000026708198 -0.023782549024 -0.000000078269
+  0.000009383239 -0.000000078269 -0.023781028401
+  0.000026708198 -0.023782549024 -0.000000078269
+ -0.023782548551  0.000000361623  0.000000121913
+ -0.000000078269  0.000000121913  0.000000103823
+  0.000009383239 -0.000000078269 -0.023781028401
+ -0.000000078269  0.000000121913  0.000000103823
+ -0.023781023575  0.000000103823  0.000000399806
+
+ 
+d/dg Alpha = -Egff w: 0.000 0.000 0.000
+  1.265070240120 -0.000194642070 -0.000481747618 -1.265070240120  0.000194642070  0.000481747618
+ -0.000059338516  1.567531000313 -0.000006519405  0.000059338516 -1.567531000313  0.000006519405
+ -0.000093326588 -0.000006512747  1.567609048686  0.000093326588  0.000006512747 -1.567609048686
+ -0.000059338516  1.567531000313 -0.000006519405  0.000059338516 -1.567531000313  0.000006519405
+  0.028440007283  0.000000985108  0.000007181615 -0.028440007283 -0.000000985108 -0.000007181615
+  0.000000126288 -0.000000293382 -0.000001150373 -0.000000126288  0.000000293382  0.000001150373
+ -0.000093326588 -0.000006512747  1.567609048686  0.000093326588  0.000006512747 -1.567609048686
+  0.000000126288 -0.000000293382 -0.000001150373 -0.000000126288  0.000000293382  0.000001150373
+  0.028439558020  0.000003495335  0.000006417132 -0.028439558020 -0.000003495335 -0.000006417132
+
+Error in /home/bast/dalton/openrsp/external/openrsp/../../build/dalton.x, exit code 71
+lda_fh.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/Egfff-static
+----------------------------------------------------------
+WARNING for ERROR  (Dalton program stopped with exit code 71)
+- THEREFORE scratch directory /scratch/DALTON_scratch_bast/bast/lda_fh is not deleted
+  by this script so you may restart the calculation, if possible
+  ( /scratch/DALTON_scratch_bast/bast/lda_fh may be deleted by your queueing system )
+- REMEMBER to delete /scratch/DALTON_scratch_bast/bast/lda_fh yourself !!!
+
+Output from 'grep -n ERROR' :
+Binary file lda_fh.out matches
+----------------------------------------------------------
+25 WARNINGS have been issued by Dalton,
+output from 'grep -n -i WARNING'  (max 10 warnings):
+Binary file lda_fh.out matches
+----------------------------------------------------------
+13 informational messages have been issued by Dalton,
+output from 'grep -n INFO'  (max 10 lines):
+Binary file lda_fh.out matches
+
+   Mon Oct  8 17:32:22 CEST 2012
+   ***************************************** 

@@ -7,13 +7,12 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch lda.dal h2o2.mol
 
-   Mon Oct  8 14:12:06 CEST 2012
+   Mon Oct  8 17:14:44 CEST 2012
 
    Calculation: lda_h2o2  (input files: lda.dal and h2o2.mol)
-   PID        : 16111
+   PID        : 18069
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
    Scratch dir: /scratch/DALTON_scratch_bast/bast/lda_h2o2
-
 
 
 
@@ -28,21 +27,16 @@ DFT grid generator
  Radial grid points mapping:  Becke
  Grid weight derivatives up to first order
 
- Atom   1 has    5500 grid points
- Atom   2 has    5500 grid points
- Atom   3 has    5500 grid points
- Atom   4 has    5500 grid points
- Total          22000 grid points
-
-
-
-
- nr electrons from xc =    18.0000004092856     
+ Atom   1 has    2500 grid points
+ Atom   2 has    2500 grid points
+ Atom   3 has    2500 grid points
+ Atom   4 has    2500 grid points
+ Total          10000 grid points
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.093283930620 -0.223235491288  0.204891834602 -0.093287226684  0.223229429273  0.204889244116 -0.081892058818 -0.030407801028 -0.204886648935  0.081895354882  0.030413863042 -0.204894429784
+  0.093242518765 -0.223115781709  0.204939241286 -0.093175678418  0.223148028442  0.204931792245 -0.081957190247 -0.030450977844 -0.204946518203  0.081890349900  0.030418731110 -0.204924515327
 
 oneave
   -1.78160846101  17.34397998119  -5.22724078096   1.78160846101 -17.34397998119  -5.22724078095   2.04644012331   1.84277669437   5.22724078095  -2.04644012330  -1.84277669437   5.22724078095
@@ -50,74 +44,14 @@ oneave
 twoave
   1.023427489868 -9.121268044280  2.842366581462 -1.023427489866  9.121268044278  2.842366581455 -1.034697321182 -0.863703344325 -2.842366581461  1.034697321180  0.863703344327 -2.842366581456
 
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
-
-
-
-
- nr electrons from xc =    18.0000004092856     
 xcave
- -0.091782644391  0.201045826077 -0.230599418283  0.092077866197 -0.200639396906 -0.230996161699  0.086629949510  0.048372395337  0.231194868684 -0.086627155542 -0.048388168216  0.231218725443
+ -0.091022290289  0.198623880744 -0.232662558556  0.093093544245 -0.201013088226 -0.231157109141  0.086482182145  0.048532128334  0.231173798442 -0.086764924228 -0.048322655261  0.231316179037
 
 gradient = Eg
-  0.023936386560  0.011514792482  0.037913271706 -0.023644460819 -0.011114425325  0.037513937803 -0.024651202883 -0.013596876289 -0.037312635637  0.024657292915  0.013587165424 -0.037296559727
+  0.024655328807  0.009212556728  0.035897538117 -0.022517234504 -0.011569517477  0.037395538490 -0.024864101677 -0.013480320107 -0.037393575148  0.024514519247  0.013657546447 -0.037229191677
 
-total force =   -0.298E-03  -0.391E-03  -0.818E-03
-total torque =    0.589E-03  -0.820E-05  -0.652E-03
+total force =   -0.179E-02   0.218E-02   0.133E-02
+total torque =   -0.290E-02  -0.646E-03   0.759E-04
 lda_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
@@ -129,5 +63,5 @@ WARNING for ERROR  (Dalton program stopped with exit code 0)
 Output from 'grep -n ERROR' :
 151:.MAX ERROR                                        
 
-   Mon Oct  8 14:12:14 CEST 2012
+   Mon Oct  8 17:14:48 CEST 2012
    ***************************************** 

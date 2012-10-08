@@ -7,13 +7,12 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch b3lyp.dal h2o2.mol
 
-   Mon Oct  8 14:12:24 CEST 2012
+   Mon Oct  8 17:14:55 CEST 2012
 
    Calculation: b3lyp_h2o2  (input files: b3lyp.dal and h2o2.mol)
-   PID        : 16193
+   PID        : 18151
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
    Scratch dir: /scratch/DALTON_scratch_bast/bast/b3lyp_h2o2
-
 
 
 
@@ -28,21 +27,16 @@ DFT grid generator
  Radial grid points mapping:  Becke
  Grid weight derivatives up to first order
 
- Atom   1 has    5500 grid points
- Atom   2 has    5500 grid points
- Atom   3 has    5500 grid points
- Atom   4 has    5500 grid points
- Total          22000 grid points
-
-
-
-
- nr electrons from xc =    17.9999972160160     
+ Atom   1 has    2500 grid points
+ Atom   2 has    2500 grid points
+ Atom   3 has    2500 grid points
+ Atom   4 has    2500 grid points
+ Total          10000 grid points
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.100182977966 -0.214939045705  0.220474716414 -0.100184443953  0.214932155296  0.220471146377 -0.087359474711 -0.033148127369 -0.220468971581  0.087360940698  0.033155017778 -0.220476891209
+  0.100154855183 -0.214845066989  0.220514155371 -0.100110088793  0.214877940723  0.220510164872 -0.087410133161 -0.033186538594 -0.220524518475  0.087365366771  0.033153664860 -0.220499801767
 
 oneave
   -1.82498532965  17.27173511773  -5.31094610901   1.82498532965 -17.27173511773  -5.31094610901   2.08921094470   1.84115324971   5.31094610901  -2.08921094470  -1.84115324971   5.31094610901
@@ -50,74 +44,14 @@ oneave
 twoave
   1.039574636792 -8.999663699016  2.860023286082 -1.039574636792  8.999663699016  2.860023286081 -1.052731707899 -0.848126268367 -2.860023286082  1.052731707899  0.848126268367 -2.860023286081
 
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
-
-
-
-
- nr electrons from xc =    17.9999972160160     
 xcave
- -0.075877904892  0.134657606483 -0.188433349133  0.076215066016 -0.134249985218 -0.188739091158  0.071148037910  0.037454001606  0.188965469599 -0.071143887937 -0.037464618683  0.188988432288
+ -0.075228296220  0.132460102439 -0.190042451024  0.077026799321 -0.134426087141 -0.188720464706  0.071020700037  0.037622123957  0.188943669200 -0.071283102036 -0.037397798151  0.189070269465
 
 gradient = Eg
-  0.019510451695  0.002782500273  0.029613599233 -0.019174756558 -0.002381769417  0.029304287171 -0.020864095696 -0.013301965060 -0.029075733934  0.020869711656  0.013298238391 -0.029060690873
+  0.020131937583  0.000678974945  0.028043936298 -0.018288668092 -0.002612085914  0.029361932117 -0.021042092019 -0.013172253934 -0.029153081227  0.020734923631  0.013363706006 -0.029001764254
 
-total force =   -0.341E-03  -0.397E-03  -0.781E-03
-total torque =    0.455E-03  -0.140E-04  -0.800E-03
+total force =   -0.154E-02   0.174E-02   0.749E-03
+total torque =   -0.261E-02  -0.560E-03  -0.308E-03
 b3lyp_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
@@ -129,5 +63,5 @@ WARNING for ERROR  (Dalton program stopped with exit code 0)
 Output from 'grep -n ERROR' :
 151:.MAX ERROR                                        
 
-   Mon Oct  8 14:12:36 CEST 2012
+   Mon Oct  8 17:15:03 CEST 2012
    ***************************************** 

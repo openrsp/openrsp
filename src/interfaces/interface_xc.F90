@@ -383,7 +383,7 @@ end module
          end do
       end do
 
-      print *, 'raboof xc energy', xc_energy
+!     print *, 'raboof xc energy', xc_energy
       deallocate(xcmat)
 
    end subroutine
