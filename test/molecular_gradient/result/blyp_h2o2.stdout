@@ -7,10 +7,10 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch blyp.dal h2o2.mol
 
-   Mon Oct  8 13:43:04 CEST 2012
+   Mon Oct  8 14:12:14 CEST 2012
 
    Calculation: blyp_h2o2  (input files: blyp.dal and h2o2.mol)
-   PID        : 3631
+   PID        : 16152
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
    Scratch dir: /scratch/DALTON_scratch_bast/bast/blyp_h2o2
 
@@ -26,22 +26,23 @@ DFT grid generator
  Rotational invariance of grid points: random rotation
  Gauss-Chebyshev(I) radial quadrature
  Radial grid points mapping:  Becke
- Screening 1.d-10
+ Grid weight derivatives up to first order
 
- Atom   1 has   11640 grid points
- Atom   2 has   11640 grid points
- Atom   3 has   11640 grid points
- Atom   4 has   11640 grid points
- Total          46560 grid points
-
-
+ Atom   1 has    5500 grid points
+ Atom   2 has    5500 grid points
+ Atom   3 has    5500 grid points
+ Atom   4 has    5500 grid points
+ Total          22000 grid points
 
 
+
+
+ nr electrons from xc =    17.9999966937912     
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.092452132462 -0.210459885837  0.203276862440 -0.092452048431  0.210459707974  0.203277279189 -0.081082628214 -0.030139528848 -0.203276285855  0.081082544183  0.030139706711 -0.203277855774
+  0.092444850837 -0.210469319982  0.203279121075 -0.092446440322  0.210460594798  0.203274783015 -0.081072836581 -0.030135730609 -0.203271957474  0.081074426067  0.030144455794 -0.203281946616
 
 oneave
   -1.77989644393  17.31478367996  -5.24129483650   1.77989644392 -17.31478367996  -5.24129483648   2.04900577172   1.85182258061   5.24129483649  -2.04900577171  -1.85182258062   5.24129483648
@@ -53,58 +54,70 @@ twoave
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 
 
 
 
+ nr electrons from xc =    17.9999966937912     
 xcave
- -0.090707011521  0.163131117821 -0.226363435388  0.090616434813 -0.163031294942 -0.226449102163  0.084413476288  0.045981824398  0.226383462548 -0.084412068129 -0.045979950577  0.226384878159
+ -0.090093500912  0.163558050990 -0.225699141622  0.090523809195 -0.163049116731 -0.226072773337  0.084415920079  0.045972410589  0.226366579533 -0.084409400821 -0.045984372497  0.226395204663
 
 gradient = Eg
-  0.023603479798 -0.013556900654  0.039423208887 -0.023693972476  0.013656545670  0.039337958860 -0.025288546992 -0.015009484871 -0.039402605141  0.025289871121  0.015011536554 -0.039402759450
+  0.024209708782 -0.013139401630  0.040089761287 -0.023780989985  0.013639610705  0.039711791512 -0.025276311568 -0.015015100441 -0.039415159775  0.025284420313  0.015011863718 -0.039396523787
 
-total force =    0.892E-04  -0.102E-03   0.442E-04
-total torque =    0.127E-03   0.109E-04  -0.206E-04
+total force =   -0.437E-03  -0.497E-03  -0.990E-03
+total torque =    0.554E-03  -0.168E-04  -0.103E-02
 blyp_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
@@ -116,5 +129,5 @@ WARNING for ERROR  (Dalton program stopped with exit code 0)
 Output from 'grep -n ERROR' :
 151:.MAX ERROR                                        
 
-   Mon Oct  8 13:43:11 CEST 2012
+   Mon Oct  8 14:12:24 CEST 2012
    ***************************************** 

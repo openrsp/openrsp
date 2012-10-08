@@ -7,10 +7,10 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch hf.dal h2o2.mol
 
-   Mon Oct  8 13:42:59 CEST 2012
+   Mon Oct  8 14:12:06 CEST 2012
 
    Calculation: hf_h2o2  (input files: hf.dal and h2o2.mol)
-   PID        : 3549
+   PID        : 16070
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
    Scratch dir: /scratch/DALTON_scratch_bast/bast/hf_h2o2
 
@@ -45,5 +45,5 @@ WARNING for ERROR  (Dalton program stopped with exit code 0)
 Output from 'grep -n ERROR' :
 148:.MAX ERROR                                        
 
-   Mon Oct  8 13:42:59 CEST 2012
+   Mon Oct  8 14:12:06 CEST 2012
    ***************************************** 
