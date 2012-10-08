@@ -114,15 +114,32 @@ contains
       integer                            :: nr_dmat
       real(8)                            :: xc_energy
       real(8), allocatable               :: xc_dmat(:)
+      integer                            :: nr_pert_geo
+      integer                            :: nr_pert_el
 !     ---------------------------------------------------------------------------
 
       nr_atoms = get_nr_atoms()
       mat_dim  = D%nrow
 
+      nr_pert_geo = 0
+      nr_pert_el  = 0
+      do i = 1, len(pert)
+         select case (pert(i:i))
+            case ('f')
+               nr_pert_el = nr_pert_el + 1
+            case ('g')
+               nr_pert_geo = nr_pert_geo + 1
+            case default
+               print *, 'error: unknown pert component'
+               stop 1
+         end select
+      end do
+
+      res(1:((nr_atoms*3)**nr_pert_geo)*(3*nr_pert_el)) = 0.0d0
+      if (.not. get_is_ks_calculation()) return
+
       select case (pert)
          case ('g')
-            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                element = i
                call xc_integrate(                &
@@ -137,8 +154,6 @@ contains
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
          case ('gg')
-            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
                   element = i &
@@ -158,14 +173,12 @@ contains
                end do
             end do
          case ('gf')
-!           res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-            if (.not. get_is_ks_calculation()) return
             nr_dmat = 3
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
             xc_dmat = 0.0d0
             call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
             do j = 1, 3
-               call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
+               call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
                do i = 1, nr_atoms*3
                   element = i &
                           + (j-1)*nr_atoms*3
@@ -182,10 +195,36 @@ contains
                end do
             end do
          case ('gff')
-            ! nothing done so far
+            nr_dmat = 4
+            allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+            xc_dmat = 0.0d0
+            call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
+          ! do k = 1, 3
+            do k = 1, 1
+               call dcopy(mat_dim*mat_dim, Df(k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
+             ! do j = 1, 3
+               do j = 1, 1
+                  call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
+                  call dcopy(mat_dim*mat_dim, Dff(j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
+                ! do i = 1, nr_atoms*3
+                  do i = 1, 1
+                     element = i                &
+                             + (j-1)*nr_atoms*3 &
+                             + (k-1)*(nr_atoms*3)*3
+                     call xc_integrate(              &
+                             xc_mat_dim=mat_dim,     &
+                             xc_nr_dmat=nr_dmat,     &
+                             xc_dmat=xc_dmat,        &
+                             xc_nr_geo_pert=1,       &
+                             xc_nr_fld_pert=2,       &
+                             xc_energy=xc_energy,    &
+                             xc_geo_coor=(/i, 0, 0/) &
+                          )
+                     res(element) = cmplx(xc_energy, 0.0d0)
+                  end do
+               end do
+            end do
          case ('ggg')
-            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
                   do k = 1, j
@@ -209,8 +248,6 @@ contains
                end do
             end do
          case ('gggg')
-            res(1:(nr_atoms*3)**len(pert)) = 0.0d0
-            if (.not. get_is_ks_calculation()) return
             do i = 1, nr_atoms*3
                do j = 1, i
                   do k = 1, j

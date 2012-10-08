@@ -7,10 +7,10 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -put DALTON.HES -nobackup -noarch lda.dal fh.mol
 
-   Mon Oct  8 17:32:16 CEST 2012
+   Mon Oct  8 17:46:14 CEST 2012
 
    Calculation: lda_fh  (input files: lda.dal and fh.mol)
-   PID        : 18346
+   PID        : 28650
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/Egfff-static
    Scratch dir: /scratch/DALTON_scratch_bast/bast/lda_fh
 
@@ -55,7 +55,7 @@ d/dg dipmom = -Egf w: 0.000 0.000
  before response solver: norm(RHS) =   4.833680454252227E-002
  
  before response solver: norm(RHS) =   0.129719735879825     
- before response solver: norm(RHS) =   9.840861388981011E-007
+ before response solver: norm(RHS) =   9.840861388980670E-007
  before response solver: norm(RHS) =   4.833379622205430E-002
  
 Beta = -Efff w: 0.000 0.000 0.000
@@ -101,5 +101,5 @@ Binary file lda_fh.out matches
 output from 'grep -n INFO'  (max 10 lines):
 Binary file lda_fh.out matches
 
-   Mon Oct  8 17:32:22 CEST 2012
+   Mon Oct  8 17:46:19 CEST 2012
    ***************************************** 
