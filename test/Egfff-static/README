@@ -3,8 +3,8 @@ method derv     gf         gff       gfff
 HF     analytic 0.2045125  4.2814426
 .      FF       0.2045124  4.2814425
 
-LDA    analytic 0.22791251
-.      FF       0.22793132 3.577011
+LDA    analytic 0.2284878  3.5777650
+.      FF       0.2279313  3.5766799  2.633027
 
 
 status DFT
@@ -12,6 +12,6 @@ status DFT
 Ef     ok
 Efg    ok
 Eff    ok
-Effg   wrong
-Efff   wrong
+Effg   ok
+Efff   ok
 Efffg  wrong
