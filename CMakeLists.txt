@@ -11,6 +11,7 @@ set(CMAKE_MODULE_PATH
 set(CMAKE_Fortran_MODULE_DIRECTORY
     ${PROJECT_BINARY_DIR}/modules
     )
+include(ConfigParentSettings)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE
@@ -19,22 +20,6 @@ if(NOT CMAKE_BUILD_TYPE)
         "Choose the type of build, options are: None Debug Release."
         FORCE
         )
-endif()
-
-if(NOT "${PARENT_DEFINITIONS}" STREQUAL "")
-    foreach (_definition ${PARENT_DEFINITIONS})
-        add_definitions(${_definition})
-    endforeach()
-else()
-    add_definitions(-DOPENRSP_STANDALONE)
-    add_definitions(-DBUILD_OPENRSP)
-    include_directories(${PROJECT_SOURCE_DIR}/include)
-endif()
-if(NOT "${PARENT_INCLUDE_DIR}" STREQUAL "")
-    include_directories(${PARENT_INCLUDE_DIR})
-endif()
-if(NOT "${PARENT_MODULE_DIR}" STREQUAL "")
-    set(CMAKE_Fortran_MODULE_DIRECTORY ${PARENT_MODULE_DIR})
 endif()
 
 set(LIBS)
