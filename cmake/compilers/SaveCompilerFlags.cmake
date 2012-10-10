@@ -33,4 +33,3 @@ if (NOT DEFINED DEFAULT_${_lang}_FLAGS_SET)
         "Flags used by the compiler during release builds." FORCE)
 endif()
 endmacro()
-
