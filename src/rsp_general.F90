@@ -248,8 +248,8 @@ p_diff = prop
 
     deallocate(energy_cache)
 ! 
-write(*,*) 'prop incr'
-write(*,*) prop - p_diff
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
 
 p_diff = prop
 
@@ -259,8 +259,8 @@ p_diff = prop
     write(*,*) 'Finished calculating exchange/correlation contributions'
     write(*,*) ' '
 
-write(*,*) 'prop incr'
-write(*,*) prop - p_diff
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
 p_diff = prop
 
     call property_cache_allocate(pulay_kn_cache)
@@ -272,8 +272,8 @@ p_diff = prop
     write(*,*) ' '
 
     deallocate(pulay_kn_cache)
-write(*,*) 'prop incr'
-write(*,*) prop - p_diff
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
 p_diff = prop
     call property_cache_allocate(pulay_lag_cache)
     call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
@@ -285,8 +285,8 @@ p_diff = prop
     write(*,*) ' '
 
     deallocate(pulay_lag_cache)
-write(*,*) 'prop incr'
-write(*,*) prop - p_diff
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
 p_diff = prop
     call property_cache_allocate(idem_cache)
     call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
@@ -298,8 +298,8 @@ p_diff = prop
     write(*,*) ' '
 
     deallocate(idem_cache)
-write(*,*) 'prop incr'
-write(*,*) prop - p_diff
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
 p_diff = prop
     call property_cache_allocate(scfe_cache)
     call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
@@ -311,8 +311,8 @@ p_diff = prop
     write(*,*) ' '
 
     deallocate(scfe_cache)
-write(*,*) 'prop incr'
-write(*,*) prop - p_diff
+! write(*,*) 'prop incr'
+! write(*,*) prop - p_diff
 p_diff = prop
   end subroutine
 
@@ -731,6 +731,41 @@ call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
 ! write(*,*) ' '
 ! end if
 
+
+       contrib = 0.0
+
+       if (num_p_tuples == 1) then
+
+          call rsp_ovlave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
+                         p_tuples(1)%pdim, nblks_tuple(1), &
+                         blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                         blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, &
+                         ave = contrib, w = p_tuples(1)%freq, &
+                         D = sdf_getdata(D, get_emptypert(), (/1/)))
+
+       elseif (num_p_tuples == 2) then
+
+          call rsp_ovlave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
+                         p_tuples(1)%pdim, nblks_tuple(1), &
+                         blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                         blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, &
+                         ave = contrib, w = p_tuples(1)%freq, D = dens_tuple(2))
+
+       end if
+
+       tmp = tmp + contrib
+
+! if (i == 1) then
+! write(*,*) 'AFTER OVLAVE T MATRIX'
+! write(*,*) real(tmp)
+! write(*,*) ' '
+! end if
+
+
+
+
        contrib = 0.0
 
        if (num_p_tuples == 1) then
@@ -978,8 +1013,8 @@ deallocate(triang_indices_pr)
        call rsp_nucpot_tr(nucpot_pert, property_size, contrib) 
        tmp = tmp + contrib
 
-write(*,*) 'AFTER NUCPOT'
-write(*,*) tmp
+! write(*,*) 'AFTER NUCPOT'
+! write(*,*) tmp
 
 
        contrib = 0.0
@@ -992,7 +1027,24 @@ write(*,*) tmp
 
        tmp = tmp + contrib
 
- write(*,*) 'AFTER ONEAVE', tmp
+!  write(*,*) 'AFTER ONEAVE', tmp
+
+       contrib = 0.0
+
+       call rsp_ovlave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
+                       p_tuples(1)%pdim, nblks_tuple(1), &
+                       blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                       blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, &
+                       ave = contrib, w = p_tuples(1)%freq, &
+                       D = sdf_getdata(D, get_emptypert(), (/1/)))
+
+       tmp = tmp + contrib
+
+
+!  write(*,*) 'AFTER OVLAVE T MATRIX', tmp
+
+
 
        contrib = 0.0
 
@@ -1003,7 +1055,7 @@ write(*,*) tmp
 
        tmp = tmp + 0.5*(contrib)
 
-write(*,*) 'AFTER TWOAVE', prop
+! write(*,*) 'AFTER TWOAVE', prop
 
 ! NOTE (MaR): XCAVE CALL REMOVED FOR NOW
  
@@ -1342,9 +1394,9 @@ call mat_init(W, zeromat%nrow, zeromat%ncol, .true.)
 
        call rsp_ovlave_tr(p12(1)%n_perturbations, p12(1)%plab, &
                       (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
-                      p12(1)%pdim, W, nblks_tuple(1), blks_tuple_info(1, &
+                      p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                       1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
-                      size(tmp), tmp)
+                      size(tmp), ave = tmp, DFD = W)
 
        do j = 1, size(inner_indices, 1)
 
@@ -1750,12 +1802,12 @@ call mat_init(W, zeromat%nrow, zeromat%ncol, .true.)
 
 ! write(*,*) 'nblks tuple b', nblks_tuple
 
-!MR: TEMPORARILY DISABLED
+
        call rsp_ovlave_tr(p12(1)%n_perturbations, p12(1)%plab, &
                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
-                       p12(1)%pdim, W, nblks_tuple(1), blks_tuple_info(1, &
+                       p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                        1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
-                       size(tmp), tmp)
+                       size(tmp), ave = tmp, DFD = W)
 
        do j = 1, size(inner_indices, 1)
 

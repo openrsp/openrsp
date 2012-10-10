@@ -170,7 +170,7 @@ blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
     call rsp_ovlint_tr(zeromat%nrow, pert%n_perturbations, pert%plab, &
                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
                        nblks, blk_info, blk_sizes, &
-                       perturbed_matrix_size, Sp)
+                       perturbed_matrix_size, ovl = Sp)
     call sdf_add(S, pert, perturbed_matrix_size, Sp)
 
 ! write(*,*) 'Got Sp'
@@ -218,14 +218,14 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 
 ! write(*,*) 'Dp tag 4', Dp(1)%magic_tag
 
- write(*,*) 'got fock lowerorder'
+!  write(*,*) 'got fock lowerorder'
 ! 
-do i = 1, perturbed_matrix_size
-
-write(*,*) 'Fp', i
-write(*,*) Fp(i)%elms_alpha
-
-end do
+! do i = 1, perturbed_matrix_size
+! 
+! write(*,*) 'Fp', i
+! write(*,*) Fp(i)%elms_alpha
+! 
+! end do
 
     deallocate(fock_lowerorder_cache)
 
@@ -271,7 +271,7 @@ end do
 
     do i = 1, size(indices, 1)
 
-write(*,*) 'i is', i
+! write(*,*) 'i is', i
 
        ind = indices(i, :)
 
@@ -284,12 +284,12 @@ write(*,*) 'i is', i
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
 
-write(*,*) 'got z', Dp(i)%elms_alpha
+! write(*,*) 'got z', Dp(i)%elms_alpha
 
        Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
 
 ! write(*,*) 'projected dp'
-       write(*,*) 'Dp at projection', Dp(i)%elms_alpha
+!        write(*,*) 'Dp at projection', Dp(i)%elms_alpha
 
        call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
@@ -316,7 +316,7 @@ write(*,*) 'got z', Dp(i)%elms_alpha
 
 
 
-write(*,*) 'did twoint_tr and xcint_tr', Fp(i)%elms_alpha
+! write(*,*) 'did twoint_tr and xcint_tr', Fp(i)%elms_alpha
 
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
 
@@ -344,7 +344,7 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
 !        X(1) = mat_zero_like(zeromat)
 !        call mat_ensure_alloc(X(1))
 
-write(*,*) 'made rhs', RHS(1)%elms_alpha
+! write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
 #ifndef VAR_LSDALTON
@@ -361,7 +361,7 @@ write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        Dh(i) = X(1) * B * A - A * B * X(1)
 
-write(*,*) 'Dh with rsp equation solution', Dh(i)%elms_alpha
+! write(*,*) 'Dh with rsp equation solution', Dh(i)%elms_alpha
 
        ! 6. Make homogeneous contribution to Fock matrix
 
@@ -376,7 +376,7 @@ write(*,*) 'Dh with rsp equation solution', Dh(i)%elms_alpha
                (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , &
                              1, Fp(i:i))
 
-write(*,*) 'Fp after homogeneous contribution', Fp(i)%elms_alpha
+! write(*,*) 'Fp after homogeneous contribution', Fp(i)%elms_alpha
 
 !        end if
 
@@ -387,15 +387,15 @@ write(*,*) 'Fp after homogeneous contribution', Fp(i)%elms_alpha
 
 write(*,*) 'Finished component', i
 
-write(*,*) 'Finally, Dp is', i, ' at indices', ind 
-write(*,*) Dp(i)%elms_alpha
-
-write(*,*) 'Finally, Fp is', i
-write(*,*) Fp(i)%elms_alpha
-
-
-write(*,*) 'Finally, Sp is', i
-write(*,*) Sp(i)%elms_alpha
+! write(*,*) 'Finally, Dp is', i
+! write(*,*) Dp(i)%elms_alpha
+! 
+! write(*,*) 'Finally, Fp is', i
+! write(*,*) Fp(i)%elms_alpha
+! 
+! 
+! write(*,*) 'Finally, Sp is', i
+! write(*,*) Sp(i)%elms_alpha
 
     end do
 
@@ -1056,13 +1056,16 @@ deallocate(triang_indices_fp)
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                    1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), property_size, Fp)
-! Waiting for developments in rsp_contribs
+
 ! NOTE: Find out if necessary ovlint/oneint in "outer indices case" above
+! NOTE (Oct 12): Probably not unless some hidden density matrix dependence
 ! NOTE: Add (a) corresponding call(s) for the energy term contributions (see e.g. eqn.
 ! 209 in ajt_rsp)
-!           call rsp_ovlint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-!                           p_tuples(1)%pdim, w = p_tuples(1)%freq, fock = Fp)
+           call rsp_ovlint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                           p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
+                    1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), property_size, &
+                    w = p_tuples(1)%freq, fock = Fp)
 
        end if
 ! write(*,*) '11'

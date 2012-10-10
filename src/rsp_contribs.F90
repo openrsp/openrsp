@@ -367,8 +367,8 @@ end if
 ! MR: NOT SURE IF WORKING PROPERLY
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
-  subroutine rsp_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
-                                      blk_sizes, propsize, ave, w, D)
+  subroutine rsp_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave, DFD, w, D)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface
 !     use gen1int_api
@@ -384,16 +384,45 @@ end if
     !> first and number of- components in each field
     integer,       intent(in)  :: c(nf), nc(nf)
     !> energy-weighted density matrix
-    type(matrix),  intent(in)  :: DFD
+    type(matrix),  intent(in), optional  :: DFD
     !> output average
-    complex(8),    intent(out) :: ave(propsize)
+    complex(8),    intent(inout), optional :: ave(propsize)
     !> field frequencies corresponding to each field
     complex(8),    intent(in), optional  :: w(nf)
     !> density matrix to contract half-differentiated overlap against
     type(matrix),  intent(in), optional  :: D
     !----------------------------------------------
-    call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
-                                      blk_sizes, propsize, ave, w, D)
+
+
+if (present(ave)) then
+
+
+if (present(w) .and. present(D)) then
+
+write(*,*) 'rsp_ovlave: Called for handling of T matrix contribution'
+write(*,*) 'rsp_ovlave: Nothing is returned presently - awaiting development'
+
+!     call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
+!                                       blk_sizes, propsize, ave = ave, w = w, D = D)
+
+else
+
+    call interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave = ave, DFD = DFD)
+
+end if
+
+
+else
+
+write(*,*) 'rsp_ovlave: Error: Unsupported input case - must be only ave or all of ave, w, D'
+
+end if
+
+
+
+
+
 
   end subroutine
 
@@ -1025,7 +1054,7 @@ write(*,*) 'case ggg'
                    n = get_triang_blks_offset(1, 3, (/1, 3, pert%pdim(1)/), &
                                               (/propsize/), (/i, j, k/))
 
-write(*,*) 'n is', n
+! write(*,*) 'n is', n
 
                    ave(n) = ave(n) + tmp_ave(i, j, k, 1)
 
@@ -1182,7 +1211,7 @@ write(*,*) 'ave after', ave(n)
     !> first and number of- components in each field
     integer,       intent(in)    :: c(nf), nc(nf)
     !> resulting overlap integral matrices (incoming content deleted)
-    type(matrix),  intent(inout) :: ovl(propsize)
+    type(matrix),  intent(inout), optional :: ovl(propsize)
     !> frequencies of each field
     complex(8),    intent(in),    optional :: w(nf)
     !> Fock matrices to which the half-differentiated overlap
@@ -1191,8 +1220,24 @@ write(*,*) 'ave after', ave(n)
     !------------------------------------------------
     integer      i, nr_ao
 
+if (present(ovl)) then
+
     call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ovl, w, fock)
+                                      blk_sizes, propsize, ovl = ovl)
+
+else if (present(w) .and. present(fock)) then
+
+write(*,*) 'rsp_ovlint: Called for handling of T matrix contribution'
+write(*,*) 'rsp_ovlint: Nothing is returned presently - awaiting development'
+
+!     call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+!                                       blk_sizes, propsize, w = w, fock = fock)
+
+else
+
+write(*,*) 'rsp_ovlint: Error: Unsupported input case - must be only ovl or both of w, fock'
+
+end if
 
   end subroutine
 
