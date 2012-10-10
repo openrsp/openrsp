@@ -207,9 +207,9 @@ integer, dimension(nblks) :: blk_sizes
       !> first and number of- components in each field
       integer,       intent(in)  :: c(nf), nc(nf)
       !> energy-weighted density matrix
-      type(matrix),  intent(in)  :: DFD
+      type(matrix),  intent(in), optional  :: DFD
       !> output average
-      complex(8),    intent(out) :: ave(propsize)
+      complex(8),    intent(inout), optional :: ave(propsize)
       !> field frequencies corresponding to each field
       complex(8),    intent(in), optional  :: w(nf)
       !> density matrix to contract half-differentiated overlap against
@@ -221,8 +221,8 @@ integer, dimension(nblks) :: blk_sizes
 ! MR: DOES NOT WORK YET
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
-                                      blk_sizes, propsize, ave, w, D)
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave, DFD, w, D)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -241,9 +241,9 @@ integer, dimension(nblks) :: blk_sizes
       !> first and number of- components in each field
       integer,       intent(in)  :: c(nf), nc(nf)
       !> energy-weighted density matrix
-      type(matrix),  intent(in)  :: DFD
+      type(matrix),  intent(in), optional  :: DFD
       !> output average
-      complex(8),    intent(out) :: ave(propsize)
+      complex(8),    intent(inout), optional :: ave(propsize)
       !> field frequencies corresponding to each field
       complex(8),    intent(in), optional  :: w(nf)
       !> density matrix to contract half-differentiated overlap against
@@ -1179,7 +1179,7 @@ integer, dimension(nblks) :: blk_sizes
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> resulting overlap integral matrices (incoming content deleted)
-      type(matrix),  intent(inout) :: ovl(propsize)
+      type(matrix),  intent(inout), optional :: ovl(propsize)
       !> frequencies of each field
       complex(8),    intent(in),    optional :: w(nf)
       !> Fock matrices to which the half-differentiated overlap
@@ -1212,7 +1212,7 @@ integer, dimension(nblks) :: blk_sizes
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> resulting overlap integral matrices (incoming content deleted)
-      type(matrix),  intent(inout) :: ovl(propsize)
+      type(matrix),  intent(inout), optional :: ovl(propsize)
       type(matrix)   :: ovl_tmp(propsize)
       !> frequencies of each field
       complex(8),    intent(in),    optional :: w(nf)
