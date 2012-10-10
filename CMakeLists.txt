@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
 project(OpenRSP Fortran C)
 
@@ -20,8 +20,6 @@ if(NOT CMAKE_BUILD_TYPE)
         FORCE
         )
 endif()
-
-include(ConfigDoc)
 
 if(NOT "${PARENT_DEFINITIONS}" STREQUAL "")
     foreach (_definition ${PARENT_DEFINITIONS})

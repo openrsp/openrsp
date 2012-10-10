@@ -1,9 +1,9 @@
-if(NOT DEFINED DEFAULT_Fortran_COMPILER_FLAGS_SET)
+if(NOT DEFINED DEFAULT_Fortran_FLAGS_SET)
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES GNU) # this is gfortran
     set(CMAKE_Fortran_FLAGS         "-DVAR_GFORTRAN -DGFORTRAN=445 -g -fbacktrace")
     set(CMAKE_Fortran_FLAGS_DEBUG   "-O0")
-    set(CMAKE_Fortran_FLAGS_RELEASE "-w -O3 -ffast-math -funroll-loops -ftree-vectorize")
+    set(CMAKE_Fortran_FLAGS_RELEASE "-Wuninitialized -O3 -ffast-math -funroll-loops -ftree-vectorize")
     if(ENABLE_STATIC_LINKING)
         set(CMAKE_Fortran_FLAGS
             "${CMAKE_Fortran_FLAGS} -static"

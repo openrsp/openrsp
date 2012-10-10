@@ -1,5 +1,3 @@
-include(SaveCompilerFlags)
-
 if (NOT DEFINED DEFAULT_CXX_FLAGS_SET)
 if (CMAKE_COMPILER_IS_GNUCXX)
     set (CMAKE_CXX_FLAGS "-Wall -Wno-unknown-pragmas -Wno-sign-compare -Woverloaded-virtual -Wwrite-strings -Wno-unused")
@@ -18,4 +16,3 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES Intel)
 endif ()
 save_compiler_flags(CXX)
 endif ()
-
