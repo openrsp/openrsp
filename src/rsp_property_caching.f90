@@ -10,7 +10,6 @@ module rsp_property_caching
 
   use rsp_field_tuple
   use rsp_indices_and_addressing
-!   use rsp_general
 
   implicit none
 
@@ -21,7 +20,7 @@ module rsp_property_caching
   public property_cache_getdata
   public property_cache_allocate
 
-!  Define property contribution cache datatype
+  !  Define property contribution cache datatype
 
  type property_cache
 
@@ -64,7 +63,7 @@ module rsp_property_caching
     end if
 
   end subroutine
-  ! Begin property_cache linked list manipulation/data retrieval routines
+
 
   subroutine property_cache_initialize(new_element, num_p_tuples, p_tuples, &
                                        property_size, data)
@@ -87,7 +86,6 @@ module rsp_property_caching
 
     allocate(new_element%data(property_size))
     new_element%data = data
-!     write(*,*) new_element%data
 
   end subroutine
 
@@ -208,16 +206,12 @@ module rsp_property_caching
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st_order
     type(p_tuple) :: merged_p_tuple
     complex(8), dimension(property_size) :: prop
-complex(8), dimension(property_size) :: p_debug
-integer :: ind_debug, ind2_debug
 
 
     next_element => cache
     passedlast = 0
     p_tuples_st_order = p_tuples_standardorder(num_p_tuples, p_tuples)
     found = .FALSE.
-
-p_debug = 0.0
 
     ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
     ! COULD THIS BE DONE IN ANOTHER WAY?
@@ -253,59 +247,50 @@ p_debug = 0.0
                                                       next_element%p_tuples)
 
 
+       if (p_tuples(1)%n_perturbations > 0) then
 
+          call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 
-if (p_tuples(1)%n_perturbations > 0) then
+          do i = 2, num_p_tuples
 
-call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+             ! This can be problematic - consider rewriting merge_p_tuple as subroutine
+             merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
 
-do i = 2, num_p_tuples
+          end do
 
-! This can be problematic - consider rewriting merge_p_tuple as subroutine
+       else
 
-merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
+          call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 
-end do
+          do i = 3, num_p_tuples
 
-else
+             ! This can be problematic - consider rewriting merge_p_tuple as subroutine
+             merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
 
-call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
+          end do
 
-do i = 3, num_p_tuples
+       end if
 
-! This can be problematic - consider rewriting merge_p_tuple as subroutine
+       merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
+       merged_nblks = get_num_blks(merged_p_tuple)
 
-merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
+       allocate(merged_blk_info(1,merged_nblks, 3))
 
+       merged_blk_info(1,:,:) = get_blk_info(merged_nblks, merged_p_tuple)
+       merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
 
-end do
+       allocate(blk_sizes(num_p_tuples, total_num_perturbations))
+       allocate(blk_sizes_merged(total_num_perturbations))
 
-end if
-
-merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-
-merged_nblks = get_num_blks(merged_p_tuple)
-allocate(merged_blk_info(1,merged_nblks, 3))
-merged_blk_info(1,:,:) = get_blk_info(merged_nblks, merged_p_tuple)
-merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-
-allocate(blk_sizes(num_p_tuples, total_num_perturbations))
-allocate(blk_sizes_merged(total_num_perturbations))
-
-blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+       blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+       merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
 
        allocate(indices(property_size, total_num_perturbations))
 
-call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-     merged_triang_size, indices)
+       call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+            merged_triang_size, indices)
 
-
-allocate(translated_index(total_num_perturbations))
-
-
-
-
+       allocate(translated_index(total_num_perturbations))
        allocate(pids_in_cache(total_num_perturbations))
        allocate(pids_current_contribution(total_num_perturbations))
        allocate(pids_merged_pert(total_num_perturbations))
@@ -315,66 +300,34 @@ allocate(translated_index(total_num_perturbations))
        k = 1
 
        do i = 1, num_p_tuples
-
           do j = 1, p_tuples(i)%n_perturbations
-
-!              pids_in_cache(k) = next_element%p_tuples(i)%pid(j)
              pids_current_contribution(k) = p_tuples_st_order(i)%pid(j)
-!              p_tuples_dimensions_cacheorder(k) = p_tuples_st_order(i)%pdim(j)
-
-
-          k = k + 1
-
+             k = k + 1
           end do
-
        end do
 
-do i = 1, total_num_perturbations
-
-pids_merged_pert(i) = merged_p_tuple%pid(i)
-
-end do
+       do i = 1, total_num_perturbations
+          pids_merged_pert(i) = merged_p_tuple%pid(i)
+       end do
 
        p_tuples_dimensions = get_ncarray(total_num_perturbations, num_p_tuples, &
                                          p_tuples_st_order)
 
-       ! Making indices
-       ! Note (MaR): This can take a lot of memory: 
-       ! Consider splitting index generation into several
-       ! steps in order to save memory - e.g. "every n ranks"
-       ! starts a new loop (note that this probably means that 
-       ! this procedure needs to be recursive)
+       allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
 
-!        allocate(indices(product(p_tuples_dimensions), total_num_perturbations))
-! 
-!        call make_indices(total_num_perturbations, 1, p_tuples_dimensions_cacheorder, &
-!                          0, indices)
+       do i = 1, num_p_tuples
 
+          nfields(i) = p_tuples_st_order(i)%n_perturbations
+          nblks_tuple(i) = get_num_blks(p_tuples_st_order(i))
+          blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_st_order(i))
+          blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
+                                      blks_tuple_info(i,1:nblks_tuple(i),:))
+          blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
+          blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
 
-allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
-
-do i = 1, num_p_tuples
-
-nfields(i) = p_tuples_st_order(i)%n_perturbations
-nblks_tuple(i) = get_num_blks(p_tuples_st_order(i))
-blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_st_order(i))
-blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-blks_tuple_info(i,1:nblks_tuple(i),:))
-blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-end do
-
-
-! write(*,*) 'pids for current contrib', pids_current_contribution
-! write(*,*) 'pids for merged pert', pids_merged_pert
-
+       end do
 
        do i = 1, size(indices, 1)
-
-
-
-
 
           pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
           (/merged_nblks/), & 
@@ -382,90 +335,35 @@ end do
           (/merged_triang_size/), &
           (/indices(i, : )/) )
 
+          do j = 1, total_num_perturbations
+             translated_index(j) = indices(i,pids_current_contribution(j))
+          end do
 
+          if (p_tuples(1)%n_perturbations > 0) then
 
-do j = 1, total_num_perturbations
+             cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
+             total_num_perturbations, nblks_tuple, & 
+             nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
 
-translated_index(j) = indices(i,pids_current_contribution(j))
+          else
 
-end do
+             cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
+             total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
+             nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
+             blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
+             translated_index)
 
-
-! write(*,*) 'regular index', indices(i, :)
-! write(*,*) 'translated index', translated_index
-
-if (p_tuples(1)%n_perturbations > 0) then
-
-          cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
-          total_num_perturbations, nblks_tuple, & 
-          nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
-
-else
-
-          cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
-          total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
-          nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
-          blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), translated_index)
-
-end if
-
-! write(*,*) 'prop offset', pr_offset
-! write(*,*) 'cache offset', cache_offset
-! write(*,*) 'data added', next_element%data(cache_offset)
+          end if
 
           prop(pr_offset) = &
           prop(pr_offset) + &
           next_element%data(cache_offset) 
 
-
-
-
-! ind_debug = get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-! pids_current_contribution, p_tuples_dimensions)
-! 
-! ind2_debug = get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-! pids_in_cache, p_tuples_dimensions)
-! 
-! write(*,*) indices(i,:), ': ', ind_debug, ' and ', ind2_debug
-! 
-! p_debug(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-! pids_current_contribution, p_tuples_dimensions)) = &
-! p_debug(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-! pids_current_contribution, p_tuples_dimensions)) + &
-! next_element%data(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-! pids_in_cache, p_tuples_dimensions)) 
-
-
-          ! To which element in the cached data does that 
-          ! cache p_tuples index tuple correspond?
-          ! Get that element
-          ! To which element in the property tensor does that correspond? 
-          ! Put the element there
-
-!           prop(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-!                pids_current_contribution, p_tuples_dimensions)) = &
-!           prop(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-!                pids_current_contribution, p_tuples_dimensions)) + &
-!           next_element%data(get_one_tensor_offset(total_num_perturbations, indices(i, :), &
-!                pids_in_cache, p_tuples_dimensions)) 
-
        end do
 
-! write(*,*) 'ind_debug'
-! write(*,*) ind_debug
-! 
-! write(*,*) 'ind2_debug'
-! write(*,*) ind2_debug
-! 
-!  write(*,*) 'Got property cache data'
-! write(*,*) real(p_debug)
-!  call printt_rsp_tensor_stdout(total_num_perturbations,total_num_perturbations, &
-!                               p_tuples_dimensions, p_debug, 1)
-
        deallocate(indices)
-
-deallocate(blks_tuple_info)
-deallocate(merged_blk_info)
+       deallocate(blks_tuple_info)
+       deallocate(merged_blk_info)
 
     else
 
@@ -475,13 +373,11 @@ deallocate(merged_blk_info)
 
        deallocate(pids_in_cache)
        deallocate(pids_current_contribution)
-deallocate(pids_merged_pert)
+       deallocate(pids_merged_pert)
        deallocate(p_tuples_dimensions)
        deallocate(p_tuples_dimensions_cacheorder)
-
-
-deallocate(blk_sizes)
-deallocate(blk_sizes_merged)
+       deallocate(blk_sizes)
+       deallocate(blk_sizes_merged)
 
   end subroutine
 
@@ -509,8 +405,5 @@ deallocate(blk_sizes_merged)
     allocate(current_element%data(1))
 
   end subroutine
-
-  ! End property_cache linked list manipulation/data retrieval routines
-
 
 end module
