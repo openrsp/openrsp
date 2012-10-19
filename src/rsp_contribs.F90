@@ -26,12 +26,11 @@ module rsp_contribs
   use dalton_ifc
   use nuc_contributions
   use basis_set,  only: cgto
+  use rsp_field_tuple
+  use rsp_sdf_caching
 
-use rsp_field_tuple
-use rsp_sdf_caching
-
-! MR: QUICK-FIX USE STATEMENT TO GET SUPPORT FOR DUMMY rsp_cfg TYPE
-use rsp_perturbed_matrices
+  ! MaR: QUICK-FIX USE STATEMENT TO GET SUPPORT FOR DUMMY rsp_cfg TYPE
+  use rsp_perturbed_matrices
 
 
 
@@ -50,17 +49,17 @@ use rsp_perturbed_matrices
   public rsp_field_anti
   public rsp_field_ordering
 
-! MR: TEMPORARY ROUTINES RETURNING NON-REDUNDANT VALUES W.R.T TENSOR SYMMETRY
-! MR: INCOMPLETE ADAPTATION TO TENSOR SYMMETRY NONREDUNDANCY IN SEVERAL OF THESE ROUTINES
+  ! MaR: ROUTINES RETURNING NON-REDUNDANT VALUES W.R.T TENSOR SYMMETRY
+  ! MaR: THESE COULD REPLACE THE CORRESPONDING ABOVE ROUTINES WHEN APPROPRIATE
   public rsp_nucpot_tr
   public rsp_ovlave_tr
   public rsp_oneave_tr
   public rsp_twoave_tr
-public rsp_xcave_tr_adapt
+  public rsp_xcave_tr_adapt
   public rsp_ovlint_tr
   public rsp_oneint_tr
   public rsp_twoint_tr
-public rsp_xcint_tr_adapt
+  public rsp_xcint_tr_adapt
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -96,8 +95,6 @@ public rsp_xcint_tr_adapt
      !> one-electron operator quadratic in field strength (MAGO)
      logical       :: quad
   end type
-
-
 
 
   ! to compactify the table below
@@ -184,12 +181,7 @@ contains
   end subroutine
 
 
-
-
-
-
-
-! MR: NOT SURE IF WORKING PROPERLY
+  ! MaR: Seems to work properly, but memory usage is not tensor symmetry nonredundant
   !> Contribution from nuclear repulsion and nuclei--field interaction
   !> to response functions. Fields (type rsp_field) are here in arbitrary order.
   !> (in normal mode) Fields are sorted, component ranges extended to what
@@ -241,141 +233,127 @@ contains
       call permute_selcomp_add((1d0,0d0), nf, order, fields(:)%comp, &
                                tcomp, fields(:)%ncomp, nucpot, rspfunc)
 
-! MR: SIMPLE LOOPS TO ASSIGN VALUES WITH ONLY GEOMETRIC PERTURBATIONS
+! MaR: SIMPLE LOOPS TO ASSIGN VALUES WITH ONLY GEOMETRIC PERTURBATIONS
 
-if (ngeo == nf) then
+      if (ngeo == nf) then
 
-if (ngeo == 1) then
+         if (ngeo == 1) then
 
-rspfunc_output = rspfunc
+            rspfunc_output = rspfunc
 
-else if (ngeo == 2) then
+         else if (ngeo == 2) then
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-h = h + 1
-rspfunc_output(h) = rspfunc((i - 1)*ncor + j)
-end do
-end do
+            h = 0
+            do i = 1, ncor
+               do j = i, ncor
+                  h = h + 1
+                  rspfunc_output(h) = rspfunc((i - 1)*ncor + j)
+               end do
+            end do
 
-else if (ngeo == 3) then
+         else if (ngeo == 3) then
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-h = h + 1
-rspfunc_output(h) = rspfunc((i - 1)*ncor**2 + (j - 1)*ncor + k)
-end do
-end do
-end do
+            h = 0
+            do i = 1, ncor
+               do j = i, ncor
+                  do k = j, ncor
+                     h = h + 1
+                     rspfunc_output(h) = rspfunc((i - 1)*ncor**2 + (j - 1)*ncor + k)
+                  end do
+               end do
+            end do
 
+         else if (ngeo == 4) then
 
+            h = 0
+            do i = 1, ncor
+               do j = i, ncor
+                  do k = j, ncor
+                     do m = k, ncor
+                        h = h + 1
+                        rspfunc_output(h) = rspfunc((i - 1)*ncor**3 + (j - 1)*ncor**2 + &
+                                            (k - 1)*ncor + m)
+                     end do
+                  end do
+               end do
+            end do
 
-else if (ngeo == 4) then
+         else if (ngeo == 5) then
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-do m = k, ncor
-h = h + 1
-rspfunc_output(h) = rspfunc((i - 1)*ncor**3 + (j - 1)*ncor**2 + (k - 1)*ncor + m)
-end do
-end do
-end do
-end do
+            h = 0
+            do i = 1, ncor
+               do j = i, ncor
+                  do k = j, ncor
+                     do m = k, ncor
+                        do n = m, ncor
+                           h = h + 1
+                           rspfunc_output(h) = rspfunc((i - 1)*ncor**4 + (j - 1)*ncor**3 + &
+                                                       (k - 1)*ncor**2 + (m - 1)*ncor + n)
+                        end do
+                     end do
+                  end do
+               end do
+            end do
 
-else if (ngeo == 5) then
+         else if (ngeo == 6) then
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-do m = k, ncor
-do n = m, ncor
-h = h + 1
-rspfunc_output(h) = rspfunc((i - 1)*ncor**4 + (j - 1)*ncor**3 + (k - 1)*ncor**2 + &
-                            (m - 1)*ncor + n)
-end do
-end do
-end do
-end do
-end do
-
-
-
-else if (ngeo == 6) then
-
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-do m = k, ncor
-do n = m, ncor
-do p = n, ncor
-h = h + 1
-rspfunc_output(h) = rspfunc((i - 1)*ncor**5 + (j - 1)*ncor**4 + (k - 1)*ncor**3 + &
-                            (m - 1)*ncor**2 + (n - 1)*ncor + p)
-end do
-end do
-end do
-end do
-end do
-end do
+            h = 0
+            do i = 1, ncor
+               do j = i, ncor
+                  do k = j, ncor
+                     do m = k, ncor
+                        do n = m, ncor
+                           do p = n, ncor
+                              h = h + 1
+                              rspfunc_output(h) = rspfunc((i - 1)*ncor**5 + &
+                              (j - 1)*ncor**4 + (k - 1)*ncor**3 + &
+                              (m - 1)*ncor**2 + (n - 1)*ncor + p)
+                           end do
+                        end do
+                     end do
+                  end do
+               end do
+            end do
 
 
+         else if (ngeo > 6) then
 
-else if (ngeo > 6) then
+            write(*,*) 'rsp_nucpot_tr error: No support for ngeo > 6 yet'
+            call quit('rsp_nucpot_tr error: No support for ngeo > 6 yet')
 
-write(*,*) 'rsp_nucpot_tr error: No support for ngeo > 4 yet'
-call quit('rsp_nucpot_tr error: No support for ngeo > 4 yet')
+         else
 
+            write(*,*) 'rsp_nucpot_tr error: Unknown field setup'
+            call quit('rsp_nucpot_tr error: Unknown field setup')
 
-else
+         end if
 
-write(*,*) 'rsp_nucpot_tr error: Unknown field setup'
-call quit('rsp_nucpot_tr error: Unknown field setup')
+         else if (ngeo == (nf - 1)) then
 
-end if
+            if (nf == 2) then
 
-else if (ngeo == (nf - 1)) then
+               write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 2 yet'
+               call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 2 yet')
 
-if (nf == 2) then
+            else if (nf == 1) then
 
-write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 2 yet'
-call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 2 yet')
+               write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 1 yet'
+               call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 1 yet')
 
+            else
 
-else if (nf == 1) then
+               rspfunc_output = 0.0
 
-write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 1 yet'
-call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 1 yet')
+            end if
 
+         else
 
+            rspfunc_output = 0.0
 
-else
+         end if
 
-rspfunc_output = 0.0
-
-end if
-
-
-
-else
-
-rspfunc_output = 0.0
-
-end if
-
-
-
-
-    end subroutine
+       end subroutine
   end subroutine
-
-
 
 
   !> average f-perturbed overlap integrals with perturbed density D
@@ -399,20 +377,10 @@ end if
   end subroutine
 
 
-
-
-
-
-! MR: NOT SURE IF WORKING PROPERLY
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
   subroutine rsp_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, ave, DFD, w, D)
-!     use dalton_ifc, only: SHELLS_NUCLEI_displace
-    ! Gen1Int interface
-!     use gen1int_api
-    !> structure containing integral program settings
-!     type(rsp_cfg), intent(in)  :: mol
     !> number of fields
     integer,       intent(in)  :: nf, propsize
     integer :: nblks
@@ -432,42 +400,30 @@ end if
     type(matrix),  intent(in), optional  :: D
     !----------------------------------------------
 
+    if (present(ave)) then
 
-if (present(ave)) then
+       if (present(w) .and. present(D)) then
 
+          write(*,*) 'rsp_ovlave: Called for handling of T matrix contribution'
+          write(*,*) 'rsp_ovlave: Nothing is returned presently - awaiting development'
 
-if (present(w) .and. present(D)) then
+!           call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
+!                                        blk_sizes, propsize, ave = ave, w = w, D = D)
 
-write(*,*) 'rsp_ovlave: Called for handling of T matrix contribution'
-write(*,*) 'rsp_ovlave: Nothing is returned presently - awaiting development'
+       else
 
-!     call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
-!                                       blk_sizes, propsize, ave = ave, w = w, D = D)
+          call interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+                                       blk_sizes, propsize, ave = ave, DFD = DFD)
 
-else
+       end if
 
-    call interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ave = ave, DFD = DFD)
+    else
 
-end if
+       write(*,*) 'rsp_ovlave: Error: Unsupported input case - must be only ave or all of ave, w, D'
 
-
-else
-
-write(*,*) 'rsp_ovlave: Error: Unsupported input case - must be only ave or all of ave, w, D'
-
-end if
-
-
-
-
-
+    end if
 
   end subroutine
-
-
-
-
 
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
@@ -490,7 +446,6 @@ end if
 
 
 
-! MR: NOT SURE IF WORKING PROPERLY
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
 
@@ -519,16 +474,6 @@ end if
                                  blk_sizes, propsize, ave)
 
   end subroutine
-
-
-
-
-
-
-
-
-
-
 
   function rank_one_pointer(siz, arr) result(ptr)
      integer,         intent(in) :: siz
@@ -843,19 +788,16 @@ end if
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
 #endif
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-h = h + 1
-ave(h) = tmp(i,j,1,1)
-end do
-end do
+       h = 0
+       do i = 1, ncor
+          do j = i, ncor
+             h = h + 1
+             ave(h) = tmp(i,j,1,1)
+          end do
+       end do
 
-
-
-!        ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
-!                          c(2):c(2)+nc(2)-1,1,1), shape(ave))
        deallocate(tmp)
+
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
        ! contract FULL cubic in tmp, unsymmetrized divided by six
        ncor = 3 * get_nr_atoms()
@@ -877,25 +819,19 @@ end do
           end do
        end do
 
+       h = 0
+       do i = 1, ncor
+          do j = i, ncor
+             do k = j, ncor
+                h = h + 1
+                ! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
+                ave(h) = 2 * tmp(i,j,k,1)
+             end do
+          end do
+       end do
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-h = h + 1
-! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
-ave(h) = 2 * tmp(i,j,k,1)
-end do
-end do
-end do
-
-
-
-       ! extract requested block
-!        ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
-!                              c(2):c(2)+nc(2)-1, &
-!                              c(3):c(3)+nc(3)-1, 1), shape(ave))
        deallocate(tmp)
+
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,ncor))
@@ -925,27 +861,20 @@ end do
           end do
        end do
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-do m = k, ncor
-h = h + 1
-! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
-ave(h) = 2 * tmp(i,j,k,m)
-end do
-end do
-end do
-end do
+       h = 0
+       do i = 1, ncor
+          do j = i, ncor
+             do k = j, ncor
+                do m = k, ncor
+                   h = h + 1
+                   ! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
+                   ave(h) = 2 * tmp(i,j,k,m)
+                end do
+             end do
+          end do
+       end do
 
-
-       ! extract requested block
-!        ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
-!                              c(2):c(2)+nc(2)-1, &
-!                              c(3):c(3)+nc(3)-1, &
-!                              c(4):c(4)+nc(4)-1), shape(ave))
        deallocate(tmp)
-
 
     else if (nf==5 .and. all(f==(/'GEO ','GEO ','GEO ','GEO ', 'GEO '/))) then
        ncor = 3 * get_nr_atoms()
@@ -958,74 +887,74 @@ end do
                                basis_small, &
                                arg)
        ! symmetrize
-    do m = 1, ncor
-       do l = 1, m
-          do k = 1, l
-             do j = 1, k
-                do i = 1, j
+       do m = 1, ncor
+          do l = 1, m
+             do k = 1, l
+                do j = 1, k
+                   do i = 1, j
 
-                   r = tmp_5(i,j,k,l,m) + tmp_5(i,j,k,m,l) + tmp_5(i,j,l,k,m) + &
-                       tmp_5(i,j,l,m,k) + tmp_5(i,j,m,k,l) + tmp_5(i,j,m,l,k) + &
-                       tmp_5(i,k,j,l,m) + tmp_5(i,k,j,m,l) + tmp_5(i,k,l,j,m) + &
-                       tmp_5(i,k,l,m,j) + tmp_5(i,k,m,j,l) + tmp_5(i,k,m,l,j) + &
-                       tmp_5(i,l,j,k,m) + tmp_5(i,l,j,m,k) + tmp_5(i,l,k,j,m) + &
-                       tmp_5(i,l,k,m,j) + tmp_5(i,l,m,j,k) + tmp_5(i,l,m,k,j) + &
-                       tmp_5(i,m,j,k,l) + tmp_5(i,m,j,l,k) + tmp_5(i,m,k,j,l) + &
-                       tmp_5(i,m,k,l,j) + tmp_5(i,m,l,j,k) + tmp_5(i,m,l,k,j) + &
-                       tmp_5(j,i,k,l,m) + tmp_5(j,i,k,m,l) + tmp_5(j,i,l,k,m) + &
-                       tmp_5(j,i,l,m,k) + tmp_5(j,i,m,k,l) + tmp_5(j,i,m,l,k) + &
-                       tmp_5(j,k,i,l,m) + tmp_5(j,k,i,m,l) + tmp_5(j,k,l,i,m) + &
-                       tmp_5(j,k,l,m,i) + tmp_5(j,k,m,i,l) + tmp_5(j,k,m,l,i) + &
-                       tmp_5(j,l,i,k,m) + tmp_5(j,l,i,m,k) + tmp_5(j,l,k,i,m) + &
-                       tmp_5(j,l,k,m,i) + tmp_5(j,l,m,i,k) + tmp_5(j,l,m,k,i) + &
-                       tmp_5(j,m,i,k,l) + tmp_5(j,m,i,l,k) + tmp_5(j,m,k,i,l) + &
-                       tmp_5(j,m,k,l,i) + tmp_5(j,m,l,i,k) + tmp_5(j,m,l,k,i) + &
-                       tmp_5(k,i,j,l,m) + tmp_5(k,i,j,m,l) + tmp_5(k,i,l,j,m) + &
-                       tmp_5(k,i,l,m,j) + tmp_5(k,i,m,j,l) + tmp_5(k,i,m,l,j) + &
-                       tmp_5(k,j,i,l,m) + tmp_5(k,j,i,m,l) + tmp_5(k,j,l,i,m) + &
-                       tmp_5(k,j,l,m,i) + tmp_5(k,j,m,i,l) + tmp_5(k,j,m,l,i) + &
-                       tmp_5(k,l,i,j,m) + tmp_5(k,l,i,m,j) + tmp_5(k,l,j,i,m) + &
-                       tmp_5(k,l,j,m,i) + tmp_5(k,l,m,i,j) + tmp_5(k,l,m,j,i) + &
-                       tmp_5(k,m,i,j,l) + tmp_5(k,m,i,l,j) + tmp_5(k,m,j,i,l) + &
-                       tmp_5(k,m,j,l,i) + tmp_5(k,m,l,i,j) + tmp_5(k,m,l,j,i) + &
-                       tmp_5(l,i,j,k,m) + tmp_5(l,i,j,m,k) + tmp_5(l,i,k,j,m) + &
-                       tmp_5(l,i,k,m,j) + tmp_5(l,i,m,j,k) + tmp_5(l,i,m,k,j) + &
-                       tmp_5(l,j,i,k,m) + tmp_5(l,j,i,m,k) + tmp_5(l,j,k,i,m) + &
-                       tmp_5(l,j,k,m,i) + tmp_5(l,j,m,i,k) + tmp_5(l,j,m,k,i) + &
-                       tmp_5(l,k,i,j,m) + tmp_5(l,k,i,m,j) + tmp_5(l,k,j,i,m) + &
-                       tmp_5(l,k,j,m,i) + tmp_5(l,k,m,i,j) + tmp_5(l,k,m,j,i) + &
-                       tmp_5(l,m,i,j,k) + tmp_5(l,m,i,k,j) + tmp_5(l,m,j,i,k) + &
-                       tmp_5(l,m,j,k,i) + tmp_5(l,m,k,i,j) + tmp_5(l,m,k,j,i) + &
-                       tmp_5(m,i,j,k,l) + tmp_5(m,i,j,l,k) + tmp_5(m,i,k,j,l) + &
-                       tmp_5(m,i,k,l,j) + tmp_5(m,i,l,j,k) + tmp_5(m,i,l,k,j) + &
-                       tmp_5(m,j,i,k,l) + tmp_5(m,j,i,l,k) + tmp_5(m,j,k,i,l) + &
-                       tmp_5(m,j,k,l,i) + tmp_5(m,j,l,i,k) + tmp_5(m,j,l,k,i) + &
-                       tmp_5(m,k,i,j,l) + tmp_5(m,k,i,l,j) + tmp_5(m,k,j,i,l) + &
-                       tmp_5(m,k,j,l,i) + tmp_5(m,k,l,i,j) + tmp_5(m,k,l,j,i) + &
-                       tmp_5(m,l,i,j,k) + tmp_5(m,l,i,k,j) + tmp_5(m,l,j,i,k) + &
-                       tmp_5(m,l,j,k,i) + tmp_5(m,l,k,i,j) + tmp_5(m,l,k,j,i) 
-                       tmp_5(i,j,k,l,m) = r
+                      r = tmp_5(i,j,k,l,m) + tmp_5(i,j,k,m,l) + tmp_5(i,j,l,k,m) + &
+                          tmp_5(i,j,l,m,k) + tmp_5(i,j,m,k,l) + tmp_5(i,j,m,l,k) + &
+                          tmp_5(i,k,j,l,m) + tmp_5(i,k,j,m,l) + tmp_5(i,k,l,j,m) + &
+                          tmp_5(i,k,l,m,j) + tmp_5(i,k,m,j,l) + tmp_5(i,k,m,l,j) + &
+                          tmp_5(i,l,j,k,m) + tmp_5(i,l,j,m,k) + tmp_5(i,l,k,j,m) + &
+                          tmp_5(i,l,k,m,j) + tmp_5(i,l,m,j,k) + tmp_5(i,l,m,k,j) + &
+                          tmp_5(i,m,j,k,l) + tmp_5(i,m,j,l,k) + tmp_5(i,m,k,j,l) + &
+                          tmp_5(i,m,k,l,j) + tmp_5(i,m,l,j,k) + tmp_5(i,m,l,k,j) + &
+                          tmp_5(j,i,k,l,m) + tmp_5(j,i,k,m,l) + tmp_5(j,i,l,k,m) + &
+                          tmp_5(j,i,l,m,k) + tmp_5(j,i,m,k,l) + tmp_5(j,i,m,l,k) + &
+                          tmp_5(j,k,i,l,m) + tmp_5(j,k,i,m,l) + tmp_5(j,k,l,i,m) + &
+                          tmp_5(j,k,l,m,i) + tmp_5(j,k,m,i,l) + tmp_5(j,k,m,l,i) + &
+                          tmp_5(j,l,i,k,m) + tmp_5(j,l,i,m,k) + tmp_5(j,l,k,i,m) + &
+                          tmp_5(j,l,k,m,i) + tmp_5(j,l,m,i,k) + tmp_5(j,l,m,k,i) + &
+                          tmp_5(j,m,i,k,l) + tmp_5(j,m,i,l,k) + tmp_5(j,m,k,i,l) + &
+                          tmp_5(j,m,k,l,i) + tmp_5(j,m,l,i,k) + tmp_5(j,m,l,k,i) + &
+                          tmp_5(k,i,j,l,m) + tmp_5(k,i,j,m,l) + tmp_5(k,i,l,j,m) + &
+                          tmp_5(k,i,l,m,j) + tmp_5(k,i,m,j,l) + tmp_5(k,i,m,l,j) + &
+                          tmp_5(k,j,i,l,m) + tmp_5(k,j,i,m,l) + tmp_5(k,j,l,i,m) + &
+                          tmp_5(k,j,l,m,i) + tmp_5(k,j,m,i,l) + tmp_5(k,j,m,l,i) + &
+                          tmp_5(k,l,i,j,m) + tmp_5(k,l,i,m,j) + tmp_5(k,l,j,i,m) + &
+                          tmp_5(k,l,j,m,i) + tmp_5(k,l,m,i,j) + tmp_5(k,l,m,j,i) + &
+                          tmp_5(k,m,i,j,l) + tmp_5(k,m,i,l,j) + tmp_5(k,m,j,i,l) + &
+                          tmp_5(k,m,j,l,i) + tmp_5(k,m,l,i,j) + tmp_5(k,m,l,j,i) + &
+                          tmp_5(l,i,j,k,m) + tmp_5(l,i,j,m,k) + tmp_5(l,i,k,j,m) + &
+                          tmp_5(l,i,k,m,j) + tmp_5(l,i,m,j,k) + tmp_5(l,i,m,k,j) + &
+                          tmp_5(l,j,i,k,m) + tmp_5(l,j,i,m,k) + tmp_5(l,j,k,i,m) + &
+                          tmp_5(l,j,k,m,i) + tmp_5(l,j,m,i,k) + tmp_5(l,j,m,k,i) + &
+                          tmp_5(l,k,i,j,m) + tmp_5(l,k,i,m,j) + tmp_5(l,k,j,i,m) + &
+                          tmp_5(l,k,j,m,i) + tmp_5(l,k,m,i,j) + tmp_5(l,k,m,j,i) + &
+                          tmp_5(l,m,i,j,k) + tmp_5(l,m,i,k,j) + tmp_5(l,m,j,i,k) + &
+                          tmp_5(l,m,j,k,i) + tmp_5(l,m,k,i,j) + tmp_5(l,m,k,j,i) + &
+                          tmp_5(m,i,j,k,l) + tmp_5(m,i,j,l,k) + tmp_5(m,i,k,j,l) + &
+                          tmp_5(m,i,k,l,j) + tmp_5(m,i,l,j,k) + tmp_5(m,i,l,k,j) + &
+                          tmp_5(m,j,i,k,l) + tmp_5(m,j,i,l,k) + tmp_5(m,j,k,i,l) + &
+                          tmp_5(m,j,k,l,i) + tmp_5(m,j,l,i,k) + tmp_5(m,j,l,k,i) + &
+                          tmp_5(m,k,i,j,l) + tmp_5(m,k,i,l,j) + tmp_5(m,k,j,i,l) + &
+                          tmp_5(m,k,j,l,i) + tmp_5(m,k,l,i,j) + tmp_5(m,k,l,j,i) + &
+                          tmp_5(m,l,i,j,k) + tmp_5(m,l,i,k,j) + tmp_5(m,l,j,i,k) + &
+                          tmp_5(m,l,j,k,i) + tmp_5(m,l,k,i,j) + tmp_5(m,l,k,j,i) 
+                          tmp_5(i,j,k,l,m) = r
 
+                   end do
                 end do
              end do
           end do
        end do
-    end do
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-do l = k, ncor
-do m = l, ncor
-h = h + 1
-! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
-ave(h) = 2 * tmp_5(i,j,k,l,m)
-end do
-end do
-end do
-end do
-end do
+       h = 0
+       do i = 1, ncor
+          do j = i, ncor
+             do k = j, ncor
+                do l = k, ncor
+                   do m = l, ncor
+                      h = h + 1
+                      ! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
+                      ave(h) = 2 * tmp_5(i,j,k,l,m)
+                   end do
+                end do
+             end do
+          end do
+       end do
 
        deallocate(tmp_5)
 
@@ -1040,286 +969,287 @@ end do
                                basis_small, &
                                arg)
        ! symmetrize
- do n = 1, ncor
-    do m = 1, n
-       do l = 1, m
-          do k = 1, l
-             do j = 1, k
-                do i = 1, j
+       do n = 1, ncor
+          do m = 1, n
+             do l = 1, m
+                do k = 1, l
+                   do j = 1, k
+                      do i = 1, j
 
-                   r = tmp_6(i,j,k,l,m,n) + tmp_6(i,j,k,l,n,m) + tmp_6(i,j,k,m,l,n) + &
-tmp_6(i,j,k,m,n,l) + tmp_6(i,j,k,n,l,m) + tmp_6(i,j,k,n,m,l) + &
-tmp_6(i,j,l,k,m,n) + tmp_6(i,j,l,k,n,m) + tmp_6(i,j,l,m,k,n) + &
-tmp_6(i,j,l,m,n,k) + tmp_6(i,j,l,n,k,m) + tmp_6(i,j,l,n,m,k) + &
-tmp_6(i,j,m,k,l,n) + tmp_6(i,j,m,k,n,l) + tmp_6(i,j,m,l,k,n) + &
-tmp_6(i,j,m,l,n,k) + tmp_6(i,j,m,n,k,l) + tmp_6(i,j,m,n,l,k) + &
-tmp_6(i,j,n,k,l,m) + tmp_6(i,j,n,k,m,l) + tmp_6(i,j,n,l,k,m) + &
-tmp_6(i,j,n,l,m,k) + tmp_6(i,j,n,m,k,l) + tmp_6(i,j,n,m,l,k) + &
-tmp_6(i,k,j,l,m,n) + tmp_6(i,k,j,l,n,m) + tmp_6(i,k,j,m,l,n) + &
-tmp_6(i,k,j,m,n,l) + tmp_6(i,k,j,n,l,m) + tmp_6(i,k,j,n,m,l) + &
-tmp_6(i,k,l,j,m,n) + tmp_6(i,k,l,j,n,m) + tmp_6(i,k,l,m,j,n) + &
-tmp_6(i,k,l,m,n,j) + tmp_6(i,k,l,n,j,m) + tmp_6(i,k,l,n,m,j) + &
-tmp_6(i,k,m,j,l,n) + tmp_6(i,k,m,j,n,l) + tmp_6(i,k,m,l,j,n) + &
-tmp_6(i,k,m,l,n,j) + tmp_6(i,k,m,n,j,l) + tmp_6(i,k,m,n,l,j) + &
-tmp_6(i,k,n,j,l,m) + tmp_6(i,k,n,j,m,l) + tmp_6(i,k,n,l,j,m) + &
-tmp_6(i,k,n,l,m,j) + tmp_6(i,k,n,m,j,l) + tmp_6(i,k,n,m,l,j) + &
-tmp_6(i,l,j,k,m,n) + tmp_6(i,l,j,k,n,m) + tmp_6(i,l,j,m,k,n) + &
-tmp_6(i,l,j,m,n,k) + tmp_6(i,l,j,n,k,m) + tmp_6(i,l,j,n,m,k) + &
-tmp_6(i,l,k,j,m,n) + tmp_6(i,l,k,j,n,m) + tmp_6(i,l,k,m,j,n) + &
-tmp_6(i,l,k,m,n,j) + tmp_6(i,l,k,n,j,m) + tmp_6(i,l,k,n,m,j) + &
-tmp_6(i,l,m,j,k,n) + tmp_6(i,l,m,j,n,k) + tmp_6(i,l,m,k,j,n) + &
-tmp_6(i,l,m,k,n,j) + tmp_6(i,l,m,n,j,k) + tmp_6(i,l,m,n,k,j) + &
-tmp_6(i,l,n,j,k,m) + tmp_6(i,l,n,j,m,k) + tmp_6(i,l,n,k,j,m) + &
-tmp_6(i,l,n,k,m,j) + tmp_6(i,l,n,m,j,k) + tmp_6(i,l,n,m,k,j) + &
-tmp_6(i,m,j,k,l,n) + tmp_6(i,m,j,k,n,l) + tmp_6(i,m,j,l,k,n) + &
-tmp_6(i,m,j,l,n,k) + tmp_6(i,m,j,n,k,l) + tmp_6(i,m,j,n,l,k) + &
-tmp_6(i,m,k,j,l,n) + tmp_6(i,m,k,j,n,l) + tmp_6(i,m,k,l,j,n) + &
-tmp_6(i,m,k,l,n,j) + tmp_6(i,m,k,n,j,l) + tmp_6(i,m,k,n,l,j) + &
-tmp_6(i,m,l,j,k,n) + tmp_6(i,m,l,j,n,k) + tmp_6(i,m,l,k,j,n) + &
-tmp_6(i,m,l,k,n,j) + tmp_6(i,m,l,n,j,k) + tmp_6(i,m,l,n,k,j) + &
-tmp_6(i,m,n,j,k,l) + tmp_6(i,m,n,j,l,k) + tmp_6(i,m,n,k,j,l) + &
-tmp_6(i,m,n,k,l,j) + tmp_6(i,m,n,l,j,k) + tmp_6(i,m,n,l,k,j) + &
-tmp_6(i,n,j,k,l,m) + tmp_6(i,n,j,k,m,l) + tmp_6(i,n,j,l,k,m) + &
-tmp_6(i,n,j,l,m,k) + tmp_6(i,n,j,m,k,l) + tmp_6(i,n,j,m,l,k) + &
-tmp_6(i,n,k,j,l,m) + tmp_6(i,n,k,j,m,l) + tmp_6(i,n,k,l,j,m) + &
-tmp_6(i,n,k,l,m,j) + tmp_6(i,n,k,m,j,l) + tmp_6(i,n,k,m,l,j) + &
-tmp_6(i,n,l,j,k,m) + tmp_6(i,n,l,j,m,k) + tmp_6(i,n,l,k,j,m) + &
-tmp_6(i,n,l,k,m,j) + tmp_6(i,n,l,m,j,k) + tmp_6(i,n,l,m,k,j) + &
-tmp_6(i,n,m,j,k,l) + tmp_6(i,n,m,j,l,k) + tmp_6(i,n,m,k,j,l) + &
-tmp_6(i,n,m,k,l,j) + tmp_6(i,n,m,l,j,k) + tmp_6(i,n,m,l,k,j) + &
-tmp_6(j,i,k,l,m,n) + tmp_6(j,i,k,l,n,m) + tmp_6(j,i,k,m,l,n) + &
-tmp_6(j,i,k,m,n,l) + tmp_6(j,i,k,n,l,m) + tmp_6(j,i,k,n,m,l) + &
-tmp_6(j,i,l,k,m,n) + tmp_6(j,i,l,k,n,m) + tmp_6(j,i,l,m,k,n) + &
-tmp_6(j,i,l,m,n,k) + tmp_6(j,i,l,n,k,m) + tmp_6(j,i,l,n,m,k) + &
-tmp_6(j,i,m,k,l,n) + tmp_6(j,i,m,k,n,l) + tmp_6(j,i,m,l,k,n) + &
-tmp_6(j,i,m,l,n,k) + tmp_6(j,i,m,n,k,l) + tmp_6(j,i,m,n,l,k) + &
-tmp_6(j,i,n,k,l,m) + tmp_6(j,i,n,k,m,l) + tmp_6(j,i,n,l,k,m) + &
-tmp_6(j,i,n,l,m,k) + tmp_6(j,i,n,m,k,l) + tmp_6(j,i,n,m,l,k) + &
-tmp_6(j,k,i,l,m,n) + tmp_6(j,k,i,l,n,m) + tmp_6(j,k,i,m,l,n) + &
-tmp_6(j,k,i,m,n,l) + tmp_6(j,k,i,n,l,m) + tmp_6(j,k,i,n,m,l) + &
-tmp_6(j,k,l,i,m,n) + tmp_6(j,k,l,i,n,m) + tmp_6(j,k,l,m,i,n) + &
-tmp_6(j,k,l,m,n,i) + tmp_6(j,k,l,n,i,m) + tmp_6(j,k,l,n,m,i) + &
-tmp_6(j,k,m,i,l,n) + tmp_6(j,k,m,i,n,l) + tmp_6(j,k,m,l,i,n) + &
-tmp_6(j,k,m,l,n,i) + tmp_6(j,k,m,n,i,l) + tmp_6(j,k,m,n,l,i) + &
-tmp_6(j,k,n,i,l,m) + tmp_6(j,k,n,i,m,l) + tmp_6(j,k,n,l,i,m) + &
-tmp_6(j,k,n,l,m,i) + tmp_6(j,k,n,m,i,l) + tmp_6(j,k,n,m,l,i) + &
-tmp_6(j,l,i,k,m,n) + tmp_6(j,l,i,k,n,m) + tmp_6(j,l,i,m,k,n) + &
-tmp_6(j,l,i,m,n,k) + tmp_6(j,l,i,n,k,m) + tmp_6(j,l,i,n,m,k) + &
-tmp_6(j,l,k,i,m,n) + tmp_6(j,l,k,i,n,m) + tmp_6(j,l,k,m,i,n) + &
-tmp_6(j,l,k,m,n,i) + tmp_6(j,l,k,n,i,m) + tmp_6(j,l,k,n,m,i) + &
-tmp_6(j,l,m,i,k,n) + tmp_6(j,l,m,i,n,k) + tmp_6(j,l,m,k,i,n) + &
-tmp_6(j,l,m,k,n,i) + tmp_6(j,l,m,n,i,k) + tmp_6(j,l,m,n,k,i) + &
-tmp_6(j,l,n,i,k,m) + tmp_6(j,l,n,i,m,k) + tmp_6(j,l,n,k,i,m) + &
-tmp_6(j,l,n,k,m,i) + tmp_6(j,l,n,m,i,k) + tmp_6(j,l,n,m,k,i) + &
-tmp_6(j,m,i,k,l,n) + tmp_6(j,m,i,k,n,l) + tmp_6(j,m,i,l,k,n) + &
-tmp_6(j,m,i,l,n,k) + tmp_6(j,m,i,n,k,l) + tmp_6(j,m,i,n,l,k) + &
-tmp_6(j,m,k,i,l,n) + tmp_6(j,m,k,i,n,l) + tmp_6(j,m,k,l,i,n) + &
-tmp_6(j,m,k,l,n,i) + tmp_6(j,m,k,n,i,l) + tmp_6(j,m,k,n,l,i) + &
-tmp_6(j,m,l,i,k,n) + tmp_6(j,m,l,i,n,k) + tmp_6(j,m,l,k,i,n) + &
-tmp_6(j,m,l,k,n,i) + tmp_6(j,m,l,n,i,k) + tmp_6(j,m,l,n,k,i) + &
-tmp_6(j,m,n,i,k,l) + tmp_6(j,m,n,i,l,k) + tmp_6(j,m,n,k,i,l) + &
-tmp_6(j,m,n,k,l,i) + tmp_6(j,m,n,l,i,k) + tmp_6(j,m,n,l,k,i) + &
-tmp_6(j,n,i,k,l,m) + tmp_6(j,n,i,k,m,l) + tmp_6(j,n,i,l,k,m) + &
-tmp_6(j,n,i,l,m,k) + tmp_6(j,n,i,m,k,l) + tmp_6(j,n,i,m,l,k) + &
-tmp_6(j,n,k,i,l,m) + tmp_6(j,n,k,i,m,l) + tmp_6(j,n,k,l,i,m) + &
-tmp_6(j,n,k,l,m,i) + tmp_6(j,n,k,m,i,l) + tmp_6(j,n,k,m,l,i) + &
-tmp_6(j,n,l,i,k,m) + tmp_6(j,n,l,i,m,k) + tmp_6(j,n,l,k,i,m) + &
-tmp_6(j,n,l,k,m,i) + tmp_6(j,n,l,m,i,k) + tmp_6(j,n,l,m,k,i) + &
-tmp_6(j,n,m,i,k,l) + tmp_6(j,n,m,i,l,k) + tmp_6(j,n,m,k,i,l) + &
-tmp_6(j,n,m,k,l,i) + tmp_6(j,n,m,l,i,k) + tmp_6(j,n,m,l,k,i) + &
-tmp_6(k,i,j,l,m,n) + tmp_6(k,i,j,l,n,m) + tmp_6(k,i,j,m,l,n) + &
-tmp_6(k,i,j,m,n,l) + tmp_6(k,i,j,n,l,m) + tmp_6(k,i,j,n,m,l) + &
-tmp_6(k,i,l,j,m,n) + tmp_6(k,i,l,j,n,m) + tmp_6(k,i,l,m,j,n) + &
-tmp_6(k,i,l,m,n,j) + tmp_6(k,i,l,n,j,m) + tmp_6(k,i,l,n,m,j) + &
-tmp_6(k,i,m,j,l,n) + tmp_6(k,i,m,j,n,l) + tmp_6(k,i,m,l,j,n) + &
-tmp_6(k,i,m,l,n,j) + tmp_6(k,i,m,n,j,l) + tmp_6(k,i,m,n,l,j) + &
-tmp_6(k,i,n,j,l,m) + tmp_6(k,i,n,j,m,l) + tmp_6(k,i,n,l,j,m) + &
-tmp_6(k,i,n,l,m,j) + tmp_6(k,i,n,m,j,l) + tmp_6(k,i,n,m,l,j) + &
-tmp_6(k,j,i,l,m,n) + tmp_6(k,j,i,l,n,m) + tmp_6(k,j,i,m,l,n) + &
-tmp_6(k,j,i,m,n,l) + tmp_6(k,j,i,n,l,m) + tmp_6(k,j,i,n,m,l) + &
-tmp_6(k,j,l,i,m,n) + tmp_6(k,j,l,i,n,m) + tmp_6(k,j,l,m,i,n) + &
-tmp_6(k,j,l,m,n,i) + tmp_6(k,j,l,n,i,m) + tmp_6(k,j,l,n,m,i) + &
-tmp_6(k,j,m,i,l,n) + tmp_6(k,j,m,i,n,l) + tmp_6(k,j,m,l,i,n) + &
-tmp_6(k,j,m,l,n,i) + tmp_6(k,j,m,n,i,l) + tmp_6(k,j,m,n,l,i) + &
-tmp_6(k,j,n,i,l,m) + tmp_6(k,j,n,i,m,l) + tmp_6(k,j,n,l,i,m) + &
-tmp_6(k,j,n,l,m,i) + tmp_6(k,j,n,m,i,l) + tmp_6(k,j,n,m,l,i) + &
-tmp_6(k,l,i,j,m,n) + tmp_6(k,l,i,j,n,m) + tmp_6(k,l,i,m,j,n) + &
-tmp_6(k,l,i,m,n,j) + tmp_6(k,l,i,n,j,m) + tmp_6(k,l,i,n,m,j) + &
-tmp_6(k,l,j,i,m,n) + tmp_6(k,l,j,i,n,m) + tmp_6(k,l,j,m,i,n) + &
-tmp_6(k,l,j,m,n,i) + tmp_6(k,l,j,n,i,m) + tmp_6(k,l,j,n,m,i) + &
-tmp_6(k,l,m,i,j,n) + tmp_6(k,l,m,i,n,j) + tmp_6(k,l,m,j,i,n) + &
-tmp_6(k,l,m,j,n,i) + tmp_6(k,l,m,n,i,j) + tmp_6(k,l,m,n,j,i) + &
-tmp_6(k,l,n,i,j,m) + tmp_6(k,l,n,i,m,j) + tmp_6(k,l,n,j,i,m) + &
-tmp_6(k,l,n,j,m,i) + tmp_6(k,l,n,m,i,j) + tmp_6(k,l,n,m,j,i) + &
-tmp_6(k,m,i,j,l,n) + tmp_6(k,m,i,j,n,l) + tmp_6(k,m,i,l,j,n) + &
-tmp_6(k,m,i,l,n,j) + tmp_6(k,m,i,n,j,l) + tmp_6(k,m,i,n,l,j) + &
-tmp_6(k,m,j,i,l,n) + tmp_6(k,m,j,i,n,l) + tmp_6(k,m,j,l,i,n) + &
-tmp_6(k,m,j,l,n,i) + tmp_6(k,m,j,n,i,l) + tmp_6(k,m,j,n,l,i) + &
-tmp_6(k,m,l,i,j,n) + tmp_6(k,m,l,i,n,j) + tmp_6(k,m,l,j,i,n) + &
-tmp_6(k,m,l,j,n,i) + tmp_6(k,m,l,n,i,j) + tmp_6(k,m,l,n,j,i) + &
-tmp_6(k,m,n,i,j,l) + tmp_6(k,m,n,i,l,j) + tmp_6(k,m,n,j,i,l) + &
-tmp_6(k,m,n,j,l,i) + tmp_6(k,m,n,l,i,j) + tmp_6(k,m,n,l,j,i) + &
-tmp_6(k,n,i,j,l,m) + tmp_6(k,n,i,j,m,l) + tmp_6(k,n,i,l,j,m) + &
-tmp_6(k,n,i,l,m,j) + tmp_6(k,n,i,m,j,l) + tmp_6(k,n,i,m,l,j) + &
-tmp_6(k,n,j,i,l,m) + tmp_6(k,n,j,i,m,l) + tmp_6(k,n,j,l,i,m) + &
-tmp_6(k,n,j,l,m,i) + tmp_6(k,n,j,m,i,l) + tmp_6(k,n,j,m,l,i) + &
-tmp_6(k,n,l,i,j,m) + tmp_6(k,n,l,i,m,j) + tmp_6(k,n,l,j,i,m) + &
-tmp_6(k,n,l,j,m,i) + tmp_6(k,n,l,m,i,j) + tmp_6(k,n,l,m,j,i) + &
-tmp_6(k,n,m,i,j,l) + tmp_6(k,n,m,i,l,j) + tmp_6(k,n,m,j,i,l) + &
-tmp_6(k,n,m,j,l,i) + tmp_6(k,n,m,l,i,j) + tmp_6(k,n,m,l,j,i) + &
-tmp_6(l,i,j,k,m,n) + tmp_6(l,i,j,k,n,m) + tmp_6(l,i,j,m,k,n) + &
-tmp_6(l,i,j,m,n,k) + tmp_6(l,i,j,n,k,m) + tmp_6(l,i,j,n,m,k) + &
-tmp_6(l,i,k,j,m,n) + tmp_6(l,i,k,j,n,m) + tmp_6(l,i,k,m,j,n) + &
-tmp_6(l,i,k,m,n,j) + tmp_6(l,i,k,n,j,m) + tmp_6(l,i,k,n,m,j) + &
-tmp_6(l,i,m,j,k,n) + tmp_6(l,i,m,j,n,k) + tmp_6(l,i,m,k,j,n) + &
-tmp_6(l,i,m,k,n,j) + tmp_6(l,i,m,n,j,k) + tmp_6(l,i,m,n,k,j) + &
-tmp_6(l,i,n,j,k,m) + tmp_6(l,i,n,j,m,k) + tmp_6(l,i,n,k,j,m) + &
-tmp_6(l,i,n,k,m,j) + tmp_6(l,i,n,m,j,k) + tmp_6(l,i,n,m,k,j) + &
-tmp_6(l,j,i,k,m,n) + tmp_6(l,j,i,k,n,m) + tmp_6(l,j,i,m,k,n) + &
-tmp_6(l,j,i,m,n,k) + tmp_6(l,j,i,n,k,m) + tmp_6(l,j,i,n,m,k) + &
-tmp_6(l,j,k,i,m,n) + tmp_6(l,j,k,i,n,m) + tmp_6(l,j,k,m,i,n) + &
-tmp_6(l,j,k,m,n,i) + tmp_6(l,j,k,n,i,m) + tmp_6(l,j,k,n,m,i) + &
-tmp_6(l,j,m,i,k,n) + tmp_6(l,j,m,i,n,k) + tmp_6(l,j,m,k,i,n) + &
-tmp_6(l,j,m,k,n,i) + tmp_6(l,j,m,n,i,k) + tmp_6(l,j,m,n,k,i) + &
-tmp_6(l,j,n,i,k,m) + tmp_6(l,j,n,i,m,k) + tmp_6(l,j,n,k,i,m) + &
-tmp_6(l,j,n,k,m,i) + tmp_6(l,j,n,m,i,k) + tmp_6(l,j,n,m,k,i) + &
-tmp_6(l,k,i,j,m,n) + tmp_6(l,k,i,j,n,m) + tmp_6(l,k,i,m,j,n) + &
-tmp_6(l,k,i,m,n,j) + tmp_6(l,k,i,n,j,m) + tmp_6(l,k,i,n,m,j) + &
-tmp_6(l,k,j,i,m,n) + tmp_6(l,k,j,i,n,m) + tmp_6(l,k,j,m,i,n) + &
-tmp_6(l,k,j,m,n,i) + tmp_6(l,k,j,n,i,m) + tmp_6(l,k,j,n,m,i) + &
-tmp_6(l,k,m,i,j,n) + tmp_6(l,k,m,i,n,j) + tmp_6(l,k,m,j,i,n) + &
-tmp_6(l,k,m,j,n,i) + tmp_6(l,k,m,n,i,j) + tmp_6(l,k,m,n,j,i) + &
-tmp_6(l,k,n,i,j,m) + tmp_6(l,k,n,i,m,j) + tmp_6(l,k,n,j,i,m) + &
-tmp_6(l,k,n,j,m,i) + tmp_6(l,k,n,m,i,j) + tmp_6(l,k,n,m,j,i) + &
-tmp_6(l,m,i,j,k,n) + tmp_6(l,m,i,j,n,k) + tmp_6(l,m,i,k,j,n) + &
-tmp_6(l,m,i,k,n,j) + tmp_6(l,m,i,n,j,k) + tmp_6(l,m,i,n,k,j) + &
-tmp_6(l,m,j,i,k,n) + tmp_6(l,m,j,i,n,k) + tmp_6(l,m,j,k,i,n) + &
-tmp_6(l,m,j,k,n,i) + tmp_6(l,m,j,n,i,k) + tmp_6(l,m,j,n,k,i) + &
-tmp_6(l,m,k,i,j,n) + tmp_6(l,m,k,i,n,j) + tmp_6(l,m,k,j,i,n) + &
-tmp_6(l,m,k,j,n,i) + tmp_6(l,m,k,n,i,j) + tmp_6(l,m,k,n,j,i) + &
-tmp_6(l,m,n,i,j,k) + tmp_6(l,m,n,i,k,j) + tmp_6(l,m,n,j,i,k) + &
-tmp_6(l,m,n,j,k,i) + tmp_6(l,m,n,k,i,j) + tmp_6(l,m,n,k,j,i) + &
-tmp_6(l,n,i,j,k,m) + tmp_6(l,n,i,j,m,k) + tmp_6(l,n,i,k,j,m) + &
-tmp_6(l,n,i,k,m,j) + tmp_6(l,n,i,m,j,k) + tmp_6(l,n,i,m,k,j) + &
-tmp_6(l,n,j,i,k,m) + tmp_6(l,n,j,i,m,k) + tmp_6(l,n,j,k,i,m) + &
-tmp_6(l,n,j,k,m,i) + tmp_6(l,n,j,m,i,k) + tmp_6(l,n,j,m,k,i) + &
-tmp_6(l,n,k,i,j,m) + tmp_6(l,n,k,i,m,j) + tmp_6(l,n,k,j,i,m) + &
-tmp_6(l,n,k,j,m,i) + tmp_6(l,n,k,m,i,j) + tmp_6(l,n,k,m,j,i) + &
-tmp_6(l,n,m,i,j,k) + tmp_6(l,n,m,i,k,j) + tmp_6(l,n,m,j,i,k) + &
-tmp_6(l,n,m,j,k,i) + tmp_6(l,n,m,k,i,j) + tmp_6(l,n,m,k,j,i) + &
-tmp_6(m,i,j,k,l,n) + tmp_6(m,i,j,k,n,l) + tmp_6(m,i,j,l,k,n) + &
-tmp_6(m,i,j,l,n,k) + tmp_6(m,i,j,n,k,l) + tmp_6(m,i,j,n,l,k) + &
-tmp_6(m,i,k,j,l,n) + tmp_6(m,i,k,j,n,l) + tmp_6(m,i,k,l,j,n) + &
-tmp_6(m,i,k,l,n,j) + tmp_6(m,i,k,n,j,l) + tmp_6(m,i,k,n,l,j) + &
-tmp_6(m,i,l,j,k,n) + tmp_6(m,i,l,j,n,k) + tmp_6(m,i,l,k,j,n) + &
-tmp_6(m,i,l,k,n,j) + tmp_6(m,i,l,n,j,k) + tmp_6(m,i,l,n,k,j) + &
-tmp_6(m,i,n,j,k,l) + tmp_6(m,i,n,j,l,k) + tmp_6(m,i,n,k,j,l) + &
-tmp_6(m,i,n,k,l,j) + tmp_6(m,i,n,l,j,k) + tmp_6(m,i,n,l,k,j) + &
-tmp_6(m,j,i,k,l,n) + tmp_6(m,j,i,k,n,l) + tmp_6(m,j,i,l,k,n) + &
-tmp_6(m,j,i,l,n,k) + tmp_6(m,j,i,n,k,l) + tmp_6(m,j,i,n,l,k) + &
-tmp_6(m,j,k,i,l,n) + tmp_6(m,j,k,i,n,l) + tmp_6(m,j,k,l,i,n) + &
-tmp_6(m,j,k,l,n,i) + tmp_6(m,j,k,n,i,l) + tmp_6(m,j,k,n,l,i) + &
-tmp_6(m,j,l,i,k,n) + tmp_6(m,j,l,i,n,k) + tmp_6(m,j,l,k,i,n) + &
-tmp_6(m,j,l,k,n,i) + tmp_6(m,j,l,n,i,k) + tmp_6(m,j,l,n,k,i) + &
-tmp_6(m,j,n,i,k,l) + tmp_6(m,j,n,i,l,k) + tmp_6(m,j,n,k,i,l) + &
-tmp_6(m,j,n,k,l,i) + tmp_6(m,j,n,l,i,k) + tmp_6(m,j,n,l,k,i) + &
-tmp_6(m,k,i,j,l,n) + tmp_6(m,k,i,j,n,l) + tmp_6(m,k,i,l,j,n) + &
-tmp_6(m,k,i,l,n,j) + tmp_6(m,k,i,n,j,l) + tmp_6(m,k,i,n,l,j) + &
-tmp_6(m,k,j,i,l,n) + tmp_6(m,k,j,i,n,l) + tmp_6(m,k,j,l,i,n) + &
-tmp_6(m,k,j,l,n,i) + tmp_6(m,k,j,n,i,l) + tmp_6(m,k,j,n,l,i) + &
-tmp_6(m,k,l,i,j,n) + tmp_6(m,k,l,i,n,j) + tmp_6(m,k,l,j,i,n) + &
-tmp_6(m,k,l,j,n,i) + tmp_6(m,k,l,n,i,j) + tmp_6(m,k,l,n,j,i) + &
-tmp_6(m,k,n,i,j,l) + tmp_6(m,k,n,i,l,j) + tmp_6(m,k,n,j,i,l) + &
-tmp_6(m,k,n,j,l,i) + tmp_6(m,k,n,l,i,j) + tmp_6(m,k,n,l,j,i) + &
-tmp_6(m,l,i,j,k,n) + tmp_6(m,l,i,j,n,k) + tmp_6(m,l,i,k,j,n) + &
-tmp_6(m,l,i,k,n,j) + tmp_6(m,l,i,n,j,k) + tmp_6(m,l,i,n,k,j) + &
-tmp_6(m,l,j,i,k,n) + tmp_6(m,l,j,i,n,k) + tmp_6(m,l,j,k,i,n) + &
-tmp_6(m,l,j,k,n,i) + tmp_6(m,l,j,n,i,k) + tmp_6(m,l,j,n,k,i) + &
-tmp_6(m,l,k,i,j,n) + tmp_6(m,l,k,i,n,j) + tmp_6(m,l,k,j,i,n) + &
-tmp_6(m,l,k,j,n,i) + tmp_6(m,l,k,n,i,j) + tmp_6(m,l,k,n,j,i) + &
-tmp_6(m,l,n,i,j,k) + tmp_6(m,l,n,i,k,j) + tmp_6(m,l,n,j,i,k) + &
-tmp_6(m,l,n,j,k,i) + tmp_6(m,l,n,k,i,j) + tmp_6(m,l,n,k,j,i) + &
-tmp_6(m,n,i,j,k,l) + tmp_6(m,n,i,j,l,k) + tmp_6(m,n,i,k,j,l) + &
-tmp_6(m,n,i,k,l,j) + tmp_6(m,n,i,l,j,k) + tmp_6(m,n,i,l,k,j) + &
-tmp_6(m,n,j,i,k,l) + tmp_6(m,n,j,i,l,k) + tmp_6(m,n,j,k,i,l) + &
-tmp_6(m,n,j,k,l,i) + tmp_6(m,n,j,l,i,k) + tmp_6(m,n,j,l,k,i) + &
-tmp_6(m,n,k,i,j,l) + tmp_6(m,n,k,i,l,j) + tmp_6(m,n,k,j,i,l) + &
-tmp_6(m,n,k,j,l,i) + tmp_6(m,n,k,l,i,j) + tmp_6(m,n,k,l,j,i) + &
-tmp_6(m,n,l,i,j,k) + tmp_6(m,n,l,i,k,j) + tmp_6(m,n,l,j,i,k) + &
-tmp_6(m,n,l,j,k,i) + tmp_6(m,n,l,k,i,j) + tmp_6(m,n,l,k,j,i) + &
-tmp_6(n,i,j,k,l,m) + tmp_6(n,i,j,k,m,l) + tmp_6(n,i,j,l,k,m) + &
-tmp_6(n,i,j,l,m,k) + tmp_6(n,i,j,m,k,l) + tmp_6(n,i,j,m,l,k) + &
-tmp_6(n,i,k,j,l,m) + tmp_6(n,i,k,j,m,l) + tmp_6(n,i,k,l,j,m) + &
-tmp_6(n,i,k,l,m,j) + tmp_6(n,i,k,m,j,l) + tmp_6(n,i,k,m,l,j) + &
-tmp_6(n,i,l,j,k,m) + tmp_6(n,i,l,j,m,k) + tmp_6(n,i,l,k,j,m) + &
-tmp_6(n,i,l,k,m,j) + tmp_6(n,i,l,m,j,k) + tmp_6(n,i,l,m,k,j) + &
-tmp_6(n,i,m,j,k,l) + tmp_6(n,i,m,j,l,k) + tmp_6(n,i,m,k,j,l) + &
-tmp_6(n,i,m,k,l,j) + tmp_6(n,i,m,l,j,k) + tmp_6(n,i,m,l,k,j) + &
-tmp_6(n,j,i,k,l,m) + tmp_6(n,j,i,k,m,l) + tmp_6(n,j,i,l,k,m) + &
-tmp_6(n,j,i,l,m,k) + tmp_6(n,j,i,m,k,l) + tmp_6(n,j,i,m,l,k) + &
-tmp_6(n,j,k,i,l,m) + tmp_6(n,j,k,i,m,l) + tmp_6(n,j,k,l,i,m) + &
-tmp_6(n,j,k,l,m,i) + tmp_6(n,j,k,m,i,l) + tmp_6(n,j,k,m,l,i) + &
-tmp_6(n,j,l,i,k,m) + tmp_6(n,j,l,i,m,k) + tmp_6(n,j,l,k,i,m) + &
-tmp_6(n,j,l,k,m,i) + tmp_6(n,j,l,m,i,k) + tmp_6(n,j,l,m,k,i) + &
-tmp_6(n,j,m,i,k,l) + tmp_6(n,j,m,i,l,k) + tmp_6(n,j,m,k,i,l) + &
-tmp_6(n,j,m,k,l,i) + tmp_6(n,j,m,l,i,k) + tmp_6(n,j,m,l,k,i) + &
-tmp_6(n,k,i,j,l,m) + tmp_6(n,k,i,j,m,l) + tmp_6(n,k,i,l,j,m) + &
-tmp_6(n,k,i,l,m,j) + tmp_6(n,k,i,m,j,l) + tmp_6(n,k,i,m,l,j) + &
-tmp_6(n,k,j,i,l,m) + tmp_6(n,k,j,i,m,l) + tmp_6(n,k,j,l,i,m) + &
-tmp_6(n,k,j,l,m,i) + tmp_6(n,k,j,m,i,l) + tmp_6(n,k,j,m,l,i) + &
-tmp_6(n,k,l,i,j,m) + tmp_6(n,k,l,i,m,j) + tmp_6(n,k,l,j,i,m) + &
-tmp_6(n,k,l,j,m,i) + tmp_6(n,k,l,m,i,j) + tmp_6(n,k,l,m,j,i) + &
-tmp_6(n,k,m,i,j,l) + tmp_6(n,k,m,i,l,j) + tmp_6(n,k,m,j,i,l) + &
-tmp_6(n,k,m,j,l,i) + tmp_6(n,k,m,l,i,j) + tmp_6(n,k,m,l,j,i) + &
-tmp_6(n,l,i,j,k,m) + tmp_6(n,l,i,j,m,k) + tmp_6(n,l,i,k,j,m) + &
-tmp_6(n,l,i,k,m,j) + tmp_6(n,l,i,m,j,k) + tmp_6(n,l,i,m,k,j) + &
-tmp_6(n,l,j,i,k,m) + tmp_6(n,l,j,i,m,k) + tmp_6(n,l,j,k,i,m) + &
-tmp_6(n,l,j,k,m,i) + tmp_6(n,l,j,m,i,k) + tmp_6(n,l,j,m,k,i) + &
-tmp_6(n,l,k,i,j,m) + tmp_6(n,l,k,i,m,j) + tmp_6(n,l,k,j,i,m) + &
-tmp_6(n,l,k,j,m,i) + tmp_6(n,l,k,m,i,j) + tmp_6(n,l,k,m,j,i) + &
-tmp_6(n,l,m,i,j,k) + tmp_6(n,l,m,i,k,j) + tmp_6(n,l,m,j,i,k) + &
-tmp_6(n,l,m,j,k,i) + tmp_6(n,l,m,k,i,j) + tmp_6(n,l,m,k,j,i) + &
-tmp_6(n,m,i,j,k,l) + tmp_6(n,m,i,j,l,k) + tmp_6(n,m,i,k,j,l) + &
-tmp_6(n,m,i,k,l,j) + tmp_6(n,m,i,l,j,k) + tmp_6(n,m,i,l,k,j) + &
-tmp_6(n,m,j,i,k,l) + tmp_6(n,m,j,i,l,k) + tmp_6(n,m,j,k,i,l) + &
-tmp_6(n,m,j,k,l,i) + tmp_6(n,m,j,l,i,k) + tmp_6(n,m,j,l,k,i) + &
-tmp_6(n,m,k,i,j,l) + tmp_6(n,m,k,i,l,j) + tmp_6(n,m,k,j,i,l) + &
-tmp_6(n,m,k,j,l,i) + tmp_6(n,m,k,l,i,j) + tmp_6(n,m,k,l,j,i) + &
-tmp_6(n,m,l,i,j,k) + tmp_6(n,m,l,i,k,j) + tmp_6(n,m,l,j,i,k) + &
-tmp_6(n,m,l,j,k,i) + tmp_6(n,m,l,k,i,j) + tmp_6(n,m,l,k,j,i)
+                         r = tmp_6(i,j,k,l,m,n) + tmp_6(i,j,k,l,n,m) + tmp_6(i,j,k,m,l,n) + &
+                             tmp_6(i,j,k,m,n,l) + tmp_6(i,j,k,n,l,m) + tmp_6(i,j,k,n,m,l) + &
+                             tmp_6(i,j,l,k,m,n) + tmp_6(i,j,l,k,n,m) + tmp_6(i,j,l,m,k,n) + &
+                             tmp_6(i,j,l,m,n,k) + tmp_6(i,j,l,n,k,m) + tmp_6(i,j,l,n,m,k) + &
+                             tmp_6(i,j,m,k,l,n) + tmp_6(i,j,m,k,n,l) + tmp_6(i,j,m,l,k,n) + &
+                             tmp_6(i,j,m,l,n,k) + tmp_6(i,j,m,n,k,l) + tmp_6(i,j,m,n,l,k) + &
+                             tmp_6(i,j,n,k,l,m) + tmp_6(i,j,n,k,m,l) + tmp_6(i,j,n,l,k,m) + &
+                             tmp_6(i,j,n,l,m,k) + tmp_6(i,j,n,m,k,l) + tmp_6(i,j,n,m,l,k) + &
+                             tmp_6(i,k,j,l,m,n) + tmp_6(i,k,j,l,n,m) + tmp_6(i,k,j,m,l,n) + &
+                             tmp_6(i,k,j,m,n,l) + tmp_6(i,k,j,n,l,m) + tmp_6(i,k,j,n,m,l) + &
+                             tmp_6(i,k,l,j,m,n) + tmp_6(i,k,l,j,n,m) + tmp_6(i,k,l,m,j,n) + &
+                             tmp_6(i,k,l,m,n,j) + tmp_6(i,k,l,n,j,m) + tmp_6(i,k,l,n,m,j) + &
+                             tmp_6(i,k,m,j,l,n) + tmp_6(i,k,m,j,n,l) + tmp_6(i,k,m,l,j,n) + &
+                             tmp_6(i,k,m,l,n,j) + tmp_6(i,k,m,n,j,l) + tmp_6(i,k,m,n,l,j) + &
+                             tmp_6(i,k,n,j,l,m) + tmp_6(i,k,n,j,m,l) + tmp_6(i,k,n,l,j,m) + &
+                             tmp_6(i,k,n,l,m,j) + tmp_6(i,k,n,m,j,l) + tmp_6(i,k,n,m,l,j) + &
+                             tmp_6(i,l,j,k,m,n) + tmp_6(i,l,j,k,n,m) + tmp_6(i,l,j,m,k,n) + &
+                             tmp_6(i,l,j,m,n,k) + tmp_6(i,l,j,n,k,m) + tmp_6(i,l,j,n,m,k) + &
+                             tmp_6(i,l,k,j,m,n) + tmp_6(i,l,k,j,n,m) + tmp_6(i,l,k,m,j,n) + &
+                             tmp_6(i,l,k,m,n,j) + tmp_6(i,l,k,n,j,m) + tmp_6(i,l,k,n,m,j) + &
+                             tmp_6(i,l,m,j,k,n) + tmp_6(i,l,m,j,n,k) + tmp_6(i,l,m,k,j,n) + &
+                             tmp_6(i,l,m,k,n,j) + tmp_6(i,l,m,n,j,k) + tmp_6(i,l,m,n,k,j) + &
+                             tmp_6(i,l,n,j,k,m) + tmp_6(i,l,n,j,m,k) + tmp_6(i,l,n,k,j,m) + &
+                             tmp_6(i,l,n,k,m,j) + tmp_6(i,l,n,m,j,k) + tmp_6(i,l,n,m,k,j) + &
+                             tmp_6(i,m,j,k,l,n) + tmp_6(i,m,j,k,n,l) + tmp_6(i,m,j,l,k,n) + &
+                             tmp_6(i,m,j,l,n,k) + tmp_6(i,m,j,n,k,l) + tmp_6(i,m,j,n,l,k) + &
+                             tmp_6(i,m,k,j,l,n) + tmp_6(i,m,k,j,n,l) + tmp_6(i,m,k,l,j,n) + &
+                             tmp_6(i,m,k,l,n,j) + tmp_6(i,m,k,n,j,l) + tmp_6(i,m,k,n,l,j) + &
+                             tmp_6(i,m,l,j,k,n) + tmp_6(i,m,l,j,n,k) + tmp_6(i,m,l,k,j,n) + &
+                             tmp_6(i,m,l,k,n,j) + tmp_6(i,m,l,n,j,k) + tmp_6(i,m,l,n,k,j) + &
+                             tmp_6(i,m,n,j,k,l) + tmp_6(i,m,n,j,l,k) + tmp_6(i,m,n,k,j,l) + &
+                             tmp_6(i,m,n,k,l,j) + tmp_6(i,m,n,l,j,k) + tmp_6(i,m,n,l,k,j) + &
+                             tmp_6(i,n,j,k,l,m) + tmp_6(i,n,j,k,m,l) + tmp_6(i,n,j,l,k,m) + &
+                             tmp_6(i,n,j,l,m,k) + tmp_6(i,n,j,m,k,l) + tmp_6(i,n,j,m,l,k) + &
+                             tmp_6(i,n,k,j,l,m) + tmp_6(i,n,k,j,m,l) + tmp_6(i,n,k,l,j,m) + &
+                             tmp_6(i,n,k,l,m,j) + tmp_6(i,n,k,m,j,l) + tmp_6(i,n,k,m,l,j) + &
+                             tmp_6(i,n,l,j,k,m) + tmp_6(i,n,l,j,m,k) + tmp_6(i,n,l,k,j,m) + &
+                             tmp_6(i,n,l,k,m,j) + tmp_6(i,n,l,m,j,k) + tmp_6(i,n,l,m,k,j) + &
+                             tmp_6(i,n,m,j,k,l) + tmp_6(i,n,m,j,l,k) + tmp_6(i,n,m,k,j,l) + &
+                             tmp_6(i,n,m,k,l,j) + tmp_6(i,n,m,l,j,k) + tmp_6(i,n,m,l,k,j) + &
+                             tmp_6(j,i,k,l,m,n) + tmp_6(j,i,k,l,n,m) + tmp_6(j,i,k,m,l,n) + &
+                             tmp_6(j,i,k,m,n,l) + tmp_6(j,i,k,n,l,m) + tmp_6(j,i,k,n,m,l) + &
+                             tmp_6(j,i,l,k,m,n) + tmp_6(j,i,l,k,n,m) + tmp_6(j,i,l,m,k,n) + &
+                             tmp_6(j,i,l,m,n,k) + tmp_6(j,i,l,n,k,m) + tmp_6(j,i,l,n,m,k) + &
+                             tmp_6(j,i,m,k,l,n) + tmp_6(j,i,m,k,n,l) + tmp_6(j,i,m,l,k,n) + &
+                             tmp_6(j,i,m,l,n,k) + tmp_6(j,i,m,n,k,l) + tmp_6(j,i,m,n,l,k) + &
+                             tmp_6(j,i,n,k,l,m) + tmp_6(j,i,n,k,m,l) + tmp_6(j,i,n,l,k,m) + &
+                             tmp_6(j,i,n,l,m,k) + tmp_6(j,i,n,m,k,l) + tmp_6(j,i,n,m,l,k) + &
+                             tmp_6(j,k,i,l,m,n) + tmp_6(j,k,i,l,n,m) + tmp_6(j,k,i,m,l,n) + &
+                             tmp_6(j,k,i,m,n,l) + tmp_6(j,k,i,n,l,m) + tmp_6(j,k,i,n,m,l) + &
+                             tmp_6(j,k,l,i,m,n) + tmp_6(j,k,l,i,n,m) + tmp_6(j,k,l,m,i,n) + &
+                             tmp_6(j,k,l,m,n,i) + tmp_6(j,k,l,n,i,m) + tmp_6(j,k,l,n,m,i) + &
+                             tmp_6(j,k,m,i,l,n) + tmp_6(j,k,m,i,n,l) + tmp_6(j,k,m,l,i,n) + &
+                             tmp_6(j,k,m,l,n,i) + tmp_6(j,k,m,n,i,l) + tmp_6(j,k,m,n,l,i) + &
+                             tmp_6(j,k,n,i,l,m) + tmp_6(j,k,n,i,m,l) + tmp_6(j,k,n,l,i,m) + &
+                             tmp_6(j,k,n,l,m,i) + tmp_6(j,k,n,m,i,l) + tmp_6(j,k,n,m,l,i) + &
+                             tmp_6(j,l,i,k,m,n) + tmp_6(j,l,i,k,n,m) + tmp_6(j,l,i,m,k,n) + &
+                             tmp_6(j,l,i,m,n,k) + tmp_6(j,l,i,n,k,m) + tmp_6(j,l,i,n,m,k) + &
+                             tmp_6(j,l,k,i,m,n) + tmp_6(j,l,k,i,n,m) + tmp_6(j,l,k,m,i,n) + &
+                             tmp_6(j,l,k,m,n,i) + tmp_6(j,l,k,n,i,m) + tmp_6(j,l,k,n,m,i) + &
+                             tmp_6(j,l,m,i,k,n) + tmp_6(j,l,m,i,n,k) + tmp_6(j,l,m,k,i,n) + &
+                             tmp_6(j,l,m,k,n,i) + tmp_6(j,l,m,n,i,k) + tmp_6(j,l,m,n,k,i) + &
+                             tmp_6(j,l,n,i,k,m) + tmp_6(j,l,n,i,m,k) + tmp_6(j,l,n,k,i,m) + &
+                             tmp_6(j,l,n,k,m,i) + tmp_6(j,l,n,m,i,k) + tmp_6(j,l,n,m,k,i) + &
+                             tmp_6(j,m,i,k,l,n) + tmp_6(j,m,i,k,n,l) + tmp_6(j,m,i,l,k,n) + &
+                             tmp_6(j,m,i,l,n,k) + tmp_6(j,m,i,n,k,l) + tmp_6(j,m,i,n,l,k) + &
+                             tmp_6(j,m,k,i,l,n) + tmp_6(j,m,k,i,n,l) + tmp_6(j,m,k,l,i,n) + &
+                             tmp_6(j,m,k,l,n,i) + tmp_6(j,m,k,n,i,l) + tmp_6(j,m,k,n,l,i) + &
+                             tmp_6(j,m,l,i,k,n) + tmp_6(j,m,l,i,n,k) + tmp_6(j,m,l,k,i,n) + &
+                             tmp_6(j,m,l,k,n,i) + tmp_6(j,m,l,n,i,k) + tmp_6(j,m,l,n,k,i) + &
+                             tmp_6(j,m,n,i,k,l) + tmp_6(j,m,n,i,l,k) + tmp_6(j,m,n,k,i,l) + &
+                             tmp_6(j,m,n,k,l,i) + tmp_6(j,m,n,l,i,k) + tmp_6(j,m,n,l,k,i) + &
+                             tmp_6(j,n,i,k,l,m) + tmp_6(j,n,i,k,m,l) + tmp_6(j,n,i,l,k,m) + &
+                             tmp_6(j,n,i,l,m,k) + tmp_6(j,n,i,m,k,l) + tmp_6(j,n,i,m,l,k) + &
+                             tmp_6(j,n,k,i,l,m) + tmp_6(j,n,k,i,m,l) + tmp_6(j,n,k,l,i,m) + &
+                             tmp_6(j,n,k,l,m,i) + tmp_6(j,n,k,m,i,l) + tmp_6(j,n,k,m,l,i) + &
+                             tmp_6(j,n,l,i,k,m) + tmp_6(j,n,l,i,m,k) + tmp_6(j,n,l,k,i,m) + &
+                             tmp_6(j,n,l,k,m,i) + tmp_6(j,n,l,m,i,k) + tmp_6(j,n,l,m,k,i) + &
+                             tmp_6(j,n,m,i,k,l) + tmp_6(j,n,m,i,l,k) + tmp_6(j,n,m,k,i,l) + &
+                             tmp_6(j,n,m,k,l,i) + tmp_6(j,n,m,l,i,k) + tmp_6(j,n,m,l,k,i) + &
+                             tmp_6(k,i,j,l,m,n) + tmp_6(k,i,j,l,n,m) + tmp_6(k,i,j,m,l,n) + &
+                             tmp_6(k,i,j,m,n,l) + tmp_6(k,i,j,n,l,m) + tmp_6(k,i,j,n,m,l) + &
+                             tmp_6(k,i,l,j,m,n) + tmp_6(k,i,l,j,n,m) + tmp_6(k,i,l,m,j,n) + &
+                             tmp_6(k,i,l,m,n,j) + tmp_6(k,i,l,n,j,m) + tmp_6(k,i,l,n,m,j) + &
+                             tmp_6(k,i,m,j,l,n) + tmp_6(k,i,m,j,n,l) + tmp_6(k,i,m,l,j,n) + &
+                             tmp_6(k,i,m,l,n,j) + tmp_6(k,i,m,n,j,l) + tmp_6(k,i,m,n,l,j) + &
+                             tmp_6(k,i,n,j,l,m) + tmp_6(k,i,n,j,m,l) + tmp_6(k,i,n,l,j,m) + &
+                             tmp_6(k,i,n,l,m,j) + tmp_6(k,i,n,m,j,l) + tmp_6(k,i,n,m,l,j) + &
+                             tmp_6(k,j,i,l,m,n) + tmp_6(k,j,i,l,n,m) + tmp_6(k,j,i,m,l,n) + &
+                             tmp_6(k,j,i,m,n,l) + tmp_6(k,j,i,n,l,m) + tmp_6(k,j,i,n,m,l) + &
+                             tmp_6(k,j,l,i,m,n) + tmp_6(k,j,l,i,n,m) + tmp_6(k,j,l,m,i,n) + &
+                             tmp_6(k,j,l,m,n,i) + tmp_6(k,j,l,n,i,m) + tmp_6(k,j,l,n,m,i) + &
+                             tmp_6(k,j,m,i,l,n) + tmp_6(k,j,m,i,n,l) + tmp_6(k,j,m,l,i,n) + &
+                             tmp_6(k,j,m,l,n,i) + tmp_6(k,j,m,n,i,l) + tmp_6(k,j,m,n,l,i) + &
+                             tmp_6(k,j,n,i,l,m) + tmp_6(k,j,n,i,m,l) + tmp_6(k,j,n,l,i,m) + &
+                             tmp_6(k,j,n,l,m,i) + tmp_6(k,j,n,m,i,l) + tmp_6(k,j,n,m,l,i) + &
+                             tmp_6(k,l,i,j,m,n) + tmp_6(k,l,i,j,n,m) + tmp_6(k,l,i,m,j,n) + &
+                             tmp_6(k,l,i,m,n,j) + tmp_6(k,l,i,n,j,m) + tmp_6(k,l,i,n,m,j) + &
+                             tmp_6(k,l,j,i,m,n) + tmp_6(k,l,j,i,n,m) + tmp_6(k,l,j,m,i,n) + &
+                             tmp_6(k,l,j,m,n,i) + tmp_6(k,l,j,n,i,m) + tmp_6(k,l,j,n,m,i) + &
+                             tmp_6(k,l,m,i,j,n) + tmp_6(k,l,m,i,n,j) + tmp_6(k,l,m,j,i,n) + &
+                             tmp_6(k,l,m,j,n,i) + tmp_6(k,l,m,n,i,j) + tmp_6(k,l,m,n,j,i) + &
+                             tmp_6(k,l,n,i,j,m) + tmp_6(k,l,n,i,m,j) + tmp_6(k,l,n,j,i,m) + &
+                             tmp_6(k,l,n,j,m,i) + tmp_6(k,l,n,m,i,j) + tmp_6(k,l,n,m,j,i) + &
+                             tmp_6(k,m,i,j,l,n) + tmp_6(k,m,i,j,n,l) + tmp_6(k,m,i,l,j,n) + &
+                             tmp_6(k,m,i,l,n,j) + tmp_6(k,m,i,n,j,l) + tmp_6(k,m,i,n,l,j) + &
+                             tmp_6(k,m,j,i,l,n) + tmp_6(k,m,j,i,n,l) + tmp_6(k,m,j,l,i,n) + &
+                             tmp_6(k,m,j,l,n,i) + tmp_6(k,m,j,n,i,l) + tmp_6(k,m,j,n,l,i) + &
+                             tmp_6(k,m,l,i,j,n) + tmp_6(k,m,l,i,n,j) + tmp_6(k,m,l,j,i,n) + &
+                             tmp_6(k,m,l,j,n,i) + tmp_6(k,m,l,n,i,j) + tmp_6(k,m,l,n,j,i) + &
+                             tmp_6(k,m,n,i,j,l) + tmp_6(k,m,n,i,l,j) + tmp_6(k,m,n,j,i,l) + &
+                             tmp_6(k,m,n,j,l,i) + tmp_6(k,m,n,l,i,j) + tmp_6(k,m,n,l,j,i) + &
+                             tmp_6(k,n,i,j,l,m) + tmp_6(k,n,i,j,m,l) + tmp_6(k,n,i,l,j,m) + &
+                             tmp_6(k,n,i,l,m,j) + tmp_6(k,n,i,m,j,l) + tmp_6(k,n,i,m,l,j) + &
+                             tmp_6(k,n,j,i,l,m) + tmp_6(k,n,j,i,m,l) + tmp_6(k,n,j,l,i,m) + &
+                             tmp_6(k,n,j,l,m,i) + tmp_6(k,n,j,m,i,l) + tmp_6(k,n,j,m,l,i) + &
+                             tmp_6(k,n,l,i,j,m) + tmp_6(k,n,l,i,m,j) + tmp_6(k,n,l,j,i,m) + &
+                             tmp_6(k,n,l,j,m,i) + tmp_6(k,n,l,m,i,j) + tmp_6(k,n,l,m,j,i) + &
+                             tmp_6(k,n,m,i,j,l) + tmp_6(k,n,m,i,l,j) + tmp_6(k,n,m,j,i,l) + &
+                             tmp_6(k,n,m,j,l,i) + tmp_6(k,n,m,l,i,j) + tmp_6(k,n,m,l,j,i) + &
+                             tmp_6(l,i,j,k,m,n) + tmp_6(l,i,j,k,n,m) + tmp_6(l,i,j,m,k,n) + &
+                             tmp_6(l,i,j,m,n,k) + tmp_6(l,i,j,n,k,m) + tmp_6(l,i,j,n,m,k) + &
+                             tmp_6(l,i,k,j,m,n) + tmp_6(l,i,k,j,n,m) + tmp_6(l,i,k,m,j,n) + &
+                             tmp_6(l,i,k,m,n,j) + tmp_6(l,i,k,n,j,m) + tmp_6(l,i,k,n,m,j) + &
+                             tmp_6(l,i,m,j,k,n) + tmp_6(l,i,m,j,n,k) + tmp_6(l,i,m,k,j,n) + &
+                             tmp_6(l,i,m,k,n,j) + tmp_6(l,i,m,n,j,k) + tmp_6(l,i,m,n,k,j) + &
+                             tmp_6(l,i,n,j,k,m) + tmp_6(l,i,n,j,m,k) + tmp_6(l,i,n,k,j,m) + &
+                             tmp_6(l,i,n,k,m,j) + tmp_6(l,i,n,m,j,k) + tmp_6(l,i,n,m,k,j) + &
+                             tmp_6(l,j,i,k,m,n) + tmp_6(l,j,i,k,n,m) + tmp_6(l,j,i,m,k,n) + &
+                             tmp_6(l,j,i,m,n,k) + tmp_6(l,j,i,n,k,m) + tmp_6(l,j,i,n,m,k) + &
+                             tmp_6(l,j,k,i,m,n) + tmp_6(l,j,k,i,n,m) + tmp_6(l,j,k,m,i,n) + &
+                             tmp_6(l,j,k,m,n,i) + tmp_6(l,j,k,n,i,m) + tmp_6(l,j,k,n,m,i) + &
+                             tmp_6(l,j,m,i,k,n) + tmp_6(l,j,m,i,n,k) + tmp_6(l,j,m,k,i,n) + &
+                             tmp_6(l,j,m,k,n,i) + tmp_6(l,j,m,n,i,k) + tmp_6(l,j,m,n,k,i) + &
+                             tmp_6(l,j,n,i,k,m) + tmp_6(l,j,n,i,m,k) + tmp_6(l,j,n,k,i,m) + &
+                             tmp_6(l,j,n,k,m,i) + tmp_6(l,j,n,m,i,k) + tmp_6(l,j,n,m,k,i) + &
+                             tmp_6(l,k,i,j,m,n) + tmp_6(l,k,i,j,n,m) + tmp_6(l,k,i,m,j,n) + &
+                             tmp_6(l,k,i,m,n,j) + tmp_6(l,k,i,n,j,m) + tmp_6(l,k,i,n,m,j) + &
+                             tmp_6(l,k,j,i,m,n) + tmp_6(l,k,j,i,n,m) + tmp_6(l,k,j,m,i,n) + &
+                             tmp_6(l,k,j,m,n,i) + tmp_6(l,k,j,n,i,m) + tmp_6(l,k,j,n,m,i) + &
+                             tmp_6(l,k,m,i,j,n) + tmp_6(l,k,m,i,n,j) + tmp_6(l,k,m,j,i,n) + &
+                             tmp_6(l,k,m,j,n,i) + tmp_6(l,k,m,n,i,j) + tmp_6(l,k,m,n,j,i) + &
+                             tmp_6(l,k,n,i,j,m) + tmp_6(l,k,n,i,m,j) + tmp_6(l,k,n,j,i,m) + &
+                             tmp_6(l,k,n,j,m,i) + tmp_6(l,k,n,m,i,j) + tmp_6(l,k,n,m,j,i) + &
+                             tmp_6(l,m,i,j,k,n) + tmp_6(l,m,i,j,n,k) + tmp_6(l,m,i,k,j,n) + &
+                             tmp_6(l,m,i,k,n,j) + tmp_6(l,m,i,n,j,k) + tmp_6(l,m,i,n,k,j) + &
+                             tmp_6(l,m,j,i,k,n) + tmp_6(l,m,j,i,n,k) + tmp_6(l,m,j,k,i,n) + &
+                             tmp_6(l,m,j,k,n,i) + tmp_6(l,m,j,n,i,k) + tmp_6(l,m,j,n,k,i) + &
+                             tmp_6(l,m,k,i,j,n) + tmp_6(l,m,k,i,n,j) + tmp_6(l,m,k,j,i,n) + &
+                             tmp_6(l,m,k,j,n,i) + tmp_6(l,m,k,n,i,j) + tmp_6(l,m,k,n,j,i) + &
+                             tmp_6(l,m,n,i,j,k) + tmp_6(l,m,n,i,k,j) + tmp_6(l,m,n,j,i,k) + &
+                             tmp_6(l,m,n,j,k,i) + tmp_6(l,m,n,k,i,j) + tmp_6(l,m,n,k,j,i) + &
+                             tmp_6(l,n,i,j,k,m) + tmp_6(l,n,i,j,m,k) + tmp_6(l,n,i,k,j,m) + &
+                             tmp_6(l,n,i,k,m,j) + tmp_6(l,n,i,m,j,k) + tmp_6(l,n,i,m,k,j) + &
+                             tmp_6(l,n,j,i,k,m) + tmp_6(l,n,j,i,m,k) + tmp_6(l,n,j,k,i,m) + &
+                             tmp_6(l,n,j,k,m,i) + tmp_6(l,n,j,m,i,k) + tmp_6(l,n,j,m,k,i) + &
+                             tmp_6(l,n,k,i,j,m) + tmp_6(l,n,k,i,m,j) + tmp_6(l,n,k,j,i,m) + &
+                             tmp_6(l,n,k,j,m,i) + tmp_6(l,n,k,m,i,j) + tmp_6(l,n,k,m,j,i) + &
+                             tmp_6(l,n,m,i,j,k) + tmp_6(l,n,m,i,k,j) + tmp_6(l,n,m,j,i,k) + &
+                             tmp_6(l,n,m,j,k,i) + tmp_6(l,n,m,k,i,j) + tmp_6(l,n,m,k,j,i) + &
+                             tmp_6(m,i,j,k,l,n) + tmp_6(m,i,j,k,n,l) + tmp_6(m,i,j,l,k,n) + &
+                             tmp_6(m,i,j,l,n,k) + tmp_6(m,i,j,n,k,l) + tmp_6(m,i,j,n,l,k) + &
+                             tmp_6(m,i,k,j,l,n) + tmp_6(m,i,k,j,n,l) + tmp_6(m,i,k,l,j,n) + &
+                             tmp_6(m,i,k,l,n,j) + tmp_6(m,i,k,n,j,l) + tmp_6(m,i,k,n,l,j) + &
+                             tmp_6(m,i,l,j,k,n) + tmp_6(m,i,l,j,n,k) + tmp_6(m,i,l,k,j,n) + &
+                             tmp_6(m,i,l,k,n,j) + tmp_6(m,i,l,n,j,k) + tmp_6(m,i,l,n,k,j) + &
+                             tmp_6(m,i,n,j,k,l) + tmp_6(m,i,n,j,l,k) + tmp_6(m,i,n,k,j,l) + &
+                             tmp_6(m,i,n,k,l,j) + tmp_6(m,i,n,l,j,k) + tmp_6(m,i,n,l,k,j) + &
+                             tmp_6(m,j,i,k,l,n) + tmp_6(m,j,i,k,n,l) + tmp_6(m,j,i,l,k,n) + &
+                             tmp_6(m,j,i,l,n,k) + tmp_6(m,j,i,n,k,l) + tmp_6(m,j,i,n,l,k) + &
+                             tmp_6(m,j,k,i,l,n) + tmp_6(m,j,k,i,n,l) + tmp_6(m,j,k,l,i,n) + &
+                             tmp_6(m,j,k,l,n,i) + tmp_6(m,j,k,n,i,l) + tmp_6(m,j,k,n,l,i) + &
+                             tmp_6(m,j,l,i,k,n) + tmp_6(m,j,l,i,n,k) + tmp_6(m,j,l,k,i,n) + &
+                             tmp_6(m,j,l,k,n,i) + tmp_6(m,j,l,n,i,k) + tmp_6(m,j,l,n,k,i) + &
+                             tmp_6(m,j,n,i,k,l) + tmp_6(m,j,n,i,l,k) + tmp_6(m,j,n,k,i,l) + &
+                             tmp_6(m,j,n,k,l,i) + tmp_6(m,j,n,l,i,k) + tmp_6(m,j,n,l,k,i) + &
+                             tmp_6(m,k,i,j,l,n) + tmp_6(m,k,i,j,n,l) + tmp_6(m,k,i,l,j,n) + &
+                             tmp_6(m,k,i,l,n,j) + tmp_6(m,k,i,n,j,l) + tmp_6(m,k,i,n,l,j) + &
+                             tmp_6(m,k,j,i,l,n) + tmp_6(m,k,j,i,n,l) + tmp_6(m,k,j,l,i,n) + &
+                             tmp_6(m,k,j,l,n,i) + tmp_6(m,k,j,n,i,l) + tmp_6(m,k,j,n,l,i) + &
+                             tmp_6(m,k,l,i,j,n) + tmp_6(m,k,l,i,n,j) + tmp_6(m,k,l,j,i,n) + &
+                             tmp_6(m,k,l,j,n,i) + tmp_6(m,k,l,n,i,j) + tmp_6(m,k,l,n,j,i) + &
+                             tmp_6(m,k,n,i,j,l) + tmp_6(m,k,n,i,l,j) + tmp_6(m,k,n,j,i,l) + &
+                             tmp_6(m,k,n,j,l,i) + tmp_6(m,k,n,l,i,j) + tmp_6(m,k,n,l,j,i) + &
+                             tmp_6(m,l,i,j,k,n) + tmp_6(m,l,i,j,n,k) + tmp_6(m,l,i,k,j,n) + &
+                             tmp_6(m,l,i,k,n,j) + tmp_6(m,l,i,n,j,k) + tmp_6(m,l,i,n,k,j) + &
+                             tmp_6(m,l,j,i,k,n) + tmp_6(m,l,j,i,n,k) + tmp_6(m,l,j,k,i,n) + &
+                             tmp_6(m,l,j,k,n,i) + tmp_6(m,l,j,n,i,k) + tmp_6(m,l,j,n,k,i) + &
+                             tmp_6(m,l,k,i,j,n) + tmp_6(m,l,k,i,n,j) + tmp_6(m,l,k,j,i,n) + &
+                             tmp_6(m,l,k,j,n,i) + tmp_6(m,l,k,n,i,j) + tmp_6(m,l,k,n,j,i) + &
+                             tmp_6(m,l,n,i,j,k) + tmp_6(m,l,n,i,k,j) + tmp_6(m,l,n,j,i,k) + &
+                             tmp_6(m,l,n,j,k,i) + tmp_6(m,l,n,k,i,j) + tmp_6(m,l,n,k,j,i) + &
+                             tmp_6(m,n,i,j,k,l) + tmp_6(m,n,i,j,l,k) + tmp_6(m,n,i,k,j,l) + &
+                             tmp_6(m,n,i,k,l,j) + tmp_6(m,n,i,l,j,k) + tmp_6(m,n,i,l,k,j) + &
+                             tmp_6(m,n,j,i,k,l) + tmp_6(m,n,j,i,l,k) + tmp_6(m,n,j,k,i,l) + &
+                             tmp_6(m,n,j,k,l,i) + tmp_6(m,n,j,l,i,k) + tmp_6(m,n,j,l,k,i) + &
+                             tmp_6(m,n,k,i,j,l) + tmp_6(m,n,k,i,l,j) + tmp_6(m,n,k,j,i,l) + &
+                             tmp_6(m,n,k,j,l,i) + tmp_6(m,n,k,l,i,j) + tmp_6(m,n,k,l,j,i) + &
+                             tmp_6(m,n,l,i,j,k) + tmp_6(m,n,l,i,k,j) + tmp_6(m,n,l,j,i,k) + &
+                             tmp_6(m,n,l,j,k,i) + tmp_6(m,n,l,k,i,j) + tmp_6(m,n,l,k,j,i) + &
+                             tmp_6(n,i,j,k,l,m) + tmp_6(n,i,j,k,m,l) + tmp_6(n,i,j,l,k,m) + &
+                             tmp_6(n,i,j,l,m,k) + tmp_6(n,i,j,m,k,l) + tmp_6(n,i,j,m,l,k) + &
+                             tmp_6(n,i,k,j,l,m) + tmp_6(n,i,k,j,m,l) + tmp_6(n,i,k,l,j,m) + &
+                             tmp_6(n,i,k,l,m,j) + tmp_6(n,i,k,m,j,l) + tmp_6(n,i,k,m,l,j) + &
+                             tmp_6(n,i,l,j,k,m) + tmp_6(n,i,l,j,m,k) + tmp_6(n,i,l,k,j,m) + &
+                             tmp_6(n,i,l,k,m,j) + tmp_6(n,i,l,m,j,k) + tmp_6(n,i,l,m,k,j) + &
+                             tmp_6(n,i,m,j,k,l) + tmp_6(n,i,m,j,l,k) + tmp_6(n,i,m,k,j,l) + &
+                             tmp_6(n,i,m,k,l,j) + tmp_6(n,i,m,l,j,k) + tmp_6(n,i,m,l,k,j) + &
+                             tmp_6(n,j,i,k,l,m) + tmp_6(n,j,i,k,m,l) + tmp_6(n,j,i,l,k,m) + &
+                             tmp_6(n,j,i,l,m,k) + tmp_6(n,j,i,m,k,l) + tmp_6(n,j,i,m,l,k) + &
+                             tmp_6(n,j,k,i,l,m) + tmp_6(n,j,k,i,m,l) + tmp_6(n,j,k,l,i,m) + &
+                             tmp_6(n,j,k,l,m,i) + tmp_6(n,j,k,m,i,l) + tmp_6(n,j,k,m,l,i) + &
+                             tmp_6(n,j,l,i,k,m) + tmp_6(n,j,l,i,m,k) + tmp_6(n,j,l,k,i,m) + &
+                             tmp_6(n,j,l,k,m,i) + tmp_6(n,j,l,m,i,k) + tmp_6(n,j,l,m,k,i) + &
+                             tmp_6(n,j,m,i,k,l) + tmp_6(n,j,m,i,l,k) + tmp_6(n,j,m,k,i,l) + &
+                             tmp_6(n,j,m,k,l,i) + tmp_6(n,j,m,l,i,k) + tmp_6(n,j,m,l,k,i) + &
+                             tmp_6(n,k,i,j,l,m) + tmp_6(n,k,i,j,m,l) + tmp_6(n,k,i,l,j,m) + &
+                             tmp_6(n,k,i,l,m,j) + tmp_6(n,k,i,m,j,l) + tmp_6(n,k,i,m,l,j) + &
+                             tmp_6(n,k,j,i,l,m) + tmp_6(n,k,j,i,m,l) + tmp_6(n,k,j,l,i,m) + &
+                             tmp_6(n,k,j,l,m,i) + tmp_6(n,k,j,m,i,l) + tmp_6(n,k,j,m,l,i) + &
+                             tmp_6(n,k,l,i,j,m) + tmp_6(n,k,l,i,m,j) + tmp_6(n,k,l,j,i,m) + &
+                             tmp_6(n,k,l,j,m,i) + tmp_6(n,k,l,m,i,j) + tmp_6(n,k,l,m,j,i) + &
+                             tmp_6(n,k,m,i,j,l) + tmp_6(n,k,m,i,l,j) + tmp_6(n,k,m,j,i,l) + &
+                             tmp_6(n,k,m,j,l,i) + tmp_6(n,k,m,l,i,j) + tmp_6(n,k,m,l,j,i) + &
+                             tmp_6(n,l,i,j,k,m) + tmp_6(n,l,i,j,m,k) + tmp_6(n,l,i,k,j,m) + &
+                             tmp_6(n,l,i,k,m,j) + tmp_6(n,l,i,m,j,k) + tmp_6(n,l,i,m,k,j) + &
+                             tmp_6(n,l,j,i,k,m) + tmp_6(n,l,j,i,m,k) + tmp_6(n,l,j,k,i,m) + &
+                             tmp_6(n,l,j,k,m,i) + tmp_6(n,l,j,m,i,k) + tmp_6(n,l,j,m,k,i) + &
+                             tmp_6(n,l,k,i,j,m) + tmp_6(n,l,k,i,m,j) + tmp_6(n,l,k,j,i,m) + &
+                             tmp_6(n,l,k,j,m,i) + tmp_6(n,l,k,m,i,j) + tmp_6(n,l,k,m,j,i) + &
+                             tmp_6(n,l,m,i,j,k) + tmp_6(n,l,m,i,k,j) + tmp_6(n,l,m,j,i,k) + &
+                             tmp_6(n,l,m,j,k,i) + tmp_6(n,l,m,k,i,j) + tmp_6(n,l,m,k,j,i) + &
+                             tmp_6(n,m,i,j,k,l) + tmp_6(n,m,i,j,l,k) + tmp_6(n,m,i,k,j,l) + &
+                             tmp_6(n,m,i,k,l,j) + tmp_6(n,m,i,l,j,k) + tmp_6(n,m,i,l,k,j) + &
+                             tmp_6(n,m,j,i,k,l) + tmp_6(n,m,j,i,l,k) + tmp_6(n,m,j,k,i,l) + &
+                             tmp_6(n,m,j,k,l,i) + tmp_6(n,m,j,l,i,k) + tmp_6(n,m,j,l,k,i) + &
+                             tmp_6(n,m,k,i,j,l) + tmp_6(n,m,k,i,l,j) + tmp_6(n,m,k,j,i,l) + &
+                             tmp_6(n,m,k,j,l,i) + tmp_6(n,m,k,l,i,j) + tmp_6(n,m,k,l,j,i) + &
+                             tmp_6(n,m,l,i,j,k) + tmp_6(n,m,l,i,k,j) + tmp_6(n,m,l,j,i,k) + &
+                             tmp_6(n,m,l,j,k,i) + tmp_6(n,m,l,k,i,j) + tmp_6(n,m,l,k,j,i)
+                             
+                         tmp_6(i,j,k,l,m,n) = r
 
-                       tmp_6(i,j,k,l,m,n) = r
+                      end do
+                   end do
                 end do
              end do
           end do
        end do
-    end do
- end do
 
-h = 0
-do i = 1, ncor
-do j = i, ncor
-do k = j, ncor
-do l = k, ncor
-do m = l, ncor
-do n = m, ncor
-h = h + 1
-! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
-ave(h) = 2 * tmp_6(i,j,k,l,m,n)
-end do
-end do
-end do
-end do
-end do
-end do
+       h = 0
+       do i = 1, ncor
+          do j = i, ncor
+             do k = j, ncor
+                do l = k, ncor
+                   do m = l, ncor
+                      do n = m, ncor
+                         h = h + 1
+                         ! MR: UNSURE ABOUT ORIGINS OF FACTOR 2 IN NEXT LINE
+                         ave(h) = 2 * tmp_6(i,j,k,l,m,n)
+                      end do
+                   end do
+                end do
+             end do
+          end do
+       end do
 
        deallocate(tmp_6)
 
 
     else
-       print *, 'rsp_twoave_tr error: not implented or in wrong order - ', &
+       print *, 'rsp_twoave_tr error: Contribution not implemented or in wrong order - ', &
                 (' ' // f(i), i=1,nf)
-       call quit('rsp_twoave_tr error: not implented or in wrong order')
+       call quit('rsp_twoave_tr error: Contribution not implemented or in wrong order')
     end if
 
   end if
@@ -1327,30 +1257,21 @@ end do
   end subroutine
 
 
-! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-! ADAPTED FROM rsp_oneave_tr
-
   subroutine rsp_xcave_tr_adapt(nr_ao, pert, D_sdf, propsize, ave)
 
     integer :: i, j, k, m, n, nr_ao, propsize
     type(p_tuple) :: pert, pg, pgg    
-! integer,       intent(in)  :: nf
-!     !> field labels in std order
-!     character(4),  intent(in)  :: f(nf)
-!     !> first and number of- components in each field
-!     integer,       intent(in)  :: c(nf), nc(nf), propsize
     type(SDF)  :: D_sdf
     type(matrix) :: D
     type(matrix), allocatable, dimension(:) :: Dg
     type(matrix), allocatable, dimension(:,:) :: Dgg
-    character :: xcave_pert_label
     !> output average
     complex(8),    intent(out) :: ave(propsize)
     complex(8), allocatable, dimension(:,:,:,:) :: tmp_ave
 
 
     allocate(tmp_ave(pert%pdim(1), pert%pdim(1), pert%pdim(1), pert%pdim(1)))
-tmp_ave = 0.0
+    tmp_ave = 0.0
 
     if (pert%n_perturbations == 0) then
        
@@ -1359,9 +1280,6 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 1) then
 
        if (all(pert%plab==(/'GEO '/))) then
-! write(*,*) 'case g'
-!           allocate(xcave_pert_label(1))
-          xcave_pert_label = 'g'
 
           ! MR: ASSUME CLOSED SHELL
           call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
@@ -1376,8 +1294,6 @@ tmp_ave = 0.0
 
           end do
 
-!           deallocate(xcave_pert_label)
-
        else
 
           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
@@ -1387,9 +1303,7 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 2) then
 
        if (all(pert%plab==(/'GEO ','GEO '/))) then
-! write(*,*) 'case gg'
-!           allocate(xcave_pert_label(2))
-          xcave_pert_label = 'gg'
+
           allocate(Dg(pert%pdim(1)))
 
           ! MR: ASSUME CLOSED SHELL
@@ -1421,7 +1335,6 @@ tmp_ave = 0.0
           end do
 
           deallocate(Dg)
-!           deallocate(xcave_pert_label)
 
        else
 
@@ -1432,41 +1345,31 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 3) then
 
        if (all(pert%plab==(/'GEO ','GEO ','GEO '/))) then
-! write(*,*) 'case ggg'
-!           allocate(xcave_pert_label(3))
-          xcave_pert_label = 'ggg'
+
           allocate(Dg(pert%pdim(1)))
 
           ! MR: ASSUME CLOSED SHELL
           call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
-! write(*,*) 'elms of D', d%elms_alpha
-
           pg = p_tuple_getone(pert, 1)
-! write(*,*) 'pg plab:', pg%plab
+
           do i = 1, pert%pdim(1)
-! write(*,*) 'i', i
+
              ! MR: ASSUME CLOSED SHELL
              call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
-! write(*,*) 'Dg(i)', Dg(i)%elms_alpha
           end do
 
           call rsp_xcave('ggg', tmp_ave(:, :, :, 1), D=D, Dg=Dg)
 
-! write(*,*) 'ave size', size(ave)
-! write(*,*) 'full ave', tmp_ave(:,:,:,1)
           do i = 1, pert%pdim(1)
              do j = 1, i
                 do k = 1, j
 
-
                    n = get_triang_blks_offset(1, 3, (/1, 3, pert%pdim(1)/), &
                                               (/propsize/), (/i, j, k/))
-
-! write(*,*) 'n is', n
 
                    ave(n) = ave(n) + tmp_ave(i, j, k, 1)
 
@@ -1475,7 +1378,6 @@ tmp_ave = 0.0
           end do
 
           deallocate(Dg)
-!           deallocate(xcave_pert_label)
 
        else
 
@@ -1486,9 +1388,7 @@ tmp_ave = 0.0
     else if (pert%n_perturbations == 4) then
 
        if (all(pert%plab==(/'GEO ','GEO ','GEO ','GEO '/))) then
-! write(*,*) 'case gggg'
-!           allocate(xcave_pert_label(4))
-          xcave_pert_label = 'gggg'
+
           allocate(Dg(pert%pdim(1)))
           allocate(Dgg(pert%pdim(1), pert%pdim(1)))
 
@@ -1496,15 +1396,10 @@ tmp_ave = 0.0
           call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
-! write(*,*) 'elms of D', D%elms_alpha
-
           pg = p_tuple_getone(pert, 1)
           call p_tuple_p1_cloneto_p2(pert, pgg)
           pgg = p_tuple_remove_first(pgg)
           pgg = p_tuple_remove_first(pgg)
-
-
-! write(*,*) 'pgg plab:', pgg%plab
 
           do i = 1, pert%pdim(1)
 
@@ -1512,18 +1407,11 @@ tmp_ave = 0.0
              call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
-! write(*,*) 'got Dg density data', Dg(i)%elms_alpha
-
              do j = 1, pert%pdim(1)
-
-
-!                 write(*,*) 'i and j', i, j
 
                 ! MR: ASSUME CLOSED SHELL
                 call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
                 call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
-
-! write(*,*) 'got Dgg density data', Dgg(i,j)%elms_alpha
 
              end do
           end do
@@ -1536,19 +1424,10 @@ tmp_ave = 0.0
                 do k = 1, j
                    do m = 1, k
 
-! write(*,*) 'indices i j k m are', i, j, k, m
-
                       n = get_triang_blks_offset(1, 4, (/1, 4, pert%pdim(1)/), &
                                                  (/propsize/), (/i, j, k, m/))
 
-! write(*,*) 'found offset', n
-! 
-! write(*,*) 'ave before', ave(n)
-! write(*,*) 'tmp_ave before', tmp_ave(i, j, k, m)
-
                       ave(n) = ave(n) + tmp_ave(i, j, k, m)
-
-! write(*,*) 'ave after', ave(n)
 
                    end do
                 end do
@@ -1557,7 +1436,6 @@ tmp_ave = 0.0
 
           deallocate(Dgg)
           deallocate(Dg)
-!           deallocate(xcave_pert_label)
 
        else
 
@@ -1574,9 +1452,6 @@ tmp_ave = 0.0
     deallocate(tmp_ave)
 
   end subroutine
-
-
-
 
 
 
@@ -1602,17 +1477,9 @@ tmp_ave = 0.0
   end subroutine
 
 
-
-
-! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-  !> Compute differentiated overlap matrices, and optionally
-  !> add half-differentiated overlap contribution to Fock matrices
+  !> Compute differentiated overlap matrices,
   subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, ovl, w, fock)
-    ! Gen1Int interface in Dalton
-!     use gen1int_api
-    !> structure containing integral program settings
-!     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
     integer,       intent(in)    :: nf, propsize
     integer :: nblks
@@ -1632,28 +1499,165 @@ tmp_ave = 0.0
     !------------------------------------------------
     integer      i, nr_ao
 
-if (present(ovl)) then
+    if (present(ovl)) then
 
-    call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ovl = ovl)
+       call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                    blk_sizes, propsize, ovl = ovl)
 
-else if (present(w) .and. present(fock)) then
+    else if (present(w) .and. present(fock)) then
 
-write(*,*) 'rsp_ovlint: Called for handling of T matrix contribution'
-write(*,*) 'rsp_ovlint: Nothing is returned presently - awaiting development'
+       write(*,*) 'rsp_ovlint: Called for handling of T matrix contribution'
+       write(*,*) 'rsp_ovlint: Nothing is returned presently - awaiting development'
 
-!     call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-!                                       blk_sizes, propsize, w = w, fock = fock)
+!        call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+!                                     blk_sizes, propsize, w = w, fock = fock)
 
-else
+    else
 
-write(*,*) 'rsp_ovlint: Error: Unsupported input case - must be only ovl or both of w, fock'
+       write(*,*) 'rsp_ovlint: Error: Unsupported input case - must be only ovl or both of w, fock'
 
-end if
+    end if
 
   end subroutine
 
 
+
+!   ! MaR: This routine not finished - awaiting development in integral code
+!   !> Compute half-differentiated overlap contribution to Fock matrices
+!   recursive subroutine rsp_ovlint_t_matrix(num_fields, fields, bra, ket, propsize, fock):
+! 
+!     implicit none
+! 
+!     if (num_fields > 0) then
+! 
+!        call rsp_ovlint_diff_bra_ket(num_fields - 1, p_tuple_remove_first(fields), &
+!             merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, propsize, fock)
+! 
+!        call rsp_ovlint_diff_bra_ket(num_fields - 1, p_tuple_remove_first(fields), &
+!             bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), propsize, fock)
+! 
+!     else
+! 
+!        tmp_int = 0
+! 
+!        merged_p_tuple = merge_p_tuple(bra, ket)
+! 
+!        ! Make frequency independent blocks for bra/ket
+! 
+!        bra%freq = 0.0
+!        ket%freq = 0.0
+! 
+!        allocate(nfields(2))
+!        allocate(nblks_tuple(2))
+!     
+!        nfields(1) = bra%n_perturbations
+!        nblks_tuple(1) = get_num_blks(bra)
+! 
+!        nfields(2) = ket%n_perturbations
+!        nblks_tuple(2) = get_num_blks(ket)
+!                
+!        total_num_perturbations = sum(nfields)
+! 
+!        allocate(blks_tuple_info(2, total_num_perturbations, 3))
+!        allocate(blks_tuple_triang_size(2))
+!        allocate(blk_sizes(2, total_num_perturbations))
+!        allocate(blk_sizes_merged(total_num_perturbations))
+!     
+!        blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra)
+!        blks_tuple_triang_size(1) = get_triangulated_size(nblks_tuple(1), &
+!                                    blks_tuple_info(1, 1:nblks_tuple(1), :))
+!        blk_sizes(1, 1:nblks_tuple(1)) = get_triangular_sizes(nblks_tuple(1), &
+!        blks_tuple_info(1,1:nblks_tuple(1),2), blks_tuple_info(1,1:nblks_tuple(1),3))
+! 
+!        blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket)
+!        blks_tuple_triang_size(2) = get_triangulated_size(nblks_tuple(2), &
+!                                    blks_tuple_info(2, 1:nblks_tuple(2), :))
+!        blk_sizes(2, 1:nblks_tuple(2)) = get_triangular_sizes(nblks_tuple(2), &
+!        blks_tuple_info(2,1:nblks_tuple(2),2), blks_tuple_info(2,1:nblks_tuple(2),3))
+! 
+! 
+!        ! Also make frequency dependent blocks for bra/ket
+!        ! The latter blocks will be larger or the same size as the former
+!        ! Loop over indices of the latter block, apply frequency factors and access
+!        ! elements of the former block (related to the interface/integral routines)
+!       
+!        call interface_1el_ovlint_half_diff(nr_ao, bra%n_perturbations, bra%plab, &
+!             (/(j/j, j = 1, bra%n_perturbations)/), bra%pdim, ket%n_perturbations, ket%plab, &
+!             (/(j/j, j = 1, ket%n_perturbations)/), ket%pdim, nblks_tuple, &
+!             blks_tuple_info, blk_sizes, tmp_fock_size, tmp_fock)
+! 
+!        k = 1
+!        do j = 1, bra%n_perturbations
+!           pids_current_contribution(k) = bra%pid(j)
+!           k = k + 1
+!        end do
+! 
+!        do j = 1, ket%n_perturbations
+!           pids_current_contribution(k) = ket%pid(j)
+!           k = k + 1
+!        end do
+! 
+!        merged_nblks = get_num_blks(merged_p_tuple)
+! 
+!        allocate(merged_blk_info(1, merged_nblks, 3))
+! 
+!        merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+!        blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+!        merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+!        merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+! 
+! 
+!        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+!             merged_triang_size, merged_indices)
+! 
+!        do i = 1, size(merged_indices, 1)
+! 
+!           fock_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+!                    (/sum(nfields)/), &
+!                    (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+!                    (/merged_indices(i, :) /))
+!    
+!           do j = 1, total_num_perturbations
+!     
+!              translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
+!     
+!           end do
+!     
+!           if (bra%n_perturbations == 0) then
+!     
+!              int_result_offset = get_triang_blks_tuple_offset(2, &
+!                                  total_num_perturbations, nblks_tuple(2), &
+!                                  nfields(2), blks_tuple_info(2, :, :), &
+!                                  blk_sizes(2,:), blks_tuple_triang_size(2), & 
+!                                  (/ translated_index(:) /))
+!     
+!           elseif (ket%n_perturbations == 0) then
+!     
+!              int_result_offset = get_triang_blks_tuple_offset(1, &
+!                                  total_num_perturbations, nblks_tuple(1), &
+!                                  nfields(1), blks_tuple_info(1, :, :), &
+!                                  blk_sizes(1,:), blks_tuple_triang_size(1), & 
+!                                  (/ translated_index(:) /))
+! 
+!           else
+! 
+!              int_result_offset = get_triang_blks_tuple_offset(2, &
+!                                  total_num_perturbations, nblks_tuple, &
+!                                  nfields, blks_tuple_info, blk_sizes, &
+!                                  blks_tuple_triang_size, &
+!                                  (/ translated_index(:) /))
+!     
+!           end if
+!     
+!           fock(fock_offset) = fock(fock_offset) + tmp_fock(int_result_offset)
+! 
+!        end do
+! 
+! 
+! ! REMEMBER DEALLOCATIONS
+! ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
+! 
+!   end subroutine
 
 
 
@@ -1673,18 +1677,8 @@ end if
   end subroutine
 
 
-
-
-
-! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-
-
   subroutine rsp_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, oneint)
-    ! Gen1Int interface in Dalton
-!     use gen1int_api
-    !> structure containing integral program settings
-!     type(rsp_cfg), intent(in)    :: mol
     !> number of fields
     integer,       intent(in)    :: nf, propsize
     integer :: nblks
@@ -1712,11 +1706,6 @@ end if
                                       blk_sizes, propsize, oneint)
 
   end subroutine
-
-
-
-
-
 
 
   !> Contract 2-electron integrals perturbed by fields 'f' with density
@@ -1877,11 +1866,6 @@ end if
     end do
   end subroutine
 
-
-
-
-! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-
   !> Contract 2-electron integrals perturbed by fields 'f' with density
   !> matrix 'dens', and add to Fock matrices 'fock' Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
@@ -1908,250 +1892,240 @@ end if
     type(matrix)  A !scratch
     real(8)          :: dummy(1)
 
-! MR: DUMMY PLACEHOLDER MOL DECLARATION
-
-! integer :: mol
-
-  if (any(f=='EL  ')) then
-     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-     do i = 1, propsize
-        if (iszero(fock(i))) then
-           call mat_ensure_alloc(fock(i))
-           fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
-        else
-           fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
-        end if
-     end do
-  else
-
-    if (nf==0) then
-       A = 0*dens
-       call mat_ensure_alloc(A)
-       call interface_scf_get_g(dens, A)
-       fock(1) = fock(1) + A
-       A = 0
-    else if (nf==1 .and. f(1)=='GEO ') then
-       n = nr_ao
-       do i = 0, nc(1)-1
-          if (iszero(fock(i+1))) then
-             call mat_ensure_alloc(fock(i+1))
+    if (any(f=='EL  ')) then
+       call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+       do i = 1, propsize
+          if (iszero(fock(i))) then
+             call mat_ensure_alloc(fock(i))
+             fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
+          else
+             fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
           end if
+       end do
+    else
 
+       if (nf==0) then
+          A = 0*dens
+          call mat_ensure_alloc(A)
+          call interface_scf_get_g(dens, A)
+          fock(1) = fock(1) + A
+          A = 0
+       else if (nf==1 .and. f(1)=='GEO ') then
+          n = nr_ao
+          do i = 0, nc(1)-1
+             if (iszero(fock(i+1))) then
+                call mat_ensure_alloc(fock(i+1))
+             end if
+   
 #ifdef PRG_DALTON
 #ifdef GRCONT_NOT_AVAILABLE
-          arg(1) = ctr_arg(1, i+1, &
-                           ncor, dens, fock(i+1), null_ptr)
-          call unopt_geodiff_loop(basis_large, &
-                                  basis_small, &
-                                  arg)
-#else
-          ! if first or an x-coord, call GRCONT
-          if (i==0 .or. mod(c(1)+i,3) == 1) then
-             call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
-                         f77_memory(:n*n*3), n*n*3, .true., .false., &
-                         1, (c(1)+i+2)/3, .false., .true., dens%elms_alpha, 1)
-          end if
-          j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
-          if (iszero(fock(1+i))) then
-             fock(1+i)%elms_alpha(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
-          else
-             fock(1+i)%elms_alpha(:, :, 1) = fock(1+i)%elms_alpha(:, :, 1) &
-                            + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
-          end if
-#endif
-#endif /* ifdef PRG_DALTON */
-
-#ifdef PRG_DIRAC
-          call interest_mpi_wake_up()
-          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1, 0, dummy)
-#endif /* ifdef PRG_DIRAC */
-
-       end do
-    else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-       ncor = 3 * get_nr_atoms()
-       ij = 0
-       do j = 0, nc(2)-1
-          do i = j, nc(1)-1
-             ij = ij + 1
-             if (iszero(fock(ij))) then
-                call mat_ensure_alloc(fock(ij))
-                fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-             end if
-             arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-                              ncor, dens, fock(ij), null_ptr)
+             arg(1) = ctr_arg(1, i+1, &
+                              ncor, dens, fock(i+1), null_ptr)
              call unopt_geodiff_loop(basis_large, &
                                      basis_small, &
                                      arg)
+#else
+             ! if first or an x-coord, call GRCONT
+             if (i==0 .or. mod(c(1)+i,3) == 1) then
+                call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
+                            f77_memory(:n*n*3), n*n*3, .true., .false., &
+                            1, (c(1)+i+2)/3, .false., .true., dens%elms_alpha, 1)
+             end if
+             j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
+             if (iszero(fock(1+i))) then
+                fock(1+i)%elms_alpha(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+             else
+                fock(1+i)%elms_alpha(:, :, 1) = fock(1+i)%elms_alpha(:, :, 1) &
+                               + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+             end if
+#endif
+#endif /* ifdef PRG_DALTON */
+   
+#ifdef PRG_DIRAC
+             call interest_mpi_wake_up()
+             call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1, 0, dummy)
+#endif /* ifdef PRG_DIRAC */
+   
           end do
-       end do
+       else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
+          ncor = 3 * get_nr_atoms()
+          ij = 0
+          do j = 0, nc(2)-1
+             do i = j, nc(1)-1
+                ij = ij + 1
+                if (iszero(fock(ij))) then
+                   call mat_ensure_alloc(fock(ij))
+                   fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                end if
+                arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
+                                 ncor, dens, fock(ij), null_ptr)
+                call unopt_geodiff_loop(basis_large, &
+                                        basis_small, &
+                                        arg)
+             end do
+          end do
+   
+   ! MaR: The case /'GEO ','GEO ','GEO '/ is handled numerically at present
+   ! for testing purposes. Upgrade to analytical when ready.
+       else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
+          ncor = 3 * get_nr_atoms()
+          ij = 0
+   
+          ! write(*,*) 'fock before', fock(1)%elms_alpha
+   
+          allocate(tmpfock(nc(1) * (nc(2) + 1) / 2))
+   
+          do k = 1, propsize
+   
+             if (iszero(fock(k))) then
+                call mat_ensure_alloc(fock(k))
+                fock(k)%elms_alpha = 0 !ajt FIXME use mat_axpy
+             end if
+   
+          end do
+   
+   ! MaR: Numerical testing disabled because it doesn't really work
+   ! MaR: Keep it like this until the analytic procedure is implemented
+   ! do k = 1, nc(1) * (nc(2) + 1) / 2
+   ! 
+   ! 
+   ! ! ASSUME CLOSED SHELL
+   ! call mat_init(tmpfock(k), nr_ao, nr_ao, .true.)
+   ! 
+   ! end do
+   ! 
+   ! h = 0
+   ! 
+   ! 
+   ! do k = 0, nc(3) - 1
+   ! 
+   ! hincr = 0
+   ! 
+   !           call SHELLS_NUCLEI_displace(k, fdistep)
+   ! 
+   ! ij = 0
+   ! 
+   !        do j = 0, nc(2)-1
+   !           do i = j, nc(1)-1
+   !              ij = ij + 1
+   !              if (iszero(tmpfock(ij))) then
+   !                 call mat_ensure_alloc(tmpfock(ij))
+   !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+   !              end if
+   !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
+   !                               ncor, dens, tmpfock(ij), null_ptr)
+   !              call unopt_geodiff_loop(basis_large, &
+   !                                      basis_small, &
+   !                                      arg)
+   !           end do
+   !        end do
+   ! 
+   ! ij = 0
+   ! 
+   ! do j = 1, nc(2)
+   !    do i = j, nc(1)
+   ! 
+   ! ij = ij + 1
+   ! 
+   ! if (j - 1 >= k) then
+   ! 
+   ! 
+   ! 
+   ! h = h + 1
+   ! hincr = hincr + 1
+   ! write(*,*) 'at plus'
+   ! write(*,*) 'j i is', j, i
+   ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
+   ! write(*,*) 'h index', h, 'ij index', ij
+   ! 
+   ! 
+   ! if (h == 1) then
+   ! 
+   ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
+   ! 
+   ! end if
+   ! 
+   ! 
+   ! 
+   ! fock(h)%elms_alpha = fock(h)%elms_alpha + tmpfock(ij)%elms_alpha / (2*fdistep)
+   ! tmpfock(ij)%elms_alpha = 0.0
+   ! 
+   ! end if
+   ! 
+   !    end do
+   ! end do
+   ! 
+   ! h = h - hincr
+   ! 
+   !           call SHELLS_NUCLEI_displace(k, -2*fdistep)
+   ! 
+   ! ij = 0
+   ! 
+   !        do j = 0, nc(2)-1
+   !           do i = j, nc(1)-1
+   !              ij = ij + 1
+   !              if (iszero(tmpfock(ij))) then
+   !                 call mat_ensure_alloc(tmpfock(ij))
+   !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+   !              end if
+   !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
+   !                               ncor, dens, tmpfock(ij), null_ptr)
+   !              call unopt_geodiff_loop(basis_large, &
+   !                                      basis_small, &
+   !                                      arg)
+   !           end do
+   !        end do
+   ! 
+   ! ij = 0
+   ! 
+   ! do j = k + 1, nc(2)
+   !    do i = j, nc(1)
+   ! 
+   ! 
+   ! ij = ij + 1
+   ! 
+   ! if (j - 1 >= k) then
+   ! 
+   ! h = h + 1
+   ! write(*,*) 'at minus'
+   ! write(*,*) 'j i is', j, i
+   ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
+   ! write(*,*) 'h index', h, 'ij index', ij
+   ! 
+   ! 
+   ! if (h == 1) then
+   ! 
+   ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
+   ! 
+   ! end if
+   ! 
+   ! 
+   ! fock(h)%elms_alpha = fock(h)%elms_alpha - tmpfock(ij)%elms_alpha / 2*fdistep
+   ! tmpfock(ij)%elms_alpha = 0.0
+   ! 
+   ! end if
+   ! 
+   !    end do
+   ! end do
+   ! 
+   !           call SHELLS_NUCLEI_displace(k, fdistep)
+   ! 
+   ! end do
+   
+          deallocate(tmpfock)
+   
+   
+          write(*,*) 'fock after', fock(1)%elms_alpha
+   
+       else
+          print *, 'error in rsp_twoint_tr: not implemented or in wrong order - ', &
+                  (' ' // f(i), i=1,nf)
+          call quit('error in rsp_twoint_tr: not implemented or in wrong order')
+       end if
 
-! MR: The case /'GEO ','GEO ','GEO '/ is handled numerically at present
-! for testing purposes. Upgrade to analytical when ready.
-    else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-       ncor = 3 * get_nr_atoms()
-       ij = 0
-
-write(*,*) 'fock before', fock(1)%elms_alpha
-
-allocate(tmpfock(nc(1) * (nc(2) + 1) / 2))
-
-do k = 1, propsize
-
-           if (iszero(fock(k))) then
-              call mat_ensure_alloc(fock(k))
-              fock(k)%elms_alpha = 0 !ajt FIXME use mat_axpy
-           end if
-
-end do
-
-! do k = 1, nc(1) * (nc(2) + 1) / 2
-! 
-! 
-! ! ASSUME CLOSED SHELL
-! call mat_init(tmpfock(k), nr_ao, nr_ao, .true.)
-! 
-! end do
-! 
-! h = 0
-! 
-! 
-! do k = 0, nc(3) - 1
-! 
-! hincr = 0
-! 
-!           call SHELLS_NUCLEI_displace(k, fdistep)
-! 
-! ij = 0
-! 
-!        do j = 0, nc(2)-1
-!           do i = j, nc(1)-1
-!              ij = ij + 1
-!              if (iszero(tmpfock(ij))) then
-!                 call mat_ensure_alloc(tmpfock(ij))
-!                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-!              end if
-!              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-!                               ncor, dens, tmpfock(ij), null_ptr)
-!              call unopt_geodiff_loop(basis_large, &
-!                                      basis_small, &
-!                                      arg)
-!           end do
-!        end do
-! 
-! ij = 0
-! 
-! do j = 1, nc(2)
-!    do i = j, nc(1)
-! 
-! ij = ij + 1
-! 
-! if (j - 1 >= k) then
-! 
-! 
-! 
-! h = h + 1
-! hincr = hincr + 1
-! write(*,*) 'at plus'
-! write(*,*) 'j i is', j, i
-! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
-! write(*,*) 'h index', h, 'ij index', ij
-! 
-! 
-! if (h == 1) then
-! 
-! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
-! 
-! end if
-! 
-! 
-! 
-! fock(h)%elms_alpha = fock(h)%elms_alpha + tmpfock(ij)%elms_alpha / (2*fdistep)
-! tmpfock(ij)%elms_alpha = 0.0
-! 
-! end if
-! 
-!    end do
-! end do
-! 
-! h = h - hincr
-! 
-!           call SHELLS_NUCLEI_displace(k, -2*fdistep)
-! 
-! ij = 0
-! 
-!        do j = 0, nc(2)-1
-!           do i = j, nc(1)-1
-!              ij = ij + 1
-!              if (iszero(tmpfock(ij))) then
-!                 call mat_ensure_alloc(tmpfock(ij))
-!                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-!              end if
-!              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-!                               ncor, dens, tmpfock(ij), null_ptr)
-!              call unopt_geodiff_loop(basis_large, &
-!                                      basis_small, &
-!                                      arg)
-!           end do
-!        end do
-! 
-! ij = 0
-! 
-! do j = k + 1, nc(2)
-!    do i = j, nc(1)
-! 
-! 
-! ij = ij + 1
-! 
-! if (j - 1 >= k) then
-! 
-! h = h + 1
-! write(*,*) 'at minus'
-! write(*,*) 'j i is', j, i
-! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
-! write(*,*) 'h index', h, 'ij index', ij
-! 
-! 
-! if (h == 1) then
-! 
-! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
-! 
-! end if
-! 
-! 
-! fock(h)%elms_alpha = fock(h)%elms_alpha - tmpfock(ij)%elms_alpha / 2*fdistep
-! tmpfock(ij)%elms_alpha = 0.0
-! 
-! end if
-! 
-!    end do
-! end do
-! 
-!           call SHELLS_NUCLEI_displace(k, fdistep)
-! 
-! end do
-
-deallocate(tmpfock)
-
-
-write(*,*) 'fock after', fock(1)%elms_alpha
-
-    else
-       print *, 'error in rsp_twoint_tr: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('error in rsp_twoint_tr: not implented or in wrong order')
     end if
 
-  end if
-
   end subroutine
-
-
-
-
-
-
-! MR: TEMPORARY ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
-! ADAPTED FROM rsp_oneint_tr
 
 
   subroutine rsp_xcint_tr_adapt(nr_ao, nf, f, c, nc, D, propsize, xcint)
@@ -2169,9 +2143,7 @@ write(*,*) 'fock after', fock(1)%elms_alpha
     type(matrix), dimension(:) :: D
     !--------------------------------------------------
 
-
-    ! MR: ONLY GEOMETRICAL PERTURBATIONS SUPPORTED SO FAR
-
+    ! MaR: ONLY GEOMETRICAL PERTURBATIONS SUPPORTED SO FAR
 
     if (nf == 0) then
 
@@ -2210,19 +2182,12 @@ write(*,*) 'fock after', fock(1)%elms_alpha
           do i = 1, nc(1)
              do j = 1, i
 
-
-! write(*,*) 'i, j', i, j
                 k = get_triang_blks_offset(1, 2, (/1, 2, nc(1)/), &
                                            (/propsize/), (/i, j/))
 
-! write(*,*) 'offset', k
-
                 xcint(k) = xcint(k) + tmp_xcint(i,j)
-! write(*,*) 'element', xcint(k)%elms_alpha
-
                 tmp_xcint(i, j) = 0
 
-! write(*,*) 'el2ndtm', xcint(k)%elms_alpha
              end do
           end do
 
@@ -2479,32 +2444,6 @@ write(*,*) 'fock after', fock(1)%elms_alpha
        if (i == ndim+1) exit
     end do
   end subroutine
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 end module

@@ -186,34 +186,13 @@ module rsp_perturbed_matrices
     type(matrix) :: W, A, B, C
 
     W%elms_alpha = 0.0
-!     W = mat_zero_like(zeromat)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
-
-
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    ! ASSUME CLOSED SHELL
+    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
     do i = 1, superstructure_size
-
-!     A = mat_zero_like(zeromat)
-!     B = mat_zero_like(zeromat)
-!     C = mat_zero_like(zeromat)
 
        call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -224,50 +203,44 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
        W = W + A * B * C
 
+       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-    .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+          call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
+          call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-       call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+          W = W + ((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) - &
+                                   frequency_zero_or_sum(deriv_struct(i,1))) * A * B * C
 
-       W = W + ((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) - &
-                                frequency_zero_or_sum(deriv_struct(i,1))) * &
-               A * B * C
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+          call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
+          call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-       call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+          W = W + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
-       W = W + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) *  &
-               A * B * C
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
+          call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
+          call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
+          W = W + ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * A * B * C
 
-       call sdf_getdata_s(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-       W = W + ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * &
-               A * B * C
-
-end if
-
+       end if
 
     end do
 
@@ -293,34 +266,13 @@ end if
     type(matrix) :: Y, A, B, C
 
     Y%elms_alpha = 0.0
-!     Y = mat_zero_like(zeromat)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
-
-
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
-
-! write(*,*) 'ind is', ind
+    ! ASSUME CLOSED SHELL
+    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
     
     do i = 1, superstructure_size
-
-! write(*,*) 'i is', i
 
        call sdf_getdata_s(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -329,62 +281,50 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
        call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-
-
        Y = Y + A*B*C
-
-
 
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-
        Y = Y - A*B*C
 
+       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
+          ! MaR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT 
+          ! MATRICES TO USE HERE AND BELOW
 
-if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-    .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-! MR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT MATRICES TO USE HERE AND BELOW
+          Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) + &
+                                    frequency_zero_or_sum(deriv_struct(i,1))) * A * B * C
 
-       call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-       Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) + &
-                                frequency_zero_or_sum(deriv_struct(i,1))) * &
-               A * B * C
-
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-       call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-       Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) *  &
-               A * B * C
+          Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
-       call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-       Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * &
-               A * B * C
+          Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
 
-end if
-
-
-
+       end if
 
     end do
 
@@ -411,34 +351,13 @@ end if
     type(sdf) :: F, D, S
     type(matrix) :: Z, A, B, C
 
-! write(*,*) 'Z tag', Z%magic_tag
+    ! MaR: Rework to avoid referring to elms_alpha
     Z%elms_alpha = 0.0
-!     Z = mat_zero_like(zeromat)
-! write(*,*) 'Z tag again', Z%magic_tag
 
-
-
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
-
-
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
-
+    ! ASSUME CLOSED SHELL
+    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
     do i = 1, superstructure_size
 
@@ -449,13 +368,7 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
        call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-
-! write(*,*) 'Z tag yet again', Z%magic_tag
-
        Z = Z + A*B*C
-
-
-! write(*,*) 'Z tag finally', Z%magic_tag
 
     end do
 
@@ -472,13 +385,11 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
     end if
 
-call p_tuple_deallocate(merged_p_tuple)
+    call p_tuple_deallocate(merged_p_tuple)
 
     A = 0
     B = 0
     C = 0
-
-!  write(*,*) 'end of function, returning', Z%elms_alpha
 
   end subroutine
 
@@ -498,30 +409,11 @@ call p_tuple_deallocate(merged_p_tuple)
     type(matrix) :: L, A, B, C
 
     L%elms_alpha = 0.0
-!     L = mat_zero_like(zeromat)
 
-
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
-
-
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
-
+    ! ASSUME CLOSED SHELL
+    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
     do i = 1, superstructure_size
 
@@ -544,8 +436,8 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
        L = L - A * B * C
 
-call p_tuple_deallocate(merged_A)
-call p_tuple_deallocate(merged_B)
+       call p_tuple_deallocate(merged_A)
+       call p_tuple_deallocate(merged_B)
        
     end do
 
@@ -556,8 +448,7 @@ call p_tuple_deallocate(merged_B)
   end subroutine
 
 
-!MR: ZETA ROUTINE STILL NOT OPTIMIZED
-
+! MaR: ZETA ROUTINE MAY STILL NOT BE FULLY OPTIMIZED
 
   subroutine rsp_get_matrix_zeta(zeromat, p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
@@ -576,29 +467,11 @@ call p_tuple_deallocate(merged_B)
     type(matrix) :: Zeta, A, B, C
 
     Zeta%elms_alpha = 0.0
-!     Zeta = mat_zero_like(zeromat)
 
-
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
-
-! 
-!     A = mat_alloc_like(zeromat)
-!     A%elms_alpha = 0.0
-! !     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B%elms_alpha = 0.0
-! !     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
-! 
-!     C = mat_alloc_like(zeromat)
-!     C%elms_alpha = 0.0
-! !     C = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(C)
+    ! ASSUME CLOSED SHELL
+    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
     do i = 1, superstructure_size
 
@@ -621,42 +494,38 @@ call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
 
        Zeta = Zeta - A * B * C
 
+       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+           .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
-if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-    .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
 
-       call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
+          Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
+                           frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
 
-       Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
-                       frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
 
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
+          Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
-       call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
-       Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+          call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
 
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
+          Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
-       call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-
-       Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-
-
-end if
-
+       end if
 
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -667,8 +536,6 @@ end if
 
        Zeta = Zeta +  A * B * C
 
-
-
        call sdf_getdata_s(S, merged_A, get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
@@ -676,44 +543,35 @@ end if
 
        Zeta = Zeta - A * B * C
 
+       if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
+           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
+          Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
+                        frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
 
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-    .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-       call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+          Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
 
-       Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
-                     frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+          Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
-       call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+       end if
 
-       Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-
-
-elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-       call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-       Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-
-
-
-end if
-
-
-call p_tuple_deallocate(merged_A)
-call p_tuple_deallocate(merged_B)
+       call p_tuple_deallocate(merged_A)
+       call p_tuple_deallocate(merged_B)
          
     end do
 
@@ -723,7 +581,7 @@ call p_tuple_deallocate(merged_B)
     if (kn_skip(merged_p_tuple%n_perturbations, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-    A = mat_zero_like(zeromat)
+       A = mat_zero_like(zeromat)
 
        call sdf_getdata_s(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, & 
        total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -732,7 +590,7 @@ call p_tuple_deallocate(merged_B)
 
     end if
 
-call p_tuple_deallocate(merged_p_tuple)
+    call p_tuple_deallocate(merged_p_tuple)
 
     A = 0
     B = 0

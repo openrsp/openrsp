@@ -24,12 +24,6 @@ module rsp_perturbed_sdf
   public rsp_fock_lowerorder
   public get_fock_lowerorder
 
-!   type rsp_cfg
-! 
-!      type(matrix) :: zeromat
-! 
-!   end type
-
   contains
 
   recursive subroutine rsp_fds(zeromat, pert, kn, F, D, S)
@@ -68,7 +62,7 @@ module rsp_perturbed_sdf
                      ' and perturbation id ', pert%pid
           write(*,*) ' '
                  
-          ! FIXME (MaR) Quick fix: Reenumerate pids from 1 and up so that 
+          ! MaR: Quick fix: Reenumerate pids from 1 and up so that 
           ! get_fds doesn't stumble. It seems to work, but consider rewrite.
          
           k = 1
@@ -124,39 +118,23 @@ module rsp_perturbed_sdf
     type(matrix), allocatable, dimension(:) :: Fp, Dp, Sp, Dh
     type(f_l_cache), pointer :: fock_lowerorder_cache
 
+    ! ASSUME CLOSED SHELL
+    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
 
-! ASSUME CLOSED SHELL
-call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-
-! ASSUME CLOSED SHELL
-call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-
-!     A = mat_alloc_like(zeromat)
-!     A = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(A)
-! 
-!     B = mat_alloc_like(zeromat)
-!     B = mat_zero_like(zeromat)
-!     call mat_ensure_alloc(B)
+    ! ASSUME CLOSED SHELL
+    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
     call sdf_getdata_s(S, get_emptypert(), (/1/), B)
 
-
     nblks = get_num_blks(pert)
-    allocate(blk_info(nblks, 3))
-allocate(blk_sizes(pert%n_perturbations))
 
+    allocate(blk_info(nblks, 3))
+    allocate(blk_sizes(pert%n_perturbations))
 
     blk_info = get_blk_info(nblks, pert)
-    
     perturbed_matrix_size = get_triangulated_size(nblks, blk_info)
-
-
-blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
-
-! write(*,*) 'perturbed matrix size', perturbed_matrix_size
-
+    blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
 
     allocate(Fp(perturbed_matrix_size))
     allocate(Dp(perturbed_matrix_size))
@@ -173,34 +151,20 @@ blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
                        perturbed_matrix_size, ovl = Sp)
     call sdf_add(S, pert, perturbed_matrix_size, Sp)
 
-! write(*,*) 'Got Sp'
-! do i = 1, perturbed_matrix_size
-! 
-! write(*,*) 'Sp at', i
-!        write(*,*) Sp(i)%elms_alpha
-! 
-! end do
-
-deallocate(blk_sizes)
+    deallocate(blk_sizes)
 
     ! INITIALIZE AND STORE D INSTANCE WITH ZEROES
     ! THE ZEROES WILL ENSURE THAT TERMS INVOLVING THE HIGHEST ORDER DENSITY MATRICES
     ! WILL BE ZERO IN THE CONSTRUCTION OF Dp
 
-
-!  write(*,*) 'zeroing'
-
-
     do i = 1, perturbed_matrix_size
 
-
-! ASSUME CLOSED SHELL
-call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, .true.)
-call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
+       ! ASSUME CLOSED SHELL
+       call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, .true.)
+       call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, .true.)
+       call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 
     end do
-
 
     call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
@@ -209,38 +173,12 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
     ! oneint, twoint, and xcint calls as needed
 
     call f_l_cache_allocate(fock_lowerorder_cache)
-
-!  write(*,*) 'allocated f l cache'
-
     call rsp_fock_lowerorder(zeromat, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          0, D, perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
-
-! write(*,*) 'Dp tag 4', Dp(1)%magic_tag
-
-!  write(*,*) 'got fock lowerorder'
-! 
-! do i = 1, perturbed_matrix_size
-! 
-! write(*,*) 'Fp', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! end do
-
     deallocate(fock_lowerorder_cache)
 
-
-! do i = 1, perturbed_matrix_size
-! 
-! write(*,*) 'Fp again', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! end do
-
     call sdf_add(F, pert, perturbed_matrix_size, Fp)
-
-!  write(*,*) 'added to Fp'
-! write(*,*) 'Dp tag 5', Dp(1)%magic_tag
 
     ! b) For Dp: Create differentiation superstructure: First dryrun for size, and
     ! then the actual superstructure call
@@ -251,8 +189,6 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
 
     sstr_incr = 0
 
-! write(*,*) 'sstr size'
-
     allocate(derivative_structure(superstructure_size, 3))
     allocate(indices(perturbed_matrix_size, pert%n_perturbations))
     allocate(ind(pert%n_perturbations))
@@ -261,90 +197,38 @@ call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
          pert%n_perturbations/), .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          superstructure_size, sstr_incr, derivative_structure)
-
-! write(*,*) 'Dp tag 6', Dp(1)%magic_tag
-! write(*,*) 'sstr'
-
     call make_triangulated_indices(nblks, blk_info, perturbed_matrix_size, indices)
-
-! write(*,*) 'tri ind'
 
     do i = 1, size(indices, 1)
 
-! write(*,*) 'i is', i
-
        ind = indices(i, :)
-
-! write(*,*) 'index is', ind
-!         write(*,*) 'Dp before z', Dp(i)%elms_alpha
-! write(*,*) 'Dp tag', Dp(i)%magic_tag
 
        call rsp_get_matrix_z(zeromat, superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
 
-! write(*,*) 'got z', Dp(i)%elms_alpha
 
        Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
 
-! write(*,*) 'projected dp'
-!        write(*,*) 'Dp at projection', Dp(i)%elms_alpha
-
        call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
-! write(*,*) 'added sdf'
-
        ! 3. Complete the particular contribution to Fp
-       ! NOTE (MaR): THERE SHOULD BE A CALL TO rsp_xcint HERE TOO
-       ! THE IF CRITERION HERE NEEDS ANOTHER LOOK
 
-
-! write(*,*) 'F particular before', Fp(i)%elms_alpha
-
-!        if (pert%n_perturbations <=2) then
-! 
-          call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
-                             1, Fp(i:i))
-
-          call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
-               (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , &
-                             1, Fp(i:i))
-! 
-!        end if
-
-
-
-
-! write(*,*) 'did twoint_tr and xcint_tr', Fp(i)%elms_alpha
-
+       call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
+                          1, Fp(i:i))
+       call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+            (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , 1, Fp(i:i))
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
-
-
-! write(*,*) 'F particular after', Fp(i)%elms_alpha
 
        ! 4. Make right-hand side using Dp
 
-! ASSUME CLOSED SHELL
-call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, .true.)
-
-!        RHS(1) = mat_alloc_like(zeromat)
-!        RHS(1) = mat_zero_like(zeromat)
-!        call mat_ensure_alloc(RHS(1))
-
+       ! ASSUME CLOSED SHELL
+       call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, .true.)
+       call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
        call rsp_get_matrix_y(zeromat, superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
-
-
-! ASSUME CLOSED SHELL
-call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
-     
-!        X(1) = mat_alloc_like(zeromat)
-!        X(1) = mat_zero_like(zeromat)
-!        call mat_ensure_alloc(X(1))
-
-! write(*,*) 'made rhs', RHS(1)%elms_alpha
 
        ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
 #ifndef VAR_LSDALTON
@@ -355,99 +239,57 @@ call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
        X(1) = -2d0*X(1)
        RHS(1) = 0
 
-! write(*,*) 'solved rsp eq'
-
        ! 5. Get Dh using the rsp equation solution X
 
        Dh(i) = X(1) * B * A - A * B * X(1)
 
-! write(*,*) 'Dh with rsp equation solution', Dh(i)%elms_alpha
-
        ! 6. Make homogeneous contribution to Fock matrix
 
-       ! THE IF CRITERION HERE NEEDS ANOTHER LOOK
-
-!        if (pert%n_perturbations <=2) then
-
-          call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
+       call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
 
-          call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
-               (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , &
-                             1, Fp(i:i))
-
-! write(*,*) 'Fp after homogeneous contribution', Fp(i)%elms_alpha
-
-!        end if
+       call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+            (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , 1, Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
 
        Dp(i) = Dp(i) + Dh(i)
 
+       write(*,*) 'Finished component', i
 
-write(*,*) 'Finished component', i
-
-! write(*,*) 'Finally, Dp is', i
-! write(*,*) Dp(i)%elms_alpha
-! 
-! write(*,*) 'Finally, Fp is', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! 
-! write(*,*) 'Finally, Sp is', i
-! write(*,*) Sp(i)%elms_alpha
+!        write(*,*) 'Finally, Dp is:'
+!        write(*,*) Dp(i)%elms_alpha
+!        write(*,*) ' '
+!        write(*,*) 'Finally, Fp is:'
+!        write(*,*) Fp(i)%elms_alpha
+!        write(*,*) ' '
+!        write(*,*) 'Finally, Sp is:'
+!        write(*,*) Sp(i)%elms_alpha
+!        write(*,*) ' '
 
     end do
-
-
-
 
     ! Add the final values to cache
 
     call sdf_add(F, pert, perturbed_matrix_size, Fp)
     call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
-!     do i = 1, size(indices, 1)
-! 
-! write(*,*) 'i is', i
-
-
-! call sdf_getdata_s(D, pert, indices(i,:), A)
-! call sdf_getdata_s(F, pert, indices(i,:), B)
-! 
-! write(*,*) 'Finally, in cache, Dp is', i
-! write(*,*) A%elms_alpha
-! 
-! write(*,*) 'Finally, in cache, Fp is', i
-! write(*,*) B%elms_alpha
-! 
-! end do
-
     do i = 1, size(indices, 1)
-! write(*,*) 'deallocation 1'
-Dh(i) = 0
-Dp(i) = 0
-Fp(i) = 0
-Sp(i) = 0
-! write(*,*) 'deallocation 2', i
 
-end do
+       Dh(i) = 0
+       Dp(i) = 0
+       Fp(i) = 0
+       Sp(i) = 0
 
+    end do
 
     deallocate(derivative_structure)
     deallocate(ind)
-
-! write(*,*) 'deallocation 3'
-
-
     deallocate(Fp)
     deallocate(Dp)
     deallocate(Sp)
     deallocate(Dh)
-
     deallocate(blk_info)
-
-! write(*,*) 'deallocation 4'
 
   end subroutine
 
@@ -459,7 +301,6 @@ end do
     implicit none
 
     logical :: density_order_skip
-    
     type(p_tuple) :: pert
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
@@ -467,7 +308,6 @@ end do
     type(matrix) :: zeromat
     type(matrix), dimension(property_size) :: Fp
     type(f_l_cache) :: fock_lowerorder_cache
-
 
     if (pert%n_perturbations >= 1) then
 
@@ -564,13 +404,6 @@ end do
              write(*,*) 'Calculated perturbed Fock matrix lower order contribution'
              write(*,*) ' '
 
-! do i = 1, property_size
-! write(*,*) 'LOF contrib. at i = ', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! 
-! end do
-
           else
 
              call f_l_cache_getdata(fock_lowerorder_cache, num_p_tuples, &
@@ -578,13 +411,6 @@ end do
                                     property_size, Fp)
 
              write(*,*) ' '
-
-! do i = 1, property_size
-! write(*,*) 'LOF contrib. at i = ', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! 
-! end do
 
           end if
 
@@ -595,7 +421,6 @@ end do
           write(*,*) ' '
 
        end if
-
 
     end if
 
@@ -609,7 +434,6 @@ end do
                                  fock_lowerorder_cache)
 
     implicit none
-
     
     type(p_tuple) :: merged_p_tuple
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
@@ -632,16 +456,6 @@ end do
     type(matrix), dimension(property_size) :: Fp
     type(f_l_cache) :: fock_lowerorder_cache
     
-! write(*,*) 'start'
-! 
-! do i = 1, num_p_tuples
-! 
-! write(*,*) 'tuple', i, ':', p_tuples(i)%plab
-! 
-! 
-! end do
-
-
     ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
     ncouter = nc_only(total_num_perturbations, total_num_perturbations - & 
                       p_tuples(1)%n_perturbations, num_p_tuples - 1, &
@@ -662,201 +476,122 @@ end do
                     p_tuples(1)%n_perturbations, num_p_tuples - 1, &
                     p_tuples(2:num_p_tuples))
 
+    ! MaR: Second way of blks_tuple_info can in the general case be larger than
+    ! needed, but is allocated this way to get a prismic data structure
+    allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
+    allocate(blks_tuple_triang_size(num_p_tuples))
+    allocate(blk_sizes(num_p_tuples, total_num_perturbations))
+    allocate(blk_sizes_merged(total_num_perturbations))
     allocate(o_whichpert(total_num_perturbations))
     allocate(o_wh_forave(total_num_perturbations))
     allocate(dens_tuple(num_p_tuples))
+    allocate(nfields(num_p_tuples))
+    allocate(nblks_tuple(num_p_tuples))
 
-allocate(nfields(num_p_tuples))
-allocate(nblks_tuple(num_p_tuples))
+    do i = 1, num_p_tuples
 
+       nfields(i) = p_tuples(i)%n_perturbations
+       nblks_tuple(i) = get_num_blks(p_tuples(i))
 
+    end do
 
+    do i = 1, num_p_tuples
 
-! Note: Second way of blks_tuple_info can in the general case be larger than
-! needed, but is allocated this way to get a prismic data structure
+       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples(i))
+       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
+                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
+       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
+       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
 
-
-
-! write(*,*) 'allocations: num_p_tuples:', num_p_tuples
-
-do i = 1, num_p_tuples
-
-! write(*,*) 'i is', i
-
-nfields(i) = p_tuples(i)%n_perturbations
-! write(*,*) 'nfields', nfields(i)
-
-nblks_tuple(i) = get_num_blks(p_tuples(i))
-! write(*,*) 'nblks tuple', nblks_tuple(i)
-
-
-end do
-
-allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
-allocate(blks_tuple_triang_size(num_p_tuples))
-
-
-allocate(blk_sizes(num_p_tuples, total_num_perturbations))
-allocate(blk_sizes_merged(total_num_perturbations))
-
-do i = 1, num_p_tuples
-
-blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples(i))
-
-! write(*,*) 'blks_tuple_info', blks_tuple_info(i, :, :)
-blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                            blks_tuple_info(i, 1:nblks_tuple(i), :))
-
-blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-
-! write(*,*) 'blks_tuple_triang_size(i)', blks_tuple_triang_size(i)
-end do
-
-! write(*,*) 'triang'
+    end do
 
     outer_indices_size = product(blks_tuple_triang_size(2:num_p_tuples))
 
+    if (p_tuples(1)%n_perturbations == 0) then
 
-if (p_tuples(1)%n_perturbations == 0) then
+       inner_indices_size = 1
 
-    inner_indices_size = 1
+    else
 
-else
+       inner_indices_size = blks_tuple_triang_size(1)
 
-    inner_indices_size = blks_tuple_triang_size(1)
-
-end if
-
-! write(*,*) 'index sizes'
-
+    end if
 
     allocate(tmp(inner_indices_size))
     allocate(lower_order_contribution(inner_indices_size * outer_indices_size))
 
     o_whichpert = make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
-
-
-
     call sortdimbypid(total_num_perturbations, total_num_perturbations - &
                       p_tuples(1)%n_perturbations, pidoutersmall, &
                       ncarray, ncoutersmall, o_whichpert)
 
-! write(*,*) 'o_whichpert', o_whichpert
-
-! write(*,*) 'near index loop'
-
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
-k = 1
-
-do i = 2, num_p_tuples
-
-do j = 1, p_tuples(i)%n_perturbations
-
-
-o_wh_forave(p_tuples(i)%pid(j)) = k
-
-k = k + 1
-
-
-end do
-
-
-
-end do
-
-
-
-
-!        do i = 1, size(o_whichpert)
-! 
-!           if (.NOT.(o_whichpert(i) == 0)) then
-! 
-!              o_wh_forave(o_whichpert(i)) = i
-! 
-!           end if
-!   
-!        end do
-
-
-!  write(*,*) 'o_wh_forave', o_wh_forave
-      do j = 1, size(lower_order_contribution)
-
-! ASSUME CLOSED SHELL
-call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, .true.)
-
-       end do
-
-
-! write(*,*) '1b'
-      do j = 1, size(tmp)
-
-! ASSUME CLOSED SHELL
-call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
-
-       end do
-
-
-! write(*,*) '1c'
+       k = 1
 
        do i = 2, num_p_tuples
-! write(*,*) 'i is', i
-! write(*,*) 'size of dens tuple', size(dens_tuple)
+          do j = 1, p_tuples(i)%n_perturbations
 
-! ASSUME CLOSED SHELL
-call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
+             o_wh_forave(p_tuples(i)%pid(j)) = k
+             k = k + 1
+
+          end do
+       end do
+
+       do j = 1, size(lower_order_contribution)
+
+          ! ASSUME CLOSED SHELL
+          call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, .true.)
 
        end do
 
- 
-! write(*,*) '1d'
+       do j = 1, size(tmp)
+
+          ! ASSUME CLOSED SHELL
+          call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
+
+       end do
+
+       do i = 2, num_p_tuples
+
+          ! ASSUME CLOSED SHELL
+          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
+
+       end do
+
        allocate(outer_indices(outer_indices_size,size(ncoutersmall)))
        allocate(inner_indices(inner_indices_size,size(ncinnersmall)))
-! write(*,*) '1'
-! write(*,*) 'blks_tuple_info 2 a', blks_tuple_info(2, :, :)
-! write(*,*) 'blks_tuple_info 3 a', blks_tuple_info(2, &
-!                1:nblks_tuple(2), :)
+
        call make_triangulated_tuples_indices(num_p_tuples - 1, total_num_perturbations, & 
             nblks_tuple(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, &
             :, :), blks_tuple_triang_size(2:num_p_tuples), outer_indices)
-! write(*,*) '2 2 2'
+
        if (p_tuples(1)%n_perturbations > 0) then
 
           call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
                1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
-! write(*,*) '3'
+
        end if
 
-!        allocate(inner_offsets(product(ncinner)))
-
        do i = 1, size(outer_indices, 1)
-
-! write(*,*) 'current outer index', outer_indices(i, :)
 
           do j = 2, num_p_tuples
 
              call sdf_getdata_s(D, p_tuples(j), (/ &
                              (outer_indices(i,o_wh_forave(p_tuples(j)%pid(k))), &
                              k = 1, p_tuples(j)%n_perturbations) /), dens_tuple(j))
-! write(*,*) '4'
+
           end do
 
-! NOTE: IS THIS ZEROING OF tmp REDUNDANT?
+          ! MaR: IS THIS ZEROING OF tmp REDUNDANT?
 
           do j = 1, size(tmp)
 
-! ASSUME CLOSED SHELL
-call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
-
-!              tmp(j) = mat_alloc_like(zeromat)
-!              tmp(j)%elms_alpha = 0.0
-!              call mat_ensure_alloc(tmp(j))
+             ! ASSUME CLOSED SHELL
+             call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
 
           end do
 
-! write(*,*) '5'
           if (num_p_tuples <= 1) then
 
              call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -866,7 +601,6 @@ call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
 
           end if
 
-
           if (num_p_tuples <= 2) then
 
              call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -875,183 +609,126 @@ call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
 
           end if
 
-! write(*,*) '6'
+          call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
+               p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+               p_tuples(1)%pdim, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
+               (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
 
-!              write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
-!
-             call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
-                           p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                           p_tuples(1)%pdim, &
-                           (/ sdf_getdata(D, get_emptypert(), (/1/)), &
-                           (dens_tuple(k), k = 2, num_p_tuples) /), &
-                           property_size, tmp)
+          if (p_tuples(1)%n_perturbations > 0) then
 
+             do j = 1, size(inner_indices,1)
 
-! Make tmp the correct ("inner-triangulated") size
-! Make some storage array the size of the full amount of data to be cached
-! Make sure that the data from the integral is put into the 
-! appropriate positions in tmp
-! After the accumulation loop: Add the appropriate elements of tmp to
-! Fp and then add tmp to fock_lowerorder_cache
+                offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, &
+                nblks_tuple, (/ (p_tuples(k)%n_perturbations, k = 1, num_p_tuples) /), &
+                blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
+                (/inner_indices(j, :), outer_indices(i, :) /)) 
 
+                ! ASSUME CLOSED SHELL
+                call mat_init(lower_order_contribution(offset), zeromat%nrow, &
+                              zeromat%ncol, .true.)
 
+                lower_order_contribution(offset) = tmp(j)
 
-if (p_tuples(1)%n_perturbations > 0) then
+             end do
 
-do j = 1, size(inner_indices,1)
+          else
 
-offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, nblks_tuple, &
-         (/ (p_tuples(k)%n_perturbations, k = 1, num_p_tuples) /), &
-         blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-         (/inner_indices(j, :), outer_indices(i, :) /)) 
+             ! MaR: There might be problems with this call (since the first p_tuple is empty)
 
+             offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations, &
+             nblks_tuple(2:num_p_tuples), &
+             (/ (p_tuples(k)%n_perturbations, k = 2, num_p_tuples) /), &
+             blks_tuple_info(2:num_p_tuples, :, :), blk_sizes(2:num_p_tuples,:), & 
+             blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
 
-! write(*,*) 'full index tuple is', (/inner_indices(j, :), outer_indices(i, :) /)
-! write(*,*) 'offset is', offset
+             ! ASSUME CLOSED SHELL
+             call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, .true.)
 
-! ASSUME CLOSED SHELL
-call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, .true.)
+             lower_order_contribution(offset) = tmp(1)
 
+          end if
 
-! lower_order_contribution(offset) = mat_alloc_like(zeromat)
-! lower_order_contribution(offset)%elms_alpha = 0.0
-! call mat_ensure_alloc(lower_order_contribution(offset))
-
-
-lower_order_contribution(offset) = tmp(j)
-
-end do
-
-else
-
-! Note: There might be problems with this call (since the first p_tuple is empty)
-
-offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations,  &
-         nblks_tuple(2:num_p_tuples), &
-         (/ (p_tuples(k)%n_perturbations, k = 2, num_p_tuples) /), &
-         blks_tuple_info(2:num_p_tuples, :, :), blk_sizes(2:num_p_tuples,:), & 
-         blks_tuple_triang_size(2:num_p_tuples), &
-         (/outer_indices(i, :) /)) 
-
-! ASSUME CLOSED SHELL
-call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, .true.)
-
-
-! lower_order_contribution(offset) = mat_alloc_like(zeromat)
-! lower_order_contribution(offset)%elms_alpha = 0.0
-! call mat_ensure_alloc(lower_order_contribution(offset))
-
-lower_order_contribution(offset) = tmp(1)
-
-end if
-! write(*,*) '6'
        end do
 
-! get triangulated indices for Fp
+       if (p_tuples(1)%n_perturbations > 0) then
 
-if (p_tuples(1)%n_perturbations > 0) then
+          call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 
-call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+          do i = 2, num_p_tuples
 
-do i = 2, num_p_tuples
+             ! MaR: This can be problematic - consider rewriting merge_p_tuple as subroutine
+             merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
 
-! This can be problematic - consider rewriting merge_p_tuple as subroutine
+          end do
 
-merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
+       else
 
-end do
-! write(*,*) '7'
-else
-! write(*,*) '7a'
-call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
-! write(*,*) '7b'
-do i = 3, num_p_tuples
+          call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 
-! This can be problematic - consider rewriting merge_p_tuple as subroutine
+          do i = 3, num_p_tuples
 
-merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
+             ! MaR: This can be problematic - consider rewriting merge_p_tuple as subroutine
+             merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
 
+          end do
 
-end do
+       end if
 
-end if
-! write(*,*) '8'
-merged_nblks = get_num_blks(merged_p_tuple)
-allocate(merged_blk_info(1, merged_nblks, 3))
-merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+       merged_nblks = get_num_blks(merged_p_tuple)
 
-blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+       allocate(merged_blk_info(1, merged_nblks, 3))
 
-! do i = 1, merged_nblks
-! write(*,*) 'merged block info', i, ':', merged_blk_info(1,i,:)
-! end do
+       merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+       blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+       merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+       merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
 
-merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+       allocate(triang_indices_fp(merged_triang_size, sum(merged_blk_info(1, :,2))))
 
-! write(*,*) 'about to allocate'
-! write(*,*) 'dimensions:', merged_triang_size, sum(merged_blk_info(1, :,2))
+       call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+            merged_triang_size, triang_indices_fp)
 
-allocate(triang_indices_fp(merged_triang_size, sum(merged_blk_info(1, :,2))))
+       do i = 1, size(triang_indices_fp, 1)
 
-! write(*,*) 'made allocation'
+          fp_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+                      (/sum(nfields)/), &
+                      (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+                      (/triang_indices_fp(i, :) /))
 
-call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-     merged_triang_size, triang_indices_fp)
+          if (p_tuples(1)%n_perturbations > 0) then
 
-! write(*,*) '8b'
-do i = 1, size(triang_indices_fp, 1)
+             lo_offset = get_triang_blks_tuple_offset(num_p_tuples, &
+                         total_num_perturbations, nblks_tuple, &
+                         nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
+                         (/triang_indices_fp(i, :) /))
 
-fp_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-            (/sum(nfields)/), &
-            (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-            (/triang_indices_fp(i, :) /))
-! write(*,*) 'indices are', triang_indices_fp(i, :)
+          else
 
-! write(*,*) 'fp offset is', fp_offset
+             lo_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
+                         total_num_perturbations, nblks_tuple(2:num_p_tuples), &
+                         nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :), &
+                         blk_sizes(2:num_p_tuples,:), &
+                         blks_tuple_triang_size(2:num_p_tuples), & 
+                         (/triang_indices_fp(i, :) /))
 
-if (p_tuples(1)%n_perturbations > 0) then
+          end if
 
-lo_offset = get_triang_blks_tuple_offset(num_p_tuples, &
-            total_num_perturbations, nblks_tuple, &
-            nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-            (/triang_indices_fp(i, :) /))
+          Fp(fp_offset) = Fp(fp_offset) + lower_order_contribution(lo_offset)
 
+       end do
 
-else
+       call f_l_cache_add_element(fock_lowerorder_cache, num_p_tuples, p_tuples, &
+            inner_indices_size * outer_indices_size, lower_order_contribution)
 
-lo_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
-            total_num_perturbations, nblks_tuple(2:num_p_tuples), &
-            nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :), &
-            blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), & 
-            (/triang_indices_fp(i, :) /))
-
-
-
-end if
-
-
-! write(*,*) 'lo offset is', lo_offset 
-! write(*,*) '8d'
-Fp(fp_offset) = Fp(fp_offset) + lower_order_contribution(lo_offset)
-! write(*,*) '8e'
-end do
-! write(*,*) '9'
-! write(*,*) 'prop size', property_size
-! write(*,*) 'lo size', size(lower_order_contribution)
-call f_l_cache_add_element(fock_lowerorder_cache, num_p_tuples, p_tuples, &
-     inner_indices_size * outer_indices_size, lower_order_contribution)
-
-! ! write(*,*) '10'
-deallocate(merged_blk_info)
-deallocate(triang_indices_fp)
-    deallocate(outer_indices)
-    deallocate(inner_indices)
+       deallocate(merged_blk_info)
+       deallocate(triang_indices_fp)
+       deallocate(outer_indices)
+       deallocate(inner_indices)
 
     else
 
        if (num_p_tuples <= 1) then
-! write(*,*) '10'
+
           call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
@@ -1059,8 +736,7 @@ deallocate(triang_indices_fp)
 
 ! NOTE: Find out if necessary ovlint/oneint in "outer indices case" above
 ! NOTE (Oct 12): Probably not unless some hidden density matrix dependence
-! NOTE: Add (a) corresponding call(s) for the energy term contributions (see e.g. eqn.
-! 209 in ajt_rsp)
+
            call rsp_ovlint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                            p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
@@ -1068,24 +744,15 @@ deallocate(triang_indices_fp)
                     w = p_tuples(1)%freq, fock = Fp)
 
        end if
-! write(*,*) '11'
+
        if (num_p_tuples <= 2) then
-! write(*,*) '12'
+
           call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/) ), &
                property_size, Fp)
 
        end if
-! write(*,*) '13'
-! do i = 1, p_tuples(1)%pdim(1)
-! 
-! write(*,*) 'for element ', i
-! write(*,*) Fp(i)%elms_alpha
-! 
-! end do
-
-!        write(*,*) 'Calling xcint (NOTE: XCINT CALL SKIPPED FOR NOW)'
 
        call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1093,33 +760,28 @@ deallocate(triang_indices_fp)
                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
                       property_size, Fp)
 
-
-       ! NOTE: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
+       ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
        ! It should be possible to just add it to Fp like already done above
        ! even with the extra complexity from the triangularization 
 
     end if
 
-deallocate(nfields)
-deallocate(nblks_tuple)
-deallocate(blks_tuple_info)
-deallocate(blks_tuple_triang_size)
-
-
-deallocate(blk_sizes)
-deallocate(blk_sizes_merged)
-
-
+    deallocate(nfields)
+    deallocate(nblks_tuple)
+    deallocate(blks_tuple_info)
+    deallocate(blks_tuple_triang_size)
+    deallocate(blk_sizes)
+    deallocate(blk_sizes_merged)
     deallocate(ncoutersmall)
     deallocate(ncinnersmall)
     deallocate(pidoutersmall)
     deallocate(o_whichpert)
     deallocate(o_wh_forave)
-!     deallocate(dens_tuple)
-
-
     deallocate(tmp)
     deallocate(lower_order_contribution)
+
+    ! MaR: Why is the next line commented? Find out
+!     deallocate(dens_tuple)
 
   end subroutine
 

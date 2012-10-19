@@ -21,7 +21,6 @@ module rsp_sdf_caching
   public sdf_add
   public sdf_already
 
-
   ! Define perturbed S, D, or F linked list datatype
 
   type SDF
@@ -59,33 +58,11 @@ module rsp_sdf_caching
     call p_tuple_p1_cloneto_p2(pert, new_element%perturb)
     allocate(new_element%data(perturbed_matrix_size))
 
-! write(*,*) 'mat size', perturbed_matrix_size
-! write(*,*) 'npert', pert%n_perturbations
-! write(*,*) 'pid', pert%pid
-! write(*,*) 'pdim', pert%pdim
-! write(*,*) 'plab', pert%plab
-! write(*,*) 'freq', pert%freq
-
     do i = 1, perturbed_matrix_size
     
-! write(*,*) 'i is', i
-!        call mat_ensure_alloc(data(i))
-! write(*,*) 'first alloc'
-!        new_element%data(i)%complex = .FALSE.
-!        new_element%data(i)%open_shell = .FALSE.
-
-! ASSUME CLOSED SHELL
-call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
-
-!        new_element%data(i) = mat_alloc_like(data(i))
-! write(*,*) 'alloc'
-!        new_element%data(i) = mat_zero_like(data(i))
-! write(*,*) 'zero'
-!        call mat_ensure_alloc(new_element%data(i))
-! write(*,*) 'ensure'
+       ! ASSUME CLOSED SHELL
+       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
        new_element%data(i) = data(i)
-! write(*,*) 'assign'
-! write(*,*) 'element finished'
 
     end do
  
@@ -110,11 +87,9 @@ call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
 
     next_element => current_element
 
-ind = ind_unsorted
-    if (pert_tuple%n_perturbations > 0) then
+    ind = ind_unsorted
 
-! write(*,*) 'getting offset for ind', ind
-! write(*,*) 'plabs are', pert_tuple%plab
+    if (pert_tuple%n_perturbations > 0) then
 
        nblks = get_num_blks(pert_tuple)
        allocate(blk_sizes(nblks))
@@ -122,31 +97,14 @@ ind = ind_unsorted
        blk_info = get_blk_info(nblks, pert_tuple)
        blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
 
-! write(*,*) 'blk info in sdf_getdata_s', blk_info(:,2)
        call sort_triangulated_indices(pert_tuple%n_perturbations, nblks, &
                                          blk_info, ind)
-
-! write(*,*) 'sorted triang indices', ind
-
 
        offset = get_triang_blks_offset(nblks, pert_tuple%n_perturbations, &
                                        blk_info, blk_sizes, ind)
 
-! write(*,*) 'got offset', offset
-
        deallocate(blk_sizes)
        deallocate(blk_info)
-
-! write(*,*) 'deallocated'
-
-!        offset = 1
-! 
-!        do i = 1, pert_tuple%n_perturbations
-! 
-!           offset = offset + (ind(i) - 1)*product(pert_tuple%pdim &
-!                             (i:pert_tuple%n_perturbations))/pert_tuple%pdim(i)
-! 
-!        end do
 
     else
 
@@ -185,12 +143,7 @@ ind = ind_unsorted
 
     if (found .eqv. .TRUE.) then
 
-! write(*,*) 'size of data', size(next_element%data)
-! write(*,*) 'offset', offset
-
        M = next_element%data(offset)
-
-! write(*,*) 'returning', M%elms(1,1)
 
     else
 
@@ -266,17 +219,9 @@ ind = ind_unsorted
 
     if (found .eqv. .TRUE.) then
 
-
-! ASSUME CLOSED SHELL
-call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
-              next_element%data(offset)%ncol, .true.)
-
-
-
-! 
-!        sdf_getdata = mat_alloc_like(next_element%data(offset))
-!        sdf_getdata = mat_zero_like(next_element%data(offset))
-!        call mat_ensure_alloc(sdf_getdata)
+       ! ASSUME CLOSED SHELL
+       call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
+                     next_element%data(offset)%ncol, .true.)
 
        sdf_getdata = next_element%data(offset)
 
@@ -301,28 +246,21 @@ call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
   end function
 
 
-subroutine sdf_reassign_data(current_element, perturbed_matrix_size, data)
+  subroutine sdf_reassign_data(current_element, perturbed_matrix_size, data)
 
-type(SDF) :: current_element
-integer :: perturbed_matrix_size, i
-type(matrix), dimension(perturbed_matrix_size) :: data
+    type(SDF) :: current_element
+    integer :: perturbed_matrix_size, i
+    type(matrix), dimension(perturbed_matrix_size) :: data
 
     do i = 1, perturbed_matrix_size
 
-
-! ASSUME CLOSED SHELL
-call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
-    
-!        current_element%data(i) = mat_alloc_like(data(i))
-!        current_element%data(i) = mat_zero_like(data(i))
-!        call mat_ensure_alloc(current_element%data(i))
-
+       ! ASSUME CLOSED SHELL
+       call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
        current_element%data(i) = data(i)
 
     end do
 
-
-end subroutine
+  end subroutine
 
   ! Add element routine
   ! NOTE(MaR): This routine assumes that the pert_tuple and data
@@ -361,9 +299,7 @@ end subroutine
 
        end do
 
-call sdf_reassign_data(next_element, perturbed_matrix_size, data)
-
-!        next_element%data = data
+       call sdf_reassign_data(next_element, perturbed_matrix_size, data)
 
     else
 
@@ -381,8 +317,6 @@ call sdf_reassign_data(next_element, perturbed_matrix_size, data)
        next_element%last = .FALSE.
        new_element%next => next_element%next
        next_element%next => new_element
-
-! call sdf_reassign_data(new_element, perturbed_matrix_size, data)
 
     end if
 
