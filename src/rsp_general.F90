@@ -209,6 +209,10 @@ public rsp_cfg
 ! 
 !     p_diff = prop
 
+    write(*,*) ' '
+    write(*,*) 'Calculating exchange/correlation contributions'
+    write(*,*) ' '
+
     call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
 
     write(*,*) ' '
@@ -1159,6 +1163,12 @@ public rsp_cfg
     
     end do
     
+
+!     write(*,*) 'pulay kn contribution'
+!     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
+!     (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
+!     merged_blk_info, property_size, prop_forcache)
+
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
    

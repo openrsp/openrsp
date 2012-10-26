@@ -283,12 +283,16 @@ module rsp_perturbed_matrices
 
        Y = Y + A*B*C
 
+! write(*,*) 'Y is now 1', Y%elms_alpha
+
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        Y = Y - A*B*C
+
+! write(*,*) 'Y is now 2', Y%elms_alpha
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -304,6 +308,8 @@ module rsp_perturbed_matrices
           Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) + &
                                     frequency_zero_or_sum(deriv_struct(i,1))) * A * B * C
 
+
+! write(*,*) 'Y is now 3', Y%elms_alpha
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
@@ -314,6 +320,8 @@ module rsp_perturbed_matrices
 
           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
+
+! write(*,*) 'Y is now 4', Y%elms_alpha
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
@@ -324,6 +332,7 @@ module rsp_perturbed_matrices
 
           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
 
+! write(*,*) 'Y is now 5', Y%elms_alpha
        end if
 
     end do
