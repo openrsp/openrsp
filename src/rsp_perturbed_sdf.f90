@@ -230,14 +230,24 @@ module rsp_perturbed_sdf
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
 
-       ! Note (MaR): What does the second argument in rsp_mosolver_exec mean?
+       ! Note (MaR): Passing only real part of freq. Is this OK?
 #ifndef VAR_LSDALTON
     !host program specific solver
-       call rsp_mosolver_exec(RHS(1), (/0d0/), X)
+
+! write(*,*) 'Fp', Fp(i)%elms_alpha
+! write(*,*) 'Dp', Dp(i)%elms_alpha
+! write(*,*) 'Sp', Sp(i)%elms_alpha
+! 
+! write(*,*) 'RHS', RHS(1)%elms_alpha
+
+       call rsp_mosolver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
 #endif
        ! Note (MaR): Why multiply by -2 like below?
        X(1) = -2d0*X(1)
        RHS(1) = 0
+
+! write(*,*) 'X', X(1)%elms_alpha
+
 
        ! 5. Get Dh using the rsp equation solution X
 
@@ -256,7 +266,7 @@ module rsp_perturbed_sdf
        Dp(i) = Dp(i) + Dh(i)
 
        write(*,*) 'Finished component', i
-
+!        write(*,*) ' '
 !        write(*,*) 'Finally, Dp is:'
 !        write(*,*) Dp(i)%elms_alpha
 !        write(*,*) ' '

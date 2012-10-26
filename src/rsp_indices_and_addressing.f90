@@ -102,6 +102,8 @@ module rsp_indices_and_addressing
     type(p_tuple) :: fields
     type(p_tuple), allocatable, dimension(:) :: each_field
 
+    fields = p_tuple_standardorder(fields)
+
     allocate(each_field(fields%n_perturbations))
 
     do i = 1, fields%n_perturbations
@@ -242,8 +244,22 @@ module rsp_indices_and_addressing
     integer, dimension(nblks, 3) :: blk_info
     integer, dimension(nfield) :: ind, ind_unsorted
 
+
+! if (nblks == 2) then
+! 
+! write(*,*) 'blk info 1', blk_info(1,:)
+! write(*,*) 'blk info 2', blk_info(2,:)
+! 
+! 
+! end if
+
     offset = 0
+
+! write(*,*) 'unsorted ind', ind_unsorted
+
     ind = sorted_triangulated_indices(nfield, nblks, blk_info, ind_unsorted)
+
+! write(*,*) 'sorted ind', ind
 
     do i = 1, nblks - 1
 
@@ -253,9 +269,27 @@ module rsp_indices_and_addressing
 
     end do
 
+
+!  if (nblks == 2) then
+ 
+!  write(*,*) 'new offset 1 ', offset
+! write(*,*) 'blk info 2', blk_info(2,:)
+
+
+! end if
+
     offset = offset + get_triang_offset(blk_info(nblks,2), &
              ind(blk_info(nblks,1): blk_info(nblks,1) + blk_info(nblks,2) - 1), &
              blk_info(nblks,3))
+! 
+! 
+!  if (nblks == 2) then
+!  
+!  write(*,*) 'new offset 2', offset
+! ! write(*,*) 'blk info 2', blk_info(2,:)
+! 
+! 
+! end if
 
   end function
 

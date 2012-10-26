@@ -274,6 +274,10 @@ end if
 
              elseif (p1%plab(i) == p2%plab(i)) then
 
+! write(*,*) 'labels are equivalent'
+! 
+! write(*,*) 'freq 1', real(p1%freq(i)), 'freq 2', real(p2%freq(i))
+
                 ! NOTE (MaR): IS IT SUFFICIENTLY GENERAL TO COMPARE ONLY THE REAL PART OF
                 ! THE FREQS.? WHICH CASES WILL INCLUDE COMPLEX FREQS. IN THE PERTURBATIONS?
                 if (real(p1%freq(i)) < real(p2%freq(i))) then
@@ -334,7 +338,7 @@ end if
 
                       ! NOTE (MaR): IS IT SUFFICIENTLY GENERAL TO COMPARE
                       ! ONLY THE REAL PART OF THE FREQS.?
-                      if (abs(p_tuple_st%freq(j)) < abs(current_minimum_freq)) then
+                      if (real(p_tuple_st%freq(j)) < real(current_minimum_freq)) then
 
                          current_minimum_freq = p_tuple_st%freq(j)
                          new_minimum = j
@@ -406,7 +410,7 @@ end if
 
           do j = i + 1, current_last_position
 
-             if (abs(p_tuple_st%freq(j)) < abs(current_minimum_freq)) then
+             if (real(p_tuple_st%freq(j)) < real(current_minimum_freq)) then
 
                 current_minimum_freq = p_tuple_st%freq(j)
                 new_minimum = j

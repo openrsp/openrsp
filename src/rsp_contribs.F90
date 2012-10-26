@@ -404,8 +404,8 @@ contains
 
        if (present(w) .and. present(D)) then
 
-          write(*,*) 'rsp_ovlave: Called for handling of T matrix contribution'
-          write(*,*) 'rsp_ovlave: Nothing is returned presently - awaiting development'
+!           write(*,*) 'rsp_ovlave: Called for handling of T matrix contribution'
+!           write(*,*) 'rsp_ovlave: Nothing is returned presently - awaiting development'
 
 !           call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
 !                                        blk_sizes, propsize, ave = ave, w = w, D = D)
@@ -961,7 +961,7 @@ contains
     else if (nf==6 .and. all(f==(/'GEO ','GEO ','GEO ','GEO ', 'GEO ', 'GEO '/))) then
        ncor = 3 * get_nr_atoms()
        allocate(tmp_6(ncor,ncor,ncor,ncor,ncor,ncor))
-       tmp_5 = 0.0
+       tmp_6 = 0.0
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
        arg(1) = ctr_arg(6, -huge(1), ncor, D1, D2, &
                         rank_one_pointer(ncor**6, tmp_6))
@@ -1260,11 +1260,12 @@ contains
   subroutine rsp_xcave_tr_adapt(nr_ao, pert, D_sdf, propsize, ave)
 
     integer :: i, j, k, m, n, nr_ao, propsize
-    type(p_tuple) :: pert, pg, pgg    
+    type(p_tuple) :: pert, pg, pgg, pggg    
     type(SDF)  :: D_sdf
     type(matrix) :: D
     type(matrix), allocatable, dimension(:) :: Dg
     type(matrix), allocatable, dimension(:,:) :: Dgg
+    type(matrix), allocatable, dimension(:,:,:) :: Dggg
     !> output average
     complex(8),    intent(out) :: ave(propsize)
     complex(8), allocatable, dimension(:,:,:,:) :: tmp_ave
@@ -1336,6 +1337,46 @@ contains
 
           deallocate(Dg)
 
+       else if ((count(pert%plab == 'GEO ') == 1) .AND. &
+                (count(pert%plab == 'EL  ') == 1)) then
+
+          write(*,*) 'Case: GEO, EL'
+
+          allocate(Dg(pert%pdim(1)))
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+          pg = p_tuple_getone(pert, 2)
+          
+          do i = 1, pert%pdim(2)
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
+
+          end do
+
+          call rsp_xcave('gf', tmp_ave(:, :, 1, 1), D=D, Df=Dg)
+
+          do i = 1, pert%pdim(1)
+             do j = 1, pert%pdim(2)
+
+                n = get_triang_blks_offset(2, 2, (/ 1, 2, 1, 1, pert%pdim(1), &
+                                                                pert%pdim(2) /), &
+                                           (/pert%pdim(1), 3/), (/i, j/))
+
+write(*,*) 'offset', n, 'size', size(ave)
+
+                ave(n) = ave(n) + tmp_ave(i, j, 1, 1)
+
+             end do
+          end do
+
+          deallocate(Dg)
+
        else
 
           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
@@ -1377,6 +1418,60 @@ contains
              end do
           end do
 
+          deallocate(Dg)
+
+       else if ((count(pert%plab == 'GEO ') == 1) .AND. &
+                (count(pert%plab == 'EL  ') == 2)) then
+
+          write(*,*) 'Case: GEO, EL, EL'
+
+          allocate(Dg(pert%pdim(2)))
+          allocate(Dgg(pert%pdim(2), pert%pdim(2)))
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+          pg = p_tuple_getone(pert, 2)
+          call p_tuple_p1_cloneto_p2(pert, pgg)
+          pgg = p_tuple_remove_first(pgg)
+
+          do i = 1, pert%pdim(2)
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
+
+             do j = 1, pert%pdim(2)
+
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
+
+             end do
+          end do
+
+          call rsp_xcave('gff', tmp_ave(:, :, :, 1), D=D, Df=Dg, Dff=Dgg)
+
+
+          do i = 1, pert%pdim(1)
+             do j = 1, pert%pdim(2)
+                do k = 1, j
+
+                   n = get_triang_blks_offset(2, 3, (/ 1, 2, 1, 2, pert%pdim(1), &
+                                                    pert%pdim(2) /), &
+                                              (/pert%pdim(1), 6/), (/i, k, j/))
+
+write(*,*) 'offset', n, 'size', size(ave)
+
+
+                   ave(n) = ave(n) + tmp_ave(i, j, k, 1)
+
+                end do
+             end do
+          end do
+
+          deallocate(Dgg)
           deallocate(Dg)
 
        else
@@ -1436,6 +1531,92 @@ contains
 
           deallocate(Dgg)
           deallocate(Dg)
+
+       else if ((count(pert%plab == 'GEO ') == 1) .AND. &
+                (count(pert%plab == 'EL  ') == 3)) then
+
+          write(*,*) 'Case: GEO, EL, EL, EL'
+
+          allocate(Dg(pert%pdim(2)))
+          allocate(Dgg(pert%pdim(2), pert%pdim(2)))
+          allocate(Dggg(pert%pdim(2), pert%pdim(2), pert%pdim(2)))
+
+!  write(*,*) '1'
+
+          ! MR: ASSUME CLOSED SHELL
+          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
+
+! write(*,*) '2'
+
+          pg = p_tuple_getone(pert, 2)
+          call p_tuple_p1_cloneto_p2(pert, pgg)
+          pgg = p_tuple_remove_first(pgg)
+          pgg = p_tuple_remove_first(pgg)
+          call p_tuple_p1_cloneto_p2(pert, pggg)
+          pggg = p_tuple_remove_first(pggg)
+
+! write(*,*) '3'
+
+          do i = 1, pert%pdim(2)
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
+
+             do j = 1, pert%pdim(2)
+
+! write(*,*) '4'
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
+
+                do k = 1, pert%pdim(2)
+
+                   ! MR: ASSUME CLOSED SHELL
+                   call mat_init(Dggg(i,j,k), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                   call sdf_getdata_s(D_sdf, pggg, (/i,j,k/), Dggg(i,j,k))
+! write(*,*) '5'
+                end do
+
+             end do
+
+
+
+
+          end do
+
+! write(*,*) '6'
+
+          call rsp_xcave('gfff', tmp_ave, D=D, Df=Dg, Dff=Dgg, Dfff=Dggg)
+
+! write(*,*) '7'
+
+          do i = 1, pert%pdim(1)
+             do j = 1, pert%pdim(2)
+! write(*,*) '7a', j
+
+                do k = 1, j
+                   do m = 1, k
+
+                      n = get_triang_blks_offset(2, 4, (/  1, 2, 1, 3, pert%pdim(1), &
+                                                                       pert%pdim(2) /), &
+                                                 (/pert%pdim(1), 10/), (/i, m, k, j/))
+
+! write(*,*) 'offset', n, 'size', size(ave)
+
+                      ave(n) = ave(n) + tmp_ave(i, j, k, m)
+
+                   end do
+                end do
+             end do
+          end do
+
+! write(*,*) '8'
+          deallocate(Dggg)
+          deallocate(Dgg)
+          deallocate(Dg)
+
 
        else
 
@@ -1506,8 +1687,8 @@ contains
 
     else if (present(w) .and. present(fock)) then
 
-       write(*,*) 'rsp_ovlint: Called for handling of T matrix contribution'
-       write(*,*) 'rsp_ovlint: Nothing is returned presently - awaiting development'
+!        write(*,*) 'rsp_ovlint: Called for handling of T matrix contribution'
+!        write(*,*) 'rsp_ovlint: Nothing is returned presently - awaiting development'
 
 !        call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
 !                                     blk_sizes, propsize, w = w, fock = fock)
@@ -1887,10 +2068,12 @@ contains
     !--------------------------------------------------
     real(8), pointer :: null_ptr(:) !because null() isn't f90
     real(8)  :: fdistep = 2d0**(-25)
-    integer       h, hincr, i, j, k, n, ij, ijk, ncor, nr_ao
+    integer       h, hincr, i, j, k, n, ij, ijk, incr, ncor, nr_ao
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
     real(8)          :: dummy(1)
+    !--------------------------------------------------
+    integer, allocatable, dimension(:,:) :: indices
 
     if (any(f=='EL  ')) then
        call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
@@ -1903,6 +2086,45 @@ contains
           end if
        end do
     else
+
+
+! ! Begin new general geo code
+! 
+!        if ((nf == count(f == 'GEO '))) then
+! 
+!           ncor = 3 * get_nr_atoms()
+!           allocate(indices(propsize, nf))
+!           call make_triangulated_indices(nf, (/1, nf, nc(1)/), propsize, indices)
+! 
+!           do i = 1, propsize
+! 
+!              if (iszero(fock(i))) then
+!                 call mat_ensure_alloc(fock(i))
+!                 fock(i)%elms_alpha = 0 !ajt FIXME use mat_axpy
+!              end if
+!              
+!              k = 0
+! 
+!              do j = 1, nf
+! 
+!                 k = k + indices(i,j) * ( nc(1)**(nf - j ) )
+! 
+!              end do
+! 
+!                 arg(1) = ctr_arg(nf, k, ncor, dens, fock(i), null_ptr)
+!                 call unopt_geodiff_loop(basis_large, basis_small, arg)
+! 
+!           end do
+! 
+!           deallocate(indices)
+! 
+!        end if
+! 
+! 
+! 
+! 
+! ! End new general geo code
+
 
        if (nf==0) then
           A = 0*dens
@@ -1965,157 +2187,188 @@ contains
              end do
           end do
    
-   ! MaR: The case /'GEO ','GEO ','GEO '/ is handled numerically at present
-   ! for testing purposes. Upgrade to analytical when ready.
-       else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
+       else if (nf==3 .and. all(f==(/'GEO ','GEO ', 'GEO '/))) then
           ncor = 3 * get_nr_atoms()
           ij = 0
-   
-          ! write(*,*) 'fock before', fock(1)%elms_alpha
-   
-          allocate(tmpfock(nc(1) * (nc(2) + 1) / 2))
-   
-          do k = 1, propsize
-   
-             if (iszero(fock(k))) then
-                call mat_ensure_alloc(fock(k))
-                fock(k)%elms_alpha = 0 !ajt FIXME use mat_axpy
-             end if
-   
+          do k = 0, nc(3)-1
+             do j = k, nc(2)-1
+                do i = j, nc(1)-1
+                   ij = ij + 1
+                   if (iszero(fock(ij))) then
+                      call mat_ensure_alloc(fock(ij))
+                      fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                   end if
+                   arg(1) = ctr_arg(3, c(1)+i + ncor * (c(2)+j-1) + &
+                                       ncor * ncor * (c(3)+k-1), &
+                                       ncor, dens, fock(ij), null_ptr)
+                   call unopt_geodiff_loop(basis_large, &
+                                           basis_small, &
+                                           arg)
+                end do
+             end do
           end do
-   
-   ! MaR: Numerical testing disabled because it doesn't really work
-   ! MaR: Keep it like this until the analytic procedure is implemented
-   ! do k = 1, nc(1) * (nc(2) + 1) / 2
-   ! 
-   ! 
-   ! ! ASSUME CLOSED SHELL
-   ! call mat_init(tmpfock(k), nr_ao, nr_ao, .true.)
-   ! 
-   ! end do
-   ! 
-   ! h = 0
-   ! 
-   ! 
-   ! do k = 0, nc(3) - 1
-   ! 
-   ! hincr = 0
-   ! 
-   !           call SHELLS_NUCLEI_displace(k, fdistep)
-   ! 
-   ! ij = 0
-   ! 
-   !        do j = 0, nc(2)-1
-   !           do i = j, nc(1)-1
-   !              ij = ij + 1
-   !              if (iszero(tmpfock(ij))) then
-   !                 call mat_ensure_alloc(tmpfock(ij))
-   !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-   !              end if
-   !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-   !                               ncor, dens, tmpfock(ij), null_ptr)
-   !              call unopt_geodiff_loop(basis_large, &
-   !                                      basis_small, &
-   !                                      arg)
-   !           end do
-   !        end do
-   ! 
-   ! ij = 0
-   ! 
-   ! do j = 1, nc(2)
-   !    do i = j, nc(1)
-   ! 
-   ! ij = ij + 1
-   ! 
-   ! if (j - 1 >= k) then
-   ! 
-   ! 
-   ! 
-   ! h = h + 1
-   ! hincr = hincr + 1
-   ! write(*,*) 'at plus'
-   ! write(*,*) 'j i is', j, i
-   ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
-   ! write(*,*) 'h index', h, 'ij index', ij
-   ! 
-   ! 
-   ! if (h == 1) then
-   ! 
-   ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
-   ! 
-   ! end if
-   ! 
-   ! 
-   ! 
-   ! fock(h)%elms_alpha = fock(h)%elms_alpha + tmpfock(ij)%elms_alpha / (2*fdistep)
-   ! tmpfock(ij)%elms_alpha = 0.0
-   ! 
-   ! end if
-   ! 
-   !    end do
-   ! end do
-   ! 
-   ! h = h - hincr
-   ! 
-   !           call SHELLS_NUCLEI_displace(k, -2*fdistep)
-   ! 
-   ! ij = 0
-   ! 
-   !        do j = 0, nc(2)-1
-   !           do i = j, nc(1)-1
-   !              ij = ij + 1
-   !              if (iszero(tmpfock(ij))) then
-   !                 call mat_ensure_alloc(tmpfock(ij))
-   !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-   !              end if
-   !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-   !                               ncor, dens, tmpfock(ij), null_ptr)
-   !              call unopt_geodiff_loop(basis_large, &
-   !                                      basis_small, &
-   !                                      arg)
-   !           end do
-   !        end do
-   ! 
-   ! ij = 0
-   ! 
-   ! do j = k + 1, nc(2)
-   !    do i = j, nc(1)
-   ! 
-   ! 
-   ! ij = ij + 1
-   ! 
-   ! if (j - 1 >= k) then
-   ! 
-   ! h = h + 1
-   ! write(*,*) 'at minus'
-   ! write(*,*) 'j i is', j, i
-   ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
-   ! write(*,*) 'h index', h, 'ij index', ij
-   ! 
-   ! 
-   ! if (h == 1) then
-   ! 
-   ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
-   ! 
-   ! end if
-   ! 
-   ! 
-   ! fock(h)%elms_alpha = fock(h)%elms_alpha - tmpfock(ij)%elms_alpha / 2*fdistep
-   ! tmpfock(ij)%elms_alpha = 0.0
-   ! 
-   ! end if
-   ! 
-   !    end do
-   ! end do
-   ! 
-   !           call SHELLS_NUCLEI_displace(k, fdistep)
-   ! 
-   ! end do
-   
-          deallocate(tmpfock)
-   
-   
-          write(*,*) 'fock after', fock(1)%elms_alpha
+
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+! 
+!    ! MaR: The case /'GEO ','GEO ','GEO '/ is handled numerically at present
+!    ! for testing purposes. Upgrade to analytical when ready.
+!        else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
+!           ncor = 3 * get_nr_atoms()
+!           ij = 0
+!    
+!           ! write(*,*) 'fock before', fock(1)%elms_alpha
+!    
+!           allocate(tmpfock(nc(1) * (nc(2) + 1) / 2))
+!    
+!           do k = 1, propsize
+!    
+!              if (iszero(fock(k))) then
+!                 call mat_ensure_alloc(fock(k))
+!                 fock(k)%elms_alpha = 0 !ajt FIXME use mat_axpy
+!              end if
+!    
+!           end do
+!    
+!    ! MaR: Numerical testing disabled because it doesn't really work
+!    ! MaR: Keep it like this until the analytic procedure is implemented
+!    ! do k = 1, nc(1) * (nc(2) + 1) / 2
+!    ! 
+!    ! 
+!    ! ! ASSUME CLOSED SHELL
+!    ! call mat_init(tmpfock(k), nr_ao, nr_ao, .true.)
+!    ! 
+!    ! end do
+!    ! 
+!    ! h = 0
+!    ! 
+!    ! 
+!    ! do k = 0, nc(3) - 1
+!    ! 
+!    ! hincr = 0
+!    ! 
+!    !           call SHELLS_NUCLEI_displace(k, fdistep)
+!    ! 
+!    ! ij = 0
+!    ! 
+!    !        do j = 0, nc(2)-1
+!    !           do i = j, nc(1)-1
+!    !              ij = ij + 1
+!    !              if (iszero(tmpfock(ij))) then
+!    !                 call mat_ensure_alloc(tmpfock(ij))
+!    !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+!    !              end if
+!    !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
+!    !                               ncor, dens, tmpfock(ij), null_ptr)
+!    !              call unopt_geodiff_loop(basis_large, &
+!    !                                      basis_small, &
+!    !                                      arg)
+!    !           end do
+!    !        end do
+!    ! 
+!    ! ij = 0
+!    ! 
+!    ! do j = 1, nc(2)
+!    !    do i = j, nc(1)
+!    ! 
+!    ! ij = ij + 1
+!    ! 
+!    ! if (j - 1 >= k) then
+!    ! 
+!    ! 
+!    ! 
+!    ! h = h + 1
+!    ! hincr = hincr + 1
+!    ! write(*,*) 'at plus'
+!    ! write(*,*) 'j i is', j, i
+!    ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
+!    ! write(*,*) 'h index', h, 'ij index', ij
+!    ! 
+!    ! 
+!    ! if (h == 1) then
+!    ! 
+!    ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
+!    ! 
+!    ! end if
+!    ! 
+!    ! 
+!    ! 
+!    ! fock(h)%elms_alpha = fock(h)%elms_alpha + tmpfock(ij)%elms_alpha / (2*fdistep)
+!    ! tmpfock(ij)%elms_alpha = 0.0
+!    ! 
+!    ! end if
+!    ! 
+!    !    end do
+!    ! end do
+!    ! 
+!    ! h = h - hincr
+!    ! 
+!    !           call SHELLS_NUCLEI_displace(k, -2*fdistep)
+!    ! 
+!    ! ij = 0
+!    ! 
+!    !        do j = 0, nc(2)-1
+!    !           do i = j, nc(1)-1
+!    !              ij = ij + 1
+!    !              if (iszero(tmpfock(ij))) then
+!    !                 call mat_ensure_alloc(tmpfock(ij))
+!    !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+!    !              end if
+!    !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
+!    !                               ncor, dens, tmpfock(ij), null_ptr)
+!    !              call unopt_geodiff_loop(basis_large, &
+!    !                                      basis_small, &
+!    !                                      arg)
+!    !           end do
+!    !        end do
+!    ! 
+!    ! ij = 0
+!    ! 
+!    ! do j = k + 1, nc(2)
+!    !    do i = j, nc(1)
+!    ! 
+!    ! 
+!    ! ij = ij + 1
+!    ! 
+!    ! if (j - 1 >= k) then
+!    ! 
+!    ! h = h + 1
+!    ! write(*,*) 'at minus'
+!    ! write(*,*) 'j i is', j, i
+!    ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
+!    ! write(*,*) 'h index', h, 'ij index', ij
+!    ! 
+!    ! 
+!    ! if (h == 1) then
+!    ! 
+!    ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
+!    ! 
+!    ! end if
+!    ! 
+!    ! 
+!    ! fock(h)%elms_alpha = fock(h)%elms_alpha - tmpfock(ij)%elms_alpha / 2*fdistep
+!    ! tmpfock(ij)%elms_alpha = 0.0
+!    ! 
+!    ! end if
+!    ! 
+!    !    end do
+!    ! end do
+!    ! 
+!    !           call SHELLS_NUCLEI_displace(k, fdistep)
+!    ! 
+!    ! end do
+!    
+!           deallocate(tmpfock)
+!    
+!    
+!           write(*,*) 'fock after', fock(1)%elms_alpha
    
        else
           print *, 'error in rsp_twoint_tr: not implemented or in wrong order - ', &
@@ -2139,15 +2392,31 @@ contains
     integer,       intent(in)    :: c(nf), nc(nf)
     !> output perturbed integrals
     type(matrix),  intent(inout) :: xcint(propsize)
+type(matrix) :: Db, Fb
     type(matrix), allocatable, dimension(:,:) :: tmp_xcint
     type(matrix), dimension(:) :: D
     !--------------------------------------------------
 
     ! MaR: ONLY GEOMETRICAL PERTURBATIONS SUPPORTED SO FAR
 
+! call mat_init(Db, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+! call mat_init(Fb, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+
     if (nf == 0) then
 
+! write(*,*) 'D before', D(1)%elms_alpha
+! write(*,*) 'F before', xcint(1)%elms_alpha
+! 
+! Db = D(1)
+! Fb = xcint(1)
+
       call rsp_xcint(D, F=xcint(1))
+
+! Db = D(1) - Db
+! Fb = xcint(1) - Fb
+! 
+! write(*,*) 'D chg', Db%elms_alpha
+! write(*,*) 'F after', Fb%elms_alpha
 
     else if (nf == 1) then
 
@@ -2157,7 +2426,8 @@ contains
 
        else
 
-          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+          write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:'
+          write(*,*) 'NO CONTRIBUTION WILL BE MADE'
 
        end if
 
