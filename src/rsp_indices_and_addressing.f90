@@ -16,6 +16,7 @@ module rsp_indices_and_addressing
   public get_one_tensor_offset
   public test_making_triangulated_indices
   public get_num_blks
+  public get_blk_info_s
   public get_blk_info
   public get_triang_blks_tuple_offset
   public get_triang_blks_offset
@@ -102,7 +103,7 @@ module rsp_indices_and_addressing
     type(p_tuple) :: fields
     type(p_tuple), allocatable, dimension(:) :: each_field
 
-    fields = p_tuple_standardorder(fields)
+!     fields = p_tuple_standardorder(fields)
 
     allocate(each_field(fields%n_perturbations))
 
@@ -117,7 +118,8 @@ module rsp_indices_and_addressing
 
     do i = 1, fields%n_perturbations
 
-       if (p_tuple_p1_lt_p2(each_field(curr_blk_start),each_field(i)) .EQV. .TRUE.) then
+       if (p_tuple_compare(each_field(curr_blk_start),each_field(i)) &
+             .EQV. .FALSE.) then
 
           curr_blk_start = i
           get_num_blks = get_num_blks + 1
@@ -129,6 +131,83 @@ module rsp_indices_and_addressing
     deallocate(each_field)
 
   end function
+
+  ! Returns array of size (nblks, 3) where row 1 is curr_blk_start, row 2 is block_len
+  ! row 3 is pdim
+
+  subroutine get_blk_info_s(nblks, fields, blk_info)
+
+    implicit none
+
+    integer :: nblks, i, this_blk, curr_blk_start
+    integer, dimension(nblks,3) :: blk_info   
+    type(p_tuple) :: fields
+    type(p_tuple), allocatable, dimension(:) :: each_field
+
+    allocate(each_field(fields%n_perturbations))
+
+    if (fields%n_perturbations > 0) then
+
+       do i = 1, fields%n_perturbations
+
+          each_field(i) = p_tuple_getone(fields, i)
+
+! write(*,*) 'field', i, 'is', each_field(i)%plab, each_field(i)%pdim
+! write(*,*) 'field', i, 'is', each_field(i)%pid, each_field(i)%freq
+
+       end do
+
+       this_blk = 1
+       curr_blk_start = 1
+       blk_info(1, 1) = 1
+       blk_info(1, 3) = each_field(1)%pdim(1)
+
+       do i = 1, fields%n_perturbations
+
+          if (p_tuple_compare(each_field(curr_blk_start),each_field(i)) &
+             .EQV. .FALSE.) then
+
+             curr_blk_start = i
+             this_blk = this_blk + 1
+             blk_info(this_blk, 1) = i
+             blk_info(this_blk - 1, 2) = i - blk_info(this_blk - 1, 1)
+             blk_info(this_blk, 3) = each_field(i)%pdim(1)
+
+          end if
+
+       end do
+
+       if (nblks > 1) then
+
+          blk_info(nblks, 2) = fields%n_perturbations - blk_info(nblks, 1) + 1
+
+       elseif (nblks == 1) then
+
+          blk_info(1, 2) = fields%n_perturbations
+
+       end if
+
+       do i = 1, fields%n_perturbations
+
+          call p_tuple_deallocate(each_field(i))
+
+! write(*,*) 'deallocated', i
+
+       end do
+
+    else
+
+       blk_info(1, 1) = 1
+       blk_info(1, 2) = 1
+       blk_info(1, 3) = 1
+
+    end if
+
+    deallocate(each_field)
+
+! write(*,*) 'deallocated total'
+
+  end subroutine
 
   ! Returns array of size (nblks, 3) where row 1 is curr_blk_start, row 2 is block_len
   ! row 3 is pdim
@@ -150,6 +229,8 @@ module rsp_indices_and_addressing
 
           each_field(i) = p_tuple_getone(fields, i)
 
+! write(*,*) 'field', i, 'is', each_field(i)%plab, each_field(i)%pdim
+
        end do
 
        this_blk = 1
@@ -159,8 +240,8 @@ module rsp_indices_and_addressing
 
        do i = 1, fields%n_perturbations
 
-          if (p_tuple_p1_lt_p2(each_field(curr_blk_start),each_field(i)) &
-             .EQV. .TRUE.) then
+          if (p_tuple_compare(each_field(curr_blk_start),each_field(i)) &
+             .EQV. .FALSE.) then
 
              curr_blk_start = i
              this_blk = this_blk + 1
@@ -186,6 +267,8 @@ module rsp_indices_and_addressing
 
           call p_tuple_deallocate(each_field(i))
 
+! write(*,*) 'deallocated', i
+
        end do
 
     else
@@ -197,6 +280,8 @@ module rsp_indices_and_addressing
     end if
 
     deallocate(each_field)
+
+! write(*,*) 'deallocated total'
 
   end function
 
@@ -489,6 +574,9 @@ module rsp_indices_and_addressing
 
     do i = 1, nblks
 
+! write(*,*) 'block', i
+! write(*,*) 'info', blk_info(i,:)
+
        triang_sizes(i) = get_one_triangular_size(blk_info(i, 2), blk_info(i,3))
 
        allocate(blks(i)%t_ind(triang_sizes(i), blk_info(i, 2)))
@@ -497,6 +585,14 @@ module rsp_indices_and_addressing
                                       triang_sizes(i), blks(i)%t_ind)
 
     end do
+
+
+!     do i = 1, nblks
+! 
+!     write(*,*) 'direct product block', i
+! write(*,*) blks(i)%t_ind
+! 
+!     end do
 
     call index_blks_direct_product(nblks, triang_sizes, blks, indices, &
                                    sum(blk_info(:,2)), 1, 1, 1)

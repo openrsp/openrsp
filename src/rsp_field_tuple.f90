@@ -210,10 +210,22 @@ end if
 
     p1%n_perturbations = 0
 
+! write(*,*) 'size dim', size(p1%pdim)
+! write(*,*) 'dim before', p1%pdim
     deallocate(p1%pdim) 
+! write(*,*) 'dim'
+! write(*,*) 'size lab', size(p1%plab)
+! write(*,*) 'lab before', p1%plab
     deallocate(p1%plab)
+! write(*,*) 'lab'
+! write(*,*) 'size id', size(p1%pid)
+! write(*,*) 'id before', p1%pid
     deallocate(p1%pid)
+! write(*,*) 'id'
+! write(*,*) 'size freq', size(p1%freq)
+! write(*,*) 'freq before', p1%freq
     deallocate(p1%freq)
+! write(*,*) 'freq'
 
   end subroutine
 
