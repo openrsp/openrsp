@@ -1297,7 +1297,7 @@ contains
 
        else
 
-          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
 
        end if
 
@@ -1379,7 +1379,7 @@ write(*,*) 'offset', n, 'size', size(ave)
 
        else
 
-          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
 
        end if
 
@@ -1476,7 +1476,7 @@ write(*,*) 'offset', n, 'size', size(ave)
 
        else
 
-          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
 
        end if
 
@@ -1620,13 +1620,13 @@ write(*,*) 'offset', n, 'size', size(ave)
 
        else
 
-          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
 
        end if
 
     else
 
-       write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
+!        write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
 
     end if
 
@@ -2426,8 +2426,8 @@ type(matrix) :: Db, Fb
 
        else
 
-          write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:'
-          write(*,*) 'NO CONTRIBUTION WILL BE MADE'
+!           write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:'
+!           write(*,*) 'NO CONTRIBUTION WILL BE MADE'
 
        end if
 
@@ -2465,13 +2465,13 @@ type(matrix) :: Db, Fb
 
        else
 
-          write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
 
        end if
 
     else
 
-       write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
+!        write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
 
     end if
 

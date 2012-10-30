@@ -265,7 +265,32 @@ module rsp_perturbed_sdf
 
        Dp(i) = Dp(i) + Dh(i)
 
-       write(*,*) 'Finished component', i
+
+
+if (perturbed_matrix_size < 10) then
+
+write(*,*) 'Finished component', i, ':', (float(i)/float(perturbed_matrix_size))*100, '% done'
+  
+
+else
+
+if (mod(i, perturbed_matrix_size/10) == 1) then
+
+write(*,*) 'Finished component', i, ':', (float(i)/float(perturbed_matrix_size))*100, '% done'
+
+end if
+
+end if
+
+! write(*,*) perturbed_matrix_size/10
+! 
+! if (mod(i, ) == 1) then
+! 
+!
+! 
+! end if
+
+
 !        write(*,*) ' '
 !        write(*,*) 'Finally, Dp is:'
 !        write(*,*) Dp(i)%elms_alpha
@@ -453,7 +478,8 @@ module rsp_perturbed_sdf
                density_order, property_size, fp_offset, lo_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, offset
     integer, dimension(0) :: noc
-    integer, dimension(total_num_perturbations) :: ncarray, ncouter, ncinner, pidouter
+    integer, dimension(total_num_perturbations) :: ncarray, ncouter, ncinner, pidouter, &
+                                                pids_current_contribution, translated_index
     integer, allocatable, dimension(:) :: o_whichpert, o_whichpertbig, o_wh_forave
     integer, allocatable, dimension(:) :: ncoutersmall, pidoutersmall, ncinnersmall
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
@@ -507,9 +533,18 @@ module rsp_perturbed_sdf
 
     do i = 1, num_p_tuples
 
-       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples(i))
+       call get_blk_info_s(nblks_tuple(i), p_tuples(i), blks_tuple_info(i, 1:nblks_tuple(i), :))
+
+! write(*,*) blks_tuple_info(i, :, :)
+! write(*,*) 'sanitized'
+! write(*,*) blks_tuple_info(i, 1:nblks_tuple(i), :)
+
        blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
                                    blks_tuple_info(i, 1:nblks_tuple(i), :))
+
+
+! write(*,*)  blks_tuple_triang_size(i) 
+
        blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
        blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
 
@@ -684,11 +719,36 @@ module rsp_perturbed_sdf
 
        end if
 
+       merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
+
+       k = 1
+       do i = 1, num_p_tuples
+          do j = 1, p_tuples(i)%n_perturbations
+             pids_current_contribution(k) = p_tuples(i)%pid(j)
+             k = k + 1
+          end do
+       end do
+
+! write(*,*) 'merged plab', merged_p_tuple%plab
+
        merged_nblks = get_num_blks(merged_p_tuple)
+
+! write(*,*) 'merged plab 2', merged_p_tuple%plab
 
        allocate(merged_blk_info(1, merged_nblks, 3))
 
-       merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+! write(*,*) 'allocate OK', merged_p_tuple%plab
+
+       call get_blk_info_s(merged_nblks, merged_p_tuple, merged_blk_info(1, :, :))
+
+! write(*,*) 'merged plab 3', merged_p_tuple%plab
+! 
+! do i = 1, merged_nblks
+! 
+! write(*,*) 'merged block info', merged_blk_info(1,i,:)
+! 
+! end do
+
        blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
        merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
        merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
@@ -698,6 +758,16 @@ module rsp_perturbed_sdf
        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
             merged_triang_size, triang_indices_fp)
 
+! do i = 1, size(triang_indices_fp,1)
+! 
+! write(*,*) 'triang indices', triang_indices_fp(i,:)
+! 
+! end do
+! 
+! write(*,*) 'size Fp', size(Fp)
+! write(*,*) 'size loc', size(lower_order_contribution)
+
+
        do i = 1, size(triang_indices_fp, 1)
 
           fp_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
@@ -705,12 +775,18 @@ module rsp_perturbed_sdf
                       (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
                       (/triang_indices_fp(i, :) /))
 
+          do j = 1, total_num_perturbations
+    
+             translated_index(j) = triang_indices_fp(i,pids_current_contribution(j))
+    
+          end do
+
           if (p_tuples(1)%n_perturbations > 0) then
 
              lo_offset = get_triang_blks_tuple_offset(num_p_tuples, &
                          total_num_perturbations, nblks_tuple, &
                          nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                         (/triang_indices_fp(i, :) /))
+                         (/translated_index(:)/))
 
           else
 
@@ -719,9 +795,13 @@ module rsp_perturbed_sdf
                          nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :), &
                          blk_sizes(2:num_p_tuples,:), &
                          blks_tuple_triang_size(2:num_p_tuples), & 
-                         (/triang_indices_fp(i, :) /))
+                         (/translated_index(:)/))
 
           end if
+
+!           write(*,*) 'ind', triang_indices_fp(i, :)
+! write(*,*) 'fp_offset', fp_offset
+! write(*,*) 'lo_offset', lo_offset
 
           Fp(fp_offset) = Fp(fp_offset) + lower_order_contribution(lo_offset)
 

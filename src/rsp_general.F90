@@ -71,6 +71,12 @@ public rsp_cfg
 ! The call (commented out) is kept here for now
 !    kn = get_bestkn(pert)
     write(*,*) ' '
+    write(*,*) 'General OpenRSP code called'
+    write(*,*) ' '
+    write(*,*) 'The field labels are', pert%plab
+    write(*,*) 'Frequencies are', pert%freq
+    write(*,*) 'Dimensions are', pert%pdim
+    write(*,*) ' '
     write(*,*) 'Choice of k, n is ', kn(1), ' and ', kn(2)
     write(*,*) ' '
 
