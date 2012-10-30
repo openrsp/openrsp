@@ -64,5 +64,22 @@ module openrsp_cfg
    logical :: openrsp_cfg_general_ggggff = .false.
    logical :: openrsp_cfg_general_gggggf = .false.
    logical :: openrsp_cfg_general_gggggg = .false.
+   logical :: openrsp_cfg_general_fffffff = .false.
+   logical :: openrsp_cfg_general_gffffff = .false.
+   logical :: openrsp_cfg_general_ggfffff = .false.
+   logical :: openrsp_cfg_general_gggffff = .false.
+   logical :: openrsp_cfg_general_ggggfff = .false.
+   logical :: openrsp_cfg_general_gggggff = .false.
+   logical :: openrsp_cfg_general_ggggggf = .false.
+   logical :: openrsp_cfg_general_ggggggg = .false.
+   logical :: openrsp_cfg_general_ffffffff = .false.
+   logical :: openrsp_cfg_general_gfffffff = .false.
+   logical :: openrsp_cfg_general_ggffffff = .false.
+   logical :: openrsp_cfg_general_gggfffff = .false.
+   logical :: openrsp_cfg_general_ggggffff = .false.
+   logical :: openrsp_cfg_general_gggggfff = .false.
+   logical :: openrsp_cfg_general_ggggggff = .false.
+   logical :: openrsp_cfg_general_gggggggf = .false.
+   logical :: openrsp_cfg_general_gggggggg = .false.
 
 end module

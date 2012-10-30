@@ -279,6 +279,80 @@
 
 !     --------------------------------------------------------------------------
 
+
+      if (kw_matches(word, '.FFFFFFF')) then
+         openrsp_cfg_general_fffffff = .true.
+      end if
+
+      if (kw_matches(word, '.GFFFFFF')) then
+         openrsp_cfg_general_gffffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGFFFFF')) then
+         openrsp_cfg_general_ggfffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGFFFF')) then
+         openrsp_cfg_general_gggffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGFFF')) then
+         openrsp_cfg_general_ggggfff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGFF')) then
+         openrsp_cfg_general_gggggff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGGF')) then
+         openrsp_cfg_general_ggggggf = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGGG')) then
+         openrsp_cfg_general_ggggggg = .true.
+      end if
+
+!     --------------------------------------------------------------------------
+
+
+      if (kw_matches(word, '.FFFFFFFF')) then
+         openrsp_cfg_general_ffffffff = .true.
+      end if
+
+      if (kw_matches(word, '.GFFFFFFF')) then
+         openrsp_cfg_general_gfffffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGFFFFFF')) then
+         openrsp_cfg_general_ggffffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGFFFFF')) then
+         openrsp_cfg_general_gggfffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGFFFF')) then
+         openrsp_cfg_general_ggggffff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGFFF')) then
+         openrsp_cfg_general_gggggfff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGGFF')) then
+         openrsp_cfg_general_ggggggff = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGGGF')) then
+         openrsp_cfg_general_gggggggf = .true.
+      end if
+
+      if (kw_matches(word, '.GGGGGGGG')) then
+         openrsp_cfg_general_gggggggg = .true.
+      end if
+
+!     --------------------------------------------------------------------------
+
       call check_whether_kw_found(word, kw_section)
 
    end subroutine
