@@ -1197,7 +1197,7 @@ end subroutine
        allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
 
        perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms,/)
+                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
        perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO '/)
        perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
 
@@ -1432,7 +1432,7 @@ end subroutine
        allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
        allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
 
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms &
+       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms, &
                                    3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
        perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
                                    'GEO ', 'GEO ', 'GEO ', 'EL  '/)
@@ -1465,7 +1465,7 @@ end subroutine
        perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms, &
                                    3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
        perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
-                                   'GEO ', 'GEO ', 'GEO ', 'GEO ',/)
+                                   'GEO ', 'GEO ', 'GEO ', 'GEO '/)
        perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
 
        if(allocated(openrsp_cfg_real_freqs)) then
