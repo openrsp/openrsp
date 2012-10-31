@@ -240,6 +240,7 @@ end subroutine
   subroutine openrsp_calc()
 
     integer       :: kn(2)
+    integer       :: i
     type(p_tuple) :: perturbation_tuple
 
 
@@ -968,6 +969,7 @@ end subroutine
     end if
 
     if (openrsp_cfg_general_gggggg) then
+
        kn = (/3, 2/)
 
        perturbation_tuple%n_perturbations = 6
@@ -994,493 +996,58 @@ end subroutine
        call rsp_prop(perturbation_tuple, kn, F, D, S)
     end if
 
-! Begin 7th order
 
-    if (openrsp_cfg_general_fffffff) then
-       kn = (/3, 3/)
+    if (openrsp_cfg_general_specify) then
 
-       perturbation_tuple%n_perturbations = 7
+       kn = openrsp_cfg_specify_kn
+
+       perturbation_tuple%n_perturbations = openrsp_cfg_specify_order
        allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
        allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
        allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
        allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
 
-       perturbation_tuple%pdim = (/3, 3, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
+       perturbation_tuple%plab = openrsp_cfg_specify_plab
+
+       do i = 1, openrsp_cfg_specify_order
+
+          if (openrsp_cfg_specify_plab(i) == 'GEO ') then
+
+             perturbation_tuple%pdim(i) = 3*num_atoms
+
+          elseif (openrsp_cfg_specify_plab(i) == 'EL  ') then
+
+             perturbation_tuple%pdim(i) = 3
+
+          elseif (openrsp_cfg_specify_plab(i) == 'MAG ') then
+
+             perturbation_tuple%pdim(i) = 3
+
+          else
+
+             write(*,*) 'ERROR: Unrecognized field', openrsp_cfg_specify_plab(i)
+             write(*,*) 'encountered when setting up customized response property calculation'
+
+          end if
+
+       end do
+       
+       perturbation_tuple%pid = (/(i, i = 1, openrsp_cfg_specify_order)/)
 
        if(allocated(openrsp_cfg_real_freqs)) then
 
-          perturbation_tuple%freq = (/ &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
+          perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order - &
+          openrsp_cfg_nr_real_freqs - 1), (-1.0) * sum(openrsp_cfg_real_freqs), &
+          openrsp_cfg_real_freqs(:) /)
 
        else
 
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
+          perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
 
        end if
 
        call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
 
-    if (openrsp_cfg_general_gffffff) then
-       kn = (/0, 6/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggfffff) then
-       kn = (/1, 5/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gggffff) then
-       kn = (/2, 4/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggggfff) then
-       kn = (/3, 3/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gggggff) then
-       kn = (/3, 3/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggggggf) then
-       kn = (/3, 3/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggggggg) then
-       kn = (/3, 3/)
-
-       perturbation_tuple%n_perturbations = 7
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO ', 'GEO '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-
-! Begin 8th order
-
-    if (openrsp_cfg_general_ffffffff) then
-       kn = (/4, 3/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3, 3, 3, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  ', & 
-                                   'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/ &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gfffffff) then
-       kn = (/0, 7/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  ', & 
-                                   'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/ 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggffffff) then
-       kn = (/1, 6/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', & 
-                                   'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/ 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gggfffff) then
-       kn = (/2, 5/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', & 
-                                   'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/ 0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggggffff) then
-       kn = (/3, 4/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
-                                   'EL  ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/ 0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gggggfff) then
-       kn = (/4, 3/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
-                                   'GEO ', 'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_ggggggff) then
-       kn = (/4, 3/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
-                                   'GEO ', 'GEO ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/ 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-          (-1.0) * sum(openrsp_cfg_real_freqs), openrsp_cfg_real_freqs(:)/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gggggggf) then
-       kn = (/4, 3/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
-                                   'GEO ', 'GEO ', 'GEO ', 'EL  '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
-    end if
-
-    if (openrsp_cfg_general_gggggggg) then
-       kn = (/4, 3/)
-
-       perturbation_tuple%n_perturbations = 8
-       allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
-       allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
-
-       perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms, &
-                                   3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
-       perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO ', & 
-                                   'GEO ', 'GEO ', 'GEO ', 'GEO '/)
-       perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6, 7, 8/)
-
-       if(allocated(openrsp_cfg_real_freqs)) then
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       else
-
-          perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0, &
-                                      0.0d0, 0.0d0, 0.0d0, 0.0d0/)
-
-       end if
-
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
     end if
 
   end subroutine

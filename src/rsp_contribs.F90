@@ -1340,7 +1340,7 @@ contains
        else if ((count(pert%plab == 'GEO ') == 1) .AND. &
                 (count(pert%plab == 'EL  ') == 1)) then
 
-          write(*,*) 'Case: GEO, EL'
+!           write(*,*) 'Case in xcave: GEO, EL'
 
           allocate(Dg(pert%pdim(1)))
 
@@ -1423,7 +1423,7 @@ write(*,*) 'offset', n, 'size', size(ave)
        else if ((count(pert%plab == 'GEO ') == 1) .AND. &
                 (count(pert%plab == 'EL  ') == 2)) then
 
-          write(*,*) 'Case: GEO, EL, EL'
+!           write(*,*) 'Case in xcave: GEO, EL, EL'
 
           allocate(Dg(pert%pdim(2)))
           allocate(Dgg(pert%pdim(2), pert%pdim(2)))
@@ -1535,7 +1535,7 @@ write(*,*) 'offset', n, 'size', size(ave)
        else if ((count(pert%plab == 'GEO ') == 1) .AND. &
                 (count(pert%plab == 'EL  ') == 3)) then
 
-          write(*,*) 'Case: GEO, EL, EL, EL'
+!           write(*,*) 'Case in xcave: GEO, EL, EL, EL'
 
           allocate(Dg(pert%pdim(2)))
           allocate(Dgg(pert%pdim(2), pert%pdim(2)))
@@ -2054,6 +2054,7 @@ write(*,*) 'offset', n, 'size', size(ave)
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
     use interface_interest
+    use rsp_indices_and_addressing, only: make_triangulated_indices
     !> number of fields
     integer,              intent(in)    :: nf, propsize
     !> field labels in std order
