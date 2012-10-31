@@ -2088,45 +2088,58 @@ write(*,*) 'offset', n, 'size', size(ave)
        end do
     else
 
-
-! ! Begin new general geo code
-! 
-!        if ((nf == count(f == 'GEO '))) then
-! 
-!           ncor = 3 * get_nr_atoms()
-!           allocate(indices(propsize, nf))
-!           call make_triangulated_indices(nf, (/1, nf, nc(1)/), propsize, indices)
-! 
-!           do i = 1, propsize
-! 
-!              if (iszero(fock(i))) then
-!                 call mat_ensure_alloc(fock(i))
-!                 fock(i)%elms_alpha = 0 !ajt FIXME use mat_axpy
-!              end if
-!              
-!              k = 0
-! 
-!              do j = 1, nf
-! 
-!                 k = k + indices(i,j) * ( nc(1)**(nf - j ) )
-! 
-!              end do
-! 
-!                 arg(1) = ctr_arg(nf, k, ncor, dens, fock(i), null_ptr)
-!                 call unopt_geodiff_loop(basis_large, basis_small, arg)
-! 
-!           end do
-! 
-!           deallocate(indices)
-! 
-!        end if
-! 
-! 
-! 
-! 
-! ! End new general geo code
+#ifdef PRG_DALTON
+! Begin new general geo code
 
 
+       if (nf==0) then
+          A = 0*dens
+          call mat_ensure_alloc(A)
+          call interface_scf_get_g(dens, A)
+          fock(1) = fock(1) + A
+          A = 0
+
+       else
+
+          if ((nf == count(f == 'GEO '))) then
+
+             ncor = 3 * get_nr_atoms()
+             allocate(indices(propsize, nf))
+             call make_triangulated_indices(1, (/1, nf, nc(1)/), propsize, indices)
+
+             do i = 1, propsize
+
+                if (iszero(fock(i))) then
+                   call mat_ensure_alloc(fock(i))
+                   fock(i)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                end if
+             
+                k = 1
+
+                do j = 1, nf
+
+                   k = k + (indices(i,j) - 1) * ( nc(1)**(nf - j ) )
+
+                end do
+
+                   arg(1) = ctr_arg(nf, k, ncor, dens, fock(i), null_ptr)
+                   call unopt_geodiff_loop(basis_large, basis_small, arg)
+
+             end do
+
+             deallocate(indices)
+
+          end if
+
+       end if
+
+
+! End new general geo code
+
+! MaR: I don't understand all the program-specific ifdefs below, so I kept this
+! non-general code for "not-Dalton" runs
+
+#else
        if (nf==0) then
           A = 0*dens
           call mat_ensure_alloc(A)
@@ -2209,173 +2222,14 @@ write(*,*) 'offset', n, 'size', size(ave)
              end do
           end do
 
-! 
-! 
-! 
-! 
-! 
-! 
-! 
-! 
-! 
-! 
-!    ! MaR: The case /'GEO ','GEO ','GEO '/ is handled numerically at present
-!    ! for testing purposes. Upgrade to analytical when ready.
-!        else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-!           ncor = 3 * get_nr_atoms()
-!           ij = 0
-!    
-!           ! write(*,*) 'fock before', fock(1)%elms_alpha
-!    
-!           allocate(tmpfock(nc(1) * (nc(2) + 1) / 2))
-!    
-!           do k = 1, propsize
-!    
-!              if (iszero(fock(k))) then
-!                 call mat_ensure_alloc(fock(k))
-!                 fock(k)%elms_alpha = 0 !ajt FIXME use mat_axpy
-!              end if
-!    
-!           end do
-!    
-!    ! MaR: Numerical testing disabled because it doesn't really work
-!    ! MaR: Keep it like this until the analytic procedure is implemented
-!    ! do k = 1, nc(1) * (nc(2) + 1) / 2
-!    ! 
-!    ! 
-!    ! ! ASSUME CLOSED SHELL
-!    ! call mat_init(tmpfock(k), nr_ao, nr_ao, .true.)
-!    ! 
-!    ! end do
-!    ! 
-!    ! h = 0
-!    ! 
-!    ! 
-!    ! do k = 0, nc(3) - 1
-!    ! 
-!    ! hincr = 0
-!    ! 
-!    !           call SHELLS_NUCLEI_displace(k, fdistep)
-!    ! 
-!    ! ij = 0
-!    ! 
-!    !        do j = 0, nc(2)-1
-!    !           do i = j, nc(1)-1
-!    !              ij = ij + 1
-!    !              if (iszero(tmpfock(ij))) then
-!    !                 call mat_ensure_alloc(tmpfock(ij))
-!    !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-!    !              end if
-!    !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-!    !                               ncor, dens, tmpfock(ij), null_ptr)
-!    !              call unopt_geodiff_loop(basis_large, &
-!    !                                      basis_small, &
-!    !                                      arg)
-!    !           end do
-!    !        end do
-!    ! 
-!    ! ij = 0
-!    ! 
-!    ! do j = 1, nc(2)
-!    !    do i = j, nc(1)
-!    ! 
-!    ! ij = ij + 1
-!    ! 
-!    ! if (j - 1 >= k) then
-!    ! 
-!    ! 
-!    ! 
-!    ! h = h + 1
-!    ! hincr = hincr + 1
-!    ! write(*,*) 'at plus'
-!    ! write(*,*) 'j i is', j, i
-!    ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
-!    ! write(*,*) 'h index', h, 'ij index', ij
-!    ! 
-!    ! 
-!    ! if (h == 1) then
-!    ! 
-!    ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
-!    ! 
-!    ! end if
-!    ! 
-!    ! 
-!    ! 
-!    ! fock(h)%elms_alpha = fock(h)%elms_alpha + tmpfock(ij)%elms_alpha / (2*fdistep)
-!    ! tmpfock(ij)%elms_alpha = 0.0
-!    ! 
-!    ! end if
-!    ! 
-!    !    end do
-!    ! end do
-!    ! 
-!    ! h = h - hincr
-!    ! 
-!    !           call SHELLS_NUCLEI_displace(k, -2*fdistep)
-!    ! 
-!    ! ij = 0
-!    ! 
-!    !        do j = 0, nc(2)-1
-!    !           do i = j, nc(1)-1
-!    !              ij = ij + 1
-!    !              if (iszero(tmpfock(ij))) then
-!    !                 call mat_ensure_alloc(tmpfock(ij))
-!    !                 tmpfock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
-!    !              end if
-!    !              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-!    !                               ncor, dens, tmpfock(ij), null_ptr)
-!    !              call unopt_geodiff_loop(basis_large, &
-!    !                                      basis_small, &
-!    !                                      arg)
-!    !           end do
-!    !        end do
-!    ! 
-!    ! ij = 0
-!    ! 
-!    ! do j = k + 1, nc(2)
-!    !    do i = j, nc(1)
-!    ! 
-!    ! 
-!    ! ij = ij + 1
-!    ! 
-!    ! if (j - 1 >= k) then
-!    ! 
-!    ! h = h + 1
-!    ! write(*,*) 'at minus'
-!    ! write(*,*) 'j i is', j, i
-!    ! write(*,*) 'fock size', size(fock), 'size tmpfock', size(tmpfock)
-!    ! write(*,*) 'h index', h, 'ij index', ij
-!    ! 
-!    ! 
-!    ! if (h == 1) then
-!    ! 
-!    ! write(*,*) 'tmpfock(ij)%elms_alpha', tmpfock(ij)%elms_alpha
-!    ! 
-!    ! end if
-!    ! 
-!    ! 
-!    ! fock(h)%elms_alpha = fock(h)%elms_alpha - tmpfock(ij)%elms_alpha / 2*fdistep
-!    ! tmpfock(ij)%elms_alpha = 0.0
-!    ! 
-!    ! end if
-!    ! 
-!    !    end do
-!    ! end do
-!    ! 
-!    !           call SHELLS_NUCLEI_displace(k, fdistep)
-!    ! 
-!    ! end do
-!    
-!           deallocate(tmpfock)
-!    
-!    
-!           write(*,*) 'fock after', fock(1)%elms_alpha
+
    
        else
           print *, 'error in rsp_twoint_tr: not implemented or in wrong order - ', &
                   (' ' // f(i), i=1,nf)
           call quit('error in rsp_twoint_tr: not implemented or in wrong order')
        end if
+#endif
 
     end if
 
