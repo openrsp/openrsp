@@ -148,7 +148,7 @@ module rsp_perturbed_sdf
     call rsp_ovlint_tr(zeromat%nrow, pert%n_perturbations, pert%plab, &
                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
                        nblks, blk_info, blk_sizes, &
-                       perturbed_matrix_size, ovl = Sp)
+                       perturbed_matrix_size, Sp)
     call sdf_add(S, pert, perturbed_matrix_size, Sp)
 
     deallocate(blk_sizes)
@@ -470,7 +470,7 @@ end if
 
     implicit none
     
-    type(p_tuple) :: merged_p_tuple
+    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
     type(matrix), allocatable, dimension(:) :: dens_tuple
@@ -827,11 +827,11 @@ end if
 ! NOTE: Find out if necessary ovlint/oneint in "outer indices case" above
 ! NOTE (Oct 12): Probably not unless some hidden density matrix dependence
 
-           call rsp_ovlint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                           p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
-                    1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), property_size, &
-                    w = p_tuples(1)%freq, fock = Fp)
+          t_matrix_bra = get_emptypert()
+          t_matrix_ket = get_emptypert()
+
+          call rsp_ovlint_t_matrix(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1), &
+                                   t_matrix_bra, t_matrix_ket, property_size, Fp)
 
        end if
 

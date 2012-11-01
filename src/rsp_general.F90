@@ -433,7 +433,7 @@ public rsp_cfg
     implicit none
 
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
-    type(p_tuple) :: merged_p_tuple
+    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket
     type(SDF) :: D
     type(property_cache) :: cache
     type(matrix), allocatable, dimension(:) :: dens_tuple
@@ -611,22 +611,23 @@ public rsp_cfg
    
           if (num_p_tuples == 1) then
    
-             call rsp_ovlave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
-                            p_tuples(1)%pdim, nblks_tuple(1), &
-                            blks_tuple_info(1, 1:nblks_tuple(1), :), &
-                            blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, &
-                            ave = contrib, w = p_tuples(1)%freq, &
-                            D = sdf_getdata(D, get_emptypert(), (/1/)))
+             t_matrix_bra = get_emptypert()
+             t_matrix_ket = get_emptypert()
+
+             call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
+                                      t_matrix_bra, t_matrix_ket, &
+                                      sdf_getdata(D, get_emptypert(), (/1/)), &
+                                      inner_indices_size, contrib)
+
    
           elseif (num_p_tuples == 2) then
-   
-             call rsp_ovlave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
-                            p_tuples(1)%pdim, nblks_tuple(1), &
-                            blks_tuple_info(1, 1:nblks_tuple(1), :), &
-                            blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, &
-                            ave = contrib, w = p_tuples(1)%freq, D = dens_tuple(2))
+
+             t_matrix_bra = get_emptypert()
+             t_matrix_ket = get_emptypert()
+
+             call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
+                                      t_matrix_bra, t_matrix_ket, &
+                                      dens_tuple(2), inner_indices_size, contrib)
    
           end if
    
@@ -808,13 +809,13 @@ public rsp_cfg
        tmp = tmp + contrib
        contrib = 0.0
 
-       call rsp_ovlave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
-                       p_tuples(1)%pdim, nblks_tuple(1), &
-                       blks_tuple_info(1, 1:nblks_tuple(1), :), &
-                       blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, &
-                       ave = contrib, w = p_tuples(1)%freq, &
-                       D = sdf_getdata(D, get_emptypert(), (/1/)))
+       t_matrix_bra = get_emptypert()
+       t_matrix_ket = get_emptypert()
+
+       call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
+                                t_matrix_bra, t_matrix_ket, &
+                                sdf_getdata(D, get_emptypert(), (/1/)), &
+                                inner_indices_size, contrib)
 
        tmp = tmp + contrib
        contrib = 0.0
@@ -1075,7 +1076,7 @@ public rsp_cfg
                           (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
                           p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                           1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
-                          size(tmp), ave = tmp, DFD = W)
+                          size(tmp), W, tmp)
  
        do j = 1, size(inner_indices, 1)
     
@@ -1393,7 +1394,7 @@ public rsp_cfg
                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
                        p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                        1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
-                       size(tmp), ave = tmp, DFD = W)
+                       size(tmp), W, tmp)
 
        do j = 1, size(inner_indices, 1)
 
