@@ -53,10 +53,12 @@ module rsp_contribs
   ! MaR: THESE COULD REPLACE THE CORRESPONDING ABOVE ROUTINES WHEN APPROPRIATE
   public rsp_nucpot_tr
   public rsp_ovlave_tr
+  public rsp_ovlave_t_matrix
   public rsp_oneave_tr
   public rsp_twoave_tr
   public rsp_xcave_tr_adapt
   public rsp_ovlint_tr
+  public rsp_ovlint_t_matrix
   public rsp_oneint_tr
   public rsp_twoint_tr
   public rsp_xcint_tr_adapt
@@ -380,7 +382,7 @@ contains
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
   subroutine rsp_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ave, DFD, w, D)
+                                      blk_sizes, propsize, DFD, ave)
     !> number of fields
     integer,       intent(in)  :: nf, propsize
     integer :: nblks
@@ -391,39 +393,215 @@ contains
     !> first and number of- components in each field
     integer,       intent(in)  :: c(nf), nc(nf)
     !> energy-weighted density matrix
-    type(matrix),  intent(in), optional  :: DFD
+    type(matrix),  intent(in) :: DFD
     !> output average
-    complex(8),    intent(inout), optional :: ave(propsize)
-    !> field frequencies corresponding to each field
-    complex(8),    intent(in), optional  :: w(nf)
-    !> density matrix to contract half-differentiated overlap against
-    type(matrix),  intent(in), optional  :: D
+    complex(8),    intent(inout) :: ave(propsize)
+
     !----------------------------------------------
 
-    if (present(ave)) then
+    call interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+                                 blk_sizes, propsize, ave = ave, DFD = DFD)
 
-       if (present(w) .and. present(D)) then
+  end subroutine
 
-!           write(*,*) 'rsp_ovlave: Called for handling of T matrix contribution'
-!           write(*,*) 'rsp_ovlave: Nothing is returned presently - awaiting development'
 
-!           call interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
-!                                        blk_sizes, propsize, ave = ave, w = w, D = D)
 
-       else
 
-          call interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
-                                       blk_sizes, propsize, ave = ave, DFD = DFD)
 
-       end if
+
+
+
+
+!   ! MaR: This routine not tested - awaiting development in integral code
+!   !> Compute half-differentiated overlap contribution to property
+  recursive subroutine rsp_ovlave_t_matrix(num_fields, fields, bra, &
+                                           ket, D, propsize, ave)
+
+    implicit none
+
+    integer :: num_fields, propsize, i, j, k, under_construction, merged_nblks
+    integer :: ave_offset, tmp_result_offset, merged_triang_size, tmp_ave_size
+    integer :: total_num_perturbations
+    type(matrix) :: D
+    type(p_tuple) :: fields, bra, ket, merged_p_tuple
+    integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
+    complex(8), dimension(propsize) :: ave, tmp_ave
+    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
+                                          blk_sizes_merged, translated_index
+    integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
+    integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
+
+
+under_construction = 1
+
+if (under_construction == 1) then
+
+! write(*,*) 'Called for T matrix contribution - currently unfinished so nothing was added'
+
+else
+    
+
+    if (num_fields > 0) then
+
+       call rsp_ovlave_t_matrix(num_fields - 1, p_tuple_remove_first(fields), &
+            merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, D, propsize, ave)
+
+       call rsp_ovlave_t_matrix(num_fields - 1, p_tuple_remove_first(fields), &
+            bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), D, propsize, ave)
 
     else
 
-       write(*,*) 'rsp_ovlave: Error: Unsupported input case - must be only ave or all of ave, w, D'
+       tmp_ave = 0.0
+
+       merged_p_tuple = merge_p_tuple(bra, ket)
+
+       ! Make frequency independent blocks for bra/ket
+
+       bra%freq = 0.0
+       ket%freq = 0.0
+
+       allocate(nfields(2))
+       allocate(nblks_tuple(2))
+    
+       nfields(1) = bra%n_perturbations
+       nblks_tuple(1) = get_num_blks(bra)
+
+       nfields(2) = ket%n_perturbations
+       nblks_tuple(2) = get_num_blks(ket)
+               
+       total_num_perturbations = sum(nfields)
+
+       allocate(blks_tuple_info(2, total_num_perturbations, 3))
+       allocate(blks_tuple_triang_size(2))
+       allocate(blk_sizes(2, total_num_perturbations))
+       allocate(blk_sizes_merged(total_num_perturbations))
+    
+       blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra)
+       blks_tuple_triang_size(1) = get_triangulated_size(nblks_tuple(1), &
+                                   blks_tuple_info(1, 1:nblks_tuple(1), :))
+       blk_sizes(1, 1:nblks_tuple(1)) = get_triangular_sizes(nblks_tuple(1), &
+       blks_tuple_info(1,1:nblks_tuple(1),2), blks_tuple_info(1,1:nblks_tuple(1),3))
+
+       blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket)
+       blks_tuple_triang_size(2) = get_triangulated_size(nblks_tuple(2), &
+                                   blks_tuple_info(2, 1:nblks_tuple(2), :))
+       blk_sizes(2, 1:nblks_tuple(2)) = get_triangular_sizes(nblks_tuple(2), &
+       blks_tuple_info(2,1:nblks_tuple(2),2), blks_tuple_info(2,1:nblks_tuple(2),3))
+
+
+       ! Also make frequency dependent blocks for bra/ket
+       ! The latter blocks will be larger or the same size as the former
+       ! Loop over indices of the latter block, apply frequency factors and access
+       ! elements of the former block (related to the interface/integral routines)
+      
+       ! MaR: Not completely sure if this is the correct size
+       tmp_ave_size = product(blks_tuple_triang_size)
+
+       call interface_1el_ovlave_half_diff(bra%n_perturbations, bra%plab, &
+            (/(j/j, j = 1, bra%n_perturbations)/), bra%pdim, ket%n_perturbations, ket%plab, &
+            (/(j/j, j = 1, ket%n_perturbations)/), ket%pdim, nblks_tuple, &
+            blks_tuple_info, blk_sizes, D, tmp_ave_size, tmp_ave)
+
+       k = 1
+       do j = 1, bra%n_perturbations
+          pids_current_contribution(k) = bra%pid(j)
+          k = k + 1
+       end do
+
+       do j = 1, ket%n_perturbations
+          pids_current_contribution(k) = ket%pid(j)
+          k = k + 1
+       end do
+
+       merged_nblks = get_num_blks(merged_p_tuple)
+
+       allocate(merged_blk_info(1, merged_nblks, 3))
+
+
+       merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+       blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+       merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+       merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+
+       allocate(merged_indices(merged_triang_size, total_num_perturbations))
+       allocate(translated_index(total_num_perturbations))
+
+
+       call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+            merged_triang_size, merged_indices)
+
+       do i = 1, size(merged_indices, 1)
+
+          ave_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+                   (/sum(nfields)/), &
+                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+                   (/merged_indices(i, :) /))
+   
+          do j = 1, total_num_perturbations
+    
+             translated_index(j) = merged_indices(i,pids_current_contribution(j))
+    
+          end do
+
+! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
+! because of no frequencies.
+    
+          if (bra%n_perturbations == 0) then
+    
+             tmp_result_offset = get_triang_blks_tuple_offset(1, &
+                                 total_num_perturbations, nblks_tuple(2), &
+                                 nfields(2), blks_tuple_info(2, :, :), &
+                                 blk_sizes(2,:), blks_tuple_triang_size(2), & 
+                                 (/ translated_index(:) /))
+    
+          elseif (ket%n_perturbations == 0) then
+    
+             tmp_result_offset = get_triang_blks_tuple_offset(1, &
+                                 total_num_perturbations, nblks_tuple(1), &
+                                 nfields(1), blks_tuple_info(1, :, :), &
+                                 blk_sizes(1,:), blks_tuple_triang_size(1), & 
+                                 (/ translated_index(:) /))
+
+          else
+
+             tmp_result_offset = get_triang_blks_tuple_offset(2, &
+                                 total_num_perturbations, nblks_tuple, &
+                                 nfields, blks_tuple_info, blk_sizes, &
+                                 blks_tuple_triang_size, &
+                                 (/ translated_index(:) /))
+    
+          end if
+    
+          ave(ave_offset) = ave(ave_offset) + &
+          0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_ave(tmp_result_offset)
+
+       end do
+
+       deallocate(merged_indices)
+       deallocate(translated_index)
+       deallocate(nfields)
+       deallocate(nblks_tuple)
+       deallocate(blks_tuple_info)
+       deallocate(blks_tuple_triang_size)
+       deallocate(blk_sizes)
+       deallocate(blk_sizes_merged)
+       deallocate(merged_blk_info)
 
     end if
 
+end if
+
   end subroutine
+
+
+
+
+
+
+
+
+
+
 
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
@@ -1660,7 +1838,7 @@ write(*,*) 'offset', n, 'size', size(ave)
 
   !> Compute differentiated overlap matrices,
   subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ovl, w, fock)
+                                      blk_sizes, propsize, ovl)
     !> number of fields
     integer,       intent(in)    :: nf, propsize
     integer :: nblks
@@ -1671,174 +1849,201 @@ write(*,*) 'offset', n, 'size', size(ave)
     !> first and number of- components in each field
     integer,       intent(in)    :: c(nf), nc(nf)
     !> resulting overlap integral matrices (incoming content deleted)
-    type(matrix),  intent(inout), optional :: ovl(propsize)
-    !> frequencies of each field
-    complex(8),    intent(in),    optional :: w(nf)
-    !> Fock matrices to which the half-differentiated overlap
-    !> contribution is ADDED
-    type(matrix),  intent(inout), optional :: fock(propsize)
+    type(matrix),  intent(inout) :: ovl(propsize)
     !------------------------------------------------
     integer      i, nr_ao
 
-    if (present(ovl)) then
-
-       call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-                                    blk_sizes, propsize, ovl = ovl)
-
-    else if (present(w) .and. present(fock)) then
-
-!        write(*,*) 'rsp_ovlint: Called for handling of T matrix contribution'
-!        write(*,*) 'rsp_ovlint: Nothing is returned presently - awaiting development'
-
-!        call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-!                                     blk_sizes, propsize, w = w, fock = fock)
-
-    else
-
-       write(*,*) 'rsp_ovlint: Error: Unsupported input case - must be only ovl or both of w, fock'
-
-    end if
+    call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+                                 blk_sizes, propsize, ovl = ovl)
 
   end subroutine
 
 
 
-!   ! MaR: This routine not finished - awaiting development in integral code
+!   ! MaR: This routine not tested - awaiting development in integral code
 !   !> Compute half-differentiated overlap contribution to Fock matrices
-!   recursive subroutine rsp_ovlint_t_matrix(num_fields, fields, bra, ket, propsize, fock):
-! 
-!     implicit none
-! 
-!     if (num_fields > 0) then
-! 
-!        call rsp_ovlint_diff_bra_ket(num_fields - 1, p_tuple_remove_first(fields), &
-!             merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, propsize, fock)
-! 
-!        call rsp_ovlint_diff_bra_ket(num_fields - 1, p_tuple_remove_first(fields), &
-!             bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), propsize, fock)
-! 
-!     else
-! 
-!        tmp_int = 0
-! 
-!        merged_p_tuple = merge_p_tuple(bra, ket)
-! 
-!        ! Make frequency independent blocks for bra/ket
-! 
-!        bra%freq = 0.0
-!        ket%freq = 0.0
-! 
-!        allocate(nfields(2))
-!        allocate(nblks_tuple(2))
-!     
-!        nfields(1) = bra%n_perturbations
-!        nblks_tuple(1) = get_num_blks(bra)
-! 
-!        nfields(2) = ket%n_perturbations
-!        nblks_tuple(2) = get_num_blks(ket)
-!                
-!        total_num_perturbations = sum(nfields)
-! 
-!        allocate(blks_tuple_info(2, total_num_perturbations, 3))
-!        allocate(blks_tuple_triang_size(2))
-!        allocate(blk_sizes(2, total_num_perturbations))
-!        allocate(blk_sizes_merged(total_num_perturbations))
-!     
-!        blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra)
-!        blks_tuple_triang_size(1) = get_triangulated_size(nblks_tuple(1), &
-!                                    blks_tuple_info(1, 1:nblks_tuple(1), :))
-!        blk_sizes(1, 1:nblks_tuple(1)) = get_triangular_sizes(nblks_tuple(1), &
-!        blks_tuple_info(1,1:nblks_tuple(1),2), blks_tuple_info(1,1:nblks_tuple(1),3))
-! 
-!        blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket)
-!        blks_tuple_triang_size(2) = get_triangulated_size(nblks_tuple(2), &
-!                                    blks_tuple_info(2, 1:nblks_tuple(2), :))
-!        blk_sizes(2, 1:nblks_tuple(2)) = get_triangular_sizes(nblks_tuple(2), &
-!        blks_tuple_info(2,1:nblks_tuple(2),2), blks_tuple_info(2,1:nblks_tuple(2),3))
-! 
-! 
-!        ! Also make frequency dependent blocks for bra/ket
-!        ! The latter blocks will be larger or the same size as the former
-!        ! Loop over indices of the latter block, apply frequency factors and access
-!        ! elements of the former block (related to the interface/integral routines)
-!       
-!        call interface_1el_ovlint_half_diff(nr_ao, bra%n_perturbations, bra%plab, &
-!             (/(j/j, j = 1, bra%n_perturbations)/), bra%pdim, ket%n_perturbations, ket%plab, &
-!             (/(j/j, j = 1, ket%n_perturbations)/), ket%pdim, nblks_tuple, &
-!             blks_tuple_info, blk_sizes, tmp_fock_size, tmp_fock)
-! 
-!        k = 1
-!        do j = 1, bra%n_perturbations
-!           pids_current_contribution(k) = bra%pid(j)
-!           k = k + 1
-!        end do
-! 
-!        do j = 1, ket%n_perturbations
-!           pids_current_contribution(k) = ket%pid(j)
-!           k = k + 1
-!        end do
-! 
-!        merged_nblks = get_num_blks(merged_p_tuple)
-! 
-!        allocate(merged_blk_info(1, merged_nblks, 3))
-! 
-!        merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-!        blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-!        merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-!        merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-! 
-! 
-!        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-!             merged_triang_size, merged_indices)
-! 
-!        do i = 1, size(merged_indices, 1)
-! 
-!           fock_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-!                    (/sum(nfields)/), &
-!                    (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-!                    (/merged_indices(i, :) /))
-!    
-!           do j = 1, total_num_perturbations
-!     
-!              translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
-!     
-!           end do
-!     
-!           if (bra%n_perturbations == 0) then
-!     
-!              int_result_offset = get_triang_blks_tuple_offset(2, &
-!                                  total_num_perturbations, nblks_tuple(2), &
-!                                  nfields(2), blks_tuple_info(2, :, :), &
-!                                  blk_sizes(2,:), blks_tuple_triang_size(2), & 
-!                                  (/ translated_index(:) /))
-!     
-!           elseif (ket%n_perturbations == 0) then
-!     
-!              int_result_offset = get_triang_blks_tuple_offset(1, &
-!                                  total_num_perturbations, nblks_tuple(1), &
-!                                  nfields(1), blks_tuple_info(1, :, :), &
-!                                  blk_sizes(1,:), blks_tuple_triang_size(1), & 
-!                                  (/ translated_index(:) /))
-! 
-!           else
-! 
-!              int_result_offset = get_triang_blks_tuple_offset(2, &
-!                                  total_num_perturbations, nblks_tuple, &
-!                                  nfields, blks_tuple_info, blk_sizes, &
-!                                  blks_tuple_triang_size, &
-!                                  (/ translated_index(:) /))
-!     
-!           end if
-!     
-!           fock(fock_offset) = fock(fock_offset) + tmp_fock(int_result_offset)
-! 
-!        end do
-! 
-! 
-! ! REMEMBER DEALLOCATIONS
-! ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
-! 
-!   end subroutine
+  recursive subroutine rsp_ovlint_t_matrix(nr_ao, num_fields, fields, bra, &
+                                           ket, propsize, fock)
+
+    implicit none
+
+    integer :: nr_ao, num_fields, propsize, i, j, k, under_construction, merged_nblks
+    integer :: fock_offset, int_result_offset, merged_triang_size, tmp_fock_size
+    integer :: total_num_perturbations
+    type(p_tuple) :: fields, bra, ket, merged_p_tuple
+    integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
+    type(matrix), dimension(propsize) :: fock, tmp_fock
+    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
+                                          blk_sizes_merged, translated_index
+    integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
+    integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
+
+
+under_construction = 1
+
+if (under_construction == 1) then
+
+write(*,*) 'Called for T matrix contribution - currently unfinished so nothing was added'
+
+else
+    
+
+    if (num_fields > 0) then
+
+       call rsp_ovlint_t_matrix(nr_ao, num_fields - 1, p_tuple_remove_first(fields), &
+            merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, propsize, fock)
+
+       call rsp_ovlint_t_matrix(nr_ao, num_fields - 1, p_tuple_remove_first(fields), &
+            bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), propsize, fock)
+
+    else
+
+       do i = 1, propsize
+          
+          ! ASSUME CLOSED SHELL
+          call mat_init(tmp_fock(i), nr_ao, nr_ao, .true.)
+
+       end do
+
+       merged_p_tuple = merge_p_tuple(bra, ket)
+
+       ! Make frequency independent blocks for bra/ket
+
+       bra%freq = 0.0
+       ket%freq = 0.0
+
+       allocate(nfields(2))
+       allocate(nblks_tuple(2))
+    
+       nfields(1) = bra%n_perturbations
+       nblks_tuple(1) = get_num_blks(bra)
+
+       nfields(2) = ket%n_perturbations
+       nblks_tuple(2) = get_num_blks(ket)
+               
+       total_num_perturbations = sum(nfields)
+
+       allocate(blks_tuple_info(2, total_num_perturbations, 3))
+       allocate(blks_tuple_triang_size(2))
+       allocate(blk_sizes(2, total_num_perturbations))
+       allocate(blk_sizes_merged(total_num_perturbations))
+    
+       blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra)
+       blks_tuple_triang_size(1) = get_triangulated_size(nblks_tuple(1), &
+                                   blks_tuple_info(1, 1:nblks_tuple(1), :))
+       blk_sizes(1, 1:nblks_tuple(1)) = get_triangular_sizes(nblks_tuple(1), &
+       blks_tuple_info(1,1:nblks_tuple(1),2), blks_tuple_info(1,1:nblks_tuple(1),3))
+
+       blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket)
+       blks_tuple_triang_size(2) = get_triangulated_size(nblks_tuple(2), &
+                                   blks_tuple_info(2, 1:nblks_tuple(2), :))
+       blk_sizes(2, 1:nblks_tuple(2)) = get_triangular_sizes(nblks_tuple(2), &
+       blks_tuple_info(2,1:nblks_tuple(2),2), blks_tuple_info(2,1:nblks_tuple(2),3))
+
+
+       ! Also make frequency dependent blocks for bra/ket
+       ! The latter blocks will be larger or the same size as the former
+       ! Loop over indices of the latter block, apply frequency factors and access
+       ! elements of the former block (related to the interface/integral routines)
+      
+       ! MaR: Not completely sure if this is the correct size
+       tmp_fock_size = product(blks_tuple_triang_size)
+
+       call interface_1el_ovlint_half_diff(nr_ao, bra%n_perturbations, bra%plab, &
+            (/(j/j, j = 1, bra%n_perturbations)/), bra%pdim, ket%n_perturbations, ket%plab, &
+            (/(j/j, j = 1, ket%n_perturbations)/), ket%pdim, nblks_tuple, &
+            blks_tuple_info, blk_sizes, tmp_fock_size, tmp_fock)
+
+       k = 1
+       do j = 1, bra%n_perturbations
+          pids_current_contribution(k) = bra%pid(j)
+          k = k + 1
+       end do
+
+       do j = 1, ket%n_perturbations
+          pids_current_contribution(k) = ket%pid(j)
+          k = k + 1
+       end do
+
+       merged_nblks = get_num_blks(merged_p_tuple)
+
+       allocate(merged_blk_info(1, merged_nblks, 3))
+
+
+       merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+       blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+       merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+       merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+
+       allocate(merged_indices(merged_triang_size, total_num_perturbations))
+       allocate(translated_index(total_num_perturbations))
+
+
+       call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+            merged_triang_size, merged_indices)
+
+       do i = 1, size(merged_indices, 1)
+
+          fock_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+                   (/sum(nfields)/), &
+                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+                   (/merged_indices(i, :) /))
+   
+          do j = 1, total_num_perturbations
+    
+             translated_index(j) = merged_indices(i,pids_current_contribution(j))
+    
+          end do
+
+! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
+! because of no frequencies.
+    
+          if (bra%n_perturbations == 0) then
+    
+             int_result_offset = get_triang_blks_tuple_offset(1, &
+                                 total_num_perturbations, nblks_tuple(2), &
+                                 nfields(2), blks_tuple_info(2, :, :), &
+                                 blk_sizes(2,:), blks_tuple_triang_size(2), & 
+                                 (/ translated_index(:) /))
+    
+          elseif (ket%n_perturbations == 0) then
+    
+             int_result_offset = get_triang_blks_tuple_offset(1, &
+                                 total_num_perturbations, nblks_tuple(1), &
+                                 nfields(1), blks_tuple_info(1, :, :), &
+                                 blk_sizes(1,:), blks_tuple_triang_size(1), & 
+                                 (/ translated_index(:) /))
+
+          else
+
+             int_result_offset = get_triang_blks_tuple_offset(2, &
+                                 total_num_perturbations, nblks_tuple, &
+                                 nfields, blks_tuple_info, blk_sizes, &
+                                 blks_tuple_triang_size, &
+                                 (/ translated_index(:) /))
+    
+          end if
+    
+          fock(fock_offset) = fock(fock_offset) + &
+          0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
+
+       end do
+
+       deallocate(merged_indices)
+       deallocate(translated_index)
+       deallocate(nfields)
+       deallocate(nblks_tuple)
+       deallocate(blks_tuple_info)
+       deallocate(blks_tuple_triang_size)
+       deallocate(blk_sizes)
+       deallocate(blk_sizes_merged)
+       deallocate(merged_blk_info)
+
+    end if
+
+end if
+
+  end subroutine
 
 
 

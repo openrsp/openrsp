@@ -13,6 +13,7 @@ module interface_1el
 
    public interface_1el_ovlave
    public interface_1el_ovlave_tr
+   public interface_1el_ovlave_half_diff
    public interface_1el_oneave
    public interface_1el_oneave_tr
    public interface_1el_ovlint
@@ -193,8 +194,8 @@ contains
    ! MaR: ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
-   subroutine interface_1el_ovlave_tr(nf, f, c, nc, DFD, nblks, blk_info, & 
-                                      blk_sizes,  propsize, ave, w, D)
+   subroutine interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+                                      blk_sizes, propsize, ave, DFD)
       ! Gen1Int interface
       use gen1int_host
       !> number of fields
@@ -207,13 +208,9 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)  :: c(nf), nc(nf)
       !> energy-weighted density matrix
-      type(matrix),  intent(in), optional  :: DFD
+      type(matrix),  intent(in) :: DFD
       !> output average
-      complex(8),    intent(inout), optional :: ave(propsize)
-      !> field frequencies corresponding to each field
-      complex(8),    intent(in), optional  :: w(nf)
-      !> density matrix to contract half-differentiated overlap against
-      type(matrix),  intent(in), optional  :: D
+      complex(8),    intent(inout) :: ave(propsize)
       STOP 'interface_1el_ovlave_tr not implemented for VAR_LSDALTON'
    end subroutine
 #else
@@ -221,7 +218,7 @@ contains
    !> \brief host program routine to get the average f-perturbed overlap integrals
    !>        with perturbed density D and energy-weighted density DFD
    subroutine interface_1el_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ave, DFD, w, D)
+                                      blk_sizes, propsize, ave, DFD)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -240,13 +237,9 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)  :: c(nf), nc(nf)
       !> energy-weighted density matrix
-      type(matrix),  intent(in), optional  :: DFD
+      type(matrix),  intent(in) :: DFD
       !> output average
-      complex(8),    intent(inout), optional :: ave(propsize)
-      !> field frequencies corresponding to each field
-      complex(8),    intent(in), optional  :: w(nf)
-      !> density matrix to contract half-differentiated overlap against
-      type(matrix),  intent(in), optional  :: D
+      complex(8),    intent(inout) :: ave(propsize)
       !----------------------------------------------
       type(matrix) A(2)
       real(8), parameter   :: fdistep = 2d0**(-25)
@@ -264,19 +257,6 @@ contains
       integer ierr                           !error information
       logical :: all_frequencies_zero
 
-      if (present(w) .and. .not. present(D)) then
-         call quit("error in interface_1el_ovlave: frequencies 'w' and density 'D' " &
-                // 'must both be present or both absent')
-      end if
-
-      all_frequencies_zero = .true.
-      if (present(w)) then
-         do i = 1, nf
-            if ((dabs(real(w(i))) > tiny(0.0d0))) then
-               all_frequencies_zero = .false.
-            end if
-         end do
-      end if
 
       if (any(f == 'EL  ')) then
          ave = 0.0
@@ -319,31 +299,7 @@ contains
          if (ierr /= 0) call quit("interface_1el_ovlave>> failed to allocate val_expt!")
          val_expt = 0.0
 
-         !FIXME changes to call Gen1Int !FIXME \sum_{j+k=n}
-         ! (-\sum_{j}w_{j}+\sum_{k}w_{k})/2 S(>)^{j}(<)^{k} ! When it comes to w, I think
-         ! it's a better idea to ask the integral program for S>> and S<>, and multiply
-         ! the resulting average or integral by w afterwards, rather than to send w into
-         ! the integral program.  ! with field frequencies
-         if (.not. all_frequencies_zero) then
-            if (order_geo==1) then
-               ! allocate matrices for integrals
-               A(1) = mat_alloc_like(DFD)
-               A(2) = mat_alloc_like(DFD)
-               ! loop over nuclear coordinates
-               do i = 0, nc(1)-1
-                  ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
-                  call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
-                  A(1) = -A(1) !SQHDR is really -dS>/dg
-                  A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
-                  A(1) = A(1) + trps(A(1)) !=1DOVL
-                  ave(1+i) = -tr(A(1),DFD)
-                  ave(1+i) = ave(1+i) + tr(A(2),D)
-               end do
-               A(1:2) = 0 !deallocate
-            else
-               call quit('interface_1el_ovlave>> GEO(>1) with freqencies not implemented!')
-            end if
-         else
+ 
         ! MR: PARAMETERS FOR ADAPTED gen1int CALL BELOW ARE MAYBE SPECIFIED 
         ! INCORRECTLY (ALSO LAST ARG)
             ! calculates the expectaion values of overlap matrix
@@ -402,8 +358,6 @@ contains
         
             deallocate(address_list)
             deallocate(tmp_index)
-
-         end if
     
          deallocate(val_expt)
 
@@ -412,6 +366,96 @@ contains
    end subroutine
 #endif
 
+
+
+
+#ifdef VAR_LSDALTON
+! MaR: ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+! MaR: This routine not finished - awaiting development in integral code
+   !> \brief host program routine to compute differentiated overlap matrices, and optionally
+   !>        add half-differentiated overlap contribution to Fock matrices
+   subroutine interface_1el_ovlave_half_diff(nbra, fbra, cbra, ncbra, &
+              nket, fket, cket, ncket, nblks_tuple, blks_tuple_info, blk_sizes, & 
+              D, propsize, ave)
+
+
+      use gen1int_host
+      !> number of fields
+      integer,       intent(in)    :: nbra, nket, propsize
+      integer, dimension(2) :: nblks_tuple
+      integer, dimension(2, nbra + nket, 3) :: blks_tuple_info
+      integer, dimension(2, nbra + nket) :: blk_sizes
+      !> field labels in std order
+      character(4),  intent(in)    :: fbra(nf), fket(nf)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: cbra(nf), ncbra(nf), cket(nf), ncket(nf)
+      !> Fock matrices to which the half-differentiated overlap
+      !> contribution is ADDED
+      complex(8),  intent(inout):: ave(propsize)
+      complex(8) :: tmp_ave(propsize)
+      type(matrix) :: D
+      STOP 'interface_1el_ovlave_half_diff not implemented for LSDALTON. TK'
+   end subroutine
+#else
+! MaR: ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
+! MaR: This routine not finished - awaiting development in integral code
+   !> \brief host program routine to compute differentiated overlap matrices, and optionally
+   !>        add half-differentiated overlap contribution to Fock matrices
+   subroutine interface_1el_ovlave_half_diff(nbra, fbra, cbra, ncbra, &
+              nket, fket, cket, ncket, nblks_tuple, blks_tuple_info, blk_sizes, & 
+              D, propsize, ave)
+      ! Gen1Int interface
+#ifdef VAR_LSDALTON
+      use gen1int_host
+#else
+      use gen1int_api
+#endif
+      !> number of fields
+      integer,       intent(in)    :: nbra, nket, propsize
+      integer, dimension(2) :: nblks_tuple
+      integer, dimension(2, nbra + nket, 3) :: blks_tuple_info
+      integer, dimension(2, nbra + nket) :: blk_sizes
+      !> field labels in std order
+      character(4),  intent(in)    :: fbra(nbra), fket(nket)
+      !> first and number of- components in each field
+      integer,       intent(in)    :: cbra(nbra), ncbra(nbra), cket(nket), ncket(nket)
+      !> Fock matrices to which the half-differentiated overlap
+      !> contribution is ADDED
+      complex(8),  intent(inout):: ave(propsize)
+      complex(8) :: tmp_ave(propsize)
+      type(matrix) :: D
+      !------------------------------------------------
+      integer      i
+
+           tmp_ave = 0.0
+           ! MaR: THIS IS THE INT CALL STRUCTURE - ADAPT TO AVE AND REMEMBER D
+           ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
+           call gen1int_host_get_int(LONDON, INT_OVERLAP,       &
+                                     0,                          &  !multipole moments
+                                     0,                          &
+                                     count(fbra=='MAG '),        &
+                                     count(fket=='MAG '), 0,     &  !magnetic derivatives
+                                     0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                     count(fbra=='GEO '),        &
+                                     count(fket=='GEO '),        &  !partial geometric derivatives
+                                     0,                          &  !total geometric derivatives
+                                     0,                          &
+                                     0, (/0/),                   &
+                                     UNIQUE_GEO,                 &
+                                     .false., .false., .false.,  &  !not implemented yet
+                                     propsize, tmp_ave, .false.,   &  !integral matrices
+#ifdef PRG_DIRAC
+                                     2, (/1, 1, 2, 2/),          &
+#else
+                                     1, (/1, 1/),                &
+#endif
+                                     get_print_unit(), 0)
+
+          ! MaR: OFFSETS AND LOCATIONS IN MEMORY POSTPONED
+          ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
+
+   end subroutine
+#endif
 
 
 
@@ -1105,7 +1149,7 @@ contains
    !> \brief host program routine to compute differentiated overlap matrices, and optionally
    !>        add half-differentiated overlap contribution to Fock matrices
    subroutine interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-                                      blk_sizes, propsize, ovl, w, fock)
+                                      blk_sizes, propsize, ovl)
       ! Gen1Int interface
 #ifdef VAR_LSDALTON
       use gen1int_host
@@ -1125,13 +1169,8 @@ contains
       !> first and number of- components in each field
       integer,       intent(in)    :: c(nf), nc(nf)
       !> resulting overlap integral matrices (incoming content deleted)
-      type(matrix),  intent(inout), optional :: ovl(propsize)
+      type(matrix),  intent(inout) :: ovl(propsize)
       type(matrix)   :: ovl_tmp(propsize)
-      !> frequencies of each field
-      complex(8),    intent(in),    optional :: w(nf)
-      !> Fock matrices to which the half-differentiated overlap
-      !> contribution is ADDED
-      type(matrix),  intent(inout), optional :: fock(propsize)
       !------------------------------------------------
       integer      i
       integer order_geo  !order of total geometric derivatives
@@ -1142,11 +1181,6 @@ contains
       integer :: num_addr, num_order
       integer, allocatable :: address_list(:,:)
       logical :: all_frequencies_zero
-
-      if (present(w) .and. .not. present(fock)) then
-         call quit("error in interface_1el_ovlint: frequencies 'w' and Fock matrix 'fock' "// &
-                   "must both be present or both absent")
-      end if
 
       ! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
 
@@ -1168,15 +1202,6 @@ contains
       end if
 
 
-
-      all_frequencies_zero = .true.
-      if (present(w)) then
-         do i = 1, nf
-            if ((dabs(real(w(i))) > tiny(0.0d0))) then
-               all_frequencies_zero = .false.
-            end if
-         end do
-      end if
 
       if (any(f=='EL  ')) then
 
@@ -1200,99 +1225,70 @@ contains
          ! sets the number of integral matrices
          num_ints = num_geom
 
-         ! MaR: DISABLED: NOT A VALID WAY OF DISCERNING THIS ANYMORE
-!          if (num_ints/=size(ovl)) then
-!             call quit("interface_1el_ovlint>> returning specific components not implemented!")
-!          end if
-
-         !FIXME changes to call Gen1Int
-         ! with field frequencies
-         if (.not. all_frequencies_zero) then
-           if (order_geo==1) then
-             ! loop over nuclear coordinates
-             do i = 0, nc(1)-1
-                ! allocate, if needed
-                if (.not.isdef(ovl(1+i))) then
-                   call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-                end if
-                ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
-                call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
-                ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
-                fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
-                fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
-                ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
-             end do
-     !FIXME to Andreas: do we need higher order geometric derivatives of overlap integrals with frequencies?
-           else
-             call quit('interface_1el_ovlint>> GEO(>1) with freqencies not implemented!')
-           end if
-         else
-           ! allocates matrices
-           do i = 1, propsize
-             if (.not.isdef(ovl(i))) then
+         ! allocates matrices
+         do i = 1, propsize
+            if (.not.isdef(ovl(i))) then
                call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-             end if
-             if (.not.isdef(ovl_tmp(i))) then
-                call mat_init(ovl_tmp(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-             end if
-           end do
-           ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
-           ! calculates the overlap matrix
-           call gen1int_host_get_int(NON_LAO, INT_OVERLAP,       &
-                                     0,                          &  !multipole moments
-                                     0,                          &
-                                     0, 0, 0,                    &  !magnetic derivatives
-                                     0, 0, 0,                    &  !derivatives w.r.t. total RAM
-                                     0, 0,                       &  !partial geometric derivatives
-                                     order_geo,                  &  !total geometric derivatives
-                                     order_geo,                  &
-                                     0, (/0/),                   &
-                                     UNIQUE_GEO,                 &
-                                     .false., .false., .false.,  &  !not implemented yet
-                                     num_ints, ovl_tmp, .false.,     &  !integral matrices
+            end if
+            if (.not.isdef(ovl_tmp(i))) then
+               call mat_init(ovl_tmp(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+            end if
+         end do
+         ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
+         ! calculates the overlap matrix
+         call gen1int_host_get_int(NON_LAO, INT_OVERLAP,       &
+                                   0,                          &  !multipole moments
+                                   0,                          &
+                                   0, 0, 0,                    &  !magnetic derivatives
+                                   0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                   0, 0,                       &  !partial geometric derivatives
+                                   order_geo,                  &  !total geometric derivatives
+                                   order_geo,                  &
+                                   0, (/0/),                   &
+                                   UNIQUE_GEO,                 &
+                                   .false., .false., .false.,  &  !not implemented yet
+                                   num_ints, ovl_tmp, .false.,     &  !integral matrices
 #ifdef PRG_DIRAC
-                                     2, (/1, 1, 2, 2/),          &
+                                   2, (/1, 1, 2, 2/),          &
 #else
-                                     1, (/1, 1/),                &
+                                   1, (/1, 1/),                &
 #endif
-                                     get_print_unit(), 0)
+                                   get_print_unit(), 0)
 
 
 
-           num_order = sum(order_derv)+order_geo
-           ! gets the number of unique total geometric derivatives
-           if (order_geo/=0) then
-              call geom_total_num_derv(order_geo, min(num_atom, order_geo), num_atom, num_addr)
-           else
-              num_addr = 1
-           end if
-           ! gets the number of derivatives/powers/moments
-           do ierr = 1, num_derv
-              num_addr = num_addr*(order_derv(ierr)+1)*(order_derv(ierr)+2)/2
-           end do
+         num_order = sum(order_derv)+order_geo
+         ! gets the number of unique total geometric derivatives
+         if (order_geo/=0) then
+            call geom_total_num_derv(order_geo, min(num_atom, order_geo), num_atom, num_addr)
+         else
+            num_addr = 1
+         end if
+         ! gets the number of derivatives/powers/moments
+         do ierr = 1, num_derv
+            num_addr = num_addr*(order_derv(ierr)+1)*(order_derv(ierr)+2)/2
+         end do
 
-           allocate(address_list(num_order,num_addr), stat=ierr)
+         allocate(address_list(num_order,num_addr), stat=ierr) 
+  
+         if (ierr/=0) stop "failed to allocate address_list!"
+         ! gets the list of addresses
+         call get_address_list(num_derv, order_derv,                     &
+                               num_atom, order_geo, min(num_atom, order_geo), &
+                               num_order, num_addr, address_list)
+ 
+         allocate(tmp_index(nf))
 
-           if (ierr/=0) stop "failed to allocate address_list!"
-           ! gets the list of addresses
-           call get_address_list(num_derv, order_derv,                     &
-                                 num_atom, order_geo, min(num_atom, order_geo), &
-                                 num_order, num_addr, address_list)
+         do i = 1, num_addr
+ 
+            tmp_index(:) = address_list(:, i)
+            ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+            ovl(ave_offset) = ovl_tmp(i)
 
-           allocate(tmp_index(nf))
+         end do
 
-           do i = 1, num_addr
-
-              tmp_index(:) = address_list(:, i)
-              ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
-              ovl(ave_offset) = ovl_tmp(i)
-
-           end do
-
-           deallocate(address_list)
-           deallocate(tmp_index)
-
-        end if
+         deallocate(address_list)
+         deallocate(tmp_index)
 
       end if
    end subroutine
@@ -1328,7 +1324,7 @@ contains
       !> Fock matrices to which the half-differentiated overlap
       !> contribution is ADDED
       type(matrix),  intent(inout):: fock(propsize)
-      STOP 'interface_1el_ovlint_tr not implemented for LSDALTON. TK'
+      STOP 'interface_1el_ovlint_half_diff not implemented for LSDALTON. TK'
    end subroutine
 #else
 ! MaR: ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN
@@ -1370,7 +1366,6 @@ contains
              end if
            end do
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
-           ! calculates the overlap matrix
            call gen1int_host_get_int(LONDON, INT_OVERLAP,       &
                                      0,                          &  !multipole moments
                                      0,                          &
