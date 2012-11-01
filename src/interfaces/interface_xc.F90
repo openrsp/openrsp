@@ -136,7 +136,11 @@ contains
          end select
       end do
 
-      res(1:((nr_atoms*3)**nr_pert_geo)*(3*nr_pert_el)) = 0.0d0
+      if (nr_pert_el > 0) then
+         res(1:((nr_atoms*3)**nr_pert_geo)*(3*nr_pert_el)) = 0.0d0
+      else
+         res(1:((nr_atoms*3)**nr_pert_geo)) = 0.0d0
+      end if
       if (.not. get_is_ks_calculation()) return
 
       select case (pert)
