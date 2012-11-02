@@ -48,11 +48,7 @@ module rsp_perturbed_sdf
 
        do i = 1, size(psub)
 
-          if (sdf_already(D, psub(i)) .eqv. .FALSE.) then
-
-             call rsp_fds(zeromat, psub(i), kn, F, D, S)
-
-          end if
+          call rsp_fds(zeromat, psub(i), kn, F, D, S)
 
        end do       
 
@@ -82,18 +78,18 @@ module rsp_perturbed_sdf
 
        else
 
-!           write(*,*) 'Would have called ovlint/fock/density with labels ', &
-!                      pert%plab, ' and perturbation id ', pert%pid, &
-!                      ' but it was k-n forbidden'
-!           write(*,*) ' '
+          write(*,*) 'Would have called ovlint/fock/density with labels ', &
+                     pert%plab, ' and perturbation id ', pert%pid, &
+                     ' but it was k-n forbidden'
+          write(*,*) ' '
 
        end if
 
     else
 
-!        write(*,*) 'FDS for labels ', pert%plab, &
-!                   'and perturbation id ', pert%pid, ' was found in cache'
-!        write(*,*) ' '
+       write(*,*) 'FDS for labels ', pert%plab, &
+                  'and perturbation id ', pert%pid, ' was found in cache'
+       write(*,*) ' '
 
     end if
 
@@ -402,7 +398,21 @@ end if
 
     else
 
+       write(*,*) 'Getting perturbed Fock matrix lower order contribution'
 
+       do i = 1, num_p_tuples
+ 
+          if (i == 1) then
+
+             write(*,*) 'F', p_tuples(i)%pid
+
+          else
+
+             write(*,*) 'D', p_tuples(i)%pid
+
+          end if
+
+       end do
 
        density_order_skip = .FALSE.
 
@@ -421,22 +431,6 @@ end if
           if (f_l_cache_already(fock_lowerorder_cache, &
           num_p_tuples, p_tuples) .EQV. .FALSE.) then
 
-       write(*,*) 'Calculating perturbed Fock matrix lower order contribution'
-
-       do i = 1, num_p_tuples
- 
-          if (i == 1) then
-
-             write(*,*) 'F', p_tuples(i)%pid
-
-          else
-
-             write(*,*) 'D', p_tuples(i)%pid
-
-          end if
-
-       end do
-
              call get_fock_lowerorder(zeromat, num_p_tuples, total_num_perturbations, &
                                       p_tuples_standardorder(num_p_tuples, p_tuples), &
                                       density_order, D, property_size, Fp, &
@@ -451,15 +445,15 @@ end if
                                     p_tuples_standardorder(num_p_tuples, p_tuples), &
                                     property_size, Fp)
 
-!              write(*,*) ' '
+             write(*,*) ' '
 
           end if
 
        else
 
-!           write(*,*) 'Skipping contribution: At least one contraction D perturbed' 
-!           write(*,*) 'at order for which perturbed D is to be found '
-!           write(*,*) ' '
+          write(*,*) 'Skipping contribution: At least one contraction D perturbed' 
+          write(*,*) 'at order for which perturbed D is to be found '
+          write(*,*) ' '
 
        end if
 

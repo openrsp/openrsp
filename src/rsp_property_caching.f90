@@ -174,17 +174,17 @@ module rsp_property_caching
 
     if (property_cache_already .EQV. .TRUE.) then
 
-!         write(*,*) 'property_cache_already: Found element in cache'
+        write(*,*) 'property_cache_already: Found element in cache'
 
     else
 
-!         write(*,*) 'property_cache_already: Element not in cache'
+        write(*,*) 'property_cache_already: Element not in cache'
 
     end if
 
   end function
 
-  ! Assumes that p_tuples is in standard order
+
   subroutine property_cache_getdata(cache, num_p_tuples, p_tuples, property_size, prop)
 
     implicit none
@@ -210,8 +210,7 @@ module rsp_property_caching
 
     next_element => cache
     passedlast = 0
-    p_tuples_st_order = p_tuples
-!     p_tuples_st_order = p_tuples_standardorder(num_p_tuples, p_tuples)
+    p_tuples_st_order = p_tuples_standardorder(num_p_tuples, p_tuples)
     found = .FALSE.
 
     ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
@@ -224,7 +223,7 @@ module rsp_property_caching
 
           found = p_tuples_compare(num_p_tuples, p_tuples_standardorder( &
                                    next_element%num_p_tuples, &
-                                   next_element%p_tuples), p_tuples)
+                                   next_element%p_tuples), p_tuples_st_order)
 
        end if
 
@@ -236,7 +235,7 @@ module rsp_property_caching
 
     if (found .eqv. .TRUE.) then
 
-!        write(*,*) 'Getting property_cache data'
+       write(*,*) 'Getting property_cache data'
 
        total_num_perturbations = 0
 
