@@ -343,19 +343,12 @@ public rsp_cfg
 
        end do
 
-       ! MaR: Since we are only calculating Hartree-Fock type energy terms here,
-       ! we don't need to go beyond to perturbed contraction density matrices
-       ! (but that is in general needed for XC contributions)
-       if (num_p_tuples < 3) then
+       ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
+       ! a(nother) pert D contraction)
 
-          ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
-          ! a(nother) pert D contraction)
-
-          call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
-          kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
-          density_order + 1, D, property_size, cache, prop)
-
-       end if
+       call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
+       kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
+       density_order + 1, D, property_size, cache, prop)
 
     ! At the final recursion level: Calculate the contribution (if k,n choice of rule
     ! allows it) or get it from cache if it was already calculated (and if k,n choice 
@@ -365,13 +358,13 @@ public rsp_cfg
 
     e_knskip = .FALSE.
 
-!        write(*,*) 'Getting energy contribution'
+       write(*,*) 'Getting energy contribution'
 
        do i = 1, num_p_tuples
  
           if (i > 1) then
 
-!              write(*,*) 'D ', p_tuples(i)%pid
+             write(*,*) 'D ', p_tuples(i)%pid
 
              if(kn_skip(p_tuples(i)%n_perturbations, p_tuples(i)%pid, kn) .EQV. .TRUE.) then
 
@@ -381,7 +374,7 @@ public rsp_cfg
           
           elseif (i == 1) then
 
-!              write(*,*) 'E ', p_tuples(i)%pid
+             write(*,*) 'E ', p_tuples(i)%pid
 
           end if
 
@@ -394,7 +387,7 @@ public rsp_cfg
           write(257,*) 'T'
           close(257)
           
-!           write(*,*) 'Evaluating property_cache_already'
+          write(*,*) 'Evaluating property_cache_already'
 
           if (property_cache_already(cache, num_p_tuples, p_tuples) .EQV. .TRUE.) then
 
@@ -403,40 +396,16 @@ public rsp_cfg
              write(257,*) 'T'
              close(257)
 
-!              write(*,*) 'Getting values from cache'
+             write(*,*) 'Getting values from cache'
 
              ! NOTE (MaR): EVERYTHING IS IN STANDARD ORDER IN 
              ! THIS CALL (LIKE property_cache_getdata ASSUMES)
              call property_cache_getdata(cache, num_p_tuples, &
                   p_tuples_standardorder(num_p_tuples, p_tuples), property_size, prop)
 
-!              write(*,*) ' '
+             write(*,*) ' '
        
           else
-
-
-       write(*,*) 'Calculating energy contribution'
-
-       do i = 1, num_p_tuples
- 
-          if (i > 1) then
-
-             write(*,*) 'D ', p_tuples(i)%pid
-
-!              if(kn_skip(p_tuples(i)%n_perturbations, p_tuples(i)%pid, kn) .EQV. .TRUE.) then
-! 
-!                 e_knskip = .TRUE.
-! 
-!              end if
-          
-          elseif (i == 1) then
-
-             write(*,*) 'E ', p_tuples(i)%pid
-
-          end if
-
-       end do
-
 
              call get_energy(num_p_tuples, total_num_perturbations, & 
                   p_tuples_standardorder(num_p_tuples, p_tuples), &
@@ -449,8 +418,8 @@ public rsp_cfg
 
        else
 
-!           write(*,*) 'Energy contribution was k-n skipped'
-!           write(*,*) ' '
+          write(*,*) 'Energy contribution was k-n skipped'
+          write(*,*) ' '
 
        end if
 
@@ -931,6 +900,9 @@ public rsp_cfg
        if (kn_skip(p12(2)%n_perturbations, p12(2)%pid, kn) .EQV. .FALSE.) then
 
 
+          write(*,*) 'Getting Pulay k-n contribution:'
+          write(*,*) 'S', p12(1)%pid
+          write(*,*) 'W', p12(2)%pid
 
           open(unit=257, file='totterms', status='old', action='write', &
                position='append')
@@ -939,8 +911,8 @@ public rsp_cfg
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
+             write(*,*) 'Getting values from cache'
+             write(*,*) ' '
 
              open(unit=257, file='cachehit', status='old', action='write', &
                   position='append') 
@@ -950,11 +922,6 @@ public rsp_cfg
              call property_cache_getdata(cache, 2, p12, property_size, prop)
        
           else
-
-          write(*,*) 'Calculating Pulay k-n contribution:'
-          write(*,*) 'S', p12(1)%pid
-          write(*,*) 'W', p12(2)%pid
-
 
              call get_pulay_kn((/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
                                kn, F, D, S, property_size, cache, prop)
@@ -966,10 +933,10 @@ public rsp_cfg
 
        else
 
-!           write(*,*) 'Pulay k-n contribution was k-n skipped:'
-!           write(*,*) 'S ', p12(1)%pid 
-!           write(*,*) 'W ', p12(2)%pid 
-!           write(*,*) ' '
+          write(*,*) 'Pulay k-n contribution was k-n skipped:'
+          write(*,*) 'S ', p12(1)%pid 
+          write(*,*) 'W ', p12(2)%pid 
+          write(*,*) ' '
 
        end if 
 
@@ -1257,7 +1224,9 @@ public rsp_cfg
        ! At lowest level:
        if (kn_skip(p12(1)%n_perturbations, p12(1)%pid, kn) .EQV. .FALSE.) then
 
-
+       write(*,*) 'Getting Pulay lagrange contribution:'
+       write(*,*) 'S', p12(1)%pid
+       write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
 
        open(unit=257, file='totterms', status='old', action='write', position='append') 
        write(257,*) 'T'
@@ -1265,8 +1234,8 @@ public rsp_cfg
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
+             write(*,*) 'Getting values from cache'
+             write(*,*) ' '
        
              open(unit=257, file='cachehit', status='old', action='write', &
              position='append') 
@@ -1276,10 +1245,6 @@ public rsp_cfg
              call property_cache_getdata(cache, 2, p12, property_size, prop)
 
           else
-
-       write(*,*) 'Calculating Pulay lagrange contribution:'
-       write(*,*) 'S', p12(1)%pid
-       write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
 
              call get_pulay_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
                                kn, F, D, S, property_size, cache, prop)
@@ -1291,10 +1256,10 @@ public rsp_cfg
 
        else
 
-!           write(*,*) 'Pulay lagrange contribution was k-n skipped:'
-!           write(*,*) 'S', p12(1)%pid 
-!           write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
-!           write(*,*) ' '
+          write(*,*) 'Pulay lagrange contribution was k-n skipped:'
+          write(*,*) 'S', p12(1)%pid 
+          write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
+          write(*,*) ' '
 
        end if
 
@@ -1570,7 +1535,9 @@ public rsp_cfg
 
        if (kn_skip(p12(1)%n_perturbations, p12(1)%pid, kn) .EQV. .FALSE.) then
 
-
+          write(*,*) 'Getting idempotency lagrange contribution'
+          write(*,*) 'Zeta', p12(1)%pid
+          write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
 
           open(unit=257, file='totterms', status='old', action='write', &
                position='append') 
@@ -1579,8 +1546,8 @@ public rsp_cfg
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
+             write(*,*) 'Getting values from cache'
+             write(*,*) ' '
 
              open(unit=257, file='cachehit', status='old', action='write', &
                   position='append')
@@ -1590,10 +1557,6 @@ public rsp_cfg
              call property_cache_getdata(cache, 2, p12, property_size, prop)
       
           else
-
-          write(*,*) 'Calculating idempotency lagrange contribution'
-          write(*,*) 'Zeta', p12(1)%pid
-          write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
 
              ! At lowest level:
              call get_idem_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
@@ -1606,10 +1569,10 @@ public rsp_cfg
 
        else
 
-!           write(*,*) 'Idempotency lagrange contribution was k-n skipped:'
-!           write(*,*) 'Zeta', p12(1)%pid 
-!           write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
-!           write(*,*) ' '
+          write(*,*) 'Idempotency lagrange contribution was k-n skipped:'
+          write(*,*) 'Zeta', p12(1)%pid 
+          write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
+          write(*,*) ' '
 
        end if
 
@@ -1905,7 +1868,9 @@ public rsp_cfg
 
        if (kn_skip(p12(1)%n_perturbations, p12(1)%pid, kn) .EQV. .FALSE.) then
 
-
+          write(*,*) 'Getting scfe lagrange contribution'
+          write(*,*) 'Lambda', p12(1)%pid
+          write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
 
           open(unit=257, file='totterms', status='old', action='write', &
                position='append') 
@@ -1919,16 +1884,12 @@ public rsp_cfg
              write(257,*) 'T'
              close(257)
 
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
+             write(*,*) 'Getting values from cache'
+             write(*,*) ' '
 
              call property_cache_getdata(cache, 2, p12, property_size, prop)
        
           else
-
-          write(*,*) 'Calculating scfe lagrange contribution'
-          write(*,*) 'Lambda', p12(1)%pid
-          write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
 
              ! At lowest level:
              call get_scfe_lag((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
@@ -1941,10 +1902,10 @@ public rsp_cfg
 
        else
 
-!           write(*,*) 'scfe lagrange contribution was k-n skipped:'
-!           write(*,*) 'Lambda', p12(1)%pid 
-!           write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
-!           write(*,*) ' '
+          write(*,*) 'scfe lagrange contribution was k-n skipped:'
+          write(*,*) 'Lambda', p12(1)%pid 
+          write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
+          write(*,*) ' '
 
        end if
 
