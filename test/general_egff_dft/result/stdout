@@ -27,53 +27,30 @@ DFT grid generator
   
  Calling ovlint/fock/density with labels EL   and perturbation id            3
   
- Getting perturbed Fock matrix lower order contribution
+ Calculating perturbed Fock matrix lower order contribution
  F           1
- f_l_cache_already: Element not in cache
+ Called for T matrix contribution - currently unfinished so nothing was added
  Calculated perturbed Fock matrix lower order contribution
-  
- Getting perturbed Fock matrix lower order contribution
- F
- D           1
- Skipping contribution: At least one contraction D perturbed
- at order for which perturbed D is to be found 
   
  Finished component           1 :   33.333332     % done
  Finished component           2 :   66.666664     % done
  Finished component           3 :   100.00000     % done
- FDS for labels EL  and perturbation id            2  was found in cache
-  
  Calling ovlint/fock/density with labels EL  EL   and perturbation id            2           3
   
- Getting perturbed Fock matrix lower order contribution
+ Calculating perturbed Fock matrix lower order contribution
  F           1           2
- f_l_cache_already: Element not in cache
+ Called for T matrix contribution - currently unfinished so nothing was added
  Calculated perturbed Fock matrix lower order contribution
   
- Getting perturbed Fock matrix lower order contribution
+ Calculating perturbed Fock matrix lower order contribution
  F           1
  D           2
- f_l_cache_already: Element not in cache
  Calculated perturbed Fock matrix lower order contribution
   
- Getting perturbed Fock matrix lower order contribution
- F           2
- D           1
- f_l_cache_already: Found element in cache
- Getting f_l_cache data
- Got Fock lower order contribution cache data
-  
- Getting perturbed Fock matrix lower order contribution
- F
- D           1           2
- Skipping contribution: At least one contraction D perturbed
- at order for which perturbed D is to be found 
-  
- Getting perturbed Fock matrix lower order contribution
+ Calculating perturbed Fock matrix lower order contribution
  F
  D           1
  D           2
- f_l_cache_already: Element not in cache
  Calculated perturbed Fock matrix lower order contribution
   
  Finished component           1 :   16.666666     % done
@@ -82,115 +59,28 @@ DFT grid generator
  Finished component           4 :   66.666664     % done
  Finished component           5 :   83.333336     % done
  Finished component           6 :   100.00000     % done
- FDS for labels EL  and perturbation id            3  was found in cache
-  
- Would have called ovlint/fock/density with labels GEO  and perturbation id            1  but it was k-n forbidden
-  
- Would have called ovlint/fock/density with labels GEO EL   and perturbation id            1           3  but it was k-n forbidden
-  
- FDS for labels EL  and perturbation id            2  was found in cache
-  
- Would have called ovlint/fock/density with labels GEO  and perturbation id            1  but it was k-n forbidden
-  
- Would have called ovlint/fock/density with labels GEO EL   and perturbation id            1           2  but it was k-n forbidden
-  
- Would have called ovlint/fock/density with labels GEO EL  EL   and perturbation id            1           2           3  but it was k-n forbidden
-  
   
  Finished calculation of perturbed overlap/density/Fock matrices
   
- Getting energy contribution
+ Calculating energy contribution
  E            1           2           3
- Evaluating property_cache_already
- property_cache_already: Element not in cache
  Calculated energy contribution
   
- Getting energy contribution
+ Calculating energy contribution
  E            1           2
  D            3
- Evaluating property_cache_already
- property_cache_already: Element not in cache
  Calculated energy contribution
   
- Getting energy contribution
- E            1           3
- D            2
- Evaluating property_cache_already
- property_cache_already: Found element in cache
- Getting values from cache
- Getting property_cache data
-  
- Getting energy contribution
+ Calculating energy contribution
  E            1
  D            2           3
- Evaluating property_cache_already
- property_cache_already: Element not in cache
  Calculated energy contribution
   
- Getting energy contribution
+ Calculating energy contribution
  E            1
  D            2
  D            3
- Evaluating property_cache_already
- property_cache_already: Element not in cache
  Calculated energy contribution
-  
- Getting energy contribution
- E            2           3
- D            1
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E            2
- D            1           3
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E            2
- D            1
- D            3
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E            3
- D            1           2
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E 
- D            1           2           3
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E 
- D            1           2
- D            3
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E            3
- D            1
- D            2
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E 
- D            1           3
- D            2
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E 
- D            1
- D            2           3
- Energy contribution was k-n skipped
-  
- Getting energy contribution
- E 
- D            1
- D            2
- D            3
- Energy contribution was k-n skipped
   
   
  Finished calculating HF energy-type contributions
@@ -237,109 +127,35 @@ DFT grid generator
   
  Finished calculating exchange/correlation contributions
   
- Getting Pulay k-n contribution:
+ Calculating Pulay k-n contribution:
  S           1           2           3
  W
- property_cache_already: Element not in cache
  Calculated Pulay k-n contribution
   
- Getting Pulay k-n contribution:
+ Calculating Pulay k-n contribution:
  S           1           2
  W           3
- property_cache_already: Element not in cache
  Calculated Pulay k-n contribution
   
- Getting Pulay k-n contribution:
- S           1           3
- W           2
- property_cache_already: Found element in cache
- Getting values from cache
-  
- Getting property_cache data
- Getting Pulay k-n contribution:
+ Calculating Pulay k-n contribution:
  S           1
  W           2           3
- property_cache_already: Element not in cache
  Calculated Pulay k-n contribution
-  
- Pulay k-n contribution was k-n skipped:
- S            2           3
- W            1
-  
- Pulay k-n contribution was k-n skipped:
- S            2
- W            1           3
-  
- Pulay k-n contribution was k-n skipped:
- S            3
- W            1           2
-  
- Pulay k-n contribution was k-n skipped:
- S 
- W            1           2           3
   
   
  Finished calculating Pulay k-n type contributions
   
- Pulay lagrange contribution was k-n skipped:
- S           1           2           3
- Wprimed           2
-  
- Pulay lagrange contribution was k-n skipped:
- S           1           2
- W           3 primed           2
-  
- Pulay lagrange contribution was k-n skipped:
- S           1           3
- W           2 primed           2
-  
- Pulay lagrange contribution was k-n skipped:
- S           1
- W           2           3 primed           2
-  
   
  Finished calculating Pulay lagrangian type contributions
   
- Idempotency lagrange contribution was k-n skipped:
- Zeta           1           2           3
- Zprimed           2
-  
- Idempotency lagrange contribution was k-n skipped:
- Zeta           1           2
- Z           3 primed           2
-  
- Idempotency lagrange contribution was k-n skipped:
- Zeta           1           3
- Z           2 primed           2
-  
- Idempotency lagrange contribution was k-n skipped:
- Zeta           1
- Z           2           3 primed           2
-  
   
  Finished calculating idempotency lagrangian type contributions
-  
- scfe lagrange contribution was k-n skipped:
- Lambda           1           2           3
- Yprimed           2
-  
- scfe lagrange contribution was k-n skipped:
- Lambda           1           2
- Y           3 primed           2
-  
- scfe lagrange contribution was k-n skipped:
- Lambda           1           3
- Y           2 primed           2
-  
- scfe lagrange contribution was k-n skipped:
- Lambda           1
- Y           2           3 primed           2
   
   
  Finished calculating SCF lagrangian type contributions
   
  Clock stopped: Property was calculated
- Time spent in get_prop:   17.185072      seconds
+ Time spent in get_prop:   17.109068      seconds
   
  Property was calculated
   
