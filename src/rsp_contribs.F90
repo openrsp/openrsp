@@ -1,6 +1,7 @@
-#ifdef PRG_DIRAC
+! commented out by Bin Gao, 2012-11-05
+!#ifdef PRG_DIRAC
 #define GRCONT_NOT_AVAILABLE
-#endif
+!#endif
 
 ! Copyright 2012      Gao Bin
 !           2012      Radovan Bast
