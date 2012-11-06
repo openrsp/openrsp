@@ -1,0 +1,16 @@
+run this test with
+$ ../../runtest
+
+then look in lda_he2.stdout
+search for gradient = Eg
+
+without grid weight derivatives you get:
+-0.251809427267
+
+with grid weight derivatives (default compilation):
+-0.264970699078
+
+correct result from finite-field:
+-0.272717
+
+note that the grid is horrible on purpose (14 radial, 14 angular points)
