@@ -1,0 +1,9 @@
+BASIS
+STO-3G
+.
+.
+AtomTypes=2 Nosymmetry
+Charge=2.0 Atoms=1
+He     2.00000000  0.00000000  0.00000000
+Charge=2.0 Atoms=1
+He     0.00000000  0.00000000  0.00000000
