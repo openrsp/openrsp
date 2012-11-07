@@ -52,7 +52,8 @@ module openrsp
   use interface_dirac_gen1int
   use interface_interest
   use rsp_functions
-  use rsp_general, only: p_tuple, rsp_prop
+  use rsp_field_tuple, only: p_tuple, p_tuple_standardorder
+  use rsp_general, only: rsp_prop
   use dalton_ifc
   use openrsp_cfg
   use matrix_defop
@@ -1045,6 +1046,10 @@ end subroutine
           perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
 
        end if
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/(i, i = 1, openrsp_cfg_specify_order)/)
+
 
        call rsp_prop(perturbation_tuple, kn, F, D, S)
 
