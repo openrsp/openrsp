@@ -116,7 +116,7 @@ module rsp_lof_caching
 
     if (found .eqv. .TRUE.) then
 
-       write(*,*) 'Getting f_l_cache data'
+!        write(*,*) 'Getting f_l_cache data'
 
        total_num_perturbations = 0
 
@@ -254,7 +254,7 @@ module rsp_lof_caching
 
        end do
 
-       write(*,*) 'Got Fock lower order contribution cache data'
+!        write(*,*) 'Got Fock lower order contribution cache data'
 
        deallocate(indices)
        deallocate(blks_tuple_info)
@@ -364,11 +364,11 @@ module rsp_lof_caching
 
     if (f_l_cache_already .EQV. .TRUE.) then
 
-        write(*,*) 'f_l_cache_already: Found element in cache'
+!         write(*,*) 'f_l_cache_already: Found element in cache'
 
     else
 
-        write(*,*) 'f_l_cache_already: Element not in cache'
+!         write(*,*) 'f_l_cache_already: Element not in cache'
 
     end if
 

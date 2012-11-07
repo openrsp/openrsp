@@ -253,8 +253,28 @@ end if
     implicit none
 
     logical :: p_tuple_p1_lt_p2
-    integer :: i
+    integer :: i, prn
     type(p_tuple) :: p1, p2
+
+prn = 0
+
+if (p1%n_perturbations == 2 .and. p2%n_perturbations == 2) then
+
+if (p1%pid(1) == 6 .or. p2%pid(1) == 6) then
+
+if (p1%pid(2) == 7 .or. p2%pid(2) == 7) then
+
+if (p1%pid(1) == 1 .or. p2%pid(1) == 1) then
+
+prn = 1
+
+end if
+
+end if
+
+end if
+
+end if
 
     ! NOTE (MaR): COULD THERE BE FALSE NEGATIVES HERE? 
     p_tuple_p1_lt_p2 = .FALSE.
@@ -277,6 +297,12 @@ end if
              p_tuple_p1_lt_p2 = .TRUE.
              exit
 
+          elseif (p1%pdim(i) < p2%pdim(i)) then
+
+
+             p_tuple_p1_lt_p2 = .FALSE.
+             exit
+
           elseif (p1%pdim(i) == p2%pdim(i)) then
 
              if (llt(p1%plab(i), p2%plab(i)) .eqv. .TRUE.) then
@@ -284,18 +310,30 @@ end if
                 p_tuple_p1_lt_p2 = .TRUE.  
                 exit
 
+
+             elseif (lgt(p1%plab(i), p2%plab(i)) .eqv. .TRUE.) then
+
+
+                p_tuple_p1_lt_p2 = .FALSE.  
+                exit
+
              elseif (p1%plab(i) == p2%plab(i)) then
 
-! write(*,*) 'labels are equivalent'
-! 
-! write(*,*) 'freq 1', real(p1%freq(i)), 'freq 2', real(p2%freq(i))
 
                 ! NOTE (MaR): IS IT SUFFICIENTLY GENERAL TO COMPARE ONLY THE REAL PART OF
                 ! THE FREQS.? WHICH CASES WILL INCLUDE COMPLEX FREQS. IN THE PERTURBATIONS?
                 if (real(p1%freq(i)) < real(p2%freq(i))) then
 
+
                    p_tuple_p1_lt_p2 = .TRUE.  
                    exit
+
+
+                elseif (real(p1%freq(i)) > real(p2%freq(i))) then
+
+                   p_tuple_p1_lt_p2 = .FALSE.  
+                   exit
+
 
                 end if
 
@@ -327,9 +365,12 @@ end if
     character(4) :: temporary_plab, current_minimum_plab
     complex(8) :: temporary_freq, current_minimum_freq
 
+
     call p_tuple_p1_cloneto_p2(pert, p_tuple_st)
 
     position_in_result = 1
+
+
 
     do i = position_in_result, p_tuple_st%n_perturbations
 
@@ -463,13 +504,44 @@ end if
     integer :: num_p_tuples
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st
     type(p_tuple) :: temporary_pert
-    integer :: i, j, k, new_minimum, max_order_curr
+    integer :: i, j, k, new_minimum, max_order_curr, prn
     integer :: temporary_pdim, temporary_pid, current_first_position, &
                current_last_position
     character(4) :: temporary_plab
     character(4), dimension(:), allocatable :: min_plab_curr
     complex(8) :: temporary_freq
     complex(8), dimension(:), allocatable :: current_minimum_freq
+
+! prn = 0
+
+! if (num_p_tuples == 3) then
+! 
+! if (p_tuples(2)%n_perturbations == 2 .AND. p_tuples(3)%n_perturbations == 2) then
+
+! if ((p_tuples(2)%pid(1) == 6) .AND. (p_tuples(2)%pid(1) == 6) &
+!      .AND. (p_tuples(3)%pid(1) == 1) .AND. (p_tuples(3)%pid(2) == 10)) then
+
+! prn = 1
+
+! write(*,*) ' '
+! write(*,*) 'incoming'
+! 
+! do i = 1, num_p_tuples
+! 
+! write(*,*) p_tuples(i)%pid
+! write(*,*) p_tuples(i)%pdim
+! write(*,*) p_tuples(i)%freq
+! 
+! end do
+! 
+! 
+! write(*,*) ' '
+
+! end if
+
+! end if
+! 
+! end if
 
     do i = 1, num_p_tuples
 
@@ -486,22 +558,57 @@ end if
           if (p_tuple_p1_lt_p2(p_tuple_standardorder(p_tuples_st(j)), &
               p_tuple_standardorder(p_tuples_st(new_minimum)))) then
 
+! if (prn == 1) then
+! 
+! write(*,*) 'changing places:', j, 'and', new_minimum
+! 
+! end if
+
              new_minimum = j
 
           end if
 
        end do
 
-       call p_tuple_p1_cloneto_p2(p_tuples_st(new_minimum),temporary_pert)
-       call p_tuple_deallocate(p_tuples_st(new_minimum))
 
-       call p_tuple_p1_cloneto_p2(p_tuples_st(i),p_tuples_st(new_minimum))
-       call p_tuple_deallocate(p_tuples_st(i))
+       if (.NOT.(new_minimum == i)) then
 
-       call p_tuple_p1_cloneto_p2(temporary_pert,p_tuples_st(i))
-       call p_tuple_deallocate(temporary_pert)
+          call p_tuple_p1_cloneto_p2(p_tuples_st(new_minimum),temporary_pert)
+          call p_tuple_deallocate(p_tuples_st(new_minimum))
+
+          p_tuples_st(i) = p_tuple_standardorder(p_tuples_st(i))
+
+          call p_tuple_p1_cloneto_p2(p_tuples_st(i),p_tuples_st(new_minimum))
+          call p_tuple_deallocate(p_tuples_st(i))
+
+          temporary_pert = p_tuple_standardorder(temporary_pert)
+
+          call p_tuple_p1_cloneto_p2(temporary_pert,p_tuples_st(i))
+          call p_tuple_deallocate(temporary_pert)
+
+       end if
 
     end do
+
+
+
+! if (prn == 1) then
+! 
+! write(*,*) ' '
+! write(*,*) 'outgoing'
+! 
+! do i = 1, num_p_tuples
+! 
+! write(*,*) p_tuples_st(i)%pid
+! write(*,*) p_tuples_st(i)%pdim
+! write(*,*) p_tuples_st(i)%freq
+! 
+! end do
+! 
+! 
+! write(*,*) ' '
+! 
+! end if
 
   end function
 

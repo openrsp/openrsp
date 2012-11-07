@@ -335,14 +335,22 @@ contains
 
             if (nf == 2) then
 
-               write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 2 yet'
-               call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 2 yet')
+               write(*,*) 'rsp_nucpot_tr warning: Generally untested support for one non-geo. field with nf = 2'
+
+               h = 0
+               do i = 1, ncor
+                  do j = 1, 3
+                     h = h + 1
+                     rspfunc_output(h) = rspfunc(ncor * (j - 1) + i)
+                  end do
+               end do
 
             else if (nf == 1) then
 
-               write(*,*) 'rsp_nucpot_tr error: No support for one non-geometrical field with nf = 1 yet'
-               call quit('rsp_nucpot_tr error: No support for one non-geometrical field  with nf = 1 yet')
+               write(*,*) 'rsp_nucpot_tr warning: Generally untested support for one non-geo. field with nf = 1'
 
+               rspfunc_output = rspfunc
+                              
             else
 
                rspfunc_output = 0.0

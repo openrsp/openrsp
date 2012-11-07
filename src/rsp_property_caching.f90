@@ -142,7 +142,7 @@ module rsp_property_caching
     implicit none
 
     logical :: property_cache_already
-    integer :: passedlast, num_p_tuples
+    integer :: passedlast, num_p_tuples, i
     type(property_cache), target :: current_element
     type(property_cache), pointer :: next_element
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st_order
@@ -164,6 +164,48 @@ module rsp_property_caching
                                    p_tuples_standardorder(next_element%num_p_tuples, &
                                    next_element%p_tuples), p_tuples_st_order)
 
+! if (property_cache_already .eqv. .true.) then
+! 
+! if (num_p_tuples == 3) then
+! 
+! if (p_tuples(2)%n_perturbations == 2 .AND. p_tuples(3)%n_perturbations == 2) then
+! 
+! if ((p_tuples(2)%pid(1) == 6) .AND. (p_tuples(2)%pid(1) == 6) &
+!      .AND. (p_tuples(3)%pid(1) == 1)) then
+! 
+! write(*,*) ' '
+! write(*,*) 'pr_cache already match: pristine:'
+! 
+! do i = 1, num_p_tuples
+! 
+! write(*,*) p_tuples(i)%pid
+! write(*,*) p_tuples(i)%pdim
+! write(*,*) p_tuples(i)%freq
+! 
+! end do
+! 
+! write(*,*) ' '
+! write(*,*) 'st_order:'
+! 
+! do i = 1, num_p_tuples
+! 
+! write(*,*) p_tuples(i)%pid
+! write(*,*) p_tuples(i)%pdim
+! write(*,*) p_tuples(i)%freq
+! 
+! end do
+! 
+! 
+! write(*,*) ' '
+! 
+! end if
+! 
+! end if
+! 
+! end if
+! 
+! end if
+
        end if
 
        if (next_element%last .eqv. .TRUE.) then
@@ -174,17 +216,17 @@ module rsp_property_caching
 
     if (property_cache_already .EQV. .TRUE.) then
 
-        write(*,*) 'property_cache_already: Found element in cache'
+!         write(*,*) 'property_cache_already: Found element in cache'
 
     else
 
-        write(*,*) 'property_cache_already: Element not in cache'
+!         write(*,*) 'property_cache_already: Element not in cache'
 
     end if
 
   end function
 
-
+  ! Assumes that p_tuples is in standard order
   subroutine property_cache_getdata(cache, num_p_tuples, p_tuples, property_size, prop)
 
     implicit none
@@ -210,8 +252,38 @@ module rsp_property_caching
 
     next_element => cache
     passedlast = 0
-    p_tuples_st_order = p_tuples_standardorder(num_p_tuples, p_tuples)
+    p_tuples_st_order = p_tuples
+!     p_tuples_st_order = p_tuples_standardorder(num_p_tuples, p_tuples)
     found = .FALSE.
+
+
+
+! if (num_p_tuples == 3) then
+! 
+! if (p_tuples(2)%n_perturbations == 2 .AND. p_tuples(3)%n_perturbations == 2) then
+! 
+! if ((p_tuples(2)%pid(1) == 6) .AND. (p_tuples(2)%pid(1) == 6) &
+!      .AND. (p_tuples(3)%pid(1) == 1)) then
+! 
+! write(*,*) ' '
+! write(*,*) 'pr_cache getdata:'
+! 
+! do i = 1, num_p_tuples
+! 
+! write(*,*) p_tuples(i)%pid
+! write(*,*) p_tuples(i)%pdim
+! write(*,*) p_tuples(i)%freq
+! 
+! end do
+! 
+! 
+! 
+! end if
+! 
+! end if
+! 
+! end if
+
 
     ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
     ! COULD THIS BE DONE IN ANOTHER WAY?
@@ -223,7 +295,7 @@ module rsp_property_caching
 
           found = p_tuples_compare(num_p_tuples, p_tuples_standardorder( &
                                    next_element%num_p_tuples, &
-                                   next_element%p_tuples), p_tuples_st_order)
+                                   next_element%p_tuples), p_tuples)
 
        end if
 
@@ -235,7 +307,7 @@ module rsp_property_caching
 
     if (found .eqv. .TRUE.) then
 
-       write(*,*) 'Getting property_cache data'
+!        write(*,*) 'Getting property_cache data'
 
        total_num_perturbations = 0
 
