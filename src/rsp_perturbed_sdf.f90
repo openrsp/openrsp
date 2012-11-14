@@ -402,7 +402,7 @@ end if
 
     else
 
-       p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
+!        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
 
        density_order_skip = .FALSE.
 
@@ -419,7 +419,7 @@ end if
        if (density_order_skip .EQV. .FALSE.) then
 
           if (f_l_cache_already(fock_lowerorder_cache, &
-          num_p_tuples, p_tuples) .EQV. .FALSE.) then
+          num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples)) .EQV. .FALSE.) then
 
        write(*,*) 'Calculating perturbed Fock matrix lower order contribution'
 
@@ -438,7 +438,8 @@ end if
        end do
 
              call get_fock_lowerorder(zeromat, num_p_tuples, total_num_perturbations, &
-                                      p_tuples, density_order, D, property_size, Fp, &
+                                      p_tuples_standardorder(num_p_tuples, p_tuples), &
+                                      density_order, D, property_size, Fp, &
                                       fock_lowerorder_cache)
 
              write(*,*) 'Calculated perturbed Fock matrix lower order contribution'
@@ -447,7 +448,8 @@ end if
           else
 
              call f_l_cache_getdata(fock_lowerorder_cache, num_p_tuples, &
-                                    p_tuples, property_size, Fp)
+                                    p_tuples_standardorder(num_p_tuples, p_tuples), &
+                                    property_size, Fp)
 
 !              write(*,*) ' '
 

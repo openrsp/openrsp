@@ -366,7 +366,7 @@ public rsp_cfg
        e_knskip = .FALSE.
 
 
-       p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
+!        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
 
 !        write(*,*) 'Getting energy contribution'
 
@@ -400,7 +400,8 @@ public rsp_cfg
           
 !           write(*,*) 'Evaluating property_cache_already'
 
-          if (property_cache_already(cache, num_p_tuples, p_tuples) .EQV. .TRUE.) then
+          if (property_cache_already(cache, num_p_tuples, &
+              p_tuples_standardorder(num_p_tuples, p_tuples)) .EQV. .TRUE.) then
 
              open(unit=257, file='cachehit', status='old', action='write', &
                   position='append') 
@@ -412,7 +413,7 @@ public rsp_cfg
              ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
              ! THIS CALL (LIKE property_cache_getdata ASSUMES)
              call property_cache_getdata(cache, num_p_tuples, &
-                  p_tuples, property_size, prop)
+                  p_tuples_standardorder(num_p_tuples, p_tuples), property_size, prop)
 
 !              write(*,*) ' '
        
@@ -443,7 +444,8 @@ public rsp_cfg
 
 
              call get_energy(num_p_tuples, total_num_perturbations, & 
-                  p_tuples, density_order, D, property_size, cache, prop)
+                  p_tuples_standardorder(num_p_tuples, p_tuples), &
+                  density_order, D, property_size, cache, prop)
 
                   write(*,*) 'Calculated energy contribution'
                   write(*,*) ' '
