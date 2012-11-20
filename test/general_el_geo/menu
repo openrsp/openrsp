@@ -1,0 +1,3 @@
+  gff_lda.dal sto-3g.mol  -get rsp_tensor
+  fff_lda.dal sto-3g.mol  -get rsp_tensor
+  gfff_hf.dal cc-pvdz.mol -get rsp_tensor

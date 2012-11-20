@@ -1,2 +1,0 @@
-# lda.dal sto-3g.mol  -get rsp_tensor
-  hf.dal  cc-pvdz.mol -get rsp_tensor
