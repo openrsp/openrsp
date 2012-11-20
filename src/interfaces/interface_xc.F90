@@ -204,15 +204,12 @@ contains
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
             xc_dmat = 0.0d0
             call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
-          do k = 1, 3
-!             do k = 1, 1
+            do k = 1, 3
                call dcopy(mat_dim*mat_dim, Df(k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
-             do j = 1, k
-!                do j = 1, 1
+               do j = 1, k
                   call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
                   call dcopy(mat_dim*mat_dim, Dff(j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
-                do i = 1, nr_atoms*3
-!                   do i = 1, 1
+                  do i = 1, nr_atoms*3
                      element = i                &
                              + (j-1)*nr_atoms*3 &
                              + (k-1)*(nr_atoms*3)*3
