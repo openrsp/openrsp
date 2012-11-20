@@ -11,13 +11,14 @@ import string
 import subprocess
 import shlex
 import time
+import shutil
 import signal
 from optparse import OptionParser, OptionGroup
 
 # global variables
 program_is_dirac  = False
 program_is_dalton = True
-pgid_dirac=None # DIRAC process group id of the program process (not the launcher)
+pgid_dirac = None # DIRAC process group id of the program process (not the launcher)
 
 def kill_win(pid):
     """
@@ -35,7 +36,7 @@ if sys.version < '2.4':
     print('runtest requires python version >= 2.4')
     sys.exit(1)
 
-root_directory = os.path.realpath(__file__)[:-8]
+root_directory = os.path.dirname(os.path.realpath(__file__))
 current_directory = os.path.realpath('.')
 
 def extract_time(time_string):
@@ -138,6 +139,11 @@ group.add_option('--overwrite',
                  dest='overwrite',
                  default=False,
                  help='overwrite reference files [default: %default]')
+group.add_option('--backup',
+                 action='store_true',
+                 dest='backup',
+                 default=False,
+                 help='backup pam output files with archive files [default: %default]')
 group.add_option('--verbose',
                  action='store_true',
                  dest='verbose',
@@ -148,6 +154,11 @@ group.add_option('--showdiff',
                  dest='showdiff',
                  default=False,
                  help="show differences in numbers [default: %default]")
+group.add_option('--jobargs',
+                 action='store',
+                 dest='jobargs',
+                 default=None,
+                 help="extra arguments to launcher [default: %default]")
 parser.add_option_group(group)
 
 # process input
@@ -156,10 +167,10 @@ parser.add_option_group(group)
 
 list_of_tests_to_run = []
 
-executed_from_subdir = os.path.isfile('%s/menu' % current_directory)
+executed_from_subdir = os.path.isfile(os.path.join(current_directory,'menu'))
 if len(sys.argv) == 1:
     if executed_from_subdir:
-        list_of_tests_to_run.append(root_directory + '/test/' + current_directory.split('/')[-1])
+        list_of_tests_to_run.append(current_directory)
     else:
         # user has given no arguments and we are not in a test subdir: print help and exit
         print(parser.format_help().strip())
@@ -171,14 +182,16 @@ if options.individual:
         options.individual = False
     else:
         for w in options.individual.split():
-            list_of_tests_to_run.append(os.path.join(root_directory, 'test', w))
+            test_to_append=os.path.join(root_directory, 'test', w)
+            list_of_tests_to_run.append(test_to_append)
 
 if options.all or (options.quick and not options.individual):
-    file = root_directory + '/test/list_of_tests'
+    file = os.path.join(root_directory,'test','list_of_tests')
     if os.path.isfile(file):
         f = open(file, 'r')
         for line in f.readlines():
-            list_of_tests_to_run.append(root_directory + '/test/' + line.strip('\n'))
+            test_to_append=os.path.join(root_directory,'test',line.strip('\n'))
+            list_of_tests_to_run.append(test_to_append)
         f.close()
     else:
         print('file %s does not exist' % file)
@@ -198,11 +211,13 @@ def int32_run(s):
 #-------------------------------------------------------------------------------
 
 class filter_task:
-     def __init__(self, precision, ignore_sign, start_string, start_is_regex, \
+     def __init__(self, precision, ignore_below_limit, ignore_sign, start_string, start_is_regex, \
                   end_string='', end_is_regex=False, end_is_including=False, plus_nr_lines=0, \
-                  compare_everything=False):
+                  compare_everything=False, nr_of_floats=0):
          self.precision          = precision
+         self.ignore_below_limit = ignore_below_limit
          self.ignore_sign        = ignore_sign
+         self.nr_of_floats       = nr_of_floats
          self.start_string       = start_string
          self.start_is_regex     = start_is_regex
          self.end_string         = end_string
@@ -215,10 +230,11 @@ class filter_task:
 
 def set_filter_defaults():
     precision         = 0.0001
+    ignore_below_limit= 1.0e-40
     ignore_sign       = False
     start_string      = ''
     start_is_regex    = False
-    return (precision, ignore_sign, start_string, start_is_regex)
+    return (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex)
 
 #-------------------------------------------------------------------------------
 
@@ -227,22 +243,30 @@ def read_filter(filter_file):
     s = open(filter_file).readlines()
     filter_task_l = []
 
-    (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+    (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+
+    nr_of_floats = 0
 
     for line in s:
-        # the syntax ($ERROR, $IGNORESIGN, ...) is for backwards copmatibility
+        # the syntax ($ERROR, $IGNORESIGN, ...) is for backwards compatibility
         # with DIRAC's old perl scripts - if you change it here, please change it globally in DIRAC repo
         if '$ERROR' in line:
             precision = float(line.split()[-1])
+        if '$IGNORE_BELOW' in line:
+            ignore_below_limit = float(line.split()[-1])
         if '$IGNORESIGN' in line:
             ignore_sign = True
+        if '$NR_OF_FLOATS' in line:
+            nr_of_floats = int(line.split()[-1])
         if (line.lower()[0:10] == 'everything'):
             filter_task_l.append(filter_task(precision,      \
+                                             ignore_below_limit, \
                                              ignore_sign,    \
                                              start_string,   \
                                              start_is_regex, \
-                                             compare_everything=True))
-            (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+                                             compare_everything=True, \
+                                             nr_of_floats=nr_of_floats))
+            (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
         if (line.lower()[0:5] == 'from:'):
             start_string = line[5:].rstrip()
         if (line.lower()[0:7] == 'fromre:'):
@@ -252,60 +276,73 @@ def read_filter(filter_file):
             nr_lines = int(line.split(':')[0].split()[-1])
             start_string = line.split(line.split(':')[0] + ':')[-1].rstrip()
             filter_task_l.append(filter_task(precision,      \
+                                             ignore_below_limit, \
                                              ignore_sign,    \
                                              start_string,   \
                                              start_is_regex, \
-                                             plus_nr_lines=nr_lines))
-            (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+                                             plus_nr_lines=nr_lines, \
+                                             nr_of_floats=nr_of_floats))
+            (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
         if (line.lower()[0:3] == 'to:'):
             filter_task_l.append(filter_task(precision,      \
+                                             ignore_below_limit, \
                                              ignore_sign,    \
                                              start_string,   \
                                              start_is_regex, \
-                                             end_string=line[3:].rstrip()))
-            (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+                                             end_string=line[3:].rstrip(), \
+                                             nr_of_floats=nr_of_floats))
+            (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
         if (line.lower()[0:5] == 'tore:'):
             filter_task_l.append(filter_task(precision,                    \
+                                             ignore_below_limit,           \
                                              ignore_sign,                  \
                                              start_string,                 \
                                              start_is_regex,               \
                                              end_string=line[5:].rstrip(), \
-                                             end_is_regex=True))
-            (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+                                             end_is_regex=True, \
+                                             nr_of_floats=nr_of_floats))
+            (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
         if (line.lower()[0:4] == 'toi:'):
             filter_task_l.append(filter_task(precision,                    \
+                                             ignore_below_limit,           \
                                              ignore_sign,                  \
                                              start_string,                 \
                                              start_is_regex,               \
                                              end_string=line[4:].rstrip(), \
-                                             end_is_including=True))
-            (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+                                             end_is_including=True, \
+                                             nr_of_floats=nr_of_floats))
+            (precision, ignore_below_limit, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
         if (line.lower()[0:6] == 'toire:'):
             filter_task_l.append(filter_task(precision,                    \
+                                             ignore_below_limit,           \
                                              ignore_sign,                  \
                                              start_string,                 \
                                              start_is_regex,               \
                                              end_string=line[6:].rstrip(), \
                                              end_is_regex=True,            \
-                                             end_is_including=True))
-            (precision, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
+                                             end_is_including=True, \
+                                             nr_of_floats=nr_of_floats))
+            (precision, ignore_below_limt, ignore_sign, start_string, start_is_regex) = set_filter_defaults()
 
     return filter_task_l
 
 #-------------------------------------------------------------------------------
 
-def extract_and_compare_floats(log_file,   \
-                               output,     \
-                               output_ref, \
-                               line_l,     \
-                               line_l_ref, \
-                               precision,  \
+def extract_and_compare_floats(log_file,     \
+                               output,       \
+                               output_ref,   \
+                               line_l,       \
+                               line_l_ref,   \
+                               nr_of_floats, \
+                               precision,    \
+                               ignore_below_limit,    \
                                ignore_sign):
     """
     in:  output      a list of strings (= a file)
          output_ref  a list of strings (= a file)
          line_l      list of integers that correspond to line numbers in python numbering
          line_l_ref  list of integers that correspond to line numbers in python numbering
+    if nr_of_floats > 0 then it will only compare the first nr_of_floats in each line
     """
 
     numeric_const_pattern = r"""
@@ -328,7 +365,10 @@ def extract_and_compare_floats(log_file,   \
     f_to_line_ref = []
     for x in line_l:
         for line in x:
+            i = 0
             for w in output[line].split():
+                i += 1
+                if (nr_of_floats > 0) and (i > nr_of_floats): break
                 # do not consider words like TzB1g
                 # otherwise we would extract 1 later
                 if re.match(r'^[0-9\.eEdD\+\-]*$', w):
@@ -341,7 +381,10 @@ def extract_and_compare_floats(log_file,   \
 
     for x in line_l_ref:
         for line in x:
+            i = 0
             for w in output_ref[line].split():
+                i += 1
+                if (nr_of_floats > 0) and (i > nr_of_floats): break
                 if re.match(r'^[0-9\.eEdD\+\-]*$', w):
                     for m in p.findall(w):
                          m = pd.sub('e', m)
@@ -361,7 +404,8 @@ def extract_and_compare_floats(log_file,   \
 
             if program_is_dirac:
                 rel_error = error
-                if abs(r_ref) > 1.0e-40:
+                if abs(r_ref) > ignore_below_limit:
+                    # calculate relative error only for significant ('nonzero') numbers
                     rel_error /= r_ref
                 if abs(rel_error) > precision:
                     log_file.write('line %i: %s' % (f_to_line[i]+1, output[f_to_line[i]]))
@@ -480,10 +524,13 @@ class run:
          if program_is_dirac:
              if not options.verbose:
                  launcher_flags += '--silent '
-             launcher_flags += '--nobackup '
-             launcher_flags += '--noarch '
+             if not options.backup:
+                 launcher_flags += '--nobackup '
+                 launcher_flags += '--noarch '
              if options.binary:
                  launcher_flags += '--dirac=%s ' % options.binary
+             if options.jobargs:
+                 launcher_flags += ' %s ' % options.jobargs
          if program_is_dalton:
              launcher_flags += '-nobackup '
              launcher_flags += '-noarch '
@@ -492,10 +539,11 @@ class run:
          self.launcher_flags = launcher_flags
      def get_output_name(self):
          if program_is_dirac:
-             inp_file_strip = string.replace(self.inp,       '.inp', '')
+             inp_file_strip = string.replace(os.path.split(self.inp)[1],       '.inp', '')
          if program_is_dalton:
-             inp_file_strip = string.replace(self.inp,       '.dal', '')
-         mol_file_strip = string.replace(self.mol,       '.mol', '')
+             inp_file_strip = string.replace(os.path.split(self.inp)[1],       '.dal', '')
+
+         mol_file_strip = string.replace(os.path.split(self.mol)[1],       '.mol', '')
          mol_file_strip = string.replace(mol_file_strip, '.xyz', '')
          return '%s_%s.out' % (inp_file_strip, mol_file_strip)
      def get_test_name(self):
@@ -508,13 +556,15 @@ class run:
              if pgid_dirac is not None:
                  print('runtest: got signal #%s, passing #2 (SIGINT) on to children' % str(signum))
                  if sys.platform != 'win32':
-                     os.killpg(pgid_dirac,signum_kill) 
-                 else: 
+                     os.killpg(pgid_dirac,signum_kill)
+                 else:
                      kill_win(pgid_dirac)
-                 #miro: important to have short time delay !
-                 time.sleep(2)
+                 if not executed_from_subdir:
+                     # time delay for killing
+                     # don't delay if this is interactive run from subdir
+                     time.sleep(2)
              sys.exit()
-			 
+
          if sys.platform != 'win32':
              signal.signal(signal.SIGHUP,child_signaller)
              signal.signal(signal.SIGPIPE,child_signaller)
@@ -526,7 +576,7 @@ class run:
             signal.signal(signal.SIGFPE,child_signaller)
             signal.signal(signal.SIGILL,child_signaller)
             signal.signal(signal.SIGSEGV,child_signaller)
- 
+
          #miro: platform independent signals
          signal.signal(signal.SIGTERM,child_signaller)
          signal.signal(signal.SIGINT,child_signaller)
@@ -548,7 +598,7 @@ class run:
                  error_message += '\n       try to specify path to your launcher with ./runtest --launcher=path'
                  print(error_message)
                  sys.exit(1)
-          
+
              output_prefix = '%s_%s' % (string.replace(self.inp, '.dal', ''), string.replace(self.mol, '.mol', ''))
              command = launcher + \
                  ' -d %s %s %s 1> %s.stdout 2> %s.stderr' % (self.launcher_flags, \
@@ -589,6 +639,9 @@ class run:
                         exit = 'SKIP'
                  if 'controlled stop: only int64' in line:
                     if int32_run(s):
+                        exit = 'SKIP'
+                 if 'controlled stop: only int32' in line:
+                    if not int32_run(s):
                         exit = 'SKIP'
              f.close()
              return exit
@@ -675,28 +728,32 @@ class run:
                                                filter_task.end_is_regex,   \
                                                filter_task.end_is_including)
 
-                 if line_l == []:
+                 if not (line_l == []):
                      # subtask did not filter anything
-                     log_file.write('ERROR: result "%s" not found\n' % filter_task.start_string)
-                 else:
+                     # this can happen since sometimes we use same filter
+                     # for very different outputs
                      for x in line_l:
                          for line in x:
                              own_result.write(output[line])
                      for x in line_l_ref:
                          for line in x:
                              ref_result.write(output_ref[line])
-                     extract_and_compare_floats(log_file,              \
-                                                output,                \
-                                                output_ref,            \
-                                                line_l,                \
-                                                line_l_ref,            \
-                                                filter_task.precision, \
+                     extract_and_compare_floats(log_file,                 \
+                                                output,                   \
+                                                output_ref,               \
+                                                line_l,                   \
+                                                line_l_ref,               \
+                                                filter_task.nr_of_floats, \
+                                                filter_task.precision,    \
+                                                filter_task.ignore_below_limit, \
                                                 filter_task.ignore_sign)
          log_file.close()
          own_result.close()
          ref_result.close()
 
      def is_shell_command(self):
+         return False
+     def is_python_command(self):
          return False
      def is_run(self):
          return True
@@ -710,6 +767,51 @@ class shell_command:
          os.system(self.command)
      def is_shell_command(self):
          return True
+     def is_run(self):
+         return False
+
+class python_command:
+     def __init__(self, test, line):
+         self.test    = test
+         self.command_args = line[2:]
+         self.command = line[:2]
+     def execute(self):
+         os.chdir(self.test)
+         if self.command == 'cp' :
+             src=self.command_args.split()[0]
+             dest=self.command_args.split()[1]
+             if len(self.command_args.split()) != 2:
+                 sys.exit("must be two arguments for copying command! you have"+self.command_args)
+             if os.path.isfile(src):
+                 pass
+                 shutil.copy(src, dest)
+             else:
+                 print "runtest warning: copied file "+src+" does not exist in "+self.test
+         elif self.command == 'rm' :
+             for dirac_file  in self.command_args.split():
+                if os.path.isfile(dirac_file):
+                    os.remove(dirac_file)
+                else:
+                    print "runtest warning: file for removing "+dirac_file+"does not exist!"
+                    print "  check the test menu presciption: "+self.command+" "+self.command_args
+         elif self.command == 'mv' :
+             src=self.command_args.split()[0]
+             dest=self.command_args.split()[1]
+             if len(self.command_args.split()) != 2:
+                 sys.exit("must be two arguments for moving command!")
+             if os.path.isfile(src):
+                 pass
+                 shutil.move(src, dest)
+             else:
+                 print "runtest warning:  source file "+src+" does not exist for move!"
+                 print "  check test menu presciption: "+self.command+" "+self.command_args
+         else:
+             print 'wrong command in menu:',self.command
+             sys.exit("Wrong meta-command in menu ! Can be only rm/cp/mv ! check menu presciption:"+self.command+" "+self.command_args)
+     def is_python_command(self):
+         return True
+     def is_shell_command(self):
+         return False
      def is_run(self):
          return False
 
@@ -734,7 +836,7 @@ def get_current_section(line, current_section):
     return current_section
 
 def line_is_keyword(line):
-    return line.split()[0] in ['sh', 'quick', 'regular', 'benchmark']
+    return line.split()[0] in ['sh', 'quick', 'regular', 'benchmark', 'cp', 'mv', 'rm']
 
 # main function
 def main(*args):
@@ -752,8 +854,17 @@ def main(*args):
                     if line[0:1] != '#':
                         current_section = get_current_section(line, current_section)
                         if use_this_line(current_section):
-                            if line[0:2] == 'sh':
+                            if   line[0:2] == 'sh':
                                 l.append(shell_command(test, line))
+                            elif line[0:2] == 'cp':
+                                l.append(python_command(test, line))
+                                pass
+                            elif line[0:2] == 'mv':
+                                l.append(python_command(test, line))
+                                pass
+                            elif line[0:2] == 'rm':
+                                l.append(python_command(test, line))
+                                pass
                             else:
                                 if not line_is_keyword(line):
                                     l.append(run(test, line, current_section[0]))
@@ -787,7 +898,7 @@ def main(*args):
     global_elapsed   = 0.0
 
     for task in l:
-        if task.is_shell_command():
+        if task.is_shell_command() or task.is_python_command():
             task.execute()
         else:
             nr_of_tests_done += 1
@@ -796,12 +907,11 @@ def main(*args):
             if exit == 'NORMAL':
                 output_file = os.path.join('result', task.get_output_name())
                 if os.path.isfile(output_file):
-                    # overwrite reference files
                     if options.overwrite:
-                        os.system('cp %s %s' % (task.get_output_name(), output_file))
-
-                    # create directory where outputs are compared
+                        # overwrite reference files
+                        shutil.copy(task.get_output_name(), output_file)
                     if not os.path.isdir('compare'):
+                        # create directory where outputs are compared
                         os.mkdir('compare')
 
                     task.apply_filter()
