@@ -617,9 +617,10 @@ class run:
              filter_name['out'] = 'filter'
          if program_is_dalton:
              # dalton has several outputs and thus several filters
-             output_suffix_l = ['out', 'stdout']
-             filter_name['out']    = 'filter.out'
-             filter_name['stdout'] = 'filter.stdout'
+             output_suffix_l = ['out', 'stdout', 'rsp_tensor']
+             filter_name['out']        = 'filter.out'
+             filter_name['stdout']     = 'filter.stdout'
+             filter_name['rsp_tensor'] = 'filter.rsp_tensor'
 
          if program_is_dirac:
              output_prefix = string.replace(self.get_output_name(), '.out', '')
@@ -632,6 +633,13 @@ class run:
 
          for output_suffix in output_suffix_l:
              output_name = output_prefix + '.' + output_suffix
+
+             if program_is_dalton:
+                 # in dalton we can have out, stdout and rsp_tensor
+                 # very often we do not have all 3 outputs
+                 # so we check whether such an output exists
+                 if not os.path.isfile('result/%s' % filter_name[output_suffix]):
+                     break
 
              # read filter and get list of filter tasks
              filter_task_l = read_filter('result/%s' % filter_name[output_suffix])

@@ -1,5 +1,6 @@
-*/*out
-*/*out.*
-*/*stdout
-*/*stderr
+*/*.out
+*/*.out.*
+*/*.stdout
+*/*.stderr
+*/*.rsp_tensor
 */compare

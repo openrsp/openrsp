@@ -25,10 +25,10 @@
 0
 3
 .SPPLAB
-GEO 
-EL  
-EL  
-EL  
+GEO
+EL
+EL
+EL
 .THRESH
  1e-10
 *END OF AORSP
