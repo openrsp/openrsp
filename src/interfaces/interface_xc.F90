@@ -21,6 +21,7 @@ module interface_xc
 
    public rsp_xcave
    public rsp_xcint
+   public rsp_xcint_new
 
    public get_is_ks_calculation
 
@@ -326,6 +327,211 @@ contains
       if (allocated(xc_dmat)) deallocate(xc_dmat)
 
    end subroutine
+
+
+
+
+! MaR: Temporarily named 'new' routine to preserve old functionality
+! while testing new - should replace as standard when done
+  !> Exchange-correlation perturbed by fields 'field', contracted over
+  !> densities 'D', added to Fock matrices 'F'
+  subroutine rsp_xcint_new(pert, res, D, Dg, Df, Dff)
+
+!   ---------------------------------------------------------------------------
+    character(*), intent(in)           :: pert
+    type(matrix), intent(out)          :: res(*)
+    type(matrix)                       :: D
+    type(matrix), intent(in), optional :: Dg(:)
+    type(matrix), intent(in), optional :: Df(:)
+    type(matrix), intent(in), optional :: Dff(:, :)
+!   ---------------------------------------------------------------------------
+    integer              :: icenter
+    integer              :: ioff
+    integer              :: imat, i, j, k, element
+    integer              :: mat_dim
+    integer              :: nr_atoms
+    integer              :: nr_dmat
+    real(8), allocatable :: xc_dmat(:)
+    real(8), allocatable :: xc_fmat(:)
+    real(8)              :: xc_energy
+!   ---------------------------------------------------------------------------
+
+#ifndef PRG_DIRAC
+    if (.not. get_is_ks_calculation()) then
+       return
+    end if
+
+    nr_atoms = get_nr_atoms()
+
+
+    mat_dim = D%nrow
+
+
+    allocate(xc_fmat(mat_dim*mat_dim))
+
+    select case (pert)
+
+       ! MaR: This is the 'unperturbed F' case
+       case ('N')
+
+          nr_dmat = 1
+          allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+
+          element = 1
+          call xc_integrate(                     &
+                            xc_mat_dim=mat_dim,  &
+                            xc_nr_dmat=1,        &
+                            xc_dmat=(/D%elms_alpha/), &
+                            xc_nr_geo_pert=0,    &
+                            xc_nr_fld_pert=0,    &
+                            xc_energy=xc_energy, &
+                            xc_fmat=xc_fmat      &
+                           )
+          call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(element)%elms_alpha, 1)
+
+       case ('f')
+
+          nr_dmat = 1
+          allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+
+          do i = 1, 3
+
+             element = i
+             call xc_integrate(                     &
+                               xc_mat_dim=mat_dim,  &
+                               xc_nr_dmat=1,        &
+                               xc_dmat=(/D%elms_alpha/),     &
+                               xc_nr_geo_pert=0,    &
+                               xc_nr_fld_pert=1,    &
+                               xc_energy=xc_energy, &
+                               xc_fmat=xc_fmat,     &
+                               xc_geo_coor=(/0/)    &
+                             )
+             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(element)%elms_alpha, 1)
+
+          end do
+
+       case ('g')
+
+          nr_dmat = 1
+          allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+
+          do i = 1, 3*nr_atoms
+
+             element = i
+             call xc_integrate(                     &
+                               xc_mat_dim=mat_dim,  &
+                               xc_nr_dmat=1,        &
+                               xc_dmat=(/D%elms_alpha/),     &
+                               xc_nr_geo_pert=1,    &
+                               xc_nr_fld_pert=0,    &
+                               xc_energy=xc_energy, &
+                               xc_fmat=xc_fmat,     &
+                               xc_geo_coor=(/i/)    &
+                              )
+             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, res(element)%elms_alpha, 1)
+
+          end do
+
+       case ('ff')
+
+          nr_dmat = 3
+          allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+
+          do i = 1, 3
+             do j = 1, i
+
+                element = i + (j-1)*3
+                call xc_integrate(                     &
+                                  xc_mat_dim=mat_dim,  &
+                                  xc_nr_dmat=3,        &
+                                  xc_dmat=(/D%elms_alpha,       &
+                                            Df(i)%elms_alpha,   &
+                                            Df(j)%elms_alpha/), &
+                                  xc_nr_geo_pert=0,    &
+                                  xc_nr_fld_pert=2,    &
+                                  xc_energy=xc_energy, &
+                                  xc_fmat=xc_fmat,     &
+                                  xc_geo_coor=(/0, 0/)    &
+                                 )
+                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, &
+                           res(element)%elms_alpha, 1)
+
+             end do
+          end do
+
+       case ('gg')
+
+          nr_dmat = 3
+          allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+
+          do i = 1, 3*nr_atoms
+             do j = 1, i
+
+                element = i  + (j-1)*nr_atoms*3
+                call xc_integrate(                     &
+                                  xc_mat_dim=mat_dim,  &
+                                  xc_nr_dmat=3,        &
+                                  xc_dmat=(/D%elms_alpha,       &
+                                            Dg(i)%elms_alpha,   &
+                                            Dg(j)%elms_alpha/), &
+                                  xc_nr_geo_pert=2,    &
+                                  xc_nr_fld_pert=0,    &
+                                  xc_energy=xc_energy, &
+                                  xc_fmat=xc_fmat,     &
+                                  xc_geo_coor=(/i, j/)    &
+                                 )
+                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, &
+                           res(element)%elms_alpha, 1)
+
+             end do
+          end do
+
+       case ('fff')
+
+          nr_dmat = 7
+          allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+
+          do i = 1, 3
+             do j = 1, i
+                do k = 1, j
+
+                   element = i + (j-1)*3 + (k-1)*(3**2)
+                   call xc_integrate(                     &
+                                     xc_mat_dim=mat_dim,  &
+                                     xc_nr_dmat=7,  &
+                                     xc_dmat=(/D%elms_alpha,       &
+                                               Df(i)%elms_alpha,   &
+                                               Df(j)%elms_alpha,   &
+                                               Df(k)%elms_alpha,       &
+                                               Dff(i, j)%elms_alpha,       &
+                                               Dff(i, k)%elms_alpha,       &
+                                               Dff(j, k)%elms_alpha/), &
+                                     xc_nr_geo_pert=0,    &
+                                     xc_nr_fld_pert=3,    &
+                                     xc_energy=xc_energy, &
+                                     xc_fmat=xc_fmat,     &
+                                     xc_geo_coor=(/0, 0, 0/)    &
+                                    )
+                   call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, &
+                              res(element)%elms_alpha, 1)
+
+                end do
+             end do
+          end do
+
+       case default
+          print *, 'Warning: perturbation ', pert, ' not implemented in xcint'
+          print *, 'No contribution was made'
+
+    end select
+
+
+    deallocate(xc_dmat)
+    deallocate(xc_fmat)
+#endif
+
+  end subroutine
 
 
    !> Exchange-correlation perturbed by fields 'field', contracted over
