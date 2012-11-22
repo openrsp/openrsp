@@ -1463,7 +1463,7 @@ end if
 
     if (pert%n_perturbations == 0) then
        
-       write(*,*) 'rsp_xcave_tr_adapt CALLED WITH NO PERTURBATION'
+       write(*,*) 'Warning: rsp_xcave_tr_adapt called with no perturbation'
 
     else if (pert%n_perturbations == 1) then
 
@@ -2450,97 +2450,245 @@ end if
   end subroutine
 
 
-  subroutine rsp_xcint_tr_adapt(nr_ao, nf, f, c, nc, D, propsize, xcint)
+  subroutine rsp_xcint_tr_adapt(nr_ao, pert, D_single, D, propsize, xcint)
 
-    integer :: i, j, k, nr_ao, propsize
-    !> number of fields
-    integer,       intent(in)    :: nf
-    !> field labels in std order
-    character(4),  intent(in)    :: f(nf)
-    !> first and number of- components in each field
-    integer,       intent(in)    :: c(nf), nc(nf)
+    integer :: i, j, k, n, nr_ao, propsize
+    type(p_tuple) :: pert, pg, pf, pff
     !> output perturbed integrals
     type(matrix),  intent(inout) :: xcint(propsize)
-type(matrix) :: Db, Fb
-    type(matrix), allocatable, dimension(:,:) :: tmp_xcint
-    type(matrix), dimension(:) :: D
+    type(matrix) :: D_single
+    type(matrix), allocatable, dimension(:) :: Dg, Df
+    type(matrix), allocatable, dimension(:,:) :: Dff
+    type(matrix), allocatable, dimension(:,:,:) :: tmp_xcint
+    type(SDF) :: D
     !--------------------------------------------------
 
-    ! MaR: ONLY GEOMETRICAL PERTURBATIONS SUPPORTED SO FAR
 
-! call mat_init(Db, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-! call mat_init(Fb, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
 
-    if (nf == 0) then
+    if (pert%n_perturbations == 0) then
 
-! write(*,*) 'D before', D(1)%elms_alpha
-! write(*,*) 'F before', xcint(1)%elms_alpha
-! 
-! Db = D(1)
-! Fb = xcint(1)
+       allocate(tmp_xcint(1, 1, 1))
 
-      call rsp_xcint(D, F=xcint(1))
+       ! MR: ASSUME CLOSED SHELL
+       call mat_init(tmp_xcint(1, 1, 1), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
 
-! Db = D(1) - Db
-! Fb = xcint(1) - Fb
-! 
-! write(*,*) 'D chg', Db%elms_alpha
-! write(*,*) 'F after', Fb%elms_alpha
+       call rsp_xcint_new('N', tmp_xcint(1, 1, 1), D_single)
+       xcint(1) = xcint(1) + tmp_xcint(1, 1, 1)
 
-    else if (nf == 1) then
+       deallocate(tmp_xcint)
 
-       if (all(f==(/'GEO '/))) then
+    else if (pert%n_perturbations == 1) then
 
-          call rsp_xcint(D, Fg=xcint)
+       if (all(pert%plab==(/'GEO '/))) then
 
-       else
+          allocate(tmp_xcint(pert%pdim(1), 1, 1))
 
-!           write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:'
-!           write(*,*) 'NO CONTRIBUTION WILL BE MADE'
+          do i = 1, pert%pdim(1)
 
-       end if
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(tmp_xcint(i, 1, 1), nrow=nr_ao, &
+                           ncol=nr_ao, closed_shell=.true.)
 
-    else if (nf == 2) then
-
-       if (all(f==(/'GEO ','GEO '/))) then
-
-          allocate(tmp_xcint(nc(1), nc(1)))
-
-          do i = 1, nc(1)
-             do j = 1, nc(1)
-
-                ! MR: ASSUME CLOSED SHELL
-                call mat_init(tmp_xcint(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-
-             end do
           end do
 
-          call rsp_xcint(D, Fgg=tmp_xcint)
+          call rsp_xcint_new('g', tmp_xcint(:, 1, 1), D_single)
 
+          do i = 1, pert%pdim(1)
 
-          do i = 1, nc(1)
-             do j = 1, i
+             xcint(i) = xcint(i) + tmp_xcint(i, 1, 1)
 
-                k = get_triang_blks_offset(1, 2, (/1, 2, nc(1)/), &
-                                           (/propsize/), (/i, j/))
+          end do
 
-                xcint(k) = xcint(k) + tmp_xcint(i,j)
-                tmp_xcint(i, j) = 0
+          deallocate(tmp_xcint)
 
-             end do
+       else if (all(pert%plab==(/'EL  '/))) then
+
+          allocate(tmp_xcint(3, 1, 1))
+
+          do i = 1, 3
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(tmp_xcint(i, 1, 1), nrow=nr_ao, &
+                           ncol=nr_ao, closed_shell=.true.)
+
+          end do
+
+          call rsp_xcint_new('f', tmp_xcint(:, 1, 1), D_single)
+
+          do i = 1, 3
+
+             xcint(i) = xcint(i) + tmp_xcint(i, 1, 1)
+
           end do
 
           deallocate(tmp_xcint)
 
        else
 
-!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
+          write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:', pert%plab
+          write(*,*) 'NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+    else if (pert%n_perturbations == 2) then
+
+       if (all(pert%plab==(/'GEO ','GEO '/))) then
+
+          allocate(tmp_xcint(pert%pdim(1), pert%pdim(1), 1))
+          allocate(Dg(pert%pdim(1)))
+
+          pg = p_tuple_getone(pert, 1)
+
+          do i = 1, pert%pdim(1)
+
+             do j = 1, pert%pdim(1)
+
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(tmp_xcint(i, j, 1), nrow=nr_ao, &
+                              ncol=nr_ao, closed_shell=.true.)
+
+             end do
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D, pg, (/i/), Dg(i))
+
+          end do
+
+          call rsp_xcint_new('gg', tmp_xcint(:, :, 1), D_single, Dg=Dg)
+
+          do i = 1, pert%pdim(1)
+             do j = 1, i
+
+                n = get_triang_blks_offset(1, 2, (/1, 2, pert%pdim(1)/), &
+                                           (/propsize/), (/i, j/))
+
+                xcint(n) = xcint(n) + tmp_xcint(i, j, 1)
+
+             end do
+          end do
+
+          deallocate(Dg)
+          deallocate(tmp_xcint)
+
+
+       else if (all(pert%plab==(/'EL  ','EL  '/))) then
+
+          allocate(tmp_xcint(pert%pdim(1), pert%pdim(1), 1))
+          allocate(Df(pert%pdim(1)))
+
+          pf = p_tuple_getone(pert, 1)
+
+          do i = 1, pert%pdim(1)
+
+             do j = 1, pert%pdim(1)
+
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(tmp_xcint(i, j, 1), nrow=nr_ao, &
+                              ncol=nr_ao, closed_shell=.true.)
+
+             end do
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Df(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D, pf, (/i/), Df(i))
+
+          end do
+
+          call rsp_xcint_new('ff', tmp_xcint(:, :, 1), D_single, Df=Df)
+
+          do i = 1, pert%pdim(1)
+             do j = 1, i
+
+                n = get_triang_blks_offset(1, 2, (/1, 2, pert%pdim(1)/), &
+                                           (/propsize/), (/i, j/))
+
+write(*,*) 'offset', n, ' from indices', i, j
+
+                xcint(n) = xcint(n) + tmp_xcint(i, j, 1)
+
+             end do
+          end do
+
+          deallocate(Df)
+          deallocate(tmp_xcint)
+
+       else
+
+          write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:', pert%plab
+          write(*,*) 'NO CONTRIBUTION WILL BE MADE'
+
+       end if
+
+
+
+    else if (pert%n_perturbations == 3) then
+
+
+       if (all(pert%plab==(/'EL  ','EL  ','EL  '/))) then
+
+          allocate(tmp_xcint(pert%pdim(1), pert%pdim(1), pert%pdim(1)))
+          allocate(Df(pert%pdim(1)))
+          allocate(Dff(pert%pdim(1), pert%pdim(1)))
+
+          pf = p_tuple_getone(pert, 1)
+          call p_tuple_p1_cloneto_p2(pert, pff)
+          pff = p_tuple_remove_first(pff)
+
+          do i = 1, pert%pdim(1)
+
+             do j = 1, pert%pdim(1)
+
+                do k = 1, pert%pdim(1)
+
+                   ! MR: ASSUME CLOSED SHELL
+                   call mat_init(tmp_xcint(i, j, k), nrow=nr_ao, &
+                                 ncol=nr_ao, closed_shell=.true.)
+
+                end do
+
+                ! MR: ASSUME CLOSED SHELL
+                call mat_init(Dff(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call sdf_getdata_s(D, pff, (/i, j/), Dff(i, j))
+
+             end do
+
+             ! MR: ASSUME CLOSED SHELL
+             call mat_init(Df(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call sdf_getdata_s(D, pf, (/i/), Df(i))
+
+          end do
+
+          call rsp_xcint_new('fff', tmp_xcint(:, :, :), D_single, Df=Df, Dff=Dff)
+
+          do i = 1, pert%pdim(1)
+             do j = 1, i
+                do k = 1, j
+
+                   n = get_triang_blks_offset(1, 3, (/1, 3, pert%pdim(1)/), &
+                                              (/propsize/), (/i, j, k/))
+
+                xcint(n) = xcint(n) + tmp_xcint(i, j, k)
+
+                end do
+             end do
+          end do
+
+          deallocate(Dff)
+          deallocate(Df)
+          deallocate(tmp_xcint)
+
+       else
+
+          write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:', pert%plab
+          write(*,*) 'NO CONTRIBUTION WILL BE MADE'
 
        end if
 
     else
 
-!        write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
+       write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED NUMBER OF FIELDS:'
+       write(*,*) 'NO CONTRIBUTION WILL BE MADE'
 
     end if
 

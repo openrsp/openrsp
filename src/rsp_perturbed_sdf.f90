@@ -180,6 +180,30 @@ module rsp_perturbed_sdf
     call rsp_fock_lowerorder(zeromat, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          0, D, perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
+
+write(*,*) 'Fp before xcint'
+
+    do i = 1, perturbed_matrix_size
+
+write(*,*) Fp(i)%elms_alpha
+
+end do
+
+! MaR: New code: New structure of rsp_xcint
+
+call rsp_xcint_tr_adapt(zeromat%nrow, pert, A, D, perturbed_matrix_size, Fp)
+
+write(*,*) 'Fp after xcint'
+
+    do i = 1, perturbed_matrix_size
+
+write(*,*) Fp(i)%elms_alpha
+
+end do
+
+
+! End new code
+
     deallocate(fock_lowerorder_cache)
 
     call sdf_add(F, pert, perturbed_matrix_size, Fp)
@@ -221,8 +245,26 @@ module rsp_perturbed_sdf
 
        call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
-       call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
-            (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , 1, Fp(i:i))
+
+
+write(*,*) 'Fp before xcint particular'
+write(*,*) Fp(i)%elms_alpha
+
+
+! MaR: Adapted for new structure
+       call rsp_xcint_tr_adapt(zeromat%nrow, get_emptypert(), Dp(i), D, &
+            perturbed_matrix_size, Fp(i:i))
+
+write(*,*) 'Fp after xcint particular'
+write(*,*) Fp(i)%elms_alpha
+
+
+
+! MaR: Should there be an array (/D_unp, Dh(i)/) like below or just the Dp(i) like above?
+!        call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+!             (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , 1, Fp(i:i))
+
+
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
 
        ! 4. Make right-hand side using Dp
@@ -262,8 +304,23 @@ module rsp_perturbed_sdf
        call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
 
-       call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
-            (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , 1, Fp(i:i))
+write(*,*) 'Fp before xcint homogeneous'
+write(*,*) Fp(i)%elms_alpha
+
+
+! MaR: Adapted for new structure
+       call rsp_xcint_tr_adapt(zeromat%nrow, get_emptypert(), Dh(i), D, &
+            perturbed_matrix_size, Fp(i:i))
+
+
+write(*,*) 'Fp after xcint homogeneous'
+write(*,*) Fp(i)%elms_alpha
+
+
+
+! MaR: Should there be an array (/D_unp, Dh(i)/) like below or just the Dh(i) like above?
+!        call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+!             (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , 1, Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
 
@@ -660,10 +717,10 @@ end if
 
           end if
 
-          call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
-               p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-               p_tuples(1)%pdim, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
-               (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
+!           call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
+!                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!                p_tuples(1)%pdim, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
+!                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
 
           if (p_tuples(1)%n_perturbations > 0) then
 
@@ -850,11 +907,11 @@ end if
 
        end if
 
-       call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                      p_tuples(1)%pdim, &
-                      (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
-                      property_size, Fp)
+!        call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+!                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!                       p_tuples(1)%pdim, &
+!                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
+!                       property_size, Fp)
 
        ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
        ! It should be possible to just add it to Fp like already done above

@@ -192,7 +192,7 @@ public rsp_cfg
     ! number of perturbations and kn
 
     prop = 0.0
-!     p_diff = prop
+    p_diff = prop
 
     call rsp_fds(zeromat, pert, kn, F, D, S)
  
@@ -210,10 +210,10 @@ public rsp_cfg
 
     deallocate(energy_cache)
 
-! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
 ! 
-!     p_diff = prop
+    p_diff = prop
 
     write(*,*) ' '
     write(*,*) 'Calculating exchange/correlation contributions'
@@ -225,9 +225,9 @@ public rsp_cfg
     write(*,*) 'Finished calculating exchange/correlation contributions'
     write(*,*) ' '
 
-! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
-!     p_diff = prop
+write(*,*) 'prop incr'
+write(*,*) prop - p_diff
+    p_diff = prop
 
     call property_cache_allocate(pulay_kn_cache)
     call rsp_pulay_kn(pert, kn, (/emptypert, emptypert/), S, D, F, &
