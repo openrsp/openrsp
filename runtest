@@ -883,14 +883,14 @@ def main(*args):
                     if nr_problems == 0:
                         suffix = filter_file.split('.')[-1]
                         output_file = task.get_output_prefix() + '.' + suffix
-                        
+
                         if os.path.isfile(os.path.join('result', output_file)):
                             if not os.path.isdir('compare'):
                                 # create directory where outputs are compared
                                 os.mkdir('compare')
-                        
+
                             task.apply_filter(output_file, suffix)
-                        
+
                             if not task.noref:
                                 if os.path.getsize('compare/%s.own' % output_file) == 0:
                                     # filter does not produce anything
