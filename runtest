@@ -614,7 +614,8 @@ class run:
                                       stdout=subprocess.PIPE,
                                       preexec_fn=os.setsid)
              else:
-                 p = subprocess.Popen(shlex.split(command),
+                 # miro: instead shlex.split(command) use plain command on Windows
+                 p = subprocess.Popen(command,
                                       stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE)
              pgid_dirac = p.pid # save DIRAC process group id for latter killing of subprocesses
@@ -950,7 +951,10 @@ def main(*args):
 
             if options.showdiff:
                 if result_text == 'FAIL':
-                    os.system('more compare/%s.diff' % task.get_output_name())
+                    #miro: more command is common for both Linux and Windows, heureka !
+                    compare_cmd='more '+os.path.join('compare',
+                                                      str(task.get_output_name())+'.diff')
+                    os.system(compare_cmd)
 
             if ((nr_crashed > 0) or (nr_failed > 0)) and options.giveup:
                 print('')
