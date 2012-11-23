@@ -13,6 +13,7 @@ import shlex
 import time
 import shutil
 import signal
+import glob
 from optparse import OptionParser, OptionGroup
 
 # global variables
@@ -134,11 +135,6 @@ group.add_option('--timeout',
                  default=None,
                  help='time limit for runtest [default: %default]',
                  metavar='"hh:mm:ss"')
-group.add_option('--overwrite',
-                 action='store_true',
-                 dest='overwrite',
-                 default=False,
-                 help='overwrite reference files [default: %default]')
 group.add_option('--backup',
                  action='store_true',
                  dest='backup',
@@ -537,15 +533,16 @@ class run:
          if options.mpi > 1:
              launcher_flags += '--mpi=%i ' % options.mpi
          self.launcher_flags = launcher_flags
-     def get_output_name(self):
-         if program_is_dirac:
-             inp_file_strip = string.replace(os.path.split(self.inp)[1],       '.inp', '')
-         if program_is_dalton:
-             inp_file_strip = string.replace(os.path.split(self.inp)[1],       '.dal', '')
 
-         mol_file_strip = string.replace(os.path.split(self.mol)[1],       '.mol', '')
+     def get_output_prefix(self):
+         if program_is_dirac:
+             inp_file_strip = string.replace(os.path.split(self.inp)[1], '.inp', '')
+         if program_is_dalton:
+             inp_file_strip = string.replace(os.path.split(self.inp)[1], '.dal', '')
+         mol_file_strip = string.replace(os.path.split(self.mol)[1], '.mol', '')
          mol_file_strip = string.replace(mol_file_strip, '.xyz', '')
-         return '%s_%s.out' % (inp_file_strip, mol_file_strip)
+         return '%s_%s' % (inp_file_strip, mol_file_strip)
+
      def get_test_name(self):
          (head,tail)=os.path.split(self.test)
          return tail
@@ -627,12 +624,12 @@ class run:
              launcher_output = p.communicate()[0]
              normal_termination = ('exit           : normal' in launcher_output)
          if program_is_dalton:
-             normal_termination = ('Total wall time used in DALTON' in open(self.get_output_name()).read())
+             normal_termination = ('Total wall time used in DALTON' in open(self.get_output_prefix() + '.out').read())
          if normal_termination:
              return 'NORMAL'
          else:
              exit = 'CRASH'
-             f = open(self.get_output_name(), 'r')
+             f = open(self.get_output_prefix() + '.out', 'r')
              s = f.readlines()
              for line in s:
                  if 'controlled stop: only sequential' in line:
@@ -663,91 +660,65 @@ class run:
              (progress, result_text, self.get_test_name(),        \
               inp_file_strip, mol_file_strip, elapsed_str))
 
-     def apply_filter(self):
+     def apply_filter(self, output_file, suffix):
 
-         filter_name = {}
-         if program_is_dirac:
-             output_suffix_l = ['out']
-             filter_name['out'] = 'filter'
-         if program_is_dalton:
-             # dalton has several outputs and thus several filters
-             output_suffix_l = ['out', 'stdout', 'rsp_tensor']
-             filter_name['out']        = 'filter.out'
-             filter_name['stdout']     = 'filter.stdout'
-             filter_name['rsp_tensor'] = 'filter.rsp_tensor'
+         log_file   = open('compare/%s.diff' % output_file, 'w')
+         own_result = open('compare/%s.own'  % output_file, 'w')
+         ref_result = open('compare/%s.ref'  % output_file, 'w')
 
-         if program_is_dirac:
-             output_prefix = string.replace(self.get_output_name(), '.out', '')
-         if program_is_dalton:
-             output_prefix = '%s_%s' % (string.replace(self.inp, '.dal', ''), string.replace(self.mol, '.mol', ''))
+         # read filter and get list of filter tasks
+         filter_task_l = read_filter('result/filter.%s' % suffix)
 
-         log_file   = open('compare/%s.diff' % self.get_output_name(), 'w')
-         own_result = open('compare/%s.own'  % self.get_output_name(), 'w')
-         ref_result = open('compare/%s.ref'  % self.get_output_name(), 'w')
+         # read output and reference output
+         output     = open(            output_file).readlines()
+         output_ref = open('result/' + output_file).readlines()
 
-         for output_suffix in output_suffix_l:
-             output_name = output_prefix + '.' + output_suffix
+         for filter_task in filter_task_l:
+             if filter_task.compare_everything:
+                 line_l     = [range(len(output))]
+                 line_l_ref = [range(len(output_ref))]
+             elif filter_task.plus_nr_lines > 0:
+                 line_l     = find_string_plus_nr_lines(output,                    \
+                                                        filter_task.start_string,  \
+                                                        filter_task.plus_nr_lines, \
+                                                        start_is_regex=filter_task.start_is_regex)
+                 line_l_ref = find_string_plus_nr_lines(output_ref,                \
+                                                        filter_task.start_string,  \
+                                                        filter_task.plus_nr_lines, \
+                                                        start_is_regex=filter_task.start_is_regex)
+             else:
+                 line_l     = find_from_to(output,         \
+                                           filter_task.start_string,   \
+                                           filter_task.start_is_regex, \
+                                           filter_task.end_string,     \
+                                           filter_task.end_is_regex,   \
+                                           filter_task.end_is_including)
+                 line_l_ref = find_from_to(output_ref,     \
+                                           filter_task.start_string,   \
+                                           filter_task.start_is_regex, \
+                                           filter_task.end_string,     \
+                                           filter_task.end_is_regex,   \
+                                           filter_task.end_is_including)
 
-             if program_is_dalton:
-                 # in dalton we can have out, stdout and rsp_tensor
-                 # very often we do not have all 3 outputs
-                 # so we check whether such an output exists
-                 if not os.path.isfile('result/%s' % filter_name[output_suffix]):
-                     break
-
-             # read filter and get list of filter tasks
-             filter_task_l = read_filter('result/%s' % filter_name[output_suffix])
-
-             # read output and reference output
-             output     = open(            output_name).readlines()
-             output_ref = open('result/' + output_name).readlines()
-
-             for filter_task in filter_task_l:
-                 if filter_task.compare_everything:
-                     line_l     = [range(len(output))]
-                     line_l_ref = [range(len(output_ref))]
-                 elif filter_task.plus_nr_lines > 0:
-                     line_l     = find_string_plus_nr_lines(output,                    \
-                                                            filter_task.start_string,  \
-                                                            filter_task.plus_nr_lines, \
-                                                            start_is_regex=filter_task.start_is_regex)
-                     line_l_ref = find_string_plus_nr_lines(output_ref,                \
-                                                            filter_task.start_string,  \
-                                                            filter_task.plus_nr_lines, \
-                                                            start_is_regex=filter_task.start_is_regex)
-                 else:
-                     line_l     = find_from_to(output,         \
-                                               filter_task.start_string,   \
-                                               filter_task.start_is_regex, \
-                                               filter_task.end_string,     \
-                                               filter_task.end_is_regex,   \
-                                               filter_task.end_is_including)
-                     line_l_ref = find_from_to(output_ref,     \
-                                               filter_task.start_string,   \
-                                               filter_task.start_is_regex, \
-                                               filter_task.end_string,     \
-                                               filter_task.end_is_regex,   \
-                                               filter_task.end_is_including)
-
-                 if not (line_l == []):
-                     # subtask did not filter anything
-                     # this can happen since sometimes we use same filter
-                     # for very different outputs
-                     for x in line_l:
-                         for line in x:
-                             own_result.write(output[line])
-                     for x in line_l_ref:
-                         for line in x:
-                             ref_result.write(output_ref[line])
-                     extract_and_compare_floats(log_file,                 \
-                                                output,                   \
-                                                output_ref,               \
-                                                line_l,                   \
-                                                line_l_ref,               \
-                                                filter_task.nr_of_floats, \
-                                                filter_task.precision,    \
-                                                filter_task.ignore_below_limit, \
-                                                filter_task.ignore_sign)
+             if not (line_l == []):
+                 # subtask did not filter anything
+                 # this can happen since sometimes we use same filter
+                 # for very different outputs
+                 for x in line_l:
+                     for line in x:
+                         own_result.write(output[line])
+                 for x in line_l_ref:
+                     for line in x:
+                         ref_result.write(output_ref[line])
+                 extract_and_compare_floats(log_file,                 \
+                                            output,                   \
+                                            output_ref,               \
+                                            line_l,                   \
+                                            line_l_ref,               \
+                                            filter_task.nr_of_floats, \
+                                            filter_task.precision,    \
+                                            filter_task.ignore_below_limit, \
+                                            filter_task.ignore_sign)
          log_file.close()
          own_result.close()
          ref_result.close()
@@ -906,36 +877,42 @@ def main(*args):
             start = time.time()
             exit = task.run_and_controlled_exit()
             if exit == 'NORMAL':
-                output_file = os.path.join('result', task.get_output_name())
-                if os.path.isfile(output_file):
-                    if options.overwrite:
-                        # overwrite reference files
-                        shutil.copy(task.get_output_name(), output_file)
-                    if not os.path.isdir('compare'):
-                        # create directory where outputs are compared
-                        os.mkdir('compare')
 
-                    task.apply_filter()
-
-                    if (not task.noref) and os.path.getsize('compare/%s.own' % task.get_output_name()) == 0:
-                        # filter does not produce anything
-                        result_text = 'BAD FILTER'
-                        nr_bad_filter += 1
-                    else:
-                        if os.path.getsize('compare/%s.diff' % task.get_output_name()) == 0:
-                            result_text = 'OK'
-                            nr_ok += 1
+                nr_problems = 0
+                for filter_file in glob.glob(os.path.join('result', 'filter*')):
+                    if nr_problems == 0:
+                        suffix = filter_file.split('.')[-1]
+                        output_file = task.get_output_prefix() + '.' + suffix
+                        
+                        if os.path.isfile(os.path.join('result', output_file)):
+                            if not os.path.isdir('compare'):
+                                # create directory where outputs are compared
+                                os.mkdir('compare')
+                        
+                            task.apply_filter(output_file, suffix)
+                        
+                            if not task.noref:
+                                if os.path.getsize('compare/%s.own' % output_file) == 0:
+                                    # filter does not produce anything
+                                    result_text = 'BAD FILTER'
+                                    nr_bad_filter += 1
+                                    nr_problems += 1
+                                else:
+                                    if os.path.getsize('compare/%s.diff' % output_file) == 0:
+                                        result_text = 'OK'
+                                        nr_ok += 1
+                                    else:
+                                        result_text = 'FAIL'
+                                        nr_failed += 1
+                                        nr_problems += 1
                         else:
-                            result_text = 'FAIL'
-                            nr_failed += 1
-
-                else:
-                    if task.noref:
-                        result_text = '(noref)'
-                        nr_marked_noref += 1
-                    else:
-                        result_text = 'NO REF'
-                        nr_without_ref += 1
+                            if task.noref:
+                                result_text = '(noref)'
+                                nr_marked_noref += 1
+                            else:
+                                result_text = 'NO REF'
+                                nr_without_ref += 1
+                                nr_problems += 1
             else:
                 result_text = exit
                 if exit == 'CRASH':
@@ -951,10 +928,7 @@ def main(*args):
 
             if options.showdiff:
                 if result_text == 'FAIL':
-                    #miro: more command is common for both Linux and Windows, heureka !
-                    compare_cmd='more '+os.path.join('compare',
-                                                      str(task.get_output_name())+'.diff')
-                    os.system(compare_cmd)
+                    os.system('more ' + os.path.join('compare', output_file + '.diff'))
 
             if ((nr_crashed > 0) or (nr_failed > 0)) and options.giveup:
                 print('')
