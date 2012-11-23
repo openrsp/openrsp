@@ -51,12 +51,6 @@ module openrsp_old
   use interface_xc
   use dalton_ifc
 
-#ifndef PRG_DIRAC
-! xcint
-  use interface_ao_specific
-  use xcint_main
-#endif
-
   implicit none
 
   !> control information of openrsp
@@ -334,7 +328,8 @@ module openrsp_old
     integer i, j, k, l
 
     if (get_is_ks_calculation()) then
-       call interface_ao_write()
+       print *, 'ERROR: XC is not supported in this version'
+       stop 1
     end if
 
     ! calculates electric-field-gradient-induced (Buckingham) birefringence
