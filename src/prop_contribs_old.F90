@@ -1596,31 +1596,11 @@ contains
             ! Coulomb-exchange
             call twofck('  ', D(pd1-pd+1+i), A(1:1))
             F(i+1) = F(i+1) + A(1)
-            ! Kohn-Sham exchange-correlation
-            call rsp_xcint(D=(/D(1), D(pd1-pd+1+i)/), F=F(1+i))
          end do
 
          if (do_dft()) then
-            select case (nd)
-               case (0)
-                  ! nothing to do
-               case (1)
-                  ! nothing to do
-               case (2)
-                  ii = 0
-                  do j = 1, df(2)
-                     do i = 1, df(1)
-                        ii = ii + 1
-                        A(1)%elms_alpha = 0.0d0
-                        call rsp_xcint(D=(/D(1), D(1+i), D(1+df(1)+j)/), F=A(1))
-                        F(ii) = F(ii) + A(1)
-                     end do
-                  end do
-               case (3)
-               case default
-                  print *, 'ERROR: prop_twoint: order not implemented'
-                  stop 1
-            end select
+            print *, 'ERROR: XC is not supported in this version'
+            stop 1
          end if
 
          A(1) = 0

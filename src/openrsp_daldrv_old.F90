@@ -359,31 +359,10 @@
     H1 = 0
     G  = 0
 
-#ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
-       ! write xcint interface files
-       call interface_ao_write()
-
-       ! add xc contribution to the fock matrix
-       mat_dim = D%nrow
-       allocate(xc_dmat(mat_dim*mat_dim))
-       xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_alpha, 1, xc_dmat, 1)
-       allocate(xc_fmat(mat_dim*mat_dim))
-       call xc_integrate(                     &
-                         xc_mat_dim=mat_dim,  &
-                         xc_nr_dmat=1,        &
-                         xc_dmat=xc_dmat,     &
-                         xc_nr_geo_pert=0,    &
-                         xc_nr_fld_pert=0,    &
-                         xc_energy=xc_energy, &
-                         xc_fmat=xc_fmat      &
-                        )
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
-       deallocate(xc_dmat)
-       deallocate(xc_fmat)
+       print *, 'ERROR: XC is not supported in this version'
+       stop 1
     end if
-#endif
 
     ! performs the calculations
     call openrsp_prop_calc(S, D, F, openrsp_info )
