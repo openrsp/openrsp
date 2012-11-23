@@ -1,10 +1,10 @@
-# ff_lda.dal     sto-3g+p.mol -get rsp_tensor
-# ff_lda.dal     sto-3g-p.mol -get rsp_tensor
-# gff_lda.dal    sto-3g.mol   -get rsp_tensor
-
 # fff_lda.dal    sto-3g.mol   -get rsp_tensor
 # ffff_lda.dal   sto-3g.mol   -get rsp_tensor
 # fffff_lda.dal  sto-3g.mol   -get rsp_tensor
+
+# ff_lda.dal     sto-3g+p.mol -get rsp_tensor
+# ff_lda.dal     sto-3g-p.mol -get rsp_tensor
+# gff_lda.dal    sto-3g.mol   -get rsp_tensor
 
 # fff_lda.dal    sto-3g+p.mol -get rsp_tensor
 # fff_lda.dal    sto-3g-p.mol -get rsp_tensor
