@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # runtest - script to run tests and compare results with reference data
-# (c) Radovan Bast (radovan.bast at irsamc.ups-tlse.fr) and friends 2010
+# (c) Radovan Bast (radovan.bast at gmail.com) and friends 2010-2012
 # licensed under the GNU Lesser General Public License
 
 import re
@@ -16,10 +16,24 @@ import signal
 import glob
 from optparse import OptionParser, OptionGroup
 
+#-------------------------------------------------------------------------------
+
+if sys.version < '2.4':
+    print('runtest requires python version >= 2.4')
+    sys.exit(1)
+
+#-------------------------------------------------------------------------------
 # global variables
+
+root_directory = os.path.dirname(os.path.realpath(__file__))
+current_directory = os.path.realpath('.')
+
 program_is_dirac  = False
 program_is_dalton = True
-pgid_dirac = None # DIRAC process group id of the program process (not the launcher)
+
+program_group_id = None
+
+#-------------------------------------------------------------------------------
 
 def kill_win(pid):
     """
@@ -32,35 +46,18 @@ def kill_win(pid):
     handle = kernel32.OpenProcess(1, 0, pid)
     return (0 != kernel32.TerminateProcess(handle, 0))
 
-
-if sys.version < '2.4':
-    print('runtest requires python version >= 2.4')
-    sys.exit(1)
-
-root_directory = os.path.dirname(os.path.realpath(__file__))
-current_directory = os.path.realpath('.')
+#-------------------------------------------------------------------------------
 
 def extract_time(time_string):
-# extract time (in seconds) from the entering time string "hh:mm:ss"
-# returns time in secs
-    def error_printout():
-        error_message = 'runtest: timestring must be hh:mm:ss, entering %s' % time_string
-        print(error_message)
-        sys.exit(3)
+    # extract time (in seconds) from the entering time string "hh:mm:ss"
+    # returns time in secs
+    hours   = int(time_string.split(':')[0])
+    minutes = int(time_string.split(':')[1])
+    seconds = int(time_string.split(':')[2])
+    return seconds + 60*minutes + 60*60*hours
 
-    if len(time_string) != 8:
-        error_printout()
-    if (time_string[2] != ":" or time_string[5] != ":"):
-        error_printout()
-    try:
-        hours=int(time_string[0:2])
-        mins=int(time_string[3:5])
-        secs=int(time_string[6:8])
-    except:
-        error_printout()
-    # sum up the total time and return
-    total_time=secs+(60*mins)+(60*60*hours)
-    return total_time
+#-------------------------------------------------------------------------------
+# parse input
 
 # define example usage
 
@@ -161,6 +158,9 @@ parser.add_option_group(group)
 
 (options, args) = parser.parse_args()
 
+#-------------------------------------------------------------------------------
+# get list of tests to run
+
 list_of_tests_to_run = []
 
 executed_from_subdir = os.path.isfile(os.path.join(current_directory,'menu'))
@@ -193,9 +193,7 @@ if options.all or (options.quick and not options.individual):
         print('file %s does not exist' % file)
         sys.exit()
 
-if options.timeout:
-    # extract the total time in seconds
-    timeout = extract_time(options.timeout)
+#-------------------------------------------------------------------------------
 
 def int32_run(s):
     for line in s:
@@ -550,12 +548,12 @@ class run:
          def child_signaller(signum, frame):
              '''Pass on signals to the launcher to its children'''
              signum_kill=2 # for killing, prepare the strongest ammo
-             if pgid_dirac is not None:
+             if program_group_id is not None:
                  print('runtest: got signal #%s, passing #2 (SIGINT) on to children' % str(signum))
                  if sys.platform != 'win32':
-                     os.killpg(pgid_dirac,signum_kill)
+                     os.killpg(program_group_id,signum_kill)
                  else:
-                     kill_win(pgid_dirac)
+                     kill_win(program_group_id)
                  if not executed_from_subdir:
                      # time delay for killing
                      # don't delay if this is interactive run from subdir
@@ -566,15 +564,11 @@ class run:
              signal.signal(signal.SIGHUP,child_signaller)
              signal.signal(signal.SIGPIPE,child_signaller)
          else:
-            # these commented signals should work with newer versions of Python
-            #signal.signal(signal.CTRL_C_EVENT,child_signaller)
-            #signal.signal(signal.CTRL_BREAK_EVENT,child_signaller)
             signal.signal(signal.SIGABRT,child_signaller)
             signal.signal(signal.SIGFPE,child_signaller)
             signal.signal(signal.SIGILL,child_signaller)
             signal.signal(signal.SIGSEGV,child_signaller)
 
-         #miro: platform independent signals
          signal.signal(signal.SIGTERM,child_signaller)
          signal.signal(signal.SIGINT,child_signaller)
 
@@ -611,11 +605,11 @@ class run:
                                       stdout=subprocess.PIPE,
                                       preexec_fn=os.setsid)
              else:
-                 # miro: instead shlex.split(command) use plain command on Windows
+                 # instead shlex.split(command) use plain command on Windows
                  p = subprocess.Popen(command,
                                       stdin=subprocess.PIPE,
                                       stdout=subprocess.PIPE)
-             pgid_dirac = p.pid # save DIRAC process group id for latter killing of subprocesses
+             program_group_id = p.pid # save DIRAC process group id for latter killing of subprocesses
 
          if program_is_dalton:
              os.system(command)
@@ -937,6 +931,7 @@ def main(*args):
                 sys.exit(1)
 
             if options.timeout:
+                timeout = extract_time(options.timeout)
                 if global_elapsed > timeout:
                     error_message = '\n Giving up runtest. Total allowed time of %s seconds exceeded.\n' % timeout
                     print(error_message)
