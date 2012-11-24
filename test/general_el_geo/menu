@@ -5,7 +5,7 @@
   ff_lda.dal    mol.mol   -get rsp_tensor
   fff_lda.dal   mol.mol   -get rsp_tensor
   ffff_lda.dal  mol.mol   -get rsp_tensor
-  ffff_lda.dal  mol.mol   -get rsp_tensor
+  fffff_lda.dal mol.mol   -get rsp_tensor
 
 # ff_lda.dal    mol+p.mol -get rsp_tensor
 # ff_lda.dal    mol-p.mol -get rsp_tensor
