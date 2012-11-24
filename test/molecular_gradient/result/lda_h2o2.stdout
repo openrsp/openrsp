@@ -7,12 +7,12 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch lda.dal h2o2.mol
 
-   Mon Oct  8 17:14:44 CEST 2012
+   Sat Nov 24 17:14:08 CET 2012
 
    Calculation: lda_h2o2  (input files: lda.dal and h2o2.mol)
-   PID        : 18069
+   PID        : 9405
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
-   Scratch dir: /scratch/DALTON_scratch_bast/bast/lda_h2o2
+   Scratch dir: /tmp/DALTON_scratch_bast/bast/lda_h2o2
 
 
 
@@ -25,43 +25,42 @@ DFT grid generator
  Rotational invariance of grid points: random rotation
  Gauss-Chebyshev(I) radial quadrature
  Radial grid points mapping:  Becke
- Grid weight derivatives up to first order
 
- Atom   1 has    2500 grid points
- Atom   2 has    2500 grid points
- Atom   3 has    2500 grid points
- Atom   4 has    2500 grid points
- Total          10000 grid points
+ Atom   1 has     196 grid points
+ Atom   2 has     196 grid points
+ Atom   3 has     196 grid points
+ Atom   4 has     196 grid points
+ Total            784 grid points
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.093242518765 -0.223115781709  0.204939241286 -0.093175678418  0.223148028442  0.204931792245 -0.081957190247 -0.030450977844 -0.204946518203  0.081890349900  0.030418731110 -0.204924515327
+  0.094741957165 -0.221350672227  0.204606371062 -0.091281031237  0.220523587233  0.205718574476 -0.084036290879 -0.030443219468 -0.204405889477  0.080575364951  0.031270304461 -0.205919056061
 
 oneave
-  -1.78160846101  17.34397998119  -5.22724078096   1.78160846101 -17.34397998119  -5.22724078095   2.04644012331   1.84277669437   5.22724078095  -2.04644012330  -1.84277669437   5.22724078095
+  -1.78160846114  17.34397998108  -5.22724078099   1.78160846114 -17.34397998107  -5.22724078098   2.04644012329   1.84277669433   5.22724078099  -2.04644012329  -1.84277669433   5.22724078098
 
 twoave
-  1.023427489868 -9.121268044280  2.842366581462 -1.023427489866  9.121268044278  2.842366581455 -1.034697321182 -0.863703344325 -2.842366581461  1.034697321180  0.863703344327 -2.842366581456
+  1.023427489992 -9.121268044166  2.842366581491 -1.023427489992  9.121268044165  2.842366581488 -1.034697321162 -0.863703344282 -2.842366581490  1.034697321161  0.863703344282 -2.842366581489
 
 xcave
- -0.091022290289  0.198623880744 -0.232662558556  0.093093544245 -0.201013088226 -0.231157109141  0.086482182145  0.048532128334  0.231173798442 -0.086764924228 -0.048322655261  0.231316179037
+ -0.074331440032  0.184680789709 -0.222338214517  0.126073792577 -0.169850558043 -0.212672844529  0.090387709439  0.058371625841  0.226976782084 -0.086805365980 -0.052919898182  0.227212756872
 
 gradient = Eg
-  0.024655328807  0.009212556728  0.035897538117 -0.022517234504 -0.011569517477  0.037395538490 -0.024864101677 -0.013480320107 -0.037393575148  0.024514519247  0.013657546447 -0.037229191677
+  0.042845617462 -0.002965424827  0.045889011929  0.012357661012  0.016968571500  0.056666585331 -0.023037675014 -0.003633064224 -0.041049962777  0.023159092545  0.009911876876 -0.042327154573
 
-total force =   -0.179E-02   0.218E-02   0.133E-02
-total torque =   -0.290E-02  -0.646E-03   0.759E-04
+total force =   -0.553E-01  -0.203E-01  -0.192E-01
+total torque =   -0.214E-01  -0.615E-02   0.275E-01
 lda_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
-- THEREFORE scratch directory /scratch/DALTON_scratch_bast/bast/lda_h2o2 is not deleted
+- THEREFORE scratch directory /tmp/DALTON_scratch_bast/bast/lda_h2o2 is not deleted
   by this script so you may restart the calculation, if possible
-  ( /scratch/DALTON_scratch_bast/bast/lda_h2o2 may be deleted by your queueing system )
-- REMEMBER to delete /scratch/DALTON_scratch_bast/bast/lda_h2o2 yourself !!!
+  ( /tmp/DALTON_scratch_bast/bast/lda_h2o2 may be deleted by your queueing system )
+- REMEMBER to delete /tmp/DALTON_scratch_bast/bast/lda_h2o2 yourself !!!
 
 Output from 'grep -n ERROR' :
-151:.MAX ERROR                                        
+150:.MAX ERROR                                        
 
-   Mon Oct  8 17:14:48 CEST 2012
+   Sat Nov 24 17:14:13 CET 2012
    ***************************************** 

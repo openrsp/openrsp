@@ -7,12 +7,12 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch blyp.dal h2o2.mol
 
-   Mon Oct  8 17:14:48 CEST 2012
+   Sat Nov 24 17:14:13 CET 2012
 
    Calculation: blyp_h2o2  (input files: blyp.dal and h2o2.mol)
-   PID        : 18110
+   PID        : 9442
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
-   Scratch dir: /scratch/DALTON_scratch_bast/bast/blyp_h2o2
+   Scratch dir: /tmp/DALTON_scratch_bast/bast/blyp_h2o2
 
 
 
@@ -25,43 +25,42 @@ DFT grid generator
  Rotational invariance of grid points: random rotation
  Gauss-Chebyshev(I) radial quadrature
  Radial grid points mapping:  Becke
- Grid weight derivatives up to first order
 
- Atom   1 has    2500 grid points
- Atom   2 has    2500 grid points
- Atom   3 has    2500 grid points
- Atom   4 has    2500 grid points
- Total          10000 grid points
+ Atom   1 has     196 grid points
+ Atom   2 has     196 grid points
+ Atom   3 has     196 grid points
+ Atom   4 has     196 grid points
+ Total            784 grid points
 nucpot
   0.780616071475 -8.189007479219  2.448495054880 -0.780616071475  8.189007479219  2.448495054880 -1.041131895699 -1.010634820640 -2.448495054880  1.041131895699  1.010634820640 -2.448495054880
 
 ovlave
-  0.092410165533 -0.210354696667  0.203327696506 -0.092361391481  0.210397870331  0.203324893844 -0.081132259491 -0.030184858967 -0.203342070272  0.081083485439  0.030141685302 -0.203310520077
+  0.093940327851 -0.208503459877  0.203046199563 -0.090454202849  0.207602002868  0.204381186793 -0.083422114305 -0.030187371278 -0.202862186921  0.079935989303  0.031088828286 -0.204565199434
 
 oneave
-  -1.77989644393  17.31478367996  -5.24129483650   1.77989644392 -17.31478367996  -5.24129483648   2.04900577172   1.85182258061   5.24129483649  -2.04900577171  -1.85182258062   5.24129483648
+  -1.77989644392  17.31478367991  -5.24129483654   1.77989644392 -17.31478367991  -5.24129483654   2.04900577171   1.85182258060   5.24129483654  -2.04900577171  -1.85182258060   5.24129483654
 
 twoave
-  1.021138731311 -9.092004333382  2.855309563451 -1.021138731306  9.092004333378  2.855309563434 -1.036493271083 -0.872039540393 -2.855309563447  1.036493271078  0.872039540397 -2.855309563437
+  1.021138731299 -9.092004333328  2.855309563491 -1.021138731298  9.092004333328  2.855309563490 -1.036493271076 -0.872039540382 -2.855309563491  1.036493271076  0.872039540382 -2.855309563490
 
 xcave
- -0.089329145849  0.160875022411 -0.227669388056  0.091484516859 -0.163216486573 -0.226029217243  0.084256276488  0.046181656420  0.226338088512 -0.084586344659 -0.045901115984  0.226495280862
+ -0.068669363856  0.136900886893 -0.211203202605  0.121259622276 -0.125838547945 -0.206072956324  0.088395170867  0.055663552135  0.223386153579 -0.084474213421 -0.050757553428  0.223458960652
 
 gradient = Eg
-  0.024939378542 -0.015707806893  0.038168090284 -0.022735233479  0.013409516395  0.039805458435 -0.025495378069 -0.014854982968 -0.039513763595  0.025116535846  0.015092349739 -0.039325021050
+  0.047129322851 -0.037830705620  0.054352778790  0.008947060571  0.047991587560  0.060818012302 -0.023646338503 -0.005375599563 -0.041985815175  0.024081170947  0.011183055278 -0.043616020614
 
-total force =   -0.183E-02   0.206E-02   0.865E-03
-total torque =   -0.323E-02  -0.682E-03  -0.443E-03
+total force =   -0.565E-01  -0.160E-01  -0.296E-01
+total torque =   -0.144E-01  -0.599E-02   0.172E-01
 blyp_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/molecular_gradient
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
-- THEREFORE scratch directory /scratch/DALTON_scratch_bast/bast/blyp_h2o2 is not deleted
+- THEREFORE scratch directory /tmp/DALTON_scratch_bast/bast/blyp_h2o2 is not deleted
   by this script so you may restart the calculation, if possible
-  ( /scratch/DALTON_scratch_bast/bast/blyp_h2o2 may be deleted by your queueing system )
-- REMEMBER to delete /scratch/DALTON_scratch_bast/bast/blyp_h2o2 yourself !!!
+  ( /tmp/DALTON_scratch_bast/bast/blyp_h2o2 may be deleted by your queueing system )
+- REMEMBER to delete /tmp/DALTON_scratch_bast/bast/blyp_h2o2 yourself !!!
 
 Output from 'grep -n ERROR' :
-151:.MAX ERROR                                        
+150:.MAX ERROR                                        
 
-   Mon Oct  8 17:14:55 CEST 2012
+   Sat Nov 24 17:14:18 CET 2012
    ***************************************** 
