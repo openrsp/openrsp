@@ -151,8 +151,6 @@ contains
                        xc_mat_dim=mat_dim,       &
                        xc_nr_dmat=1,             &
                        xc_dmat=(/D%elms_alpha/), &
-                       xc_nr_geo_pert=1,         &
-                       xc_nr_fld_pert=0,         &
                        xc_energy=xc_energy,      &
                        xc_geo_coor=(/i/)         &
                     )
@@ -169,8 +167,6 @@ contains
                           xc_dmat=(/D%elms_alpha,       &
                                     Dg(i)%elms_alpha,   &
                                     Dg(j)%elms_alpha/), &
-                          xc_nr_geo_pert=2,             &
-                          xc_nr_fld_pert=0,             &
                           xc_energy=xc_energy,          &
                           xc_geo_coor=(/i, j/)          &
                        )
@@ -191,10 +187,8 @@ contains
                           xc_mat_dim=mat_dim,  &
                           xc_nr_dmat=nr_dmat,  &
                           xc_dmat=xc_dmat,     &
-                          xc_nr_geo_pert=1,    &
-                          xc_nr_fld_pert=1,    &
                           xc_energy=xc_energy, &
-                          xc_geo_coor=(/i, 0/) &
+                          xc_geo_coor=(/i/) &
                        )
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
@@ -217,10 +211,8 @@ contains
                              xc_mat_dim=mat_dim,     &
                              xc_nr_dmat=nr_dmat,     &
                              xc_dmat=xc_dmat,        &
-                             xc_nr_geo_pert=1,       &
-                             xc_nr_fld_pert=2,       &
                              xc_energy=xc_energy,    &
-                             xc_geo_coor=(/i, 0, 0/) &
+                             xc_geo_coor=(/i/) &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -250,10 +242,8 @@ contains
                                 xc_mat_dim=mat_dim,        &
                                 xc_nr_dmat=nr_dmat,        &
                                 xc_dmat=xc_dmat,           &
-                                xc_nr_geo_pert=1,          &
-                                xc_nr_fld_pert=3,          &
                                 xc_energy=xc_energy,       &
-                                xc_geo_coor=(/l, 0, 0, 0/) &
+                                xc_geo_coor=(/l/) &
                              )
                         res(element) = cmplx(xc_energy, 0.0d0)
                      end do
@@ -274,8 +264,6 @@ contains
                                        Dg(i)%elms_alpha,   &
                                        Dg(j)%elms_alpha,   &
                                        Dg(k)%elms_alpha/), &
-                             xc_nr_geo_pert=3,             &
-                             xc_nr_fld_pert=0,             &
                              xc_energy=xc_energy,          &
                              xc_geo_coor=(/i, j, k/)       &
                           )
@@ -306,8 +294,6 @@ contains
                                           Dgg(j, k)%elms_alpha,   &
                                           Dgg(j, l)%elms_alpha,   &
                                           Dgg(k, l)%elms_alpha/), &
-                                xc_nr_geo_pert=4,                 &
-                                xc_nr_fld_pert=0,                 &
                                 xc_energy=xc_energy,              &
                                 xc_geo_coor=(/i, j, k, l/)        &
                              )
@@ -369,8 +355,6 @@ contains
                            xc_mat_dim=mat_dim,  &
                            xc_nr_dmat=nr_dmat,  &
                            xc_dmat=xc_dmat,     &
-                           xc_nr_geo_pert=0,    &
-                           xc_nr_fld_pert=0,    &
                            xc_energy=xc_energy, &
                            xc_fmat=xc_fmat      &
                           )
@@ -383,8 +367,6 @@ contains
                               xc_mat_dim=mat_dim,  &
                               xc_nr_dmat=nr_dmat,  &
                               xc_dmat=xc_dmat,     &
-                              xc_nr_geo_pert=1,    &
-                              xc_nr_fld_pert=0,    &
                               xc_energy=xc_energy, &
                               xc_fmat=xc_fmat,     &
                               xc_geo_coor=(/i/)    &
@@ -400,8 +382,6 @@ contains
                                  xc_mat_dim=mat_dim,  &
                                  xc_nr_dmat=nr_dmat,  &
                                  xc_dmat=xc_dmat,     &
-                                 xc_nr_geo_pert=2,    &
-                                 xc_nr_fld_pert=0,    &
                                  xc_energy=xc_energy, &
                                  xc_fmat=xc_fmat,     &
                                  xc_geo_coor=(/i, j/) &
@@ -442,8 +422,6 @@ end module
                         xc_mat_dim=nr_ao,    &
                         xc_nr_dmat=1,        &
                         xc_dmat=0.5d0*dmat,  &
-                        xc_nr_geo_pert=0,    &
-                        xc_nr_fld_pert=0,    &
                         xc_energy=xc_energy, &
                         xc_fmat=xcmat        &
                        )
