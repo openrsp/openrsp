@@ -326,8 +326,8 @@ contains
       end do
       do k = 1, 3
          do j = 1, 3
-            FDSfg = (Fe(k)*Df(j) + Ff(j)*De(k)) * S &
-              - S * (De(k)*Ff(j) + Df(j)*Fe(k))
+            FDSfg = (Ff(j)*Dg(k) + Fg(k)*Df(j)) * S &
+              - S * (Df(j)*Fg(k) + Dg(k)*Ff(j))
             do i = 1, 3
                Efff(i,j,k) = Efff(i,j,k) - tr(DeSD(i),FDSfg)
             end do; FDSfg=0
@@ -339,7 +339,7 @@ contains
       end do
       do k = 1, 3
          do j = 1, 3
-            DSDfg = De(k)*S*Df(j) + Df(j)*S*De(k)
+            DSDfg = Df(j)*S*Dg(k) + Dg(k)*S*Df(j)
             do i = 1, 3
                Efff(i,j,k) = Efff(i,j,k) - tr(FeDS(i),DSDfg)
             end do; DSDfg=0
