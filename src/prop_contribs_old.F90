@@ -861,9 +861,9 @@ contains
             do j = 0, de(2)-1
                do i = 0, de(1)-1
                 ! call twofck_ks(2, (/D(1),D(2+i),D(2+de(1)+j)/), A(1))
-                ! do k = 0, de(3)-1
-                !    E(1+i+de(1)*(j+de(2)*k)) = tr(A(1),D(2+de(1)+de(2)+k))
-                ! end do
+                do k = 0, de(3)-1
+                   E(1+i+de(1)*(j+de(2)*k)) = 0 !tr(A(1),D(2+de(1)+de(2)+k))
+                end do
                 ! A(1) = 0*A(1)
                end do
             end do
