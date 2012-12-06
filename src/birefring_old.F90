@@ -638,6 +638,7 @@ contains
       !ajt This should really be a 3rd order perturbed density, which isn't
       !    implemented in prop_contribs. Rather, fake it with a second order density
       !    NB: This is incorrect with DFT
+      zm = 0*S
       call prop_twoave((/'MAG'/), (/D,Dq,Def,(zm,i=1,6*3*3)/), &
                        (/6,3,3*3/), Eqbff, perm=(/2,1,3/))
       ! call print_tensor(shape(Eqbff), Eqbff, 'E2bDqDef', Eqbff); Eqbff=0
