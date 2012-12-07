@@ -1070,7 +1070,7 @@ contains
        end do
     end do
 
-    call print_tensor(shape(Egf), Egf, 'dipole gradient Egf')
+    call print_tensor(shape(Egf), Egf, 'dipole gradient -Egf')
     call write_dipole_gradient_to_file(ng, Egf)
 
     if (only_gradient) then
@@ -1178,13 +1178,13 @@ contains
     end do; DgSD=0;
     Eggf = Eggf + tmp; call print_tensor(shape(tmp), tmp, '-DaSD FDSbf1')
     ! print
-    call print_tensor(shape(Eggf), Eggf, 'diphes = Eggf')
+    call print_tensor(shape(Eggf), -Eggf, 'diphes = -Eggf')
     ! print formatted to file diphes
     open (unit=iounit, file='diphes', status='replace', action='write')
     write (iounit,*)
     do i = 1, size(Eggf,3)
        !call print_tensor(shape(Eggf(:,:,i)), Eggf(:,:,i))
-       call print_tensor(shape(Eggf(:,:,i)), Eggf(:,:,i), unit=iounit)
+       call print_tensor(shape(Eggf(:,:,i)), -Eggf(:,:,i), unit=iounit)
     end do
     close (iounit)
     ! free
