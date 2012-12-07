@@ -2153,6 +2153,7 @@ end if
 
 #ifdef PRG_DALTON
        n = nr_ao
+       ncor = 3 * get_nr_atoms()
        do i = 0, nc(1)-1
           if (iszero(fock(i+1))) then
              call mat_ensure_alloc(fock(i+1))
