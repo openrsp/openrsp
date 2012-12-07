@@ -741,7 +741,8 @@ module rsp_indices_and_addressing
 
     implicit none
 
-    integer :: ftl, highest, lowest
+    integer :: highest, lowest
+    integer(8) :: ftl
 
     if (highest == lowest) then
 

@@ -2307,6 +2307,8 @@ end if
 ! Begin new general geo code
 
 
+       nullify(null_ptr)
+
        if (nf==0) then
           A = 0*dens
           call mat_ensure_alloc(A)
