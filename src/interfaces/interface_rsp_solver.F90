@@ -279,7 +279,12 @@ contains
     if ( ierr /= 0 ) call QUIT( 'Failed to allocate MO solutions!' )
     ! loops over solution vectors
     do ISOL = 1, rsp2_number_of_omegas
-      mo_eigvec(ISOL) = mat_alloc_like(RHS_MO)
+
+      ! MaR: Next line replaced by mat_init call to avoid strange nonallocation error msg
+      ! mo_eigvec(ISOL) = mat_alloc_like(RHS_MO)
+      ! ASSUMES CLOSED SHELL
+      call mat_init(mo_eigvec(ISOL), RHS_MO%nrow, RHS_MO%ncol, .TRUE.)
+
       ! reads the solution
       call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
 
