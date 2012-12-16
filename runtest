@@ -525,11 +525,13 @@ class run:
                  launcher_flags += '--dirac=%s ' % options.binary
              if options.jobargs:
                  launcher_flags += ' %s ' % options.jobargs
+             if options.mpi > 1:
+                 launcher_flags += '--mpi=%i ' % options.mpi
          if program_is_dalton:
              launcher_flags += '-nobackup '
              launcher_flags += '-noarch '
-         if options.mpi > 1:
-             launcher_flags += '--mpi=%i ' % options.mpi
+             if options.mpi > 1:
+                 launcher_flags += '-N %i ' % options.mpi
          self.launcher_flags = launcher_flags
 
      def get_output_prefix(self):
