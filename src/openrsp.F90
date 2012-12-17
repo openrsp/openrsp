@@ -59,6 +59,7 @@ module openrsp
   use matrix_defop
   use eri_contractions, only: ctr_arg
   use eri_basis_loops,  only: unopt_geodiff_loop
+  use num_grid
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -108,6 +109,7 @@ contains
     real(8), allocatable   :: xc_dmat(:)
     real(8), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
+    integer                :: kfree
     real(8)                :: xc_energy
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
@@ -212,6 +214,10 @@ contains
     if (get_is_ks_calculation()) then
        ! write xcint interface files
        call interface_ao_write()
+
+       ! write traditional Dalton grid to file
+       kfree = 1
+       call write_num_grid_to_file(D%elms_alpha, work, kfree, lwork)
 
        ! add xc contribution to the fock matrix
        mat_dim = D%nrow
