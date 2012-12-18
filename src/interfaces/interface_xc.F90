@@ -147,14 +147,14 @@ contains
          case ('g')
             do i = 1, nr_atoms*3
                element = i
-               call xc_integrate(                &
-                       xc_mat_dim=mat_dim,       &
-                       xc_nr_dmat=1,             &
-                       xc_dmat=(/D%elms_alpha/), &
-                       xc_energy=xc_energy,      &
-                       xc_get_ave=.true.,        &
-                       xc_fmat=(/0.0d0/),        &
-                       xc_geo_coor=(/i/)         &
+               call xc_integrate(             &
+                       mat_dim=mat_dim,       &
+                       nr_dmat=1,             &
+                       dmat=(/D%elms_alpha/), &
+                       energy=xc_energy,      &
+                       get_ave=.true.,        &
+                       fmat=(/0.0d0/),        &
+                       geo_coor=(/i/)         &
                     )
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
@@ -163,16 +163,16 @@ contains
                do j = 1, i
                   element = i &
                           + (j-1)*nr_atoms*3
-                  call xc_integrate(                    &
-                          xc_mat_dim=mat_dim,           &
-                          xc_nr_dmat=3,                 &
-                          xc_dmat=(/D%elms_alpha,       &
-                                    Dg(i)%elms_alpha,   &
-                                    Dg(j)%elms_alpha/), &
-                          xc_energy=xc_energy,          &
-                          xc_get_ave=.true.,            &
-                          xc_fmat=(/0.0d0/),            &
-                          xc_geo_coor=(/i, j/)          &
+                  call xc_integrate(                 &
+                          mat_dim=mat_dim,           &
+                          nr_dmat=3,                 &
+                          dmat=(/D%elms_alpha,       &
+                                 Dg(i)%elms_alpha,   &
+                                 Dg(j)%elms_alpha/), &
+                          energy=xc_energy,          &
+                          get_ave=.true.,            &
+                          fmat=(/0.0d0/),            &
+                          geo_coor=(/i, j/)          &
                        )
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
@@ -187,14 +187,14 @@ contains
                do i = 1, nr_atoms*3
                   element = i &
                           + (j-1)*nr_atoms*3
-                  call xc_integrate(           &
-                          xc_mat_dim=mat_dim,  &
-                          xc_nr_dmat=nr_dmat,  &
-                          xc_dmat=xc_dmat,     &
-                          xc_energy=xc_energy, &
-                          xc_get_ave=.true.,   &
-                          xc_fmat=(/0.0d0/),   &
-                          xc_geo_coor=(/i/)    &
+                  call xc_integrate(        &
+                          mat_dim=mat_dim,  &
+                          nr_dmat=nr_dmat,  &
+                          dmat=xc_dmat,     &
+                          energy=xc_energy, &
+                          get_ave=.true.,   &
+                          fmat=(/0.0d0/),   &
+                          geo_coor=(/i/)    &
                        )
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
@@ -213,14 +213,14 @@ contains
                      element = i                &
                              + (j-1)*nr_atoms*3 &
                              + (k-1)*(nr_atoms*3)*3
-                     call xc_integrate(           &
-                             xc_mat_dim=mat_dim,  &
-                             xc_nr_dmat=nr_dmat,  &
-                             xc_dmat=xc_dmat,     &
-                             xc_energy=xc_energy, &
-                             xc_get_ave=.true.,   &
-                             xc_fmat=(/0.0d0/),   &
-                             xc_geo_coor=(/i/)    &
+                     call xc_integrate(        &
+                             mat_dim=mat_dim,  &
+                             nr_dmat=nr_dmat,  &
+                             dmat=xc_dmat,     &
+                             energy=xc_energy, &
+                             get_ave=.true.,   &
+                             fmat=(/0.0d0/),   &
+                             geo_coor=(/i/)    &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -246,14 +246,14 @@ contains
                                 + (j-1)*nr_atoms*3     &
                                 + (k-1)*(nr_atoms*3)*3 &
                                 + (l-1)*(nr_atoms*3)*3*3
-                        call xc_integrate(           &
-                                xc_mat_dim=mat_dim,  &
-                                xc_nr_dmat=nr_dmat,  &
-                                xc_dmat=xc_dmat,     &
-                                xc_energy=xc_energy, &
-                                xc_get_ave=.true.,   &
-                                xc_fmat=(/0.0d0/),   &
-                                xc_geo_coor=(/l/)    &
+                        call xc_integrate(        &
+                                mat_dim=mat_dim,  &
+                                nr_dmat=nr_dmat,  &
+                                dmat=xc_dmat,     &
+                                energy=xc_energy, &
+                                get_ave=.true.,   &
+                                fmat=(/0.0d0/),   &
+                                geo_coor=(/l/)    &
                              )
                         res(element) = cmplx(xc_energy, 0.0d0)
                      end do
@@ -267,17 +267,17 @@ contains
                      element = i                &
                              + (j-1)*nr_atoms*3 &
                              + (k-1)*(nr_atoms*3)**2
-                     call xc_integrate(                    &
-                             xc_mat_dim=mat_dim,           &
-                             xc_nr_dmat=4,                 &
-                             xc_dmat=(/D%elms_alpha,       &
-                                       Dg(i)%elms_alpha,   &
-                                       Dg(j)%elms_alpha,   &
-                                       Dg(k)%elms_alpha/), &
-                             xc_energy=xc_energy,          &
-                             xc_get_ave=.true.,            &
-                             xc_fmat=(/0.0d0/),            &
-                             xc_geo_coor=(/i, j, k/)       &
+                     call xc_integrate(                 &
+                             mat_dim=mat_dim,           &
+                             nr_dmat=4,                 &
+                             dmat=(/D%elms_alpha,       &
+                                    Dg(i)%elms_alpha,   &
+                                    Dg(j)%elms_alpha,   &
+                                    Dg(k)%elms_alpha/), &
+                             energy=xc_energy,          &
+                             get_ave=.true.,            &
+                             fmat=(/0.0d0/),            &
+                             geo_coor=(/i, j, k/)       &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -292,24 +292,24 @@ contains
                                 + (j-1)*nr_atoms*3      &
                                 + (k-1)*(nr_atoms*3)**2 &
                                 + (l-1)*(nr_atoms*3)**3
-                        call xc_integrate(                        &
-                                xc_mat_dim=mat_dim,               &
-                                xc_nr_dmat=11,                    &
-                                xc_dmat=(/D%elms_alpha,           &
-                                          Dg(i)%elms_alpha,       &
-                                          Dg(j)%elms_alpha,       &
-                                          Dg(k)%elms_alpha,       &
-                                          Dg(l)%elms_alpha,       &
-                                          Dgg(i, j)%elms_alpha,   &
-                                          Dgg(i, k)%elms_alpha,   &
-                                          Dgg(i, l)%elms_alpha,   &
-                                          Dgg(j, k)%elms_alpha,   &
-                                          Dgg(j, l)%elms_alpha,   &
-                                          Dgg(k, l)%elms_alpha/), &
-                                xc_energy=xc_energy,              &
-                                xc_get_ave=.true.,                &
-                                xc_fmat=(/0.0d0/),                &
-                                xc_geo_coor=(/i, j, k, l/)        &
+                        call xc_integrate(                     &
+                                mat_dim=mat_dim,               &
+                                nr_dmat=11,                    &
+                                dmat=(/D%elms_alpha,           &
+                                       Dg(i)%elms_alpha,       &
+                                       Dg(j)%elms_alpha,       &
+                                       Dg(k)%elms_alpha,       &
+                                       Dg(l)%elms_alpha,       &
+                                       Dgg(i, j)%elms_alpha,   &
+                                       Dgg(i, k)%elms_alpha,   &
+                                       Dgg(i, l)%elms_alpha,   &
+                                       Dgg(j, k)%elms_alpha,   &
+                                       Dgg(j, l)%elms_alpha,   &
+                                       Dgg(k, l)%elms_alpha/), &
+                                energy=xc_energy,              &
+                                get_ave=.true.,                &
+                                fmat=(/0.0d0/),                &
+                                geo_coor=(/i, j, k, l/)        &
                              )
                         res(element) = cmplx(xc_energy, 0.0d0)
                      end do
@@ -365,28 +365,28 @@ contains
       allocate(xc_fmat(mat_dim*mat_dim))
 
       if (present(F)) then
-         call xc_integrate(                     &
-                           xc_mat_dim=mat_dim,  &
-                           xc_nr_dmat=nr_dmat,  &
-                           xc_dmat=xc_dmat,     &
-                           xc_energy=xc_energy, &
-                           xc_get_ave=.false.,  &
-                           xc_fmat=xc_fmat,     &
-                           xc_geo_coor=(/0/)    &
+         call xc_integrate(                  &
+                           mat_dim=mat_dim,  &
+                           nr_dmat=nr_dmat,  &
+                           dmat=xc_dmat,     &
+                           energy=xc_energy, &
+                           get_ave=.false.,  &
+                           fmat=xc_fmat,     &
+                           geo_coor=(/0/)    &
                           )
          call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
       end if
 
       if (present(Fg)) then
          do i = 1, nr_atoms*3
-            call xc_integrate(                     &
-                              xc_mat_dim=mat_dim,  &
-                              xc_nr_dmat=nr_dmat,  &
-                              xc_dmat=xc_dmat,     &
-                              xc_energy=xc_energy, &
-                              xc_get_ave=.false.,  &
-                              xc_fmat=xc_fmat,     &
-                              xc_geo_coor=(/i/)    &
+            call xc_integrate(                  &
+                              mat_dim=mat_dim,  &
+                              nr_dmat=nr_dmat,  &
+                              dmat=xc_dmat,     &
+                              energy=xc_energy, &
+                              get_ave=.false.,  &
+                              fmat=xc_fmat,     &
+                              geo_coor=(/i/)    &
                              )
             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms_alpha, 1)
          end do
@@ -395,14 +395,14 @@ contains
       if (present(Fgg)) then
          do i = 1, nr_atoms*3
             do j = 1, i
-               call xc_integrate(                     &
-                                 xc_mat_dim=mat_dim,  &
-                                 xc_nr_dmat=nr_dmat,  &
-                                 xc_dmat=xc_dmat,     &
-                                 xc_energy=xc_energy, &
-                                 xc_get_ave=.false.,  &
-                                 xc_fmat=xc_fmat,     &
-                                 xc_geo_coor=(/i, j/) &
+               call xc_integrate(                  &
+                                 mat_dim=mat_dim,  &
+                                 nr_dmat=nr_dmat,  &
+                                 dmat=xc_dmat,     &
+                                 energy=xc_energy, &
+                                 get_ave=.false.,  &
+                                 fmat=xc_fmat,     &
+                                 geo_coor=(/i, j/) &
                                 )
                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms_alpha, 1)
             end do
@@ -436,14 +436,14 @@ end module
       xc_energy = 0.0d0
 
       call interface_ao_write()
-      call xc_integrate(                     &
-                        xc_mat_dim=nr_ao,    &
-                        xc_nr_dmat=1,        &
-                        xc_dmat=0.5d0*dmat,  &
-                        xc_energy=xc_energy, &
-                        xc_get_ave=.false.,  &
-                        xc_fmat=xcmat,       &
-                        xc_geo_coor=(/0/)    &
+      call xc_integrate(                  &
+                        mat_dim=nr_ao,    &
+                        nr_dmat=1,        &
+                        dmat=0.5d0*dmat,  &
+                        energy=xc_energy, &
+                        get_ave=.false.,  &
+                        fmat=xcmat,       &
+                        geo_coor=(/0/)    &
                        )
 
       k = 0

@@ -219,14 +219,14 @@ contains
        xc_dmat = 0.0d0
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_alpha, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
-       call xc_integrate(                     &
-                         xc_mat_dim=mat_dim,  &
-                         xc_nr_dmat=1,        &
-                         xc_dmat=xc_dmat,     &
-                         xc_energy=xc_energy, &
-                         xc_get_ave=.false.,  &
-                         xc_fmat=xc_fmat,     &
-                         xc_geo_coor=(/0/)    &
+       call xc_integrate(                  &
+                         mat_dim=mat_dim,  &
+                         nr_dmat=1,        &
+                         dmat=xc_dmat,     &
+                         energy=xc_energy, &
+                         get_ave=.false.,  &
+                         fmat=xc_fmat,     &
+                         geo_coor=(/0/)    &
                         )
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
        deallocate(xc_dmat)
