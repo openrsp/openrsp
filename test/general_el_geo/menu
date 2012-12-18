@@ -1,26 +1,20 @@
-  ff_blyp.dal   mol.mol   -get rsp_tensor
-  fff_blyp.dal  mol.mol   -get rsp_tensor
-  ffff_blyp.dal mol.mol   -get rsp_tensor
+  ff_blyp.dal    mol.mol -get rsp_tensor
+  fff_blyp.dal   mol.mol -get rsp_tensor
+  ffff_blyp.dal  mol.mol -get rsp_tensor
 
-  ff_lda.dal    mol.mol   -get rsp_tensor
-  fff_lda.dal   mol.mol   -get rsp_tensor
-  ffff_lda.dal  mol.mol   -get rsp_tensor
-  fffff_lda.dal mol.mol   -get rsp_tensor
+  fff_b3lyp.dal  mol.mol -get rsp_tensor
 
-# ff_lda.dal    mol+p.mol -get rsp_tensor
-# ff_lda.dal    mol-p.mol -get rsp_tensor
-  gff_lda.dal   mol.mol   -get rsp_tensor
+  ff_lda.dal     mol.mol -get rsp_tensor
+  fff_lda.dal    mol.mol -get rsp_tensor
+  ffff_lda.dal   mol.mol -get rsp_tensor
+  fffff_lda.dal  mol.mol -get rsp_tensor
 
-# ff_blyp.dal   mol+p.mol -get rsp_tensor
-# ff_blyp.dal   mol-p.mol -get rsp_tensor
-  gff_blyp.dal  mol.mol   -get rsp_tensor
+  gff_lda.dal    mol.mol -get rsp_tensor
+  gfff_lda.dal   mol.mol -get rsp_tensor
 
-# fff_lda.dal   mol+p.mol -get rsp_tensor
-# fff_lda.dal   mol-p.mol -get rsp_tensor
-  gfff_lda.dal  mol.mol   -get rsp_tensor
+  gff_blyp.dal   mol.mol -get rsp_tensor
+  gfff_blyp.dal  mol.mol -get rsp_tensor
 
-# fff_blyp.dal  mol+p.mol -get rsp_tensor
-# fff_blyp.dal  mol-p.mol -get rsp_tensor
-  gfff_blyp.dal mol.mol   -get rsp_tensor
+  gfff_b3lyp.dal mol.mol -get rsp_tensor
 
-  gfff_hf.dal   mol.mol   -get rsp_tensor
+  gfff_hf.dal    mol.mol -get rsp_tensor
