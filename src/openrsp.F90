@@ -224,7 +224,9 @@ contains
                          xc_nr_dmat=1,        &
                          xc_dmat=xc_dmat,     &
                          xc_energy=xc_energy, &
-                         xc_fmat=xc_fmat      &
+                         xc_get_ave=.false.,  &
+                         xc_fmat=xc_fmat,     &
+                         xc_geo_coor=(/0/)    &
                         )
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
        deallocate(xc_dmat)
