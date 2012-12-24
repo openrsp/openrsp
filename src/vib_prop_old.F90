@@ -628,14 +628,14 @@ contains
       !--------------------------------------------------
       ! electric-electric equations, solve 6 eqs, not 3x3
       do k = 1, 3;
-         De(k) = trps(Df(k))
-         Fe(k) = trps(Ff(k))
+         De(k) = trans(Df(k))
+         Fe(k) = trans(Ff(k))
          call pert_dens(S, (/'EL','EL'/), (/k,1/), &
                         (/D,De(1:k),Df(k)/), (/F,Fe(1:k),Ff(k)/), &
                         Def(1:k,k), Fef(1:k,k), freq=(/freq,-freq/), comp=(/1,k/))
          do j = 1, k-1
-            Def(k,j) = trps(Def(j,k))
-            Fef(k,j) = trps(Fef(j,k))
+            Def(k,j) = trans(Def(j,k))
+            Fef(k,j) = trans(Fef(j,k))
          end do
       end do
       !------------------------
@@ -743,8 +743,8 @@ contains
       !electric equations, Eff=-alpha
       call pert_dens(S, (/'EL'/), (/3/), (/D/), (/F/), Df, Ff, freq=(/freq/))
       do i = 1, 3
-         De(i) = trps(Df(i))
-         Fe(i) = trps(Ff(i))
+         De(i) = trans(Df(i))
+         Fe(i) = trans(Ff(i))
       end do
       Eff = 0
       call prop_oneave(S, (/'EL'/), (/De/), (/3,3/), Eff)
@@ -752,14 +752,14 @@ contains
       !---------------------------------------------------------------------
       ! electric-electric equations De(-w)f(+w), solve 6 instead of 3x3 eqs.
       do k = 1, 3;
-         De(k) = trps(Df(k))
-         Fe(k) = trps(Ff(k))
+         De(k) = trans(Df(k))
+         Fe(k) = trans(Ff(k))
          call pert_dens(S, (/'EL','EL'/), (/k,1/), &
                         (/D,De(:k),Df(k)/), (/F,Fe(:k),Ff(k)/), &
                         Def(:k,k), Fef(:k,k), freq=(/-freq,freq/), comp=(/1,k/))
          do j = 1, k-1
-            Def(k,j) = trps(Def(j,k))
-            Fef(k,j) = trps(Fef(j,k))
+            Def(k,j) = trans(Def(j,k))
+            Fef(k,j) = trans(Fef(j,k))
          end do
       end do
       !------------------------
@@ -809,7 +809,7 @@ contains
                   - S * (Df(j)*Fef(k,l) + De(k)*Fff(j,l) + Df(l)*Fef(k,j)      &
                       +  Def(k,l)*Ff(j) + Dff(j,l)*Fe(k) + Def(k,j)*Ff(l))
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(DeSD(i),FDSfef)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(DeSD(i),FDSfef)
                end do; FDSfef=0
             end do
          end do
@@ -825,7 +825,7 @@ contains
                DSDfef = Df(j)*S*Def(k,l) + De(k)*S*Dff(j,l) + Df(l)*S*Def(k,j) &
                       + Def(k,l)*S*Df(j) + Dff(j,l)*S*De(k) + Def(k,j)*S*Df(l)
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(FeDS(i),DSDfef)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(FeDS(i),DSDfef)
                end do; DSDfef=0
             end do
          end do
@@ -883,8 +883,8 @@ contains
             do i=1,3
                if (freq(m)==freq(n)) Df(i,n) = Df(i,m)
                if (freq(m)==freq(n)) Ff(i,n) = Ff(i,m)
-               if (freq(m)/=freq(n)) Df(i,n) = trps(Df(i,m))
-               if (freq(m)/=freq(n)) Ff(i,n) = trps(Ff(i,m))
+               if (freq(m)/=freq(n)) Df(i,n) = trans(Df(i,m))
+               if (freq(m)/=freq(n)) Ff(i,n) = trans(Ff(i,m))
             end do
             cycle
          end if
@@ -960,11 +960,11 @@ contains
                      Dff(j,k,n) = Dff(k,j,m)
                      Fff(j,k,n) = Fff(k,j,m)
                   else if (freq(mj)==-freq(nj)) then
-                     Dff(j,k,n) = trps(Dff(j,k,m))
-                     Fff(j,k,n) = trps(Fff(j,k,m))
+                     Dff(j,k,n) = trans(Dff(j,k,m))
+                     Fff(j,k,n) = trans(Fff(j,k,m))
                   else !freq(mj)==-freq(nk)
-                     Dff(j,k,n) = trps(Dff(k,j,m))
-                     Fff(j,k,n) = trps(Fff(k,j,m))
+                     Dff(j,k,n) = trans(Dff(k,j,m))
+                     Fff(j,k,n) = trans(Fff(k,j,m))
                   end if
                end do
             end do
@@ -981,8 +981,8 @@ contains
                do j = 1, k-1
                   if (freq(nj)==freq(nk)) Dff(k,j,n) = Dff(j,k,n)
                   if (freq(nj)==freq(nk)) Fff(k,j,n) = Fff(j,k,n)
-                  if (freq(nj)/=freq(nk)) Dff(k,j,n) = trps(Dff(j,k,n))
-                  if (freq(nj)/=freq(nk)) Fff(k,j,n) = trps(Fff(j,k,n))
+                  if (freq(nj)/=freq(nk)) Dff(k,j,n) = trans(Dff(j,k,n))
+                  if (freq(nj)/=freq(nk)) Fff(k,j,n) = trans(Fff(j,k,n))
                end do
             end do
          else
@@ -1109,8 +1109,8 @@ contains
             do i=1,3
                if (freq(m)==freq(n)) Df(i,n) = Df(i,m)
                if (freq(m)==freq(n)) Ff(i,n) = Ff(i,m)
-               if (freq(m)/=freq(n)) Df(i,n) = trps(Df(i,m))
-               if (freq(m)/=freq(n)) Ff(i,n) = trps(Ff(i,m))
+               if (freq(m)/=freq(n)) Df(i,n) = trans(Df(i,m))
+               if (freq(m)/=freq(n)) Ff(i,n) = trans(Ff(i,m))
                Egf(:,:,n) = Egf(:,:,m)
             end do
             cycle
@@ -1169,12 +1169,12 @@ contains
                      Fff(i,j,n) = Fff(j,i,m)
                      Egff(:,i,j,n) = Egff(:,j,i,m)
                   else if (freq(mi)==-freq(ni) .and. freq(mj)==-freq(nj)) then
-                     Dff(i,j,n) = trps(Dff(i,j,m))
-                     Fff(i,j,n) = trps(Fff(i,j,m))
+                     Dff(i,j,n) = trans(Dff(i,j,m))
+                     Fff(i,j,n) = trans(Fff(i,j,m))
                      Egff(:,i,j,n) = Egff(:,i,j,m)
                   else !freq(mi)==-freq(nj) .and. freq(mj)==-freq(ni)
-                     Dff(i,j,n) = trps(Dff(j,i,m))
-                     Fff(i,j,n) = trps(Fff(j,i,m))
+                     Dff(i,j,n) = trans(Dff(j,i,m))
+                     Fff(i,j,n) = trans(Fff(j,i,m))
                      Egff(:,i,j,n) = Egff(:,j,i,m)
                   end if
                end do
@@ -1193,8 +1193,8 @@ contains
                do i=1,j-1
                   if (freq(ni)==freq(nj)) Dff(j,i,n) = Dff(i,j,n)
                   if (freq(ni)==freq(nj)) Fff(j,i,n) = Fff(i,j,n)
-                  if (freq(ni)/=freq(nj)) Dff(j,i,n) = trps(Dff(i,j,n))
-                  if (freq(ni)/=freq(nj)) Fff(j,i,n) = trps(Fff(i,j,n))
+                  if (freq(ni)/=freq(nj)) Dff(j,i,n) = trans(Dff(i,j,n))
+                  if (freq(ni)/=freq(nj)) Fff(j,i,n) = trans(Fff(i,j,n))
                end do
             end do
          else
@@ -1367,8 +1367,8 @@ contains
                   do i=1,3
                      if (freq(nj)==freq(nk)) Dfff(i,k,j) = Dfff(i,j,k)
                      if (freq(nj)==freq(nk)) Ffff(i,k,j) = Ffff(i,j,k)
-                     if (freq(nj)/=freq(nk)) Dfff(i,k,j) = trps(Dfff(i,j,k))
-                     if (freq(nj)/=freq(nk)) Ffff(i,k,j) = trps(Ffff(i,j,k))
+                     if (freq(nj)/=freq(nk)) Dfff(i,k,j) = trans(Dfff(i,j,k))
+                     if (freq(nj)/=freq(nk)) Ffff(i,k,j) = trans(Ffff(i,j,k))
                   end do
                end do
             end do
@@ -1405,7 +1405,7 @@ contains
                           Dfff(:,:,:)/), (/ng,3,3*3/), Egfff(:,:,:,:,n))
          ! call print_tensor((/ng,3,3,3/), Egfff(:,:,:,:,n), 'E2GD0Ddef + E2gDdDef'); Egfff(:,:,:,:,n)=0
          Rg333 = 0
-         zeromat = mat_zero_like(D)
+         zeromat = 0*D
          call prop_twoave((/'GEO'/), (/D,Df(:,nj),Dff(:,:,nik), &
                           (zeromat,i=1,3*3*3)/), (/ng,3,3*3/), Rg333)
          do j=1,3

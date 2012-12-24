@@ -344,7 +344,7 @@ contains
                   // ' auxiliary label out of range 0..9: ' // p(1),get_print_unit())
          call load_oneint(prop_auxlab(i), A(1))
          do j=0, max(0,nd-1)
-            E(1+j) = tr(A(1),D(1+j))
+            E(1+j) = trace(A(1),D(1+j))
          end do
       else if (np==1 .and. p(1)=='EL') then
          ! contract -dipole integrals '?DIPLEN ' with densities
@@ -353,7 +353,7 @@ contains
                call load_oneint(xyz(c(1)+i) // 'DIPLEN ',A(1))
                ! loop over density matrices
                do j=0, max(0,nd-1)
-                  E(1+i+dp(1)*j) = tr(A(1),D(j+1)) !*2 for total dens hidden in tr
+                  E(1+i+dp(1)*j) = trace(A(1),D(j+1)) !*2 for total dens hidden in tr
                end do
          end do
          ! no densities means D(1) contains unperturbed density matrix.
@@ -367,7 +367,7 @@ contains
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'DIPVEL ', A(1))
             do j = 0, nd-1
-               E(1+i+dp(1)*j) = tr(A(1), D(j+1))
+               E(1+i+dp(1)*j) = trace(A(1), D(j+1))
             end do
          end do
       ! No-London magnetic
@@ -375,7 +375,7 @@ contains
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', A(1))
             do j = 0, nd-1
-               E(1+i+dp(1)*j) = tr(A(1), D(j+1)) / 2 !factor 1/2
+               E(1+i+dp(1)*j) = trace(A(1), D(j+1)) / 2 !factor 1/2
             end do
          end do
       ! London magnetic, Since anti-symmetric, no unperturbed (nd==0)
@@ -390,13 +390,13 @@ contains
             else
                call load_oneint('d|S>/dB' // xyz(c(1)+i), A(2))
                A(1) = A(1) - w(1)/2 * A(2)
-               A(1) = A(1) - w(1)/2 * trps(A(2))
-               A(2) = A(2) - trps(A(2))
+               A(1) = A(1) - w(1)/2 * trans(A(2))
+               A(2) = A(2) - trans(A(2))
             end if
             do j = 0, nd-1
-               E(1+i+dp(1)*j) = tr(A(1), D(j+1))
+               E(1+i+dp(1)*j) = trace(A(1), D(j+1))
                if (present(DFD)) &
-                  E(1+i+dp(1)*j) = E(1+i+dp(1)*j) - tr(A(2), DFD(j+1))
+                  E(1+i+dp(1)*j) = E(1+i+dp(1)*j) - trace(A(2), DFD(j+1))
             end do
          end do
       ! Electric field gradient
@@ -407,7 +407,7 @@ contains
             ii = c(1)+i + merge(3, merge(2, 0, c(1)+i > 1), c(1)+i > 3) - 1
             call load_oneint(xyz(1+mod(ii,3)) // xyz(1+ii/3) // 'THETA ', A(1))
             do j = 0, max(0,nd-1)
-               E(1+i+dp(1)*j) = tr(A(1), D(j+1))
+               E(1+i+dp(1)*j) = trace(A(1), D(j+1))
             end do
          end do
          ! if unperturbed density, add nuclear contribution
@@ -428,13 +428,13 @@ contains
                call load_oneint('SQHDR' // prefix_zeros(c(1)+i,3), A(2))
                A(2) = -A(2) !SQHDR is really -dS>/dg
                A(1) = A(1) - w(1)/2 * A(2)
-               A(1) = A(1) + w(1)/2 * trps(A(2))
-               A(2) = A(2) + trps(A(2))
+               A(1) = A(1) + w(1)/2 * trans(A(2))
+               A(2) = A(2) + trans(A(2))
             end if
             do j = 0, max(0,nd-1)
-               E(1+i+dp(1)*j) = tr(A(1), D(j+1))
+               E(1+i+dp(1)*j) = trace(A(1), D(j+1))
                if (present(DFD)) &
-                  E(1+i+dp(1)*j) = E(1+i+dp(1)*j) - tr(A(2), DFD(j+1))
+                  E(1+i+dp(1)*j) = E(1+i+dp(1)*j) - trace(A(2), DFD(j+1))
             end do
          end do
          ! nuclear repulsion contribution
@@ -451,7 +451,7 @@ contains
                         // xyz(max(c(1)+i,c(2)+j)) // 'SUSCGO', A(1))
                do k = 0, max(0,nd-1)
                   ! ajt Since MAGO is imaginary/anti-symmetri, we get a minus sign here
-                  E(1+i+dp(1)*(j+dp(2)*k)) = -tr(A(1),D(1+k))
+                  E(1+i+dp(1)*(j+dp(2)*k)) = -trace(A(1),D(1+k))
                end do
             end do
          end do
@@ -462,7 +462,7 @@ contains
                call load_oneint(xyz(c(2)+j) // '-CM1 ' &
                              // xyz(c(1)+i) // ' ', A(1))
                do k = 0, nd-1
-                  E(1+i+dp(1)*(j+dp(2)*k)) = tr(A(1), D(k+1))
+                  E(1+i+dp(1)*(j+dp(2)*k)) = trace(A(1), D(k+1))
                end do
             end do
          end do
@@ -477,31 +477,31 @@ contains
                   call load_oneint('dS/dB2' // xyz(min(c(1)+i,c(2)+j)) &
                                             // xyz(max(c(1)+i,c(2)+j)), A(2))
                else
-                  ! only load >> XX XY YY XZ YZ ZZ, use trps(..) for <<
+                  ! only load >> XX XY YY XZ YZ ZZ, use trans(..) for <<
                   call load_oneint('>>S/B2' // xyz(min(c(1)+i,c(2)+j)) &
                                        // xyz(max(c(1)+i,c(2)+j)), A(2))
                   A(1) = A(1) - (w(1)+w(2))/2 * A(2)
-                  A(1) = A(1) + (w(1)+w(2))/2 * trps(A(2))
-                  A(2) = A(2) + trps(A(2))
-                  ! only load <> XX XY YY XZ YZ ZZ, use trps(..) for the others
+                  A(1) = A(1) + (w(1)+w(2))/2 * trans(A(2))
+                  A(2) = A(2) + trans(A(2))
+                  ! only load <> XX XY YY XZ YZ ZZ, use trans(..) for the others
                   call load_oneint('<>S/B2' // xyz(min(c(1)+i,c(2)+j)) &
                                        // xyz(max(c(1)+i,c(2)+j)), A(3))
                   !ajt1009 Changed sign on these two: (think it's correct)
                   A(1) = A(1) - merge(-1, 1, c(1)+i < c(2)+j) &
                                        * (w(1)-w(2))/2 * A(3)
                   A(1) = A(1) + merge(-1, 1, c(1)+i < c(2)+j) &
-                                  * (w(1)-w(2))/2 * trps(A(3))
+                                  * (w(1)-w(2))/2 * trans(A(3))
                   A(2) = A(2) + A(3)
-                  A(2) = A(2) + trps(A(3))
+                  A(2) = A(2) + trans(A(3))
                end if
                ! ajt Since MAG is imaginary/anti-symmetric, we get a minus sign here
                A(1) = -A(1)
                A(2) = -A(2)
                do k = 0, max(0,nd-1)
-                  E(1+i+dp(1)*(j+dp(2)*k)) = tr(A(1),D(k+1))
+                  E(1+i+dp(1)*(j+dp(2)*k)) = trace(A(1),D(k+1))
                   if (present(DFD)) &
                      E(1+i+dp(1)*(j+dp(2)*k)) = E(1+i+dp(1)*(j+dp(2)*k)) &
-                                              - tr(A(2), DFD(k+1))
+                                              - trace(A(2), DFD(k+1))
                end do
             end do
          end do
@@ -522,7 +522,7 @@ contains
             call load_oneint('YZ-QDB ' // xyz(c(2)+j), A(5))
             do i = 0, dp(1)-1 !ELGR indices
                do k = 0, nd-1 !density indices
-                  E(1+i+dp(1)*(j+dp(2)*k)) = tr(A(c(1)+i), D(k+1))
+                  E(1+i+dp(1)*(j+dp(2)*k)) = trace(A(c(1)+i), D(k+1))
                end do
             end do
             ! ajt Please leave. Old code without trace removal
@@ -543,7 +543,7 @@ contains
                call load_oneint(prefix_zeros(c(1)+i,3) // 'DPG ' &
                            // xyz(c(2)+j), A(1))
                do k = 0, max(0,nd-1) !density indices
-                  E(1+i+dp(1)*(j+dp(2)*k)) = -tr(A(1), D(k+1)) !minus sign
+                  E(1+i+dp(1)*(j+dp(2)*k)) = -trace(A(1), D(k+1)) !minus sign
                end do
             end do
          end do
@@ -566,7 +566,7 @@ contains
                call load_oneint(prefix_zeros(c(1)+i,3) // 'AMDR' &
                            // xyz(c(2)+j), A(1))
                do k = 0, nd-1
-                  E(1+i+dp(1)*(j+dp(2)*k)) = tr(A(1), D(k+1)) / 2 !factor 1/2
+                  E(1+i+dp(1)*(j+dp(2)*k)) = trace(A(1), D(k+1)) / 2 !factor 1/2
                end do
             end do
          end do
@@ -587,8 +587,8 @@ contains
                                 // xyz(c(2)+j), A(1))
                   do k = 0, max(0,nd-1)
                      E(1+i+dp(1)*(j+dp(2)*k)) = (-1) * & !factor -1
-                                ((w(1)-w(2))/2 *  tr(A(1), D(k+1)) &
-                              +  (w(1)-w(2))/2 * dot(A(1), D(k+1)))
+                                ((w(1)-w(2))/2 * trace(A(1), D(k+1)) &
+                              +  (w(1)-w(2))/2 *   dot(A(1), D(k+1)))
                   end do
                end do
             end do
@@ -621,7 +621,7 @@ contains
             call load_oneint(prefix_zeros(c(1)+i,3) // 'QDGYZ', A(5))
             do j = 0, dp(2)-1 !ELGR indices
                do k = 0, max(0,nd-1) !density indices
-                  E(1+i+dp(1)*(j+dp(2)*k)) = tr(A(c(2)+j), D(k+1)) * (-3/2d0) !factor -3/2
+                  E(1+i+dp(1)*(j+dp(2)*k)) = trace(A(c(2)+j), D(k+1)) * (-3/2d0) !factor -3/2
                end do
             end do
          end do
@@ -676,7 +676,7 @@ contains
                               // xyz(max(c(1)+i,c(2)+j)) // ' ', A(1))
                   do l = 0, max(0,nd-1)
                      ! ajt Since MAG is imaginary/anti-symmetric, we get a minus sign here
-                     E(1+i+dp(1)*(j+dp(2)*(k+dp(3)*l))) = -tr(A(1), D(1+l))
+                     E(1+i+dp(1)*(j+dp(2)*(k+dp(3)*l))) = -trace(A(1), D(1+l))
                   end do
                end do
             end do
@@ -853,7 +853,7 @@ contains
              ! call twofck_ks(1, (/D(1),D(2+i)/), A(1))
                ! trace with first density matrix
                do j = 0, de(2)-1
-                  E(1+i+de(1)*j) = tr(A(1),D(2+de(1)+j))
+                  E(1+i+de(1)*j) = trace(A(1),D(2+de(1)+j))
                end do
             end do
          else if (nd==3) then
@@ -897,7 +897,7 @@ contains
             end if
             do j = 0, pd-1
                do i = 0, de(1)-1
-                  E(1+i+de(1)*j) = tr(A(c(1)+i), D(pd1-pd+1+j))
+                  E(1+i+de(1)*j) = trace(A(c(1)+i), D(pd1-pd+1+j))
                end do
             end do
          end if
@@ -920,7 +920,7 @@ contains
                do k = 0, de(3)-1
                   do i = 0, de(1)-1
                      E(1+i+de(1)*(j+de(2)*k)) = E(1+i+de(1)*(j+de(2)*k)) &
-                                              + tr(A(c(1)+i), D(2+de(2)+k))
+                                              + trace(A(c(1)+i), D(2+de(2)+k))
                   end do
                end do
             end do
@@ -978,7 +978,7 @@ contains
                      ii = min(c(1)+i,c(2)+j) &
                         + max(c(1)+i,c(2)+j) * (max(c(1)+i,c(2)+j)-1) / 2
                      ! ajt Since MAG is imaginary/anti-symmetric, we get a minus sign here
-                     E(1+i+de(1)*(j+de(2)*k)) = -tr(A(ii), D(pd1-pd+1+k)) &
+                     E(1+i+de(1)*(j+de(2)*k)) = -trace(A(ii), D(pd1-pd+1+k)) &
                                               * merge(1/2d0,1d0,nd==0) !half for magnetizability
 !                    merge(1/2d0,1d0,nd==0) means multiply by 0.5 if nd == 0
                   end do
@@ -1004,7 +1004,7 @@ contains
                         ! ajt Since MAG is imaginary/anti-symmetric, we get a minus sign here
                         E(1+i+de(1)*(j+de(2)*(k+de(3)*l))) &
                                     = E(1+i+de(1)*(j+de(2)*(k+de(3)*l))) &
-                                    - tr(A(ii),D(2+de(3)+l))
+                                    - trace(A(ii),D(2+de(3)+l))
                      end do
                   end do
                end do
@@ -1238,46 +1238,54 @@ contains
          call load_oneint(prop_auxlab(i), F(1))
       else if (np==1 .and. p(1)=='EL') then
          do i = 0, dp(1)-1
-            F(i+1) = mat_alloc_like(S0)
+            F(i+1) = 0*S0
+            call mat_ensure_alloc(F(i+1), only_alloc=.true.)
             call load_oneint(xyz(c(1)+i) // 'DIPLEN ', F(i+1))
          end do
       else if (np==1 .and. p(1)=='VEL') then
          do i = 0, dp(1)-1
-            F(i+1) = mat_alloc_like(S0)
+            F(i+1) = 0*S0
+            call mat_ensure_alloc(F(i+1), only_alloc=.true.)
             call load_oneint(xyz(c(1)+i) // 'DIPVEL ', F(i+1))
          end do
       else if (np==1 .and. p(1)=='MAGO') then
          do i = 0, dp(1)-1
-            F(i+1) = mat_alloc_like(S0)
+            F(i+1) = 0*S0
+            call mat_ensure_alloc(F(i+1), only_alloc=.true.)
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', F(i+1))
             F(i+1) = (1/2d0) * F(1+i) !factor 1/2 here
          end do
       else if (np==1 .and. p(1)=='MAG') then
          do i = 0, dp(1)-1
-            F(i+1) = mat_alloc_like(S0)
+            F(i+1) = 0*S0
+            call mat_ensure_alloc(F(i+1), only_alloc=.true.)
             call load_oneint('dh/dB' // xyz(c(1)+i) // '  ', F(i+1))
-            S(i+1) = mat_alloc_like(S0)
+            S(i+1) = 0*S0
+            call mat_ensure_alloc(S(i+1), only_alloc=.true.)
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('dS/dB' // xyz(c(1)+i) // '  ', S(i+1))
             else
                call load_oneint('d|S>/dB' // xyz(c(1)+i), S(i+1))
                F(i+1) = F(i+1) - w(1)/2 * S(i+1)
-               F(i+1) = F(i+1) - w(1)/2 * trps(S(i+1))
-               S(i+1) = S(i+1) - trps(S(i+1))
+               F(i+1) = F(i+1) - w(1)/2 * trans(S(i+1))
+               S(i+1) = S(i+1) - trans(S(i+1))
             end if
          end do
       else if (np==1 .and. p(1)=='ELGR') then
          do i = 0, dp(1)-1
             ii = c(1)+i + merge(3, merge(2, 0, c(1)+i > 1), c(1)+i > 3) - 1
-            F(i+1) = mat_alloc_like(S0)
+            F(i+1) = 0*S0
+            call mat_ensure_alloc(F(i+1), only_alloc=.true.)
             call load_oneint(xyz(1+mod(ii,3)) // xyz(1+ii/3) // 'THETA ', &
                              F(1+i))
          end do
       else if (np==1 .and. p(1)=='GEO') then
          do i = 0, dp(1)-1
-            F(i+1) = mat_alloc_like(S0)
+            F(i+1) = 0*S0
+            call mat_ensure_alloc(F(i+1), only_alloc=.true.)
             call load_oneint('1DHAM' // prefix_zeros(c(1)+i,3), F(i+1))
-            S(i+1) = mat_alloc_like(S0)
+            S(i+1) = 0*S0
+            call mat_ensure_alloc(S(i+1), only_alloc=.true.)
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('1DOVL' // prefix_zeros(c(1)+i,3), S(i+1))
                S(i+1) = -S(i+1) !1DOVL is really -dS/dg
@@ -1285,14 +1293,15 @@ contains
                call load_oneint('SQHDR' // prefix_zeros(c(1)+i,3), S(i+1))
                S(i+1) = -S(i+1) !SQHDR is really -dS>/dg
                F(i+1) = F(i+1) - w(1)/2 * S(i+1)
-               F(i+1) = F(i+1) + w(1)/2 * trps(S(i+1))
-               S(i+1) = S(i+1) + trps(S(i+1))
+               F(i+1) = F(i+1) + w(1)/2 * trans(S(i+1))
+               S(i+1) = S(i+1) + trans(S(i+1))
             end if
          end do
       else if (np==2 .and. all(p==(/'MAG','EL '/))) then
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
-               F(1+i+dp(1)*j) = mat_alloc_like(S0)
+               F(1+i+dp(1)*j) = 0*S0
+               call mat_ensure_alloc(F(1+i+dp(1)*j), only_alloc=.true.)
                call load_oneint(xyz(c(2)+j) // '-CM1 ' &
                              // xyz(c(1)+i) // ' ', F(1+i+dp(1)*j))
             end do
@@ -1300,7 +1309,8 @@ contains
       else if (np==2 .and. all(p==(/'MAGO','MAGO'/))) then
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
-               F(1+i+dp(1)*j) = mat_alloc_like(S0)
+               F(1+i+dp(1)*j) = 0*S0
+               call mat_ensure_alloc(F(1+i+dp(1)*j), only_alloc=.true.)
                call load_oneint(xyz(min(c(1)+i,c(2)+j))              &
                              // xyz(max(c(1)+i,c(2)+j)) // 'SUSCGO', &
                                 F(1+i+dp(1)*j))
@@ -1313,32 +1323,35 @@ contains
             do i = 0, dp(1)-1
                ii = 1+i+dp(1)*j
                ! Hamiltonian integrals and -i/2 Tbb in A(1), Sbb in A(2)
-               F(ii) = mat_alloc_like(S0)
+               F(ii) = 0*S0
+               call mat_ensure_alloc(F(ii), only_alloc=.true.)
                call load_oneint(xyz(min(c(1)+i,c(2)+j)) &
                              // xyz(max(c(1)+i,c(2)+j)) // 'dh/dB2', F(ii))
                ! If both fields static, no -i/2 Tbb to A(1)
-               S(ii) = mat_alloc_like(S0)
+               S(ii) = 0*S0
+               call mat_ensure_alloc(S(ii), only_alloc=.true.)
                if (w(1)==0 .and. w(2)==0) then
                   call load_oneint('dS/dB2' // xyz(min(c(1)+i,c(2)+j))  &
                                             // xyz(max(c(1)+i,c(2)+j)), S(ii))
                else
-                  !only load >> XX XY YY XZ YZ ZZ, use trps(..) for <<
+                  !only load >> XX XY YY XZ YZ ZZ, use trans(..) for <<
                   call load_oneint('>>S/B2' // xyz(min(c(1)+i,c(2)+j))  &
                                             // xyz(max(c(1)+i,c(2)+j)), S(ii))
                   F(ii) = F(ii) - (w(1)+w(2))/2 * S(ii)
-                  F(ii) = F(ii) + (w(1)+w(2))/2 * trps(S(ii))
-                  S(ii) = S(ii) + trps(S(ii))
-                  !only load <> XX XY YY XZ YZ ZZ, use trps(..) for the others
-                  A(1) = mat_alloc_like(S0)
+                  F(ii) = F(ii) + (w(1)+w(2))/2 * trans(S(ii))
+                  S(ii) = S(ii) + trans(S(ii))
+                  !only load <> XX XY YY XZ YZ ZZ, use trans(..) for the others
+                  A(1) = 0*S0
+                  call mat_ensure_alloc(A(1), only_alloc=.true.)
                   call load_oneint('<>S/B2' // xyz(min(c(1)+i,c(2)+j)) &
                                             // xyz(max(c(1)+i,c(2)+j)), A(1))
                   !ajt&kk 0410 Changed sign on these two: (think it's correct)
                   F(ii) = F(ii) - merge(-1, 1, c(1)+i < c(2)+j) &
                                          * (w(1)-w(2))/2 * A(1)
                   F(ii) = F(ii) + merge(-1, 1, c(1)+i < c(2)+j) &
-                                         * (w(1)-w(2))/2 * trps(A(1))
+                                         * (w(1)-w(2))/2 * trans(A(1))
                   S(ii) = S(ii) + A(1)
-                  S(ii) = S(ii) + trps(A(1))
+                  S(ii) = S(ii) + trans(A(1))
                   A(1) = 0 !free
                end if
                !ajt Since MAG is imaginary/anti-symmetric, we get a minus sign here
@@ -1348,7 +1361,8 @@ contains
          end do
       else if (np==2 .and. all(p==(/'ELGR','MAG '/))) then
          do i = 1, 6
-            A(i) = mat_alloc_like(S0)
+            A(i) = 0*S0
+            call mat_ensure_alloc(A(i), only_alloc=.true.)
          end do
          do j = 0, dp(2)-1 !MAG indices
             ! ajt The integrals 'XY-QDB Z' are not traceless like THETA.
@@ -1371,7 +1385,8 @@ contains
       else if (np==2 .and. all(p==(/'GEO','EL '/))) then
          do j = 0, dp(2)-1 !EL indices
             do i = 0, dp(1)-1 !GEO indices
-               F(1+i+dp(1)*j) = mat_alloc_like(S0)
+               F(1+i+dp(1)*j) = 0*S0
+               call mat_ensure_alloc(F(1+i+dp(1)*j), only_alloc=.true.)
                call load_oneint(prefix_zeros(c(1)+i,2) // ' DPG ' &
                                 // xyz(c(2)+j), F(1+i+dp(1)*j))
                F(1+i+dp(1)*j) = -F(1+i+dp(1)*j) !minus sign
@@ -1380,7 +1395,8 @@ contains
       else if (np==2 .and. all(p==(/'GEO ','MAGO'/))) then
          do j = 0, dp(2)-1
             do i = 0, dp(1)-1
-               F(1+i+dp(1)*j) = mat_alloc_like(S0)
+               F(1+i+dp(1)*j) = 0*S0
+               call mat_ensure_alloc(F(1+i+dp(1)*j), only_alloc=.true.)
                call load_oneint(prefix_zeros(c(1)+i,3) // 'AMDR' &
                                 // xyz(c(2)+j), F(1+i+dp(1)*j))
                F(1+i+dp(1)*j) = 1/2d0 * F(1+i+dp(1)*j) !factor 1/2
@@ -1388,7 +1404,8 @@ contains
          end do
       else if (np==2 .and. all(p==(/'GEO ','ELGR'/))) then
          do i = 1, 6
-            A(i) = mat_alloc_like(S0)
+            A(i) = 0*S0
+            call mat_ensure_alloc(A(i), only_alloc=.true.)
          end do
          do i = 0, dp(1)-1 !GEO indices
             ! ajt The integrals '01QDG XY' are not traceless.
@@ -1412,7 +1429,8 @@ contains
          do k = 0, dp(3)-1
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
-                  F(1+i+dp(1)*(j+dp(2)*k)) = mat_alloc_like(S0)
+                  F(1+i+dp(1)*(j+dp(2)*k)) = 0*S0
+                  call mat_ensure_alloc(F(1+i+dp(1)*(j+dp(2)*k)), only_alloc=.true.)
                   call load_oneint(xyz(c(3)+k) // '-CM2'              &
                                    // xyz(min(c(1)+i,c(2)+j))         &
                                    // xyz(max(c(1)+i,c(2)+j)) // ' ', &
@@ -1708,7 +1726,7 @@ contains
       integer          :: nf, n2, lwrk, i, aa=0
       real(8), pointer :: wrk(:)
       nf = size(F)
-      n2 = size(D(1)%elms_alpha)
+      n2 = size(D(1)%elms)
       if (what=='  ' .and. nf==1) then
          lwrk = 0
       else if (what=='M ' .and. nf==3) then
@@ -1740,13 +1758,13 @@ contains
       if (what=='  ') then
          call interface_scf_get_g(D(1), F(1))
       else
-         wrk(1:n2) = reshape(D(1)%elms_alpha, (/n2/)) !ajt fixme
+         wrk(1:n2) = reshape(D(1)%elms, (/n2/)) !ajt fixme
          call GRCONT(wrk( 1+n2+n2*nf : lwrk ), (lwrk-n2-n2*nf),         &
                      wrk( 1+n2 : n2+n2*nf ), n2*nf, (what(1:1) == 'G'), &
                      (what(1:1) == 'M'), merge(1,2,what(2:2)==' '),     &
                      aa, .false., .true., wrk(1:n2), 1)
          do i = 1, nf
-            F(i)%elms_alpha = reshape(wrk(1+n2*i:n2*(1+i)), shape(F(i)%elms_alpha)) !ajt fixme
+            F(i)%elms = reshape(wrk(1+n2*i:n2*(1+i)), shape(F(i)%elms)) !ajt fixme
          end do
       end if
       !deallocate work
@@ -1791,13 +1809,13 @@ contains
       call f77_memory_select(work_len=lwrk, work=wrk)
 
 !     this is done because grcont presently needs Da and Db to be consecutive
-!     and (/Da%elms_alpha, Db%elms_alpha/) can cause stack overflow, depending
+!     and (/Da%elms, Db%elms/) can cause stack overflow, depending
 !     on ulimit and compiler flags; -auto-scalar:fine: -auto:overflow
 !     a future rewrite of grcont could take a list of pointers
 !     (or just type(matrix)) instead of consecutive real(8) arrays
-      l = size(Da%elms_alpha)
-      wrk(    1:  l) = reshape(Da%elms_alpha, (/l/))
-      wrk(l + 1:2*l) = reshape(Db%elms_alpha, (/l/))
+      l = size(Da%elms)
+      wrk(    1:  l) = reshape(Da%elms, (/l/))
+      wrk(l + 1:2*l) = reshape(Db%elms, (/l/))
 
       e = 0.0d0
 

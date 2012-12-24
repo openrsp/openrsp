@@ -1,6 +1,7 @@
 module interface_rsp_solver
 
    use matrix_defop
+   use matrix_lowlevel, only: mat_init
    use interface_scf
    use interface_f77_memory
    use interface_io
@@ -89,10 +90,13 @@ contains
     if ( present( optimal_orb ) ) solver_optorb = optimal_orb
     ! initializes the coefficients of molecular orbitals matrices
 
-    call mat_init(solver_CMO, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(solver_CMO, NBAST, NBAST, &
+                  .false., .false., .false., .false., .false.)
 
-    solver_CMO_OCC = mat_alloc_like(solver_CMO)
-    solver_CMO_VIR = mat_alloc_like(solver_CMO)
+    solver_CMO_OCC = 0*solver_CMO
+    call mat_ensure_alloc(solver_CMO_OCC, only_alloc=.true.)
+    solver_CMO_VIR = 0*solver_CMO
+    call mat_ensure_alloc(solver_CMO_VIR, only_alloc=.true.)
     ! gets the coefficients of molecular orbitals
     call di_get_cmo( solver_CMO, solver_CMO_OCC, solver_CMO_VIR )
     ! reads active part of one-electron density matrix (MO)
@@ -238,14 +242,15 @@ contains
 
     ! transforms from AO to MO, and writes RHS (MO) into file
 
-    call mat_init(RHS_MO, nrow=NORBT, ncol=NORBT, closed_shell=.true.)
+    call mat_init(RHS_MO, NORBT, NORBT, &
+                  .false., .false., .false., .false., .false.)
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
-      call UTHV( solver_CMO%elms_alpha, RHS(IRHS)%elms_alpha, solver_CMO%elms_alpha, &
-                 ISYM, ISYM, NBAST, NBAST, RHS_MO%elms_alpha, f77_memory(get_f77_memory_next()) )
+      call UTHV( solver_CMO%elms, RHS(IRHS)%elms, solver_CMO%elms, &
+                 ISYM, ISYM, NBAST, NBAST, RHS_MO%elms, f77_memory(get_f77_memory_next()) )
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
-      call PRPORB( RHS_MO%elms_alpha, solver_DV, f77_memory(get_f77_memory_next()) )
+      call PRPORB( RHS_MO%elms, solver_DV, f77_memory(get_f77_memory_next()) )
       !FIXME: why multiplied by -1
       call DSCAL( KZVAR, -1.0D+00, f77_memory(get_f77_memory_next()), 1 )
       ! writes out right hand side vector
@@ -257,7 +262,7 @@ contains
       !> \todo                      iout = log_dal,               &
       !> \todo                      label = 'GP Vector (MO) in DALTON_IFC' )
       !> \todo end if
-      call DZERO( RHS_MO%elms_alpha, NORBT*NORBT )
+      call DZERO( RHS_MO%elms, NORBT*NORBT )
     end do
 
     ! calculates the linear response vector and writes to file
@@ -283,7 +288,8 @@ contains
       ! MaR: Next line replaced by mat_init call to avoid strange nonallocation error msg
       ! mo_eigvec(ISOL) = mat_alloc_like(RHS_MO)
       ! ASSUMES CLOSED SHELL
-      call mat_init(mo_eigvec(ISOL), RHS_MO%nrow, RHS_MO%ncol, .TRUE.)
+      call mat_init(mo_eigvec(ISOL), RHS_MO%nrow, RHS_MO%ncol, &
+                    .false., .false., .false., .false., .false.)
 
       ! reads the solution
       call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
@@ -296,13 +302,13 @@ contains
       call SETZY( f77_memory(KMJWOP) )
       ! This subroutine unpacks the ZY matrix from the vector.
       ! It uses the Z and the Y part of the vector.
-      call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms_alpha, f77_memory(KMJWOP) )
+      call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, f77_memory(KMJWOP) )
       ! divides solution by 2 in accordance with ABACUS solver, or
       ! because Andreas' code does not use total density matrix
-      mo_eigvec(ISOL)%elms_alpha = mo_eigvec(ISOL)%elms_alpha / 2
+      mo_eigvec(ISOL)%elms = mo_eigvec(ISOL)%elms / 2
       ! transforms from MO to AO
-      eigvec(ISOL) = - solver_CMO_OCC*( mo_eigvec(ISOL)*trps( solver_CMO_VIR ) ) &
-                     - solver_CMO_VIR*( mo_eigvec(ISOL)*trps( solver_CMO_OCC ) )
+      eigvec(ISOL) = - solver_CMO_OCC*( mo_eigvec(ISOL)*trans( solver_CMO_VIR ) ) &
+                     - solver_CMO_VIR*( mo_eigvec(ISOL)*trans( solver_CMO_OCC ) )
     end do ! loops over solution vectors
 
     ! closes and deletes files
@@ -347,14 +353,14 @@ contains
       call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
     rewind( LUSIFC )
     ! reads the molecular orbital coefficients
-    call rd_sirifc( 'CMO', found, CMO%elms_alpha, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+    call rd_sirifc( 'CMO', found, CMO%elms, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
-    !N if ( .not. restrict_scf ) CMO%elms_alpha = CMO%elms_alpha
+    !N if ( .not. restrict_scf ) CMO%elms = CMO%elms
     ! generates the occupied and virtual molecular orbitals
-    CMO_OCC%elms_alpha(:,:NOCCT,1)   = CMO%elms_alpha(:,:NOCCT,1)
-    CMO_OCC%elms_alpha(:,NOCCT+1:,1) = 0
-    CMO_VIR%elms_alpha(:,:NOCCT,1)   = 0
-    CMO_VIR%elms_alpha(:,NOCCT+1:,1) = CMO%elms_alpha(:,NOCCT+1:,1)
+    CMO_OCC%elms(:,:NOCCT,1)   = CMO%elms(:,:NOCCT,1)
+    CMO_OCC%elms(:,NOCCT+1:,1) = 0
+    CMO_VIR%elms(:,:NOCCT,1)   = 0
+    CMO_VIR%elms(:,NOCCT+1:,1) = CMO%elms(:,NOCCT+1:,1)
     ! closes SIRIFC
     if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
   end subroutine
@@ -586,7 +592,8 @@ contains
 
        allocate(mo_coef(ncmotq))
        call read_mo_coef(mo_coef)
-       call mat_init(C, nrow=ntbas(0), ncol=norbt, closed_shell=.true.)
+       call mat_init(C, ntbas(0), norbt, &
+                     .false., .false., .false., .false., .false.)
        call get_C(C, mo_coef, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
        deallocate(mo_coef)
        RHS_mo = trps(C)*(RHS(1)*C)
@@ -607,7 +614,7 @@ contains
           do k = 1, length_pp
              i = kappa_pp(1, k)
              s = kappa_pp(2, k)
-             prop_gradient_pp(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
+             prop_gradient_pp(k, iz) = -2.0d0*RHS_mo%elms(s, i, iz)
           end do
        end do
 
@@ -630,7 +637,7 @@ contains
           do k = 1, length_pn
              i = kappa_pn(1, k)
              s = kappa_pn(2, k)
-             prop_gradient_pn(k, iz) = -2.0d0*RHS_mo%elms_alpha(s, i, iz)
+             prop_gradient_pn(k, iz) = -2.0d0*RHS_mo%elms(s, i, iz)
           end do
        end do
 
@@ -823,20 +830,20 @@ contains
 !   scatter response vectors
 !   ========================
 
-    Wp%elms_alpha = 0.0d0
+    Wp%elms = 0.0d0
 
     if (include_pp_rotations) then
       call scatter_vector(length_pp,                   &
                           kappa_pp, &
                           1.0d0,                       &
                           response_vector_pph,         &
-                          Wp%elms_alpha,                     &
+                          Wp%elms,                     &
                           Wp%pg_sym-1)
       call scatter_vector(length_pp,                   &
                           kappa_pp, &
                          -1.0d0,                       &
                           response_vector_ppa,         &
-                          Wp%elms_alpha,                     &
+                          Wp%elms,                     &
                           Wp%pg_sym-1)
 
       deallocate(kappa_pp)
@@ -849,13 +856,13 @@ contains
                           kappa_pn, &
                           1.0d0,                       &
                           response_vector_pnh,         &
-                          Wp%elms_alpha,                     &
+                          Wp%elms,                     &
                           Wp%pg_sym-1)
       call scatter_vector(length_pn,                   &
                           kappa_pn, &
                          -1.0d0,                       &
                           response_vector_pna,         &
-                          Wp%elms_alpha,                     &
+                          Wp%elms,                     &
                           Wp%pg_sym-1)
 
       deallocate(kappa_pn)
@@ -869,8 +876,10 @@ contains
 
     allocate(mo_coef(n2bbasxq))
     call read_mo_coef(mo_coef)
-    call mat_init(Cig, nrow=ntbas(0), ncol=norbt, closed_shell=.true.)
-    call mat_init(Csg, nrow=ntbas(0), ncol=norbt, closed_shell=.true.)
+    call mat_init(Cig, ntbas(0), norbt, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(Csg, ntbas(0), norbt, &
+                  .false., .false., .false., .false., .false.)
     call get_C(Cig, mo_coef, i=1.0d0, s=0.0d0, g=1.0d0, u=0.0d0)
     call get_C(Csg, mo_coef, i=0.0d0, s=1.0d0, g=1.0d0, u=0.0d0)
     if (nfsym == 2) then

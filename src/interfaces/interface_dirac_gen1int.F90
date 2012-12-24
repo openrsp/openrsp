@@ -36,7 +36,7 @@ contains
       integer                     :: i
 
       do i = 1, num_ints
-         M(i)%elms_alpha = 0.0d0
+         M(i)%elms = 0.0d0
       end do
 
       call gen1int_host_get_int(non_lao, trim(prop_name),      &

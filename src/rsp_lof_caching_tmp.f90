@@ -12,6 +12,7 @@ module rsp_lof_caching
   use rsp_sdf_caching
   use rsp_indices_and_addressing
   use matrix_defop
+  use matrix_lowlevel, only: mat_init
 
   implicit none
 
@@ -60,7 +61,8 @@ module rsp_lof_caching
 
     do i = 1, property_size
        ! ASSUME CLOSED SHELL
-       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
+       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, &
+                     .false., .false., .false., .false., .false.)
        new_element%data(i) = data(i)
 
     end do

@@ -57,6 +57,7 @@ module openrsp
   use dalton_ifc
   use openrsp_cfg
   use matrix_defop
+  use matrix_lowlevel,  only: mat_init
   use eri_contractions, only: ctr_arg
   use eri_basis_loops,  only: unopt_geodiff_loop
 
@@ -151,22 +152,25 @@ contains
                            openrsp_cfg_solver_optorb)
 
     ! initialize and allocate overlap matrix
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(S, NBAST, NBAST, .false., .false., .false., .false., .false.)
 
     ! get the overlap
     call interface_scf_get_s(S)
 
     ! get the AO density matrix and divide by 2
-    D  = mat_alloc_like(S)
+    D = 0*S
+    call mat_ensure_alloc(D, only_alloc=.true.)
     call interface_scf_get_d(D)
     D = 0.5d0*D
 
     ! get the one electron Hamiltonian
-    H1 = mat_alloc_like(S)
+    H1 = 0*S
+    call mat_ensure_alloc(H1, only_alloc=.true.)
     call interface_scf_get_h1(H1)
 
     ! get the two electron contribution (G) to Fock matrix
-    G  = mat_alloc_like(S)
+    G = 0*S
+    call mat_ensure_alloc(G, only_alloc=.true.)
     call interface_scf_get_g(D, G)
 
     ! Fock matrix F = H1 + G
@@ -181,9 +185,12 @@ contains
     print *, '2-el energy       =', 0.5d0*dot(G, D)
     print *, 'electronic energy =', dot(H1, D) + 0.5d0*dot(G, D)
 
-    TX = mat_alloc_like(D)
-    TY = mat_alloc_like(D)
-    TZ = mat_alloc_like(D)
+    TX = 0*D
+    call mat_ensure_alloc(TX, only_alloc=.true.)
+    TY = 0*D
+    call mat_ensure_alloc(TY, only_alloc=.true.)
+    TZ = 0*D
+    call mat_ensure_alloc(TZ, only_alloc=.true.)
     call get_1el_integrals(                                &
                            M=(/TX, TY, TZ/),               &
                            prop_name="INT_CART_MULTIPOLE", &
@@ -217,7 +224,7 @@ contains
        mat_dim = D%nrow
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms_alpha, 1, xc_dmat, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
        call xc_integrate(                  &
                          mat_dim=mat_dim,  &
@@ -228,7 +235,7 @@ contains
                          fmat=xc_fmat,     &
                          geo_coor=(/0/)    &
                         )
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if

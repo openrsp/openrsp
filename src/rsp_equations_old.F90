@@ -319,12 +319,12 @@ contains
             do i0 = 1, dimp(1)
                i = 1+i0
                FDSp(i0) =            (Fp(i) - w(1)/2 * Sp(i)) * DSp(1)
-               FDSp(i0) = FDSp(i0) - trps(DSp(1)) * (Fp(i) + w(1)/2 * Sp(i))
-               FDSp(i0) = FDSp(i0) + FDp(1) * Sp(i) - Sp(i) * trps(FDp(1))
+               FDSp(i0) = FDSp(i0) - trans(DSp(1)) * (Fp(i) + w(1)/2 * Sp(i))
+               FDSp(i0) = FDSp(i0) + FDp(1) * Sp(i) - Sp(i) * trans(FDp(1))
                FDSp(i0) = FDSp(i0) + (Fp(1) - w(1)/2 * S0) * Dp(i) * S0
                FDSp(i0) = FDSp(i0) - S0 * Dp(i) * (Fp(1) + w(1)/2 * S0)
                DSDp(i0) =            Dp(1) * Sp(i) * Dp(1) - Dp(i)
-               DSDp(i0) = DSDp(i0) + Dp(i)*trps(DSp(1))
+               DSDp(i0) = DSDp(i0) + Dp(i)*trans(DSp(1))
                DSDp(i0) = DSDp(i0) + DSp(1)*Dp(i)
                Sp(i)=0
             end do
@@ -341,12 +341,12 @@ contains
             do i0 = 1, dimp(1)*dimp(2)
                i = 1+dimp(1)+dimp(2)+i0
                FDSp(i0) =            (Fp(i) - (w(1)+w(2))/2 * Sp(i)) * DSp(1)
-               FDSp(i0) = FDSp(i0) - trps(DSp(1)) * (Fp(i) + (w(1)+w(2))/2 * Sp(i))
-               FDSp(i0) = FDSp(i0) + FDp(1) * Sp(i) - Sp(i) * trps(FDp(1))
+               FDSp(i0) = FDSp(i0) - trans(DSp(1)) * (Fp(i) + (w(1)+w(2))/2 * Sp(i))
+               FDSp(i0) = FDSp(i0) + FDp(1) * Sp(i) - Sp(i) * trans(FDp(1))
                FDSp(i0) = FDSp(i0) + (Fp(1) - (w(1)+w(2))/2 * S0) * Dp(i) * S0
                FDSp(i0) = FDSp(i0) - S0 * Dp(i) * (Fp(1) + (w(1)+w(2))/2 * S0)
                DSDp(i0) =            Dp(1) * Sp(i) * Dp(1) - Dp(i)
-               DSDp(i0) = DSDp(i0) + Dp(i)*trps(DSp(1))
+               DSDp(i0) = DSDp(i0) + Dp(i)*trans(DSp(1))
                DSDp(i0) = DSDp(i0) + DSp(1)*Dp(i)
                Sp(i)=0
             end do
@@ -716,7 +716,7 @@ contains
             if (all(sol%freq(:size(p)) == ffreq)) then
                Dp(j) = sol%D(j)
             else !copy and +-transpose
-               Dp(j) = (-1)**nanti * trps(sol%D(j))
+               Dp(j) = (-1)**nanti * trans(sol%D(j))
             end if
          end do
          ! calculate the corresponding Fock matrix
@@ -748,7 +748,7 @@ contains
       ! top DSDp off with DSpD and FDSp with (F-w/2S)DSp-SpD(F+w/2S)
       do i = 1, pd
          !ajt fixme This will not result in completely (anti-)symmetric
-         !          DSDp and FDSp. Use +=sym*trps(..) to achieve this
+         !          DSDp and FDSp. Use +=sym*trans(..) to achieve this
          DSDp(i) = DSDp(i) + D(1)*Sp(i)*D(1)
          FDSp(i) = FDSp(i)  + (F(1) - sum(ffreq)/2 * S0)*D(1)*Sp(i) &
                  - Sp(i)*D(1)*(F(1) + sum(ffreq)/2 * S0)
@@ -876,19 +876,20 @@ contains
             Xph(1) = 0*S0
          else
             freq1(1) = dreal(freq)
-            Xph(1) = mat_zero_like(Dp(i))
+            Xph(1) = 0*Dp(i)
+            call mat_ensure_alloc(Xph(1), only_alloc=.true.)
             call rsp_mosolver_exec(FDSp(i:i), freq1(1:1), Xph(1))
          end if
          ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),
          ! make sure Dp it comes out completely symmetric
          if (sym /= 0 .and. freq==0) then
             Dp(i) = 1/2d0 * Dp(i) + 2d0 * DS*Xph(1)
-            Dp(i) = Dp(i) - 1d0*sym * trps(Dp(i))
+            Dp(i) = Dp(i) - 1d0*sym * trans(Dp(i))
          else
             ! radovan: the following fails with optimization
-!           Dp(i) = Dp(i) + 2d0 * (DS*Xph(1) - Xph(1)*trps(DS))
+!           Dp(i) = Dp(i) + 2d0 * (DS*Xph(1) - Xph(1)*trans(DS))
             ! workaround:
-            T = 2d0*(DS*Xph(1) - Xph(1)*trps(DS))
+            T = 2d0*(DS*Xph(1) - Xph(1)*trans(DS))
             Dp(i) = Dp(i) + T
             T = 0
          end if
@@ -930,15 +931,15 @@ contains
          ! with half the number of multiplications (though twice as many lines)
          if (sym /= 0) then
             Dp(i) = 1/2d0 * DSDp(i) - DS*DSDp(i)
-            Dp(i) = Dp(i) - sym * trps(Dp(i)) !symmetrize or anti-symmetrize
+            Dp(i) = Dp(i) - sym * trans(Dp(i)) !symmetrize or anti-symmetrize
             FDSp(i) = FDSp(i)*DS
-            FDSp(i) = FDSp(i) - sym * trps(FDSp(i))
+            FDSp(i) = FDSp(i) - sym * trans(FDSp(i))
             FDSp(i) = FDSp(i) + Fp(i)
             ! ajt Ensure that the perturbed Fock is precisely (anti-)symmetric
-            !ajt wrong: Fp(i) = 1/2d0 * Fp(i) - 1/2d0*sym * trps(Fp(i)) !(anti-)symmetrize
+            !ajt wrong: Fp(i) = 1/2d0 * Fp(i) - 1/2d0*sym * trans(Fp(i)) !(anti-)symmetrize
          else
-            Dp(i) = DSDp(i) - DSDp(i)*trps(DS) - DS*DSDp(i)
-            FDSp(i) = FDSp(i)*DS - trps(DS)*FDSp(i) + Fp(i)
+            Dp(i) = DSDp(i) - DSDp(i)*trans(DS) - DS*DSDp(i)
+            FDSp(i) = FDSp(i)*DS - trans(DS)*FDSp(i) + Fp(i)
          end if
          DSDp(i) = 0
       end do
@@ -948,9 +949,9 @@ contains
       do i=1, neq
          if (sym /= 0) then
             FDSp(i) = FDSp(i)*DS
-            FDSp(i) = FDSp(i) + 1d0*sym * trps(FDSp(i))
+            FDSp(i) = FDSp(i) + 1d0*sym * trans(FDSp(i))
          else
-            FDSp(i) = FDSp(i)*DS - trps(DS)*FDSp(i)
+            FDSp(i) = FDSp(i)*DS - trans(DS)*FDSp(i)
          end if
       end do
    end subroutine
@@ -995,7 +996,7 @@ contains
       complex(8),   intent(out)   :: tsmom(2,neq)
       type(matrix) :: SDxS, SVxS
       integer      :: i, j, k
-      Vx = Dx*trps(DS) - DS*Dx !for dot/tr with FDSp
+      Vx = Dx*trans(DS) - DS*Dx !for dot/tr with FDSp
       SDxS = S0*Dx*S0         !for removal from FDSp
       SVxS = S0*Vx*S0         !for removal from Fp
       ! loop over -right-hand-sides (equations)
@@ -1004,17 +1005,17 @@ contains
          tsmom(2,i) = dot(Vx, FDSp(i))
          ! de-excitation transition moment (frequency -exci)
          if (sym/=0) tsmom(1,i) = sym * tsmom(2,i)
-         if (sym==0) tsmom(1,i) = tr(Vx, FDSp(i))
+         if (sym==0) tsmom(1,i) = trace(Vx, FDSp(i))
          ! remove both resonant and opposite-resonant component
          ! from FDSp. This preserves symmetry. The solution's
          ! opposite-resonant component will be added after solving.
          ! Not activated in LINSCA, as the solver takes care of this
-         FDSp(i) = FDSp(i) - tsmom(1,i) * trps(SDxS) &
+         FDSp(i) = FDSp(i) - tsmom(1,i) * trans(SDxS) &
                            - tsmom(2,i) * SDxS
          ! remove resonant component from Fp, so Fp/Dp will
          ! solve the response equation FpDS+FDpS...-wSDpS=0
          if (abs(exci+freq) < abs(exci-freq)) then
-            Fp(i) = Fp(i) + tsmom(1,i) * trps(SVxS)
+            Fp(i) = Fp(i) + tsmom(1,i) * trans(SVxS)
          else
             Fp(i) = Fp(i) - tsmom(2,i) * SVxS
          end if
@@ -1041,7 +1042,7 @@ contains
          ! if excitation resonant, add de-excitation contrib a*Dx^T
          if (abs(exci-freq) <= abs(exci+freq)) then
 ! In LINSCA, the solver takes care of this
-            Dp(i) = Dp(i) + (tsmom(1,i) / (freq+exci)) * trps(Dx)
+            Dp(i) = Dp(i) + (tsmom(1,i) / (freq+exci)) * trans(Dx)
          else !if de-excitation resonant, add excitation contrib a*Dx
             Dp(i) = Dp(i) + (tsmom(2,i) / (freq-exci)) * Dx
          end if

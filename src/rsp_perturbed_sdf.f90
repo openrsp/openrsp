@@ -10,6 +10,7 @@
 module rsp_perturbed_sdf
 
   use matrix_defop
+  use matrix_lowlevel, only: mat_init
   use rsp_contribs
   use rsp_field_tuple
   use rsp_indices_and_addressing
@@ -123,10 +124,12 @@ module rsp_perturbed_sdf
     type(f_l_cache), pointer :: fock_lowerorder_cache
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
     call sdf_getdata_s(S, get_emptypert(), (/1/), B)
@@ -164,9 +167,12 @@ module rsp_perturbed_sdf
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, .true.)
-       call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, .true.)
-       call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, .true.)
+       call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, &
+                     .false., .false., .false., .false., .false.)
+       call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, &
+                     .false., .false., .false., .false., .false.)
+       call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, &
+                     .false., .false., .false., .false., .false.)
 
     end do
 
@@ -228,8 +234,10 @@ module rsp_perturbed_sdf
        ! 4. Make right-hand side using Dp
 
        ! ASSUME CLOSED SHELL
-       call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, .true.)
-       call mat_init(X(1), zeromat%nrow, zeromat%ncol, .true.)
+       call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, &
+                     .false., .false., .false., .false., .false.)
+       call mat_init(X(1), zeromat%nrow, zeromat%ncol, &
+                     .false., .false., .false., .false., .false.)
        call rsp_get_matrix_y(zeromat, superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
@@ -592,21 +600,24 @@ end if
        do j = 1, size(lower_order_contribution)
 
           ! ASSUME CLOSED SHELL
-          call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, .true.)
+          call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, &
+                        .false., .false., .false., .false., .false.)
 
        end do
 
        do j = 1, size(tmp)
 
           ! ASSUME CLOSED SHELL
-          call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
+          call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, &
+                        .false., .false., .false., .false., .false.)
 
        end do
 
        do i = 2, num_p_tuples
 
           ! ASSUME CLOSED SHELL
-          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
+          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, &
+                        .false., .false., .false., .false., .false.)
 
        end do
 
@@ -639,7 +650,8 @@ end if
           do j = 1, size(tmp)
 
              ! ASSUME CLOSED SHELL
-             call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, .true.)
+             call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, &
+                           .false., .false., .false., .false., .false.)
 
           end do
 
@@ -675,8 +687,8 @@ end if
                 (/inner_indices(j, :), outer_indices(i, :) /)) 
 
                 ! ASSUME CLOSED SHELL
-                call mat_init(lower_order_contribution(offset), zeromat%nrow, &
-                              zeromat%ncol, .true.)
+                call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, &
+                              .false., .false., .false., .false., .false.)
 
                 lower_order_contribution(offset) = tmp(j)
 
@@ -693,7 +705,8 @@ end if
              blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
 
              ! ASSUME CLOSED SHELL
-             call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, .true.)
+             call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, &
+                           .false., .false., .false., .false., .false.)
 
              lower_order_contribution(offset) = tmp(1)
 

@@ -43,6 +43,7 @@
   subroutine openrsp_daldrv_old( WORK, LWORK, WAVPCM )
     ! matrix
     use matrix_defop
+    use matrix_lowlevel, only: mat_init
     ! interface of DALTON
     use interface_f77_memory
     use interface_io
@@ -335,11 +336,14 @@
     call rsp_mosolver_splash( LUPRI )
 
     ! initialize and allocate matrices
-    call mat_init(S, nrow=NBAST, ncol=NBAST, closed_shell=.true.)
+    call mat_init(S, NBAST, NBAST, .false., .false., .false., .false., .false.)
 
-    D  = mat_alloc_like(S)
-    H1 = mat_alloc_like(S)
-    G  = mat_alloc_like(S)
+    D = 0*S
+    call mat_ensure_alloc(D, only_alloc=.true.)
+    H1 = 0*S
+    call mat_ensure_alloc(H1, only_alloc=.true.)
+    G = 0*S
+    call mat_ensure_alloc(G, only_alloc=.true.)
 
     ! get the overlap and one electron Hamiltonian matrices
     call interface_scf_get_s(S)

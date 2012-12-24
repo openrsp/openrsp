@@ -11,6 +11,7 @@ module rsp_sdf_caching
   use rsp_field_tuple
   use rsp_indices_and_addressing
   use matrix_defop
+  use matrix_lowlevel, only: mat_init
 
   implicit none
 
@@ -61,7 +62,8 @@ module rsp_sdf_caching
     do i = 1, perturbed_matrix_size
     
        ! ASSUME CLOSED SHELL
-       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
+       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, &
+                     .false., .false., .false., .false., .false.)
        new_element%data(i) = data(i)
 
     end do
@@ -221,7 +223,8 @@ module rsp_sdf_caching
 
        ! ASSUME CLOSED SHELL
        call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
-                     next_element%data(offset)%ncol, .true.)
+                     next_element%data(offset)%ncol, &
+                     .false., .false., .false., .false., .false.)
 
        sdf_getdata = next_element%data(offset)
 
@@ -255,7 +258,8 @@ module rsp_sdf_caching
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol, .true.)
+       call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol, &
+                     .false., .false., .false., .false., .false.)
        current_element%data(i) = data(i)
 
     end do

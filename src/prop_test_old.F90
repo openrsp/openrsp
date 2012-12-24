@@ -329,7 +329,7 @@ contains
             FDSfg = (Ff(j)*Dg(k) + Fg(k)*Df(j)) * S &
               - S * (Df(j)*Fg(k) + Dg(k)*Ff(j))
             do i = 1, 3
-               Efff(i,j,k) = Efff(i,j,k) - tr(DeSD(i),FDSfg)
+               Efff(i,j,k) = Efff(i,j,k) - trace(DeSD(i),FDSfg)
             end do; FDSfg=0
          end do
       end do; DeSD=0
@@ -341,7 +341,7 @@ contains
          do j = 1, 3
             DSDfg = Df(j)*S*Dg(k) + Dg(k)*S*Df(j)
             do i = 1, 3
-               Efff(i,j,k) = Efff(i,j,k) - tr(FeDS(i),DSDfg)
+               Efff(i,j,k) = Efff(i,j,k) - trace(FeDS(i),DSDfg)
             end do; DSDfg=0
          end do
       end do; FeDS=0
@@ -437,7 +437,7 @@ contains
                       +  Dh(l)*Ffg(j,k) + Dfg(j,k)*Fh(l) &
                       +  Dfh(j,l)*Fg(k) + Dgh(k,l)*Ff(j))
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(DeSD(i),FDSfgh)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(DeSD(i),FDSfgh)
                end do; FDSfgh=0
             end do
          end do
@@ -453,7 +453,7 @@ contains
                       + Dh(l)*S*Dfg(j,k) + Dfg(j,k)*S*Dh(l) &
                       + Dfh(j,l)*S*Dg(k) + Dgh(k,l)*S*Df(j)
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(FeDS(i),DSDfgh)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(FeDS(i),DSDfgh)
                end do; DSDfgh=0
             end do
          end do
@@ -509,7 +509,7 @@ contains
               - S * (Dh(l)*Fg(k) + Dg(k)*Fh(l))
             do j = 1, 3
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(DeSDf(i,j),FDSgh)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(DeSDf(i,j),FDSgh)
                end do
             end do; FDSgh=0
          end do
@@ -526,7 +526,7 @@ contains
             DSDgh = Dg(k)*S*Dh(l) + Dh(l)*S*Dg(k)
             do j = 1, 3
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(FeDSf(i,j),DSDgh)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(FeDSf(i,j),DSDgh)
                end do
             end do; DSDgh=0
          end do
@@ -544,7 +544,7 @@ contains
               - S * (Df(j)*Fh(l) + Dh(l)*Ff(j))
             do k = 1, 3
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(DeSDg(i,k),FDSfh)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(DeSDg(i,k),FDSfh)
                end do
             end do; FDSfh=0
          end do
@@ -561,7 +561,7 @@ contains
             DSDfh = Df(j)*S*Dh(l) + Dh(l)*S*Df(j)
             do k = 1, 3
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(FeDSg(i,k),DSDfh)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(FeDSg(i,k),DSDfh)
                end do
             end do; DSDfh=0
          end do
@@ -579,7 +579,7 @@ contains
               - S * (Df(j)*Fg(k) + Dg(k)*Ff(j))
             do l = 1, 3
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(DeSDh(i,l),FDSfg)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(DeSDh(i,l),FDSfg)
                end do
             end do; FDSfg=0
          end do
@@ -596,7 +596,7 @@ contains
             DSDfg = Df(j)*S*Dg(k) + Dg(k)*S*Df(j)
             do l = 1, 3
                do i = 1, 3
-                  Effff(i,j,k,l) = Effff(i,j,k,l) - tr(FeDSh(i,l),DSDfg)
+                  Effff(i,j,k,l) = Effff(i,j,k,l) - trace(FeDSh(i,l),DSDfg)
                end do
             end do; DSDfg=0
          end do
@@ -728,89 +728,60 @@ contains
   end subroutine
 
 
-   subroutine print_tensor(dims, tensor, title, freqs, colwidth, unit)
-   !ajt This is used for printing response function tensors
-   !TODO: Add comp. lables argument. Make space between blocks of rows
-      integer,                intent(in) :: dims(:)
-      complex(8),             intent(in) :: tensor(*) !(product(dims))
-      character(*), optional, intent(in) :: title
-      integer,      optional, intent(in) :: colwidth, unit
-      complex(8),   optional, intent(in) :: freqs(:)
-      integer     :: uni, siz, dec, cwid, i
-      character*9 :: fmt
-      uni = 6
-      if (present(unit)) uni = unit
-      if (present(title)) then
-         if (present(freqs)) then
-            fmt = '(a,nf6.3)'
-            write (fmt(4:4),'(i1)') size(freqs)
-            write (uni,fmt) title // ' w:', dreal(freqs)
-         else
-            write (uni,'(a)') title
-         end if
-      end if
-      siz = product(dims)
-      dec = max(2, 1+ceiling(log10(maxval(abs(tensor(1:siz))))))
-      !dec = max(dec,ceiling(log10( maxval(tensor(1:siz)))))
-      cwid = 15
-      if (present(colwidth)) cwid = max(colwidth,dec+2)
-      dec = cwid - dec - 1
-      fmt = '(fww.dd)'
-      write (fmt(3:7),'(i2,a1,i2)') cwid, '.', dec
-      if (any(dimag(tensor(1:siz)) /= 0)) write (uni,'(a)') '    (real part)'
-      call subr(dims, dreal(tensor(1:siz)), uni, cwid, fmt)
-      if (any(dimag(tensor(1:siz)) /= 0)) then
-         write (uni,'(a)') '    (imaginary part)'
-         call subr(dims, dimag(tensor(1:siz)), uni, cwid, fmt)
-      end if
-      write (uni,'()') !final blank line
-   contains
-      subroutine subr(dims, tnz, unit, cwid, fmt)
-         integer,     intent(in) :: dims(:), unit, cwid
-         real(8),     intent(in) :: tnz(*)
-         character*8, intent(in) :: fmt
-         integer :: i, j, l
-         character*(dims(1)*(cwid+1)) :: line
-         do i = 1, product(dims), dims(1)
-            l = 1
-            do j = 1, dims(1)
-               line(l:l) = ' '
-               write (line(l+1:l+cwid), fmt) tnz(i+j-1)
-               l = l + 1 + cwid
-            end do
-            write (unit,'(a)') line
-         end do
-      end subroutine
-   end subroutine
+  subroutine print_tensor(dims, tensor, title, freqs, colwidth, unit)
+  !ajt This is used for printing response function tensors
+  !TODO: Add comp. lables argument. Make space between blocks of rows
+    integer,                intent(in) :: dims(:)
+    complex(8),             intent(in) :: tensor(*) !(product(dims))
+    character(*), optional, intent(in) :: title
+    integer,      optional, intent(in) :: colwidth, unit
+    complex(8),   optional, intent(in) :: freqs(:)
+    integer     :: uni, siz, dec, cwid, i
+    character*9 :: fmt
+    uni = 6
+    if (present(unit)) uni = unit
+    if (present(title)) then
+       if (present(freqs)) then
+          fmt = '(a,nf6.3)'
+          write (fmt(4:4),'(i1)') size(freqs)
+          write (uni,fmt) title // ' w:', dreal(freqs)
+       else
+          write (uni,'(a)') title
+       end if
+    end if
+    siz = product(dims)
+    dec = max(2, 1+ceiling(log10(maxval(abs(tensor(1:siz))))))
+    !dec = max(dec,ceiling(log10( maxval(tensor(1:siz)))))
+    cwid = 15
+    if (present(colwidth)) cwid = max(colwidth,dec+2)
+    dec = cwid - dec - 1
+    fmt = '(fww.dd)'
+    write (fmt(3:7),'(i2,a1,i2)') cwid, '.', dec
+    if (any(dimag(tensor(1:siz)) /= 0)) write (uni,'(a)') '    (real part)'
+    call subr(dims, dreal(tensor(1:siz)), uni, cwid, fmt)
+    if (any(dimag(tensor(1:siz)) /= 0)) then
+       write (uni,'(a)') '    (imaginary part)'
+       call subr(dims, dimag(tensor(1:siz)), uni, cwid, fmt)
+    end if
+    write (uni,'()') !final blank line
+  contains
+    subroutine subr(dims, tnz, unit, cwid, fmt)
+       integer,     intent(in) :: dims(:), unit, cwid
+       real(8),     intent(in) :: tnz(*)
+       character*8, intent(in) :: fmt
+       integer :: i, j, l
+       character*(dims(1)*(cwid+1)) :: line
+       do i = 1, product(dims), dims(1)
+          l = 1
+          do j = 1, dims(1)
+             line(l:l) = ' '
+             write (line(l+1:l+cwid), fmt) tnz(i+j-1)
+             l = l + 1 + cwid
+          end do
+          write (unit,'(a)') line
+       end do
+    end subroutine
+  end subroutine
 
-
-!ajt Function for generating Gaussian random real numbers,
-!    which I occiationally use for debugging
-!
-!    !> Random real numbers with Gaussian distribution
-!    !> The generator is seeded on the first call
-!    !> Two reals are generated each time, and returned
-!    !> in consecutive calls. Random_Seed and Random_Number
-!    !> are provided by Intel and GNU compilers.
-!    !> To get different numbers, change seed.
-!    function RandomReal() result(r)
-!        real(8),parameter :: pi=3.14159265358979323846d00
-!        real(8) :: r,a,x,y
-!        real(8),save:: rnext
-!        logical,save:: first=.true.,flip=.true.
-!        if (first) then !reset fortran's random generator
-!            call Random_Seed(put=(/628468422,281827387/))
-!            first = .false.
-!        end if
-!        r = rnext
-!        flip = .not.flip
-!        if (flip) return !return sav
-!        call Random_Number(x)
-!        a = 2*Pi*x !angle in [0,2pi]
-!        call Random_Number(x)
-!        y = sqrt(-log(x))
-!        rnext = cos(a)*y
-!        r = sin(a)*y
-!    end function
 
 end module

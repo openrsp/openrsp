@@ -17,6 +17,7 @@
 module rsp_contribs
 
   use matrix_defop
+  use matrix_lowlevel, only: mat_init
   use interface_molecule
   use interface_io
   use interface_xc
@@ -702,9 +703,10 @@ end if
 
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
-       A(1) = mat_alloc_like(D1)
+       A(1) = 0*D1
+       call mat_ensure_alloc(A(1), only_alloc=.true.)
        call interface_scf_get_g(D2, A(1)) !Coulomb and exchange
-       ave(1) = tr(A(1),D1)
+       ave(1) = trace(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
 
 #ifdef PRG_DALTON
@@ -719,8 +721,8 @@ end if
        tmp = 2.0d0*tmp
 #else
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,1,1,1), ncor, .true., .false., &
                    1, 0, .true., .false., f77_memory(:n*n*2), 2)
@@ -733,7 +735,7 @@ end if
        allocate(real_ave(size(ave)))
        real_ave = 0.0
        call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, 0, size(real_ave), real_ave)
+       call interest_get_int(D1%nrow, D1%elms, D2%elms, 1, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -761,8 +763,8 @@ end if
        end do
 #else
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,:,1,1), ncor**2, .true., .false., &
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
@@ -776,7 +778,7 @@ end if
        allocate(real_ave(size(ave)))
        real_ave = 0.0
        call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 2, 0, size(real_ave), real_ave)
+       call interest_get_int(D1%nrow, D1%elms, D2%elms, 2, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -816,7 +818,7 @@ end if
        allocate(real_ave(size(ave)))
        real_ave = 0.0
        call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 3, 0, size(real_ave), real_ave)
+       call interest_get_int(D1%nrow, D1%elms, D2%elms, 3, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -909,9 +911,10 @@ end if
 
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
-       A(1) = mat_alloc_like(D1)
+       A(1) = 0*D1
+       call mat_ensure_alloc(A(1), only_alloc=.true.)
        call interface_scf_get_g(D2, A(1)) !Coulomb and exchange
-       ave(1) = tr(A(1),D1)
+       ave(1) = trace(A(1),D1)
     else if (nf==1 .and. f(1)=='GEO ') then
 
 #ifdef PRG_DALTON
@@ -927,8 +930,8 @@ end if
        tmp = 2.0d0*tmp
 #else
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,1,1,1), ncor, .true., .false., &
                    1, 0, .true., .false., f77_memory(:n*n*2), 2)
@@ -941,7 +944,7 @@ end if
        allocate(real_ave(size(ave)))
        real_ave = 0.0
        call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms_alpha, D2%elms_alpha, 1, 0, size(real_ave), real_ave)
+       call interest_get_int(D1%nrow, D1%elms, D2%elms, 1, 0, size(real_ave), real_ave)
        do i = 1, size(ave)
           ave(i) = 2.0d0*real_ave(i)
        end do
@@ -968,8 +971,8 @@ end if
        end do
 #else
        n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms_alpha,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms_alpha,(/n*n/))
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,:,1,1), ncor**2, .true., .false., &
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
@@ -1470,7 +1473,8 @@ end if
        if (all(pert%plab==(/'GEO '/))) then
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
 
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
@@ -1495,7 +1499,8 @@ end if
           allocate(Dg(pert%pdim(1)))
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
 
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
@@ -1504,7 +1509,8 @@ end if
           do i = 1, pert%pdim(1)
 
              ! MR: ASSUME CLOSED SHELL
-             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call mat_init(Dg(i), nr_ao, nr_ao, &
+                           .false., .false., .false., .false., .false.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
           end do
@@ -1532,7 +1538,8 @@ end if
           allocate(Dg(pert%pdim(1)))
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
 
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
@@ -1541,7 +1548,8 @@ end if
           do i = 1, pert%pdim(2)
 
              ! MR: ASSUME CLOSED SHELL
-             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call mat_init(Dg(i), nr_ao, nr_ao, &
+                           .false., .false., .false., .false., .false.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
           end do
@@ -1577,7 +1585,8 @@ write(*,*) 'offset', n, 'size', size(ave)
           allocate(Dg(pert%pdim(1)))
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
           pg = p_tuple_getone(pert, 1)
@@ -1585,7 +1594,8 @@ write(*,*) 'offset', n, 'size', size(ave)
           do i = 1, pert%pdim(1)
 
              ! MR: ASSUME CLOSED SHELL
-             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call mat_init(Dg(i), nr_ao, nr_ao, &
+                           .false., .false., .false., .false., .false.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
           end do
@@ -1616,7 +1626,8 @@ write(*,*) 'offset', n, 'size', size(ave)
           allocate(Dgg(pert%pdim(2), pert%pdim(2)))
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
           pg = p_tuple_getone(pert, 2)
@@ -1626,13 +1637,15 @@ write(*,*) 'offset', n, 'size', size(ave)
           do i = 1, pert%pdim(2)
 
              ! MR: ASSUME CLOSED SHELL
-             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call mat_init(Dg(i), nr_ao, nr_ao, &
+                           .false., .false., .false., .false., .false.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
              do j = 1, pert%pdim(2)
 
                 ! MR: ASSUME CLOSED SHELL
-                call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(Dgg(i,j), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
                 call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
 
              end do
@@ -1675,7 +1688,8 @@ write(*,*) 'offset', n, 'size', size(ave)
           allocate(Dgg(pert%pdim(1), pert%pdim(1)))
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
           pg = p_tuple_getone(pert, 1)
@@ -1686,13 +1700,15 @@ write(*,*) 'offset', n, 'size', size(ave)
           do i = 1, pert%pdim(1)
 
              ! MR: ASSUME CLOSED SHELL
-             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call mat_init(Dg(i), nr_ao, nr_ao, &
+                           .false., .false., .false., .false., .false.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
              do j = 1, pert%pdim(1)
 
                 ! MR: ASSUME CLOSED SHELL
-                call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(Dgg(i,j), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
                 call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
 
              end do
@@ -1731,7 +1747,8 @@ write(*,*) 'offset', n, 'size', size(ave)
 !  write(*,*) '1'
 
           ! MR: ASSUME CLOSED SHELL
-          call mat_init(D, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+          call mat_init(D, nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), D)
 
 ! write(*,*) '2'
@@ -1748,20 +1765,23 @@ write(*,*) 'offset', n, 'size', size(ave)
           do i = 1, pert%pdim(2)
 
              ! MR: ASSUME CLOSED SHELL
-             call mat_init(Dg(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+             call mat_init(Dg(i), nr_ao, nr_ao, &
+                           .false., .false., .false., .false., .false.)
              call sdf_getdata_s(D_sdf, pg, (/i/), Dg(i))
 
              do j = 1, pert%pdim(2)
 
 ! write(*,*) '4'
                 ! MR: ASSUME CLOSED SHELL
-                call mat_init(Dgg(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(Dgg(i,j), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
                 call sdf_getdata_s(D_sdf, pgg, (/i,j/), Dgg(i,j))
 
                 do k = 1, pert%pdim(2)
 
                    ! MR: ASSUME CLOSED SHELL
-                   call mat_init(Dggg(i,j,k), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                   call mat_init(Dggg(i,j,k), nr_ao, nr_ao, &
+                                 .false., .false., .false., .false., .false.)
                    call sdf_getdata_s(D_sdf, pggg, (/i,j,k/), Dggg(i,j,k))
 ! write(*,*) '5'
                 end do
@@ -1910,7 +1930,8 @@ else
        do i = 1, propsize
           
           ! ASSUME CLOSED SHELL
-          call mat_init(tmp_fock(i), nr_ao, nr_ao, .true.)
+          call mat_init(tmp_fock(i), nr_ao, nr_ao, &
+                        .false., .false., .false., .false., .false.)
 
        end do
 
@@ -2132,13 +2153,14 @@ end if
     nullify(null_ptr) !because null() isn't f90
 
   if (any(f=='EL  ')) then
-     call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+     call mat_init(A, nr_ao, nr_ao, &
+                   .false., .false., .false., .false., .false.)
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))
-           fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
+           fock(i)%elms = fock(i)%elms + A%elms
         else
-           fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
+           fock(i)%elms = fock(i)%elms + A%elms
         end if
      end do
   else
@@ -2169,13 +2191,13 @@ end if
           if (i==0 .or. mod(c(1)+i,3) == 1) then
              call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
                          f77_memory(:n*n*3), n*n*3, .true., .false., &
-                         1, (c(1)+i+2)/3, .false., .true., dens%elms_alpha, 1)
+                         1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
           end if
           j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
           if (iszero(fock(1+i))) then
-             fock(1+i)%elms_alpha(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+             fock(1+i)%elms(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           else
-             fock(1+i)%elms_alpha(:, :, 1) = fock(1+i)%elms_alpha(:, :, 1) &
+             fock(1+i)%elms(:, :, 1) = fock(1+i)%elms(:, :, 1) &
                             + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
           end if
 #endif
@@ -2190,7 +2212,7 @@ end if
        end do
        do i = 1, nc(1)
           call interest_mpi_wake_up()
-          call interest_get_int(dens%nrow, dens%elms_alpha, fock(i)%elms_alpha, 1, i, 0, dummy)
+          call interest_get_int(dens%nrow, dens%elms, fock(i)%elms, 1, i, 0, dummy)
        end do
 #endif /* ifdef PRG_DIRAC */
 
@@ -2203,7 +2225,7 @@ end if
              ij = 1 + i + nc(1)*j
              if (iszero(fock(ij))) then
                 call mat_ensure_alloc(fock(ij))
-                fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                fock(ij)%elms = 0 !ajt FIXME use mat_axpy
              end if
              arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
                               ncor, dens, fock(ij), null_ptr)
@@ -2292,13 +2314,14 @@ end if
     integer, allocatable, dimension(:,:) :: indices
 
     if (any(f=='EL  ')) then
-       call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+       call mat_init(A, nr_ao, nr_ao, &
+                     .false., .false., .false., .false., .false.)
        do i = 1, propsize
           if (iszero(fock(i))) then
              call mat_ensure_alloc(fock(i))
-             fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
+             fock(i)%elms = fock(i)%elms + A%elms
           else
-             fock(i)%elms_alpha = fock(i)%elms_alpha + A%elms_alpha
+             fock(i)%elms = fock(i)%elms + A%elms
           end if
        end do
     else
@@ -2328,7 +2351,7 @@ end if
 
                 if (iszero(fock(i))) then
                    call mat_ensure_alloc(fock(i))
-                   fock(i)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                   fock(i)%elms = 0 !ajt FIXME use mat_axpy
                 end if
              
                 k = 1
@@ -2382,13 +2405,13 @@ end if
              if (i==0 .or. mod(c(1)+i,3) == 1) then
                 call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
                             f77_memory(:n*n*3), n*n*3, .true., .false., &
-                            1, (c(1)+i+2)/3, .false., .true., dens%elms_alpha, 1)
+                            1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
              end if
              j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
              if (iszero(fock(1+i))) then
-                fock(1+i)%elms_alpha(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
+                fock(1+i)%elms(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
              else
-                fock(1+i)%elms_alpha(:, :, 1) = fock(1+i)%elms_alpha(:, :, 1) &
+                fock(1+i)%elms(:, :, 1) = fock(1+i)%elms(:, :, 1) &
                                + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
              end if
 #endif
@@ -2396,7 +2419,7 @@ end if
    
 #ifdef PRG_DIRAC
              call interest_mpi_wake_up()
-             call interest_get_int(dens%nrow, dens%elms_alpha, fock(i+1)%elms_alpha, 1, i+1, 0, dummy)
+             call interest_get_int(dens%nrow, dens%elms, fock(i+1)%elms, 1, i+1, 0, dummy)
 #endif /* ifdef PRG_DIRAC */
    
           end do
@@ -2408,7 +2431,7 @@ end if
                 ij = ij + 1
                 if (iszero(fock(ij))) then
                    call mat_ensure_alloc(fock(ij))
-                   fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                   fock(ij)%elms = 0 !ajt FIXME use mat_axpy
                 end if
                 arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
                                  ncor, dens, fock(ij), null_ptr)
@@ -2427,7 +2450,7 @@ end if
                    ij = ij + 1
                    if (iszero(fock(ij))) then
                       call mat_ensure_alloc(fock(ij))
-                      fock(ij)%elms_alpha = 0 !ajt FIXME use mat_axpy
+                      fock(ij)%elms = 0 !ajt FIXME use mat_axpy
                    end if
                    arg(1) = ctr_arg(3, c(1)+i + ncor * (c(2)+j-1) + &
                                        ncor * ncor * (c(3)+k-1), &
@@ -2476,8 +2499,8 @@ type(matrix) :: Db, Fb
 
     if (nf == 0) then
 
-! write(*,*) 'D before', D(1)%elms_alpha
-! write(*,*) 'F before', xcint(1)%elms_alpha
+! write(*,*) 'D before', D(1)%elms
+! write(*,*) 'F before', xcint(1)%elms
 ! 
 ! Db = D(1)
 ! Fb = xcint(1)
@@ -2487,8 +2510,8 @@ type(matrix) :: Db, Fb
 ! Db = D(1) - Db
 ! Fb = xcint(1) - Fb
 ! 
-! write(*,*) 'D chg', Db%elms_alpha
-! write(*,*) 'F after', Fb%elms_alpha
+! write(*,*) 'D chg', Db%elms
+! write(*,*) 'F after', Fb%elms
 
     else if (nf == 1) then
 
@@ -2513,7 +2536,8 @@ type(matrix) :: Db, Fb
              do j = 1, nc(1)
 
                 ! MR: ASSUME CLOSED SHELL
-                call mat_init(tmp_xcint(i,j), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(tmp_xcint(i,j), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
 
              end do
           end do

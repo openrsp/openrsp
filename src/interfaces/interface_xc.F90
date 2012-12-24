@@ -150,7 +150,7 @@ contains
                call xc_integrate(             &
                        mat_dim=mat_dim,       &
                        nr_dmat=1,             &
-                       dmat=(/D%elms_alpha/), &
+                       dmat=(/D%elms/),       &
                        energy=xc_energy,      &
                        get_ave=.true.,        &
                        fmat=(/0.0d0/),        &
@@ -166,9 +166,9 @@ contains
                   call xc_integrate(                 &
                           mat_dim=mat_dim,           &
                           nr_dmat=3,                 &
-                          dmat=(/D%elms_alpha,       &
-                                 Dg(i)%elms_alpha,   &
-                                 Dg(j)%elms_alpha/), &
+                          dmat=(/D%elms,             &
+                                 Dg(i)%elms,         &
+                                 Dg(j)%elms/),       &
                           energy=xc_energy,          &
                           get_ave=.true.,            &
                           fmat=(/0.0d0/),            &
@@ -181,9 +181,9 @@ contains
             nr_dmat = 3
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
             xc_dmat = 0.0d0
-            call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
+            call dcopy(mat_dim*mat_dim, D%elms, 1, xc_dmat(1), 1)
             do j = 1, 3
-               call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
+               call dcopy(mat_dim*mat_dim, Df(j)%elms, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
                do i = 1, nr_atoms*3
                   element = i &
                           + (j-1)*nr_atoms*3
@@ -203,12 +203,12 @@ contains
             nr_dmat = 4
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
             xc_dmat = 0.0d0
-            call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
+            call dcopy(mat_dim*mat_dim, D%elms, 1, xc_dmat(1), 1)
             do k = 1, 3
-               call dcopy(mat_dim*mat_dim, Df(k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
+               call dcopy(mat_dim*mat_dim, Df(k)%elms, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
                do j = 1, k
-                  call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
-                  call dcopy(mat_dim*mat_dim, Dff(j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
+                  call dcopy(mat_dim*mat_dim, Df(j)%elms, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
+                  call dcopy(mat_dim*mat_dim, Dff(j, k)%elms, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
                   do i = 1, nr_atoms*3
                      element = i                &
                              + (j-1)*nr_atoms*3 &
@@ -230,17 +230,17 @@ contains
             nr_dmat = 8
             allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
             xc_dmat = 0.0d0
-            call dcopy(mat_dim*mat_dim, D%elms_alpha, 1, xc_dmat(1), 1)
+            call dcopy(mat_dim*mat_dim, D%elms, 1, xc_dmat(1), 1)
             do i = 1, 3
-               call dcopy(mat_dim*mat_dim, Df(i)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
+               call dcopy(mat_dim*mat_dim, Df(i)%elms, 1, xc_dmat(mat_dim*mat_dim*1 + 1), 1)
                do j = 1, i
-                  call dcopy(mat_dim*mat_dim, Df(j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
-                  call dcopy(mat_dim*mat_dim, Dff(i, j)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
+                  call dcopy(mat_dim*mat_dim, Df(j)%elms, 1, xc_dmat(mat_dim*mat_dim*2 + 1), 1)
+                  call dcopy(mat_dim*mat_dim, Dff(i, j)%elms, 1, xc_dmat(mat_dim*mat_dim*3 + 1), 1)
                   do k = 1, j
-                     call dcopy(mat_dim*mat_dim, Df(k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*4 + 1), 1)
-                     call dcopy(mat_dim*mat_dim, Dff(i, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*5 + 1), 1)
-                     call dcopy(mat_dim*mat_dim, Dff(j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*6 + 1), 1)
-                     call dcopy(mat_dim*mat_dim, Dfff(i, j, k)%elms_alpha, 1, xc_dmat(mat_dim*mat_dim*7 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Df(k)%elms, 1, xc_dmat(mat_dim*mat_dim*4 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Dff(i, k)%elms, 1, xc_dmat(mat_dim*mat_dim*5 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Dff(j, k)%elms, 1, xc_dmat(mat_dim*mat_dim*6 + 1), 1)
+                     call dcopy(mat_dim*mat_dim, Dfff(i, j, k)%elms, 1, xc_dmat(mat_dim*mat_dim*7 + 1), 1)
                      do l = 1, nr_atoms*3
                         element = i                    &
                                 + (j-1)*nr_atoms*3     &
@@ -267,17 +267,17 @@ contains
                      element = i                &
                              + (j-1)*nr_atoms*3 &
                              + (k-1)*(nr_atoms*3)**2
-                     call xc_integrate(                 &
-                             mat_dim=mat_dim,           &
-                             nr_dmat=4,                 &
-                             dmat=(/D%elms_alpha,       &
-                                    Dg(i)%elms_alpha,   &
-                                    Dg(j)%elms_alpha,   &
-                                    Dg(k)%elms_alpha/), &
-                             energy=xc_energy,          &
-                             get_ave=.true.,            &
-                             fmat=(/0.0d0/),            &
-                             geo_coor=(/i, j, k/)       &
+                     call xc_integrate(           &
+                             mat_dim=mat_dim,     &
+                             nr_dmat=4,           &
+                             dmat=(/D%elms,       &
+                                    Dg(i)%elms,   &
+                                    Dg(j)%elms,   &
+                                    Dg(k)%elms/), &
+                             energy=xc_energy,    &
+                             get_ave=.true.,      &
+                             fmat=(/0.0d0/),      &
+                             geo_coor=(/i, j, k/) &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -292,24 +292,24 @@ contains
                                 + (j-1)*nr_atoms*3      &
                                 + (k-1)*(nr_atoms*3)**2 &
                                 + (l-1)*(nr_atoms*3)**3
-                        call xc_integrate(                     &
-                                mat_dim=mat_dim,               &
-                                nr_dmat=11,                    &
-                                dmat=(/D%elms_alpha,           &
-                                       Dg(i)%elms_alpha,       &
-                                       Dg(j)%elms_alpha,       &
-                                       Dg(k)%elms_alpha,       &
-                                       Dg(l)%elms_alpha,       &
-                                       Dgg(i, j)%elms_alpha,   &
-                                       Dgg(i, k)%elms_alpha,   &
-                                       Dgg(i, l)%elms_alpha,   &
-                                       Dgg(j, k)%elms_alpha,   &
-                                       Dgg(j, l)%elms_alpha,   &
-                                       Dgg(k, l)%elms_alpha/), &
-                                energy=xc_energy,              &
-                                get_ave=.true.,                &
-                                fmat=(/0.0d0/),                &
-                                geo_coor=(/i, j, k, l/)        &
+                        call xc_integrate(               &
+                                mat_dim=mat_dim,         &
+                                nr_dmat=11,              &
+                                dmat=(/D%elms,           &
+                                       Dg(i)%elms,       &
+                                       Dg(j)%elms,       &
+                                       Dg(k)%elms,       &
+                                       Dg(l)%elms,       &
+                                       Dgg(i, j)%elms,   &
+                                       Dgg(i, k)%elms,   &
+                                       Dgg(i, l)%elms,   &
+                                       Dgg(j, k)%elms,   &
+                                       Dgg(j, l)%elms,   &
+                                       Dgg(k, l)%elms/), &
+                                energy=xc_energy,        &
+                                get_ave=.true.,          &
+                                fmat=(/0.0d0/),          &
+                                geo_coor=(/i, j, k, l/)  &
                              )
                         res(element) = cmplx(xc_energy, 0.0d0)
                      end do
@@ -359,7 +359,7 @@ contains
       allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
       xc_dmat = 0.0d0
       do imat = 1, nr_dmat
-         call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms_alpha, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
+         call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
       end do
 
       allocate(xc_fmat(mat_dim*mat_dim))
@@ -374,7 +374,7 @@ contains
                            fmat=xc_fmat,     &
                            geo_coor=(/0/)    &
                           )
-         call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms_alpha, 1)
+         call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
       end if
 
       if (present(Fg)) then
@@ -388,7 +388,7 @@ contains
                               fmat=xc_fmat,     &
                               geo_coor=(/i/)    &
                              )
-            call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms_alpha, 1)
+            call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
          end do
       end if
 
@@ -404,7 +404,7 @@ contains
                                  fmat=xc_fmat,     &
                                  geo_coor=(/i, j/) &
                                 )
-               call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms_alpha, 1)
+               call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
             end do
          end do
       end if
