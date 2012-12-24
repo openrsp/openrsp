@@ -1,7 +1,7 @@
 module interface_basis
 
    use basis_set, only: cgto
-   use matrix_backend, only : matrix, mat_really_zero_out_data, mat_alloc, mat_nullify,mat_magic_setup
+   use matrix_lowlevel, only : matrix, mat_init
    use eri_contractions, only: ctr_arg, set_eri_contractions_xfac
    use eri_basis_loops, only: unopt_geodiff_loop
    implicit none
@@ -112,32 +112,15 @@ contains
      ctr_arg_item(1)%ncor = ncor
      nullify(ctr_arg_item(1)%dens)
      allocate(ctr_arg_item(1)%dens)
-     call mat_nullify(ctr_arg_item(1)%dens)
-
-     ctr_arg_item(1)%dens%ncol=nbast
-     ctr_arg_item(1)%dens%nrow=nbast
-     ctr_arg_item(1)%dens%is_closed_shell = .TRUE.
-     ctr_arg_item(1)%dens%is_open_shell   = .FALSE.
-     ctr_arg_item(1)%dens%algebra = 1
-     ctr_arg_item(1)%dens%ih_sym = 1
-     ctr_arg_item(1)%dens%pg_sym = 1
-     ctr_arg_item(1)%dens%magic_tag = mat_magic_setup
-     call mat_alloc(ctr_arg_item(1)%dens)
-     CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%dens%elms_alpha,1)
+     call mat_init(ctr_arg_item(1)%dens, nbast, nbast, &
+                   .false., .false., .false., .false., .false.)
+     CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%dens%elms,1)
      !
      nullify(ctr_arg_item(1)%fock_or_dens)
      allocate(ctr_arg_item(1)%fock_or_dens)
-     call mat_nullify(ctr_arg_item(1)%fock_or_dens)
-     ctr_arg_item(1)%fock_or_dens%ncol=nbast
-     ctr_arg_item(1)%fock_or_dens%nrow=nbast
-     ctr_arg_item(1)%fock_or_dens%is_closed_shell = .TRUE.
-     ctr_arg_item(1)%fock_or_dens%is_open_shell   = .FALSE.
-     ctr_arg_item(1)%fock_or_dens%algebra = 1
-     ctr_arg_item(1)%fock_or_dens%ih_sym = 1
-     ctr_arg_item(1)%fock_or_dens%pg_sym = 1
-     ctr_arg_item(1)%fock_or_dens%magic_tag = mat_magic_setup
-     call mat_alloc(ctr_arg_item(1)%fock_or_dens)
-    CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%fock_or_dens%elms_alpha,1)
+     call mat_init(ctr_arg_item(1)%fock_or_dens, nbast, nbast, &
+                   .false., .false., .false., .false., .false.)
+     CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%fock_or_dens%elms,1)
 !     ctr_arg_item(1)%dens = Dmat
 !     ctr_arg_item(1)%fock_or_dens = Gmat
      ctr_arg_item(1)%average => average

@@ -138,11 +138,11 @@ contains
     !   DV(*)   active part of one-electron density matrix (over MO's)
     ! Scratch:
     !   WRK(LFRSAV)
-    call FCKDEN( GETDC, GETDV, D%elms_alpha, f77_memory(strt_dvao), f77_memory(strt_cmo), &
+    call FCKDEN( GETDC, GETDV, D%elms, f77_memory(strt_dvao), f77_memory(strt_cmo), &
                  f77_memory(strt_dv), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! sums DCAO and DVAO
     if ( GETDV ) &
-      D%elms_alpha(:, :, 1) = D%elms_alpha(:, :, 1) + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
+      D%elms(:, :, 1) = D%elms(:, :, 1) + reshape( f77_memory(strt_dvao : strt_dvao+N2BASX-1), &
                                  (/D%nrow, D%ncol/) )
     ! clean
     call set_f77_memory_next(strt_cmo)
@@ -221,7 +221,7 @@ contains
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_gmat', get_f77_memory_next()-1, get_f77_memory_total() )
     ! sets the total density matrix
     !> \todo this may fail for unrestricted calculations
-    call DCOPY( N2BASX, D%elms_alpha, 1, f77_memory(work_ao_dens), 1 )
+    call DCOPY( N2BASX, D%elms, 1, f77_memory(work_ao_dens), 1 )
     call DSCAL( N2BASX, two, f77_memory(work_ao_dens), 1 )
     ! outputs the total density matrix to check
     ! only one density matrix
@@ -230,7 +230,7 @@ contains
     !> \todo determines IFCTYP run-time
     IFCTYP = 3
     ! calculates two electron contribution by calling SIRFCK
-    call SIRFCK( G%elms_alpha, f77_memory(work_ao_dens), NDMAT, &
+    call SIRFCK( G%elms, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
     ! PCM two-electron contributions
     if ( get_is_pcm_calculation() ) then
@@ -247,17 +247,17 @@ contains
       call DSPTSI( NBAST, f77_memory(work_pcm), f77_memory(work_pcm2) )
 
       ! adds to G
-      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms_alpha, 1 )
+      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms, 1 )
     end if
-    !N if ( .not. restrict_scf ) G%elms_alpha = G%elms_alpha
+    !N if ( .not. restrict_scf ) G%elms = G%elms
     ! cleans
     call set_f77_memory_next(work_ao_dens)
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-    G%elms_alpha = 0.0d0
+    G%elms = 0.0d0
     call interest_mpi_wake_up()
-    call interest_get_int(D%nrow, D%elms_alpha, G%elms_alpha, 0, 1, 0, dummy)
+    call interest_get_int(D%nrow, D%elms, G%elms, 0, 1, 0, dummy)
 #endif /* ifdef PRG_DIRAC */
 
   end subroutine
@@ -294,7 +294,7 @@ contains
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
-    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms_alpha )
+    call DSPTSI( NBAST, f77_memory(work_ovlp), S%elms )
     ! clean
     call set_f77_memory_next(work_ovlp)
 #endif /* ifdef PRG_DALTON */
@@ -365,7 +365,7 @@ contains
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
     ! gets S
     ! gets H1
-    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms_alpha )
+    call DSPTSI( NBAST, f77_memory(work_ham1), H1%elms )
     ! clean
     call set_f77_memory_next(work_ham1)
 #endif /* ifdef PRG_DALTON */
@@ -398,13 +398,13 @@ contains
                              print_unit=get_print_unit()     &
                             )
 
-      T%elms_alpha = 0.0d0
+      T%elms = 0.0d0
 
-      call dcopy(H1%nrow*H1%ncol, TX%elms_alpha, 1, T%elms_alpha(1, 1, 4), 1)
-      call dcopy(H1%nrow*H1%ncol, TY%elms_alpha, 1, T%elms_alpha(1, 1, 3), 1)
-      call dcopy(H1%nrow*H1%ncol, TZ%elms_alpha, 1, T%elms_alpha(1, 1, 2), 1)
+      call dcopy(H1%nrow*H1%ncol, TX%elms, 1, T%elms(1, 1, 4), 1)
+      call dcopy(H1%nrow*H1%ncol, TY%elms, 1, T%elms(1, 1, 3), 1)
+      call dcopy(H1%nrow*H1%ncol, TZ%elms, 1, T%elms(1, 1, 2), 1)
 
-      H1%elms_alpha = 0.0d0
+      H1%elms = 0.0d0
 
       ! kinetic energy = c (\vec \alpha \cdot \vec p)
       H1 = H1 - openrsp_cfg_speed_of_light*T
@@ -515,21 +515,21 @@ contains
             k = k + 1
             do n = 1, nr_g_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = mo_coef(ir)*g*s
+               C%elms(n, k, iz) = mo_coef(ir)*g*s
             end do
          end do
          do m = 1, nr_g_mo_pi
             k = k + 1
             do n = 1, nr_g_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = mo_coef(ir)*g*i
+               C%elms(n, k, iz) = mo_coef(ir)*g*i
             end do
          end do
          do m = 1, nr_g_mo_ps
             k = k + 1
             do n = 1, nr_g_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = mo_coef(ir)*g*s
+               C%elms(n, k, iz) = mo_coef(ir)*g*s
             end do
          end do
       end do
@@ -542,21 +542,21 @@ contains
             k = k + 1
             do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = mo_coef(ir)*u*s
+               C%elms(n, k, iz) = mo_coef(ir)*u*s
             end do
          end do
          do m = 1, nr_u_mo_pi
             k = k + 1
             do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = mo_coef(ir)*u*i
+               C%elms(n, k, iz) = mo_coef(ir)*u*i
             end do
          end do
          do m = 1, nr_u_mo_ps
             k = k + 1
             do n = nr_g_ao + 1, nr_g_ao + nr_u_ao
                ir = ir + 1
-               C%elms_alpha(n, k, iz) = mo_coef(ir)*u*s
+               C%elms(n, k, iz) = mo_coef(ir)*u*s
             end do
          end do
       end do

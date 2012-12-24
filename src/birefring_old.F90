@@ -161,7 +161,7 @@ contains
                        + De(j)*(F+(freq(2)-freq(3))/2*S)*Df(k) &
                        + Df(k)*(F-(freq(2)-freq(3))/2*S)*De(j)
             do i = 1, 3
-               Ebff(i,j,k) = Ebff(i,j,k) - tr(Sb(i),DFDef(j,k))
+               Ebff(i,j,k) = Ebff(i,j,k) - trace(Sb(i),DFDef(j,k))
             end do; DFDef(j,k)=0
          end do
       end do
@@ -174,7 +174,7 @@ contains
          do j = 1, 3
             FDSef = (Fe(j)*Df(k) + Ff(k)*De(j))*S - S*(De(j)*Ff(k) + Df(k)*Fe(j))
             do i = 1, 3
-               Ebff(i,j,k) = Ebff(i,j,k) - tr(DbSD(i),FDSef)
+               Ebff(i,j,k) = Ebff(i,j,k) - trace(DbSD(i),FDSef)
             end do; FDSef=0
          end do
       end do
@@ -190,7 +190,7 @@ contains
          do j = 1, 3
             DSDef = De(j)*S*Df(k) + Df(k)*S*De(j)
             do i = 1, 3
-               Ebff(i,j,k) = Ebff(i,j,k) - tr(FbDS(i),DSDef)
+               Ebff(i,j,k) = Ebff(i,j,k) - trace(FbDS(i),DSDef)
             end do; DSDef=0
          end do
       end do
@@ -293,16 +293,16 @@ contains
          do j = 1, 3
             if (freq(1)==freq(2)) Dt(j) = De(j)
             if (freq(1)==freq(2)) Ft(j) = Fe(j)
-            if (freq(1)/=freq(2)) Dt(j) = trps(De(j))
-            if (freq(1)/=freq(2)) Ft(j) = trps(Fe(j))
+            if (freq(1)/=freq(2)) Dt(j) = trans(De(j))
+            if (freq(1)/=freq(2)) Ft(j) = trans(Fe(j))
             call pert_dens(S, (/'EL','EL'/), (/j,1/), (/D,Dt(:j),De(j)/), &
                            (/F,Ft(:j),Fe(j)/), Dte(:j,j), Fte(:j,j), &
                            freq=(/freq(1),freq(2)/), comp=(/1,j/))
             do i = 1, j-1
                if (freq(1)==freq(2)) Dte(j,i) = Dte(i,j)
                if (freq(1)==freq(2)) Fte(j,i) = Fte(i,j)
-               if (freq(1)/=freq(2)) Dte(j,i) = trps(Dte(i,j))
-               if (freq(1)/=freq(2)) Fte(j,i) = trps(Fte(i,j))
+               if (freq(1)/=freq(2)) Dte(j,i) = trans(Dte(i,j))
+               if (freq(1)/=freq(2)) Fte(j,i) = trans(Fte(i,j))
             end do
          end do
       else
@@ -410,16 +410,16 @@ contains
          do l = 1, 3
             if (freq(3)==freq(4)) De(l) = Df(l)
             if (freq(3)==freq(4)) Fe(l) = Ff(l)
-            if (freq(3)/=freq(4)) De(l) = trps(Df(l))
-            if (freq(3)/=freq(4)) Fe(l) = trps(Ff(l))
+            if (freq(3)/=freq(4)) De(l) = trans(Df(l))
+            if (freq(3)/=freq(4)) Fe(l) = trans(Ff(l))
             call pert_dens(S, (/'EL','EL'/), (/l,1/), (/D,De(:l),Df(l)/), &
                            (/F,Fe(:l),Ff(l)/), Def(:l,l), Fef(:l,l), &
                            freq=(/freq(3),freq(4)/), comp=(/1,l/))
             do k = 1, l-1
                if (freq(3)==freq(4)) Def(l,k) = Def(k,l)
                if (freq(3)==freq(4)) Fef(l,k) = Fef(k,l)
-               if (freq(3)/=freq(4)) Def(l,k) = trps(Def(k,l))
-               if (freq(3)/=freq(4)) Fef(l,k) = trps(Fef(k,l))
+               if (freq(3)/=freq(4)) Def(l,k) = trans(Def(k,l))
+               if (freq(3)/=freq(4)) Fef(l,k) = trans(Fef(k,l))
             end do
          end do
       else
@@ -442,8 +442,8 @@ contains
          do j = 1, 3
             if (freq(1)==freq(2)) Db(j) = Dc(j)
             if (freq(1)==freq(2)) Fb(j) = Fc(j)
-            if (freq(1)/=freq(2)) Db(j) = -trps(Dc(j))
-            if (freq(1)/=freq(2)) Fb(j) = -trps(Fc(j))
+            if (freq(1)/=freq(2)) Db(j) = -trans(Dc(j))
+            if (freq(1)/=freq(2)) Fb(j) = -trans(Fc(j))
          end do
       else
          call pert_dens(S, (/'MAGO'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq(1)/))
@@ -460,8 +460,8 @@ contains
             do j = 1, 3
                if (freq(3)==freq(4)) Dce(j,l) = Dcf(j,l)
                if (freq(3)==freq(4)) Fce(j,l) = Fcf(j,l)
-               if (freq(3)/=freq(4)) Dce(j,l) = -trps(Dcf(j,l))
-               if (freq(3)/=freq(4)) Fce(j,l) = -trps(Fcf(j,l))
+               if (freq(3)/=freq(4)) Dce(j,l) = -trans(Dcf(j,l))
+               if (freq(3)/=freq(4)) Fce(j,l) = -trans(Fcf(j,l))
             end do
          end do
       else
@@ -500,10 +500,10 @@ contains
                   - S * (Dc(j)*Fef(k,l) + De(k)*Fcf(j,l) + Df(l)*Fce(j,k) &
                       +  Def(k,l)*Fc(j) + Dcf(j,l)*Fe(k) + Dce(j,k)*Ff(l))
                do i = 1, 3
-                  Eooff(i,j,k,l) = Eooff(i,j,k,l) - tr(DbSD(i),FDScef)
+                  Eooff(i,j,k,l) = Eooff(i,j,k,l) - trace(DbSD(i),FDScef)
                end do
                do i = 1, 6
-                  Eqoff(i,j,k,l) = Eqoff(i,j,k,l) - tr(DqSD(i),FDScef)
+                  Eqoff(i,j,k,l) = Eqoff(i,j,k,l) - trace(DqSD(i),FDScef)
                end do; FDScef=0
             end do
          end do
@@ -521,10 +521,10 @@ contains
                DSDcef = Dc(j)*S*Def(k,l) + De(k)*S*Dcf(j,l) + Df(l)*S*Dce(j,k) &
                       + Def(k,l)*S*Dc(j) + Dcf(j,l)*S*De(k) + Dce(j,k)*S*Df(l)
                do i = 1, 3
-                  Eooff(i,j,k,l) = Eooff(i,j,k,l) - tr(FbDS(i),DSDcef)
+                  Eooff(i,j,k,l) = Eooff(i,j,k,l) - trace(FbDS(i),DSDcef)
                end do
                do i = 1, 6
-                  Eqoff(i,j,k,l) = Eqoff(i,j,k,l) - tr(FqDS(i),DSDcef)
+                  Eqoff(i,j,k,l) = Eqoff(i,j,k,l) - trace(FqDS(i),DSDcef)
                end do; DSDcef=0
             end do
          end do
@@ -561,8 +561,8 @@ contains
          do j = 1, 3
             if (freq(1)==freq(2)) Db(j) = Dc(j)
             if (freq(1)==freq(2)) Fb(j) = Fc(j)
-            if (freq(1)/=freq(2)) Db(j) = -trps(Dc(j))
-            if (freq(1)/=freq(2)) Fb(j) = -trps(Fc(j))
+            if (freq(1)/=freq(2)) Db(j) = -trans(Dc(j))
+            if (freq(1)/=freq(2)) Fb(j) = -trans(Fc(j))
          end do
       else
          call pert_dens(S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq(1)/))
@@ -579,8 +579,8 @@ contains
             do j = 1, 3
                if (freq(3)==freq(4)) Dce(j,l) = Dcf(j,l)
                if (freq(3)==freq(4)) Fce(j,l) = Fcf(j,l)
-               if (freq(3)/=freq(4)) Dce(j,l) = -trps(Dcf(j,l))
-               if (freq(3)/=freq(4)) Fce(j,l) = -trps(Fcf(j,l))
+               if (freq(3)/=freq(4)) Dce(j,l) = -trans(Dcf(j,l))
+               if (freq(3)/=freq(4)) Fce(j,l) = -trans(Fcf(j,l))
             end do
          end do
       else
@@ -704,7 +704,7 @@ contains
                       + Df(l)*Fce(j,k)*D + D*Ff(l)*Dce(j,k) &
                       + D*Fce(j,k)*Df(l) + Dce(j,k)*Ff(l)*D
                do i = 1, 3
-                  Ebbff(i,j,k,l) = Ebbff(i,j,k,l) - tr(Sb(i),DFDcef)
+                  Ebbff(i,j,k,l) = Ebbff(i,j,k,l) - trace(Sb(i),DFDcef)
                end do; DFDcef=0
             end do
          end do
@@ -731,10 +731,10 @@ contains
                   - Sb(j) * (D*Fef(k,l) + De(k)*Ff(l) + Df(l)*Fe(k)          &
                           +  Def(k,l)*(F+(freq(3)+freq(4))*S))
                do i = 1, 3
-                  Ebbff(i,j,k,l) = Ebbff(i,j,k,l) - tr(DbSD(i),FDScef)
+                  Ebbff(i,j,k,l) = Ebbff(i,j,k,l) - trace(DbSD(i),FDScef)
                end do
                do i = 1, 6
-                  Eqbff(i,j,k,l) = Eqbff(i,j,k,l) - tr(DqSD(i),FDScef)
+                  Eqbff(i,j,k,l) = Eqbff(i,j,k,l) - trace(DqSD(i),FDScef)
                end do; FDScef=0
             end do
          end do
@@ -757,10 +757,10 @@ contains
                       + Dc(j)*S*Def(k,l) + De(k)*S*Dcf(j,l) + Df(l)*S*Dce(j,k) &
                       + Def(k,l)*S*Dc(j) + Dcf(j,l)*S*De(k) + Dce(j,k)*S*Df(l)
                do i = 1, 3
-                  Ebbff(i,j,k,l) = Ebbff(i,j,k,l) - tr(FbDS(i),DSDcef)
+                  Ebbff(i,j,k,l) = Ebbff(i,j,k,l) - trace(FbDS(i),DSDcef)
                end do
                do i = 1, 6
-                  Eqbff(i,j,k,l) = Eqbff(i,j,k,l) - tr(FqDS(i),DSDcef)
+                  Eqbff(i,j,k,l) = Eqbff(i,j,k,l) - trace(FqDS(i),DSDcef)
                end do; DSDcef=0
             end do
          end do

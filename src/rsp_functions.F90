@@ -156,7 +156,8 @@ contains
 
        FDSg(1) = FDSg(1)*D*S - S*D*FDSg(1)
 
-       X(1) = mat_alloc_like(D)
+       X(1) = 0*D
+       call mat_ensure_alloc(X(1), only_alloc=.true.)
        call rsp_mosolver_exec(FDSg(1), (/0d0/), X)
        FDSg(1) = 0
 
@@ -420,7 +421,7 @@ contains
                 + (Fg(k)*D+F*Dg(k))*Sg(j) - (Sg(k)*D+S*Dg(k))*Fg(j) &
                 + (Fg(j)*D+F*Dg(j))*Sg(k) - (Sg(j)*D+S*Dg(j))*Fg(k)
           do i = 1, size(Dg)
-             tmp(i,j,k) = -tr(DgSD(i),FDSgg)
+             tmp(i,j,k) = -trace(DgSD(i),FDSgg)
           end do; FDSgg=0
        end do
     end do; DgSD=0;
@@ -560,7 +561,7 @@ contains
 
     do i = 1, size(Dg)
        do j = 1, size(Dg)
-          Ag(j)%elms_alpha = 0.0d0
+          Ag(j)%elms = 0.0d0
        end do
        call rsp_twoint(S%nrow, 1, (/'GEO '/), (/1/), shape(Ag), Dg(i), Ag)
        call rsp_xcint(D=(/D, Dg(i)/), Fg=Ag)
@@ -569,7 +570,7 @@ contains
           Fgg(j, i) = Fgg(j, i) + Ag(j)
        end do
        do j = 1, i
-          A%elms_alpha = 0.0d0
+          A%elms = 0.0d0
           call rsp_xcint(D=(/D, Dg(i), Dg(j)/), F=A)
           Fgg(i, j) = Fgg(i, j) + A
           if (i /= j) then
@@ -599,6 +600,7 @@ contains
                  - S*Dg(j)*Fg(i) - Sg(i)*D*Fg(j) - Sg(i)*Dg(j)*F - Sgg(i,j)*D*F &
                  - Sg(j)*D*Fg(i) - Sg(j)*Dg(i)*F
           X(1) = 0*RHS(1)
+          call mat_ensure_alloc(X(1), only_alloc=.true.)
           call rsp_mosolver_exec(RHS(1), (/0d0/), X)
           X(1)=-2d0*X(1)
           RHS(1)=0
@@ -888,7 +890,7 @@ contains
                      Dg(k)*(Sgg(i,j)*D+Sg(i)*Dg(j))+(D*Sgg(i,j)+Dg(j)*Sg(i))*Dg(k)
 
             do m = 1, size(Dg)
-              tmp(m,i,j,k) = -tr(FgDS(m),DSDggg2p)
+              tmp(m,i,j,k) = -trace(FgDS(m),DSDggg2p)
             end do; DSDggg2p=0
 
         end do
@@ -921,7 +923,7 @@ contains
                      F*(Dg(i)*Sgg(j,k)+Dg(j)*Sgg(i,k)+Dg(k)*Sgg(i,j)) - &
                      (Sgg(j,k)*Dg(i)+Sgg(i,k)*Dg(j)+Sgg(i,j)*Dg(k))*F
           do m = 1, size(Dg)
-             tmp(m,i,j,k) = -tr(DgSD(m),FDSggg2p)
+             tmp(m,i,j,k) = -trace(DgSD(m),FDSggg2p)
           end do
 
         end do
@@ -1004,7 +1006,8 @@ contains
        FDSf(1) = Ff(i)*D*S
        FDSf(1) = FDSf(1) - S*D*Ff(i)
 
-       X(1) = mat_alloc_like(D)
+       X(1) = 0*D
+       call mat_ensure_alloc(X(1), only_alloc=.true.)
        call rsp_mosolver_exec(FDSf(1), (/0d0/), X)
        FDSf(1) = 0
 
@@ -1172,7 +1175,7 @@ contains
           FDSgf = (Ff(k)*Dg(j)+Fg(j)*Df(k))*S - Sg(j)*(D*Ff(k) + Df(k)*F) &
                 + (Ff(k)*D+F*Df(k))*Sg(j) - S*(Dg(j)*Ff(k) + Df(k)*Fg(j))
           do i = 1, size(Dg)
-             tmp(i,j,k) = -tr(DgSD(i),FDSgf)
+             tmp(i,j,k) = -trace(DgSD(i),FDSgf)
           end do; FDSgf=0
        end do
     end do; DgSD=0;
@@ -1337,7 +1340,8 @@ contains
       Epg = 0.0d0
 
       FDSp(1) = Fp(1)*D*S - S*D*Fp(1)
-      Dp(1)   = mat_alloc_like(D)
+      Dp(1)   = 0*D
+      call mat_ensure_alloc(Dp(1), only_alloc=.true.)
       call rsp_mosolver_exec(FDSp(1), (/0.0d0/), Dp)
       FDSp(1) = 0
       call rsp_twoint(S%nrow, 0, nof, noc, noc, Dp(1), Fp(1))

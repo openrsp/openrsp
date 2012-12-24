@@ -10,6 +10,7 @@
 module rsp_perturbed_matrices
 
   use matrix_defop
+  use matrix_lowlevel, only: mat_init
   use rsp_field_tuple
   use rsp_sdf_caching
 !   use rsp_general, only: rsp_cfg
@@ -185,12 +186,15 @@ module rsp_perturbed_matrices
     type(sdf) :: F, D, S
     type(matrix) :: W, A, B, C
 
-    W%elms_alpha = 0.0
+    W%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, superstructure_size
 
@@ -265,12 +269,15 @@ module rsp_perturbed_matrices
     type(sdf) :: F, D, S
     type(matrix) :: Y, A, B, C
 
-    Y%elms_alpha = 0.0
+    Y%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
     
     do i = 1, superstructure_size
 
@@ -361,12 +368,15 @@ module rsp_perturbed_matrices
     type(matrix) :: Z, A, B, C
 
     ! MaR: Rework to avoid referring to elms_alpha
-    Z%elms_alpha = 0.0
+    Z%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, superstructure_size
 
@@ -385,7 +395,8 @@ module rsp_perturbed_matrices
 
     if (kn_skip(total_num_perturbations, merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-    A = mat_zero_like(zeromat)
+    A = zeromat
+    call mat_ensure_alloc(A)
 
         call sdf_getdata_s(D, merged_p_tuple, get_fds_data_index(merged_p_tuple, &
         total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -417,12 +428,15 @@ module rsp_perturbed_matrices
     type(sdf) :: D, S
     type(matrix) :: L, A, B, C
 
-    L%elms_alpha = 0.0
+    L%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, superstructure_size
 
@@ -475,12 +489,15 @@ module rsp_perturbed_matrices
     type(sdf) :: F, D, S
     type(matrix) :: Zeta, A, B, C
 
-    Zeta%elms_alpha = 0.0
+    Zeta%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(B, zeromat%nrow, zeromat%ncol, .true.)
-    call mat_init(C, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, superstructure_size
 
@@ -590,7 +607,8 @@ module rsp_perturbed_matrices
     if (kn_skip(merged_p_tuple%n_perturbations, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-       A = mat_zero_like(zeromat)
+       A = zeromat
+       call mat_ensure_alloc(A)
 
        call sdf_getdata_s(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, & 
        total_num_perturbations, which_index_is_pid, indices_len, ind), A)

@@ -10,6 +10,7 @@
 module rsp_general
 
   use matrix_defop
+  use matrix_lowlevel, only: mat_init
   use rsp_contribs
   use rsp_field_tuple
   use rsp_indices_and_addressing
@@ -81,7 +82,8 @@ public rsp_cfg
     write(*,*) ' '
 
     ! ASSUME CLOSED SHELL
-    call mat_init(zeromat, S_unperturbed%nrow, S_unperturbed%ncol, .true.)
+    call mat_init(zeromat, S_unperturbed%nrow, S_unperturbed%ncol, &
+                  .true., .false., .false., .false., .false.)
 
     allocate(S)
     S%next => S
@@ -592,7 +594,8 @@ public rsp_cfg
        do i = 1, num_p_tuples
    
           ! ASSUME CLOSED SHELL
-          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, .true.)
+          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, &
+                        .false., .false., .false., .false., .false.)
    
        end do
    
@@ -1099,12 +1102,14 @@ public rsp_cfg
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
     
     ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(W, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
     
     do i = 1, size(outer_indices, 1)
     
        tmp = 0.0
-       W = mat_zero_like(zeromat)
+       W = zeromat
+       call mat_ensure_alloc(W)
  
        call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
                              p12(2)%n_perturbations, which_index_is_pid, &
@@ -1419,12 +1424,14 @@ public rsp_cfg
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(W, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, size(outer_indices, 1)
 
        tmp = 0.0
-       W = mat_zero_like(zeromat)
+       W = zeromat
+       call mat_ensure_alloc(W)
 
        call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
@@ -1750,14 +1757,17 @@ public rsp_cfg
     offset = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Z, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(Z, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Zeta, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(Zeta, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, size(outer_indices_a, 1)
 
-       Zeta = mat_zero_like(zeromat)
+       Zeta = zeromat
+       call mat_ensure_alloc(Zeta)
 
        call rsp_get_matrix_zeta(zeromat, p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
             deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
@@ -1766,7 +1776,8 @@ public rsp_cfg
 
        do j = 1, size(outer_indices_b, 1)
 
-          Z = mat_zero_like(zeromat)
+          Z = zeromat
+          call mat_ensure_alloc(Z)
 
           call rsp_get_matrix_z(zeromat, d_supsize(2), deriv_structb, kn, &
                p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
@@ -1777,7 +1788,7 @@ public rsp_cfg
                    blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
 
-          prop_forcache(offset) = prop_forcache(offset) -tr(Zeta, Z)
+          prop_forcache(offset) = prop_forcache(offset) -trace(Zeta, Z)
 
        end do
 
@@ -2084,14 +2095,17 @@ public rsp_cfg
     offset = 0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Y, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(Y, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(L, zeromat%nrow, zeromat%ncol, .true.)
+    call mat_init(L, zeromat%nrow, zeromat%ncol, &
+                  .false., .false., .false., .false., .false.)
 
     do i = 1, size(outer_indices_a, 1)
 
-       L = mat_zero_like(zeromat)
+       L = zeromat
+       call mat_ensure_alloc(L)
 
        call rsp_get_matrix_lambda(zeromat, p_tuple_getone(p12(1), 1), d_supsize(1), &
             deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
@@ -2099,7 +2113,8 @@ public rsp_cfg
 
        do j = 1, size(outer_indices_b, 1)
 
-          Y = mat_zero_like(zeromat)
+          Y = zeromat
+          call mat_ensure_alloc(Y)
 
           call rsp_get_matrix_y(zeromat, d_supsize(2), deriv_structb, &
                p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
@@ -2111,7 +2126,7 @@ public rsp_cfg
                    blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
 
-          prop_forcache(offset) = prop_forcache(offset) - tr(L, Y)
+          prop_forcache(offset) = prop_forcache(offset) - trace(L, Y)
 
        end do
 

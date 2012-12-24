@@ -140,8 +140,8 @@ contains
     if (any(fld%ncomp /= 1)) &
        call quit('error: rsp_fock expected fld%ncomp = 1')
     if (size(fld) == 1 .and. up_to_order == 0) then
-       DSD = mat_zero_like(S(1))
-       FDS = mat_zero_like(DSD)
+       DSD = 0*S(1)
+       FDS = 0*DSD
     else
        call quit('rsp_pert_eqs: not implemented order size(fld) > 1')
     end if
@@ -178,8 +178,10 @@ contains
     ! minus-right-hand-sides DSD and FDS
     !ajt FIXME Disabled for now
     ! call rsp_eval_eqs(mol, fld, S, D, F, DSD, FDS, size(fld)-1)
-    DSD = mat_zero_like(S(1))
-    FDS = mat_zero_like(S(1))
+    DSD = 0*S(1)
+    call mat_ensure_alloc(DSD)
+    FDS = 0*S(1)
+    call mat_ensure_alloc(FDS)
     ! calculate all lower-order contributions to the p-perturbed Fock
     ! matrices, as well as the p-perturbed overlap matrices
 !     call rsp_fock(mol, fld,
@@ -219,9 +221,9 @@ contains
                 D = sol%D
                 if (present(F) .and. isdef(sol%F)) F = sol%F
              else !if (all(sol%fld%freq  == -fld%freq)) then
-                D = (-1d0)**nanti * trps(sol%D)
+                D = (-1d0)**nanti * trans(sol%D)
                 if (present(F) .and. isdef(sol%F)) &
-                   F = (-1d0)**nanti * trps(sol%F)
+                   F = (-1d0)**nanti * trans(sol%F)
              end if
              if (present(S) .and. isdef(sol%S)) S = sol%S
              exit
@@ -324,14 +326,14 @@ contains
          ! with half the number of multiplications (though twice as many lines)
          if (sym /= 0) then
             D(i) = 1/2d0 * DSD(i) - DSD(i)*SD0
-            D(i) = D(i) - sym*1d0 * trps(D(i)) !symmetrize or anti-symmetrize
+            D(i) = D(i) - sym*1d0 * trans(D(i)) !symmetrize or anti-symmetrize
             FDS(i) = -SD0*FDS(i)
-            FDS(i) = FDS(i) - sym*1d0 * trps(FDS(i)) + F(i)
+            FDS(i) = FDS(i) - sym*1d0 * trans(FDS(i)) + F(i)
             ! ajt Ensure that the perturbed Fock is precisely (anti-)symmetric
             !ajt wrong: F(i) = 1/2d0 * F(i) - 1/2d0*sym * dag(F(i)) !(anti-)symmetrize
          else
-            D(i) = DSD(i) - DSD(i)*SD0 - trps(SD0)*DSD(i)
-            FDS(i) = FDS(i)*trps(SD0) - SD0*FDS(i) + F(i)
+            D(i) = DSD(i) - DSD(i)*SD0 - trans(SD0)*DSD(i)
+            FDS(i) = FDS(i)*trans(SD0) - SD0*FDS(i) + F(i)
          end if
          DSD(i) = 0
       end do
@@ -341,9 +343,9 @@ contains
       do i = 1,neq
          if (sym /= 0) then
             FDS(i) = -SD0*FDS(i)
-            FDS(i) = FDS(i) + 1d0*sym * trps(FDS(i))
+            FDS(i) = FDS(i) + 1d0*sym * trans(FDS(i))
          else
-            FDS(i) = FDS(i)*trps(SD0) - SD0*FDS(i)
+            FDS(i) = FDS(i)*trans(SD0) - SD0*FDS(i)
          end if
       end do
    end subroutine

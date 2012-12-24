@@ -2,6 +2,7 @@ module interface_1el
 
    use openrsp_cfg
    use matrix_defop
+   use matrix_lowlevel, only: mat_init
    use interface_molecule
    use interface_basis
    use interface_f77_memory
@@ -132,17 +133,19 @@ contains
          if (.not. all_frequencies_zero) then
             if (order_geo==1) then
                ! allocate matrices for integrals
-               A(1) = mat_alloc_like(DFD)
-               A(2) = mat_alloc_like(DFD)
+                 A(1) = 0*DFD
+                 call mat_ensure_alloc(A(1), only_alloc=.true.)
+                 A(2) = 0*DFD
+                 call mat_ensure_alloc(A(2), only_alloc=.true.)
                ! loop over nuclear coordinates
                do i = 0, nc(1)-1
                   ! (half-) perturbed overlap -i/2 Tg into A(1), Sg in A(2)
                   call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), A(1))
                   A(1) = -A(1) !SQHDR is really -dS>/dg
-                  A(2) = (-w(1)/2) * (A(1) + trps(A(1)))
-                  A(1) = A(1) + trps(A(1)) !=1DOVL
-                  ave(1+i) = -tr(A(1),DFD)
-                  ave(1+i) = ave(1+i) + tr(A(2),D)
+                  A(2) = (-w(1)/2) * (A(1) + trans(A(1)))
+                  A(1) = A(1) + trans(A(1)) !=1DOVL
+                  ave(1+i) = -trace(A(1),DFD)
+                  ave(1+i) = ave(1+i) + trace(A(2),D)
                end do
                A(1:2) = 0 !deallocate
             else
@@ -312,7 +315,7 @@ contains
                                        order_geo,                  &  !total geometric derivatives
                                        order_geo,                  &
                                        0, (/0/),                   &
-                                       UNIQUE_GEO,              &
+                                       UNIQUE_GEO,                 &
                                        .false., .false., .false.,  &  !not implemented yet
                                        1, (/DFD/), propsize,       &  !expectation values
                                        val_expt, .false.,          &
@@ -523,9 +526,10 @@ contains
 
          ave = 0.0d0
 
-         P = mat_alloc_like(D)
+         P = 0*D
+         call mat_ensure_alloc(P, only_alloc=.true.)
          do i = 1, nc(1)
-            call get_fc_integrals(P%nrow, P%elms_alpha, openrsp_cfg_pnc_center, i, 0)
+            call get_fc_integrals(P%nrow, P%elms, openrsp_cfg_pnc_center, i, 0)
             ave(i) = dot(P, D)
          end do
          P = 0
@@ -641,10 +645,11 @@ contains
             val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(1:num_expt)
 
             ! kinetic energy
-            T = mat_alloc_like(D)
+            T = 0*D
+            call mat_ensure_alloc(T, only_alloc=.true.)
             do ixyz = 1, 3
-               T%elms_alpha = 0.0d0
-               call dcopy(D%nrow*D%ncol, D%elms_alpha(1, 1, 5-ixyz), 1, T%elms_alpha, 1)
+               T%elms = 0.0d0
+               call dcopy(D%nrow*D%ncol, D%elms(1, 1, 5-ixyz), 1, T%elms, 1)
                temp = 0.0d0
                call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
                                           0,                           &
@@ -812,7 +817,7 @@ contains
                                        1, (/D/), propsize,          &  !expectation values
                                        val_expt, .false.,           &
 #ifdef PRG_DIRAC
-                                       2, (/1, 1, 2, 2/),          &
+                                       2, (/1, 1, 2, 2/),           &
 #else
                                        1, (/1, 1/),                &
 #endif
@@ -882,10 +887,11 @@ contains
             val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(1:num_expt)
 
             ! kinetic energy
-            T = mat_alloc_like(D)
+            T = 0*D
+            call mat_ensure_alloc(T, only_alloc=.true.)
             do ixyz = 1, 3
-               T%elms_alpha = 0.0d0
-               call dcopy(D%nrow*D%ncol, D%elms_alpha(1, 1, 5-ixyz), 1, T%elms_alpha, 1)
+               T%elms = 0.0d0
+               call dcopy(D%nrow*D%ncol, D%elms(1, 1, 5-ixyz), 1, T%elms, 1)
                temp = 0.0d0
                call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
                                           0,                           &
@@ -1041,7 +1047,8 @@ contains
       if (any(f=='EL  ')) then
 
          do i = 1, product(nc)
-            call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         call mat_init(ovl(i), nr_ao, nr_ao, &
+                       .false., .false., .false., .false., .false.)
          end do
 
       else
@@ -1072,16 +1079,18 @@ contains
              do i = 0, nc(1)-1
                 ! allocate, if needed
                 if (.not.isdef(ovl(1+i))) then
-                   call mat_init(ovl(1+i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(ovl(1+i), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
                 end if
                 ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
                 call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
                 ovl(1+i)  = -ovl(1+i) !SQHDR is really -dS>/dg
                 fock(1+i) = fock(1+i) - w(1)/2 * ovl(1+i)
-                fock(1+i) = fock(1+i) + w(1)/2 * trps(ovl(1+i))
-                ovl(1+i)  = ovl(1+i)  + trps(ovl(1+i)) !=dS/dg=-1DOVL
+                fock(1+i) = fock(1+i) + w(1)/2 * trans(ovl(1+i))
+                ovl(1+i)  = ovl(1+i)  + trans(ovl(1+i)) !=dS/dg=-1DOVL
              end do
      !FIXME to Andreas: do we need higher order geometric derivatives of overlap integrals with frequencies?
+     !         ajt: I'd assume yes, but probably not in the near future (2013)
            else
              call quit('interface_1el_ovlint>> GEO(>1) with freqencies not implemented!')
            end if
@@ -1089,7 +1098,8 @@ contains
            ! allocates matrices
            do i = 1, num_ints
              if (.not.isdef(ovl(i))) then
-               call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(ovl(i), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
              end if
            end do
            ! calculates the overlap matrix
@@ -1206,7 +1216,8 @@ contains
       if (any(f=='EL  ')) then
 
          do i = 1, propsize
-            call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+            call mat_init(ovl(i), nr_ao, nr_ao, &
+                          .false., .false., .false., .false., .false.)
          end do
 
       else
@@ -1228,10 +1239,12 @@ contains
          ! allocates matrices
          do i = 1, propsize
             if (.not.isdef(ovl(i))) then
-               call mat_init(ovl(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+               call mat_init(ovl(i), nr_ao, nr_ao, &
+                             .false., .false., .false., .false., .false.)
             end if
             if (.not.isdef(ovl_tmp(i))) then
-               call mat_init(ovl_tmp(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+               call mat_init(ovl_tmp(i), nr_ao, nr_ao, &
+                             .false., .false., .false., .false., .false.)
             end if
          end do
          ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
@@ -1359,14 +1372,16 @@ contains
 
            do i = 1, propsize
              if (.not.isdef(fock(i))) then
-               call mat_init(fock(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(fock(i), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
              end if
              if (.not.isdef(tmp_fock(i))) then
-                call mat_init(tmp_fock(i), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(tmp_fock(i), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
              end if
            end do
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
-           call gen1int_host_get_int(LONDON, INT_OVERLAP,       &
+           call gen1int_host_get_int(LONDON, INT_OVERLAP,        &
                                      0,                          &  !multipole moments
                                      0,                          &
                                      count(fbra=='MAG '),        &
@@ -1379,7 +1394,7 @@ contains
                                      0, (/0/),                   &
                                      UNIQUE_GEO,                 &
                                      .false., .false., .false.,  &  !not implemented yet
-                                     propsize, tmp_fock, .false.,   &  !integral matrices
+                                     propsize, tmp_fock, .false.,&  !integral matrices
 #ifdef PRG_DIRAC
                                      2, (/1, 1, 2, 2/),          &
 #else
@@ -1392,26 +1407,6 @@ contains
 
    end subroutine
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #ifdef VAR_LSDALTON
@@ -1469,22 +1464,24 @@ contains
          end if
 
          if (.not. isdef(oneint(1))) then
-            call mat_init(oneint(1), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+            call mat_init(oneint(1), nr_ao, nr_ao, &
+                          .false., .false., .false., .false., .false.)
          end if
-         call get_fc_integrals(nr_ao, oneint(1)%elms_alpha, openrsp_cfg_pnc_center, 0, 0)
+         call get_fc_integrals(nr_ao, oneint(1)%elms, openrsp_cfg_pnc_center, 0, 0)
 #endif /* ifdef PRG_DIRAC */
 
       else if (count(f == 'EL  ') > 1) then
 
          ! radovan: this code does not make sense to me
          !          what is it supposed to do?
-         call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         call mat_init(A, nr_ao, nr_ao, &
+                       .false., .false., .false., .false., .false.)
          do i = 1, product(nc)
             if (iszero(oneint(i))) then
                call mat_ensure_alloc(oneint(i))
-               oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+               oneint(i)%elms = oneint(i)%elms + A%elms
             else
-               oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+               oneint(i)%elms = oneint(i)%elms + A%elms
             end if
          end do
 
@@ -1515,7 +1512,8 @@ contains
 
          do imat = 1, size(oneint)
             if (.not.isdef(oneint(imat))) then
-               call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+               call mat_init(oneint(imat), nr_ao, nr_ao, &
+                             .false., .false., .false., .false., .false.)
             end if
          end do
 
@@ -1545,7 +1543,8 @@ contains
 #ifdef PRG_DIRAC
             allocate(T(3*size(oneint)))
             do i = 1, 3*size(oneint)
-               T(i) = mat_alloc_like(oneint(1))
+               T(i) = 0*oneint(1)
+               call mat_ensure_alloc(T(i), only_alloc=.true.)
             end do
 
             ! nuclear attraction
@@ -1583,7 +1582,7 @@ contains
                oneint(i) = oneint(i) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*T(i)
             end do
 
-!           ! kinetic energy
+            ! kinetic energy
             call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
                                       0,                           &
                                       1,                           &
@@ -1600,11 +1599,11 @@ contains
                                       get_print_unit(), 0)
             do i = 1, size(oneint)
                do ixyz = 1, 3
-                  call daxpy(T(1)%nrow*T(1)%ncol,                &
-                            -openrsp_cfg_speed_of_light,         &
-                             T((i-1)*3 + ixyz)%elms_alpha,       &
-                             1,                                  &
-                             oneint(i)%elms_alpha(1, 1, 5-ixyz), &
+                  call daxpy(T(1)%nrow*T(1)%ncol,          &
+                            -openrsp_cfg_speed_of_light,   &
+                             T((i-1)*3 + ixyz)%elms,       &
+                             1,                            &
+                             oneint(i)%elms(1, 1, 5-ixyz), &
                              1)
                end do
             end do
@@ -1719,13 +1718,14 @@ contains
       end if
 
       if (count(f=='EL  ') > 1) then
-         call mat_init(A, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+         call mat_init(A, nr_ao, nr_ao, &
+                       .false., .false., .false., .false., .false.)
          do i = 1, propsize
             if (iszero(oneint(i))) then
                call mat_ensure_alloc(oneint(i))
-               oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+               oneint(i)%elms = oneint(i)%elms + A%elms
             else
-               oneint(i)%elms_alpha = oneint(i)%elms_alpha + A%elms_alpha
+               oneint(i)%elms = oneint(i)%elms + A%elms
             end if
          end do
 
@@ -1757,10 +1757,12 @@ contains
 
          do imat = 1, size(oneint)
             if (.not.isdef(oneint(imat))) then
-               call mat_init(oneint(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+               call mat_init(oneint(imat), nr_ao, nr_ao, &
+                             .false., .false., .false., .false., .false.)
             end if
              if (.not.isdef(oneint_tmp(imat))) then
-                call mat_init(oneint_tmp(imat), nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
+                call mat_init(oneint_tmp(imat), nr_ao, nr_ao, &
+                              .false., .false., .false., .false., .false.)
              end if
          end do
 
@@ -1793,7 +1795,8 @@ contains
 #ifdef PRG_DIRAC
             allocate(T(3*size(oneint)))
             do i = 1, 3*size(oneint)
-               T(i) = mat_alloc_like(oneint(1))
+               T(i) = 0*oneint(1)
+               call mat_ensure_alloc(T(i), only_alloc=.true.)
             end do
 
             ! nuclear attraction
@@ -1850,9 +1853,9 @@ contains
                do ixyz = 1, 3
                   call daxpy(T(1)%nrow*T(1)%ncol,                &
                             -openrsp_cfg_speed_of_light,         &
-                             T((i-1)*3 + ixyz)%elms_alpha,       &
+                             T((i-1)*3 + ixyz)%elms,       &
                              1,                                  &
-                             oneint(i)%elms_alpha(1, 1, 5-ixyz), &
+                             oneint(i)%elms(1, 1, 5-ixyz), &
                              1)
                end do
             end do
@@ -1873,8 +1876,8 @@ contains
                                       0, (/0/),                  &
                                       UNIQUE_GEO,                &
                                       .false., .false., .false., &  !not implemented yet
-                                      num_ints, oneint_tmp, .false., &  !integral matrices
-                                      1, (/1, 1/),               &
+                                      num_ints, oneint_tmp,      &  !integral matrices
+                                      .false., 1, (/1, 1/),      &
                                       get_print_unit(), 0)
 #endif
          end if
@@ -2279,17 +2282,17 @@ contains
       if (iszero(D)) then
          Dtri = 0
       else
-         if (.not.anti) call DGEFSP(D%nrow, D%elms_alpha, Dtri)
-         if (     anti) call DGETAP(D%nrow, D%elms_alpha, Dtri)
-         ! scale elms_alpha by 4 if anti, 2 if symm
+         if (.not.anti) call DGEFSP(D%nrow, D%elms, Dtri)
+         if (     anti) call DGETAP(D%nrow, D%elms, Dtri)
+         ! scale elms by 4 if anti, 2 if symm
          Dtri = Dtri * merge(4,2,anti)
       end if
       if (iszero(DFD)) then
          DFDtri = 0
       else
-         if (.not.anti) call DGEFSP(D%nrow, DFD%elms_alpha, DFDtri)
-         if (     anti) call DGETAP(D%nrow, DFD%elms_alpha, DFDtri)
-         ! scale elms_alpha by 4 if anti, 2 if symm
+         if (.not.anti) call DGEFSP(D%nrow, DFD%elms, DFDtri)
+         if (     anti) call DGETAP(D%nrow, DFD%elms, DFDtri)
+         ! scale elms by 4 if anti, 2 if symm
          DFDtri = DFDtri * merge(4,2,anti)
       end if
       ! write fo files
@@ -2333,16 +2336,16 @@ contains
     if (.not.present(D)) then
        Dtri = 0
     else if (anti) then
-       call DGETAP(D%nrow, D%elms_alpha, Dtri)
+       call DGETAP(D%nrow, D%elms, Dtri)
     else !symm
-       call DGEFSP(D%nrow, D%elms_alpha, Dtri)
+       call DGEFSP(D%nrow, D%elms, Dtri)
     end if
     if (.not.present(DFD)) then
        DFDtri = 0
     else if (anti) then
-       call DGETAP(DFD%nrow, DFD%elms_alpha, DFDtri)
+       call DGETAP(DFD%nrow, DFD%elms, DFDtri)
     else !symm
-       call DGEFSP(DFD%nrow, DFD%elms_alpha, DFDtri)
+       call DGEFSP(DFD%nrow, DFD%elms, DFDtri)
     end if
     ! write to files
 #ifdef PRG_DIRAC
@@ -2396,7 +2399,7 @@ contains
     intrep = 0 !call dzero(intrep,9*MXCENT)
     intadr = 0 !call dzero(intadr,9*MXCENT)
     ! create triangularly packed matrix from D
-    call DGEFSP(D%nrow, D%elms_alpha, Dtri)
+    call DGEFSP(D%nrow, D%elms, Dtri)
     ncomp = 0
 !      SUBROUTINE GET1IN(SINTMA,WORD,NCOMP,WORK,LWORK,LABINT,INTREP,
 !     &                  INTADR,MPQUAD,TOFILE,KPATOM,TRIMAT,EXPVAL,
@@ -2452,7 +2455,7 @@ contains
       anti = .false. !radovan: was undefined, setting it to false
       call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
 #endif
-      call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_alpha )
+      call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
     else
       ! closes file AOPROPER first
       if ( LUPROP > 0 ) call GPCLOSE( LUPROP, 'KEEP' )
@@ -2461,15 +2464,15 @@ contains
       if ( FNDLB2( prop_lab, RTNLBL, LUPROP ) ) then
         ! square matrix
         if ( RTNLBL(2) == 'SQUARE' ) then
-          call READT( LUPROP, N2BASX, prop_int%elms_alpha )
+          call READT( LUPROP, N2BASX, prop_int%elms )
         ! symmetric matrix
         else if ( RTNLBL(2) == 'SYMMETRI' ) then
           call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
-          call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_alpha )
+          call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
         ! anti-symmetric matrix
         else if ( RTNLBL(2) == 'ANTISYMM' ) then
           call READT( LUPROP, NNBASX, f77_memory(get_f77_memory_next()) )
-          call DAPTGE( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms_alpha )
+          call DAPTGE( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
         else
           call QUIT( 'Error: No symmetry label on AOPROPER!' )
         end if
