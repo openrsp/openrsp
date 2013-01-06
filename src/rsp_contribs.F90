@@ -2314,16 +2314,7 @@ end if
     integer, allocatable, dimension(:,:) :: indices
 
     if (any(f=='EL  ')) then
-       call mat_init(A, nr_ao, nr_ao, &
-                     .false., .false., .false., .false., .false.)
-       do i = 1, propsize
-          if (iszero(fock(i))) then
-             call mat_ensure_alloc(fock(i))
-             fock(i)%elms = fock(i)%elms + A%elms
-          else
-             fock(i)%elms = fock(i)%elms + A%elms
-          end if
-       end do
+       ! nothing to add
     else
 
 #ifdef PRG_DALTON
