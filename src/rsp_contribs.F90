@@ -1563,7 +1563,7 @@ end if
                                                                 pert%pdim(2) /), &
                                            (/pert%pdim(1), 3/), (/i, j/))
 
-write(*,*) 'offset', n, 'size', size(ave)
+! write(*,*) 'offset', n, 'size', size(ave)
 
                 ave(n) = ave(n) + tmp_ave(i, j, 1, 1)
 
@@ -1653,7 +1653,7 @@ write(*,*) 'offset', n, 'size', size(ave)
 
           call rsp_xcave('gff', tmp_ave(:, :, :, 1), D=D, Df=Dg, Dff=Dgg)
 
-
+! write(*,*) 'contribution', tmp_ave(:,:,:,1)
           do i = 1, pert%pdim(1)
              do j = 1, pert%pdim(2)
                 do k = 1, j
@@ -1662,7 +1662,7 @@ write(*,*) 'offset', n, 'size', size(ave)
                                                     pert%pdim(2) /), &
                                               (/pert%pdim(1), 6/), (/i, k, j/))
 
-write(*,*) 'offset', n, 'size', size(ave)
+! write(*,*) 'offset', n, 'size', size(ave)
 
 
                    ave(n) = ave(n) + tmp_ave(i, j, k, 1)

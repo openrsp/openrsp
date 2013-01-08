@@ -72,4 +72,11 @@ module openrsp_cfg
    integer, dimension(2) :: openrsp_cfg_specify_kn
    character(4), allocatable, dimension(:) :: openrsp_cfg_specify_plab
 
+   ! MaR: Keywords for pure vibrational contribution calculation
+
+   logical :: openrsp_cfg_general_pv2f = .false.
+   logical :: openrsp_cfg_general_pv3f = .false.
+   logical :: openrsp_cfg_general_pv4f = .false.
+
+
 end module

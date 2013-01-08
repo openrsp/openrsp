@@ -10,6 +10,8 @@
 module rsp_indices_and_addressing
 
   use rsp_field_tuple
+  use matrix_defop
+  use matrix_lowlevel, only: mat_init, mat_ensure_alloc
 
   implicit none
 
@@ -39,6 +41,7 @@ module rsp_indices_and_addressing
   public make_outerwhichpert
   public get_pidoutersmall
   public sortdimbypid
+  public mat_init_like_and_zero
 
 
   ! Define triangulated index block datatype
@@ -1031,5 +1034,12 @@ module rsp_indices_and_addressing
 
   end subroutine
 
+! Written by AJT. Initializes matrix B from A and explicitly zeroes B
+    subroutine mat_init_like_and_zero(A, B)
+      type(matrix), intent(in)    :: A
+      type(matrix), intent(inout) :: B
+      B = 0*A
+      call mat_ensure_alloc(B)
+    end subroutine 
 
 end module
