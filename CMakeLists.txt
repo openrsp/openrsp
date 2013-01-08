@@ -39,6 +39,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_functions.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_field_tuple.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_general.F90
+    ${PROJECT_SOURCE_DIR}/src/vib_pv_contribs.f90
     ${PROJECT_SOURCE_DIR}/src/vib_prop_old.F90
     ${PROJECT_SOURCE_DIR}/src/nuc_contributions.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_indices_and_addressing.f90

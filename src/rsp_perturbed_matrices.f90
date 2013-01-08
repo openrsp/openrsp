@@ -26,7 +26,7 @@ module rsp_perturbed_matrices
   public rsp_get_matrix_zeta
   public get_fds_data_index
   public frequency_zero_or_sum
-
+  
 
   type rsp_cfg
 
@@ -191,10 +191,15 @@ module rsp_perturbed_matrices
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, A)
+
     call mat_init(B, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, B)
+
     call mat_init(C, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
 
@@ -217,8 +222,8 @@ module rsp_perturbed_matrices
           call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-          W = W + ((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) - &
-                                   frequency_zero_or_sum(deriv_struct(i,1))) * A * B * C
+          W = W + ((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) - &
+                                   frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -230,7 +235,7 @@ module rsp_perturbed_matrices
           call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-          W = W + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
+          W = W + ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
@@ -242,7 +247,7 @@ module rsp_perturbed_matrices
           call sdf_getdata_s(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-          W = W + ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * A * B * C
+          W = W + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * A * B * C
 
        end if
 
@@ -274,10 +279,15 @@ module rsp_perturbed_matrices
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, A)
+
     call mat_init(B, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, B)
+
     call mat_init(C, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, C)
     
     do i = 1, superstructure_size
 
@@ -373,10 +383,15 @@ module rsp_perturbed_matrices
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, A)
+
     call mat_init(B, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, B)
+
     call mat_init(C, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
 
@@ -433,10 +448,15 @@ module rsp_perturbed_matrices
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, A)
+
     call mat_init(B, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, B)
+
     call mat_init(C, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
 
@@ -494,10 +514,15 @@ module rsp_perturbed_matrices
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, A)
+
     call mat_init(B, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, B)
+
     call mat_init(C, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
 

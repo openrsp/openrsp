@@ -301,6 +301,29 @@
          end do
       end if
 
+!     --------------------------------------------------------------------------
+
+      ! MaR: Keywords for pure vibrational contribution calculations
+
+      ! PV contribution to alpha
+
+      if (kw_matches(word, '.PV2FLD')) then
+         openrsp_cfg_general_pv2f = .true.
+      end if
+
+      ! PV contribution to beta
+
+      if (kw_matches(word, '.PV3FLD')) then
+         openrsp_cfg_general_pv3f = .true.
+      end if
+
+      ! PV contribution to gamma
+
+      if (kw_matches(word, '.PV4FLD')) then
+         openrsp_cfg_general_pv4f = .true.
+      end if
+
+
       call check_whether_kw_found(word, kw_section)
 
    end subroutine

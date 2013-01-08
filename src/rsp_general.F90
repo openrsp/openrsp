@@ -84,6 +84,7 @@ public rsp_cfg
     ! ASSUME CLOSED SHELL
     call mat_init(zeromat, S_unperturbed%nrow, S_unperturbed%ncol, &
                   .true., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(S_unperturbed, zeromat)
 
     allocate(S)
     S%next => S
@@ -596,6 +597,7 @@ public rsp_cfg
           ! ASSUME CLOSED SHELL
           call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, &
                         .false., .false., .false., .false., .false.)
+          call mat_init_like_and_zero(zeromat, dens_tuple(i))
    
        end do
    
@@ -1104,6 +1106,7 @@ public rsp_cfg
     ! ASSUME CLOSED SHELL
     call mat_init(W, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, W)
     
     do i = 1, size(outer_indices, 1)
     
@@ -1426,6 +1429,7 @@ public rsp_cfg
     ! ASSUME CLOSED SHELL
     call mat_init(W, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, W)
 
     do i = 1, size(outer_indices, 1)
 
@@ -1759,10 +1763,12 @@ public rsp_cfg
     ! ASSUME CLOSED SHELL
     call mat_init(Z, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, Z)
 
     ! ASSUME CLOSED SHELL
     call mat_init(Zeta, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, Zeta)
 
     do i = 1, size(outer_indices_a, 1)
 
@@ -2097,10 +2103,12 @@ public rsp_cfg
     ! ASSUME CLOSED SHELL
     call mat_init(Y, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, Y)
 
     ! ASSUME CLOSED SHELL
     call mat_init(L, zeromat%nrow, zeromat%ncol, &
                   .false., .false., .false., .false., .false.)
+    call mat_init_like_and_zero(zeromat, L)
 
     do i = 1, size(outer_indices_a, 1)
 

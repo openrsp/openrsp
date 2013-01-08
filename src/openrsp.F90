@@ -60,6 +60,8 @@ module openrsp
   use matrix_lowlevel,  only: mat_init
   use eri_contractions, only: ctr_arg
   use eri_basis_loops,  only: unopt_geodiff_loop
+  use vib_prop_old, only: load_vib_modes
+  use vib_pv_contribs
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -97,7 +99,6 @@ module openrsp
   integer :: print_level = 0
 
 contains
-
 
   subroutine openrsp_setup(WAVPCM, LWORK, WORK)
     logical, intent(in)    :: WAVPCM
@@ -250,6 +251,14 @@ end subroutine
     integer       :: kn(2)
     integer       :: i
     type(p_tuple) :: perturbation_tuple
+real(8), dimension(3) :: fld_dum
+
+    integer       :: n_nm, j, k, ierr
+    real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
+    real(8), allocatable, dimension(:,:) :: T
+    complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
+    complex(8), allocatable, dimension(:,:,:) :: egff_cart, egff_nm, fff_pv
+    complex(8), allocatable, dimension(:,:,:,:) :: egfff_cart, egfff_nm, ffff_pv
 
 
     if (openrsp_cfg_gradient) then
@@ -1061,6 +1070,427 @@ end subroutine
        call rsp_prop(perturbation_tuple, kn, F, D, S)
 
     end if
+
+    if (openrsp_cfg_general_pv2f) then
+
+       ! Get normal mode transformation matrix
+       ! Get normal mode frequencies
+
+fld_dum = 0.0
+
+       allocate(T(3*num_atoms, 3*num_atoms))
+       allocate(nm_freq_b(3*num_atoms))
+
+nm_freq_b = 0.0
+
+       call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
+
+       allocate(nm_freq(n_nm))
+
+nm_freq = 0.0
+
+       nm_freq = nm_freq_b(1:n_nm)
+       deallocate(nm_freq_b)
+
+       allocate(ff_pv(3, 3))
+       allocate(egf_cart(3*num_atoms, 3))
+       allocate(egf_nm(3*n_nm, 3))
+
+ff_pv = 0.0
+egf_cart = 0.0
+egf_nm = 0.0
+
+
+       ! Calculate gradient of dipole moment
+
+       kn = (/0,1/)
+
+       perturbation_tuple%n_perturbations = 2
+       allocate(perturbation_tuple%pdim(2))
+       allocate(perturbation_tuple%plab(2))
+       allocate(perturbation_tuple%pid(2))
+       allocate(perturbation_tuple%freq(2))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3/)
+       perturbation_tuple%pid = (/1, 2/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          read(258,*) fld_dum
+          egf_cart(i, :) = fld_dum
+       end do
+
+       close(258)
+
+       egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
+
+       ! Calculate PV contribution to polarizability
+
+write(*,*) 'egf nm', egf_nm
+       ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(1), &
+                        openrsp_cfg_real_freqs(1) /), dm_1d = egf_nm)
+
+
+       deallocate(T)
+       deallocate(ff_pv)
+       deallocate(egf_cart)
+       deallocate(egf_nm)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+    end if
+
+    if (openrsp_cfg_general_pv3f) then
+
+fld_dum = 0.0
+
+       ! Get normal mode transformation matrix
+       ! Get normal mode frequencies
+
+       allocate(T(3*num_atoms, 3*num_atoms))
+
+       allocate(nm_freq_b(3*num_atoms))
+
+nm_freq_b = 0.0
+
+       call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
+
+       allocate(nm_freq(n_nm))
+
+nm_freq = 0.0
+
+       nm_freq = nm_freq_b(1:n_nm)
+       deallocate(nm_freq_b)
+
+       allocate(ff_pv(3, 3))
+       allocate(fff_pv(3, 3, 3))
+       allocate(egf_cart(3*num_atoms, 3))
+       allocate(egf_nm(3*n_nm, 3))
+       allocate(egff_cart(3*num_atoms, 3, 3))
+       allocate(egff_nm(3*n_nm, 3, 3))
+
+ff_pv = 0.0
+fff_pv = 0.0
+egf_cart = 0.0
+egf_nm = 0.0
+egff_cart = 0.0
+egff_nm = 0.0
+
+
+       ! Calculate gradient of dipole moment
+
+       kn = (/0,1/)
+
+       perturbation_tuple%n_perturbations = 2
+       allocate(perturbation_tuple%pdim(2))
+       allocate(perturbation_tuple%plab(2))
+       allocate(perturbation_tuple%pid(2))
+       allocate(perturbation_tuple%freq(2))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3/)
+       perturbation_tuple%pid = (/1, 2/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          read(258,*) fld_dum
+          egf_cart(i, :) = fld_dum
+       end do
+
+       close(258)
+
+       egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
+
+       ! Calculate PV contribution to polarizability
+
+       ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(1), &
+                        openrsp_cfg_real_freqs(1) /), dm_1d = egf_nm) 
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+      ! Calculate gradient of polarizability
+
+       kn = (/0,2/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(3))
+       allocate(perturbation_tuple%plab(3))
+       allocate(perturbation_tuple%pid(3))
+       allocate(perturbation_tuple%freq(3))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! Read polarizability gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          do j = 1, 3
+             read(258,*) fld_dum
+             egff_cart(i, j, :) = fld_dum
+          end do
+       end do
+
+       close(258)
+
+       egff_nm = trans_cartnc_2w1d(3*num_atoms, n_nm, egff_cart, T(:,1:n_nm))
+
+       ! Calculate PV contribution to 1st hyperpolarizability
+
+       fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0)* sum(openrsp_cfg_real_freqs), &
+                openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(2) /), dm_1d = egf_nm, &
+                po_1d = egff_nm)
+
+       deallocate(T)
+       deallocate(nm_freq)
+       deallocate(ff_pv)
+       deallocate(fff_pv)
+       deallocate(egf_cart)
+       deallocate(egf_nm)
+       deallocate(egff_cart)
+       deallocate(egff_nm)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+    end if
+
+    if (openrsp_cfg_general_pv4f) then
+
+fld_dum = 0.0
+
+       ! Get normal mode transformation matrix
+       ! Get normal mode frequencies
+
+       allocate(T(3*num_atoms, 3*num_atoms))
+
+       allocate(nm_freq_b(3*num_atoms))
+
+nm_freq_b = 0.0
+
+       call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
+
+       allocate(nm_freq(n_nm))
+
+nm_freq = 0.0
+
+       nm_freq = nm_freq_b(1:n_nm)
+       deallocate(nm_freq_b)
+
+       allocate(ff_pv(3, 3))
+       allocate(fff_pv(3, 3, 3))
+       allocate(ffff_pv(3, 3, 3, 3))
+       allocate(egf_cart(3*num_atoms, 3))
+       allocate(egf_nm(3*n_nm, 3))
+       allocate(egff_cart(3*num_atoms, 3, 3))
+       allocate(egff_nm(3*n_nm, 3, 3))
+       allocate(egfff_cart(3*num_atoms, 3, 3, 3))
+       allocate(egfff_nm(3*n_nm, 3, 3, 3))
+
+ff_pv = 0.0
+fff_pv = 0.0
+ffff_pv = 0.0
+egf_cart = 0.0
+egf_nm = 0.0
+egff_cart = 0.0
+egff_nm = 0.0
+egfff_cart = 0.0
+egfff_nm = 0.0
+
+       ! Calculate gradient of dipole moment
+
+       kn = (/0,1/)
+
+       perturbation_tuple%n_perturbations = 2
+       allocate(perturbation_tuple%pdim(2))
+       allocate(perturbation_tuple%plab(2))
+       allocate(perturbation_tuple%pid(2))
+       allocate(perturbation_tuple%freq(2))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3/)
+       perturbation_tuple%pid = (/1, 2/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          read(258,*) fld_dum
+          egf_cart(i, :) = fld_dum
+       end do
+
+       close(258)
+
+       egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
+
+       ! Calculate PV contribution to polarizability
+
+       ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(1), &
+                        openrsp_cfg_real_freqs(1) /), dm_1d = egf_nm) 
+
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
+       ! Calculate gradient of polarizability
+
+       kn = (/0,2/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(3))
+       allocate(perturbation_tuple%plab(3))
+       allocate(perturbation_tuple%pid(3))
+       allocate(perturbation_tuple%freq(3))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! Read polarizability gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          do j = 1, 3
+             read(258,*) fld_dum
+             egff_cart(i, j, :) = fld_dum
+          end do
+       end do
+
+       close(258)
+
+       egff_nm = trans_cartnc_2w1d(3*num_atoms, n_nm, egff_cart, T(:,1:n_nm))
+
+       ! Calculate PV contribution to 1st hyperpolarizability
+
+       fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0)* sum(openrsp_cfg_real_freqs), &
+                openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(2) /), dm_1d = egf_nm, &
+                po_1d = egff_nm)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+       ! Calculate gradient of first hyperpolarizability
+
+       kn = (/0,3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! Read 1st hyperpolarizability gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          do j = 1, 3
+             do k = 1, 3
+                read(258,*) fld_dum
+                egfff_cart(i, j, k, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       egfff_nm = trans_cartnc_3w1d(3*num_atoms, n_nm, egfff_cart, T(:,1:n_nm))
+
+       ! Calculate PV contribution to 2nd hyperpolarizability
+
+       ffff_pv = gamma_pv(n_nm, nm_freq, (/ (-1.0)* sum(openrsp_cfg_real_freqs), &
+                          openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(2), &
+                          openrsp_cfg_real_freqs(3)/), dm_1d = egf_nm, po_1d = egff_nm, &
+                          hp_1d = egfff_nm) 
+
+       deallocate(T)
+       deallocate(nm_freq)
+       deallocate(ff_pv)
+       deallocate(fff_pv)
+       deallocate(ffff_pv)
+       deallocate(egf_cart)
+       deallocate(egf_nm)
+       deallocate(egff_cart)
+       deallocate(egff_nm)
+       deallocate(egfff_cart)
+       deallocate(egfff_nm)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+    end if
+
+
+
 
   end subroutine
 

@@ -12,6 +12,7 @@ module vib_prop_old
    implicit none
 
    public roa_pol_Gpri_Aten_grads
+   public load_vib_modes
    public cars_pol_shyp_polgra
    public vib_ana_polari
    public print_shypol
