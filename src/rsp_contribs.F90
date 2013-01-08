@@ -2324,9 +2324,16 @@ end if
        nullify(null_ptr)
 
        if (nf==0) then
+       call mat_init(A, fock(1)%nrow, fock(1)%ncol, &
+                     .false., .false., .false., .false., .false.)
           A = 0*dens
           call mat_ensure_alloc(A)
+! write(*,*) 'A', A%elms
+! write(*,*) 'dens', dens%elms
+
           call interface_scf_get_g(dens, A)
+
+! write(*,*) 'A 2', A%elms
           fock(1) = fock(1) + A
           A = 0
 

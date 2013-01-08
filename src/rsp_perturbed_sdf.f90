@@ -154,10 +154,24 @@ module rsp_perturbed_sdf
 
     ! 1. Call ovlint and store perturbed overlap matrix
 
+
+    do i = 1, perturbed_matrix_size
+
+       ! ASSUME CLOSED SHELL
+       call mat_init(Sp(i), zeromat%nrow, zeromat%ncol, &
+                     .false., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(zeromat, Sp(i))
+
+    end do
+! write(*,*) 'Sp a', Sp(1)%elms
+
     call rsp_ovlint_tr(zeromat%nrow, pert%n_perturbations, pert%plab, &
                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
                        nblks, blk_info, blk_sizes, &
                        perturbed_matrix_size, Sp)
+
+! write(*,*) 'Sp b', Sp(1)%elms
+
     call sdf_add(S, pert, perturbed_matrix_size, Sp)
 
     deallocate(blk_sizes)
@@ -189,9 +203,13 @@ module rsp_perturbed_sdf
     ! a) For the initial part of Fp: Make the initial recursive (lower order) 
     ! oneint, twoint, and xcint calls as needed
 
+! write(*,*) 'Fp a', Fp(1)%elms
+
     call f_l_cache_allocate(fock_lowerorder_cache)
     call rsp_fock_lowerorder(zeromat, pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          0, D, perturbed_matrix_size, Fp, fock_lowerorder_cache)
+
+! write(*,*) 'Fp b', Fp(1)%elms
 
     deallocate(fock_lowerorder_cache)
 
@@ -220,23 +238,34 @@ module rsp_perturbed_sdf
 
        ind = indices(i, :)
 
+! write(*,*) 'Dp 0', Dp(1)%elms
+
        call rsp_get_matrix_z(zeromat, superstructure_size, derivative_structure, &
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
 
+! write(*,*) 'Dp 1', Dp(1)%elms
+
 
        Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
+! write(*,*) 'Dp 2', Dp(1)%elms
+
 
        call sdf_add(D, pert, perturbed_matrix_size, Dp)
 
        ! 3. Complete the particular contribution to Fp
-
+! write(*,*) 'Fp b2', Fp(1)%elms
        call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
+! write(*,*) 'Fp b3', Fp(1)%elms
        call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , 1, Fp(i:i))
+! write(*,*) 'Fp b4', Fp(1)%elms
+
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
+! write(*,*) 'Fp c', Fp(1)%elms
+
 
        ! 4. Make right-hand side using Dp
 
@@ -249,9 +278,13 @@ module rsp_perturbed_sdf
                      .false., .false., .false., .false., .false.)
        call mat_init_like_and_zero(zeromat, X(1))
 
+! write(*,*) 'RHS a', RHS(1)%elms
+
        call rsp_get_matrix_y(zeromat, superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
+
+! write(*,*) 'RHS b', RHS(1)%elms
 
        ! Note (MaR): Passing only real part of freq. Is this OK?
 #ifndef VAR_LSDALTON
@@ -261,7 +294,7 @@ module rsp_perturbed_sdf
 ! write(*,*) 'Dp', Dp(i)%elms_alpha
 ! write(*,*) 'Sp', Sp(i)%elms_alpha
 ! 
-! write(*,*) 'RHS', RHS(1)%elms_alpha
+! write(*,*) 'RHS c', RHS(1)%elms
 
        call rsp_mosolver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
 #endif

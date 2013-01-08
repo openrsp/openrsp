@@ -1215,10 +1215,12 @@ contains
 
       if (any(f=='EL  ')) then
 
-         do i = 1, propsize
-            call mat_init(ovl(i), nr_ao, nr_ao, &
-                          .false., .false., .false., .false., .false.)
-         end do
+!          do i = 1, propsize
+!             call mat_init(ovl(i), nr_ao, nr_ao, &
+!                           .false., .false., .false., .false., .false.)
+! 
+! 
+!          end do
 
       else
 
