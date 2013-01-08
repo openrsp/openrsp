@@ -410,8 +410,8 @@ module rsp_perturbed_matrices
 
     if (kn_skip(total_num_perturbations, merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-    A = zeromat
-    call mat_ensure_alloc(A)
+!     A = zeromat
+!     call mat_ensure_alloc(A)
 
         call sdf_getdata_s(D, merged_p_tuple, get_fds_data_index(merged_p_tuple, &
         total_num_perturbations, which_index_is_pid, indices_len, ind), A)
