@@ -1722,6 +1722,9 @@ contains
       if (count(f=='EL  ') > 1) then
          call mat_init(A, nr_ao, nr_ao, &
                        .false., .false., .false., .false., .false.)
+         A = 0*oneint(1)
+         call mat_ensure_alloc(A)
+
          do i = 1, propsize
             if (iszero(oneint(i))) then
                call mat_ensure_alloc(oneint(i))
