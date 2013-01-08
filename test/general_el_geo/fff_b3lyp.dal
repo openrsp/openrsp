@@ -27,6 +27,10 @@
 .SPRULE
 0
 2
+.FREQ
+2
+0.1
+0.1
 .SPPLAB
 EL
 EL
