@@ -1453,13 +1453,13 @@ contains
 
     end if
 
-write(*,*) 'Calculated alpha PV'
-
-do i = 1, 3
-
-write(*,*)  real(alpha_pv(i,:))
-
-end do
+! write(*,*) 'Calculated alpha PV'
+! 
+! do i = 1, 3
+! 
+! write(*,*)  real(alpha_pv(i,:))
+! 
+! end do
 
   end function
 
@@ -1951,16 +1951,16 @@ end do
     end if
 
 
-write(*,*) 'Calculated beta PV'
-
-do i = 1, 3
-do j = 1, 3
-
-write(*,*)  real(beta_pv(i,j,:))
-
-end do
-write(*,*) ' '
-end do
+! write(*,*) 'Calculated beta PV'
+! 
+! do i = 1, 3
+! do j = 1, 3
+! 
+! write(*,*)  real(beta_pv(i,j,:))
+! 
+! end do
+! write(*,*) ' '
+! end do
 
   end function
 
@@ -2560,19 +2560,19 @@ end do
     end if
 
 
-write(*,*) 'Calculated gamma PV'
-
-do i = 1, 3
-do j = 1, 3
-do k = 1, 3
-
-write(*,*)  real(gamma_pv(i,j,k,:))
-
-end do 
-write(*,*) ' '
-end do
-write(*,*) ' '
-end do
+! write(*,*) 'Calculated gamma PV'
+! 
+! do i = 1, 3
+! do j = 1, 3
+! do k = 1, 3
+! 
+! write(*,*)  real(gamma_pv(i,j,k,:))
+! 
+! end do 
+! write(*,*) ' '
+! end do
+! write(*,*) ' '
+! end do
 
   end function
 

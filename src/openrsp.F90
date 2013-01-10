@@ -252,8 +252,9 @@ end subroutine
     integer       :: i
     type(p_tuple) :: perturbation_tuple
 real(8), dimension(3) :: fld_dum
+real(8), dimension(3) :: dm
 
-    integer       :: n_nm, j, k, ierr
+    integer       :: n_nm, h, j, k, m, ierr
     real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
     real(8), allocatable, dimension(:,:) :: T
     complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
@@ -1073,21 +1074,50 @@ real(8), dimension(3) :: fld_dum
 
     if (openrsp_cfg_general_pv2f) then
 
+       ! Calculate dipole moment
+
+       kn = (/0,0/)
+
+       perturbation_tuple%n_perturbations = 1
+       allocate(perturbation_tuple%pdim(1))
+       allocate(perturbation_tuple%plab(1))
+       allocate(perturbation_tuple%pid(1))
+       allocate(perturbation_tuple%freq(1))
+
+       perturbation_tuple%plab = (/'EL  '/)
+       perturbation_tuple%pdim = (/3/)
+       perturbation_tuple%pid = (/1/)
+       perturbation_tuple%freq = (/0.0d0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! Read dipole moment from file
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       read(258,*) fld_dum
+          dm = fld_dum
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
        ! Get normal mode transformation matrix
        ! Get normal mode frequencies
 
-fld_dum = 0.0
+       fld_dum = 0.0
 
        allocate(T(3*num_atoms, 3*num_atoms))
        allocate(nm_freq_b(3*num_atoms))
 
-nm_freq_b = 0.0
+       nm_freq_b = 0.0
 
        call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
 
        allocate(nm_freq(n_nm))
 
-nm_freq = 0.0
+       nm_freq = 0.0
 
        nm_freq = nm_freq_b(1:n_nm)
        deallocate(nm_freq_b)
@@ -1096,10 +1126,9 @@ nm_freq = 0.0
        allocate(egf_cart(3*num_atoms, 3))
        allocate(egf_nm(3*n_nm, 3))
 
-ff_pv = 0.0
-egf_cart = 0.0
-egf_nm = 0.0
-
+       ff_pv = 0.0
+       egf_cart = 0.0
+       egf_nm = 0.0
 
        ! Calculate gradient of dipole moment
 
@@ -1137,9 +1166,43 @@ egf_nm = 0.0
 
        ! Calculate PV contribution to polarizability
 
-write(*,*) 'egf nm', egf_nm
        ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(1), &
                         openrsp_cfg_real_freqs(1) /), dm_1d = egf_nm)
+
+       ! Normalize dipole moment - follows procedure by AJT
+
+       if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
+
+          dm = (/0d0, 0d0, 1d0/)
+
+       else
+
+          dm = dm/((sum(dm * dm))**0.5)
+
+       end if
+
+       open(unit=259, file='alpha_pv', status='replace', action='write') 
+
+       write(259,*) 'Pure vibrational output'
+       write(259,*) '======================='
+       write(259,*) ' '
+       write(259,*) 'Frequencies w0, w1 are', (-1.0)* openrsp_cfg_real_freqs(1), ' ,', &
+                  openrsp_cfg_real_freqs(1)
+       write(259,*) ' '
+       write(259,*) 'PV contribution to polarizability'
+       write(259,*) '================================='
+       write(259,*) ' '
+       do i = 1, 3
+          write(259,*)  real(ff_pv(i,:))
+       end do
+       write(259,*) ' '
+       write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+       ! Follows method by AJT
+       write(259,*) 'Dipole^2', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                i = 1, 3), j = 1, 3) /) ))
+       write(259,*) ' '
+
+       close(259)
 
 
        deallocate(T)
@@ -1156,7 +1219,36 @@ write(*,*) 'egf nm', egf_nm
 
     if (openrsp_cfg_general_pv3f) then
 
-fld_dum = 0.0
+       ! Calculate dipole moment
+
+       kn = (/0,0/)
+
+       perturbation_tuple%n_perturbations = 1
+       allocate(perturbation_tuple%pdim(1))
+       allocate(perturbation_tuple%plab(1))
+       allocate(perturbation_tuple%pid(1))
+       allocate(perturbation_tuple%freq(1))
+
+       perturbation_tuple%plab = (/'EL  '/)
+       perturbation_tuple%pdim = (/3/)
+       perturbation_tuple%pid = (/1/)
+       perturbation_tuple%freq = (/0.0d0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! Read dipole moment from file
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       read(258,*) fld_dum
+          dm = fld_dum
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+       fld_dum = 0.0
 
        ! Get normal mode transformation matrix
        ! Get normal mode frequencies
@@ -1165,13 +1257,13 @@ fld_dum = 0.0
 
        allocate(nm_freq_b(3*num_atoms))
 
-nm_freq_b = 0.0
+       nm_freq_b = 0.0
 
        call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
 
        allocate(nm_freq(n_nm))
 
-nm_freq = 0.0
+       nm_freq = 0.0
 
        nm_freq = nm_freq_b(1:n_nm)
        deallocate(nm_freq_b)
@@ -1183,13 +1275,12 @@ nm_freq = 0.0
        allocate(egff_cart(3*num_atoms, 3, 3))
        allocate(egff_nm(3*n_nm, 3, 3))
 
-ff_pv = 0.0
-fff_pv = 0.0
-egf_cart = 0.0
-egf_nm = 0.0
-egff_cart = 0.0
-egff_nm = 0.0
-
+       ff_pv = 0.0
+       fff_pv = 0.0
+       egf_cart = 0.0
+       egf_nm = 0.0
+       egff_cart = 0.0
+       egff_nm = 0.0
 
        ! Calculate gradient of dipole moment
 
@@ -1225,10 +1316,64 @@ egff_nm = 0.0
 
        egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
 
-       ! Calculate PV contribution to polarizability
 
-       ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(1), &
-                        openrsp_cfg_real_freqs(1) /), dm_1d = egf_nm) 
+       ! Normalize dipole moment - follows procedure by AJT
+
+       if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
+
+          dm = (/0d0, 0d0, 1d0/)
+
+       else
+
+          dm = dm/((sum(dm * dm))**0.5)
+
+       end if
+
+
+       do h = 1, 2
+
+          ! Calculate PV contribution to polarizability
+
+          ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(h), &
+                           openrsp_cfg_real_freqs(h) /), dm_1d = egf_nm) 
+
+
+          if (h == 1) then
+
+             open(unit=259, file='alpha_pv', status='replace', action='write') 
+
+          else
+
+             open(unit=259, file='alpha_pv', status='old', action='write', position='append') 
+
+          end if
+
+          write(259,*) 'Pure vibrational output'
+          write(259,*) '======================='
+          write(259,*) ' '
+          write(259,*) 'Frequency combination', h
+          write(259,*) ' '
+          write(259,*) 'Frequencies w0, w1 are', (-1.0)* openrsp_cfg_real_freqs(h), ' ,', &
+                     openrsp_cfg_real_freqs(h)
+          write(259,*) ' '
+          write(259,*) 'PV contribution to polarizability'
+          write(259,*) '================================='
+          write(259,*) ' '
+          do i = 1, 3
+             write(259,*)  real(ff_pv(i,:))
+          end do
+          write(259,*) ' '
+          write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+                                     (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+          ! Follows method by AJT
+          write(259,*) 'Dipole^2', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                   i = 1, 3), j = 1, 3) /) ))
+          write(259,*) ' '
+
+          close(259)
+
+       end do
+
 
        deallocate(perturbation_tuple%pdim)
        deallocate(perturbation_tuple%plab)
@@ -1276,6 +1421,34 @@ egff_nm = 0.0
                 openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(2) /), dm_1d = egf_nm, &
                 po_1d = egff_nm)
 
+       open(unit=259, file='beta_pv', status='replace', action='write') 
+
+       write(259,*) 'Pure vibrational output'
+       write(259,*) '======================='
+       write(259,*) ' '
+       write(259,*) 'Frequencies w0, w1, w2 are', (-1.0)* sum(openrsp_cfg_real_freqs), ' ,', &
+                  openrsp_cfg_real_freqs(1), ' ,', openrsp_cfg_real_freqs(2)
+       write(259,*) ' '
+       write(259,*) 'PV contribution to 1st hyperpolarizability'
+       write(259,*) '=========================================='
+       write(259,*) ' '
+       do i = 1, 3
+          do j = 1, 3
+             write(259,*)  real(fff_pv(i,j,:))
+          end do
+          write(259,*) ' '
+       end do
+       ! Follows method by AJT
+       write(259,*) 'Isotropic:', real((1.0/5.0) * sum ( (/ (( (fff_pv(i,i,j) + &
+                    fff_pv(i,j,i) + fff_pv(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /)))
+       ! Follows method by AJT
+       write(259,*) 'Dipole^3', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
+                                i = 1, 3), j = 1, 3), k = 1, 3) /) ))
+       write(259,*) ' '
+
+       close(259)
+
+
        deallocate(T)
        deallocate(nm_freq)
        deallocate(ff_pv)
@@ -1294,7 +1467,37 @@ egff_nm = 0.0
 
     if (openrsp_cfg_general_pv4f) then
 
-fld_dum = 0.0
+       ! Calculate dipole moment
+
+       kn = (/0,0/)
+
+       perturbation_tuple%n_perturbations = 1
+       allocate(perturbation_tuple%pdim(1))
+       allocate(perturbation_tuple%plab(1))
+       allocate(perturbation_tuple%pid(1))
+       allocate(perturbation_tuple%freq(1))
+
+       perturbation_tuple%plab = (/'EL  '/)
+       perturbation_tuple%pdim = (/3/)
+       perturbation_tuple%pid = (/1/)
+       perturbation_tuple%freq = (/0.0d0/)
+
+       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! Read dipole moment from file
+
+       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       read(258,*) fld_dum
+          dm = fld_dum
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
+       fld_dum = 0.0
 
        ! Get normal mode transformation matrix
        ! Get normal mode frequencies
@@ -1303,13 +1506,13 @@ fld_dum = 0.0
 
        allocate(nm_freq_b(3*num_atoms))
 
-nm_freq_b = 0.0
+       nm_freq_b = 0.0
 
        call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
 
        allocate(nm_freq(n_nm))
 
-nm_freq = 0.0
+       nm_freq = 0.0
 
        nm_freq = nm_freq_b(1:n_nm)
        deallocate(nm_freq_b)
@@ -1324,15 +1527,15 @@ nm_freq = 0.0
        allocate(egfff_cart(3*num_atoms, 3, 3, 3))
        allocate(egfff_nm(3*n_nm, 3, 3, 3))
 
-ff_pv = 0.0
-fff_pv = 0.0
-ffff_pv = 0.0
-egf_cart = 0.0
-egf_nm = 0.0
-egff_cart = 0.0
-egff_nm = 0.0
-egfff_cart = 0.0
-egfff_nm = 0.0
+       ff_pv = 0.0
+       fff_pv = 0.0
+       ffff_pv = 0.0
+       egf_cart = 0.0
+       egf_nm = 0.0
+       egff_cart = 0.0
+       egff_nm = 0.0
+       egfff_cart = 0.0
+       egfff_nm = 0.0
 
        ! Calculate gradient of dipole moment
 
@@ -1368,11 +1571,61 @@ egfff_nm = 0.0
 
        egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
 
-       ! Calculate PV contribution to polarizability
+       ! Normalize dipole moment - follows procedure by AJT
 
-       ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(1), &
-                        openrsp_cfg_real_freqs(1) /), dm_1d = egf_nm) 
+       if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
 
+          dm = (/0d0, 0d0, 1d0/)
+
+       else
+
+          dm = dm/((sum(dm * dm))**0.5)
+
+       end if
+
+       do h = 1, 3
+
+          ! Calculate PV contribution to polarizability
+
+          ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(h), &
+                           openrsp_cfg_real_freqs(h) /), dm_1d = egf_nm) 
+
+
+          if (h == 1) then
+
+             open(unit=259, file='alpha_pv', status='replace', action='write') 
+
+          else
+
+             open(unit=259, file='alpha_pv', status='old', action='write', position='append') 
+
+          end if
+
+          write(259,*) 'Pure vibrational output'
+          write(259,*) '======================='
+          write(259,*) ' '
+          write(259,*) 'Frequency combination', h
+          write(259,*) ' '
+          write(259,*) 'Frequencies w0, w1 are', (-1.0)* openrsp_cfg_real_freqs(h), ' ,', &
+                        openrsp_cfg_real_freqs(h)
+          write(259,*) ' '
+          write(259,*) 'PV contribution to polarizability'
+          write(259,*) '================================='
+          write(259,*) ' '
+          do i = 1, 3
+             write(259,*)  real(ff_pv(i,:))
+          end do
+          write(259,*) ' '
+          write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+                                     (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+          ! Follows method by AJT
+          write(259,*) 'Dipole^2', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                   i = 1, 3), j = 1, 3) /) ))
+          write(259,*) ' '
+
+          close(259)
+
+       end do
 
        deallocate(perturbation_tuple%pdim)
        deallocate(perturbation_tuple%plab)
@@ -1415,11 +1668,89 @@ egfff_nm = 0.0
 
        egff_nm = trans_cartnc_2w1d(3*num_atoms, n_nm, egff_cart, T(:,1:n_nm))
 
-       ! Calculate PV contribution to 1st hyperpolarizability
+       do h = 1, 3
 
-       fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0)* sum(openrsp_cfg_real_freqs), &
-                openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(2) /), dm_1d = egf_nm, &
-                po_1d = egff_nm)
+          ! Calculate PV contribution to 1st hyperpolarizability
+
+          if (h == 1) then
+
+             fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0)* (openrsp_cfg_real_freqs(1) + &
+                      openrsp_cfg_real_freqs(2)), openrsp_cfg_real_freqs(1), &
+                      openrsp_cfg_real_freqs(2) /), dm_1d = egf_nm, po_1d = egff_nm)
+
+          elseif (h == 2) then
+
+             fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0)* (openrsp_cfg_real_freqs(1) + &
+                      openrsp_cfg_real_freqs(3)), openrsp_cfg_real_freqs(1), &
+                      openrsp_cfg_real_freqs(3) /), dm_1d = egf_nm, po_1d = egff_nm)
+
+          elseif (h == 3) then
+
+             fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0)* (openrsp_cfg_real_freqs(2) + &
+                      openrsp_cfg_real_freqs(3)), openrsp_cfg_real_freqs(2), &
+                      openrsp_cfg_real_freqs(3) /), dm_1d = egf_nm, po_1d = egff_nm)
+
+          end if
+
+          if (h == 1) then
+
+             open(unit=259, file='beta_pv', status='replace', action='write') 
+
+          else
+
+             open(unit=259, file='beta_pv', status='old', action='write', position='append') 
+
+          end if
+
+          write(259,*) 'Pure vibrational output'
+          write(259,*) '======================='
+          write(259,*) ' '
+          write(259,*) 'Frequency combination', h
+          write(259,*) ' '
+
+          if (h == 1) then
+
+             write(259,*) 'Frequencies w0, w1, w2 are', (-1.0)* (openrsp_cfg_real_freqs(1) + &
+                          openrsp_cfg_real_freqs(2)), ' ,', openrsp_cfg_real_freqs(1), ' ,', &
+                          openrsp_cfg_real_freqs(2)
+
+          elseif (h == 2) then
+
+             write(259,*) 'Frequencies w0, w1, w2 are', (-1.0)* (openrsp_cfg_real_freqs(1) + &
+                          openrsp_cfg_real_freqs(3)), ' ,', openrsp_cfg_real_freqs(1), ' ,', &
+                          openrsp_cfg_real_freqs(3)
+
+          elseif (h == 3) then
+
+             write(259,*) 'Frequencies w0, w1, w2 are', (-1.0)* (openrsp_cfg_real_freqs(2) + &
+                          openrsp_cfg_real_freqs(3)), ' ,', openrsp_cfg_real_freqs(2), ' ,', &
+                          openrsp_cfg_real_freqs(3)
+
+          end if
+
+
+          write(259,*) ' '
+          write(259,*) 'PV contribution to 1st hyperpolarizability'
+          write(259,*) '=========================================='
+          write(259,*) ' '
+          do i = 1, 3
+             do j = 1, 3
+                write(259,*)  real(fff_pv(i,j,:))
+             end do
+             write(259,*) ' '
+          end do
+          ! Follows method by AJT
+          write(259,*) 'Isotropic:', real(((1.0)/(5.0)) * sum ( (/ (((fff_pv(i,i,j) + &
+                                     fff_pv(i,j,i) + fff_pv(j,i,i)) * dm(j), &
+                                     i = 1, 3), j = 1, 3) /)))
+          ! Follows method by AJT
+          write(259,*) 'Dipole^3', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
+                                   i = 1, 3), j = 1, 3), k = 1, 3) /) ))
+          write(259,*) ' '
+
+          close(259)
+
+       end do
 
        deallocate(perturbation_tuple%pdim)
        deallocate(perturbation_tuple%plab)
@@ -1469,6 +1800,39 @@ egfff_nm = 0.0
                           openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(2), &
                           openrsp_cfg_real_freqs(3)/), dm_1d = egf_nm, po_1d = egff_nm, &
                           hp_1d = egfff_nm) 
+
+
+       open(unit=259, file='gamma_pv', status='replace', action='write') 
+
+       write(259,*) 'Pure vibrational output'
+       write(259,*) '======================='
+       write(259,*) ' '
+       write(259,*) 'Frequencies w0, w1, w2, w3 are', (-1.0)* sum(openrsp_cfg_real_freqs), & 
+                  ' ,', openrsp_cfg_real_freqs(1), ' ,', openrsp_cfg_real_freqs(2), &
+                  ' ,', openrsp_cfg_real_freqs(3)
+       write(259,*) ' '
+       write(259,*) 'PV contribution to 2nd hyperpolarizability'
+       write(259,*) '=========================================='
+       write(259,*) ' '
+       do i = 1, 3
+          do j = 1, 3
+             do k = 1, 3
+                write(259,*)  real(ffff_pv(i,j,k,:))
+             end do 
+             write(259,*) ' '
+          end do
+          write(259,*) ' '
+       end do
+       ! Follows method by AJT
+       write(259,*) 'Isotropic:', real(((1.0)/(15.0)) * sum ((/ ((ffff_pv(i,i,j,j) + &
+                    ffff_pv(i,j,i,j) + ffff_pv(i,j,j,i), i = 1, 3), j = 1, 3) /)))
+       ! Follows method by AJT
+       write(259,*) 'Dipole^4', real(sum( (/ ((((ffff_pv(i,j,k,m) * dm(i) * dm(j) * dm(k) * &
+                                dm(m), i = 1, 3), j = 1, 3), k = 1, 3), m = 1, 3) /) ))
+       write(259,*) ' '
+
+       close(259)
+
 
        deallocate(T)
        deallocate(nm_freq)
