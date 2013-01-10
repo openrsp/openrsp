@@ -1929,9 +1929,8 @@ else
 
        do i = 1, propsize
           
-          ! ASSUME CLOSED SHELL
-          call mat_init(tmp_fock(i), nr_ao, nr_ao, &
-                        .false., .false., .false., .false., .false.)
+          tmp_fock(i) = 0 * fock(1)
+          call mat_ensure_alloc(tmp_fock(i))
 
        end do
 
