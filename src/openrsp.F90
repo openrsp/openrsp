@@ -1124,7 +1124,7 @@ real(8), dimension(3) :: dm
 
        allocate(ff_pv(3, 3))
        allocate(egf_cart(3*num_atoms, 3))
-       allocate(egf_nm(3*n_nm, 3))
+       allocate(egf_nm(n_nm, 3))
 
        ff_pv = 0.0
        egf_cart = 0.0
@@ -1271,9 +1271,9 @@ real(8), dimension(3) :: dm
        allocate(ff_pv(3, 3))
        allocate(fff_pv(3, 3, 3))
        allocate(egf_cart(3*num_atoms, 3))
-       allocate(egf_nm(3*n_nm, 3))
+       allocate(egf_nm(n_nm, 3))
        allocate(egff_cart(3*num_atoms, 3, 3))
-       allocate(egff_nm(3*n_nm, 3, 3))
+       allocate(egff_nm(n_nm, 3, 3))
 
        ff_pv = 0.0
        fff_pv = 0.0
@@ -1521,11 +1521,11 @@ real(8), dimension(3) :: dm
        allocate(fff_pv(3, 3, 3))
        allocate(ffff_pv(3, 3, 3, 3))
        allocate(egf_cart(3*num_atoms, 3))
-       allocate(egf_nm(3*n_nm, 3))
+       allocate(egf_nm(n_nm, 3))
        allocate(egff_cart(3*num_atoms, 3, 3))
-       allocate(egff_nm(3*n_nm, 3, 3))
+       allocate(egff_nm(n_nm, 3, 3))
        allocate(egfff_cart(3*num_atoms, 3, 3, 3))
-       allocate(egfff_nm(3*n_nm, 3, 3, 3))
+       allocate(egfff_nm(n_nm, 3, 3, 3))
 
        ff_pv = 0.0
        fff_pv = 0.0
