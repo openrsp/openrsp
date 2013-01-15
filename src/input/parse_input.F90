@@ -101,6 +101,21 @@
          end do
       end if
 
+      ! MaR: Support for multiple frequency tuples
+      ! Extend this support to ordinary rsp property calculations
+
+      if (kw_matches(word, '.MFREQS')) then
+         call kw_read(word, openrsp_cfg_nr_freq_tuples)
+         call kw_read(word, openrsp_cfg_nr_real_freqs) ! Here used as freqs. per tuple
+         allocate(openrsp_cfg_real_freqs(openrsp_cfg_nr_freq_tuples * &
+                                         openrsp_cfg_nr_real_freqs))
+         do i = 1, openrsp_cfg_nr_freq_tuples
+               read(get_file_unit(), *) openrsp_cfg_real_freqs( &
+               (i - 1) * openrsp_cfg_nr_freq_tuples + 1 : &
+               (i - 1) * openrsp_cfg_nr_freq_tuples + openrsp_cfg_nr_real_freqs)
+         end do
+      end if
+
       if (kw_matches(word, '.IMFREQ')) then
          call kw_read(word, openrsp_cfg_nr_imag_freqs)
          allocate(openrsp_cfg_imag_freqs(openrsp_cfg_nr_imag_freqs))
