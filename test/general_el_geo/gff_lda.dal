@@ -27,6 +27,9 @@
 .SPRULE
 0
 2
+.FREQ
+1
+0.1
 .SPPLAB
 GEO
 EL
