@@ -26,6 +26,9 @@ module openrsp_cfg
    integer              :: openrsp_cfg_nr_imag_freqs = 1
    real(8), allocatable :: openrsp_cfg_imag_freqs(:)
 
+   ! MaR: Support for multiple frequency tuples
+   integer              :: openrsp_cfg_nr_freq_tuples = 1
+
    logical :: openrsp_cfg_gradient        = .false.
    logical :: openrsp_cfg_hessian         = .false.
    logical :: openrsp_cfg_dipole_gradient = .false.
