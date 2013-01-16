@@ -111,8 +111,8 @@
                                          openrsp_cfg_nr_real_freqs))
          do i = 1, openrsp_cfg_nr_freq_tuples
                read(get_file_unit(), *) openrsp_cfg_real_freqs( &
-               (i - 1) * openrsp_cfg_nr_freq_tuples + 1 : &
-               (i - 1) * openrsp_cfg_nr_freq_tuples + openrsp_cfg_nr_real_freqs)
+               (i - 1) * openrsp_cfg_nr_real_freqs + 1 : &
+               i * openrsp_cfg_nr_real_freqs)
          end do
       end if
 
