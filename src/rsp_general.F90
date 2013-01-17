@@ -18,6 +18,7 @@ module rsp_general
   use rsp_perturbed_sdf
   use rsp_property_caching
   use rsp_sdf_caching
+  use interface_xc
 
   implicit none
 
@@ -137,7 +138,8 @@ public rsp_cfg
     write(*,*) ' '
     call cpu_time(timing_start)
 
-    call get_prop(pert, kn, nr_ao, property_size, prop, F, D, S)
+    call get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
+                  property_size, prop, F, D, S)
 
     call cpu_time(timing_end)
     write(*,*) 'Clock stopped: Property was calculated'
@@ -170,15 +172,18 @@ public rsp_cfg
 
   end subroutine
 
-  subroutine get_prop(pert, kn, nr_ao, property_size, prop, F, D, S)
+  subroutine get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
+                      property_size, prop, F, D, S)
 
     implicit none
 
     type(SDF) :: F, D, S
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: emptyp_tuples
-    integer :: property_size, nr_ao
+    integer :: property_size, nr_ao, num_blks
     integer, dimension(2) :: kn
+    integer, dimension(num_blks) :: blk_sizes
+    integer, dimension(num_blks,3) :: blk_info
     complex(8), dimension(property_size) :: prop, p_diff
     type(property_cache), pointer :: energy_cache, pulay_kn_cache, &
                                      pulay_lag_cache, idem_cache, scfe_cache
@@ -222,7 +227,8 @@ public rsp_cfg
     write(*,*) 'Calculating exchange/correlation contributions'
     write(*,*) ' '
 
-    call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
+!     call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
+call rsp_xcave_new(nr_ao, pert, num_blks, blk_sizes, blk_info, property_size, prop, D)
 
     write(*,*) ' '
     write(*,*) 'Finished calculating exchange/correlation contributions'
