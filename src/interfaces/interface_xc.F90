@@ -109,6 +109,7 @@ contains
    subroutine rsp_xcave_new(mat_dim, pert, num_blks, blk_sizes, blk_info, property_size, prop, D_sdf)
 
 !     ---------------------------------------------------------------------------
+      integer                            :: num_blks, property_size
       type(p_tuple)           :: pert
       type(SDF) :: D_sdf
       complex(8),   dimension(property_size) :: prop, res
@@ -117,7 +118,6 @@ contains
       integer                            :: i, j, k, l, maxcomp1, maxcomp2, maxcomp3
       integer                            :: element
       integer                            :: mat_dim
-      integer                            :: num_blks, property_size
       integer, dimension(num_blks) :: blk_sizes
       integer, dimension(num_blks,3) :: blk_info
       integer                            :: nr_atoms
