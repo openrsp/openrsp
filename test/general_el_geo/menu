@@ -8,5 +8,3 @@
   fff_lda.dal    mol.mol -get rsp_tensor
   ffff_lda.dal   mol.mol -get rsp_tensor
   fffff_lda.dal  mol.mol -get rsp_tensor
-
-  gfff_hf.dal    mol.mol -get rsp_tensor
