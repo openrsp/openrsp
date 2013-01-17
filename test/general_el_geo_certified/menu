@@ -1,2 +1,3 @@
-  gf_b3lyp.dal  mol.mol -get rsp_tensor
-  gff_b3lyp.dal mol.mol -get rsp_tensor
+  gf_b3lyp.dal   mol.mol -get rsp_tensor
+  gff_b3lyp.dal  mol.mol -get rsp_tensor
+  gfff_b3lyp.dal mol.mol -get rsp_tensor
