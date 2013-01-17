@@ -230,8 +230,7 @@ contains
          else if ((count(pert%plab == 'GEO ') == 1) .AND. &
                 (count(pert%plab == 'EL  ') == 1)) then
 
-            ! MaR: Why not size 2? I used 3 because the original code used that
-            allocate(dmat_tuple(3))
+            allocate(dmat_tuple(2))
 
             call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
@@ -246,10 +245,9 @@ contains
 
                   call xc_integrate(        &
                           mat_dim=mat_dim,  &
-                          nr_dmat=3,  &
+                          nr_dmat=2,  &
                           dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms,  &
-                                 dmat_tuple(3)%elms/),&
+                                 dmat_tuple(2)%elms/),&
                           energy=xc_energy, &
                           get_ave=.true.,   &
                           fmat=(/0.0d0/),   &
