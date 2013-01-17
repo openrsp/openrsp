@@ -494,7 +494,7 @@ contains
 ! If so, do "nonredundant loop" for field 2, if not, do all 3 components of both field 1 and 2
                if (p_tuple_compare(p_tuple_getone(pert, 2) , &
                    p_tuple_getone(pert, 3)) .eqv. .TRUE.) then
-                  maxcomp2 = k
+                  maxcomp2 = i
                else
                   maxcomp2 = 3
                end if
