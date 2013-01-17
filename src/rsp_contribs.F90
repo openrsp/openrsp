@@ -1653,17 +1653,17 @@ end if
 
           call rsp_xcave('gff', tmp_ave(:, :, :, 1), D=D, Df=Dg, Dff=Dgg)
 
-! write(*,*) 'contribution', tmp_ave(:,:,:,1)
+ write(*,*) 'contribution', tmp_ave(:,:,:,1)
           do i = 1, pert%pdim(1)
              do j = 1, pert%pdim(2)
                 do k = 1, j
-
+write(*,*) 'i j k', i, j, k
                    n = get_triang_blks_offset(2, 3, (/ 1, 2, 1, 2, pert%pdim(1), &
                                                     pert%pdim(2) /), &
                                               (/pert%pdim(1), 6/), (/i, k, j/))
 
-! write(*,*) 'offset', n, 'size', size(ave)
-
+write(*,*) 'offset', n
+write(*,*) 'property is', tmp_ave(i, j, k, 1)
 
                    ave(n) = ave(n) + tmp_ave(i, j, k, 1)
 
