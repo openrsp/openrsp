@@ -122,28 +122,12 @@ contains
       integer, dimension(num_blks,3) :: blk_info
       integer                            :: nr_atoms
       real(8)                            :: xc_energy
-      integer                            :: nr_pert_geo
-      integer                            :: nr_pert_el
 !     ---------------------------------------------------------------------------
 
       res = 0.0
       if (.not. get_is_ks_calculation()) return
 
       nr_atoms = get_nr_atoms()
-
-      nr_pert_geo = 0
-      nr_pert_el  = 0
-      do i = 1, pert%n_perturbations
-         select case (pert%plab(i))
-            case ('EL  ')
-               nr_pert_el = nr_pert_el + 1
-            case ('GEO ')
-               nr_pert_geo = nr_pert_geo + 1
-            case default
-               print *, 'Error: rsp_xcave: unknown perturbation type', pert%plab(i)
-               stop 1
-         end select
-      end do
 
       if (pert%n_perturbations == 1) then
 
