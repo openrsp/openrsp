@@ -130,7 +130,6 @@ contains
       if (.not. get_is_ks_calculation()) return
 
       nr_atoms = get_nr_atoms()
-!       mat_dim  = D%nrow !fixme this is not set
 
       nr_pert_geo = 0
       nr_pert_el  = 0
