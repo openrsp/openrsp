@@ -382,14 +382,14 @@ contains
 
                do j = 1, i
 
-                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(2))
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
 
                   call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
                                      p_tuple_getone(pert, 2)), (/i,j/), dmat_tuple(6))
 
                   do k = 1, j
 
-                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(3))
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
 
                      call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
                                         p_tuple_getone(pert, 3)), (/i,k/), dmat_tuple(7))
@@ -399,7 +399,7 @@ contains
 
                      do l = 1, k
 
-                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(4))
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(5))
 
 
                         call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
