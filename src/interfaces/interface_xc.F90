@@ -127,9 +127,10 @@ contains
 !     ---------------------------------------------------------------------------
 
       res = 0.0
+      if (.not. get_is_ks_calculation()) return
 
       nr_atoms = get_nr_atoms()
-!       mat_dim  = D%nrow
+!       mat_dim  = D%nrow !fixme this is not set
 
       nr_pert_geo = 0
       nr_pert_el  = 0
@@ -144,14 +145,6 @@ contains
                stop 1
          end select
       end do
-
-      if (nr_pert_el > 0) then
-         res(1:((nr_atoms*3)**nr_pert_geo)*(3*nr_pert_el)) = 0.0d0
-      else
-         res(1:((nr_atoms*3)**nr_pert_geo)) = 0.0d0
-      end if
-      if (.not. get_is_ks_calculation()) return
-
 
       if (pert%n_perturbations == 1) then
 
