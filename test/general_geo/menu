@@ -1,7 +1,7 @@
-  g_b3lyp.dal  mol.mol   -get rsp_tensor
-# g_b3lyp.dal  mol+p.mol -get rsp_tensor
-# g_b3lyp.dal  mol-p.mol -get rsp_tensor
+  g_b3lyp.dal    mol.mol -get rsp_tensor
+  gg_b3lyp.dal   mol.mol -get rsp_tensor
+  ggg_b3lyp.dal  mol.mol -get rsp_tensor
+# gggg_b3lyp.dal mol.mol -get rsp_tensor
 
-  gg_b3lyp.dal mol.mol   -get rsp_tensor
-# gg_b3lyp.dal mol+p.mol -get rsp_tensor
-# gg_b3lyp.dal mol-p.mol -get rsp_tensor
+# ggg_b3lyp.dal mol+p.mol -get rsp_tensor
+# ggg_b3lyp.dal mol-p.mol -get rsp_tensor
