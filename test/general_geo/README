@@ -1,0 +1,9 @@
+
+with .ULTRAFINE grid
+
+      LDA                 B3LYP
+      ff      response    ff      response
+
+gg    0.9653  0.9657      0.9652  0.9655
+ggg  -2.9853 -2.9947     -2.9820 -2.9860
+gggg  8.7404  8.8306      8.9159  8.8184
