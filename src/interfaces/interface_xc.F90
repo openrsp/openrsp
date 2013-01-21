@@ -155,6 +155,7 @@ contains
                        get_ave=.true.,              &
                        fmat=(/0.0d0/),              &
                        geo_coor=(/i/),              &
+                       pert_labels=(/pert%plab/),   &
                        kn=kn                        &
                     )
                res(element) = cmplx(xc_energy, 0.0d0)
@@ -203,6 +204,7 @@ contains
                           get_ave=.true.,              &
                           fmat=(/0.0d0/),              &
                           geo_coor=(/i, j/),           &
+                       pert_labels=(/pert%plab/),   &
                           kn=kn                        &
                        )
 
@@ -238,6 +240,7 @@ contains
                           get_ave=.true.,              &
                           fmat=(/0.0d0/),              &
                           geo_coor=(/i/),              &
+                       pert_labels=(/pert%plab/),   &
                           kn=kn                        &
                        )
                   res(element) = cmplx(xc_energy, 0.0d0)
@@ -291,6 +294,7 @@ contains
                              get_ave=.true.,           &
                              fmat=(/0.0d0/),           &
                              geo_coor=(/i, j, k/),     &
+                       pert_labels=(/pert%plab/),   &
                              kn=kn                     &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
@@ -357,6 +361,7 @@ contains
                              get_ave=.true.,            &
                              fmat=(/0.0d0/),            &
                              geo_coor=(/i/),            &
+                       pert_labels=(/pert%plab/),   &
                              kn=kn                      &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
@@ -444,6 +449,7 @@ contains
                                 get_ave=.true.,          &
                                 fmat=(/0.0d0/),          &
                                 geo_coor=(/i, j, k, l/), &
+                       pert_labels=(/pert%plab/),   &
                                 kn=kn                    &
                              )
                         res(element) = cmplx(xc_energy, 0.0d0)
@@ -550,6 +556,7 @@ contains
                                 get_ave=.true.,         &
                                 fmat=(/0.0d0/),         &
                                 geo_coor=(/l/),         &
+                       pert_labels=(/pert%plab/),   &
                                 kn=kn                   &
                              )
 
@@ -648,6 +655,7 @@ contains
                            get_ave=.false.,  &
                            fmat=xc_fmat,     &
                            geo_coor=(/0/),   &
+                           pert_labels=(/'NONE'/), &
                            kn=(/0, 0/)       &
                           )
          call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
@@ -663,6 +671,7 @@ contains
                               get_ave=.false.,  &
                               fmat=xc_fmat,     &
                               geo_coor=(/i/),   &
+                           pert_labels=(/'NONE'/), &
                               kn=(/0, 0/)       &
                              )
             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
@@ -680,6 +689,7 @@ contains
                                  get_ave=.false.,   &
                                  fmat=xc_fmat,      &
                                  geo_coor=(/i, j/), &
+                           pert_labels=(/'NONE'/), &
                                  kn=(/0, 0/)        &
                                 )
                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
@@ -722,6 +732,7 @@ end module
                         get_ave=.false.,  &
                         fmat=xcmat,       &
                         geo_coor=(/0/),   &
+                        pert_labels=(/'NONE'/), &
                         kn=(/0, 0/)       &
                        )
 
