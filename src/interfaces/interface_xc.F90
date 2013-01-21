@@ -103,23 +103,34 @@ contains
 
    !> Exchange-correlation perturbed by fields f, averaged over densities D
    !> New routine under development (by MaR)
-   subroutine rsp_xcave(mat_dim, pert, num_blks, blk_sizes, blk_info, property_size, prop, D_sdf)
+   subroutine rsp_xcave(mat_dim,       &
+                        pert,          &
+                        kn,            &
+                        num_blks,      &
+                        blk_sizes,     &
+                        blk_info,      &
+                        property_size, &
+                        prop,          &
+                        D_sdf)
 
-!     ---------------------------------------------------------------------------
-      integer                            :: num_blks, property_size
-      type(p_tuple)           :: pert
-      type(SDF) :: D_sdf
-      complex(8),   dimension(property_size) :: prop, res
+!     --------------------------------------------------------------------------
+      integer,       intent(in)    :: mat_dim
+      type(p_tuple), intent(in)    :: pert
+      integer,       intent(in)    :: kn(2)
+      integer,       intent(in)    :: num_blks
+      integer,       intent(in)    :: blk_sizes(num_blks)
+      integer,       intent(in)    :: blk_info(num_blks, 3)
+      integer,       intent(in)    :: property_size
+      complex(8),    intent(inout) :: prop(property_size)
+      type(SDF)                    :: D_sdf
+!     --------------------------------------------------------------------------
+      complex(8)                   :: res(property_size) !fixme, allocate
+      integer                      :: i, j, k, l, maxcomp1, maxcomp2, maxcomp3
+      integer                      :: element
+      integer                      :: nr_atoms
+      real(8)                      :: xc_energy
       type(matrix), allocatable, dimension(:) :: dmat_tuple
-!     ---------------------------------------------------------------------------
-      integer                            :: i, j, k, l, maxcomp1, maxcomp2, maxcomp3
-      integer                            :: element
-      integer                            :: mat_dim
-      integer, dimension(num_blks) :: blk_sizes
-      integer, dimension(num_blks,3) :: blk_info
-      integer                            :: nr_atoms
-      real(8)                            :: xc_energy
-!     ---------------------------------------------------------------------------
+!     --------------------------------------------------------------------------
 
       res = 0.0
       if (.not. get_is_ks_calculation()) return
