@@ -227,8 +227,7 @@ public rsp_cfg
     write(*,*) 'Calculating exchange/correlation contributions'
     write(*,*) ' '
 
-!     call rsp_xcave_tr_adapt(nr_ao, pert, D, property_size, prop)
-call rsp_xcave_new(nr_ao, pert, num_blks, blk_sizes, blk_info, property_size, prop, D)
+    call rsp_xcave(nr_ao, pert, num_blks, blk_sizes, blk_info, property_size, prop, D)
 
     write(*,*) ' '
     write(*,*) 'Finished calculating exchange/correlation contributions'

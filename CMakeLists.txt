@@ -36,7 +36,6 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_contribs.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.F90
-    ${PROJECT_SOURCE_DIR}/src/rsp_functions.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_field_tuple.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_general.F90
     ${PROJECT_SOURCE_DIR}/src/vib_pv_contribs.f90

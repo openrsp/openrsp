@@ -1,1 +1,1 @@
-hf.dal h2o2.mol
+hf.dal h2o2.mol -get rsp_tensor

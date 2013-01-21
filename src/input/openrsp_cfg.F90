@@ -29,45 +29,6 @@ module openrsp_cfg
    ! MaR: Support for multiple frequency tuples
    integer              :: openrsp_cfg_nr_freq_tuples = 1
 
-   logical :: openrsp_cfg_gradient        = .false.
-   logical :: openrsp_cfg_hessian         = .false.
-   logical :: openrsp_cfg_dipole_gradient = .false.
-   logical :: openrsp_cfg_dipole_hessian  = .false.
-   logical :: openrsp_cfg_cubic_ff        = .false.
-   logical :: openrsp_cfg_quartic_ff      = .false.
-
-   logical :: openrsp_cfg_pnc_gradient   = .false.
-   logical :: openrsp_cfg_pnc_hessian    = .false.
-   integer :: openrsp_cfg_pnc_center     = 1
-
-   logical :: openrsp_cfg_general_f      = .false.
-   logical :: openrsp_cfg_general_g      = .false.
-   logical :: openrsp_cfg_general_ff     = .false.
-   logical :: openrsp_cfg_general_gf     = .false.
-   logical :: openrsp_cfg_general_gg     = .false.
-   logical :: openrsp_cfg_general_fff    = .false.
-   logical :: openrsp_cfg_general_gff    = .false.
-   logical :: openrsp_cfg_general_ggf    = .false.
-   logical :: openrsp_cfg_general_ggg    = .false.
-   logical :: openrsp_cfg_general_ffff   = .false.
-   logical :: openrsp_cfg_general_gfff   = .false.
-   logical :: openrsp_cfg_general_ggff   = .false.
-   logical :: openrsp_cfg_general_gggf   = .false.
-   logical :: openrsp_cfg_general_gggg   = .false.
-   logical :: openrsp_cfg_general_fffff  = .false.
-   logical :: openrsp_cfg_general_gffff  = .false.
-   logical :: openrsp_cfg_general_ggfff  = .false.
-   logical :: openrsp_cfg_general_gggff  = .false.
-   logical :: openrsp_cfg_general_ggggf  = .false.
-   logical :: openrsp_cfg_general_ggggg  = .false.
-   logical :: openrsp_cfg_general_ffffff = .false.
-   logical :: openrsp_cfg_general_gfffff = .false.
-   logical :: openrsp_cfg_general_ggffff = .false.
-   logical :: openrsp_cfg_general_gggfff = .false.
-   logical :: openrsp_cfg_general_ggggff = .false.
-   logical :: openrsp_cfg_general_gggggf = .false.
-   logical :: openrsp_cfg_general_gggggg = .false.
-
    ! MaR: Configuration parameters for custom property specification
 
    logical :: openrsp_cfg_general_specify = .false.
