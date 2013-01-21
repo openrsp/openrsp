@@ -610,9 +610,10 @@ contains
 
    !> Exchange-correlation perturbed by fields 'field', contracted over
    !> densities 'D', added to Fock matrices 'F'
-   subroutine rsp_xcint(D, F, Fg, Fgg)
+   subroutine rsp_xcint(pert_labels, D, F, Fg, Fgg)
 
 !     ---------------------------------------------------------------------------
+      character(4), intent(in)              :: pert_labels(:)
       type(matrix), intent(in)              :: D(:)
       type(matrix), intent(inout), optional :: F
       type(matrix), intent(inout), optional :: Fg(:)
@@ -655,7 +656,7 @@ contains
                            get_ave=.false.,  &
                            fmat=xc_fmat,     &
                            geo_coor=(/0/),   &
-                           pert_labels=(/'NONE'/), &
+                           pert_labels=pert_labels, &
                            kn=(/0, 0/)       &
                           )
          call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
@@ -671,7 +672,7 @@ contains
                               get_ave=.false.,  &
                               fmat=xc_fmat,     &
                               geo_coor=(/i/),   &
-                           pert_labels=(/'NONE'/), &
+                           pert_labels=pert_labels, &
                               kn=(/0, 0/)       &
                              )
             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
@@ -689,7 +690,7 @@ contains
                                  get_ave=.false.,   &
                                  fmat=xc_fmat,      &
                                  geo_coor=(/i, j/), &
-                           pert_labels=(/'NONE'/), &
+                           pert_labels=pert_labels, &
                                  kn=(/0, 0/)        &
                                 )
                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)

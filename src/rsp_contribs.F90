@@ -2093,83 +2093,36 @@ type(matrix) :: Db, Fb
     type(matrix), dimension(:) :: D
     !--------------------------------------------------
 
-    ! MaR: ONLY GEOMETRICAL PERTURBATIONS SUPPORTED SO FAR
-
-! call mat_init(Db, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-! call mat_init(Fb, nrow=nr_ao, ncol=nr_ao, closed_shell=.true.)
-
     if (nf == 0) then
-
-! write(*,*) 'D before', D(1)%elms
-! write(*,*) 'F before', xcint(1)%elms
-! 
-! Db = D(1)
-! Fb = xcint(1)
-
-      call rsp_xcint(D, F=xcint(1))
-
-! Db = D(1) - Db
-! Fb = xcint(1) - Fb
-! 
-! write(*,*) 'D chg', Db%elms
-! write(*,*) 'F after', Fb%elms
-
+      call rsp_xcint(f, D, F=xcint(1))
     else if (nf == 1) then
-
        if (all(f==(/'GEO '/))) then
-
-          call rsp_xcint(D, Fg=xcint)
-
+          call rsp_xcint(f, D, Fg=xcint)
        else
-
-!           write(*,*) 'WARNING (rsp_xcint_tr_adapt): UNSUPPORTED CONTRIBUTION:'
-!           write(*,*) 'NO CONTRIBUTION WILL BE MADE'
-
        end if
-
     else if (nf == 2) then
-
        if (all(f==(/'GEO ','GEO '/))) then
-
           allocate(tmp_xcint(nc(1), nc(1)))
-
           do i = 1, nc(1)
              do j = 1, nc(1)
-
-                ! MR: ASSUME CLOSED SHELL
                 call mat_init(tmp_xcint(i,j), nr_ao, nr_ao, &
                               .false., .false., .false., .false., .false.)
-
              end do
           end do
-
-          call rsp_xcint(D, Fgg=tmp_xcint)
-
-
+          call rsp_xcint(f, D, Fgg=tmp_xcint)
           do i = 1, nc(1)
              do j = 1, i
-
                 k = get_triang_blks_offset(1, 2, (/1, 2, nc(1)/), &
                                            (/propsize/), (/i, j/))
 
                 xcint(k) = xcint(k) + tmp_xcint(i,j)
                 tmp_xcint(i, j) = 0
-
              end do
           end do
-
           deallocate(tmp_xcint)
-
        else
-
-!           write(*,*) 'WARNING: UNSUPPORTED CONTRIBUTION: NO CONTRIBUTION WILL BE MADE'
-
        end if
-
     else
-
-!        write(*,*) 'WARNING: UNSUPPORTED NUMBER OF FIELDS: NO CONTRIBUTION WILL BE MADE'
-
     end if
 
   end subroutine
