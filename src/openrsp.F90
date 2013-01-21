@@ -233,7 +233,8 @@ contains
                          energy=xc_energy, &
                          get_ave=.false.,  &
                          fmat=xc_fmat,     &
-                         geo_coor=(/0/)    &
+                         geo_coor=(/0/),   &
+                         kn=(/0, 0/)       &
                         )
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
        deallocate(xc_dmat)

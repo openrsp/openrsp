@@ -147,14 +147,15 @@ contains
 
             do i = 1, nr_atoms*3
                element = i
-               call xc_integrate(             &
-                       mat_dim=mat_dim,       &
-                       nr_dmat=1,             &
-                       dmat=(/dmat_tuple(1)%elms/),       &
-                       energy=xc_energy,      &
-                       get_ave=.true.,        &
-                       fmat=(/0.0d0/),        &
-                       geo_coor=(/i/)         &
+               call xc_integrate(                   &
+                       mat_dim=mat_dim,             &
+                       nr_dmat=1,                   &
+                       dmat=(/dmat_tuple(1)%elms/), &
+                       energy=xc_energy,            &
+                       get_ave=.true.,              &
+                       fmat=(/0.0d0/),              &
+                       geo_coor=(/i/),              &
+                       kn=kn                        &
                     )
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
@@ -192,16 +193,17 @@ contains
                   element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                             blk_info, blk_sizes, (/i, j/))
 
-                  call xc_integrate(                  &
-                          mat_dim=mat_dim,            &
-                          nr_dmat=3,                  &
-                          dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms,  &
-                                 dmat_tuple(3)%elms/),&
-                          energy=xc_energy,           &
-                          get_ave=.true.,             &
-                          fmat=(/0.0d0/),             &
-                          geo_coor=(/i, j/)           &
+                  call xc_integrate(                   &
+                          mat_dim=mat_dim,             &
+                          nr_dmat=3,                   &
+                          dmat=(/dmat_tuple(1)%elms,   &
+                                 dmat_tuple(2)%elms,   &
+                                 dmat_tuple(3)%elms/), &
+                          energy=xc_energy,            &
+                          get_ave=.true.,              &
+                          fmat=(/0.0d0/),              &
+                          geo_coor=(/i, j/),           &
+                          kn=kn                        &
                        )
 
                   res(element) = cmplx(xc_energy, 0.0d0)
@@ -227,15 +229,16 @@ contains
                   element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                             blk_info, blk_sizes, (/i, j/))
 
-                  call xc_integrate(        &
-                          mat_dim=mat_dim,  &
-                          nr_dmat=2,  &
-                          dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms/),&
-                          energy=xc_energy, &
-                          get_ave=.true.,   &
-                          fmat=(/0.0d0/),   &
-                          geo_coor=(/i/)    &
+                  call xc_integrate(                   &
+                          mat_dim=mat_dim,             &
+                          nr_dmat=2,                   &
+                          dmat=(/dmat_tuple(1)%elms,   &
+                                 dmat_tuple(2)%elms/), &
+                          energy=xc_energy,            &
+                          get_ave=.true.,              &
+                          fmat=(/0.0d0/),              &
+                          geo_coor=(/i/),              &
+                          kn=kn                        &
                        )
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
@@ -277,17 +280,18 @@ contains
                      element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                                blk_info, blk_sizes, (/i, j, k/))
 
-                     call xc_integrate(           &
-                             mat_dim=mat_dim,     &
-                             nr_dmat=4,           &
+                     call xc_integrate(                &
+                             mat_dim=mat_dim,          &
+                             nr_dmat=4,                &
                            dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms,  &
-                                 dmat_tuple(3)%elms,  &
-                                 dmat_tuple(4)%elms/),&
-                             energy=xc_energy,    &
-                             get_ave=.true.,      &
-                             fmat=(/0.0d0/),      &
-                             geo_coor=(/i, j, k/) &
+                                 dmat_tuple(2)%elms,   &
+                                 dmat_tuple(3)%elms,   &
+                                 dmat_tuple(4)%elms/), &
+                             energy=xc_energy,         &
+                             get_ave=.true.,           &
+                             fmat=(/0.0d0/),           &
+                             geo_coor=(/i, j, k/),     &
+                             kn=kn                     &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -342,17 +346,18 @@ contains
 ! write(*,*) 'dmat 3', dmat_tuple(3)%elms
 ! write(*,*) 'dmat 4', dmat_tuple(4)%elms
 
-                     call xc_integrate(        &
-                             mat_dim=mat_dim,  &
-                             nr_dmat=4,  &
-                             dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms,  &
-                                 dmat_tuple(3)%elms,  &
-                                 dmat_tuple(4)%elms/),&
-                             energy=xc_energy, &
-                             get_ave=.true.,   &
-                             fmat=(/0.0d0/),   &
-                             geo_coor=(/i/)    &
+                     call xc_integrate(                 &
+                             mat_dim=mat_dim,           &
+                             nr_dmat=4,                 &
+                             dmat=(/dmat_tuple(1)%elms, &
+                                 dmat_tuple(2)%elms,    &
+                                 dmat_tuple(3)%elms,    &
+                                 dmat_tuple(4)%elms/),  &
+                             energy=xc_energy,          &
+                             get_ave=.true.,            &
+                             fmat=(/0.0d0/),            &
+                             geo_coor=(/i/),            &
+                             kn=kn                      &
                           )
                      res(element) = cmplx(xc_energy, 0.0d0)
 ! write(*,*) 'result:', res(element)
@@ -425,20 +430,21 @@ contains
                                 mat_dim=mat_dim,         &
                                 nr_dmat=11,              &
                              dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms,  &
-                                 dmat_tuple(3)%elms,  &
-                                 dmat_tuple(4)%elms,  &
-                                 dmat_tuple(5)%elms,  &
-                                 dmat_tuple(6)%elms,  &
-                                 dmat_tuple(7)%elms,  &
-                                 dmat_tuple(8)%elms,  &
-                                 dmat_tuple(9)%elms,  &
-                                 dmat_tuple(10)%elms,  &
-                                 dmat_tuple(11)%elms/),&
+                                 dmat_tuple(2)%elms,     &
+                                 dmat_tuple(3)%elms,     &
+                                 dmat_tuple(4)%elms,     &
+                                 dmat_tuple(5)%elms,     &
+                                 dmat_tuple(6)%elms,     &
+                                 dmat_tuple(7)%elms,     &
+                                 dmat_tuple(8)%elms,     &
+                                 dmat_tuple(9)%elms,     &
+                                 dmat_tuple(10)%elms,    &
+                                 dmat_tuple(11)%elms/),  &
                                 energy=xc_energy,        &
                                 get_ave=.true.,          &
                                 fmat=(/0.0d0/),          &
-                                geo_coor=(/i, j, k, l/)  &
+                                geo_coor=(/i, j, k, l/), &
+                                kn=kn                    &
                              )
                         res(element) = cmplx(xc_energy, 0.0d0)
                      end do
@@ -529,21 +535,22 @@ contains
 
 ! write(*,*) 'At i j k l', i, j, k, l, ', got offset:', element
 
-                        call xc_integrate(        &
-                                mat_dim=mat_dim,  &
-                                nr_dmat=8,  &
-                             dmat=(/dmat_tuple(1)%elms,  &
-                                 dmat_tuple(2)%elms,  &
-                                 dmat_tuple(3)%elms,  &
-                                 dmat_tuple(4)%elms,  &
-                                 dmat_tuple(5)%elms,  &
-                                 dmat_tuple(6)%elms,  &
-                                 dmat_tuple(7)%elms,  &
-                                 dmat_tuple(8)%elms/),&
-                                energy=xc_energy, &
-                                get_ave=.true.,   &
-                                fmat=(/0.0d0/),   &
-                                geo_coor=(/l/)    &
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=8,              &
+                             dmat=(/dmat_tuple(1)%elms, &
+                                 dmat_tuple(2)%elms,    &
+                                 dmat_tuple(3)%elms,    &
+                                 dmat_tuple(4)%elms,    &
+                                 dmat_tuple(5)%elms,    &
+                                 dmat_tuple(6)%elms,    &
+                                 dmat_tuple(7)%elms,    &
+                                 dmat_tuple(8)%elms/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/l/),         &
+                                kn=kn                   &
                              )
 
 ! (The result is added to the property tensor at the very end of the routine)
@@ -640,7 +647,8 @@ contains
                            energy=xc_energy, &
                            get_ave=.false.,  &
                            fmat=xc_fmat,     &
-                           geo_coor=(/0/)    &
+                           geo_coor=(/0/),   &
+                           kn=(/0, 0/)       &
                           )
          call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
       end if
@@ -654,7 +662,8 @@ contains
                               energy=xc_energy, &
                               get_ave=.false.,  &
                               fmat=xc_fmat,     &
-                              geo_coor=(/i/)    &
+                              geo_coor=(/i/),   &
+                              kn=(/0, 0/)       &
                              )
             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
          end do
@@ -663,14 +672,15 @@ contains
       if (present(Fgg)) then
          do i = 1, nr_atoms*3
             do j = 1, i
-               call xc_integrate(                  &
-                                 mat_dim=mat_dim,  &
-                                 nr_dmat=nr_dmat,  &
-                                 dmat=xc_dmat,     &
-                                 energy=xc_energy, &
-                                 get_ave=.false.,  &
-                                 fmat=xc_fmat,     &
-                                 geo_coor=(/i, j/) &
+               call xc_integrate(                   &
+                                 mat_dim=mat_dim,   &
+                                 nr_dmat=nr_dmat,   &
+                                 dmat=xc_dmat,      &
+                                 energy=xc_energy,  &
+                                 get_ave=.false.,   &
+                                 fmat=xc_fmat,      &
+                                 geo_coor=(/i, j/), &
+                                 kn=(/0, 0/)        &
                                 )
                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
             end do
@@ -711,7 +721,8 @@ end module
                         energy=xc_energy, &
                         get_ave=.false.,  &
                         fmat=xcmat,       &
-                        geo_coor=(/0/)    &
+                        geo_coor=(/0/),   &
+                        kn=(/0, 0/)       &
                        )
 
       k = 0
