@@ -403,25 +403,25 @@ contains
                   call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
 
                   call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
-                                     p_tuple_getone(pert, 2)), (/i,j/), dmat_tuple(6))
+                                     p_tuple_getone(pert, 2)), (/i,j/), dmat_tuple(4))
 
                   do k = 1, j
 
-                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(5))
 
                      call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
-                                        p_tuple_getone(pert, 3)), (/i,k/), dmat_tuple(7))
+                                        p_tuple_getone(pert, 3)), (/i,k/), dmat_tuple(6))
                      call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
-                                        p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(9))
+                                        p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(7))
 
 
                      do l = 1, k
 
-                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(5))
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(8))
 
 
                         call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
-                                           p_tuple_getone(pert, 4)), (/i,l/), dmat_tuple(8))
+                                           p_tuple_getone(pert, 4)), (/i,l/), dmat_tuple(9))
                         call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
                                            p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(10))
                         call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
