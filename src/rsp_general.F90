@@ -497,27 +497,27 @@ public rsp_cfg
     complex(8), allocatable, dimension(:) :: tmp, contrib, prop_forcache
     complex(8), dimension(property_size) :: prop
 
-    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
-    ncouter = nc_only(total_num_perturbations, total_num_perturbations - &
-              p_tuples(1)%n_perturbations, num_p_tuples - 1, &
-              p_tuples(2:num_p_tuples), ncarray)
-    ncinner = nc_only(total_num_perturbations, p_tuples(1)%n_perturbations, 1, &
-                      p_tuples(1), ncarray)
+!    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
+!    ncouter = nc_only(total_num_perturbations, total_num_perturbations - &
+!              p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+!              p_tuples(2:num_p_tuples), ncarray)
+!    ncinner = nc_only(total_num_perturbations, p_tuples(1)%n_perturbations, 1, &
+!                      p_tuples(1), ncarray)
 
     allocate(dens_tuple(num_p_tuples))
     allocate(nucpot_pert(p_tuples(1)%n_perturbations))
-    allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
-    allocate(ncinnersmall(p_tuples(1)%n_perturbations))
-    allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
+ !   allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
+ !   allocate(ncinnersmall(p_tuples(1)%n_perturbations))
+ !   allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
 
-    ncoutersmall = nc_onlysmall(total_num_perturbations, total_num_perturbations - &
-                   p_tuples(1)%n_perturbations, num_p_tuples - 1, &
-                   p_tuples(2:num_p_tuples), ncarray)
-    ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%n_perturbations, &
-                   1, p_tuples(1), ncarray)
-    pidoutersmall = get_pidoutersmall(total_num_perturbations - &
-                    p_tuples(1)%n_perturbations, num_p_tuples - 1, &
-                    p_tuples(2:num_p_tuples))
+ !   ncoutersmall = nc_onlysmall(total_num_perturbations, total_num_perturbations - &
+ !                  p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+ !                  p_tuples(2:num_p_tuples), ncarray)
+ !   ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%n_perturbations, &
+ !                  1, p_tuples(1), ncarray)
+ !   pidoutersmall = get_pidoutersmall(total_num_perturbations - &
+ !                   p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+ !                   p_tuples(2:num_p_tuples))
 
     allocate(o_whichpert(total_num_perturbations))
     allocate(o_wh_forave(total_num_perturbations))
@@ -566,15 +566,16 @@ public rsp_cfg
     prop_forcache = 0.0
     contrib = 0.0
 
-    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
-                      p_tuples(1)%n_perturbations, pidoutersmall, &
-                      ncarray, ncoutersmall, o_whichpert)
+!    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
+!                      p_tuples(1)%n_perturbations, pidoutersmall, &
+!                      ncarray, ncoutersmall, o_whichpert)
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
-   
-       allocate(outer_indices(outer_indices_size,size(ncoutersmall)))
-       allocate(inner_indices(inner_indices_size,size(ncinnersmall)))
-   
+
+       allocate(outer_indices(outer_indices_size,total_num_perturbations - &
+                p_tuples(1)%n_perturbations))
+       allocate(inner_indices(inner_indices_size,p_tuples(1)%n_perturbations))
+
        k = 1
     
        do i = 2, num_p_tuples
@@ -588,14 +589,14 @@ public rsp_cfg
     
        k = 1
    
-       do i = 2, num_p_tuples
-          do j = 1, p_tuples(i)%n_perturbations
-   
-             ncoutersmall(k) =  p_tuples(i)%pdim(j)
-             k = k + 1
-   
-          end do
-       end do
+!       do i = 2, num_p_tuples
+!          do j = 1, p_tuples(i)%n_perturbations
+!   
+!             ncoutersmall(k) =  p_tuples(i)%pdim(j)
+!             k = k + 1
+!   
+!          end do
+!       end do
    
        do i = 1, num_p_tuples
    
@@ -907,9 +908,9 @@ public rsp_cfg
     deallocate(blk_sizes_merged)
     deallocate(nucpot_pert)
     deallocate(dens_tuple)
-    deallocate(ncoutersmall)
-    deallocate(ncinnersmall)
-    deallocate(pidoutersmall)
+!    deallocate(ncoutersmall)
+!    deallocate(ncinnersmall)
+!    deallocate(pidoutersmall)
     deallocate(o_whichpert)
     deallocate(o_wh_forave)
     deallocate(tmp)
