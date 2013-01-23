@@ -550,25 +550,25 @@ end if
     type(matrix), dimension(property_size) :: Fp
     type(f_l_cache) :: fock_lowerorder_cache
     
-    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
-    ncouter = nc_only(total_num_perturbations, total_num_perturbations - & 
-                      p_tuples(1)%n_perturbations, num_p_tuples - 1, &
-                      p_tuples(2:num_p_tuples), ncarray)
-    ncinner = nc_only(total_num_perturbations, p_tuples(1)%n_perturbations, 1, &
-                      p_tuples(1), ncarray)
+!    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
+!    ncouter = nc_only(total_num_perturbations, total_num_perturbations - & 
+!                      p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+!                      p_tuples(2:num_p_tuples), ncarray)
+!    ncinner = nc_only(total_num_perturbations, p_tuples(1)%n_perturbations, 1, &
+!                      p_tuples(1), ncarray)
 
     allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
     allocate(ncinnersmall(p_tuples(1)%n_perturbations))
     allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
 
-    ncoutersmall = nc_onlysmall(total_num_perturbations, total_num_perturbations - &
-                                p_tuples(1)%n_perturbations, num_p_tuples - 1, &
-                                p_tuples(2:num_p_tuples), ncarray)
-    ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%n_perturbations, &
-                   1, p_tuples(1), ncarray)
-    pidoutersmall = get_pidoutersmall(total_num_perturbations - &
-                    p_tuples(1)%n_perturbations, num_p_tuples - 1, &
-                    p_tuples(2:num_p_tuples))
+!    ncoutersmall = nc_onlysmall(total_num_perturbations, total_num_perturbations - &
+!                                p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+!                                p_tuples(2:num_p_tuples), ncarray)
+!    ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%n_perturbations, &
+!                   1, p_tuples(1), ncarray)
+!    pidoutersmall = get_pidoutersmall(total_num_perturbations - &
+!                    p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+ !                   p_tuples(2:num_p_tuples))
 
     ! MaR: Second way of blks_tuple_info can in the general case be larger than
     ! needed, but is allocated this way to get a prismic data structure
@@ -624,9 +624,9 @@ end if
     allocate(lower_order_contribution(inner_indices_size * outer_indices_size))
 
     o_whichpert = make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
-    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
-                      p_tuples(1)%n_perturbations, pidoutersmall, &
-                      ncarray, ncoutersmall, o_whichpert)
+!    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
+!                      p_tuples(1)%n_perturbations, pidoutersmall, &
+!                      ncarray, ncoutersmall, o_whichpert)
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
@@ -668,8 +668,9 @@ end if
 
        end do
 
-       allocate(outer_indices(outer_indices_size,size(ncoutersmall)))
-       allocate(inner_indices(inner_indices_size,size(ncinnersmall)))
+       allocate(outer_indices(outer_indices_size,total_num_perturbations - &
+                p_tuples(1)%n_perturbations))
+       allocate(inner_indices(inner_indices_size,p_tuples(1)%n_perturbations))
 
        call make_triangulated_tuples_indices(num_p_tuples - 1, total_num_perturbations, & 
             nblks_tuple(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, &
