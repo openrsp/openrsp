@@ -42,5 +42,8 @@ module openrsp_cfg
    logical :: openrsp_cfg_general_pv3f = .false.
    logical :: openrsp_cfg_general_pv4f = .false.
 
+   ! MaR: Keywords for SHG (and possibly higher-orders later) calculation
+
+   logical :: openrsp_cfg_general_shg = .false.
 
 end module

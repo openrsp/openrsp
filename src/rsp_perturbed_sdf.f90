@@ -39,6 +39,8 @@ module rsp_perturbed_sdf
     type(SDF) :: F, D, S
     type(matrix) :: zeromat
 
+
+
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
     ! Then (at final recursion level) get perturbed F, D, S 
@@ -64,7 +66,8 @@ module rsp_perturbed_sdf
        if (kn_skip(pert%n_perturbations, pert%pid, kn) .eqv. .FALSE.) then
 
           write(*,*) 'Calling ovlint/fock/density with labels ', pert%plab, &
-                     ' and perturbation id ', pert%pid
+                     ' and perturbation id ', pert%pid, ' with frequencies (real part)', &
+                     real(pert%freq)
           write(*,*) ' '
                  
           ! MaR: Quick fix: Reenumerate pids from 1 and up so that 
@@ -122,6 +125,7 @@ module rsp_perturbed_sdf
     type(matrix) :: X(1), RHS(1), A, B, zeromat
     type(matrix), allocatable, dimension(:) :: Fp, Dp, Sp, Dh
     type(f_l_cache), pointer :: fock_lowerorder_cache
+
 
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol, &

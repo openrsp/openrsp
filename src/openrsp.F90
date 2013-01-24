@@ -61,6 +61,7 @@ module openrsp
   use eri_basis_loops,  only: unopt_geodiff_loop
   use vib_prop_old, only: load_vib_modes
   use vib_pv_contribs
+  use rsp_sdf_caching
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -252,12 +253,15 @@ end subroutine
     integer       :: kn(2)
     integer       :: i
     type(p_tuple) :: perturbation_tuple
-real(8), dimension(3) :: fld_dum
-real(8), dimension(3) :: dm
-
+    type(matrix) :: zeromat_already
+    type(SDF), pointer :: F_already, D_already, S_already
+    real(8), dimension(3) :: fld_dum
+    real(8), dimension(3) :: dm
+    character(len=4) :: file_id
     integer       :: n_nm, h, j, k, m, ierr
     real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
     real(8), allocatable, dimension(:,:) :: T
+    real(8), dimension(3,3,3) :: fff
     complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
     complex(8), allocatable, dimension(:,:,:) :: egff_cart, egff_nm, fff_pv
     complex(8), allocatable, dimension(:,:,:,:) :: egfff_cart, egfff_nm, ffff_pv
@@ -300,26 +304,207 @@ real(8), dimension(3) :: dm
        
        perturbation_tuple%pid = (/(i, i = 1, openrsp_cfg_specify_order)/)
 
-       if(allocated(openrsp_cfg_real_freqs)) then
+       ! Requires that openrsp_cfg_nr_freq_tuples is set to 1 if no frequencies specified
+       ! That is currently the default
+       ! Requires that openrsp_cfg_nr_real_freqs is used as freqs. per tuple
+       ! That is also currently the default
 
-          perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order - &
-          openrsp_cfg_nr_real_freqs - 1), (-1.0) * &
-          sum(openrsp_cfg_real_freqs(1:openrsp_cfg_nr_real_freqs)), &
-          openrsp_cfg_real_freqs(1:openrsp_cfg_nr_real_freqs) /)
+       do k = 1, openrsp_cfg_nr_freq_tuples
+
+          if(allocated(openrsp_cfg_real_freqs)) then
+
+             perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order - &
+             openrsp_cfg_nr_real_freqs - 1), (-1.0) * &
+             sum(openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1: &
+                                              k * openrsp_cfg_nr_real_freqs)), &
+                 openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1: &
+                                              k * openrsp_cfg_nr_real_freqs) /)
+
+          else
+
+             perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
+
+          end if
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, openrsp_cfg_specify_order)/)
+
+file_id = '    '
+
+
+          write(file_id, '(I4)') k
+
+
+          if (openrsp_cfg_nr_freq_tuples == 1) then
+
+             call rsp_prop(perturbation_tuple, kn, F_unpert=F, D_unpert=D, S_unpert=S)
+
+          else
+
+             if (k == 1) then
+
+                ! ASSUME CLOSED SHELL
+                call mat_init(zeromat_already, S%nrow, S%ncol, &
+                              .true., .false., .false., .false., .false.)
+                call mat_init_like_and_zero(S, zeromat_already)
+
+
+                call sdf_setup_datatype(S_already, S)
+                call sdf_setup_datatype(D_already, D)
+                call sdf_setup_datatype(F_already, F)
+
+             end if
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id = 'freq_tuple_' // trim(adjustl(file_id)))
+
+          end if
+
+       end do
+
+
+    end if
+
+
+    if (openrsp_cfg_general_shg) then
+
+
+       ! Calculate dipole moment
+
+       kn = (/0,0/)
+
+       perturbation_tuple%n_perturbations = 1
+       allocate(perturbation_tuple%pdim(1))
+       allocate(perturbation_tuple%plab(1))
+       allocate(perturbation_tuple%pid(1))
+       allocate(perturbation_tuple%freq(1))
+
+       perturbation_tuple%plab = (/'EL  '/)
+       perturbation_tuple%pdim = (/3/)
+       perturbation_tuple%pid = (/1/)
+       perturbation_tuple%freq = (/0.0d0/)
+
+       call rsp_prop(perturbation_tuple, kn, F_unpert=F, D_unpert=D, S_unpert=S, file_id='Ef')
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+       ! Read dipole moment from file
+
+       open(unit = 258, file='rsp_tensor_Ef', status='old', action='read', iostat=ierr)
+       read(258,*) fld_dum
+          dm = fld_dum
+       close(258)
+
+       ! Normalize dipole moment - follows procedure by AJT
+
+       if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
+
+          dm = (/0d0, 0d0, 1d0/)
 
        else
 
-          perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
+          dm = dm/((sum(dm * dm))**0.5)
 
        end if
 
-       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
-       perturbation_tuple%pid = (/(i, i = 1, openrsp_cfg_specify_order)/)
+       kn = (/1,1/)
+
+       perturbation_tuple%n_perturbations = 3
+       allocate(perturbation_tuple%pdim(3))
+       allocate(perturbation_tuple%plab(3))
+       allocate(perturbation_tuple%pid(3))
+       allocate(perturbation_tuple%freq(3))
+
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3/)
+
+       ! Requires that openrsp_cfg_nr_freq_tuples is set to 1 if no frequencies specified
+       ! That is currently the default
+       ! Requires that openrsp_cfg_nr_real_freqs is used as freqs. per tuple
+       ! That is also currently the default
+
+       do k = 1, openrsp_cfg_nr_freq_tuples
+
+          if(allocated(openrsp_cfg_real_freqs)) then
+
+             perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order - &
+             openrsp_cfg_nr_real_freqs - 1), (-1.0) * &
+             sum(openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1: &
+                                              k * openrsp_cfg_nr_real_freqs)), &
+                 openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1: &
+                                              k * openrsp_cfg_nr_real_freqs) /)
+
+          else
+
+             perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
+
+          end if
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/1, 2, 3/)
+
+          write(file_id, '(I4)'), k
 
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+          if (k == 1) then
+
+             ! ASSUME CLOSED SHELL
+             call mat_init(zeromat_already, S%nrow, S%ncol, &
+                              .true., .false., .false., .false., .false.)
+             call mat_init_like_and_zero(S, zeromat_already)
+
+             call sdf_setup_datatype(S_already, S)
+             call sdf_setup_datatype(D_already, D)
+             call sdf_setup_datatype(F_already, F)
+
+          end if
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, &
+                        file_id = 'freq_tuple_' // trim(adjustl(file_id)))
+
+! 
+! 
+!           call rsp_prop(perturbation_tuple, kn, F_unpert=F, D_unpert=D, S_unpert=S, file_id = &
+!                'freq_tuple_' // trim(adjustl(file_id)))
+
+          open(unit = 258, file='rsp_tensor_' // 'freq_tuple_' // trim(adjustl(file_id)), &
+               status='old', action='read', iostat=ierr)
+
+          fff = 0.0
+
+          do i = 1, 3
+             do j = 1, 3
+                read(258,*) fld_dum
+                fff(i, j, :) = fld_dum
+             end do
+          end do
+
+          close(258)
+
+          open(unit=259, file='rsp_tensor_' // 'freq_tuple_' // trim(adjustl(file_id)), &
+               status='old', action='write', position='append') 
+
+          ! Follows method by AJT
+          write(259,*) 'Isotropic:', real((1.0/5.0) * sum ( (/ (( (fff(i,i,j) + &
+                       fff(i,j,i) + fff(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /)))
+          ! Follows method by AJT
+          write(259,*) 'Dipole^3', real(sum( (/ (((fff(i,j,k) * dm(i) * dm(j) * dm(k), &
+                                   i = 1, 3), j = 1, 3), k = 1, 3) /) ))
+          write(259,*) ' '
+
+          close(259)
+
+       end do
 
     end if
+
+
 
     if (openrsp_cfg_general_pv2f) then
 
@@ -338,11 +523,11 @@ real(8), dimension(3) :: dm
        perturbation_tuple%pid = (/1/)
        perturbation_tuple%freq = (/0.0d0/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       call rsp_prop(perturbation_tuple, kn, F, D, S, file_id='Ef')
 
        ! Read dipole moment from file
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Ef', status='old', action='read', iostat=ierr)
        read(258,*) fld_dum
           dm = fld_dum
        close(258)
@@ -397,12 +582,25 @@ real(8), dimension(3) :: dm
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat_already, S%nrow, S%ncol, &
+                     .true., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(S, zeromat_already)
+
+
+       call sdf_setup_datatype(S_already, S)
+       call sdf_setup_datatype(D_already, D)
+       call sdf_setup_datatype(F_already, F)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Egf', status='old', action='read', iostat=ierr)
 
        do i = 1, 3*num_atoms
           read(258,*) fld_dum
@@ -497,11 +695,11 @@ real(8), dimension(3) :: dm
        perturbation_tuple%pid = (/1/)
        perturbation_tuple%freq = (/0.0d0/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       call rsp_prop(perturbation_tuple, kn, F, D, S, file_id='Ef')
 
        ! Read dipole moment from file
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Ef', status='old', action='read', iostat=ierr)
        read(258,*) fld_dum
           dm = fld_dum
        close(258)
@@ -563,12 +761,24 @@ real(8), dimension(3) :: dm
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat_already, S%nrow, S%ncol, &
+                     .true., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(S, zeromat_already)
+
+
+       call sdf_setup_datatype(S_already, S)
+       call sdf_setup_datatype(D_already, D)
+       call sdf_setup_datatype(F_already, F)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Egf', status='old', action='read', iostat=ierr)
 
        do i = 1, 3*num_atoms
           read(258,*) fld_dum
@@ -666,11 +876,12 @@ real(8), dimension(3) :: dm
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egff')
 
        ! Read polarizability gradient from file and transform to normal mode basis
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Egff', status='old', action='read', iostat=ierr)
 
        do i = 1, 3*num_atoms
           do j = 1, 3
@@ -766,11 +977,11 @@ real(8), dimension(3) :: dm
        perturbation_tuple%pid = (/1/)
        perturbation_tuple%freq = (/0.0d0/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       call rsp_prop(perturbation_tuple, kn, F, D, S, file_id='Ef')
 
        ! Read dipole moment from file
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Ef', status='old', action='read', iostat=ierr)
        read(258,*) fld_dum
           dm = fld_dum
        close(258)
@@ -839,12 +1050,24 @@ real(8), dimension(3) :: dm
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat_already, S%nrow, S%ncol, &
+                     .true., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(S, zeromat_already)
+
+
+       call sdf_setup_datatype(S_already, S)
+       call sdf_setup_datatype(D_already, D)
+       call sdf_setup_datatype(F_already, F)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Egf', status='old', action='read', iostat=ierr)
 
        do i = 1, 3*num_atoms
           read(258,*) fld_dum
@@ -941,11 +1164,12 @@ real(8), dimension(3) :: dm
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egff')
 
        ! Read polarizability gradient from file and transform to normal mode basis
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Egff', status='old', action='read', iostat=ierr)
 
        do i = 1, 3*num_atoms
           do j = 1, 3
@@ -1084,11 +1308,12 @@ real(8), dimension(3) :: dm
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-       call rsp_prop(perturbation_tuple, kn, F, D, S)
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egfff')
 
        ! Read 1st hyperpolarizability gradient from file and transform to normal mode basis
 
-       open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
+       open(unit = 258, file='rsp_tensor_Egfff', status='old', action='read', iostat=ierr)
 
        do i = 1, 3*num_atoms
           do j = 1, 3
