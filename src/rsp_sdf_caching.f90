@@ -15,6 +15,7 @@ module rsp_sdf_caching
 
   implicit none
 
+  public sdf_setup_datatype
   public sdf_init
   public sdf_getdata_s
   public sdf_getdata
@@ -42,6 +43,29 @@ module rsp_sdf_caching
   end type
 
   contains
+
+  subroutine sdf_setup_datatype(new_instance, first_data)
+
+    implicit none
+
+    type(SDF), pointer :: new_instance
+    type(matrix):: first_data
+    
+    allocate(new_instance)
+    new_instance%next => new_instance
+    new_instance%last = .TRUE.
+    new_instance%perturb%n_perturbations = 0
+    allocate(new_instance%perturb%pdim(0))
+    allocate(new_instance%perturb%plab(0))
+    allocate(new_instance%perturb%pid(0))
+    allocate(new_instance%perturb%freq(0))
+    allocate(new_instance%data(1))
+    new_instance%data = first_data
+ 
+  end subroutine
+
+
+
 
   ! Begin SDF linked list manipulation/data retrieval routines
 

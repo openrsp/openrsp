@@ -43,13 +43,22 @@ public rsp_cfg
 
   contains
 
+! Supports supplying F, D, S instances through F_already etc.
+! (must then also give zeromat_already) or 
+! initializing new ones through F_unpert etc.
+! F, D, S instances that are supplied are used blindly, so 
+! the user must ensure that the instances contain the correct information w.r.t.
+! e.g. the molecular geometry and basis set
 
-  subroutine rsp_prop(pert_unordered, kn, F_unperturbed, D_unperturbed, S_unperturbed)
+  subroutine rsp_prop(pert_unordered, kn, F_unpert, D_unpert, S_unpert, &
+                      F_already, D_already, S_already, zeromat_already, file_id)
 
     implicit none
 
+    character(len=*), optional :: file_id
     type(p_tuple) :: pert, pert_unordered
-    type(matrix) :: F_unperturbed, D_unperturbed, S_unperturbed
+    type(matrix), optional :: F_unpert, D_unpert, S_unpert, zeromat_already
+    type(SDF), optional :: F_already, D_already, S_already
     type(SDF), pointer :: F, D, S
     integer, dimension(2) :: kn
     real :: timing_start, timing_end
@@ -82,43 +91,30 @@ public rsp_cfg
     write(*,*) 'Choice of k, n is ', kn(1), ' and ', kn(2)
     write(*,*) ' '
 
-    ! ASSUME CLOSED SHELL
-    call mat_init(zeromat, S_unperturbed%nrow, S_unperturbed%ncol, &
-                  .true., .false., .false., .false., .false.)
-    call mat_init_like_and_zero(S_unperturbed, zeromat)
+    if (present(S_already) .eqv. .FALSE.) then
 
-    allocate(S)
-    S%next => S
-    S%last = .TRUE.
-    S%perturb%n_perturbations = 0
-    allocate(S%perturb%pdim(0))
-    allocate(S%perturb%plab(0))
-    allocate(S%perturb%pid(0))
-    allocate(S%perturb%freq(0))
-    allocate(S%data(1))
-    S%data = S_unperturbed
+! Assumes S_unpert, D_unpert, F_unpert is present
 
-    allocate(D)
-    D%next => D
-    D%last = .TRUE.
-    D%perturb%n_perturbations = 0
-    allocate(D%perturb%pdim(0))
-    allocate(D%perturb%plab(0))
-    allocate(D%perturb%pid(0))
-    allocate(D%perturb%freq(0))
-    allocate(D%data(1))
-    D%data = D_unperturbed
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat, S_unpert%nrow, S_unpert%ncol, &
+                     .true., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(S_unpert, zeromat)
 
-    allocate(F)
-    F%next => F
-    F%last = .TRUE.
-    F%perturb%n_perturbations = 0
-    allocate(F%perturb%pdim(0))
-    allocate(F%perturb%plab(0))
-    allocate(F%perturb%pid(0))
-    allocate(F%perturb%freq(0))
-    allocate(F%data(1))
-    F%data = F_unperturbed
+
+       call sdf_setup_datatype(S, S_unpert)
+       call sdf_setup_datatype(D, D_unpert)
+       call sdf_setup_datatype(F, F_unpert)
+
+    else
+
+! Assumes zeromat_already is present
+
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat, zeromat_already%nrow, zeromat_already%ncol, &
+                     .true., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(zeromat_already, zeromat)
+
+    end if
 
     num_blks = get_num_blks(pert)
     allocate(blk_info(num_blks, 3))
@@ -129,7 +125,7 @@ public rsp_cfg
 
     property_size = get_triangulated_size(num_blks, blk_info)
 
-    nr_ao = D_unperturbed%nrow
+    nr_ao = zeromat%nrow
 
     allocate(prop(property_size))
     prop = 0.0
@@ -138,8 +134,18 @@ public rsp_cfg
     write(*,*) ' '
     call cpu_time(timing_start)
 
-    call get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
-                  property_size, prop, F, D, S)
+    if (present(F_already)) then
+
+       call get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
+                     property_size, prop, F_already, D_already, S_already)
+
+    else
+
+       call get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
+                     property_size, prop, F, D, S)
+
+   end if
+
 
     call cpu_time(timing_end)
     write(*,*) 'Clock stopped: Property was calculated'
@@ -148,15 +154,30 @@ public rsp_cfg
 
     write(*,*) 'Property was calculated'
     write(*,*) ' '
-    open(unit=260, file='rsp_tensor', status='replace', action='write') 
+
+    if (present(file_id)) then
+       open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
+            status='replace', action='write') 
+    else
+       open(unit=260, file='rsp_tensor', &
+            status='replace', action='write') 
+    end if
+
     write(260,*) ' '
-    close(260)
+
 
     call print_rsp_tensor_tr(1, pert%n_perturbations, pert%pdim, &
     (/ (1, j = 1, (pert%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-    blk_info, property_size, prop)
+    blk_info, property_size, prop, 260)
 
-    write(*,*) 'Property was printed to rsp_tensor'
+    close(260)
+
+    if (present(file_id)) then
+       write(*,*) 'Property was printed to rsp_tensor_' // trim(adjustl(file_id))
+    else
+       write(*,*) 'Property was printed to rsp_tensor'
+    end if
+
     write(*,*) ' '
     write(*,*) 'End of print'
 
@@ -219,7 +240,7 @@ public rsp_cfg
     deallocate(energy_cache)
 
 ! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+! write(*,*) real(prop - p_diff)
 ! 
 !     p_diff = prop
 
@@ -234,7 +255,8 @@ public rsp_cfg
     write(*,*) ' '
 
 ! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+! write(*,*) real(prop - p_diff)
+! 
 !     p_diff = prop
 
     call property_cache_allocate(pulay_kn_cache)
@@ -246,9 +268,12 @@ public rsp_cfg
     write(*,*) ' '
 
     deallocate(pulay_kn_cache)
+
 ! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+! write(*,*) real(prop - p_diff)
+! 
 !     p_diff = prop
+
     call property_cache_allocate(pulay_lag_cache)
     call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
                        (/p_tuple_getone(pert,1), emptypert/), &
@@ -259,9 +284,12 @@ public rsp_cfg
     write(*,*) ' '
 
     deallocate(pulay_lag_cache)
+
 ! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+! write(*,*) real(prop - p_diff)
+! 
 !     p_diff = prop
+
     call property_cache_allocate(idem_cache)
     call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
@@ -272,9 +300,12 @@ public rsp_cfg
     write(*,*) ' '
 
     deallocate(idem_cache)
+
 ! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+! write(*,*) real(prop - p_diff)
+! 
 !     p_diff = prop
+
     call property_cache_allocate(scfe_cache)
     call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
                       (/p_tuple_getone(pert,1), emptypert/), &
@@ -285,8 +316,10 @@ public rsp_cfg
     write(*,*) ' '
 
     deallocate(scfe_cache)
+
 ! write(*,*) 'prop incr'
-! write(*,*) prop - p_diff
+! write(*,*) real(prop - p_diff)
+! 
 !     p_diff = prop
 
   end subroutine
@@ -2282,11 +2315,11 @@ public rsp_cfg
 
 
   recursive subroutine print_rsp_tensor_tr(lvl, npert, pdim, ind, &
-                       nblks, blk_sizes, blk_info, propsize, prop)
+                       nblks, blk_sizes, blk_info, propsize, prop, print_id)
 
     implicit none
 
-    integer :: lvl, npert, nblks, i, propsize
+    integer :: lvl, npert, nblks, i, propsize, print_id
     integer, dimension(npert) :: pdim
     integer, dimension(npert - 1) :: ind, new_ind
     integer, dimension(nblks) :: blk_sizes
@@ -2303,10 +2336,10 @@ public rsp_cfg
 
        end do
 
-       open(unit=260, file='rsp_tensor', status='old', action='write', &
-            position='append') 
-       write(260,*) real(line_for_print)
-       close(260)
+!        open(unit=260, file='rsp_tensor', status='old', action='write', &
+!             position='append') 
+       write(print_id,*) real(line_for_print)
+!        close(260)
 
     else
 
@@ -2318,14 +2351,14 @@ public rsp_cfg
           new_ind(lvl) = i
 
           call print_rsp_tensor_tr(lvl + 1, npert, pdim, new_ind, &
-                                   nblks, blk_sizes, blk_info, propsize, prop)
+                                   nblks, blk_sizes, blk_info, propsize, prop, print_id)
 
        end do
 
-       open(unit=260, file='rsp_tensor', status='old', action='write', &
-            position='append') 
-       write(260,*) ' '
-       close(260)
+!        open(unit=260, file='rsp_tensor', status='old', action='write', &
+!             position='append') 
+       write(print_id,*) ' '
+!        close(260)
 
     end if
 

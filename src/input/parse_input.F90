@@ -182,6 +182,16 @@
          openrsp_cfg_general_pv4f = .true.
       end if
 
+!     --------------------------------------------------------------------------
+
+      ! MaR: Keywords for SHG (and later possibly higher order) calculations
+
+      ! SHG
+
+      if (kw_matches(word, '.RSPSHG')) then
+         openrsp_cfg_general_shg = .true.
+      end if
+
 
       call check_whether_kw_found(word, kw_section)
 
