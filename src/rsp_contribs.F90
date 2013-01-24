@@ -2107,6 +2107,8 @@ type(matrix) :: Db, Fb
              do j = 1, nc(1)
                 call mat_init(tmp_xcint(i,j), nr_ao, nr_ao, &
                               .false., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(xcint(1), tmp_xcint(i,j))
+
              end do
           end do
           call rsp_xcint(f, D, Fgg=tmp_xcint)
