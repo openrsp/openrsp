@@ -179,27 +179,26 @@ contains
 
          if (count(pert%plab == 'GEO ') == 2) then
 
-            allocate(dmat_tuple(3))
+            allocate(dmat_tuple(2))
 
             call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
             do i = 1, nr_atoms*3
 
-               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
+             ! call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
                do j = 1, i
 
-                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(2))
 
                   element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                             blk_info, blk_sizes, (/i, j/))
 
                   call xc_integrate(                   &
                           mat_dim=mat_dim,             &
-                          nr_dmat=3,                   &
+                          nr_dmat=2,                   &
                           dmat=(/dmat_tuple(1)%elms,   &
-                                 dmat_tuple(2)%elms,   &
-                                 dmat_tuple(3)%elms/), &
+                                 dmat_tuple(2)%elms/), &
                           energy=xc_energy,            &
                           get_ave=.true.,              &
                           fmat=(/0.0d0/),              &
