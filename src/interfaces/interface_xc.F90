@@ -306,9 +306,55 @@ contains
          else if ((count(pert%plab == 'GEO ') == 2) .AND. &
                 (count(pert%plab == 'EL  ') == 1)) then
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
 
-            
+            ! Set up for (k,n) = (1,1)
+            ! Almost sure of ordering in dmat_tuple
+
+            allocate(dmat_tuple(4))
+
+            call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+            do k = 1, 3
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
+
+               do j = 1, nr_atoms*3
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
+                  
+                  do i = 1, j
+
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
+
+
+                     element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                               blk_info, blk_sizes, (/i, j, k/))
+
+
+                     call xc_integrate(                 &
+                             mat_dim=mat_dim,           &
+                             nr_dmat=4,                 &
+                             dmat=(/dmat_tuple(1)%elms, &
+                                 dmat_tuple(2)%elms,    &
+                                 dmat_tuple(3)%elms,    &
+                                 dmat_tuple(4)%elms/),  &
+                             energy=xc_energy,          &
+                             get_ave=.true.,            &
+                             fmat=(/0.0d0/),            &
+                             geo_coor=(/i, j/),         &
+                       pert_labels=(/pert%plab/),   &
+                             kn=kn                      &
+                          )
+                     res(element) = cmplx(xc_energy, 0.0d0)
+
+                  end do
+               end do
+            end do
+
+            deallocate(dmat_tuple)
+
+
+
          else if ((count(pert%plab == 'GEO ') == 1) .AND. &
                 (count(pert%plab == 'EL  ') == 2)) then
 
@@ -462,12 +508,156 @@ contains
          else if ((count(pert%plab == 'GEO ') == 3) .AND. &
                 (count(pert%plab == 'EL  ') == 1)) then
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+
+            ! Using (k,n) = (1,2)
+
+            allocate(dmat_tuple(8))
+
+            call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+            do i = 1, 3
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/i/), dmat_tuple(6))
+
+               do j = 1, nr_atoms*3
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/j/), dmat_tuple(4))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                     p_tuple_getone(pert, 4)), (/j,i/), dmat_tuple(8))
+
+                  do k = 1, j
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/k/), dmat_tuple(3))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 3)), (/k,j/), dmat_tuple(5))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 4)), (/k,i/), dmat_tuple(7))
+
+                     do l = 1, k
+
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/l/), dmat_tuple(2))
+
+                        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                                  blk_info, blk_sizes, (/l, k, j, i/))
+
+
+
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=8,              &
+                             dmat=(/dmat_tuple(1)%elms, &
+                                 dmat_tuple(2)%elms,    &
+                                 dmat_tuple(3)%elms,    &
+                                 dmat_tuple(4)%elms,    &
+                                 dmat_tuple(5)%elms,    &
+                                 dmat_tuple(6)%elms,    &
+                                 dmat_tuple(7)%elms,    &
+                                 dmat_tuple(8)%elms/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/l, k, j/),         &
+                       pert_labels=(/pert%plab/),   &
+                                kn=kn                   &
+                             )
+
+                        res(element) = cmplx(xc_energy, 0.0d0)
+                     end do
+                  end do
+               end do
+            end do
+
+            deallocate(dmat_tuple)
+
 
          else if ((count(pert%plab == 'GEO ') == 2) .AND. &
                 (count(pert%plab == 'EL  ') == 2)) then
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+
+! Using (k,n) = (1,2)
+
+
+            allocate(dmat_tuple(8))
+
+            call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+            do i = 1, 3
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/i/), dmat_tuple(6))
+
+               if (p_tuple_compare(p_tuple_getone(pert, 3) , &
+                   p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                  maxcomp2 = i
+               else
+                  maxcomp2 = 3
+               end if
+
+               do j = 1, maxcomp2
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/j/), dmat_tuple(4))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                     p_tuple_getone(pert, 4)), (/j,i/), dmat_tuple(8))
+
+                  do k = 1, nr_atoms*3
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/k/), dmat_tuple(3))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 3)), (/k,j/), dmat_tuple(5))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 4)), (/k,i/), dmat_tuple(7))
+
+                     do l = 1, k
+
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/l/), dmat_tuple(2))
+
+                        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                                  blk_info, blk_sizes, (/l, k, j, i/))
+
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=8,              &
+                             dmat=(/dmat_tuple(1)%elms, &
+                                 dmat_tuple(2)%elms,    &
+                                 dmat_tuple(3)%elms,    &
+                                 dmat_tuple(4)%elms,    &
+                                 dmat_tuple(5)%elms,    &
+                                 dmat_tuple(6)%elms,    &
+                                 dmat_tuple(7)%elms,    &
+                                 dmat_tuple(8)%elms/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/l, k/),         &
+                       pert_labels=(/pert%plab/),   &
+                                kn=kn                   &
+                             )
+
+                        res(element) = cmplx(xc_energy, 0.0d0)
+                     end do
+                  end do
+               end do
+            end do
+
+            deallocate(dmat_tuple)
+
+
+
+
+
+
+
+
+
+
+
+
+
             
          else if ((count(pert%plab == 'GEO ') == 1) .AND. &
                 (count(pert%plab == 'EL  ') == 3)) then
