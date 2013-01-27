@@ -584,40 +584,40 @@ contains
 
             call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-            do i = 1, 3
+            do l = 1, 3
 
-               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/i/), dmat_tuple(6))
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(6))
 
                if (p_tuple_compare(p_tuple_getone(pert, 3) , &
                    p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
-                  maxcomp2 = i
+                  maxcomp2 = l
                else
                   maxcomp2 = 3
                end if
 
-               do j = 1, maxcomp2
+               do k = 1, maxcomp2
 
-                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/j/), dmat_tuple(4))
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
 
                   call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
-                                     p_tuple_getone(pert, 4)), (/j,i/), dmat_tuple(8))
+                                     p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(8))
 
-                  do k = 1, nr_atoms*3
+                  do j = 1, nr_atoms*3
 
-                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/k/), dmat_tuple(3))
-
-                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
-                                     p_tuple_getone(pert, 3)), (/k,j/), dmat_tuple(5))
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
 
                   call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
-                                     p_tuple_getone(pert, 4)), (/k,i/), dmat_tuple(7))
+                                     p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(5))
 
-                     do l = 1, k
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(7))
 
-                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/l/), dmat_tuple(2))
+                     do i = 1, j
+
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
                         element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
-                                  blk_info, blk_sizes, (/l, k, j, i/))
+                                  blk_info, blk_sizes, (/i, j, k, l/))
 
                         call xc_integrate(              &
                                 mat_dim=mat_dim,        &
@@ -633,8 +633,8 @@ contains
                                 energy=xc_energy,       &
                                 get_ave=.true.,         &
                                 fmat=(/0.0d0/),         &
-                                geo_coor=(/l, k/),         &
-                       pert_labels=(/pert%plab/),   &
+                                geo_coor=(/i, j/),         &
+                                pert_labels=(/pert%plab/),   &
                                 kn=kn                   &
                              )
 
