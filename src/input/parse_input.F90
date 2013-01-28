@@ -192,6 +192,26 @@
          openrsp_cfg_general_shg = .true.
       end if
 
+!     --------------------------------------------------------------------------
+
+      ! MaR: Keywords for EFISHG-CID calculation
+
+      ! SHG
+
+      if (kw_matches(word, '.EFSHCI')) then
+         openrsp_cfg_general_efishgcid = .true.
+      end if
+
+
+!     --------------------------------------------------------------------------
+
+      ! MaR: Keywords for SFG calculation
+
+      ! SHG
+
+      if (kw_matches(word, '.RSPSFG')) then
+         openrsp_cfg_general_sfg = .true.
+      end if
 
       call check_whether_kw_found(word, kw_section)
 

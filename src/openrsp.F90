@@ -62,6 +62,7 @@ module openrsp
   use vib_prop_old, only: load_vib_modes
   use vib_pv_contribs
   use rsp_sdf_caching
+  use rsp_mag_prop
 
 #ifndef PRG_DIRAC
 ! xcint
@@ -251,7 +252,7 @@ end subroutine
   subroutine openrsp_calc()
 
     integer       :: kn(2)
-    integer       :: i
+    integer       :: i, setup_i
     type(p_tuple) :: perturbation_tuple
     type(matrix) :: zeromat_already
     type(SDF), pointer :: F_already, D_already, S_already
@@ -262,9 +263,13 @@ end subroutine
     real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
     real(8), allocatable, dimension(:,:) :: T
     real(8), dimension(3,3,3) :: fff
+    real(8) :: c0
+    complex(8), dimension(3) :: CID
     complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
     complex(8), allocatable, dimension(:,:,:) :: egff_cart, egff_nm, fff_pv
     complex(8), allocatable, dimension(:,:,:,:) :: egfff_cart, egfff_nm, ffff_pv
+    complex(8), dimension(3,3,3,3) :: Effff, Effmfww, Effmfw2w
+    complex(8), dimension(3,3,6,3) :: Effqfww, Effqfw2w
 
 
     if (openrsp_cfg_general_specify) then
@@ -1402,6 +1407,288 @@ file_id = '    '
        deallocate(perturbation_tuple%plab)
        deallocate(perturbation_tuple%pid)
        deallocate(perturbation_tuple%freq)
+
+    end if
+
+
+
+! MaR: This routine is untested
+    if (openrsp_cfg_general_efishgcid) then
+
+       
+       ! FIND CORRECT VALUE: AROUND 137?
+       c0 = 1.0
+
+       fld_dum = 0.0
+
+
+       Effff = 0.0
+       Effmfww = 0.0
+       Effmfw2w = 0.0
+       Effqfww = 0.0
+       Effqfw2w = 0.0
+
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat_already, S%nrow, S%ncol, &
+                     .true., .false., .false., .false., .false.)
+       call mat_init_like_and_zero(S, zeromat_already)
+
+       call sdf_setup_datatype(S_already, S)
+       call sdf_setup_datatype(D_already, D)
+       call sdf_setup_datatype(F_already, F)
+
+do k = 1, openrsp_cfg_nr_freq_tuples
+
+       ! Calculate Effff(w, w, 0)
+
+       kn = (/1,2/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k), openrsp_cfg_real_freqs(k), 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor_Effff', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3
+          do j = 1, 3
+             do m = 1, 3
+                read(258,*) fld_dum
+                Effff(i, j, m, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
+       ! Calculate Effmf(w, w, 0)
+
+       kn = (/0,3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'MAG ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k),  -2.0d0 * openrsp_cfg_real_freqs(k), 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Emfffww')
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor_Emfffww', status='old', action='read', iostat=ierr)
+
+! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
+       do i = 1, 3
+          do j = 1, 3
+             do m = 1, 3
+                read(258,*) fld_dum
+                Effmfww(m, j, i, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+       ! Calculate Effmf(w, -2w, 0)
+
+       kn = (/0,3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'MAG ', 'EL  '/)
+       perturbation_tuple%pdim = (/3, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k), openrsp_cfg_real_freqs(k), 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effmfw2w')
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor_Effmfw2w', status='old', action='read', iostat=ierr)
+
+! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
+       do i = 1, 3
+          do j = 1, 3
+             do m = 1, 3
+                read(258,*) fld_dum
+                Effmfw2w(m, j, i, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
+
+
+
+
+       ! Calculate Effqf(w, w, 0)
+
+       kn = (/0,3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'ELGR', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/6, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k), -2.0d0 * openrsp_cfg_real_freqs(k), 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effqfww')
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor_Effqfww', status='old', action='read', iostat=ierr)
+
+! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
+       do i = 1, 3
+          do j = 1, 3
+             do m = 1, 3
+                read(258,*) fld_dum
+                Effqfww(m, j, i, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+       ! Calculate Effqf(w, -2w, 0)
+
+       kn = (/0,3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'ELGR', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/6, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k), openrsp_cfg_real_freqs(k), 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effqfw2w')
+
+
+       ! Read dipole moment gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor_Effqfw2w', status='old', action='read', iostat=ierr)
+
+! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
+       do i = 1, 3
+          do j = 1, 3
+             do m = 1, 3
+                read(258,*) fld_dum
+                Effqfw2w(m, j, i, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+do i = 1, 3
+
+ CID(i) = (1.0/c0) * ( M_efishg(i, Effff, Effmfww, Effmfw2w) + &
+          openrsp_cfg_real_freqs(k) *  L_efishg(i, Effff, Effqfww, Effqfw2w) ) / &
+          ( D_efishg(setup_i, Effff) )
+
+end do
+
+
+! Add output printing
+
+
+
+
+
+end do
 
     end if
 
