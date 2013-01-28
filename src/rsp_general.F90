@@ -165,12 +165,18 @@ public rsp_cfg
 
     write(260,*) ' '
 
+    open(unit=261, file='rsp_tensor_human', &
+         status='replace', action='write') 
+
+    write(261,*) ' '
+
 
     call print_rsp_tensor_tr(1, pert%n_perturbations, pert%pdim, &
     (/ (1, j = 1, (pert%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-    blk_info, property_size, prop, 260)
+    blk_info, property_size, prop, 260, 261)
 
     close(260)
+    close(261)
 
     if (present(file_id)) then
        write(*,*) 'Property was printed to rsp_tensor_' // trim(adjustl(file_id))
@@ -2315,17 +2321,19 @@ public rsp_cfg
 
 
   recursive subroutine print_rsp_tensor_tr(lvl, npert, pdim, ind, &
-                       nblks, blk_sizes, blk_info, propsize, prop, print_id)
+                       nblks, blk_sizes, blk_info, propsize, prop, print_id, &
+                       print_id_human)
 
     implicit none
 
-    integer :: lvl, npert, nblks, i, propsize, print_id
+    integer :: lvl, npert, nblks, i, propsize, print_id, print_id_human
     integer, dimension(npert) :: pdim
     integer, dimension(npert - 1) :: ind, new_ind
     integer, dimension(nblks) :: blk_sizes
     integer, dimension(nblks, 3) :: blk_info
     complex(8), dimension(pdim(npert)) :: line_for_print
     complex(8), dimension(propsize) :: prop
+    character(20) :: format_line
 
     if (lvl == npert) then
 
@@ -2336,7 +2344,11 @@ public rsp_cfg
 
        end do
 
-       write(print_id,*) real(line_for_print)
+       write(print_id, *) real(line_for_print)
+
+       format_line = '(      f20.8)'
+       write(format_line(2:7), '(i6)') pdim(npert)
+       write(print_id_human, format_line) real(line_for_print)
 
     else
 
@@ -2348,11 +2360,12 @@ public rsp_cfg
           new_ind(lvl) = i
 
           call print_rsp_tensor_tr(lvl + 1, npert, pdim, new_ind, &
-                                   nblks, blk_sizes, blk_info, propsize, prop, print_id)
+                                   nblks, blk_sizes, blk_info, propsize, prop, print_id, print_id_human)
 
        end do
 
-       write(print_id,*) ' '
+       write(print_id, *) ' '
+       write(print_id_human, *) ' '
 
     end if
 
