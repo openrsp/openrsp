@@ -46,4 +46,13 @@ module openrsp_cfg
 
    logical :: openrsp_cfg_general_shg = .false.
 
+   ! MaR: Keywords for EFISHG-CID calculation
+
+   logical :: openrsp_cfg_general_efishgcid = .false.
+   
+   ! MaR: Keywords for SFG calculation
+
+   logical :: openrsp_cfg_general_sfg = .false.
+
+
 end module
