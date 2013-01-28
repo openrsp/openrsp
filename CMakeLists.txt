@@ -47,7 +47,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/rsp_choose_rule.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_lof_caching_tmp.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_perturbed_matrices.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_perturbed_sdf.f90
+    ${PROJECT_SOURCE_DIR}/src/rsp_perturbed_sdf.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_property_caching.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_sdf_caching.f90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_molecule.F90
