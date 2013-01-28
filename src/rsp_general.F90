@@ -2336,10 +2336,7 @@ public rsp_cfg
 
        end do
 
-!        open(unit=260, file='rsp_tensor', status='old', action='write', &
-!             position='append') 
        write(print_id,*) real(line_for_print)
-!        close(260)
 
     else
 
@@ -2355,10 +2352,7 @@ public rsp_cfg
 
        end do
 
-!        open(unit=260, file='rsp_tensor', status='old', action='write', &
-!             position='append') 
        write(print_id,*) ' '
-!        close(260)
 
     end if
 
