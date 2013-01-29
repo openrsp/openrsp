@@ -47,7 +47,7 @@ contains
       if (present(unit)) uni = unit
       if (present(title)) then
          if (present(freqs)) then
-            fmt = '(a,nf6.3)'
+            fmt = '(a,nf8.3)'
             write (fmt(4:4),'(i1)') size(freqs)
             write (uni,fmt) title // ' w:', dreal(freqs)
          else
