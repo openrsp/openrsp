@@ -1,0 +1,3 @@
+  ff_b3lyp.dal   aug-dz.mol -get rsp_tensor_human
+  fff_b3lyp.dal  aug-dz.mol -get rsp_tensor_human
+  ffff_b3lyp.dal aug-dz.mol -get rsp_tensor_human
