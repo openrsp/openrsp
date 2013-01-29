@@ -3,4 +3,5 @@
 */*.stdout
 */*.stderr
 */*.rsp_tensor
+*/*.rsp_tensor_human
 */compare
