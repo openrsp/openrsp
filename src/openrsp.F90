@@ -1695,6 +1695,229 @@ end do
 
 
 
+
+
+
+! ! MaR: This routine is untested
+! ! Get SFG point intensities in the double harmonic approximation
+!     if (openrsp_cfg_general_sfg) then
+! 
+!        ! Get Egf 
+!        ! Get Egff (which frequency/frequencies?)
+! 
+! ! Get vibrational information and convert tensors to normal mode basis
+! ! All of the above should be easily adaptable from the pv_beta code
+! 
+!        ! Calculate dipole moment
+! 
+!        kn = (/0,0/)
+! 
+!        perturbation_tuple%n_perturbations = 1
+!        allocate(perturbation_tuple%pdim(1))
+!        allocate(perturbation_tuple%plab(1))
+!        allocate(perturbation_tuple%pid(1))
+!        allocate(perturbation_tuple%freq(1))
+! 
+!        perturbation_tuple%plab = (/'EL  '/)
+!        perturbation_tuple%pdim = (/3/)
+!        perturbation_tuple%pid = (/1/)
+!        perturbation_tuple%freq = (/0.0d0/)
+! 
+!        call rsp_prop(perturbation_tuple, kn, F, D, S, file_id='Ef')
+! 
+!        ! Read dipole moment from file
+! 
+!        open(unit = 258, file='rsp_tensor_Ef', status='old', action='read', iostat=ierr)
+!        read(258,*) fld_dum
+!           dm = fld_dum
+!        close(258)
+! 
+!        deallocate(perturbation_tuple%pdim)
+!        deallocate(perturbation_tuple%plab)
+!        deallocate(perturbation_tuple%pid)
+!        deallocate(perturbation_tuple%freq)
+! 
+!        fld_dum = 0.0
+! 
+!        ! Get normal mode transformation matrix
+!        ! Get normal mode frequencies
+! 
+!        allocate(T(3*num_atoms, 3*num_atoms))
+! 
+!        allocate(nm_freq_b(3*num_atoms))
+! 
+!        nm_freq_b = 0.0
+! 
+!        call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
+! 
+!        allocate(nm_freq(n_nm))
+! 
+!        nm_freq = 0.0
+! 
+!        nm_freq = nm_freq_b(1:n_nm)
+!        deallocate(nm_freq_b)
+! 
+!        allocate(ff_pv(3, 3))
+!        allocate(fff_pv(3, 3, 3))
+!        allocate(egf_cart(3*num_atoms, 3))
+!        allocate(egf_nm(n_nm, 3))
+!        allocate(egff_cart(3*num_atoms, 3, 3))
+!        allocate(egff_nm(n_nm, 3, 3))
+! 
+!        ff_pv = 0.0
+!        fff_pv = 0.0
+!        egf_cart = 0.0
+!        egf_nm = 0.0
+!        egff_cart = 0.0
+!        egff_nm = 0.0
+! 
+!        ! Calculate gradient of dipole moment
+! 
+!        kn = (/0,1/)
+! 
+!        perturbation_tuple%n_perturbations = 2
+!        allocate(perturbation_tuple%pdim(2))
+!        allocate(perturbation_tuple%plab(2))
+!        allocate(perturbation_tuple%pid(2))
+!        allocate(perturbation_tuple%freq(2))
+! 
+!        perturbation_tuple%plab = (/'GEO ', 'EL  '/)
+!        perturbation_tuple%pdim = (/3*num_atoms, 3/)
+!        perturbation_tuple%pid = (/1, 2/)
+!        perturbation_tuple%freq = (/0.0d0, 0.0d0/)
+! 
+!        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+!        perturbation_tuple%pid = (/1, 2/)
+! 
+!        ! ASSUME CLOSED SHELL
+!        call mat_init(zeromat_already, S%nrow, S%ncol, &
+!                      .true., .false., .false., .false., .false.)
+!        call mat_init_like_and_zero(S, zeromat_already)
+! 
+! 
+!        call sdf_setup_datatype(S_already, S)
+!        call sdf_setup_datatype(D_already, D)
+!        call sdf_setup_datatype(F_already, F)
+! 
+! 
+!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                            S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
+! 
+! 
+!        ! Read dipole moment gradient from file and transform to normal mode basis
+! 
+!        open(unit = 258, file='rsp_tensor_Egf', status='old', action='read', iostat=ierr)
+! 
+!        do i = 1, 3*num_atoms
+!           read(258,*) fld_dum
+!           egf_cart(i, :) = fld_dum
+!        end do
+! 
+!        close(258)
+! 
+!        egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
+! 
+! 
+!        ! Normalize dipole moment - follows procedure by AJT
+! 
+!        if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
+! 
+!           dm = (/0d0, 0d0, 1d0/)
+! 
+!        else
+! 
+!           dm = dm/((sum(dm * dm))**0.5)
+! 
+!        end if
+! 
+! 
+! 
+!        deallocate(perturbation_tuple%pdim)
+!        deallocate(perturbation_tuple%plab)
+!        deallocate(perturbation_tuple%pid)
+!        deallocate(perturbation_tuple%freq)
+! 
+!        do k = 1, openrsp_cfg_nr_freq_tuples
+! 
+!           ! Calculate gradient of polarizability
+! 
+!           kn = (/0,2/)
+! 
+!           perturbation_tuple%n_perturbations = 3
+!           allocate(perturbation_tuple%pdim(3))
+!           allocate(perturbation_tuple%plab(3))
+!           allocate(perturbation_tuple%pid(3))
+!           allocate(perturbation_tuple%freq(3))
+! 
+!           perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  '/)
+!           perturbation_tuple%pdim = (/3*num_atoms, 3, 3/)
+!           perturbation_tuple%pid = (/1, 2, 3/)
+!           perturbation_tuple%freq = (/0.0d0, -1.0d0 * openrsp_cfg_real_freqs(k), &
+!                                                       openrsp_cfg_real_freqs(k)/)
+! 
+!           perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+!           perturbation_tuple%pid = (/1, 2, 3/)
+! 
+! 
+!           call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                               S_already=S_already, zeromat_already=zeromat_already, file_id='Egff')
+! 
+!           ! Read polarizability gradient from file and transform to normal mode basis
+! 
+!           open(unit = 258, file='rsp_tensor_Egff', status='old', action='read', iostat=ierr)
+! 
+!           do i = 1, 3*num_atoms
+!              do j = 1, 3
+!                 read(258,*) fld_dum
+!                 egff_cart(i, j, :) = fld_dum
+!              end do
+!           end do
+! 
+!           close(258)
+! 
+!           egff_nm = trans_cartnc_2w1d(3*num_atoms, n_nm, egff_cart, T(:,1:n_nm))
+! 
+!           deallocate(perturbation_tuple%pdim)
+!           deallocate(perturbation_tuple%plab)
+!           deallocate(perturbation_tuple%pid)
+!           deallocate(perturbation_tuple%freq)
+! 
+!           do m = 1, n_nm
+! 
+!              sfg_intensity(i) = 
+! 
+!           end do
+! 
+! 
+! 
+! 
+!        end do
+! 
+!        deallocate(T)
+!        deallocate(nm_freq)
+!        deallocate(ff_pv)
+!        deallocate(fff_pv)
+!        deallocate(egf_cart)
+!        deallocate(egf_nm)
+!        deallocate(egff_cart)
+!        deallocate(egff_nm)
+! 
+! 
+! 
+! 
+! ! Loop over modes, calculate point intensities
+!       
+! 
+!     end if
+
+
+
+
+
+
+
+
+
   end subroutine
 
   subroutine openrsp_finalize()
