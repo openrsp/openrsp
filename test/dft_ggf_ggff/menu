@@ -1,2 +1,0 @@
-  ggf_b3lyp.dal  mol.mol -get rsp_tensor
-  ggff_b3lyp.dal mol.mol -get rsp_tensor
