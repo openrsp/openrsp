@@ -596,7 +596,7 @@ contains
                      .false., .false., .false., .false., .false.)
        call get_C(C, mo_coef, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
        deallocate(mo_coef)
-       RHS_mo = trps(C)*(RHS(1)*C)
+       RHS_mo = trans(C)*(RHS(1)*C)
        C = 0
 
     RHS_mo%ih_sym = RHS(1)%ih_sym
@@ -895,22 +895,22 @@ contains
     if (nfsym == 2) then
       if (jbtof(Wp%pg_sym-1, 1) == 2) then
 !       ungerade perturbation
-        Dp(1) = (Cig*(Wp*trps(Csu))) &
-           + (Ciu*(Wp*trps(Csg))) &
-           - (Csg*(Wp*trps(Ciu))) &
-           - (Csu*(Wp*trps(Cig)))
+        Dp(1) = (Cig*(Wp*trans(Csu))) &
+           + (Ciu*(Wp*trans(Csg))) &
+           - (Csg*(Wp*trans(Ciu))) &
+           - (Csu*(Wp*trans(Cig)))
       else
 !       gerade perturbation
-        Dp(1) = (Cig*(Wp*trps(Csg))) &
-           + (Ciu*(Wp*trps(Csu))) &
-           - (Csg*(Wp*trps(Cig))) &
-           - (Csu*(Wp*trps(Ciu)))
+        Dp(1) = (Cig*(Wp*trans(Csg))) &
+           + (Ciu*(Wp*trans(Csu))) &
+           - (Csg*(Wp*trans(Cig))) &
+           - (Csu*(Wp*trans(Ciu)))
       end if
       Ciu = 0
       Csu = 0
     else
-      Dp(1) = (Cig*(Wp*trps(Csg))) &
-         - (Csg*(Wp*trps(Cig)))
+      Dp(1) = (Cig*(Wp*trans(Csg))) &
+         - (Csg*(Wp*trans(Cig)))
     end if
     Cig = 0
     Csg = 0

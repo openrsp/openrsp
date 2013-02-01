@@ -166,7 +166,8 @@ contains
 
       allocate(mo_coef(ncmotq))
 
-      call mat_init(C_i, nrow=ntbas(0), ncol=norbt, closed_shell=.true.)
+      call mat_init(C_i, ntbas(0), norbt, &
+                    .false., .false., .false., .false., .false.)
 
       call read_mo_coef(mo_coef)
 
@@ -174,7 +175,7 @@ contains
 
       deallocate(mo_coef)
 
-      D = C_i*(trps(C_i))
+      D = C_i*(trans(C_i))
       D = 2.0d0*D
 
       C_i     = 0
@@ -381,10 +382,10 @@ contains
          stop 1
       end if
 
-      T  = mat_alloc_like(H1)
-      TX = mat_alloc_like(H1)
-      TY = mat_alloc_like(H1)
-      TZ = mat_alloc_like(H1)
+      call mat_init_like_and_zero(H1, T)
+      call mat_init_like_and_zero(H1, TX)
+      call mat_init_like_and_zero(H1, TY)
+      call mat_init_like_and_zero(H1, TZ)
 
       call get_1el_integrals(                                &
                              M=(/TX, TY, TZ/),               &

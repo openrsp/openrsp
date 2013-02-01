@@ -133,6 +133,7 @@ contains
 !     --------------------------------------------------------------------------
 
       res = 0.0
+#ifndef PRG_DIRAC
       if (.not. get_is_ks_calculation()) return
 
       nr_atoms = get_nr_atoms()
@@ -773,9 +774,9 @@ contains
                     pert%n_perturbations
 
       end if
+#endif /* ifdef PRG_DIRAC */
 
       prop = prop + res
-
 
    end subroutine
 
@@ -911,6 +912,7 @@ end module
 
       xc_energy = 0.0d0
 
+#ifndef PRG_DIRAC
       call interface_ao_write()
       call xc_integrate(                  &
                         mat_dim=nr_ao,    &
@@ -931,6 +933,7 @@ end module
             fmat(k) = fmat(k) + xcmat(j, i)
          end do
       end do
+#endif /* ifndef PRG_DIRAC */
 
 !     print *, 'raboof xc energy', xc_energy
       deallocate(xcmat)
