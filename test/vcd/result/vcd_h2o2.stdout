@@ -1,0 +1,32 @@
+
+   ***************************************** 
+   **** OUTPUT FROM DALTON SHELL SCRIPT **** 
+   ***************************************** 
+
+   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+
+   Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch vcd.dal h2o2.mol
+
+   Fri Feb  1 16:01:50 CET 2013
+
+   Calculation: vcd_h2o2  (input files: vcd.dal and h2o2.mol)
+   PID        : 10041
+   Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/vcd
+   Scratch dir: /tmp/DALTON_scratch_bast/bast/vcd_h2o2
+
+ before response solver: norm(RHS) =    2.3890731334686279     
+ before response solver: norm(RHS) =    1.1748373508453369     
+ before response solver: norm(RHS) =    1.8637607097625732     
+
+ before response solver: norm(RHS) =    7.6304502487182617     
+ before response solver: norm(RHS) =    1.5959914922714233     
+ before response solver: norm(RHS) =    7.0159182548522949     
+Egbw
+ -0.086076049628 -0.168516771701  0.976294118140 -0.086076049628 -0.168516771700 -0.976294118140  0.088078612069  0.466593182630 -0.099668266008  0.088078612070  0.466593182631  0.099668266008
+  0.256612355402  0.006642307448 -0.122984706105  0.256612355401  0.006642307448  0.122984706106 -0.548529700702 -0.007424866401  0.213833468350 -0.548529700702 -0.007424866399 -0.213833468350
+ -1.269004523830  0.149418429092  0.104538170219  1.269004523830 -0.149418429092  0.104538170218  0.271970280680 -0.232681101205 -0.104717490144 -0.271970280680  0.232681101206 -0.104717490144
+
+vcd_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/vcd
+
+   Fri Feb  1 16:02:18 CET 2013
+   ***************************************** 

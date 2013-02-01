@@ -64,11 +64,16 @@ contains
       do j=1,3
          FDSbw(j) = -1/2d0 * S*D*Sb(j) - S*Db(j)*S &
                   -  1/2d0 * Sb(j)*D*S
-         Sb(j) = 0
+         Sb(j)%elms = 0.0d0
       end do
       ! call solver directly
       call solve_scf_eq(S, D, F, -1, (0d0,0d0), 3, &
                         Sb, FDSbw, Dbw, Fbw)
+
+!     do j=1,3
+!        Sb(j) = 0
+!     end do
+
       ! contract the frequency-differentiated response function
       Egbw = 0
       call prop_oneave(S, (/'GEO','MAG'/), (/D/), shape(Egbw), Egbw, &

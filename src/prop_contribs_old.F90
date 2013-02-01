@@ -595,7 +595,7 @@ contains
             ! nuclear contribution if unperturbed density (nd==0)
             if (nd == 0) then
                allocate(RR(3*(3*na)))
-               call AATNUC_ifc(3*na, RR)
+               call AATNUC_ifc(na, RR)
                do j = 0, dp(2)-1
                   do i = 0, dp(1)-1
                      E(1+i+dp(1)*j) = E(1+i+dp(1)*j) + 2 & !factor 2

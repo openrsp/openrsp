@@ -105,6 +105,8 @@
     ! if calculates vibrational 2nd hyperpolarizability
     logical :: openrsp_vibshyp = .false.
 
+    logical :: openrsp_vcd = .false.
+
     ! the followings are for MO response solver
     !
     ! maximum number of micro iterations in the iterative solution of
@@ -282,6 +284,8 @@
         openrsp_vibbeta = .true.
       case ( '.VIBSHYP' )
         openrsp_vibshyp = .true.
+      case ( '.VCD' )
+        openrsp_vcd = .true.
       ! illegal keyword
       case default
         call QUIT( ' Keyword "'//trim(word)//'" is not recognized in OpenRSP!' )
@@ -325,7 +329,8 @@
                            openrsp_sechyp,     &
                            openrsp_sechyp1,    &
                            openrsp_vibbeta,    &
-                           openrsp_vibshyp )
+                           openrsp_vibshyp,    &
+                           openrsp_vcd )
     deallocate( real_freqs )
     deallocate( imag_freqs )
 
