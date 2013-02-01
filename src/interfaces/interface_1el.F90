@@ -529,7 +529,9 @@ contains
          P = 0*D
          call mat_ensure_alloc(P, only_alloc=.true.)
          do i = 1, nc(1)
-            call get_fc_integrals(P%nrow, P%elms, openrsp_cfg_pnc_center, i, 0)
+            print *, 'error: fix pnc code'
+            stop 1
+          ! call get_fc_integrals(P%nrow, P%elms, openrsp_cfg_pnc_center, i, 0)
             ave(i) = dot(P, D)
          end do
          P = 0
@@ -915,7 +917,7 @@ contains
             T = 0
 
             deallocate(temp)
-            deallocate(num_derv)
+          ! deallocate(num_derv)
 
 #endif /* ifdef PRG_DIRAC */
 
@@ -1469,7 +1471,9 @@ contains
             call mat_init(oneint(1), nr_ao, nr_ao, &
                           .false., .false., .false., .false., .false.)
          end if
-         call get_fc_integrals(nr_ao, oneint(1)%elms, openrsp_cfg_pnc_center, 0, 0)
+         print *, 'error: fix pnc code'
+         stop 1
+       ! call get_fc_integrals(nr_ao, oneint(1)%elms, openrsp_cfg_pnc_center, 0, 0)
 #endif /* ifdef PRG_DIRAC */
 
       else if (count(f == 'EL  ') > 1) then
