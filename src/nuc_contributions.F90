@@ -422,13 +422,20 @@ contains
 #include "aatens.h"
     integer, intent(in) :: na
     real(8), intent(out) :: AATN( 3, 3*na )
-    real(8) :: CSTRA( 3*na, 3*na ), SCTRA( 3*na, 3*na )
+
+    real(8), allocatable :: cstra(:, :)
+    real(8), allocatable :: sctra(:, :)
+
 #ifdef PRG_DIRAC
     print *, 'fix nucaat call'
     stop 1
 #else
+    allocate(cstra(3*na, 3*na))
+    allocate(sctra(3*na, 3*na))
     call NUCAAT( CSTRA, SCTRA, 0 )
          AATN(:,:) = AATNUC( :, :3*na )
+    deallocate(cstra)
+    deallocate(sctra)
 #endif
   end subroutine
 #endif
