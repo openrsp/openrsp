@@ -103,7 +103,8 @@ module prop_contribs_old
 
    character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
 
-   logical, external :: do_dft
+ ! logical, external :: do_dft
+   logical, parameter :: do_dft = .false.
 
 contains
 
@@ -877,7 +878,7 @@ contains
       !London magnetic, no nd==0 because because MAG anti
       else if (np==1 .and. p(1)=='MAG' .and. nd /= 0) then
          ! di_get_MagDeriv_(F,G)xD_DFT takes initialized
-         if (do_dft()) then !scratch in A(4:6)
+         if (do_dft) then !scratch in A(4:6)
             do i = 4, 6
                if (iszero(A(i))) call mat_ensure_alloc(A(i))
             end do
@@ -889,7 +890,7 @@ contains
             ! Coulomb-exchange
             call twofck('M ', D(1:1), A(1:3))
             ! Kohn-Sham contribution
-            if (do_dft()) then
+            if (do_dft) then
                call di_get_MagDeriv_FxD_DFT(A(4:6), D(1))
                do i = 1, 3
                   A(i) = A(i) + A(3+i)
@@ -910,7 +911,7 @@ contains
                ! Coulomb-exchange
                call twofck('M ', D(2+j:2+j), A(1:3))
                ! Kohn-Sham
-               if (do_dft()) then
+               if (do_dft) then
                   call di_get_MagDeriv_GxD_DFT(D(1), D(2+j), A(4:6))
                   do i = 1, 3
                      A(i) = A(i) - A(3+i) !negative sign on KS contrib
@@ -960,7 +961,7 @@ contains
             call quit('prop_twoave: GEO, nd > 2 not implemented')
          end if
          deallocate(RR)
-         if (do_dft()) print* !after all the "...integrated to nn electrons..." prints
+         if (do_dft) print* !after all the "...integrated to nn electrons..." prints
       else if (np==2 .and. all(p==(/'MAG','MAG'/))) then
          ! highest-order contribution
          if (nd /= 0 .and. all((/(iszero(D(i)), i=pd1-pd+1,pd1)/))) then
@@ -969,7 +970,7 @@ contains
             ! Coulomb-exchange
             call twofck('MM', D(1:1), A(1:6))
             ! Kohn-Sham exchange-correlation
-            if (do_dft()) then
+            if (do_dft) then
                call quit('prop_twoave: MAG MAG not implemented for DFT')
             end if
             do k = 0, pd-1
@@ -993,7 +994,7 @@ contains
             do k = 0, de(3)-1
                if (iszero(D(2+k))) cycle
                call twofck('MM', D(2+k), A(:6))
-               if (do_dft()) then
+               if (do_dft) then
                   call quit('prop_twoave: MAG MAG not implemented for DFT')
                end if
                do l = 0, de(4)-1
@@ -1024,7 +1025,7 @@ contains
             call twoctr('GG', D(1), D(pd1-pd+1+k), RR)
             if (nd==0) RR = RR/2 !factor 1/2 for unperturbed Hessian integrals
             ! Kohn-Sham exchange-correlation
-            if (do_dft()) then
+            if (do_dft) then
                call quit('prop_twoave: GEO GEO, DFT not implemented',get_print_unit())
             end if
             do j = 0, de(2)-1
@@ -1042,7 +1043,7 @@ contains
                do k = 0, de(3)-1
                   if (iszero(D(2+k))) cycle
                   call twoctr('GG', D(2+k), D(2+de(3)+l), RR)
-                  if (do_dft()) then
+                  if (do_dft) then
                      call quit('prop_twoave: GEO GEO, DFT not implemented',get_print_unit())
                   end if
                   do j = 0, de(2)-1
@@ -1616,7 +1617,7 @@ contains
             F(i+1) = F(i+1) + A(1)
          end do
 
-         if (do_dft()) then
+         if (do_dft) then
             print *, 'ERROR: XC is not supported in this version'
             stop 1
          end if
@@ -1632,7 +1633,7 @@ contains
                F(1+i+df(1)*j) = F(1+i+df(1)*j) + A(c(1)+i)
             end do
             ! Kohn-Sham
-            if (do_dft()) then
+            if (do_dft) then
                if (nd==0) call di_get_MagDeriv_FxD_DFT(A(1:3), D(1))
                if (nd/=0) call di_get_MagDeriv_GxD_DFT(D(1), D(pd1-pd+1+j), A(1:3))
                do i = 0, df(1)-1
@@ -1641,7 +1642,7 @@ contains
                end do
             end if
          end do
-         if (nd==0 .or. nd==1 .or. .not.do_dft()) then
+         if (nd==0 .or. nd==1 .or. .not.do_dft) then
             ! nothing more
          else
             call quit('prop_twoint: MAG, nd > 2 not implemented with DFT')
@@ -1654,26 +1655,26 @@ contains
                if (i==0 .or. mod(c(1)+i-1,3)==0) then
                   call twofck('G ', D(pd1-pd+1+j:pd1-pd+1+j), A(1:3), &
                               a=1+(c(1)+i-1)/3)
-                  if (do_dft()) then
+                  if (do_dft) then
                      call quit('prop_twoint: GEO not implemented with DFT')
                   end if
                end if
                F(1+i+df(1)*j) = F(1+i+df(1)*j) + A(1+mod(c(1)+i-1,3))
             end do
          end do
-         if (nd==0 .or. nd==1 .or. .not.do_dft()) then
+         if (nd==0 .or. nd==1 .or. .not.do_dft) then
             ! nothing more
          else
             call quit('prop_twoint: GEO not implemented with DFT')
          end if
-         ! if (do_dft()) print* !after all the "...integrated to nn electrons..." prints
+         ! if (do_dft) print* !after all the "...integrated to nn electrons..." prints
       else if (np==2 .and. all(p==(/'MAG','MAG'/))) then
          do k = 0, pd-1
             if (iszero(D(pd1-pd+1+k))) cycle
             ! Coulomb-exchange
             call twofck('MM', D(1:1), A(1:6))
             ! Kohn-Sham
-            if (do_dft()) then
+            if (do_dft) then
                call quit('prop_twoint: MAG MAG not implemented with DFT')
             end if
             do j = 0, df(2)-1
@@ -1685,7 +1686,7 @@ contains
                end do
             end do
          end do
-         if (nd==0 .or. nd==1 .or. .not.do_dft()) then
+         if (nd==0 .or. nd==1 .or. .not.do_dft) then
              !nothing more
          else
             call quit('prop_twoint: MAG MAG and nd > 2 not implemented with DFT')
@@ -1759,10 +1760,15 @@ contains
          call interface_scf_get_g(D(1), F(1))
       else
          wrk(1:n2) = reshape(D(1)%elms, (/n2/)) !ajt fixme
+#ifdef PRG_DIRAC
+         print *, 'ERROR fix grcont call'
+         stop 1
+#else
          call GRCONT(wrk( 1+n2+n2*nf : lwrk ), (lwrk-n2-n2*nf),         &
                      wrk( 1+n2 : n2+n2*nf ), n2*nf, (what(1:1) == 'G'), &
                      (what(1:1) == 'M'), merge(1,2,what(2:2)==' '),     &
                      aa, .false., .true., wrk(1:n2), 1)
+#endif
          do i = 1, nf
             F(i)%elms = reshape(wrk(1+n2*i:n2*(1+i)), shape(F(i)%elms)) !ajt fixme
          end do
@@ -1820,6 +1826,10 @@ contains
       e = 0.0d0
 
 
+#ifdef PRG_DIRAC
+         print *, 'ERROR fix grcont call'
+         stop 1
+#else
       call grcont(wrk(2*l + 1),    &
                   lwrk - 2*l,      &
                   e,                &
@@ -1832,6 +1842,7 @@ contains
                   .false.,          &
                   wrk(1),             &
                   2)
+#endif
 
 
       call f77_memory_deselect(work_len=lwrk, work=wrk)
