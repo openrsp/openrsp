@@ -9,6 +9,7 @@ module interface_scf
    use interface_dirac_gen1int
    use eri_contractions, only: ctr_arg
    use eri_basis_loops,  only: unopt_geodiff_loop
+   use rsp_indices_and_addressing
 
    implicit none
 
