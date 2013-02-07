@@ -896,8 +896,10 @@ end module
 
    subroutine external_rsp_xcint(nr_ao, dmat, fmat, xc_energy)
 
+#ifndef PRG_DIRAC
       use interface_ao_specific
       use xcint_main
+#endif
 
       integer      :: nr_ao
       real(8)      :: dmat(nr_ao, nr_ao)
