@@ -154,7 +154,11 @@ contains
                            openrsp_cfg_solver_optorb)
 
     ! initialize and allocate overlap matrix
+#ifdef PRG_DIRAC
+    call mat_init(S, NBAST, NBAST, .false., .false., .true., .false., .false.)
+#else
     call mat_init(S, NBAST, NBAST, .false., .false., .false., .false., .false.)
+#endif
 
     ! get the overlap
     call interface_scf_get_s(S)
