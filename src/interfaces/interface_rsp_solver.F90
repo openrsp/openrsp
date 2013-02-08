@@ -90,8 +90,7 @@ contains
     if ( present( optimal_orb ) ) solver_optorb = optimal_orb
     ! initializes the coefficients of molecular orbitals matrices
 
-    call mat_init(solver_CMO, NBAST, NBAST, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(solver_CMO, NBAST, NBAST)
 
     solver_CMO_OCC = 0*solver_CMO
     call mat_ensure_alloc(solver_CMO_OCC, only_alloc=.true.)
@@ -242,8 +241,7 @@ contains
 
     ! transforms from AO to MO, and writes RHS (MO) into file
 
-    call mat_init(RHS_MO, NORBT, NORBT, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(RHS_MO, NORBT, NORBT)
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
@@ -288,8 +286,7 @@ contains
       ! MaR: Next line replaced by mat_init call to avoid strange nonallocation error msg
       ! mo_eigvec(ISOL) = mat_alloc_like(RHS_MO)
       ! ASSUMES CLOSED SHELL
-      call mat_init(mo_eigvec(ISOL), RHS_MO%nrow, RHS_MO%ncol, &
-                    .false., .false., .false., .false., .false.)
+      call mat_init(mo_eigvec(ISOL), RHS_MO%nrow, RHS_MO%ncol)
 
       ! reads the solution
       call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
@@ -592,8 +589,7 @@ contains
 
        allocate(mo_coef(ncmotq))
        call read_mo_coef(mo_coef)
-       call mat_init(C, ntbas(0), norbt, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(C, ntbas(0), norbt)
        call get_C(C, mo_coef, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
        deallocate(mo_coef)
        RHS_mo = trans(C)*(RHS(1)*C)
@@ -876,10 +872,8 @@ contains
 
     allocate(mo_coef(n2bbasxq))
     call read_mo_coef(mo_coef)
-    call mat_init(Cig, ntbas(0), norbt, &
-                  .false., .false., .false., .false., .false.)
-    call mat_init(Csg, ntbas(0), norbt, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(Cig, ntbas(0), norbt)
+    call mat_init(Csg, ntbas(0), norbt)
     call get_C(Cig, mo_coef, i=1.0d0, s=0.0d0, g=1.0d0, u=0.0d0)
     call get_C(Csg, mo_coef, i=0.0d0, s=1.0d0, g=1.0d0, u=0.0d0)
     if (nfsym == 2) then

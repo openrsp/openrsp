@@ -154,11 +154,7 @@ contains
                            openrsp_cfg_solver_optorb)
 
     ! initialize and allocate overlap matrix
-#ifdef PRG_DIRAC
-    call mat_init(S, NBAST, NBAST, .false., .false., .true., .false., .false.)
-#else
-    call mat_init(S, NBAST, NBAST, .false., .false., .false., .false., .false.)
-#endif
+    call mat_init(S, NBAST, NBAST)
 
     ! get the overlap
     call interface_scf_get_s(S)
@@ -353,8 +349,7 @@ file_id = '    '
              if (k == 1) then
 
                 ! ASSUME CLOSED SHELL
-                call mat_init(zeromat_already, S%nrow, S%ncol, &
-                              .true., .false., .false., .false., .false.)
+                call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
                 call mat_init_like_and_zero(S, zeromat_already)
 
 
@@ -463,8 +458,7 @@ file_id = '    '
           if (k == 1) then
 
              ! ASSUME CLOSED SHELL
-             call mat_init(zeromat_already, S%nrow, S%ncol, &
-                              .true., .false., .false., .false., .false.)
+             call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
              call mat_init_like_and_zero(S, zeromat_already)
 
              call sdf_setup_datatype(S_already, S)
@@ -593,8 +587,7 @@ file_id = '    '
 
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, &
-                     .true., .false., .false., .false., .false.)
+       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
        call mat_init_like_and_zero(S, zeromat_already)
 
 
@@ -771,8 +764,7 @@ file_id = '    '
        perturbation_tuple%pid = (/1, 2/)
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, &
-                     .true., .false., .false., .false., .false.)
+       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
        call mat_init_like_and_zero(S, zeromat_already)
 
 
@@ -1060,8 +1052,7 @@ file_id = '    '
        perturbation_tuple%pid = (/1, 2/)
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, &
-                     .true., .false., .false., .false., .false.)
+       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
        call mat_init_like_and_zero(S, zeromat_already)
 
 
@@ -1433,8 +1424,7 @@ file_id = '    '
        Effqfw2w = 0.0
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, &
-                     .true., .false., .false., .false., .false.)
+       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)

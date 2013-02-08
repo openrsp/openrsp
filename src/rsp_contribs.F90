@@ -1756,8 +1756,7 @@ end if
     nullify(null_ptr) !because null() isn't f90
 
   if (any(f=='EL  ')) then
-     call mat_init(A, nr_ao, nr_ao, &
-                   .false., .false., .false., .false., .false.)
+     call mat_init(A, nr_ao, nr_ao)
      do i = 1, product(nc)
         if (iszero(fock(i))) then
            call mat_ensure_alloc(fock(i))
@@ -1927,8 +1926,7 @@ end if
        nullify(null_ptr)
 
        if (nf==0) then
-       call mat_init(A, fock(1)%nrow, fock(1)%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(A, fock(1)%nrow, fock(1)%ncol)
           A = 0*dens
           call mat_ensure_alloc(A)
 ! write(*,*) 'A', A%elms
@@ -2105,8 +2103,7 @@ type(matrix) :: Db, Fb
           allocate(tmp_xcint(nc(1), nc(1)))
           do i = 1, nc(1)
              do j = 1, nc(1)
-                call mat_init(tmp_xcint(i,j), nr_ao, nr_ao, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(tmp_xcint(i,j), nr_ao, nr_ao)
        call mat_init_like_and_zero(xcint(1), tmp_xcint(i,j))
 
              end do

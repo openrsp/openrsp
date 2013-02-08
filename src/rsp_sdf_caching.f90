@@ -86,8 +86,7 @@ module rsp_sdf_caching
     do i = 1, perturbed_matrix_size
     
        ! ASSUME CLOSED SHELL
-       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol)
        call mat_init_like_and_zero(data(i), new_element%data(i))
 
        new_element%data(i) = data(i)
@@ -249,8 +248,7 @@ module rsp_sdf_caching
 
        ! ASSUME CLOSED SHELL
        call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
-                     next_element%data(offset)%ncol, &
-                     .false., .false., .false., .false., .false.)
+                     next_element%data(offset)%ncol)
        call mat_init_like_and_zero(next_element%data(offset), sdf_getdata)
 
        sdf_getdata = next_element%data(offset)
@@ -285,8 +283,7 @@ module rsp_sdf_caching
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol)
        call mat_init_like_and_zero(data(i), current_element%data(i))
 
 

@@ -96,8 +96,7 @@ public rsp_cfg
 ! Assumes S_unpert, D_unpert, F_unpert is present
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat, S_unpert%nrow, S_unpert%ncol, &
-                     .true., .false., .false., .false., .false.)
+       call mat_init(zeromat, S_unpert%nrow, S_unpert%ncol, is_zero=.true.)
        call mat_init_like_and_zero(S_unpert, zeromat)
 
 
@@ -110,8 +109,7 @@ public rsp_cfg
 ! Assumes zeromat_already is present
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat, zeromat_already%nrow, zeromat_already%ncol, &
-                     .true., .false., .false., .false., .false.)
+       call mat_init(zeromat, zeromat_already%nrow, zeromat_already%ncol, is_zero=.true.)
        call mat_init_like_and_zero(zeromat_already, zeromat)
 
     end if
@@ -640,8 +638,7 @@ public rsp_cfg
        do i = 1, num_p_tuples
    
           ! ASSUME CLOSED SHELL
-          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, &
-                        .false., .false., .false., .false., .false.)
+          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol)
           call mat_init_like_and_zero(zeromat, dens_tuple(i))
    
        end do
@@ -1149,8 +1146,7 @@ public rsp_cfg
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
     
     ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(W, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, W)
     
     do i = 1, size(outer_indices, 1)
@@ -1472,8 +1468,7 @@ public rsp_cfg
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(W, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, W)
 
     do i = 1, size(outer_indices, 1)
@@ -1806,13 +1801,11 @@ public rsp_cfg
     offset = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Z, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(Z, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, Z)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Zeta, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(Zeta, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, Zeta)
 
     do i = 1, size(outer_indices_a, 1)
@@ -2146,13 +2139,11 @@ public rsp_cfg
     offset = 0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Y, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(Y, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, Y)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(L, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(L, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, L)
 
     do i = 1, size(outer_indices_a, 1)

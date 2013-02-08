@@ -61,8 +61,7 @@ module rsp_lof_caching
 
     do i = 1, property_size
        ! ASSUME CLOSED SHELL
-       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol)
        call mat_init_like_and_zero(data(i), new_element%data(i))
 
        new_element%data(i) = data(i)

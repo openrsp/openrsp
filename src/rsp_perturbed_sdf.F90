@@ -128,13 +128,11 @@ module rsp_perturbed_sdf
 
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(B, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, B)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
@@ -162,8 +160,7 @@ module rsp_perturbed_sdf
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(Sp(i), zeromat%nrow, zeromat%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(Sp(i), zeromat%nrow, zeromat%ncol)
        call mat_init_like_and_zero(zeromat, Sp(i))
 
     end do
@@ -187,16 +184,13 @@ module rsp_perturbed_sdf
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(Dp(i), zeromat%nrow, zeromat%ncol)
        call mat_init_like_and_zero(zeromat, Dp(i))
 
-       call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(Dh(i), zeromat%nrow, zeromat%ncol)
        call mat_init_like_and_zero(zeromat, Dh(i))
 
-       call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(Fp(i), zeromat%nrow, zeromat%ncol)
        call mat_init_like_and_zero(zeromat, Fp(i))
 
     end do
@@ -274,12 +268,10 @@ module rsp_perturbed_sdf
        ! 4. Make right-hand side using Dp
 
        ! ASSUME CLOSED SHELL
-       call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(RHS(1), zeromat%nrow, zeromat%ncol)
        call mat_init_like_and_zero(zeromat, RHS(1))
 
-       call mat_init(X(1), zeromat%nrow, zeromat%ncol, &
-                     .false., .false., .false., .false., .false.)
+       call mat_init(X(1), zeromat%nrow, zeromat%ncol)
        call mat_init_like_and_zero(zeromat, X(1))
 
 ! write(*,*) 'RHS a', RHS(1)%elms
@@ -648,8 +640,7 @@ end if
        do j = 1, size(lower_order_contribution)
 
           ! ASSUME CLOSED SHELL
-          call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol, &
-                        .false., .false., .false., .false., .false.)
+          call mat_init(lower_order_contribution(j), zeromat%nrow, zeromat%ncol)
           call mat_init_like_and_zero(zeromat, lower_order_contribution(j))
 
        end do
@@ -657,8 +648,7 @@ end if
        do j = 1, size(tmp)
 
           ! ASSUME CLOSED SHELL
-          call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, &
-                        .false., .false., .false., .false., .false.)
+          call mat_init(tmp(j), zeromat%nrow, zeromat%ncol)
           call mat_init_like_and_zero(zeromat, tmp(j))
 
        end do
@@ -666,8 +656,7 @@ end if
        do i = 2, num_p_tuples
 
           ! ASSUME CLOSED SHELL
-          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, &
-                        .false., .false., .false., .false., .false.)
+          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol)
           call mat_init_like_and_zero(zeromat, dens_tuple(i))
 
        end do
@@ -702,8 +691,7 @@ end if
           do j = 1, size(tmp)
 
              ! ASSUME CLOSED SHELL
-             call mat_init(tmp(j), zeromat%nrow, zeromat%ncol, &
-                           .false., .false., .false., .false., .false.)
+             call mat_init(tmp(j), zeromat%nrow, zeromat%ncol)
              call mat_init_like_and_zero(zeromat, tmp(j))
 
           end do
@@ -740,8 +728,7 @@ end if
                 (/inner_indices(j, :), outer_indices(i, :) /)) 
 
                 ! ASSUME CLOSED SHELL
-                call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol)
                 call mat_init_like_and_zero(zeromat, lower_order_contribution(offset))
 
                 lower_order_contribution(offset) = tmp(j)
@@ -759,8 +746,7 @@ end if
              blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
 
              ! ASSUME CLOSED SHELL
-             call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol, &
-                           .false., .false., .false., .false., .false.)
+             call mat_init(lower_order_contribution(offset), zeromat%nrow, zeromat%ncol)
              call mat_init_like_and_zero(zeromat, lower_order_contribution(offset))
 
              lower_order_contribution(offset) = tmp(1)
