@@ -189,16 +189,13 @@ module rsp_perturbed_matrices
     W%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
 
-    call mat_init(B, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, B)
 
-    call mat_init(C, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
@@ -277,16 +274,13 @@ module rsp_perturbed_matrices
     Y%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
 
-    call mat_init(B, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, B)
 
-    call mat_init(C, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, C)
     
     do i = 1, superstructure_size
@@ -381,16 +375,13 @@ module rsp_perturbed_matrices
     Z%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
 
-    call mat_init(B, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, B)
 
-    call mat_init(C, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
@@ -446,16 +437,13 @@ module rsp_perturbed_matrices
     L%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
 
-    call mat_init(B, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, B)
 
-    call mat_init(C, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size
@@ -512,16 +500,13 @@ module rsp_perturbed_matrices
     Zeta%elms = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
 
-    call mat_init(B, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(B, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, B)
 
-    call mat_init(C, zeromat%nrow, zeromat%ncol, &
-                  .false., .false., .false., .false., .false.)
+    call mat_init(C, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, C)
 
     do i = 1, superstructure_size

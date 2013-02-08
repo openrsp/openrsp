@@ -112,14 +112,12 @@ contains
      ctr_arg_item(1)%ncor = ncor
      nullify(ctr_arg_item(1)%dens)
      allocate(ctr_arg_item(1)%dens)
-     call mat_init(ctr_arg_item(1)%dens, nbast, nbast, &
-                   .false., .false., .false., .false., .false.)
+     call mat_init(ctr_arg_item(1)%dens, nbast, nbast)
      CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%dens%elms,1)
      !
      nullify(ctr_arg_item(1)%fock_or_dens)
      allocate(ctr_arg_item(1)%fock_or_dens)
-     call mat_init(ctr_arg_item(1)%fock_or_dens, nbast, nbast, &
-                   .false., .false., .false., .false., .false.)
+     call mat_init(ctr_arg_item(1)%fock_or_dens, nbast, nbast)
      CALL DCOPY(NBAST*NBAST,Dfull,1,ctr_arg_item(1)%fock_or_dens%elms,1)
 !     ctr_arg_item(1)%dens = Dmat
 !     ctr_arg_item(1)%fock_or_dens = Gmat

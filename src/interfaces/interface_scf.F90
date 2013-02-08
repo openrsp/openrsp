@@ -167,12 +167,7 @@ contains
 
       allocate(mo_coef(ncmotq))
 
-      call mat_init(C_i, ntbas(0), norbt, &
-#ifdef PRG_DIRAC
-                    .false., .false., .true., .false., .false.)
-#else
-                    .false., .false., .false., .false., .false.)
-#endif
+      call mat_init(C_i, ntbas(0), norbt)
 
       call read_mo_coef(mo_coef)
 

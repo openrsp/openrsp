@@ -341,7 +341,7 @@
     call rsp_mosolver_splash( LUPRI )
 
     ! initialize and allocate matrices
-    call mat_init(S, NBAST, NBAST, .false., .false., .false., .false., .false.)
+    call mat_init(S, NBAST, NBAST)
 
     D = 0*S
     call mat_ensure_alloc(D, only_alloc=.true.)

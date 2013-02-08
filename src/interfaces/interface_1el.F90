@@ -1049,8 +1049,7 @@ contains
       if (any(f=='EL  ')) then
 
          do i = 1, product(nc)
-         call mat_init(ovl(i), nr_ao, nr_ao, &
-                       .false., .false., .false., .false., .false.)
+            call mat_init(ovl(i), nr_ao, nr_ao)
          end do
 
       else
@@ -1081,8 +1080,7 @@ contains
              do i = 0, nc(1)-1
                 ! allocate, if needed
                 if (.not.isdef(ovl(1+i))) then
-                call mat_init(ovl(1+i), nr_ao, nr_ao, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(ovl(1+i), nr_ao, nr_ao)
                 end if
                 ! overlap into ovl, half-perturbed overlap -i/2 Tg added to fock
                 call legacy_read_integrals('SQHDR' // prefix_zeros(c(1)+i,3), ovl(1+i))
@@ -1100,8 +1098,7 @@ contains
            ! allocates matrices
            do i = 1, num_ints
              if (.not.isdef(ovl(i))) then
-                call mat_init(ovl(i), nr_ao, nr_ao, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(ovl(i), nr_ao, nr_ao)
              end if
            end do
            ! calculates the overlap matrix
@@ -1217,13 +1214,6 @@ contains
 
       if (any(f=='EL  ')) then
 
-!          do i = 1, propsize
-!             call mat_init(ovl(i), nr_ao, nr_ao, &
-!                           .false., .false., .false., .false., .false.)
-! 
-! 
-!          end do
-
       else
 
          ! gets the order of total geometric derivatives
@@ -1243,12 +1233,10 @@ contains
          ! allocates matrices
          do i = 1, propsize
             if (.not.isdef(ovl(i))) then
-               call mat_init(ovl(i), nr_ao, nr_ao, &
-                             .false., .false., .false., .false., .false.)
+               call mat_init(ovl(i), nr_ao, nr_ao)
             end if
             if (.not.isdef(ovl_tmp(i))) then
-               call mat_init(ovl_tmp(i), nr_ao, nr_ao, &
-                             .false., .false., .false., .false., .false.)
+               call mat_init(ovl_tmp(i), nr_ao, nr_ao)
             end if
          end do
          ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
@@ -1376,12 +1364,10 @@ contains
 
            do i = 1, propsize
              if (.not.isdef(fock(i))) then
-                call mat_init(fock(i), nr_ao, nr_ao, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(fock(i), nr_ao, nr_ao)
              end if
              if (.not.isdef(tmp_fock(i))) then
-                call mat_init(tmp_fock(i), nr_ao, nr_ao, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(tmp_fock(i), nr_ao, nr_ao)
              end if
            end do
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
@@ -1468,8 +1454,7 @@ contains
          end if
 
          if (.not. isdef(oneint(1))) then
-            call mat_init(oneint(1), nr_ao, nr_ao, &
-                          .false., .false., .false., .false., .false.)
+            call mat_init(oneint(1), nr_ao, nr_ao)
          end if
          print *, 'error: fix pnc code'
          stop 1
@@ -1480,8 +1465,7 @@ contains
 
          ! radovan: this code does not make sense to me
          !          what is it supposed to do?
-         call mat_init(A, nr_ao, nr_ao, &
-                       .false., .false., .false., .false., .false.)
+         call mat_init(A, nr_ao, nr_ao)
          do i = 1, product(nc)
             if (iszero(oneint(i))) then
                call mat_ensure_alloc(oneint(i))
@@ -1518,8 +1502,7 @@ contains
 
          do imat = 1, size(oneint)
             if (.not.isdef(oneint(imat))) then
-               call mat_init(oneint(imat), nr_ao, nr_ao, &
-                             .false., .false., .false., .false., .false.)
+               call mat_init(oneint(imat), nr_ao, nr_ao)
             end if
          end do
 
@@ -1724,8 +1707,7 @@ contains
       end if
 
       if (count(f=='EL  ') > 1) then
-         call mat_init(A, nr_ao, nr_ao, &
-                       .false., .false., .false., .false., .false.)
+         call mat_init(A, nr_ao, nr_ao)
          A = 0*oneint(1)
          call mat_ensure_alloc(A)
 
@@ -1766,12 +1748,10 @@ contains
 
          do imat = 1, size(oneint)
             if (.not.isdef(oneint(imat))) then
-               call mat_init(oneint(imat), nr_ao, nr_ao, &
-                             .false., .false., .false., .false., .false.)
+               call mat_init(oneint(imat), nr_ao, nr_ao)
             end if
              if (.not.isdef(oneint_tmp(imat))) then
-                call mat_init(oneint_tmp(imat), nr_ao, nr_ao, &
-                              .false., .false., .false., .false., .false.)
+                call mat_init(oneint_tmp(imat), nr_ao, nr_ao)
              end if
          end do
 
