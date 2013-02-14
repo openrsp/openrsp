@@ -846,9 +846,7 @@ contains
 #endif /* ifdef PRG_DALTON */
 
 #ifdef PRG_DIRAC
-            ! MaR: ALLOCATION SIZE WAS CHANGED HERE IN THE PATTERN OF EARLIER CHANGES
-            ! IT WAS CHANGED TO THE TENSOR SYMMETRY NONREDUNDANT SIZE
-            allocate(temp(propsize*3))
+            allocate(temp(size(val_expt)*3))
 
             ! nuclear attraction
             temp = 0.0d0
@@ -861,13 +859,13 @@ contains
                                        order_geo,                 &
                                        order_geo,                 &
                                        0, (/0/),                  &
-                                       REDUNDANT_GEO,             &
+                                       UNIQUE_GEO,                &
                                        .false., .false., .false., &
                                        1, (/D/), propsize,        &
                                        temp, .false.,             &
                                        2, (/1, 1, 2, 2/),         &
                                        get_print_unit(), 0)
-            val_expt(:, 1) = val_expt(:, 1) + temp(1:num_expt)
+            val_expt(:, 1) = val_expt(:, 1) + temp(1:size(val_expt))
 
             ! beta' matrix
             temp = 0.0d0
@@ -886,7 +884,7 @@ contains
                                        temp, .false.,             &
                                        1, (/2, 2/),               &
                                        get_print_unit(), 0)
-            val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(1:num_expt)
+            val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(1:size(val_expt))
 
             ! kinetic energy
             T = 0*D
@@ -910,15 +908,13 @@ contains
                                           temp, .false.,               &
                                           2, (/1, 2, 2, 1/),           &
                                           get_print_unit(), 0)
-               do i = 1, num_expt
+               do i = 1, size(val_expt)
                   val_expt(i, 1) = val_expt(i, 1) + openrsp_cfg_speed_of_light*temp((i-1)*3 + ixyz)
                end do
             end do
             T = 0
 
             deallocate(temp)
-          ! deallocate(num_derv)
-
 #endif /* ifdef PRG_DIRAC */
 
          end if
