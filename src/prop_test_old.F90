@@ -13,7 +13,7 @@ module prop_test_old
 
    implicit none
 
-   public test_vcd
+   public vcd_aat
    public test_mcd
    public elec_dipmom
    public elec_polariz
@@ -40,7 +40,7 @@ module prop_test_old
 
 contains
 
-   subroutine test_vcd(ng, S, D, F)
+   subroutine vcd_aat(ng, S, D, F)
    ! "Atomic axial tensor" = -1/2 * Egbw
    ! Egbw = << GEO(0.0) MAG(0.0) FREQ(91) >>
       integer,      intent(in) :: ng
