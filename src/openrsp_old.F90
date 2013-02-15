@@ -610,7 +610,7 @@ module openrsp_old
 
     ! calculate VCD AAT
     if (this_info%openrsp_vcd) then
-       call test_vcd(3*get_nr_atoms(), S, D, F)
+       call vcd_aat(3*get_nr_atoms(), S, D, F)
     end if
 
     ! calculates vibrational hyperpolarizability
