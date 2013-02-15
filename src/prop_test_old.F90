@@ -5,9 +5,11 @@
 module prop_test_old
 
    use matrix_defop
+   use matrix_lowlevel
    use prop_contribs_old
    use rsp_equations_old
    use interface_io
+   use interface_1el
 
    implicit none
 
@@ -43,63 +45,75 @@ contains
    ! Egbw = << GEO(0.0) MAG(0.0) FREQ(91) >>
       integer,      intent(in) :: ng
       type(matrix), intent(in) :: S, D, F
-      complex(8)    :: Egbw(ng,3), Rn3(ng,3), Rm3(ng,3)
+      complex(8)    :: Egbw(ng,3)
       type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
-      type(matrix)  :: M3(3), Sb(3), FDSbw(3), DFDbw(3)
-      integer       :: j
+      type(matrix)  :: Sb(3), FDSbw(3), Wbw(3)
+
+      type(matrix)  :: T, T2
+      integer       :: ib, ig
+      character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
+
       call pert_dens(S, (/'MAG'/), (/3/), &
                      (/D/), (/F/), Db, Fb, freq=(/(0d0,0d0)/))
-      ! hack: Obtain frequency derivative of one-electron integrals
-      !       by HUGE finite difference
-      call prop_oneint(S, (/'MAG'/), (/3/), F=Fbw, S=Sb, &
-                       freq = (huge(1d0)/128) * (/(1d0,0d0)/))
-      call prop_oneint(S, (/'MAG'/), (/3/), F=M3, &
-                       freq = (/(0d0,0d0)/))
-      do j=1,3
-         Fbw(j) = (128/huge(1d0)) * (Fbw(j)-M3(j))
-         M3(j) = 0
+
+      call mat_zero_like(D, T)
+      do ib = 1, 3
+         call legacy_read_integrals('d<S|/dB'//xyz(ib), T)
+         Fbw(ib) = 0.5d0*T + 0.5d0*trans(T)
       end do
+      T = 0
 
       ! contstruct -RHS's for the frequency-differentiated equation
-      do j=1,3
-         FDSbw(j) = -1/2d0 * S*D*Sb(j) - S*Db(j)*S &
-                  -  1/2d0 * Sb(j)*D*S
-         Sb(j)%elms = 0.0d0
+      ! part of eq. (47)
+      do ib = 1, 3
+         call mat_zero_like(D, Sb(ib))
+         call legacy_read_integrals('dS/dB'//xyz(ib)//'  ', Sb(ib))
+
+         FDSbw(ib) =                 &
+                   - 0.5d0*S*D*Sb(ib) &
+                   - 0.5d0*Sb(ib)*D*S &
+                   - S*Db(ib)*S
+
+         Sb(ib)%elms = 0.0d0
       end do
+
       ! call solver directly
+      ! rest of the rhs eq. (47) is prepared inside solve_scf_eq
       call solve_scf_eq(S, D, F, -1, (0d0,0d0), 3, &
                         Sb, FDSbw, Dbw, Fbw)
 
-!     do j=1,3
-!        Sb(j) = 0
-!     end do
+      Sb = 0
 
       ! contract the frequency-differentiated response function
       Egbw = 0
       call prop_oneave(S, (/'GEO','MAG'/), (/D/), shape(Egbw), Egbw, &
                        freq = (/(-1d0,0d0), (1d0,0d0)/))
-      ! call print_tensor(shape(Egbw), Egbw, '-i/2TgbwD'); Egbw=0
-      ! hack: Obtain frequency-differentiated one-electron integrals
-      !       by another HUGE finite difference
-      Rn3 = 0
-      call prop_oneave(S, (/'GEO'/), (/Db/), shape(Rn3), Rn3, &
-                       freq = (huge(1d0)/128) * (/(-1d0,0d0)/))
-      Rm3 = 0
-      call prop_oneave(S, (/'GEO'/), (/Db/), shape(Rm3), Rm3, &
-                       freq = (/(0d0,0d0)/))
-      Egbw = Egbw + (128/huge(1d0)) * (Rn3 - Rm3)
-      ! call print_tensor(shape(Egbw), Egbw, '-i/2TgwDb'); Egbw=0
-      do j=1,3
-         DFDbw(j) = Dbw(j)*F*D + D*Fbw(j)*D + D*F*Dbw(j) &
-                  + 1/2d0 * Db(j)*S*D - 1/2d0 * D*S*Db(j)
+
+      call mat_zero_like(D, T)
+      do ig = 1, ng
+         call legacy_read_integrals('SQHDR'//prefix_zeros(ig, 3), T)
+         T2 = 0.5d0*T - 0.5d0*trans(T)
+         do ib = 1, 3
+            Egbw(ig, ib) = Egbw(ig, ib) + dot(Db(ib), T2)
+         end do
       end do
+      T = 0
+      T2 = 0
+
+      ! part of eq. (50)
+      do ib = 1, 3
+         Wbw(ib) = Dbw(ib)*F*D      &
+                 + D*Fbw(ib)*D      &
+                 + D*F*Dbw(ib)      &
+                 + 0.5d0*Db(ib)*S*D &
+                 - 0.5d0*D*S*Db(ib)
+      end do
+
       call prop_oneave(S, (/'GEO'/), (/Dbw/), shape(Egbw), Egbw, &
-                       DFD = DFDbw)
-      DFDbw = 0
-      ! call print_tensor(shape(Egbw), Egbw, 'HgDbw - SgDFDbw'); Egbw=0
+                       DFD = Wbw)
+      Wbw = 0
       call prop_twoave((/'GEO'/), (/D,Dbw/), shape(Egbw), Egbw)
-      ! call print_tensor(shape(Egbw), Egbw, 'Gg(D)Dbw'); Egbw=0
-      ! print, free, return
+
       call print_tensor(shape(Egbw), Egbw, 'Egbw')
       Db=0; Fb=0; Dbw=0; Fbw=0
    end subroutine
@@ -787,6 +801,21 @@ contains
        end do
     end subroutine
   end subroutine
+
+  function prefix_zeros(n, l)
+    integer, intent(in) :: n, l !number, length
+    character(l)        :: prefix_zeros !resulting n in ascii
+    character(1), parameter :: char0to9(0:9) &
+          = (/'0','1','2','3','4','5','6','7','8','9'/)
+    integer :: i, k
+    k = n
+    do i = l, 1, -1
+       prefix_zeros(i:i) = char0to9(mod(k,10))
+       k = k / 10
+    end do
+    if (k /= 0) call quit('prefix_zeros error: Argument integer does not fit ' &
+                       // 'in the specified number of ASCII caracters')
+  end function
 
 
 end module
