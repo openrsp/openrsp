@@ -43,18 +43,22 @@ contains
    subroutine vcd_aat(ng, S, D, F)
    ! "Atomic axial tensor" = -1/2 * Egbw
    ! Egbw = << GEO(0.0) MAG(0.0) FREQ(91) >>
+
       integer,      intent(in) :: ng
       type(matrix), intent(in) :: S, D, F
-      complex(8)    :: Egbw(ng,3)
+
+      complex(8)    :: aat(ng, 3)
+
       type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
       type(matrix)  :: Sb(3), FDSbw(3), Wbw(3)
-
       type(matrix)  :: T, T2
+
       integer       :: ib, ig
       character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
 
       call pert_dens(S, (/'MAG'/), (/3/), &
                      (/D/), (/F/), Db, Fb, freq=(/(0d0,0d0)/))
+      Fb = 0
 
       call mat_zero_like(D, T)
       do ib = 1, 3
@@ -83,10 +87,11 @@ contains
                         Sb, FDSbw, Dbw, Fbw)
 
       Sb = 0
+      FDSbw = 0
 
       ! contract the frequency-differentiated response function
-      Egbw = 0
-      call prop_oneave(S, (/'GEO','MAG'/), (/D/), shape(Egbw), Egbw, &
+      aat = 0.0d0
+      call prop_oneave(S, (/'GEO','MAG'/), (/D/), shape(aat), aat, &
                        freq = (/(-1d0,0d0), (1d0,0d0)/))
 
       call mat_zero_like(D, T)
@@ -94,7 +99,7 @@ contains
          call legacy_read_integrals('SQHDR'//prefix_zeros(ig, 3), T)
          T2 = 0.5d0*T - 0.5d0*trans(T)
          do ib = 1, 3
-            Egbw(ig, ib) = Egbw(ig, ib) + dot(Db(ib), T2)
+            aat(ig, ib) = aat(ig, ib) + dot(Db(ib), T2)
          end do
       end do
       T = 0
@@ -108,14 +113,17 @@ contains
                  + 0.5d0*Db(ib)*S*D &
                  - 0.5d0*D*S*Db(ib)
       end do
+      Db = 0
+      Fbw = 0
 
-      call prop_oneave(S, (/'GEO'/), (/Dbw/), shape(Egbw), Egbw, &
+      call prop_oneave(S, (/'GEO'/), (/Dbw/), shape(aat), aat, &
                        DFD = Wbw)
       Wbw = 0
-      call prop_twoave((/'GEO'/), (/D,Dbw/), shape(Egbw), Egbw)
+      call prop_twoave((/'GEO'/), (/D,Dbw/), shape(aat), aat)
+      Dbw = 0
 
-      call print_tensor(shape(Egbw), Egbw, 'Egbw')
-      Db=0; Fb=0; Dbw=0; Fbw=0
+      call print_tensor(shape(aat), aat, 'AAT')
+
    end subroutine
 
 
