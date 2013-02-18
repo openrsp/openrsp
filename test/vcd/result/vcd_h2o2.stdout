@@ -7,10 +7,10 @@
 
    Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch vcd.dal h2o2.mol
 
-   Fri Feb 15 10:42:07 CET 2013
+   Mon Feb 18 15:42:36 CET 2013
 
    Calculation: vcd_h2o2  (input files: vcd.dal and h2o2.mol)
-   PID        : 24647
+   PID        : 25138
    Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/vcd
    Scratch dir: /tmp/DALTON_scratch_bast/bast/vcd_h2o2
 
@@ -28,12 +28,12 @@
  before response solver: norm(RHS) =    7.63045024871826     
  before response solver: norm(RHS) =    1.59599149227142     
  before response solver: norm(RHS) =    7.01591825485229     
-Egbw
- -0.086076049628 -0.168516771701  0.976294118140 -0.086076049628 -0.168516771700 -0.976294118140  0.088078612069  0.466593182630 -0.099668266008  0.088078612070  0.466593182631  0.099668266008
+AAT
+ -0.086076049628 -0.168516771701  0.976294118141 -0.086076049628 -0.168516771700 -0.976294118140  0.088078612069  0.466593182630 -0.099668266008  0.088078612070  0.466593182631  0.099668266008
   0.256612355401  0.006642307448 -0.122984706105  0.256612355401  0.006642307448  0.122984706106 -0.548529700702 -0.007424866400  0.213833468350 -0.548529700702 -0.007424866400 -0.213833468350
  -1.269004523830  0.149418429092  0.104538170218  1.269004523830 -0.149418429092  0.104538170218  0.271970280680 -0.232681101205 -0.104717490144 -0.271970280680  0.232681101206 -0.104717490144
 
 vcd_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/vcd
 
-   Fri Feb 15 10:42:33 CET 2013
+   Mon Feb 18 15:43:03 CET 2013
    ***************************************** 
