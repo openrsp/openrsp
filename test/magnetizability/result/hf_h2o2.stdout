@@ -1,0 +1,45 @@
+
+   ***************************************** 
+   **** OUTPUT FROM DALTON SHELL SCRIPT **** 
+   ***************************************** 
+
+   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+
+   Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch hf.dal h2o2.mol
+
+   Mon Feb 18 15:59:57 CET 2013
+
+   Calculation: hf_h2o2  (input files: hf.dal and h2o2.mol)
+   PID        : 1642
+   Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/magnetizability
+   Scratch dir: /tmp/DALTON_scratch_bast/bast/hf_h2o2
+
+
+ DALTON: default work memory size used.            64000000
+
+ Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   0
+
+   0: Directories for basis set searches:
+     /home/bast/dalton/openrsp/external/openrsp/test/magnetizability:/home/bast/dalton/openrsp/build/basis
+ before response solver: norm(RHS) =    6.34614896774292     
+ before response solver: norm(RHS) =    1.42927324771881     
+ before response solver: norm(RHS) =    6.43725872039795     
+ 
+no-London Magnetizability = Eoo w: 0.000 0.000
+ -5.387926719505 -0.045702423240  0.000000000000
+ -0.045702420508 -5.076070103717  0.000000000000
+  0.000000000000  0.000000000000 -5.433497889942
+
+ before response solver: norm(RHS) =    2.38907313346863     
+ before response solver: norm(RHS) =    1.17483735084534     
+ before response solver: norm(RHS) =    1.86376070976257     
+ 
+London Magnetizability = Ebb w: 0.000 0.000
+ -3.343906577456 -0.051636816474  0.000000000000
+ -0.051636551966 -5.057188858795 -0.000000000000
+  0.000000000000 -0.000000000000 -3.225481336985
+
+hf_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/magnetizability
+
+   Mon Feb 18 16:00:24 CET 2013
+   ***************************************** 

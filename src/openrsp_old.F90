@@ -92,6 +92,7 @@ module openrsp_old
     logical :: openrsp_vibshyp = .false.
 
     logical :: openrsp_vcd = .false.
+    logical :: openrsp_magnetizability = .false.
   end type rspinfo_t
 
   public :: openrsp_info_set
@@ -140,7 +141,8 @@ module openrsp_old
                                openrsp_sechyp1,     &
                                openrsp_vibbeta,     &
                                openrsp_vibshyp,     &
-                               openrsp_vcd )
+                               openrsp_vcd,         &
+                               openrsp_magnetizability )
     type(rspinfo_t), intent(inout) :: this_info
     integer, optional, intent(in) :: log_io
     integer, optional, intent(in) :: level_print
@@ -160,6 +162,7 @@ module openrsp_old
     logical, optional, intent(in) :: openrsp_vibbeta
     logical, optional, intent(in) :: openrsp_vibshyp
     logical, optional, intent(in) :: openrsp_vcd
+    logical, optional, intent(in) :: openrsp_magnetizability
     ! error information
     integer ierr
     ! sets the IO unit of log file
@@ -212,6 +215,7 @@ module openrsp_old
     if ( present( openrsp_vibshyp ) ) this_info%openrsp_vibshyp = openrsp_vibshyp
 
     if ( present( openrsp_vcd ) ) this_info%openrsp_vcd = openrsp_vcd
+    if ( present( openrsp_magnetizability ) ) this_info%openrsp_magnetizability = openrsp_magnetizability
   end subroutine openrsp_info_set
 
   !> \brief dumps the control information of openrsp
@@ -286,6 +290,8 @@ module openrsp_old
       'Calculate vibrational second hyperpolarizability'
     if ( this_info%openrsp_vcd ) write( l_io_dump, 100 )  &
       'Calculate VCD AAT'
+    if ( this_info%openrsp_magnetizability ) write( l_io_dump, 100 )  &
+      'Calculate magnetizability'
 100 format('INFO ',A,I6)
 110 format('INFO ',A,10F12.6)
   end subroutine openrsp_info_dump
@@ -611,6 +617,11 @@ module openrsp_old
     ! calculate VCD AAT
     if (this_info%openrsp_vcd) then
        call vcd_aat(3*get_nr_atoms(), S, D, F)
+    end if
+
+    ! calculate magnetizability
+    if (this_info%openrsp_magnetizability) then
+       call magnetizability(S, D, F)
     end if
 
     ! calculates vibrational hyperpolarizability

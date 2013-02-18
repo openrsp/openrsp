@@ -106,6 +106,7 @@
     logical :: openrsp_vibshyp = .false.
 
     logical :: openrsp_vcd = .false.
+    logical :: openrsp_magnetizability = .false.
 
     ! the followings are for MO response solver
     !
@@ -286,8 +287,10 @@
         openrsp_vibshyp = .true.
       case ( '.VCD' )
         openrsp_vcd = .true.
-      ! illegal keyword
+      case ( '.MAGNETIZABILITY' )
+        openrsp_magnetizability = .true.
       case default
+        ! illegal keyword
         call QUIT( ' Keyword "'//trim(word)//'" is not recognized in OpenRSP!' )
       end select
       ! reads next line
@@ -330,7 +333,8 @@
                            openrsp_sechyp1,    &
                            openrsp_vibbeta,    &
                            openrsp_vibshyp,    &
-                           openrsp_vcd )
+                           openrsp_vcd,        &
+                           openrsp_magnetizability )
     deallocate( real_freqs )
     deallocate( imag_freqs )
 
