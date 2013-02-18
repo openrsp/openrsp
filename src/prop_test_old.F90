@@ -22,7 +22,7 @@ module prop_test_old
    public elec_sechyp
    public alt_elec_sechyp
    public alt2_elec_sechyp
-   public magnetiz
+   public magnetizability
    public elec_quadrupole
    public prop_test_gradient
 
@@ -640,11 +640,12 @@ contains
    end subroutine
 
 
-   subroutine magnetiz(S, D, F, freq, Eoo, Ebb)
+   subroutine magnetizability(S, D, F)
    !no-Lon and London magnetizability
       type(matrix),      intent(in)  :: S, D, F
-      complex(8),        intent(in)  :: freq
-      complex(8),        intent(out) :: Eoo(3,3), Ebb(3,3)
+
+      complex(8),        parameter   :: freq = 0.0d0
+      complex(8)                     :: Eoo(3,3), Ebb(3,3)
       type(matrix) :: Db(3), Fb(3), DFD, DFDb(3)
       integer      :: i, j
       !no-London
