@@ -122,6 +122,7 @@ contains
       call prop_twoave((/'GEO'/), (/D,Dbw/), shape(aat), aat)
       Dbw = 0
 
+      aat = -0.5d0*aat
       call print_tensor(shape(aat), aat, 'AAT')
 
    end subroutine
