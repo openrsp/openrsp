@@ -34,17 +34,8 @@ module rsp_contribs
   ! MaR: QUICK-FIX USE STATEMENT TO GET SUPPORT FOR DUMMY rsp_cfg TYPE
   use rsp_perturbed_matrices
 
-
-
   implicit none
 
-  public rsp_nucpot
-  public rsp_ovlave
-  public rsp_oneave
-  public rsp_twoave
-  public rsp_ovlint
-  public rsp_oneint
-  public rsp_twoint
   public rsp_field
   public rsp_field_bas
   public rsp_field_dim
@@ -133,55 +124,6 @@ module rsp_contribs
   private
 
 contains
-
-
-  !> Contribution from nuclear repulsion and nuclei--field interaction
-  !> to response functions. Fields (type rsp_field) are here in arbitrary order.
-  !> (in normal mode) Fields are sorted, component ranges extended to what
-  !> rsp_backend expects (currently only full ranges). Then the call is then relayed
-  !> to rsp_backend's nuclear_potential, which computes and returns the requested real
-  !> tensor in standard order. The requested ranges of this tensor is then reordered
-  !> and added to rspfunc
-  subroutine rsp_nucpot(fields, rspfunc)
-    !> field descriptors (label freq comp ncomp)
-    type(rsp_field), intent(in)    :: fields(:)
-    !> output tensor, to which nuclear contribution is *ADDED*
-    complex(8),      intent(inout) :: rspfunc(product(fields%ncomp))
-    !---------------------------------------------------------------
-    integer      nf, ncor, ngeo, ext_ncomp, i
-    integer      order(size(fields)), tcomp(size(fields))
-    character(4) ext_label(2)
-    logical      nonz
-    ! prepare and determine ordering. This also validates comp/ncomp
-    call count_and_prepare(fields, .true., .false., order, tcomp, nucpot = nonz)
-    ! early return if zero
-    if (.not.nonz) return
-    ! find number of GEO, and two, one or none external fields
-    nf = size(fields)
-    ngeo = count(fields%label == 'GEO ')
-    ext_label(:) = (/'NONE','NONE'/)
-    ext_ncomp = 1
-    if (ngeo == nf-1) then
-       ext_label(1) = fields(order(nf))%label
-       ext_ncomp    = tcomp(nf)
-    else if (ngeo == nf-2) then
-       ext_label(1) = fields(order(nf-1))%label
-       ext_label(2) = fields(order(nf))%label
-       ext_ncomp    = tcomp(nf-1) * tcomp(nf)
-    end if
-    ! use inner to avoid allocate'ing 'nucpot' below
-    ncor = 1
-    if (ngeo > 0) ncor = tcomp(1)
-    call inner
-  contains
-    subroutine inner
-      real(8) nucpot(ncor**ngeo * ext_ncomp)
-      call nuclear_potential(ngeo, ncor, ext_label, ext_ncomp, nucpot)
-      ! add requested component ranges to rspfunc
-      call permute_selcomp_add((1d0,0d0), nf, order, fields(:)%comp, &
-                               tcomp, fields(:)%ncomp, nucpot, rspfunc)
-    end subroutine
-  end subroutine
 
 
   ! MaR: Seems to work properly, but memory usage is not tensor symmetry nonredundant
@@ -364,27 +306,6 @@ contains
          end if
 
        end subroutine
-  end subroutine
-
-
-  !> average f-perturbed overlap integrals with perturbed density D
-  !> and energy-weighted density DFD
-  subroutine rsp_ovlave(nf, f, c, nc, DFD, ave, w, D)
-    !> number of fields
-    integer,       intent(in)  :: nf
-    !> field labels in std order
-    character(4),  intent(in)  :: f(nf)
-    !> first and number of- components in each field
-    integer,       intent(in)  :: c(nf), nc(nf)
-    !> energy-weighted density matrix
-    type(matrix),  intent(in)  :: DFD
-    !> output average
-    complex(8),    intent(out) :: ave(product(nc))
-    !> field frequencies corresponding to each field
-    complex(8),    intent(in), optional  :: w(nf)
-    !> density matrix to contract half-differentiated overlap against
-    type(matrix),  intent(in), optional  :: D
-    call interface_1el_ovlave(nf, f, c, nc, DFD, ave, w, D)
   end subroutine
 
 
@@ -609,30 +530,6 @@ end if
 
 
 
-
-
-
-  !> Average 1-electron integrals perturbed by fields f
-  !> with the (perturbed) density matrix D
-
-! radovan: there is code repetition in ave and int setup
-
-  subroutine rsp_oneave(nf, f, c, nc, D, ave)
-    !> number of fields
-    integer,       intent(in)  :: nf
-    !> field labels in std order
-    character(4),  intent(in)  :: f(nf)
-    !> first and number of- components in each field
-    integer,       intent(in)  :: c(nf), nc(nf)
-    !> density matrix to average over
-    type(matrix),  intent(in)  :: D
-    !> output average
-    complex(8),    intent(out) :: ave(product(nc))
-    call interface_1el_oneave(nf, f, c, nc, D, ave)
-  end subroutine
-
-
-
   !> Average 1-electron integrals perturbed by fields f
   !> with the (perturbed) density matrix D
 
@@ -668,212 +565,6 @@ end if
      real(8), pointer            :: ptr(:)
      ptr => arr
   end function
-
-
-  !> Average 2-electron integrals perturbed by fields f over the
-  !> product of density matrces D1 and D2
-  subroutine rsp_twoave(nf, f, c, nc, D1, D2, ave)
-
-    use eri_contractions, only: ctr_arg
-    use eri_basis_loops,  only: unopt_geodiff_loop
-    use interface_interest
-
-    !> number of fields
-    integer,              intent(in)  :: nf
-    !> field labels in std order
-    character(4),         intent(in)  :: f(nf)
-    !> first and number of- components in each field
-    integer,              intent(in)  :: c(nf), nc(nf)
-    !> density matrix to average over
-    type(matrix), target, intent(in)  :: D1, D2
-    !> output average
-    complex(8),           intent(out) :: ave(product(nc))
-    !----------------------------------------------
-    real(8), allocatable              :: real_ave(:)
-    real(8), pointer :: tmp(:,:,:,:) !scratch
-    type(matrix)  A(1) !scratch matrices
-    type(ctr_arg) arg(1)
-    real(8)       r
-    integer       i, j, k, l, n, ncor
-
-  if (any(f== 'EL  ')) then
-     ave = 0.0
-  else
-
-    if (nf==0) then
-       ! contract second density to Fock matrix, then trace with first
-       A(1) = 0*D1
-       call mat_ensure_alloc(A(1), only_alloc=.true.)
-       call interface_scf_get_g(D2, A(1)) !Coulomb and exchange
-       ave(1) = trace(A(1),D1)
-    else if (nf==1 .and. f(1)=='GEO ') then
-
-#ifdef PRG_DALTON
-       ncor = 3 * get_nr_atoms()
-       allocate(tmp(ncor,1,1,1))
-#ifdef GRCONT_NOT_AVAILABLE
-       arg(1) = ctr_arg(1, -huge(1), ncor, D1, D2, &
-                        rank_one_pointer(ncor, tmp(:,1,1,1)))
-       call unopt_geodiff_loop(basis_large, &
-                               basis_small, &
-                               arg)
-       tmp = 2.0d0*tmp
-#else
-       n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
-       call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
-                   tmp(:,1,1,1), ncor, .true., .false., &
-                   1, 0, .true., .false., f77_memory(:n*n*2), 2)
-#endif
-       ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
-       deallocate(tmp)
-#endif /* ifdef PRG_DALTON */
-
-#ifdef PRG_DIRAC
-       allocate(real_ave(size(ave)))
-       real_ave = 0.0
-       call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms, D2%elms, 1, 0, size(real_ave), real_ave)
-       do i = 1, size(ave)
-          ave(i) = 2.0d0*real_ave(i)
-       end do
-       deallocate(real_ave)
-#endif /* ifdef PRG_DIRAC */
-
-    else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-
-#ifdef PRG_DALTON
-       ncor = 3 * get_nr_atoms()
-       allocate(tmp(ncor,ncor,1,1))
-#ifdef GRCONT_NOT_AVAILABLE
-       arg(1) = ctr_arg(2, -huge(1), ncor, D1, D2, &
-                        rank_one_pointer(ncor**2, tmp(:,:,1,1)))
-       call unopt_geodiff_loop(basis_large, &
-                               basis_small, &
-                               arg)
-       ! symmetrize
-       do j = 1, ncor
-          do i = 1, j
-             r = tmp(i, j, 1, 1) + tmp(j, i, 1, 1)
-             tmp(i, j, 1, 1) = 2.0d0*r
-             tmp(j, i, 1, 1) = 2.0d0*r
-          end do
-       end do
-#else
-       n = D1%nrow
-       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
-       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
-       call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
-                   tmp(:,:,1,1), ncor**2, .true., .false., &
-                   2, 0, .true., .false., f77_memory(:n*n*2), 2)
-#endif
-       ave = reshape(tmp(c(1):c(1)+nc(1)-1, &
-                         c(2):c(2)+nc(2)-1,1,1), shape(ave))
-       deallocate(tmp)
-#endif /* ifdef PRG_DALTON */
-
-#ifdef PRG_DIRAC
-       allocate(real_ave(size(ave)))
-       real_ave = 0.0
-       call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms, D2%elms, 2, 0, size(real_ave), real_ave)
-       do i = 1, size(ave)
-          ave(i) = 2.0d0*real_ave(i)
-       end do
-       deallocate(real_ave)
-#endif /* ifdef PRG_DIRAC */
-
-    else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
-
-#ifdef PRG_DALTON
-       ! contract FULL cubic in tmp, unsymmetrized divided by six
-       ncor = 3 * get_nr_atoms()
-       allocate(tmp(ncor,ncor,ncor,1))
-       arg(1) = ctr_arg(3, -huge(1), ncor, D1, D2, &
-                        rank_one_pointer(ncor**3, tmp(:,:,:,1)))
-       call unopt_geodiff_loop(basis_large, &
-                               basis_small, &
-                               arg)
-       ! symmetrize
-       do k = 1, ncor
-          do j = 1, k
-             do i = 1, j
-                r = tmp(i,j,k,1) + tmp(i,k,j,1) + tmp(k,i,j,1) &
-                  + tmp(k,j,i,1) + tmp(j,k,i,1) + tmp(j,i,k,1)
-                tmp(i,j,k,1) = r;  tmp(i,k,j,1) = r;  tmp(k,i,j,1) = r
-                tmp(k,j,i,1) = r;  tmp(j,k,i,1) = r;  tmp(j,i,k,1) = r
-             end do
-          end do
-       end do
-       ! extract requested block
-       ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
-                             c(2):c(2)+nc(2)-1, &
-                             c(3):c(3)+nc(3)-1, 1), shape(ave))
-       deallocate(tmp)
-#endif /* ifdef PRG_DALTON */
-
-#ifdef PRG_DIRAC
-       allocate(real_ave(size(ave)))
-       real_ave = 0.0
-       call interest_mpi_wake_up()
-       call interest_get_int(D1%nrow, D1%elms, D2%elms, 3, 0, size(real_ave), real_ave)
-       do i = 1, size(ave)
-          ave(i) = 2.0d0*real_ave(i)
-       end do
-       deallocate(real_ave)
-#endif /* ifdef PRG_DIRAC */
-
-    else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
-       ncor = 3 * get_nr_atoms()
-       allocate(tmp(ncor,ncor,ncor,ncor))
-       ! contract FULL quartic in tmp, unsymmetrized divided by 24
-       arg(1) = ctr_arg(4, -huge(1), ncor, D1, D2, &
-                        rank_one_pointer(ncor**4, tmp))
-       call unopt_geodiff_loop(basis_large, &
-                               basis_small, &
-                               arg)
-       ! symmetrize
-       do l = 1, ncor
-          do k = 1, l
-             do j = 1, k
-                do i = 1, j
-                   r = tmp(i,j,k,l) + tmp(i,k,j,l) + tmp(k,i,j,l) &
-                     + tmp(k,j,i,l) + tmp(j,k,i,l) + tmp(j,i,k,l) &
-                     + tmp(i,j,l,k) + tmp(i,k,l,j) + tmp(k,i,l,j) &
-                     + tmp(k,j,l,i) + tmp(j,k,l,i) + tmp(j,i,l,k) &
-                     + tmp(i,l,j,k) + tmp(i,l,k,j) + tmp(k,l,i,j) &
-                     + tmp(k,l,j,i) + tmp(j,l,k,i) + tmp(j,l,i,k) &
-                     + tmp(l,i,j,k) + tmp(l,i,k,j) + tmp(l,k,i,j) &
-                     + tmp(l,k,j,i) + tmp(l,j,k,i) + tmp(l,j,i,k)
-                   tmp(i,j,k,l) = r;  tmp(i,k,j,l) = r;  tmp(k,i,j,l) = r
-                   tmp(k,j,i,l) = r;  tmp(j,k,i,l) = r;  tmp(j,i,k,l) = r
-                   tmp(i,j,l,k) = r;  tmp(i,k,l,j) = r;  tmp(k,i,l,j) = r
-                   tmp(k,j,l,i) = r;  tmp(j,k,l,i) = r;  tmp(j,i,l,k) = r
-                   tmp(i,l,j,k) = r;  tmp(i,l,k,j) = r;  tmp(k,l,i,j) = r
-                   tmp(k,l,j,i) = r;  tmp(j,l,k,i) = r;  tmp(j,l,i,k) = r
-                   tmp(l,i,j,k) = r;  tmp(l,i,k,j) = r;  tmp(l,k,i,j) = r
-                   tmp(l,k,j,i) = r;  tmp(l,j,k,i) = r;  tmp(l,j,i,k) = r
-                end do
-             end do
-          end do
-       end do
-       ! extract requested block
-       ave = 2 * reshape(tmp(c(1):c(1)+nc(1)-1, &
-                             c(2):c(2)+nc(2)-1, &
-                             c(3):c(3)+nc(3)-1, &
-                             c(4):c(4)+nc(4)-1), shape(ave))
-       deallocate(tmp)
-    else
-       print *, 'rsp_twoave error: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('rsp_twoave error: not implented or in wrong order')
-    end if
-
-  end if
-
-  end subroutine
-
 
 ! MR: NOT SURE IF WORKING PROPERLY
   !> Average 2-electron integrals perturbed by fields f over the
@@ -1447,27 +1138,6 @@ end if
 
 
 
-  !> Compute differentiated overlap matrices, and optionally
-  !> add half-differentiated overlap contribution to Fock matrices
-  subroutine rsp_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
-    !> structure containing integral program settings
-    integer,       intent(in)    :: nr_ao
-    !> number of fields
-    integer,       intent(in)    :: nf
-    !> field labels in std order
-    character(4),  intent(in)    :: f(nf)
-    !> first and number of- components in each field
-    integer,       intent(in)    :: c(nf), nc(nf)
-    !> resulting overlap integral matrices (incoming content deleted)
-    type(matrix),  intent(inout) :: ovl(product(nc))
-    !> frequencies of each field
-    complex(8),    intent(in),    optional :: w(nf)
-    !> Fock matrices to which the half-differentiated overlap
-    !> contribution is ADDED
-    type(matrix),  intent(inout), optional :: fock(product(nc))
-    call interface_1el_ovlint(nr_ao, nf, f, c, nc, ovl, w, fock)
-  end subroutine
-
 
   !> Compute differentiated overlap matrices,
   subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
@@ -1680,22 +1350,6 @@ end if
 
 
 
-
-  subroutine rsp_oneint(nr_ao, nf, f, c, nc, oneint)
-    !> structure containing integral program settings
-    integer,       intent(in)    :: nr_ao
-    !> number of fields
-    integer,       intent(in)    :: nf
-    !> field labels in std order
-    character(4),  intent(in)    :: f(nf)
-    !> first and number of- components in each field
-    integer,       intent(in)    :: c(nf), nc(nf)
-    !> output perturbed integrals
-    type(matrix),  intent(inout) :: oneint(product(nc))
-    call interface_1el_oneint(nr_ao, nf, f, c, nc, oneint)
-  end subroutine
-
-
   subroutine rsp_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, oneint)
     !> number of fields
@@ -1723,133 +1377,6 @@ end if
 
     call interface_1el_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, oneint)
-
-  end subroutine
-
-
-  !> Contract 2-electron integrals perturbed by fields 'f' with density
-  !> matrix 'dens', and add to Fock matrices 'fock' Average 2-electron integrals perturbed by fields f over the
-  !> product of density matrces D1 and D2
-  subroutine rsp_twoint(nr_ao, nf, f, c, nc, dens, fock)
-    ! work array to be passed to GRCONT
-    use eri_contractions, only: ctr_arg
-    use eri_basis_loops,  only: unopt_geodiff_loop
-    use interface_interest
-    integer,              intent(in)    :: nr_ao
-    !> number of fields
-    integer,              intent(in)    :: nf
-    !> field labels in std order
-    character(4),         intent(in)    :: f(nf)
-    !> first and number of- components in each field
-    integer,              intent(in)    :: c(nf), nc(nf)
-    !> density matrix to average over
-    type(matrix), target, intent(in)    :: dens
-    !> Fock matrix to which two-electron contribution is ADDED
-    type(matrix), target, intent(inout) :: fock(product(nc))
-    !--------------------------------------------------
-    real(8), pointer :: null_ptr(:) !because null() isn't f90
-    integer       i, j, n, ij, ncor
-    type(ctr_arg) arg(1)
-    type(matrix)  A !scratch
-    real(8)          :: dummy(1)
-
-    nullify(null_ptr) !because null() isn't f90
-
-  if (any(f=='EL  ')) then
-     call mat_init(A, nr_ao, nr_ao)
-     do i = 1, product(nc)
-        if (iszero(fock(i))) then
-           call mat_ensure_alloc(fock(i))
-           fock(i)%elms = fock(i)%elms + A%elms
-        else
-           fock(i)%elms = fock(i)%elms + A%elms
-        end if
-     end do
-  else
-
-    if (nf==0) then
-       A = 0*dens
-       call mat_ensure_alloc(A)
-       call interface_scf_get_g(dens, A)
-       fock(1) = fock(1) + A
-       A = 0
-    else if (nf==1 .and. f(1)=='GEO ') then
-
-#ifdef PRG_DALTON
-       n = nr_ao
-       ncor = 3 * get_nr_atoms()
-       do i = 0, nc(1)-1
-          if (iszero(fock(i+1))) then
-             call mat_ensure_alloc(fock(i+1))
-          end if
-#ifdef GRCONT_NOT_AVAILABLE
-          arg(1) = ctr_arg(1, i+1, &
-                           ncor, dens, fock(i+1), null_ptr)
-          call unopt_geodiff_loop(basis_large, &
-                                  basis_small, &
-                                  arg)
-#else
-          ! if first or an x-coord, call GRCONT
-          if (i==0 .or. mod(c(1)+i,3) == 1) then
-             call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
-                         f77_memory(:n*n*3), n*n*3, .true., .false., &
-                         1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
-          end if
-          j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
-          if (iszero(fock(1+i))) then
-             fock(1+i)%elms(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
-          else
-             fock(1+i)%elms(:, :, 1) = fock(1+i)%elms(:, :, 1) &
-                            + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
-          end if
-#endif
-       end do
-#endif /* ifdef PRG_DALTON */
-
-#ifdef PRG_DIRAC
-       do i = 1, nc(1)
-          if (iszero(fock(i))) then
-             call mat_ensure_alloc(fock(i))
-          end if
-       end do
-       do i = 1, nc(1)
-          call interest_mpi_wake_up()
-          call interest_get_int(dens%nrow, dens%elms, fock(i)%elms, 1, i, 0, dummy)
-       end do
-#endif /* ifdef PRG_DIRAC */
-
-    else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-
-#ifdef PRG_DALTON
-       ncor = 3 * get_nr_atoms()
-       do j = 0, nc(2)-1
-          do i = 0, nc(1)-1
-             ij = 1 + i + nc(1)*j
-             if (iszero(fock(ij))) then
-                call mat_ensure_alloc(fock(ij))
-                fock(ij)%elms = 0 !ajt FIXME use mat_axpy
-             end if
-             arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-                              ncor, dens, fock(ij), null_ptr)
-             call unopt_geodiff_loop(basis_large, &
-                                     basis_small, &
-                                     arg)
-          end do
-       end do
-#endif /* ifdef PRG_DALTON */
-
-#ifdef PRG_DIRAC
-       print *, 'error: the 2nd order twoint contribution is not available in DIRAC'
-       stop 1
-#endif /* ifdef PRG_DIRAC */
-
-    else
-       print *, 'error in rsp_oneave: not implented or in wrong order - ', &
-                (' ' // f(i), i=1,nf)
-       call quit('error in rsp_oneave: not implented or in wrong order')
-    end if
-
-  end if
 
   end subroutine
 
