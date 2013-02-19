@@ -22,8 +22,8 @@ module interface_xc
    public di_get_MagDeriv_FxD_DFT
    public di_get_MagDeriv_GxD_DFT
 
-   public rsp_xcave
-   public rsp_xcint
+   public rsp_xcave_interface
+   public rsp_xcint_interface
 
    public get_is_ks_calculation
 
@@ -103,7 +103,7 @@ contains
 
    !> Exchange-correlation perturbed by fields f, averaged over densities D
    !> New routine under development (by MaR)
-   subroutine rsp_xcave(mat_dim,       &
+   subroutine rsp_xcave_interface(mat_dim,       &
                         pert,          &
                         kn,            &
                         num_blks,      &
@@ -166,11 +166,11 @@ contains
 
          else if (count(pert%plab == 'EL  ') == 1) then
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unsupported perturbation tuple:', pert%plab
 
          else
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unsupported perturbation tuple:', pert%plab
 
          end if
  
@@ -251,11 +251,11 @@ contains
 
          else if (count(pert%plab == 'EL  ') == 2) then
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unsupported perturbation tuple:', pert%plab
 
          else
 
-            write(*,*) 'WARNING: rsp_xcave: Unknown perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unknown perturbation tuple:', pert%plab
 
          end if
 
@@ -420,11 +420,11 @@ contains
 
          else if (count(pert%plab == 'EL  ') == 3) then
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unsupported perturbation tuple:', pert%plab
 
          else
 
-            write(*,*) 'WARNING: rsp_xcave: Unknown perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unknown perturbation tuple:', pert%plab
 
          end if
 
@@ -760,17 +760,17 @@ contains
          else if (count(pert%plab == 'EL  ') == 4) then
 
 
-            write(*,*) 'WARNING: rsp_xcave: Unsupported perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unsupported perturbation tuple:', pert%plab
 
          else
 
-            write(*,*) 'WARNING: rsp_xcave: Unknown perturbation tuple:', pert%plab
+            write(*,*) 'WARNING: rsp_xcave_interface: Unknown perturbation tuple:', pert%plab
 
          end if
 
       else
 
-         write(*,*) 'WARNING: rsp_xcave: Unsupported number of perturbations:', &
+         write(*,*) 'WARNING: rsp_xcave_interface: Unsupported number of perturbations:', &
                     pert%n_perturbations
 
       end if
@@ -798,7 +798,7 @@ contains
 
    !> Exchange-correlation perturbed by fields 'field', contracted over
    !> densities 'D', added to Fock matrices 'F'
-   subroutine rsp_xcint(pert_labels, D, F, Fg, Fgg)
+   subroutine rsp_xcint_interface(pert_labels, D, F, Fg, Fgg)
 
 !     ---------------------------------------------------------------------------
       character(4), intent(in)              :: pert_labels(:)
@@ -894,7 +894,7 @@ contains
 
 end module
 
-   subroutine external_rsp_xcint(nr_ao, dmat, fmat, xc_energy)
+   subroutine external_rsp_xcint_interface(nr_ao, dmat, fmat, xc_energy)
 
 #ifndef PRG_DIRAC
       use interface_ao_specific

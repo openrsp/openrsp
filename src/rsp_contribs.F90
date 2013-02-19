@@ -44,16 +44,16 @@ module rsp_contribs
 
   ! MaR: ROUTINES RETURNING NON-REDUNDANT VALUES W.R.T TENSOR SYMMETRY
   ! MaR: THESE COULD REPLACE THE CORRESPONDING ABOVE ROUTINES WHEN APPROPRIATE
-  public rsp_nucpot_tr
-  public rsp_ovlave_tr
+  public rsp_nucpot
+  public rsp_ovlave
   public rsp_ovlave_t_matrix
-  public rsp_oneave_tr
-  public rsp_twoave_tr
-  public rsp_ovlint_tr
+  public rsp_oneave
+  public rsp_twoave
+  public rsp_ovlint
   public rsp_ovlint_t_matrix
-  public rsp_oneint_tr
-  public rsp_twoint_tr
-  public rsp_xcint_tr_adapt
+  public rsp_oneint
+  public rsp_twoint
+  public rsp_xcint_adapt
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -134,7 +134,7 @@ contains
   !> to rsp_backend's nuclear_potential, which computes and returns the requested real
   !> tensor in standard order. The requested ranges of this tensor is then reordered
   !> and added to rspfunc
-  subroutine rsp_nucpot_tr(fields, propsize, rspfunc_output)
+  subroutine rsp_nucpot(fields, propsize, rspfunc_output)
     !> field descriptors (label freq comp ncomp)
     type(rsp_field), intent(in)    :: fields(:)
     !> output tensor, to which nuclear contribution is *ADDED*
@@ -263,13 +263,13 @@ contains
 
          else if (ngeo > 6) then
 
-            write(*,*) 'rsp_nucpot_tr error: No support for ngeo > 6 yet'
-            call quit('rsp_nucpot_tr error: No support for ngeo > 6 yet')
+            write(*,*) 'rsp_nucpot error: No support for ngeo > 6 yet'
+            call quit('rsp_nucpot error: No support for ngeo > 6 yet')
 
          else
 
-            write(*,*) 'rsp_nucpot_tr error: Unknown field setup'
-            call quit('rsp_nucpot_tr error: Unknown field setup')
+            write(*,*) 'rsp_nucpot error: Unknown field setup'
+            call quit('rsp_nucpot error: Unknown field setup')
 
          end if
 
@@ -277,7 +277,7 @@ contains
 
             if (nf == 2) then
 
-               write(*,*) 'rsp_nucpot_tr warning: Generally untested support for one non-geo. field with nf = 2'
+               write(*,*) 'rsp_nucpot warning: Generally untested support for one non-geo. field with nf = 2'
 
                h = 0
                do i = 1, ncor
@@ -289,7 +289,7 @@ contains
 
             else if (nf == 1) then
 
-               write(*,*) 'rsp_nucpot_tr warning: Generally untested support for one non-geo. field with nf = 1'
+               write(*,*) 'rsp_nucpot warning: Generally untested support for one non-geo. field with nf = 1'
 
                rspfunc_output = rspfunc
                               
@@ -311,7 +311,7 @@ contains
 
   !> average f-perturbed overlap integrals with perturbed density D
   !> and energy-weighted density DFD
-  subroutine rsp_ovlave_tr(nf, f, c, nc, nblks, blk_info, & 
+  subroutine rsp_ovlave(nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, DFD, ave)
     !> number of fields
     integer,       intent(in)  :: nf, propsize
@@ -535,7 +535,7 @@ end if
 
 ! radovan: there is code repetition in ave and int setup
 
-  subroutine rsp_oneave_tr(nf, f, c, nc, D, nblks, blk_info, blk_sizes, propsize, ave)
+  subroutine rsp_oneave(nf, f, c, nc, D, nblks, blk_info, blk_sizes, propsize, ave)
 !     use dalton_ifc, only: SHELLS_NUCLEI_displace
     ! Gen1Int interface in Dalton
 !     use gen1int_api
@@ -569,7 +569,7 @@ end if
 ! MR: NOT SURE IF WORKING PROPERLY
   !> Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
-  subroutine rsp_twoave_tr(nf, f, c, nc, D1, D2, propsize, ave)
+  subroutine rsp_twoave(nf, f, c, nc, D1, D2, propsize, ave)
 
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
@@ -1127,9 +1127,9 @@ end if
 
 
     else
-       print *, 'rsp_twoave_tr error: Contribution not implemented or in wrong order - ', &
+       print *, 'rsp_twoave error: Contribution not implemented or in wrong order - ', &
                 (' ' // f(i), i=1,nf)
-       call quit('rsp_twoave_tr error: Contribution not implemented or in wrong order')
+       call quit('rsp_twoave error: Contribution not implemented or in wrong order')
     end if
 
   end if
@@ -1140,7 +1140,7 @@ end if
 
 
   !> Compute differentiated overlap matrices,
-  subroutine rsp_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+  subroutine rsp_ovlint(nr_ao, nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, ovl)
     !> number of fields
     integer,       intent(in)    :: nf, propsize
@@ -1350,7 +1350,7 @@ end if
 
 
 
-  subroutine rsp_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
+  subroutine rsp_oneint(nr_ao, nf, f, c, nc, nblks, blk_info, & 
                                       blk_sizes, propsize, oneint)
     !> number of fields
     integer,       intent(in)    :: nf, propsize
@@ -1416,7 +1416,7 @@ end if
   !> Contract 2-electron integrals perturbed by fields 'f' with density
   !> matrix 'dens', and add to Fock matrices 'fock' Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
-  subroutine rsp_twoint_tr(nr_ao, nf, f, c, nc, dens, propsize, fock)
+  subroutine rsp_twoint(nr_ao, nf, f, c, nc, dens, propsize, fock)
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
     use interface_interest
@@ -1591,9 +1591,9 @@ end if
 
    
        else
-          print *, 'error in rsp_twoint_tr: not implemented or in wrong order - ', &
+          print *, 'error in rsp_twoint: not implemented or in wrong order - ', &
                   (' ' // f(i), i=1,nf)
-          call quit('error in rsp_twoint_tr: not implemented or in wrong order')
+          call quit('error in rsp_twoint: not implemented or in wrong order')
        end if
 #endif
 
@@ -1602,7 +1602,7 @@ end if
   end subroutine
 
 
-  subroutine rsp_xcint_tr_adapt(nr_ao, nf, f, c, nc, D, propsize, xcint)
+  subroutine rsp_xcint_adapt(nr_ao, nf, f, c, nc, D, propsize, xcint)
 
     integer :: i, j, k, nr_ao, propsize
     !> number of fields
@@ -1619,10 +1619,10 @@ type(matrix) :: Db, Fb
     !--------------------------------------------------
 
     if (nf == 0) then
-      call rsp_xcint(f, D, F=xcint(1))
+      call rsp_xcint_interface(f, D, F=xcint(1))
     else if (nf == 1) then
        if (all(f==(/'GEO '/))) then
-          call rsp_xcint(f, D, Fg=xcint)
+          call rsp_xcint_interface(f, D, Fg=xcint)
        else
        end if
     else if (nf == 2) then
@@ -1635,7 +1635,7 @@ type(matrix) :: Db, Fb
 
              end do
           end do
-          call rsp_xcint(f, D, Fgg=tmp_xcint)
+          call rsp_xcint_interface(f, D, Fgg=tmp_xcint)
           do i = 1, nc(1)
              do j = 1, i
                 k = get_triang_blks_offset(1, 2, (/1, 2, nc(1)/), &

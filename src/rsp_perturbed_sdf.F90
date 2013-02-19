@@ -166,7 +166,7 @@ module rsp_perturbed_sdf
     end do
 ! write(*,*) 'Sp a', Sp(1)%elms
 
-    call rsp_ovlint_tr(zeromat%nrow, pert%n_perturbations, pert%plab, &
+    call rsp_ovlint(zeromat%nrow, pert%n_perturbations, pert%plab, &
                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
                        nblks, blk_info, blk_sizes, &
                        perturbed_matrix_size, Sp)
@@ -254,10 +254,10 @@ module rsp_perturbed_sdf
 
        ! 3. Complete the particular contribution to Fp
 ! write(*,*) 'Fp b2', Fp(1)%elms
-       call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
+       call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
 ! write(*,*) 'Fp b3', Fp(1)%elms
-       call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+       call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , 1, Fp(i:i))
 ! write(*,*) 'Fp b4', Fp(1)%elms
 
@@ -307,10 +307,10 @@ module rsp_perturbed_sdf
 
        ! 6. Make homogeneous contribution to Fock matrix
 
-       call rsp_twoint_tr(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
+       call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
 
-       call rsp_xcint_tr_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+       call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , 1, Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
@@ -698,7 +698,7 @@ end if
 
           if (num_p_tuples <= 1) then
 
-             call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_oneint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                    1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), size(tmp), tmp)
@@ -707,13 +707,13 @@ end if
 
           if (num_p_tuples <= 2) then
 
-             call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
 
           end if
 
-          call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
+          call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
@@ -879,7 +879,7 @@ end if
 
        if (num_p_tuples <= 1) then
 
-          call rsp_oneint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_oneint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                           p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                    1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), property_size, Fp)
@@ -897,14 +897,14 @@ end if
 
        if (num_p_tuples <= 2) then
 
-          call rsp_twoint_tr(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/) ), &
                property_size, Fp)
 
        end if
 
-       call rsp_xcint_tr_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                       p_tuples(1)%pdim, &
                       (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
