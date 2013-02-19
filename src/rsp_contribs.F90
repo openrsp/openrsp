@@ -595,9 +595,16 @@ end if
     real(8)       r
     integer       h, i, j, k, l, m, n, p, q, ncor
 
-  if (any(f== 'EL  ')) then
-     ave = 0.0
-  else
+    if (any(f == 'EL  ')) then
+       ave = 0.0d0
+       return
+    end if
+
+#ifdef PRG_DIRAC
+    ! this routine is broken in DIRAC, zero out and return for the moment
+    ave = 0.0d0
+    return
+#endif
 
     if (nf==0) then
        ! contract second density to Fock matrix, then trace with first
@@ -1132,8 +1139,6 @@ end if
        call quit('rsp_twoave error: Contribution not implemented or in wrong order')
     end if
 
-  end if
-
   end subroutine
 
 
@@ -1442,9 +1447,15 @@ end if
     !--------------------------------------------------
     integer, allocatable, dimension(:,:) :: indices
 
-    if (any(f=='EL  ')) then
+    if (any(f == 'EL  ')) then
        ! nothing to add
-    else
+       return
+    end if
+
+#ifdef PRG_DIRAC
+   ! this routine is not verified
+   return
+#endif
 
 #ifdef PRG_DALTON
 ! Begin new general geo code
@@ -1596,8 +1607,6 @@ end if
           call quit('error in rsp_twoint: not implemented or in wrong order')
        end if
 #endif
-
-    end if
 
   end subroutine
 
