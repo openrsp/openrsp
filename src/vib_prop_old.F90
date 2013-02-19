@@ -1137,8 +1137,6 @@ contains
                           DFD=(/DFDf/), freq=(/-freq(n)/))
          DFDf = 0
 
-       ! old code
-       ! call rsp_xcave(pert='gf', res=Egf_xc, D=D, Df=Df(:, n))
          Egf(:, :, n) = Egf(:, :, n) + Egf_xc(:, :)
 
          ! call print_tensor((/ng,3/), Egf(:,:,n), 'E1gDf - i/2TgDf - Sg(DFD)f'); Egf(:,:,n)=0
@@ -1219,9 +1217,6 @@ contains
          call prop_twoave((/'GEO'/), (/D,Df(:,ni),Df(:,nj),Dff(:,:,n)/), &
                           (/ng,3,3/), Egff(:,:,:,n))
 
-         ! XC contribution will fail with nonzero frequency
-       ! old code
-       ! call rsp_xcave(pert='gff', res=Egff_xc, D=D, Df=Df(:, ni), Dff=Dff(:, :, n))
          Egff(:, :, :, n) = Egff(:, :, :, n) + Egff_xc(:, :, :)
 
          ! prepare DFDff
@@ -1421,9 +1416,6 @@ contains
                           (zeromat,i=1,3*3*3)/), (/ng,3*3,3/),   &
                           Egfff(:,:,:,:,n), perm=(/1,3,2/))
 
-         ! XC contribution will fail with nonzero frequency
-         ! old code
-       ! call rsp_xcave(pert='gfff', res=Egfff_xc, D=D, Df=Df(:, ni), Dff=Dff(:, :, nij), Dfff=Dfff(:, :, :))
          Egfff(:, :, :, :, n) = Egfff(:, :, :, :, n) + Egfff_xc(:, :, :, :)
 
          ! call print_tensor((/ng,3,3,3/), Egfff(:,:,:,:,n), 'E2gDfDde'); Egfff(:,:,:,:,n)=0

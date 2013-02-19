@@ -252,7 +252,7 @@ public rsp_cfg
     write(*,*) 'Calculating exchange/correlation contributions'
     write(*,*) ' '
 
-    call rsp_xcave(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
+    call rsp_xcave_interface(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
 
     write(*,*) ' '
     write(*,*) 'Finished calculating exchange/correlation contributions'
@@ -673,7 +673,7 @@ public rsp_cfg
    
           if (num_p_tuples == 1) then
    
-             call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
                             p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
                             nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
@@ -681,7 +681,7 @@ public rsp_cfg
    
           elseif (num_p_tuples == 2) then
    
-             call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                             p_tuples(1)%pdim, dens_tuple(2), &
                             nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
@@ -719,7 +719,7 @@ public rsp_cfg
    
           if (num_p_tuples == 1) then
    
-             call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), &
                              (/1/)), sdf_getdata(D, get_emptypert(), (/1/)) , &
@@ -727,7 +727,7 @@ public rsp_cfg
    
           elseif (num_p_tuples == 2) then
    
-             call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), &
                              sdf_getdata(D, get_emptypert(), (/1/)) , &
@@ -735,7 +735,7 @@ public rsp_cfg
     
           elseif (num_p_tuples == 3) then
     
-             call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+             call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), dens_tuple(3), &
                              inner_indices_size, contrib)
@@ -878,12 +878,12 @@ public rsp_cfg
        tmp = 0.0
        contrib = 0.0
 
-       call rsp_nucpot_tr(nucpot_pert, property_size, contrib) 
+       call rsp_nucpot(nucpot_pert, property_size, contrib) 
 
        tmp = tmp + contrib
        contrib = 0.0
 
-       call rsp_oneave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        sdf_getdata(D, get_emptypert(), (/1/)) , &
                        nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
@@ -903,7 +903,7 @@ public rsp_cfg
        tmp = tmp + contrib
        contrib = 0.0
 
-       call rsp_twoave_tr(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        sdf_getdata(D, get_emptypert(), (/1/)) , &
                        sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
@@ -1159,7 +1159,7 @@ public rsp_cfg
                              p12(2)%n_perturbations, which_index_is_pid, &
                              p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
  
-       call rsp_ovlave_tr(p12(1)%n_perturbations, p12(1)%plab, &
+       call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
                           (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
                           p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                           1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
@@ -1481,7 +1481,7 @@ public rsp_cfg
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
-       call rsp_ovlave_tr(p12(1)%n_perturbations, p12(1)%plab, &
+       call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
                        p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
                        1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
