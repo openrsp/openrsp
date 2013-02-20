@@ -8,9 +8,6 @@ module nuc_contributions
    public nuclear_potential
    public gradient_nuc
    public hessian_nuc
-   public cubicff_nuc
-   public quarticff_nuc
-   public nucrep_deriv
 #ifndef VAR_LSDALTON
    public dipnuc_ifc
    public qdrnuc_ifc
@@ -140,101 +137,6 @@ contains
       end do
 
    end subroutine
-
-
-  !> Nuclear repulsion contribution to cubic force field, where \param na
-  !> is the number of atoms, \param chg the charges of the nuclei, and
-  !> \param cor the coordinates of the nuclei
-  subroutine cubicff_nuc(na, cub)
-     integer, intent(in)  :: na
-     real(8), intent(out) :: cub(3,na,3,na,3,na)
-     real(8) r(3), rrr(3,3,3), trace(3)
-     integer i, j, k, l
-     cub = 0 !start from zero
-     ! loop over pairs i<j of nuclei
-     do j = 2, na
-        do i = 1, j-1
-           ! construct triple tensor prod with traces removed
-           r(1) = get_nuc_xyz(1, j) - get_nuc_xyz(1, i)
-           r(2) = get_nuc_xyz(2, j) - get_nuc_xyz(2, i)
-           r(3) = get_nuc_xyz(3, j) - get_nuc_xyz(3, i)
-           rrr = reshape((/((r(:)*r(k)*r(l),k=1,3),l=1,3)/),(/3,3,3/))
-           trace = rrr(:,1,1) + rrr(:,2,2) + rrr(:,3,3)
-           do k = 1, 3
-              rrr(:,k,k) = rrr(:,k,k) - trace/5
-              rrr(k,:,k) = rrr(k,:,k) - trace/5
-              rrr(k,k,:) = rrr(k,k,:) - trace/5
-           end do
-           ! apply scale factor 15 Qi Qj / r^7
-           rrr = rrr * (15 * get_nuc_charge(i) * get_nuc_charge(j) / sum(r**2)**(7/2d0))
-           cub(:,i,:,i,:,i) = cub(:,i,:,i,:,i) + rrr !iii
-           cub(:,i,:,i,:,j) = -rrr !iij
-           cub(:,i,:,j,:,i) = -rrr !iji
-           cub(:,j,:,i,:,i) = -rrr !jii
-           cub(:,i,:,j,:,j) =  rrr !ijj
-           cub(:,j,:,i,:,j) =  rrr !jij
-           cub(:,j,:,j,:,i) =  rrr !jji
-           cub(:,j,:,j,:,j) = cub(:,j,:,j,:,j) - rrr !jjj
-        end do
-     end do
-  end subroutine
-
-
-  !> Nuclear repulsion contribution to quartic force field, where \param na
-  !> is the number of atoms, \param chg the charges of the nuclei, and
-  !> \param cor the coordinates of the nuclei
-  !> Note: Dimensions 7 and 8 of 'qua' have been joined, to comply with
-  !> fortran standard (max 7 dims)
-  subroutine quarticff_nuc(na, qua)
-     integer, intent(in)  :: na
-     real(8), intent(out) :: qua(3,na,3,na,3,na,3*na)
-     real(8) r(3), rrrr(3,3,3,3), trace(3,3), trace2
-     integer i, j, k, l, m
-     qua = 0 !start from zero
-     ! loop over pairs i<j of nuclei
-     do j = 2, na
-        do i = 1, j-1
-           ! construct quadruple tensor product with traces removed
-           r(1) = get_nuc_xyz(1, j) - get_nuc_xyz(1, i)
-           r(2) = get_nuc_xyz(2, j) - get_nuc_xyz(2, i)
-           r(3) = get_nuc_xyz(3, j) - get_nuc_xyz(3, i)
-           rrrr = reshape((/(((r(:)*r(k)*r(l)*r(m), &
-                          k=1,3),l=1,3),m=1,3)/),(/3,3,3,3/))
-           trace  = rrrr(:,:,1,1) + rrrr(:,:,2,2) + rrrr(:,:,3,3)
-           trace2 = trace(1,1) + trace(2,2) + trace(3,3)
-           do k = 1, 3
-              trace(k,k) = trace(k,k) - trace2/10
-           end do
-           do k = 1, 3
-              rrrr(:,:,k,k) = rrrr(:,:,k,k) - trace/7
-              rrrr(:,k,:,k) = rrrr(:,k,:,k) - trace/7
-              rrrr(k,:,:,k) = rrrr(k,:,:,k) - trace/7
-              rrrr(:,k,k,:) = rrrr(:,k,k,:) - trace/7
-              rrrr(k,:,k,:) = rrrr(k,:,k,:) - trace/7
-              rrrr(k,k,:,:) = rrrr(k,k,:,:) - trace/7
-           end do
-           ! apply scale factor 105 Qi Qj / r^9
-           rrrr = rrrr * (105 * get_nuc_charge(i) * get_nuc_charge(j) / sum(r**2)**(9/2d0))
-           qua(:,i,:,i,:,i,3*i-2:3*i) = qua(:,i,:,i,:,i,3*i-2:3*i) + rrrr !iiii
-           qua(:,i,:,i,:,i,3*j-2:3*j) = -rrrr !iiij
-           qua(:,i,:,i,:,j,3*i-2:3*i) = -rrrr !iiji
-           qua(:,i,:,j,:,i,3*i-2:3*i) = -rrrr !ijii
-           qua(:,j,:,i,:,i,3*i-2:3*i) = -rrrr !jiii
-           qua(:,i,:,i,:,j,3*j-2:3*j) =  rrrr !iijj
-           qua(:,i,:,j,:,i,3*j-2:3*j) =  rrrr !ijij
-           qua(:,j,:,i,:,i,3*j-2:3*j) =  rrrr !jiij
-           qua(:,i,:,j,:,j,3*i-2:3*i) =  rrrr !ijji
-           qua(:,j,:,i,:,j,3*i-2:3*i) =  rrrr !jiji
-           qua(:,j,:,j,:,i,3*i-2:3*i) =  rrrr !jjii
-           qua(:,i,:,j,:,j,3*j-2:3*j) = -rrrr !ijjj
-           qua(:,j,:,i,:,j,3*j-2:3*j) = -rrrr !jijj
-           qua(:,j,:,j,:,i,3*j-2:3*j) = -rrrr !jjij
-           qua(:,j,:,j,:,j,3*i-2:3*i) = -rrrr !jjji
-           qua(:,j,:,j,:,j,3*j-2:3*j) = qua(:,j,:,j,:,j,3*j-2:3*j) + rrrr !jjjj
-        end do
-     end do
-  end subroutine
-
 
 
   ! derivatives of nuclear repulsion energy

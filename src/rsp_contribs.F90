@@ -1450,38 +1450,6 @@ end if
   end subroutine
 
 
-! MR: SHELLS_NUCLEI_displace copied from old file. Just used temporarily 
-! for testing 6th order force field (the (/'GEO ', 'GEO ', 'GEO '/) contribution
-! in twoint is not implememted analytically yet).
-
-  !> Move the nuclei and basis functions, as seen from the integral
-  !> programs. For doing finite difference differentiation.
-  subroutine SHELLS_NUCLEI_displace(ic, dc)
-    implicit integer (i,m-n)
-#include <implicit.h>
-    integer,  intent(in) :: ic
-    real(8), intent(in) :: dc !step
-    ! need MXSHEL
-#include <maxorb.h>
-    ! need CENT
-#include <shells.h>
-    ! need MXCOOR
-#include <mxcent.h>
-    ! need CORD
-#include <nuclei.h>
-    integer a, r, i
-    a = 1 + (ic-1)/3
-    r = 1 + mod(ic-1,3)
-    if (a <= 0 .or. a > NATOMS) &
-       call quit("SHELLS_NUCLEI_displace error: arg. 'ic' out of range")
-    ! move atom in CORD, then in CENT
-    CORD(r,a)  = CORD(r,a)  + dc
-    do i = 1, NLRGSH
-       if (NCENT(i) == a) &
-          CENT(i,r,:) = CENT(i,r,:) + dc
-    end do
-  end subroutine
-
   !> Contract 2-electron integrals perturbed by fields 'f' with density
   !> matrix 'dens', and add to Fock matrices 'fock' Average 2-electron integrals perturbed by fields f over the
   !> product of density matrces D1 and D2
