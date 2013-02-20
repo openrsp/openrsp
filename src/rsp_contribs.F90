@@ -26,7 +26,7 @@ module rsp_contribs
   use interface_scf
   use interface_basis
   use dalton_ifc
-  use nuc_contributions
+  use interface_nuclear
   use basis_set,  only: cgto
   use rsp_field_tuple
   use rsp_sdf_caching

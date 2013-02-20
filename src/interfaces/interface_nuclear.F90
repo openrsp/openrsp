@@ -1,4 +1,4 @@
-module nuc_contributions
+module interface_nuclear
 
    use interface_molecule
    use interface_io
