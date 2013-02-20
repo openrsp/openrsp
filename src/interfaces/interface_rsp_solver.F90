@@ -300,15 +300,9 @@ contains
       ! This subroutine unpacks the ZY matrix from the vector.
       ! It uses the Z and the Y part of the vector.
       call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, f77_memory(KMJWOP) )
-      ! divides solution by 2 in accordance with ABACUS solver, or
-      ! because Andreas' code does not use total density matrix
-      mo_eigvec(ISOL)%elms = mo_eigvec(ISOL)%elms / 2
       ! transforms from MO to AO
       eigvec(ISOL) = - solver_CMO_OCC*( mo_eigvec(ISOL)*trans( solver_CMO_VIR ) ) &
                      - solver_CMO_VIR*( mo_eigvec(ISOL)*trans( solver_CMO_OCC ) )
-
-      ! radovan: strange factor, was previously further up
-      eigvec(ISOL) = 2.0d0*eigvec(ISOL)
     end do ! loops over solution vectors
 
     ! closes and deletes files
