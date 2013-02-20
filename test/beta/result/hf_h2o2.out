@@ -4820,7 +4820,7 @@ RSPC Calling alt_elec_hypol ...
  Time used in linear response calculation is      0.42 CPU seconds for symmetry 1
 
  >>> Total time used in response solver is         0.42 CPU seconds.
-beta = -Efff w:-0.144 0.072 0.072
+beta = -Efff w: -0.144 0.072 0.072
   -0.00000000000  -0.00000000000  -7.93192175369
   -0.00000000000  -0.00000000000  -8.91418301393
   -7.51141293168  -8.61737380730  -0.00000000000
