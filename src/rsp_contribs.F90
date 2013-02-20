@@ -1452,11 +1452,6 @@ end if
        return
     end if
 
-#ifdef PRG_DIRAC
-   ! this routine is not verified
-   return
-#endif
-
 #ifdef PRG_DALTON
 ! Begin new general geo code
 
