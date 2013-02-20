@@ -600,18 +600,18 @@ end if
        return
     end if
 
-#ifdef PRG_DIRAC
-    ! this routine is broken in DIRAC, zero out and return for the moment
-    ave = 0.0d0
-    return
-#endif
-
     if (nf==0) then
+
        ! contract second density to Fock matrix, then trace with first
        A(1) = 0*D1
        call mat_ensure_alloc(A(1), only_alloc=.true.)
        call interface_scf_get_g(D2, A(1)) !Coulomb and exchange
        ave(1) = trace(A(1),D1)
+
+
+
+
+
     else if (nf==1 .and. f(1)=='GEO ') then
 
 #ifdef PRG_DALTON
@@ -648,8 +648,15 @@ end if
        deallocate(real_ave)
 #endif /* ifdef PRG_DIRAC */
 
+
+
+
+
+
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
+
        ncor = 3 * get_nr_atoms()
+#ifdef PRG_DALTON
        allocate(tmp(ncor,ncor,1,1))
        tmp = 0.0
 #ifdef GRCONT_NOT_AVAILABLE
@@ -674,7 +681,6 @@ end if
                    tmp(:,:,1,1), ncor**2, .true., .false., &
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
 #endif
-
        h = 0
        do i = 1, ncor
           do j = i, ncor
@@ -684,8 +690,36 @@ end if
        end do
 
        deallocate(tmp)
+#endif  /* ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+       allocate(real_ave(ncor*ncor))
+       real_ave = 0.0
+       call interest_mpi_wake_up()
+       call interest_get_int(D1%nrow, D1%elms, D2%elms, 2, 0, size(real_ave), real_ave)
+       p = 0
+       q = 0
+       do i = 1, ncor
+          do j = 1, ncor
+             q = q + 1
+             if (j >= i) then
+                p = p + 1
+                ave(p) = 2.0d0*real_ave(q)
+             end if
+          end do
+       end do
+       deallocate(real_ave)
+#endif /* ifdef PRG_DIRAC */
+
+
+
 
     else if (nf==3 .and. all(f==(/'GEO ','GEO ','GEO '/))) then
+
+#ifdef PRG_DIRAC
+       print *, 'error: twoave contribution not programmed'
+       stop 1
+#endif
        ! contract FULL cubic in tmp, unsymmetrized divided by six
        ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,1))
@@ -719,8 +753,18 @@ end if
 
        deallocate(tmp)
 
+
+
+
+
+
     else if (nf==4 .and. all(f==(/'GEO ','GEO ','GEO ','GEO '/))) then
-       ncor = 3 * get_nr_atoms()
+ 
+#ifdef PRG_DIRAC
+       print *, 'error: twoave contribution not programmed'
+       stop 1
+#endif
+      ncor = 3 * get_nr_atoms()
        allocate(tmp(ncor,ncor,ncor,ncor))
        tmp = 0.0
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
@@ -763,7 +807,17 @@ end if
 
        deallocate(tmp)
 
+
+
+
+
+
     else if (nf==5 .and. all(f==(/'GEO ','GEO ','GEO ','GEO ', 'GEO '/))) then
+
+#ifdef PRG_DIRAC
+       print *, 'error: twoave contribution not programmed'
+       stop 1
+#endif
        ncor = 3 * get_nr_atoms()
        allocate(tmp_5(ncor,ncor,ncor,ncor,ncor))
        tmp_5 = 0.0
@@ -845,7 +899,17 @@ end if
 
        deallocate(tmp_5)
 
+
+
+
+
+
     else if (nf==6 .and. all(f==(/'GEO ','GEO ','GEO ','GEO ', 'GEO ', 'GEO '/))) then
+
+#ifdef PRG_DIRAC
+       print *, 'error: twoave contribution not programmed'
+       stop 1
+#endif
        ncor = 3 * get_nr_atoms()
        allocate(tmp_6(ncor,ncor,ncor,ncor,ncor,ncor))
        tmp_6 = 0.0
