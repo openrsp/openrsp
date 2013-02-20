@@ -838,7 +838,7 @@ contains
       logical, save  :: first_complex = .true.
       real(8)        :: gamma_saved
       logical        :: has_imag
-      type(matrix)   :: reFDSp(1), imFDSp(1), reXph(1), imXph(1), T
+      type(matrix)   :: reFDSp(1), imFDSp(1), reXph(1), imXph(1)
       ! for resonant equations (real freq coincides with +-an excitation energy).
       ! Excitation energies and densities are stored in solved_eqs.
       ! Excitation and de-excitation should be projected out of the
@@ -883,15 +883,10 @@ contains
          ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),
          ! make sure Dp it comes out completely symmetric
          if (sym /= 0 .and. freq==0) then
-            Dp(i) = 1/2d0 * Dp(i) + 2d0 * DS*Xph(1)
+            Dp(i) = 1/2d0 * Dp(i) + 1d0 * DS*Xph(1)
             Dp(i) = Dp(i) - 1d0*sym * trans(Dp(i))
          else
-            ! radovan: the following fails with optimization
-!           Dp(i) = Dp(i) + 2d0 * (DS*Xph(1) - Xph(1)*trans(DS))
-            ! workaround:
-            T = 2d0*(DS*Xph(1) - Xph(1)*trans(DS))
-            Dp(i) = Dp(i) + T
-            T = 0
+            Dp(i) = Dp(i) + D0*S0*Xph(1) - Xph(1)*S0*D0
          end if
          Xph(1) = 0
          FDSp(i) = 0
