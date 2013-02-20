@@ -11,7 +11,7 @@ module interface_rsp_solver
    public rsp_mosolver_init
    public rsp_mosolver_splash
 #ifndef VAR_LSDALTON
-   public rsp_mosolver_exec
+   public rsp_solver_exec
 #endif
    public rsp_mosolver_finalize
 
@@ -170,7 +170,7 @@ contains
   !> \param RHS is the right hand side vectors (property gradients?)
   !> \param eigval contains the frequencies
   !> \return eigvec contains the solution vectors (AO)
-  subroutine rsp_mosolver_exec(RHS,    &
+  subroutine rsp_solver_exec(RHS,    &
                                eigval, &
                                eigvec)
 
@@ -474,7 +474,7 @@ contains
 
   end subroutine
 
-  subroutine rsp_mosolver_exec(RHS,    &
+  subroutine rsp_solver_exec(RHS,    &
                                eigval, &
                                Dp)
 

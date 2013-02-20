@@ -178,42 +178,6 @@ contains
     ! Fock matrix F = H1 + G
     F = H1 + G
 
-#ifdef PRG_DIRAC
-!   radovan: the contributions below are extremely useful
-!            for debugging
-!            after i get dirac fully interfaced i will remove/clean it up
-    print *, 'nr of electrons   =', dot(D, S)
-    print *, '1-el energy       =', dot(H1, D)
-    print *, '2-el energy       =', 0.5d0*dot(G, D)
-    print *, 'electronic energy =', dot(H1, D) + 0.5d0*dot(G, D)
-
-    TX = 0*D
-    call mat_ensure_alloc(TX, only_alloc=.true.)
-    TY = 0*D
-    call mat_ensure_alloc(TY, only_alloc=.true.)
-    TZ = 0*D
-    call mat_ensure_alloc(TZ, only_alloc=.true.)
-    call get_1el_integrals(                                &
-                           M=(/TX, TY, TZ/),               &
-                           prop_name="INT_CART_MULTIPOLE", &
-                           num_ints=3,                     &
-                           order_mom=1,                    &
-                           order_elec=0,                   &
-                           order_geo_total=0,              &
-                           max_num_cent=0,                 &
-                           blocks=(/1, 1, 2, 2/),          &
-                           print_unit=get_print_unit()     &
-                          )
-
-    print *, 'dipole z          =', dot(TZ, D)
-!   call rsp_mosolver_exec((/TZ/), (/0.0d0/), Dp)
-!   print *, 'polarizability zz =', -dot(TZ, Dp(1))
-
-    TX = 0
-    TY = 0
-    TZ = 0
-#endif /* ifdef PRG_DIRAC */
-
     H1 = 0
     G  = 0
 
