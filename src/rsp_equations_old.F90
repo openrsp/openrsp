@@ -878,7 +878,7 @@ contains
             freq1(1) = dreal(freq)
             Xph(1) = 0*Dp(i)
             call mat_ensure_alloc(Xph(1), only_alloc=.true.)
-            call rsp_mosolver_exec(FDSp(i:i), freq1(1:1), Xph(1))
+            call rsp_solver_exec(FDSp(i:i), freq1(1:1), Xph(1))
          end if
          ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),
          ! make sure Dp it comes out completely symmetric

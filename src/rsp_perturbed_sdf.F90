@@ -107,10 +107,8 @@ module rsp_perturbed_sdf
 
   ! ASSUMES THAT PERTURBATION TUPLE IS IN STANDARD ORDER
   subroutine get_fds(zeromat, pert, F, D, S)
-#ifndef VAR_LSDALTON
-    !host program specific solver
-    use interface_rsp_solver, only: rsp_mosolver_exec
-#endif
+
+    use interface_rsp_solver, only: rsp_solver_exec
     implicit none
 
     
@@ -283,17 +281,7 @@ module rsp_perturbed_sdf
 ! write(*,*) 'RHS b', RHS(1)%elms
 
        ! Note (MaR): Passing only real part of freq. Is this OK?
-#ifndef VAR_LSDALTON
-    !host program specific solver
-
-! write(*,*) 'Fp', Fp(i)%elms_alpha
-! write(*,*) 'Dp', Dp(i)%elms_alpha
-! write(*,*) 'Sp', Sp(i)%elms_alpha
-! 
-! write(*,*) 'RHS c', RHS(1)%elms
-
-       call rsp_mosolver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
-#endif
+       call rsp_solver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
        RHS(1) = 0
 
 
