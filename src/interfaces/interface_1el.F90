@@ -472,7 +472,9 @@ contains
                                        temp, .false.,             &
                                        2, (/1, 1, 2, 2/),         &
                                        get_print_unit(), 0)
-            val_expt(:, 1) = val_expt(:, 1) + temp(1:size(val_expt))
+            do i = 1, propsize
+               val_expt(i, 1) = val_expt(i, 1) + temp(i)
+            end do
 
             ! beta' matrix
             temp = 0.0d0
@@ -491,7 +493,9 @@ contains
                                        temp, .false.,             &
                                        1, (/2, 2/),               &
                                        get_print_unit(), 0)
-            val_expt(:, 1) = val_expt(:, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(1:size(val_expt))
+            do i = 1, propsize
+               val_expt(i, 1) = val_expt(i, 1) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*temp(i)
+            end do
 
             ! kinetic energy
             T = 0*D
@@ -515,7 +519,7 @@ contains
                                           temp, .false.,               &
                                           2, (/1, 2, 2, 1/),           &
                                           get_print_unit(), 0)
-               do i = 1, size(val_expt)
+               do i = 1, propsize
                   val_expt(i, 1) = val_expt(i, 1) + openrsp_cfg_speed_of_light*temp((i-1)*3 + ixyz)
                end do
             end do
@@ -1010,26 +1014,26 @@ contains
          ! only geometric perturbations
          else
 #ifdef PRG_DIRAC
-            allocate(T(3*size(oneint)))
-            do i = 1, 3*size(oneint)
-               T(i) = 0*oneint(1)
+            allocate(T(3*size(oneint_tmp)))
+            do i = 1, 3*size(oneint_tmp)
+               T(i) = 0*oneint_tmp(1)
                call mat_ensure_alloc(T(i), only_alloc=.true.)
             end do
 
             ! nuclear attraction
-            call gen1int_host_get_int(NON_LAO, INT_POT_ENERGY,   &
-                                      0,                         &
-                                      0,                         &
-                                      0, 0, 0,                   &
-                                      0, 0, 0,                   &
-                                      0, 0,                      &
-                                      order_geo,                 &
-                                      order_geo,                 &
-                                      0, (/0/),                  &
-                                      UNIQUE_GEO,                &
-                                      .false., .false., .false., &
-                                      num_ints, oneint, .false., &
-                                      2, (/1, 1, 2, 2/),         &
+            call gen1int_host_get_int(NON_LAO, INT_POT_ENERGY,       &
+                                      0,                             &
+                                      0,                             &
+                                      0, 0, 0,                       &
+                                      0, 0, 0,                       &
+                                      0, 0,                          &
+                                      order_geo,                     &
+                                      order_geo,                     &
+                                      0, (/0/),                      &
+                                      UNIQUE_GEO,                    &
+                                      .false., .false., .false.,     &
+                                      num_ints, oneint_tmp, .false., &
+                                      2, (/1, 1, 2, 2/),             &
                                       get_print_unit(), 0)
 
             ! beta' matrix
@@ -1047,11 +1051,11 @@ contains
                                       num_ints, T, .false.,      &
                                       1, (/2, 2/),               &
                                       get_print_unit(), 0)
-            do i = 1, size(oneint)
-               oneint(i) = oneint(i) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*T(i)
+            do i = 1, size(oneint_tmp)
+               oneint_tmp(i) = oneint_tmp(i) - 2.0d0*(openrsp_cfg_speed_of_light**2.0d0)*T(i)
             end do
 
-!           ! kinetic energy
+            ! kinetic energy
             call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
                                       0,                           &
                                       1,                           &
@@ -1066,18 +1070,18 @@ contains
                                       3*num_ints, T, .false.,      &
                                       2, (/1, 2, 2, 1/),           &
                                       get_print_unit(), 0)
-            do i = 1, size(oneint)
+            do i = 1, size(oneint_tmp)
                do ixyz = 1, 3
-                  call daxpy(T(1)%nrow*T(1)%ncol,                &
-                            -openrsp_cfg_speed_of_light,         &
-                             T((i-1)*3 + ixyz)%elms,       &
-                             1,                                  &
-                             oneint(i)%elms(1, 1, 5-ixyz), &
+                  call daxpy(T(1)%nrow*T(1)%ncol,              &
+                            -openrsp_cfg_speed_of_light,       &
+                             T((i-1)*3 + ixyz)%elms,           &
+                             1,                                &
+                             oneint_tmp(i)%elms(1, 1, 5-ixyz), &
                              1)
                end do
             end do
 
-            do i = 1, 3*size(oneint)
+            do i = 1, 3*size(oneint_tmp)
                T(i) = 0
             end do
             deallocate(T)
