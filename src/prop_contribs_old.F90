@@ -17,7 +17,7 @@ module prop_contribs_old
    use interface_f77_memory
    use interface_scf
    use dalton_ifc
-   use nuc_contributions
+   use interface_nuclear
    use interface_io
 
    implicit none
