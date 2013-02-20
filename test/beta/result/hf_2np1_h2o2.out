@@ -5806,7 +5806,7 @@ RSPC Calling elec_hypolar ...
  Time used in linear response calculation is      0.46 CPU seconds for symmetry 1
 
  >>> Total time used in response solver is         0.46 CPU seconds.
-beta = -Efff w:-0.144 0.072 0.072
+beta = -Efff w: -0.144 0.072 0.072
    0.00000000000  -0.00000000000  -7.51141292592
    0.00000000000  -0.00000000001  -8.61737380779
   -7.93192172374  -8.91418310930  -0.00000000000
