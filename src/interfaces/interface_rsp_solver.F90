@@ -308,7 +308,7 @@ contains
                      - solver_CMO_VIR*( mo_eigvec(ISOL)*trans( solver_CMO_OCC ) )
 
       ! radovan: strange factor, was previously further up
-      eigvec(ISOL) = -2.0d0*eigvec(ISOL)
+      eigvec(ISOL) = 2.0d0*eigvec(ISOL)
     end do ! loops over solution vectors
 
     ! closes and deletes files
