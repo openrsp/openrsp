@@ -287,11 +287,7 @@ module rsp_perturbed_sdf
 
        ! 5. Get Dh using the rsp equation solution X
 
-#ifdef PRG_DIRAC
-       Dh(i) = X(1)
-#else
-       Dh(i) = X(1) * B * A - A * B * X(1)
-#endif
+       Dh(i) = A*B*X(1) - X(1)*B*A
 
        ! 6. Make homogeneous contribution to Fock matrix
 

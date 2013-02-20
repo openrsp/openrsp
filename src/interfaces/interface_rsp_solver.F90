@@ -590,13 +590,12 @@ contains
 !   fixme stop at spinfree
 !   see old interface to see how it is done
 
-       allocate(mo_coef(ncmotq))
-       call read_mo_coef(mo_coef)
-       call mat_init(C, ntbas(0), norbt)
-       call get_C(C, mo_coef, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
-       deallocate(mo_coef)
-       RHS_mo = trans(C)*(RHS(1)*C)
-       C = 0
+    allocate(mo_coef(ncmotq))
+    call read_mo_coef(mo_coef)
+    call mat_init(C, ntbas(0), norbt)
+    call get_C(C, mo_coef, i=1.0d0, s=1.0d0, g=1.0d0, u=1.0d0)
+    deallocate(mo_coef)
+    RHS_mo = trans(C)*(RHS(1)*C)
 
     RHS_mo%ih_sym = RHS(1)%ih_sym
     RHS_mo%pg_sym = RHS(1)%pg_sym
@@ -869,48 +868,9 @@ contains
       deallocate(response_vector_pna)
     end if
 
-
-!   get coefficients
-!   ================
-
-    allocate(mo_coef(n2bbasxq))
-    call read_mo_coef(mo_coef)
-    call mat_init(Cig, ntbas(0), norbt)
-    call mat_init(Csg, ntbas(0), norbt)
-    call get_C(Cig, mo_coef, i=1.0d0, s=0.0d0, g=1.0d0, u=0.0d0)
-    call get_C(Csg, mo_coef, i=0.0d0, s=1.0d0, g=1.0d0, u=0.0d0)
-    if (nfsym == 2) then
-      call get_C(Ciu, mo_coef, i=1.0d0, s=0.0d0, g=0.0d0, u=1.0d0)
-      call get_C(Csu, mo_coef, i=0.0d0, s=1.0d0, g=0.0d0, u=1.0d0)
-    end if
-    deallocate(mo_coef)
-
-
-!   construct perturbed AO density matrix
-!   =====================================
-
-    if (nfsym == 2) then
-      if (jbtof(Wp%pg_sym-1, 1) == 2) then
-!       ungerade perturbation
-        Dp(1) = (Cig*(Wp*trans(Csu))) &
-           + (Ciu*(Wp*trans(Csg))) &
-           - (Csg*(Wp*trans(Ciu))) &
-           - (Csu*(Wp*trans(Cig)))
-      else
-!       gerade perturbation
-        Dp(1) = (Cig*(Wp*trans(Csg))) &
-           + (Ciu*(Wp*trans(Csu))) &
-           - (Csg*(Wp*trans(Cig))) &
-           - (Csu*(Wp*trans(Ciu)))
-      end if
-      Ciu = 0
-      Csu = 0
-    else
-      Dp(1) = (Cig*(Wp*trans(Csg))) &
-         - (Csg*(Wp*trans(Cig)))
-    end if
-    Cig = 0
-    Csg = 0
+    ! backtransform
+    Dp(1) = C*(Wp*trans(C))
+    C = 0
 
     Dp(1)%ih_sym = Wp%ih_sym
     Dp(1)%pg_sym = Wp%pg_sym
