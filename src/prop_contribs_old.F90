@@ -285,7 +285,7 @@ contains
       end if
       ! everything set up, so call core procedure oneave.
       ! Argument nd=0 is used when averaging over unperturbed density,
-      ! in which case also perturbed nuclear attraction should be included
+      ! in which case also perturbed nuclear attraction should be added
       nd = merge(0, nd, size(p)==size(dime))
       call oneave(S0, size(p), pp, ccomp, ddime(:size(p)), ffreq, nd, D, Etmp, DFD)
       ! add oneavg property contribution in temporary array Etmp(:) to
@@ -794,7 +794,7 @@ contains
       end if
       ! everything set up, so call core procedure oneave.
       ! Argument nd=0 is used when averaging over unperturbed density,
-      ! in which case also perturbed nuclear attraction should be included
+      ! in which case also perturbed nuclear attraction should be added
       call twoave(size(p), size(dime)-size(p), pp, ccomp, ddime, D, Etmp)
       ! add oneavg property contribution in temporary array Etmp(:) to
       ! resulting property array E(:), while permuting indices according to pperm
