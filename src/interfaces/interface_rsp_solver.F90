@@ -306,6 +306,9 @@ contains
       ! transforms from MO to AO
       eigvec(ISOL) = - solver_CMO_OCC*( mo_eigvec(ISOL)*trans( solver_CMO_VIR ) ) &
                      - solver_CMO_VIR*( mo_eigvec(ISOL)*trans( solver_CMO_OCC ) )
+
+      ! radovan: strange factor, was previously further up
+      eigvec(ISOL) = -2.0d0*eigvec(ISOL)
     end do ! loops over solution vectors
 
     ! closes and deletes files
