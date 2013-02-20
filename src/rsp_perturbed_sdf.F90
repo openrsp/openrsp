@@ -296,13 +296,6 @@ module rsp_perturbed_sdf
 #endif
        RHS(1) = 0
 
-#ifndef PRG_DIRAC
-       ! Note (MaR): Why multiply by -2 like below?
-       X(1) = -2d0*X(1)
-#endif
-
-! write(*,*) 'X', X(1)%elms_alpha
-
 
        ! 5. Get Dh using the rsp equation solution X
 
