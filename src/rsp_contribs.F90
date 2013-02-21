@@ -1,7 +1,6 @@
 ! commented out by Bin Gao, 2012-11-05
-!#ifdef PRG_DIRAC
+! radovan: probably because it made problems with MPI?
 #define GRCONT_NOT_AVAILABLE
-!#endif
 
 ! Copyright 2012      Gao Bin
 !           2012      Radovan Bast
