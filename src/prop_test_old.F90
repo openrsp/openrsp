@@ -49,7 +49,7 @@ contains
       integer,      intent(in) :: ng
       type(matrix), intent(in) :: S, D, F
 
-      complex(8)    :: aat(ng, 3)
+      complex(8)    :: aat(ng, 3), temp(ng, 3)
 
       type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
       type(matrix)  :: Wbw(3)
@@ -117,7 +117,13 @@ contains
       call prop_oneave(S, (/'GEO'/), (/Dbw/), shape(aat), aat, &
                        DFD = Wbw)
       Wbw = 0
-      call prop_twoave((/'GEO'/), (/D,Dbw/), shape(aat), aat)
+
+      temp = 0.0d0
+      do ib = 1, 3
+         call rsp_twoave(1, (/'GEO '/), (/1/), (/ng/), D, Dbw(ib), ng, temp(1, ib))
+      end do
+      aat = aat + temp
+
       Dbw = 0
 
       aat = -0.5d0*aat
