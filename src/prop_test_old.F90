@@ -10,6 +10,8 @@ module prop_test_old
    use rsp_equations_old
    use interface_io
    use interface_1el
+   use interface_rsp_solver
+   use rsp_contribs
 
    implicit none
 
@@ -50,44 +52,40 @@ contains
       complex(8)    :: aat(ng, 3)
 
       type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
-      type(matrix)  :: Sb(3), FDSbw(3), Wbw(3)
-      type(matrix)  :: T, T2
+      type(matrix)  :: Wbw(3)
+      type(matrix)  :: T, T2, X(3), M(3), SL
 
       integer       :: ib, ig
       character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
+
+    integer, dimension(0) :: noc
+    character(4), dimension(0) :: nof
 
       call pert_dens(S, (/'MAG'/), (/3/), &
                      (/D/), (/F/), Db, Fb, freq=(/(0d0,0d0)/))
       Fb = 0
 
-      call mat_zero_like(D, T)
+      call mat_zero_like(D, SL)
       do ib = 1, 3
-         call legacy_read_integrals('d<S|/dB'//xyz(ib), T)
-         Fbw(ib) = 0.5d0*T + 0.5d0*trans(T)
+         call legacy_read_integrals('d<S|/dB'//xyz(ib), SL)
+
+         ! SL - SR
+         Fbw(ib) = 0.5d0*SL + 0.5d0*trans(SL) ! SL - SR
+
+         ! form RHS = -S*D*SL - SR*D*S - S*Db*S
+         M(ib) = -S*D*SL
+         M(ib) = M(ib) - trans(M(ib))
+         M(ib) = M(ib) - S*Db(ib)*S
+
+         call mat_zero_like(D, X(ib))
+         call rsp_solver_exec(M(ib), (/0.0d0/), X(ib))
+
+         Dbw(ib) = D*S*X(ib) - X(ib)*S*D
+         call rsp_twoint(S%nrow, 0, nof, noc, noc, Dbw(ib), 1, Fbw(ib))
       end do
-      T = 0
-
-      ! contstruct -RHS's for the frequency-differentiated equation
-      ! part of eq. (47)
-      do ib = 1, 3
-         call mat_zero_like(D, Sb(ib))
-         call legacy_read_integrals('dS/dB'//xyz(ib)//'  ', Sb(ib))
-
-         FDSbw(ib) =                 &
-                   - 0.5d0*S*D*Sb(ib) &
-                   - 0.5d0*Sb(ib)*D*S &
-                   - S*Db(ib)*S
-
-         Sb(ib)%elms = 0.0d0
-      end do
-
-      ! call solver directly
-      ! rest of the rhs eq. (47) is prepared inside solve_scf_eq
-      call solve_scf_eq(S, D, F, -1, (0d0,0d0), 3, &
-                        Sb, FDSbw, Dbw, Fbw)
-
-      Sb = 0
-      FDSbw = 0
+      X = 0
+      M = 0
+      SL = 0
 
       ! contract the frequency-differentiated response function
       aat = 0.0d0
