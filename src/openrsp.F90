@@ -178,6 +178,42 @@ contains
     ! Fock matrix F = H1 + G
     F = H1 + G
 
+#ifdef PRG_DIRAC
+!   radovan: the contributions below are extremely useful
+!            for debugging
+!            after i get dirac fully interfaced i will remove/clean it up
+    print *, 'nr of electrons   =', dot(D, S)
+    print *, '1-el energy       =', dot(H1, D)
+    print *, '2-el energy       =', 0.5d0*dot(G, D)
+    print *, 'electronic energy =', dot(H1, D) + 0.5d0*dot(G, D)
+
+    TX = 0*D
+    call mat_ensure_alloc(TX, only_alloc=.true.)
+    TY = 0*D
+    call mat_ensure_alloc(TY, only_alloc=.true.)
+    TZ = 0*D
+    call mat_ensure_alloc(TZ, only_alloc=.true.)
+    call get_1el_integrals(                                &
+                           M=(/TX, TY, TZ/),               &
+                           prop_name="INT_CART_MULTIPOLE", &
+                           num_ints=3,                     &
+                           order_mom=1,                    &
+                           order_elec=0,                   &
+                           order_geo_total=0,              &
+                           max_num_cent=0,                 &
+                           blocks=(/1, 1, 2, 2/),          &
+                           print_unit=get_print_unit()     &
+                          )
+
+    print *, 'dipole z          =', dot(TZ, D)
+!   call rsp_mosolver_exec((/TZ/), (/0.0d0/), Dp)
+!   print *, 'polarizability zz =', -dot(TZ, Dp(1))
+
+    TX = 0
+    TY = 0
+    TZ = 0
+#endif /* ifdef PRG_DIRAC */
+
     H1 = 0
     G  = 0
 
@@ -223,9 +259,11 @@ end subroutine
     real(8), dimension(3) :: fld_dum
     real(8), dimension(3) :: dm
     character(len=4) :: file_id
+    character(20) :: format_line
     integer       :: n_nm, h, j, k, m, ierr
     real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
     real(8), allocatable, dimension(:,:) :: T
+    real(8), dimension(3,3) :: ff
     real(8), dimension(3,3,3) :: fff
     real(8) :: c0
     complex(8), dimension(3) :: CID
@@ -379,24 +417,220 @@ file_id = '    '
 
        end if
 
-       kn = (/1,1/)
 
-       perturbation_tuple%n_perturbations = 3
-       allocate(perturbation_tuple%pdim(3))
-       allocate(perturbation_tuple%plab(3))
-       allocate(perturbation_tuple%pid(3))
-       allocate(perturbation_tuple%freq(3))
-
-       perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  '/)
-       perturbation_tuple%pdim = (/3, 3, 3/)
-       perturbation_tuple%pid = (/1, 2, 3/)
 
        ! Requires that openrsp_cfg_nr_freq_tuples is set to 1 if no frequencies specified
        ! That is currently the default
        ! Requires that openrsp_cfg_nr_real_freqs is used as freqs. per tuple
        ! That is also currently the default
 
+          open(unit = 320, file='shg_output', status='replace', action='write', iostat=ierr)
+write(320, *) 'Second harmonic generation output'
+write(320, *) '================================='
+write(320, *) ' '
+
+
        do k = 1, openrsp_cfg_nr_freq_tuples
+
+          write(320,*) 'Frequency combination', k
+          write(320,*) ' '
+
+          if (k == 1) then
+
+             ! ASSUME CLOSED SHELL
+             call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+             call mat_init_like_and_zero(S, zeromat_already)
+
+             call sdf_setup_datatype(S_already, S)
+             call sdf_setup_datatype(D_already, D)
+             call sdf_setup_datatype(F_already, F)
+
+          end if
+
+
+! alpha(-2w; 2w)
+
+
+          kn = (/0,1/)
+
+          perturbation_tuple%n_perturbations = 2
+          allocate(perturbation_tuple%pdim(2))
+          allocate(perturbation_tuple%plab(2))
+          allocate(perturbation_tuple%pid(2))
+          allocate(perturbation_tuple%freq(2))
+
+          perturbation_tuple%plab = (/'EL  ',  'EL  '/)
+          perturbation_tuple%pdim = (/3, 3/)
+          perturbation_tuple%pid = (/1, 2/)
+
+          if(allocated(openrsp_cfg_real_freqs)) then
+
+             perturbation_tuple%freq = (/ (-1.0) * &
+             sum(openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1: &
+                                              k * openrsp_cfg_nr_real_freqs)), &
+             sum(openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1: &
+                                              k * openrsp_cfg_nr_real_freqs))/)
+
+          else
+
+             perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
+
+          end if
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/1, 2/)
+
+          write(file_id, '(I4)'), k
+
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, &
+                        file_id = 'ff2w_freq_tuple_' // trim(adjustl(file_id)))
+
+
+          open(unit = 258, file='rsp_tensor_' // 'ff2w_freq_tuple_' // trim(adjustl(file_id)), &
+               status='old', action='read', iostat=ierr)
+
+
+          write(320,*) ' '
+          write(320,*) 'Polarizability (-2w;2w)'
+          write(320,*) '======================='
+          write(320,*) ' '
+          write(320,*) 'Frequencies w0, w1 are', perturbation_tuple%freq(1), ' ,', &
+                        perturbation_tuple%freq(2)
+          write(320,*) ' '
+          write(320,*) 'Polarizability:'
+          write(320,*) ' '
+
+
+          ff = 0.0
+
+          format_line = '(      f20.8)'
+          write(format_line(2:7), '(i6)') size(ff,1)
+
+          do i = 1, 3
+                read(258,*) fld_dum
+                ff(i, :) = fld_dum
+                write(320, format_line) ff(i,:)
+          end do
+
+
+          write(320,*) ' '
+          write(320,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+                                     (ff(1,1) + ff(2,2) + ff(3,3)))
+          ! Follows method by AJT
+          write(320,*) 'Dipole^2', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
+                                   i = 1, 3), j = 1, 3) /) ))
+          write(320,*) ' '
+
+
+
+          close(258)
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+! alpha(-w; w)
+
+
+          kn = (/0,1/)
+
+          perturbation_tuple%n_perturbations = 2
+          allocate(perturbation_tuple%pdim(2))
+          allocate(perturbation_tuple%plab(2))
+          allocate(perturbation_tuple%pid(2))
+          allocate(perturbation_tuple%freq(2))
+
+          perturbation_tuple%plab = (/'EL  ',  'EL  '/)
+          perturbation_tuple%pdim = (/3, 3/)
+          perturbation_tuple%pid = (/1, 2/)
+
+          if(allocated(openrsp_cfg_real_freqs)) then
+
+             perturbation_tuple%freq = (/ (-1.0) * &
+             openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1), &
+             openrsp_cfg_real_freqs((k - 1) * openrsp_cfg_nr_real_freqs + 1)/)
+
+          else
+
+             perturbation_tuple%freq = (/(i * 0.0d0 , i = 1, openrsp_cfg_specify_order)/)
+
+          end if
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/1, 2/)
+
+          write(file_id, '(I4)'), k
+
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, &
+                        file_id = 'ffw_freq_tuple_' // trim(adjustl(file_id)))
+
+
+          open(unit = 258, file='rsp_tensor_' // 'ffw_freq_tuple_' // trim(adjustl(file_id)), &
+               status='old', action='read', iostat=ierr)
+
+
+          write(320,*) ' '
+          write(320,*) 'Polarizability (-w;w)'
+          write(320,*) '======================='
+          write(320,*) ' '
+          write(320,*) 'Frequencies w0, w1 are', perturbation_tuple%freq(1), ' ,', &
+                        perturbation_tuple%freq(2)
+          write(320,*) ' '
+          write(320,*) 'Polarizability:'
+          write(320,*) ' '
+
+
+          ff = 0.0
+
+          format_line = '(      f20.8)'
+          write(format_line(2:7), '(i6)') size(ff,1)
+
+          do i = 1, 3
+                read(258,*) fld_dum
+                ff(i, :) = fld_dum
+                write(320, format_line) ff(i,:)
+          end do
+
+
+          write(320,*) ' '
+          write(320,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+                                     (ff(1,1) + ff(2,2) + ff(3,3)))
+          ! Follows method by AJT
+          write(320,*) 'Dipole^2', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
+                                   i = 1, 3), j = 1, 3) /) ))
+          write(320,*) ' '
+
+
+
+          close(258)
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+! beta(-w; w)
+
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(3))
+          allocate(perturbation_tuple%plab(3))
+          allocate(perturbation_tuple%pid(3))
+          allocate(perturbation_tuple%freq(3))
+
+          perturbation_tuple%plab = (/'EL  ', 'EL  ', 'EL  '/)
+          perturbation_tuple%pdim = (/3, 3, 3/)
+          perturbation_tuple%pid = (/1, 2, 3/)
+
+
 
           if(allocated(openrsp_cfg_real_freqs)) then
 
@@ -419,53 +653,57 @@ file_id = '    '
           write(file_id, '(I4)'), k
 
 
-          if (k == 1) then
-
-             ! ASSUME CLOSED SHELL
-             call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-             call mat_init_like_and_zero(S, zeromat_already)
-
-             call sdf_setup_datatype(S_already, S)
-             call sdf_setup_datatype(D_already, D)
-             call sdf_setup_datatype(F_already, F)
-
-          end if
-
           call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
                         S_already=S_already, zeromat_already=zeromat_already, &
-                        file_id = 'freq_tuple_' // trim(adjustl(file_id)))
+                        file_id = 'fff_freq_tuple_' // trim(adjustl(file_id)))
 
-! 
-! 
-!           call rsp_prop(perturbation_tuple, kn, F_unpert=F, D_unpert=D, S_unpert=S, file_id = &
-!                'freq_tuple_' // trim(adjustl(file_id)))
 
-          open(unit = 258, file='rsp_tensor_' // 'freq_tuple_' // trim(adjustl(file_id)), &
+
+          write(320,*) ' '
+          write(320,*) 'Hyperpolarizability (-2w;w,w)'
+          write(320,*) '============================='
+          write(320,*) ' '
+          write(320,*) 'Frequencies w0, w1, w2 are', perturbation_tuple%freq(1), ' ,', &
+                        perturbation_tuple%freq(2), perturbation_tuple%freq(3)
+          write(320,*) ' '
+          write(320,*) 'Hyperpolarizability:'
+          write(320,*) ' '
+
+          open(unit = 258, file='rsp_tensor_' // 'fff_freq_tuple_' // trim(adjustl(file_id)), &
                status='old', action='read', iostat=ierr)
 
           fff = 0.0
+
+          format_line = '(      f20.8)'
+          write(format_line(2:7), '(i6)') size(ff,1)
 
           do i = 1, 3
              do j = 1, 3
                 read(258,*) fld_dum
                 fff(i, j, :) = fld_dum
+                write(320, format_line) fff(i,j,:)
              end do
           end do
 
           close(258)
 
-          open(unit=259, file='rsp_tensor_' // 'freq_tuple_' // trim(adjustl(file_id)), &
-               status='old', action='write', position='append') 
-
+          write(320,*) ' '
           ! Follows method by AJT
-          write(259,*) 'Isotropic:', real((1.0/5.0) * sum ( (/ (( (fff(i,i,j) + &
+          write(320,*) 'Isotropic:', real((1.0/5.0) * sum ( (/ (( (fff(i,i,j) + &
                        fff(i,j,i) + fff(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /)))
           ! Follows method by AJT
-          write(259,*) 'Dipole^3', real(sum( (/ (((fff(i,j,k) * dm(i) * dm(j) * dm(k), &
+          write(320,*) 'Dipole^3', real(sum( (/ (((fff(i,j,k) * dm(i) * dm(j) * dm(k), &
                                    i = 1, 3), j = 1, 3), k = 1, 3) /) ))
-          write(259,*) ' '
+          write(320,*) ' '
 
-          close(259)
+          close(320)
+
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
 
        end do
 
@@ -618,8 +856,13 @@ file_id = '    '
           write(259,*) 'PV contribution to polarizability'
           write(259,*) '================================='
           write(259,*) ' '
+
+          format_line = '(      f20.8)'
+          write(format_line(2:7), '(i6)') size(ff_pv,1)
+          
+
           do i = 1, 3
-             write(259,*)  real(ff_pv(i,:))
+             write(259, format_line) real(ff_pv(i,:))
           end do
           write(259,*) ' '
           write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
@@ -801,8 +1044,11 @@ file_id = '    '
              write(259,*) 'PV contribution to polarizability'
              write(259,*) '================================='
              write(259,*) ' '
+             format_line = '(      f20.8)'
+             write(format_line(2:7), '(i6)') size(ff_pv,1)
+          
              do i = 1, 3
-                write(259,*)  real(ff_pv(i,:))
+                write(259, format_line) real(ff_pv(i,:))
              end do
              write(259,*) ' '
              write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * &
@@ -891,9 +1137,13 @@ file_id = '    '
           write(259,*) 'PV contribution to 1st hyperpolarizability'
           write(259,*) '=========================================='
           write(259,*) ' '
+
+          format_line = '(      f20.8)'
+          write(format_line(2:7), '(i6)') size(ff_pv,1)
+
           do i = 1, 3
              do j = 1, 3
-                write(259,*)  real(fff_pv(i,j,:))
+                write(259, format_line) real(fff_pv(i,j,:))
              end do
              write(259,*) ' '
           end do
@@ -1087,8 +1337,12 @@ file_id = '    '
              write(259,*) 'PV contribution to polarizability'
              write(259,*) '================================='
              write(259,*) ' '
+
+             format_line = '(      f20.8)'
+             write(format_line(2:7), '(i6)') size(ff_pv,1)
+
              do i = 1, 3
-                write(259,*)  real(ff_pv(i,:))
+                write(259, format_line) real(ff_pv(i,:))
              end do
              write(259,*) ' '
              write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * &
@@ -1228,9 +1482,13 @@ file_id = '    '
              write(259,*) 'PV contribution to 1st hyperpolarizability'
              write(259,*) '=========================================='
              write(259,*) ' '
+
+             format_line = '(      f20.8)'
+             write(format_line(2:7), '(i6)') size(ff_pv,1)
+
              do i = 1, 3
                 do j = 1, 3
-                   write(259,*)  real(fff_pv(i,j,:))
+                   write(259, format_line) real(fff_pv(i,j,:))
                 end do
                 write(259,*) ' '
              end do
@@ -1329,10 +1587,13 @@ file_id = '    '
           write(259,*) 'PV contribution to 2nd hyperpolarizability'
           write(259,*) '=========================================='
           write(259,*) ' '
+          format_line = '(      f20.8)'
+          write(format_line(2:7), '(i6)') size(ff_pv,1)
+
           do i = 1, 3
              do j = 1, 3
                 do m = 1, 3
-                   write(259,*)  real(ffff_pv(i,j,m,:))
+                   write(259, format_line) real(ffff_pv(i,j,m,:))
                 end do 
                 write(259,*) ' '
              end do
@@ -1748,8 +2009,7 @@ end do
 !        perturbation_tuple%pid = (/1, 2/)
 ! 
 !        ! ASSUME CLOSED SHELL
-!        call mat_init(zeromat_already, S%nrow, S%ncol, &
-!                      .true., .false., .false., .false., .false.)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
 !        call mat_init_like_and_zero(S, zeromat_already)
 ! 
 ! 

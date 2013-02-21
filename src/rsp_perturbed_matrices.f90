@@ -294,20 +294,26 @@ module rsp_perturbed_matrices
 
        Y = Y + A*B*C
 
-! write(*,*) 'Y is now 1', Y%elms_alpha
+       if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
+
+          call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
+
+          Y = Y - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
+
+       end if
 
        call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
        call sdf_getdata_s(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-       Y = Y - A*B*C
+        Y = Y - A * B * C
 
-! write(*,*) 'Y is now 2', Y%elms_alpha
+! write(*,*) 'Y is now 2', Y%elms
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
           ! MaR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT 
           ! MATRICES TO USE HERE AND BELOW
 
@@ -316,11 +322,10 @@ module rsp_perturbed_matrices
           call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-          Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,3)) + &
-                                    frequency_zero_or_sum(deriv_struct(i,1))) * A * B * C
+          Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
+                                    frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
 
 
-! write(*,*) 'Y is now 3', Y%elms_alpha
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
@@ -332,7 +337,6 @@ module rsp_perturbed_matrices
           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
 
-! write(*,*) 'Y is now 4', Y%elms_alpha
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
@@ -343,8 +347,12 @@ module rsp_perturbed_matrices
 
           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
 
-! write(*,*) 'Y is now 5', Y%elms_alpha
        end if
+
+
+
+
+
 
     end do
 
@@ -499,6 +507,8 @@ module rsp_perturbed_matrices
 
     Zeta%elms = 0.0
 
+
+
     ! ASSUME CLOSED SHELL
     call mat_init(A, zeromat%nrow, zeromat%ncol)
     call mat_init_like_and_zero(zeromat, A)
@@ -535,8 +545,6 @@ module rsp_perturbed_matrices
 
           call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
 
           Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
                            frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
@@ -546,8 +554,6 @@ module rsp_perturbed_matrices
 
           call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
 
           Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
 
@@ -556,8 +562,6 @@ module rsp_perturbed_matrices
 
           call sdf_getdata_s(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
 
           Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
@@ -585,16 +589,8 @@ module rsp_perturbed_matrices
           call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-          Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
+          Zeta = Zeta - ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
                         frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-          Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
@@ -602,7 +598,15 @@ module rsp_perturbed_matrices
           call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
-          Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
+          Zeta = Zeta - ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
+
+       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
+                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+
+          call sdf_getdata_s(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
+               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
+
+          Zeta = Zeta - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
        end if
 
