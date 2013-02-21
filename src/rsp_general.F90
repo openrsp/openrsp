@@ -156,16 +156,16 @@ public rsp_cfg
     if (present(file_id)) then
        open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
             status='replace', action='write') 
+       open(unit=261, file='rsp_tensor_human_' // trim(adjustl(file_id)), &
+            status='replace', action='write') 
     else
        open(unit=260, file='rsp_tensor', &
+            status='replace', action='write') 
+       open(unit=261, file='rsp_tensor_human', &
             status='replace', action='write') 
     end if
 
     write(260,*) ' '
-
-    open(unit=261, file='rsp_tensor_human', &
-         status='replace', action='write') 
-
     write(261,*) ' '
 
 
@@ -178,8 +178,11 @@ public rsp_cfg
 
     if (present(file_id)) then
        write(*,*) 'Property was printed to rsp_tensor_' // trim(adjustl(file_id))
+       write(*,*) 'Property (formatted print) was printed to rsp_tensor_human_' &
+                   // trim(adjustl(file_id)) 
     else
        write(*,*) 'Property was printed to rsp_tensor'
+       write(*,*) 'Property (formatted print) was printed to rsp_tensor_human'
     end if
 
     write(*,*) ' '
@@ -638,7 +641,7 @@ public rsp_cfg
        do i = 1, num_p_tuples
    
           ! ASSUME CLOSED SHELL
-          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol)
+          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
           call mat_init_like_and_zero(zeromat, dens_tuple(i))
    
        end do
@@ -1146,7 +1149,7 @@ public rsp_cfg
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
     
     ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol)
+    call mat_init(W, zeromat%nrow, zeromat%ncol, is_zero=.true.)
     call mat_init_like_and_zero(zeromat, W)
     
     do i = 1, size(outer_indices, 1)
@@ -1468,7 +1471,7 @@ public rsp_cfg
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol)
+    call mat_init(W, zeromat%nrow, zeromat%ncol, is_zero=.true.)
     call mat_init_like_and_zero(zeromat, W)
 
     do i = 1, size(outer_indices, 1)
@@ -1801,11 +1804,11 @@ public rsp_cfg
     offset = 0.0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Z, zeromat%nrow, zeromat%ncol)
+    call mat_init(Z, zeromat%nrow, zeromat%ncol, is_zero=.true.)
     call mat_init_like_and_zero(zeromat, Z)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Zeta, zeromat%nrow, zeromat%ncol)
+    call mat_init(Zeta, zeromat%nrow, zeromat%ncol, is_zero=.true.)
     call mat_init_like_and_zero(zeromat, Zeta)
 
     do i = 1, size(outer_indices_a, 1)
@@ -2139,11 +2142,11 @@ public rsp_cfg
     offset = 0
 
     ! ASSUME CLOSED SHELL
-    call mat_init(Y, zeromat%nrow, zeromat%ncol)
+    call mat_init(Y, zeromat%nrow, zeromat%ncol, is_zero=.true.)
     call mat_init_like_and_zero(zeromat, Y)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(L, zeromat%nrow, zeromat%ncol)
+    call mat_init(L, zeromat%nrow, zeromat%ncol, is_zero=.true.)
     call mat_init_like_and_zero(zeromat, L)
 
     do i = 1, size(outer_indices_a, 1)
