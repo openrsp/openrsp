@@ -893,7 +893,7 @@ contains
 #endif
       integer, intent(in)          :: nr_ao, propsize
       integer :: nblks
-      integer, dimension(nblks) :: blk_sizes
+      integer, dimension(nblks) :: blk_sizes  ! please document what these block thingies are
       integer, dimension(nblks, 3) :: blk_info
       integer :: num_derv, j, k, ave_offset, ierr
       integer, allocatable, dimension(:) :: order_derv, tmp_index
