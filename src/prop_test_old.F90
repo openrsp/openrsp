@@ -11,6 +11,7 @@ module prop_test_old
    use interface_io
    use interface_1el
    use interface_rsp_solver
+   use interface_nuclear
    use rsp_contribs
 
    implicit none
@@ -50,10 +51,11 @@ contains
       type(matrix), intent(in) :: S, D, F
 
       complex(8)    :: aat(ng, 3), temp(ng, 3)
+      real(8)       :: temp_real(3, ng)
 
       type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
       type(matrix)  :: Wbw(3)
-      type(matrix)  :: T, T2, X(3), M(3), SL
+      type(matrix)  :: T, X(1), M(1), SL
 
       integer       :: ib, ig
       character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
@@ -66,6 +68,7 @@ contains
       Fb = 0
 
       call mat_zero_like(D, SL)
+      call mat_zero_like(D, X(1))
       do ib = 1, 3
          call legacy_read_integrals('d<S|/dB'//xyz(ib), SL)
 
@@ -73,50 +76,60 @@ contains
          Fbw(ib) = 0.5d0*SL + 0.5d0*trans(SL) ! SL - SR
 
          ! form RHS = -S*D*SL - SR*D*S - S*Db*S
-         M(ib) = -S*D*SL
-         M(ib) = M(ib) - trans(M(ib))
-         M(ib) = M(ib) - S*Db(ib)*S
+         M(1) = -S*D*SL
+         M(1) = M(1) - trans(M(1))
+         M(1) = M(1) - S*Db(ib)*S
 
-         call mat_zero_like(D, X(ib))
-         call rsp_solver_exec(M(ib), (/0.0d0/), X(ib))
+         call rsp_solver_exec(M(1), (/0.0d0/), X(1))
 
-         Dbw(ib) = D*S*X(ib) - X(ib)*S*D
+         Dbw(ib) = D*S*X(1) - X(1)*S*D
          call rsp_twoint(S%nrow, 0, nof, noc, noc, Dbw(ib), 1, Fbw(ib))
       end do
       X = 0
       M = 0
       SL = 0
 
+      do ib = 1, 3
+         Wbw(ib) = Dbw(ib)*F*D + D*Fbw(ib)*D + D*F*Dbw(ib) &
+                 + 0.5d0*Db(ib)*S*D - 0.5d0*D*S*Db(ib)
+      end do
+      Fbw = 0
+
       ! contract the frequency-differentiated response function
       aat = 0.0d0
-      call prop_oneave(S, (/'GEO','MAG'/), (/D/), shape(aat), aat, &
-                       freq = (/(-1d0,0d0), (1d0,0d0)/))
 
       call mat_zero_like(D, T)
       do ig = 1, ng
          call legacy_read_integrals('SQHDR'//prefix_zeros(ig, 3), T)
-         T2 = 0.5d0*T - 0.5d0*trans(T)
          do ib = 1, 3
-            aat(ig, ib) = aat(ig, ib) + dot(Db(ib), T2)
+            aat(ig, ib) = aat(ig, ib) + 0.5d0*dot(Db(ib), T) - 0.5d0*trace(Db(ib), T)
+            aat(ig, ib) = aat(ig, ib) + dot(Wbw(ib), T) + trace(Wbw(ib), T)
+         end do
+      end do
+      Wbw = 0
+      Db = 0
+      do ig = 1, ng
+         do ib = 1, 3
+            call legacy_read_integrals(prefix_zeros(ig, 2)//' HDB '//xyz(ib), T)
+            aat(ig, ib) = aat(ig, ib) + trace(T, D) + dot(T, D)
          end do
       end do
       T = 0
-      T2 = 0
 
-      ! part of eq. (50)
+      ! nuclear contribution
+      temp_real = 0.0d0
+      call aatnuc_ifc(ng/3, temp_real)
       do ib = 1, 3
-         Wbw(ib) = Dbw(ib)*F*D      &
-                 + D*Fbw(ib)*D      &
-                 + D*F*Dbw(ib)      &
-                 + 0.5d0*Db(ib)*S*D &
-                 - 0.5d0*D*S*Db(ib)
+         do ig = 1, ng
+            aat(ig, ib) = aat(ig, ib) - 2.0d0*temp_real(ib, ig)
+         end do
       end do
-      Db = 0
-      Fbw = 0
 
-      call prop_oneave(S, (/'GEO'/), (/Dbw/), shape(aat), aat, &
-                       DFD = Wbw)
-      Wbw = 0
+      temp = 0.0d0
+      do ib = 1, 3
+         call rsp_oneave(1, (/'GEO '/), (/1/), (/ng/), Dbw(ib), 1, (/1, 1, ng/), (/ng/), ng, temp(1, ib))
+      end do
+      aat = aat + temp
 
       temp = 0.0d0
       do ib = 1, 3
