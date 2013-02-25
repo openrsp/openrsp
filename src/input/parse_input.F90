@@ -136,6 +136,13 @@
          openrsp_cfg_skip_ssss = .false.
       end if
 
+      ! MaR: For entering temperature in Kelvin
+
+      if (kw_matches(word, '.TMPRTR')) then
+         call kw_read(word, openrsp_cfg_temperature)
+      end if
+
+
 !     --------------------------------------------------------------------------
 
       ! MaR: Keywords for custom property specification
@@ -186,8 +193,6 @@
 
       ! MaR: Keywords for SHG (and later possibly higher order) calculations
 
-      ! SHG
-
       if (kw_matches(word, '.RSPSHG')) then
          openrsp_cfg_general_shg = .true.
       end if
@@ -195,8 +200,6 @@
 !     --------------------------------------------------------------------------
 
       ! MaR: Keywords for EFISHG-CID calculation
-
-      ! SHG
 
       if (kw_matches(word, '.EFSHCI')) then
          openrsp_cfg_general_efishgcid = .true.
@@ -207,11 +210,27 @@
 
       ! MaR: Keywords for SFG calculation
 
-      ! SHG
-
       if (kw_matches(word, '.RSPSFG')) then
          openrsp_cfg_general_sfg = .true.
       end if
+
+
+!     --------------------------------------------------------------------------
+
+      ! MaR: Keywords for hyper-Raman calculation
+
+      if (kw_matches(word, '.HYPRAM')) then
+         openrsp_cfg_general_hyper_raman = .true.
+      end if
+
+      ! MaR: Normal mode frequency scaling (e.g. to account for 
+      ! lack of correlation or anharmonicity)
+
+      if (kw_matches(word, '.FSCALE')) then
+         call kw_read(word, openrsp_cfg_general_hypram_freqscale)
+      end if
+
+
 
       call check_whether_kw_found(word, kw_section)
 

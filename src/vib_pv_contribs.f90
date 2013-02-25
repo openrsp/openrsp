@@ -1,3 +1,4 @@
+
 module vib_pv_contribs
 
 contains
@@ -3955,5 +3956,191 @@ contains
 
 
   end function
+
+
+  function hpsq_ravg_vv(hp_1d_tnm)
+!--------------------------------------------------------------------------------
+!
+! Calculates and returns the combination of hyperpolarizability derivatives
+! associated with the VV (vertically-vertically plane polarized incident light) 
+! hyper-Raman intensity.
+!
+! This expression is found in J. Chem. Phys. 124, 244312 (2006) by Quinet, O.,
+! Champagne, B., and Rodriguez, V.
+!
+!--------------------------------------------------------------------------------
+
+    implicit none
+      integer :: i, j, k
+      double precision :: hpsq_ravg_vv
+      double precision, dimension(3,3,3) :: hp_1d_tnm ! hp_1d_tnm is hyperpolarizability derivatives for 'this normal mode'
+
+    ! Loop over Cartesian axes and make the appropriate combinations
+
+    hpsq_ravg_vv = 0.0
+
+    do i = 1, 3
+
+      hpsq_ravg_vv = hpsq_ravg_vv + 1.0/7.0 * (( hp_1d_tnm(i,i,i) )**(2.0))
+
+      do j = 1, 3
+
+	if (.NOT.(j == i)) then
+
+	  hpsq_ravg_vv = hpsq_ravg_vv + 1.0/35.0 * (4.0 * (( hp_1d_tnm(i,i,j) )**(2.0)) + &
+	  2.0 * hp_1d_tnm(i,i,i) * hp_1d_tnm(i,j,j) + 4.0 * hp_1d_tnm(j,i,i) * hp_1d_tnm(i,i,j) + &
+	  4.0 * hp_1d_tnm(i,i,i) * hp_1d_tnm(j,j,i) + (( hp_1d_tnm(j,i,i) )**(2.0)) )
+	  
+	  do k = 1, 3
+
+	    if (.NOT.((k == i) .OR. (k == j))) then
+
+	    hpsq_ravg_vv = hpsq_ravg_vv + 1.0/105.0 * (4.0 * hp_1d_tnm(i,i,j) * hp_1d_tnm(j,k,k) + &
+	    hp_1d_tnm(j,i,i) * hp_1d_tnm(j,k,k) + 4.0 * hp_1d_tnm(i,i,j) * hp_1d_tnm(k,k,j) + &
+	    2.0 * (( hp_1d_tnm(i,j,k) )**(2.0)) + 4.0 * hp_1d_tnm(i,j,k) * hp_1d_tnm(j,i,k))
+
+	    end if
+
+	  end do
+
+	end if
+ 
+      end do
+    end do
+
+  end function
+
+  function hpsq_ravg_hv(hp_1d_tnm)
+!--------------------------------------------------------------------------------
+!
+! Calculates and returns the combination of hyperpolarizability derivatives
+! associated with the HV (horizontally-vertically plane polarized incident light)
+! hyper-Raman intensity.
+!
+! This expression is found in J. Chem. Phys. 124, 244312 (2006) by Quinet, O.,
+! Champagne, B., and Rodriguez, V.
+!
+!--------------------------------------------------------------------------------
+
+    implicit none
+
+      integer :: i, j, k
+      double precision :: hpsq_ravg_hv
+      double precision, dimension(3,3,3) :: hp_1d_tnm ! hp_1d_tnm is hyperpolarizability derivatives for 'this normal mode'
+
+    ! Loop over Cartesian axes and make the appropriate combinations
+
+    hpsq_ravg_hv = 0.0
+
+    do i = 1, 3
+
+      hpsq_ravg_hv = hpsq_ravg_hv + 1.0/35.0 * (( hp_1d_tnm(i,i,i) )**(2.0))
+
+      do j = 1, 3
+
+	if (.NOT.(j == i)) then
+
+	  hpsq_ravg_hv = hpsq_ravg_hv + 4.0/105.0 * hp_1d_tnm(i,i,i) * hp_1d_tnm(i,j,j) - &
+	  2.0/35.0 * hp_1d_tnm(i,i,i) * hp_1d_tnm(j,j,i) + 8.0/105.0 * (( hp_1d_tnm(i,i,j) )**(2.0)) + &
+	  3.0/35.0 * (( hp_1d_tnm(i,j,j) )**(2.0)) - 2.0/35.0 * hp_1d_tnm(i,i,j) * hp_1d_tnm(j,i,i)
+	  	  
+	  do k = 1, 3
+
+	    if (.NOT.((k == i) .OR. (k == j))) then
+
+	    hpsq_ravg_hv = hpsq_ravg_hv + 1.0/35.0 * hp_1d_tnm(i,j,j) * hp_1d_tnm(i,k,k) - &
+	    2.0/105.0 * hp_1d_tnm(i,i,k) * hp_1d_tnm(j,j,k) - &
+	    2.0/105.0 * hp_1d_tnm(i,i,j) * hp_1d_tnm(j,k,k) + 2.0/35.0 * (( hp_1d_tnm(i,j,k) )**(2.0)) - &
+	    2.0/105.0 * hp_1d_tnm(i,j,k) * hp_1d_tnm(j,i,k)
+
+	    end if
+
+	  end do
+
+	end if
+ 
+      end do
+    end do
+
+  end function
+
+  function hyp_raman_vv(n_nm, temp, opt_e, nm_e, hp_1d)
+!--------------------------------------------------------------------------------
+!
+! Calculates and returns the hyper-Raman intensity associated with 
+! the VV (vertically-vertically plane polarized incident light) scenario.
+!
+! This expression is adapted from one found in J. Chem. Phys. 124, 244312 (2006)
+! by Quinet, O., Champagne, B., and Rodriguez, V.
+!
+!--------------------------------------------------------------------------------
+
+    implicit none
+
+      integer :: n_nm, i
+      double precision :: hbar, boltz, temp, nm_e ! H-bar, Boltzmann's constant and temperature
+      double precision :: opt_e, hyp_raman_vv
+      double precision, dimension(3,3,3) :: hp_1d
+
+    hbar = 1.0
+    boltz = 0.0000031668153
+    hyp_raman_vv = 0.0
+
+    if (temp == 0.0)  then
+    
+      hyp_raman_vv = hyp_raman_vv + hbar * ((2.0 * opt_e - nm_e)**(4.0)) / &
+      (2.0 * nm_e ) * hpsq_ravg_vv(hp_1d)
+
+    else
+
+      hyp_raman_vv = hyp_raman_vv + hbar * ((2.0 * opt_e - nm_e)**(4.0)) / &
+      ((2.0 * nm_e) * (1.0 - exp( - 1.0 * hbar * nm_e / (boltz * temp) ))) * &
+      hpsq_ravg_vv(hp_1d)
+
+    end if
+
+
+
+  end function
+
+
+  function hyp_raman_hv(n_nm, temp, opt_e, nm_e, hp_1d)
+!--------------------------------------------------------------------------------
+!
+! Calculates and returns the hyper-Raman intensity associated with 
+! the HV (horizontally-vertically plane polarized incident light) scenario.
+!
+! This expression is adapted from one found in J. Chem. Phys. 124, 244312 (2006)
+! by Quinet, O., Champagne, B., and Rodriguez, V.
+!
+!--------------------------------------------------------------------------------
+
+    implicit none
+
+      integer :: n_nm, i
+      double precision :: hbar, boltz, temp, nm_e ! H-bar, Boltzmann's constant and temperature
+      double precision :: opt_e, hyp_raman_hv
+      double precision, dimension(3,3,3) :: hp_1d
+
+    hbar = 1.0
+    boltz = 0.0000031668153
+    hyp_raman_hv = 0.0
+
+    if (temp == 0.0)  then
+
+      hyp_raman_hv = hyp_raman_hv + hbar * ((2.0 * opt_e - nm_e)**(4.0)) / &
+      (2.0 * nm_e) * hpsq_ravg_hv(hp_1d)
+
+    else
+
+      hyp_raman_hv = hyp_raman_hv + hbar * ((2.0 * opt_e - nm_e)**(4.0)) / &
+      ((2.0 * nm_e) * (1.0 - exp( - 1.0 * hbar * nm_e / (boltz * temp) ))) * &
+      hpsq_ravg_hv(hp_1d)
+
+    end if
+
+  end function
+
+
 
 end module vib_pv_contribs
