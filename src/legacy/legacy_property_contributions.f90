@@ -3,12 +3,12 @@
 ! GNU Lesser General Public License.
 
 !> @file
-!> Contains module prop_contribs
+!> Contains module legacy_property_contributions
 
 !> This module contains routines for calculating contributions
 !> to molecular properties (1st order, linear response, etc.),
 !> and perturbed Fock matrices.
-module prop_contribs_old
+module legacy_property_contributions
 
    use matrix_defop
    use interface_molecule

@@ -6,7 +6,7 @@
 module legacy_birefringence
 
    use matrix_defop          !matrix type and operators
-   use prop_contribs_old     !property contractions and integrals
+   use legacy_property_contributions     !property contractions and integrals
    use rsp_equations_old     !response equation contractor/solver
 
    implicit none
