@@ -37,6 +37,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/input/parse_input.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/dalton_ifc.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_1el.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_2el.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_basis.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_dirac_gen1int.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_f77_memory.F90
