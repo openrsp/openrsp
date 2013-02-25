@@ -1627,7 +1627,8 @@ write(320, *) ' '
        perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  '/)
        perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3/)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
-       perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0/)
+       perturbation_tuple%freq = (/0.0d0, -2.0d0* openrsp_cfg_real_freqs(1),&
+                       openrsp_cfg_real_freqs(1), openrsp_cfg_real_freqs(1)/)
 
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
