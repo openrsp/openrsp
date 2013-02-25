@@ -19,6 +19,7 @@ module rsp_general
   use rsp_property_caching
   use rsp_sdf_caching
   use interface_xc
+  use interface_2el
 
   implicit none
 

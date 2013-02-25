@@ -10,6 +10,7 @@ module legacy_properties
    use rsp_equations_old
    use interface_io
    use interface_1el
+   use interface_2el
    use interface_rsp_solver
    use interface_nuclear
    use rsp_contribs
