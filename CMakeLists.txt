@@ -57,16 +57,16 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_vibrational_properties.f90
     ${PROJECT_SOURCE_DIR}/src/openrsp.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_choose_rule.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_contribs.F90
-    ${PROJECT_SOURCE_DIR}/src/rsp_equations.F90
-    ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_contribs.f90
+    ${PROJECT_SOURCE_DIR}/src/rsp_equations.f90
+    ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_field_tuple.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_general.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_general.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_indices_and_addressing.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_lof_caching_tmp.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_mag_prop.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_perturbed_matrices.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_perturbed_sdf.F90
+    ${PROJECT_SOURCE_DIR}/src/rsp_perturbed_sdf.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_property_caching.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_sdf_caching.f90
     ${PROJECT_SOURCE_DIR}/src/vib_pv_contribs.f90
