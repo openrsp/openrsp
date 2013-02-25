@@ -649,7 +649,7 @@ write(320, *) ' '
                                    i = 1, 3), j = 1, 3), k = 1, 3) /) ))
           write(320,*) ' '
 
-          close(320)
+
 
 
           deallocate(perturbation_tuple%pdim)
@@ -659,6 +659,8 @@ write(320, *) ' '
 
 
        end do
+
+       close(320)
 
     end if
 
