@@ -54,7 +54,7 @@
     use interface_rsp_solver
     use interface_1el
     ! main module of openrsp
-    use openrsp_old
+    use legacy_openrsp
 
     use interface_molecule
 
@@ -157,16 +157,13 @@
     real(8)              :: xc_energy
     real(8), allocatable :: eigval(:)
 
-#ifdef VAR_LSDALTON
-    STOP 'openrsp_daldrv_old'
-#else
     call interface_molecule_init()
     call interface_io_init()
     call interface_xc_init()
     call interface_scf_init()
     call interface_pcm_init(wavpcm)
     call interface_basis_init()
-#endif
+
     nbast = get_nr_ao()
     lupri = get_print_unit()
     lucmd = get_input_unit()
@@ -386,11 +383,9 @@
     F = 0
     call openrsp_info_clean(openrsp_info)
     call rsp_mosolver_finalize()
-#ifdef USE_WAVPCM
     if (get_is_pcm_calculation()) then
-       call pcm_finalize()
+       call interface_pcm_finalize()
     end if
-#endif
     call interface_f77_memory_finalize()
 
     ! stamps the date, time and hostname

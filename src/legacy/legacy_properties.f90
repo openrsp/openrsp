@@ -2,7 +2,7 @@
 !> Contains module prop_test
 
 !> ajt/radovan: Response-related testing routines and some calculations
-module prop_test_old
+module legacy_properties
 
    use matrix_defop
    use matrix_lowlevel

@@ -38,11 +38,11 @@
 !>          and the interface of calling Andreas J. Thorvaldsen's codes
 !> \author Bin Gao
 !> \date 2009-12-08
-module openrsp_old
+module legacy_openrsp
   ! matrix
   use matrix_defop
   ! response-related testing routines and some calculations
-  use prop_test_old
+  use legacy_properties
   use legacy_vibrational_properties
   use legacy_birefringence
   use interface_molecule
@@ -738,5 +738,5 @@ module openrsp_old
 100 format('RSPC ',A,10F11.8)
   end subroutine openrsp_prop_calc
 
-end module openrsp_old
+end module
 
