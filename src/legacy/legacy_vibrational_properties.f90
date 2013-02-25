@@ -4,7 +4,7 @@ module legacy_vibrational_properties
 
    use matrix_defop
    use rsp_equations_old
-   use prop_contribs_old
+   use legacy_property_contributions
    use dalton_ifc
    use interface_molecule
    use interface_xc

@@ -6,7 +6,7 @@ module legacy_properties
 
    use matrix_defop
    use matrix_lowlevel
-   use prop_contribs_old
+   use legacy_property_contributions
    use rsp_equations_old
    use interface_io
    use interface_1el

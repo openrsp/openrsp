@@ -23,14 +23,14 @@
 !                                       dirac/trunk               revision 10659
 
 !> Delivers perturbed density matrices (solutions of response equations).
-!> Property integrals are obtained through module prop_contribs.
+!> Property integrals are obtained through module legacy_property_contributions.
 !> Right-hand-sides are contracted here, and solutions are obtained
 !> by invoking one of several response solvers, configured at compile
 !> time by #define statements.
 module rsp_equations_old
 
    use matrix_defop      !matrix type and operators
-   use prop_contribs_old !integrals and integral contractions
+   use legacy_property_contributions !integrals and integral contractions
    use interface_rsp_solver
 
    implicit none

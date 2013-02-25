@@ -52,9 +52,9 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_openrsp.f90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_openrsp_driver.f90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_properties.f90
+    ${PROJECT_SOURCE_DIR}/src/legacy/legacy_property_contributions.f90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_vibrational_properties.f90
     ${PROJECT_SOURCE_DIR}/src/openrsp.f90
-    ${PROJECT_SOURCE_DIR}/src/prop_contribs_old.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_choose_rule.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_contribs.F90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations.F90
