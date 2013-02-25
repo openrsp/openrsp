@@ -6,9 +6,7 @@ module interface_xc
 !  to a host program outside of interface_xc_init
 
    use matrix_defop
-#ifndef PRG_DIRAC
-   use xcint_main
-#endif
+   use xcint_integrator
    use interface_molecule
    use rsp_field_tuple
    use rsp_indices_and_addressing
@@ -896,10 +894,8 @@ end module
 
    subroutine external_rsp_xcint_interface(nr_ao, dmat, fmat, xc_energy)
 
-#ifndef PRG_DIRAC
       use interface_ao_specific
-      use xcint_main
-#endif
+      use xcint_integrator
 
       integer      :: nr_ao
       real(8)      :: dmat(nr_ao, nr_ao)

@@ -66,7 +66,7 @@ module openrsp
 
 ! xcint
   use interface_ao_specific
-  use xcint_main
+  use xcint_integrator
 
   implicit none
 
