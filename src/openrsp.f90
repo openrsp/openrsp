@@ -59,16 +59,14 @@ module openrsp
   use matrix_lowlevel,  only: mat_init
   use eri_contractions, only: ctr_arg
   use eri_basis_loops,  only: unopt_geodiff_loop
-  use vib_prop_old, only: load_vib_modes
+  use legacy_vibrational_properties, only: load_vib_modes
   use vib_pv_contribs
   use rsp_sdf_caching
   use rsp_mag_prop
 
-#ifndef PRG_DIRAC
 ! xcint
   use interface_ao_specific
   use xcint_main
-#endif
 
   implicit none
 
@@ -115,21 +113,14 @@ contains
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
 
-#ifdef PRG_DIRAC
-    type(matrix)           :: TX, TY, TZ, Dp(1)
-#endif
-
     type(ctr_arg) :: arg(1)
-#ifdef VAR_LSDALTON
-    STOP 'openrsp_setup'
-#else
+
     call interface_molecule_init()
     call interface_io_init()
     call interface_xc_init()
     call interface_pcm_init(wavpcm)
     call interface_scf_init()
     call interface_basis_init()
-#endif
 
     nbast = get_nr_ao()
     lupri = get_print_unit()
@@ -178,46 +169,9 @@ contains
     ! Fock matrix F = H1 + G
     F = H1 + G
 
-#ifdef PRG_DIRAC
-!   radovan: the contributions below are extremely useful
-!            for debugging
-!            after i get dirac fully interfaced i will remove/clean it up
-    print *, 'nr of electrons   =', dot(D, S)
-    print *, '1-el energy       =', dot(H1, D)
-    print *, '2-el energy       =', 0.5d0*dot(G, D)
-    print *, 'electronic energy =', dot(H1, D) + 0.5d0*dot(G, D)
-
-    TX = 0*D
-    call mat_ensure_alloc(TX, only_alloc=.true.)
-    TY = 0*D
-    call mat_ensure_alloc(TY, only_alloc=.true.)
-    TZ = 0*D
-    call mat_ensure_alloc(TZ, only_alloc=.true.)
-    call get_1el_integrals(                                &
-                           M=(/TX, TY, TZ/),               &
-                           prop_name="INT_CART_MULTIPOLE", &
-                           num_ints=3,                     &
-                           order_mom=1,                    &
-                           order_elec=0,                   &
-                           order_geo_total=0,              &
-                           max_num_cent=0,                 &
-                           blocks=(/1, 1, 2, 2/),          &
-                           print_unit=get_print_unit()     &
-                          )
-
-    print *, 'dipole z          =', dot(TZ, D)
-!   call rsp_mosolver_exec((/TZ/), (/0.0d0/), Dp)
-!   print *, 'polarizability zz =', -dot(TZ, Dp(1))
-
-    TX = 0
-    TY = 0
-    TZ = 0
-#endif /* ifdef PRG_DIRAC */
-
     H1 = 0
     G  = 0
 
-#ifndef PRG_DIRAC
     if (get_is_ks_calculation()) then
        ! write xcint interface files
        call interface_ao_write()
@@ -243,7 +197,6 @@ contains
        deallocate(xc_dmat)
        deallocate(xc_fmat)
     end if
-#endif /* ifdef PRG_DIRAC */
 
     num_atoms = get_nr_atoms()
 
@@ -2148,11 +2101,9 @@ end do
     F = 0
 
     call rsp_mosolver_finalize()
-#ifdef USE_WAVPCM
     if (get_is_pcm_calculation()) then
-       call pcm_finalize()
+       call interface_pcm_finalize()
     end if
-#endif
     call interface_f77_memory_finalize()
     ! stamp with date, time and hostname
     call TSTAMP(' ', lupri)

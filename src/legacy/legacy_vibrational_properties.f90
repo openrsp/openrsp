@@ -1,4 +1,4 @@
-module vib_prop_old
+module legacy_vibrational_properties
 !Calculation and outputting of vibrational (optical) properties.
 !This file is currently common to Dalton and Dirac
 

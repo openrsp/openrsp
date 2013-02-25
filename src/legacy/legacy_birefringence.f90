@@ -3,7 +3,7 @@
 
 !> Calculation and outputting of optical birefringences
 !> This file is currently common to Dalton and Dirac
-module birefring_old
+module legacy_birefringence
 
    use matrix_defop          !matrix type and operators
    use prop_contribs_old     !property contractions and integrals

@@ -43,10 +43,8 @@ module openrsp_old
   use matrix_defop
   ! response-related testing routines and some calculations
   use prop_test_old
-  ! calculation and outputting of vibrational (optical) properties
-  use vib_prop_old
-  ! calculation and outputting of optical birefringences
-  use birefring_old
+  use legacy_vibrational_properties
+  use legacy_birefringence
   use interface_molecule
   use interface_xc
   use dalton_ifc
