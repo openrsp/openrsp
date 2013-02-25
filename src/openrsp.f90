@@ -215,10 +215,11 @@ end subroutine
     character(20) :: format_line
     integer       :: n_nm, h, j, k, m, ierr
     real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
+    real(8), allocatable, dimension(:) :: hr_intensities_hv, hr_intensities_vv
     real(8), allocatable, dimension(:,:) :: T
     real(8), dimension(3,3) :: ff
     real(8), dimension(3,3,3) :: fff
-    real(8) :: c0
+    real(8) :: c0, reccm
     complex(8), dimension(3) :: CID
     complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
     complex(8), allocatable, dimension(:,:,:) :: egff_cart, egff_nm, fff_pv
@@ -1585,7 +1586,166 @@ write(320, *) ' '
 
     end if
 
+    if (openrsp_cfg_general_hyper_raman) then
 
+       ! Verify the value of the conversion factor
+       reccm = 219474.6313705d0
+       fld_dum = 0.0
+
+       ! Get normal mode transformation matrix
+       ! Get normal mode frequencies
+
+       allocate(T(3*num_atoms, 3*num_atoms))
+
+       allocate(nm_freq_b(3*num_atoms))
+
+       nm_freq_b = 0.0
+
+       call load_vib_modes(3*num_atoms, n_nm, nm_freq_b, T)
+
+       allocate(nm_freq(n_nm))
+
+       nm_freq = nm_freq_b(1:n_nm) * openrsp_cfg_general_hypram_freqscale
+       
+       deallocate(nm_freq_b)
+
+       allocate(egfff_cart(3*num_atoms, 3, 3, 3))
+       allocate(egfff_nm(n_nm, 3, 3, 3))
+       allocate(hr_intensities_hv(n_nm))
+       allocate(hr_intensities_vv(n_nm))
+
+       ! Calculate gradient of first hyperpolarizability
+
+       kn = (/0,3/)
+
+       perturbation_tuple%n_perturbations = 4
+       allocate(perturbation_tuple%pdim(4))
+       allocate(perturbation_tuple%plab(4))
+       allocate(perturbation_tuple%pid(4))
+       allocate(perturbation_tuple%freq(4))
+
+       perturbation_tuple%plab = (/'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+       perturbation_tuple%pdim = (/3*num_atoms, 3, 3, 3/)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+       perturbation_tuple%freq = (/0.0d0, 0.0d0, 0.0d0, 0.0d0/)
+
+       perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+       perturbation_tuple%pid = (/1, 2, 3, 4/)
+
+       ! ASSUME CLOSED SHELL
+       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+       call mat_init_like_and_zero(S, zeromat_already)
+
+
+       call sdf_setup_datatype(S_already, S)
+       call sdf_setup_datatype(D_already, D)
+       call sdf_setup_datatype(F_already, F)
+
+
+
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egfff')
+
+       ! Read 1st hyperpolarizability gradient from file and transform to normal mode basis
+
+       open(unit = 258, file='rsp_tensor_Egfff', status='old', action='read', iostat=ierr)
+
+       do i = 1, 3*num_atoms
+          do j = 1, 3
+             do k = 1, 3
+                read(258,*) fld_dum
+                egfff_cart(i, j, k, :) = fld_dum
+             end do
+          end do
+       end do
+
+       close(258)
+
+       egfff_nm = trans_cartnc_3w1d(3*num_atoms, n_nm, egfff_cart, T(:,1:n_nm))
+
+       open(unit = 12, file='hr_output', status='replace', action='write', iostat=ierr)
+
+       write(12,*) 'HYPER-RAMAN INTENSITY OUTPUT'
+       write(12,*) '============================'
+       write(12,*) ' '
+       ! Write something about time and date
+       ! Adapt frequency to multiple frequency tuple setup
+       write(12,100) openrsp_cfg_real_freqs(1)
+       100 format('The Hyper-Raman intensities are calculated using an electronic frequency of ', &
+       F10.7, ' a.u.')
+       write(12,*) ' '
+
+       write(12,101) openrsp_cfg_temperature
+       101 format('The temperature is set at', F10.5 ' K.')
+       write(12,*) ' '
+       
+       write(12,102) n_nm
+       102 format('The number of normal modes considered in this system is', I5, ' .')
+       write(12,*) 'These modes have the following frequencies:'
+       write(12,*) ' '
+
+       write(12,*) 'Mode      Frequency (a.u.)'
+       write(12,*) '=========================='
+       write(12,*) ' '
+
+       do i = 1, n_nm
+          write(12,103) i, nm_freq(i)
+          103 format(I6, 4X, F10.7)
+       end do
+
+
+       write(12,*) ' '
+
+       write(12,120) openrsp_cfg_general_hypram_freqscale
+       120 format('The frequencies are all scaled by a factor of', F10.5, ' .')
+       write(12,*) ' '
+
+
+       ! Calculate the intensities mode by mode
+
+       ! Adapt frequency to multiple frequency tuple setup
+       do i = 1, n_nm
+          hr_intensities_hv(i) = hyp_raman_hv(n_nm, openrsp_cfg_temperature, &
+                                 openrsp_cfg_real_freqs(1), nm_freq(i), dreal(egfff_nm(i, :, :, :)))
+       end do
+
+       write(12,*) 'HR intensities using HV polarization:'
+       write(12,*) ' '
+       write(12,*) 'Mode        Freq. (a.u.)    Freq (cm^-1)      Intensity '
+       write(12,*) '====================================================================='
+       write(12,*) ' '
+
+       do i = 1, n_nm
+          write(12,114) i, nm_freq(i), nm_freq(i)*reccm, hr_intensities_hv(i)
+          114 format(I5, 4X, F13.7, 6X, F13.7, 4X, F25.10)
+       end do
+       write(12,*) ' '
+
+       ! Adapt frequency to multiple frequency tuple setup
+       do i = 1, n_nm
+          hr_intensities_vv(i) = hyp_raman_vv(n_nm, openrsp_cfg_temperature, &
+                                 openrsp_cfg_real_freqs(1), nm_freq(i), dreal(egfff_nm(i, :, :, :)))
+       end do
+
+       write(12,*) 'HR intensities using VV polarization:'
+       write(12,*) ' '
+       write(12,*) 'Mode        Freq. (a.u.)    Freq (cm^-1)      Intensity '
+       write(12,*) '====================================================================='
+       write(12,*) ' '
+
+       do i = 1, n_nm
+          write(12,115) i, nm_freq(i), nm_freq(i)*reccm, hr_intensities_vv(i)
+          115 format(I5, 4X, F13.7, 6X, F13.7, 4X, F25.10)
+       end do
+       write(12,*) ' '
+       close(12)
+
+       deallocate(hr_intensities_hv)
+       deallocate(hr_intensities_vv)
+       deallocate(nm_freq)
+       deallocate(T)
+
+    end if
 
 ! MaR: This routine is untested
     if (openrsp_cfg_general_efishgcid) then
