@@ -788,77 +788,11 @@ contains
              if (iszero(fock(i+1))) then
                 call mat_ensure_alloc(fock(i+1))
              end if
-   
-#ifdef PRG_DALTON
-#ifdef GRCONT_NOT_AVAILABLE
-             arg(1) = ctr_arg(1, i+1, &
-                              ncor, dens, fock(i+1), null_ptr)
-             call unopt_geodiff_loop(basis_large, &
-                                     basis_small, &
-                                     arg)
-#else
-             ! if first or an x-coord, call GRCONT
-             if (i==0 .or. mod(c(1)+i,3) == 1) then
-                call GRCONT(f77_memory(n*n*3+1:), size(f77_memory)-n*n*3, &
-                            f77_memory(:n*n*3), n*n*3, .true., .false., &
-                            1, (c(1)+i+2)/3, .false., .true., dens%elms, 1)
-             end if
-             j = 1 + mod(c(1)+i-1,3) !x y z = 1 2 3
-             if (iszero(fock(1+i))) then
-                fock(1+i)%elms(:, :, 1) = reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
-             else
-                fock(1+i)%elms(:, :, 1) = fock(1+i)%elms(:, :, 1) &
-                               + reshape(f77_memory(n*n*(j-1)+1:n*n*j),(/n,n/))
-             end if
-#endif
-#endif /* ifdef PRG_DALTON */
-   
-#ifdef PRG_DIRAC
+
              call interest_mpi_wake_up()
              call interest_get_int(dens%nrow, dens%elms, fock(i+1)%elms, 1, i+1, 0, dummy)
-#endif /* ifdef PRG_DIRAC */
    
           end do
-       else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
-          ncor = 3 * get_nr_atoms()
-          ij = 0
-          do j = 0, nc(2)-1
-             do i = j, nc(1)-1
-                ij = ij + 1
-                if (iszero(fock(ij))) then
-                   call mat_ensure_alloc(fock(ij))
-                   fock(ij)%elms = 0 !ajt FIXME use mat_axpy
-                end if
-                arg(1) = ctr_arg(2, c(1)+i + ncor * (c(2)+j-1), &
-                                 ncor, dens, fock(ij), null_ptr)
-                call unopt_geodiff_loop(basis_large, &
-                                        basis_small, &
-                                        arg)
-             end do
-          end do
-   
-       else if (nf==3 .and. all(f==(/'GEO ','GEO ', 'GEO '/))) then
-          ncor = 3 * get_nr_atoms()
-          ij = 0
-          do k = 0, nc(3)-1
-             do j = k, nc(2)-1
-                do i = j, nc(1)-1
-                   ij = ij + 1
-                   if (iszero(fock(ij))) then
-                      call mat_ensure_alloc(fock(ij))
-                      fock(ij)%elms = 0 !ajt FIXME use mat_axpy
-                   end if
-                   arg(1) = ctr_arg(3, c(1)+i + ncor * (c(2)+j-1) + &
-                                       ncor * ncor * (c(3)+k-1), &
-                                       ncor, dens, fock(ij), null_ptr)
-                   call unopt_geodiff_loop(basis_large, &
-                                           basis_small, &
-                                           arg)
-                end do
-             end do
-          end do
-
-
 
        else
           print *, 'error in rsp_twoint: not implemented or in wrong order - ', &
