@@ -680,15 +680,40 @@ contains
     real(8), pointer :: null_ptr(:) !because null() isn't f90
     real(8)  :: fdistep = 2d0**(-25)
     integer       h, hincr, i, j, k, n, ij, ijk, incr, ncor, nr_ao
+    integer       lwork
     type(ctr_arg) arg(1)
     type(matrix)  A !scratch
     real(8)          :: dummy(1)
+    integer          :: idummy(1)
+    real(8), allocatable :: f77_memory(:)
+    real(8), allocatable :: temp_fmat(:)
+    real(8), allocatable :: temp_dmat(:)
     !--------------------------------------------------
     integer, allocatable, dimension(:,:) :: indices
 
     if (any(f == 'EL  ')) then
        ! nothing to add
        return
+    end if
+
+    if (nf == 1 .and. f(1) == 'MAG ') then
+       !fixme wild guess
+       lwork = 100000000
+       allocate(f77_memory(lwork))
+
+       allocate(temp_dmat(nr_ao*nr_ao))
+       call dcopy(nr_ao*nr_ao, dens%elms, 1, temp_dmat, 1)
+
+       allocate(temp_fmat(3*nr_ao*nr_ao))
+       temp_fmat = 0.0d0
+       call grcont(f77_memory, lwork, temp_fmat, (3*nr_ao*nr_ao), .false., .true., 1, &
+                   0, .false., .true., temp_dmat, 1)
+       do i = 1, 3
+          call dcopy(nr_ao*nr_ao, temp_fmat((i-1)*nr_ao*nr_ao + 1), 1, fock(i)%elms, 1)
+       end do
+       deallocate(f77_memory)
+       deallocate(temp_fmat)
+       deallocate(temp_dmat)
     end if
 
 #ifdef PRG_DALTON
@@ -834,7 +859,7 @@ contains
           end do
 
 
-   
+
        else
           print *, 'error in rsp_twoint: not implemented or in wrong order - ', &
                   (' ' // f(i), i=1,nf)
