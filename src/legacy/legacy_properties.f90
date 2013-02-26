@@ -54,27 +54,48 @@ contains
       complex(8)    :: aat(ng, 3), temp(ng, 3)
       real(8)       :: temp_real(3, ng)
 
-      type(matrix)  :: Db(3), Fb(3), Dbw(3), Fbw(3)
+      type(matrix)  :: Db(3), Dbw(3), Fbw(3), Sb(3), GB(3)
       type(matrix)  :: Wbw(3)
-      type(matrix)  :: T, X(1), M(1), SL
+      type(matrix)  :: T, X(1), M(1), SL, Y, R(1), HB
 
       integer       :: ib, ig
       character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
 
-    integer, dimension(0) :: noc
-    character(4), dimension(0) :: nof
-
-      call pert_dens(S, (/'MAG'/), (/3/), &
-                     (/D/), (/F/), Db, Fb, freq=(/(0d0,0d0)/))
-      Fb = 0
+      integer, dimension(0) :: noc
+      character(4), dimension(0) :: nof
 
       call mat_zero_like(D, SL)
+      call mat_zero_like(D, HB)
       call mat_zero_like(D, X(1))
+      call mat_zero_like(D, GB(1))
+      call mat_zero_like(D, GB(2))
+      call mat_zero_like(D, GB(3))
+      call rsp_twoint(S%nrow, 1, (/'MAG '/), (/1/), (/3/), D, 3, GB)
+
       do ib = 1, 3
          call legacy_read_integrals('d<S|/dB'//xyz(ib), SL)
 
+         call legacy_read_integrals('dh/dB'//xyz(ib)//'  ', HB)
+
          ! SL - SR
          Fbw(ib) = 0.5d0*SL + 0.5d0*trans(SL) ! SL - SR
+
+         Sb(ib) = SL - trans(SL)
+
+         M(1) = F*D*Sb(ib) - Sb(ib)*D*F
+
+         Y = D*Sb(ib)*D - D*Sb(ib)*D*S*D - D*S*D*Sb(ib)*D
+         call mat_zero_like(D, R(1))
+         call rsp_twoint(S%nrow, 0, nof, noc, noc, Y, 1, R(1))
+         R(1) = R(1) + HB + GB(ib)
+
+         M(1) = M(1) + R(1)*D*S - S*D*R(1)
+         R = 0
+
+         call rsp_solver_exec(M(1), (/0.0d0/), X(1))
+         Db(ib) = D*S*X(1) - X(1)*S*D
+         Db(ib) = Db(ib) + Y
+         Y = 0
 
          ! form RHS = -S*D*SL - SR*D*S - S*Db*S
          M(1) = -S*D*SL
@@ -89,6 +110,8 @@ contains
       X = 0
       M = 0
       SL = 0
+      HB = 0
+      GB = 0
 
       do ib = 1, 3
          Wbw(ib) = Dbw(ib)*F*D + D*Fbw(ib)*D + D*F*Dbw(ib) &
