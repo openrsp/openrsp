@@ -219,7 +219,7 @@ end subroutine
     real(8), allocatable, dimension(:,:) :: T
     real(8), dimension(3,3) :: ff
     real(8), dimension(3,3,3) :: fff
-    real(8) :: c0, reccm
+    real(8) :: c0, reccm, aunm
     complex(8), dimension(3) :: CID
     complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
     complex(8), allocatable, dimension(:,:,:) :: egff_cart, egff_nm, fff_pv
@@ -227,6 +227,8 @@ end subroutine
     complex(8), dimension(3,3,3,3) :: Effff, Effmfww, Effmfw2w
     complex(8), dimension(3,3,6,3) :: Effqfww, Effqfw2w
 
+    ! Source: http://www.webqc.org/unitconverters-js.php
+    aunm = 45.56335
 
     if (openrsp_cfg_general_specify) then
 
@@ -326,7 +328,6 @@ file_id = '    '
 
     end if
 
-
     if (openrsp_cfg_general_shg) then
 
 
@@ -381,6 +382,10 @@ file_id = '    '
           open(unit = 320, file='shg_output', status='replace', action='write', iostat=ierr)
 write(320, *) 'Second harmonic generation output'
 write(320, *) '================================='
+write(320, *) ' '
+
+write(320, *) 'Dipole moment (Debye): ', dm*0.393456
+write(320, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
 write(320, *) ' '
 
 
@@ -450,8 +455,10 @@ write(320, *) ' '
           write(320,*) 'Polarizability (-2w;2w)'
           write(320,*) '======================='
           write(320,*) ' '
-          write(320,*) 'Frequencies w0, w1 are', perturbation_tuple%freq(1), ' ,', &
+          write(320,*) 'Frequencies w0, w1 are (a.u.)', perturbation_tuple%freq(1), ' ,', &
                         perturbation_tuple%freq(2)
+          write(320,*) 'Wavelengths for w0, w1 are (nm)', aunm/perturbation_tuple%freq(1), ' ,', &
+                        aunm/perturbation_tuple%freq(2)
           write(320,*) ' '
           write(320,*) 'Polarizability:'
           write(320,*) ' '
@@ -470,11 +477,15 @@ write(320, *) ' '
 
 
           write(320,*) ' '
-          write(320,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+          write(320,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
                                      (ff(1,1) + ff(2,2) + ff(3,3)))
+          write(320,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+                                     (ff(1,1) + ff(2,2) + ff(3,3))) * 1.481847
           ! Follows method by AJT
-          write(320,*) 'Dipole^2', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
+          write(320,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
                                    i = 1, 3), j = 1, 3) /) ))
+          write(320,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
+                                   i = 1, 3), j = 1, 3) /) )) * 1.481847
           write(320,*) ' '
 
 
@@ -532,8 +543,11 @@ write(320, *) ' '
           write(320,*) 'Polarizability (-w;w)'
           write(320,*) '======================='
           write(320,*) ' '
-          write(320,*) 'Frequencies w0, w1 are', perturbation_tuple%freq(1), ' ,', &
+
+          write(320,*) 'Frequencies w0, w1 are (a.u.)', perturbation_tuple%freq(1), ' ,', &
                         perturbation_tuple%freq(2)
+          write(320,*) 'Wavelengths for w0, w1 are (nm)', aunm/perturbation_tuple%freq(1), ' ,', &
+                        aunm/perturbation_tuple%freq(2)
           write(320,*) ' '
           write(320,*) 'Polarizability:'
           write(320,*) ' '
@@ -552,11 +566,15 @@ write(320, *) ' '
 
 
           write(320,*) ' '
-          write(320,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+          write(320,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
                                      (ff(1,1) + ff(2,2) + ff(3,3)))
+          write(320,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+                                     (ff(1,1) + ff(2,2) + ff(3,3))) * 1.481847
           ! Follows method by AJT
-          write(320,*) 'Dipole^2', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
+          write(320,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
                                    i = 1, 3), j = 1, 3) /) ))
+          write(320,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff(i,j) * dm(i) * dm(j), &
+                                   i = 1, 3), j = 1, 3) /) )) * 1.481847
           write(320,*) ' '
 
 
@@ -617,8 +635,10 @@ write(320, *) ' '
           write(320,*) 'Hyperpolarizability (-2w;w,w)'
           write(320,*) '============================='
           write(320,*) ' '
-          write(320,*) 'Frequencies w0, w1, w2 are', perturbation_tuple%freq(1), ' ,', &
+          write(320,*) 'Frequencies w0, w1, w2 are (a.u.)', perturbation_tuple%freq(1), ' ,', &
                         perturbation_tuple%freq(2), perturbation_tuple%freq(3)
+          write(320,*) 'Wavelengths for w0, w1, w2 are (nm)', aunm/perturbation_tuple%freq(1), ' ,', &
+                        aunm/perturbation_tuple%freq(2), aunm/perturbation_tuple%freq(3)
           write(320,*) ' '
           write(320,*) 'Hyperpolarizability:'
           write(320,*) ' '
@@ -643,11 +663,15 @@ write(320, *) ' '
 
           write(320,*) ' '
           ! Follows method by AJT
-          write(320,*) 'Isotropic:', real((1.0/5.0) * sum ( (/ (( (fff(i,i,j) + &
+          write(320,*) 'Isotropic (a.u.):', real((1.0/5.0) * sum ( (/ (( (fff(i,i,j) + &
                        fff(i,j,i) + fff(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /)))
+          write(320,*) 'Isotropic (10^-30 esu):', real((1.0/5.0) * sum ( (/ (( (fff(i,i,j) + &
+                       fff(i,j,i) + fff(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /))) * 0.00863922
           ! Follows method by AJT
-          write(320,*) 'Dipole^3', real(sum( (/ (((fff(i,j,k) * dm(i) * dm(j) * dm(k), &
+          write(320,*) 'Dipole^3 (a.u.):', real(sum( (/ (((fff(i,j,k) * dm(i) * dm(j) * dm(k), &
                                    i = 1, 3), j = 1, 3), k = 1, 3) /) ))
+          write(320,*) 'Dipole^3 (10^-30 esu):', real(sum( (/ (((fff(i,j,k) * dm(i) * dm(j) * dm(k), &
+                                   i = 1, 3), j = 1, 3), k = 1, 3) /) )) * 0.00863922
           write(320,*) ' '
 
 
@@ -804,10 +828,15 @@ write(320, *) ' '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
+          write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+          write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+          write(259, *) ' '
           write(259,*) 'Frequency combination', k
           write(259,*) ' '
-          write(259,*) 'Frequencies w0, w1 are', (-1.0)* openrsp_cfg_real_freqs(k), ' ,', &
+          write(259,*) 'Frequencies w0, w1 are (a.u.)', (-1.0)* openrsp_cfg_real_freqs(k), ' ,', &
                      openrsp_cfg_real_freqs(k)
+          write(259,*) 'Wavelengths for w0, w1 are (nm)', (-1.0)*aunm/openrsp_cfg_real_freqs(k), ' ,', &
+                     aunm/openrsp_cfg_real_freqs(k)
           write(259,*) ' '
           write(259,*) 'PV contribution to polarizability'
           write(259,*) '================================='
@@ -821,10 +850,15 @@ write(320, *) ' '
              write(259, format_line) real(ff_pv(i,:))
           end do
           write(259,*) ' '
-          write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+          write(259,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
+                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+          write(259,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3))) * 1.481847
           ! Follows method by AJT
-          write(259,*) 'Dipole^2', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
-                                   i = 1, 3), j = 1, 3) /) ))
+          write(259,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                      i = 1, 3), j = 1, 3) /) ))
+          write(259,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                      i = 1, 3), j = 1, 3) /) )) * 1.481847
           write(259,*) ' '
 
           close(259)
@@ -991,11 +1025,17 @@ write(320, *) ' '
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
              write(259,*) ' '
+             write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+             write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) ' '
              write(259,*) 'Frequency combination', (k - 1) * 2 + h
              write(259,*) ' '
-             write(259,*) 'Frequencies w0, w1 are', (-1.0)* &
+             write(259,*) 'Frequencies w0, w1 are (a.u.)', (-1.0)* &
                           openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
                           openrsp_cfg_real_freqs((k - 1) * 2 + h)
+             write(259,*) 'Wavelengths for w0, w1 are (nm)', (-1.0)* aunm/&
+                          openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
+                          aunm/openrsp_cfg_real_freqs((k - 1) * 2 + h)
              write(259,*) ' '
              write(259,*) 'PV contribution to polarizability'
              write(259,*) '================================='
@@ -1007,11 +1047,15 @@ write(320, *) ' '
                 write(259, format_line) real(ff_pv(i,:))
              end do
              write(259,*) ' '
-             write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+             write(259,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
                                         (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+             write(259,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3))) * 1.481847
              ! Follows method by AJT
-             write(259,*) 'Dipole^2', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+             write(259,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
                                       i = 1, 3), j = 1, 3) /) ))
+             write(259,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                      i = 1, 3), j = 1, 3) /) )) * 1.481847
              write(259,*) ' '
 
              close(259)
@@ -1083,12 +1127,21 @@ write(320, *) ' '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
+          write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+          write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+          write(259, *) ' '
           write(259,*) 'Frequency combination', k
           write(259,*) ' '
-          write(259,*) 'Frequencies w0, w1, w2 are', (-1.0) * &
+          write(259,*) 'Frequencies w0, w1, w2 are (a.u.)', (-1.0) * &
                        sum(openrsp_cfg_real_freqs((k-1)*2 + 1: (k-1)*2 + 2)), ' ,', &
                        openrsp_cfg_real_freqs((k-1)*2 + 1), ' ,', &
                        openrsp_cfg_real_freqs((k-1)*2 + 2)
+          write(259,*) 'Wavelengths for w0, w1, w2 are (nm)', (-1.0) * &
+                       aunm / sum(openrsp_cfg_real_freqs((k-1)*2 + 1: (k-1)*2 + 2)), ' ,', &
+                       aunm / openrsp_cfg_real_freqs((k-1)*2 + 1), ' ,', &
+                       aunm / openrsp_cfg_real_freqs((k-1)*2 + 2)
+
+
           write(259,*) ' '
           write(259,*) 'PV contribution to 1st hyperpolarizability'
           write(259,*) '=========================================='
@@ -1104,11 +1157,18 @@ write(320, *) ' '
              write(259,*) ' '
           end do
           ! Follows method by AJT
-          write(259,*) 'Isotropic:', real((1.0/5.0) * sum ( (/ (( (fff_pv(i,i,j) + &
+          write(259,*) 'Isotropic (a.u.):', real((1.0/5.0) * sum ( (/ (( (fff_pv(i,i,j) + &
                        fff_pv(i,j,i) + fff_pv(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /)))
+          write(259,*) 'Isotropic (10^-30 esu):', real((1.0/5.0) * sum ( (/ (( (fff_pv(i,i,j) + &
+                       fff_pv(i,j,i) + fff_pv(j,i,i)) * dm(j), i = 1, 3), j = 1, 3) /))) * 0.00863922
+
+
+
           ! Follows method by AJT
-          write(259,*) 'Dipole^3', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
+          write(259,*) 'Dipole^3 (a.u.):', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
                                    i = 1, 3), j = 1, 3), k = 1, 3) /) ))
+          write(259,*) 'Dipole^3 (10^⁻30 esu):', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
+                                   i = 1, 3), j = 1, 3), k = 1, 3) /) )) * 0.00863922
           write(259,*) ' '
 
           close(259)
@@ -1284,11 +1344,17 @@ write(320, *) ' '
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
              write(259,*) ' '
+             write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+             write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) ' '
              write(259,*) 'Frequency combination', (k - 1) * 3 + h
              write(259,*) ' '
-             write(259,*) 'Frequencies w0, w1 are', (-1.0)* &
+             write(259,*) 'Frequencies w0, w1 are (a.u.)', (-1.0)* &
                            openrsp_cfg_real_freqs((k - 1) * 3 + h), ' ,', &
                            openrsp_cfg_real_freqs((k - 1) * 3 + h)
+             write(259,*) 'Wavelengths for w0, w1 are (nm)', (-1.0)* &
+                           aunm / openrsp_cfg_real_freqs((k - 1) * 3 + h), ' ,', &
+                           aunm / openrsp_cfg_real_freqs((k - 1) * 3 + h)
              write(259,*) ' '
              write(259,*) 'PV contribution to polarizability'
              write(259,*) '================================='
@@ -1301,11 +1367,15 @@ write(320, *) ' '
                 write(259, format_line) real(ff_pv(i,:))
              end do
              write(259,*) ' '
-             write(259,*) 'Isotropic:', real(((1.0)/(3.0)) * &
+             write(259,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
                                         (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+             write(259,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3))) * 1.481847
              ! Follows method by AJT
-             write(259,*) 'Dipole^2', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+             write(259,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
                                       i = 1, 3), j = 1, 3) /) ))
+             write(259,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                      i = 1, 3), j = 1, 3) /) )) * 1.481847
              write(259,*) ' '
 
              close(259)
@@ -1404,32 +1474,51 @@ write(320, *) ' '
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
              write(259,*) ' '
+             write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+             write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) ' '
              write(259,*) 'Frequency combination', (k - 1) * 3 + h
              write(259,*) ' '
 
              if (h == 1) then
 
-                write(259,*) 'Frequencies w0, w1, w2 are', (-1.0) * &
+                write(259,*) 'Frequencies w0, w1, w2 are (a.u.)', (-1.0) * &
                              (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 2)), ' ,', &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 1), ' ,', &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 2)
+                write(259,*) 'Wavelengths for w0, w1, w2 are (nm)', (-1.0) * aunm / &
+                             (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
+                             openrsp_cfg_real_freqs((k - 1) * 3 + 2)), ' ,', &
+                             aunm / openrsp_cfg_real_freqs((k - 1) * 3 + 1), ' ,', &
+                             aunm / openrsp_cfg_real_freqs((k - 1) * 3 + 2)
 
              elseif (h == 2) then
 
-                write(259,*) 'Frequencies w0, w1, w2 are', (-1.0) * &
+                write(259,*) 'Frequencies w0, w1, w2 are (a.u.)', (-1.0) * &
                              (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 3)), ' ,', &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 1), ' ,', &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 3)
+                write(259,*) 'Wavelengths for w0, w1, w2 are (nm)', (-1.0) * aunm / &
+                             (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
+                             openrsp_cfg_real_freqs((k - 1) * 3 + 3)), ' ,', &
+                             aunm / openrsp_cfg_real_freqs((k - 1) * 3 + 1), ' ,', &
+                             aunm / openrsp_cfg_real_freqs((k - 1) * 3 + 3)
+
 
              elseif (h == 3) then
 
-                write(259,*) 'Frequencies w0, w1, w2 are', (-1.0) * &
+                write(259,*) 'Frequencies w0, w1, w2 are (a.u.)', (-1.0) * &
                              (openrsp_cfg_real_freqs((k - 1) * 3 + 2) + &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 3)), ' ,', &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 2), ' ,', &
                              openrsp_cfg_real_freqs((k - 1) * 3 + 3)
+                write(259,*) 'Wavelengths for w0, w1, w2 are (nm)', (-1.0) * aunm / &
+                             (openrsp_cfg_real_freqs((k - 1) * 3 + 2) + &
+                             openrsp_cfg_real_freqs((k - 1) * 3 + 3)), ' ,', &
+                             aunm / openrsp_cfg_real_freqs((k - 1) * 3 + 2), ' ,', &
+                             aunm / openrsp_cfg_real_freqs((k - 1) * 3 + 3)
 
              end if
 
@@ -1449,12 +1538,17 @@ write(320, *) ' '
                 write(259,*) ' '
              end do
              ! Follows method by AJT
-             write(259,*) 'Isotropic:', real(((1.0)/(5.0)) * sum ( (/ (((fff_pv(i,i,j) + &
+             write(259,*) 'Isotropic (a.u.):', real(((1.0)/(5.0)) * sum ( (/ (((fff_pv(i,i,j) + &
                                         fff_pv(i,j,i) + fff_pv(j,i,i)) * dm(j), &
                                         i = 1, 3), j = 1, 3) /)))
+             write(259,*) 'Isotropic (10^-30 esu):', real(((1.0)/(5.0)) * sum ( (/ (((fff_pv(i,i,j) + &
+                                        fff_pv(i,j,i) + fff_pv(j,i,i)) * dm(j), &
+                                        i = 1, 3), j = 1, 3) /)))*0.00863922
              ! Follows method by AJT
-             write(259,*) 'Dipole^3', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
+             write(259,*) 'Dipole^3 (a.u.):', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
                                       i = 1, 3), j = 1, 3), k = 1, 3) /) ))
+             write(259,*) 'Dipole^3 (10^-30 esu):', real(sum( (/ (((fff_pv(i,j,k) * dm(i) * dm(j) * dm(k), &
+                                      i = 1, 3), j = 1, 3), k = 1, 3) /) ))*0.00863922
              write(259,*) ' '
 
              close(259)
@@ -1532,13 +1626,21 @@ write(320, *) ' '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
+          write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+          write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+          write(259, *) ' '
           write(259,*) 'Frequency combination', k
           write(259,*) ' '
-          write(259,*) 'Frequencies w0, w1, w2, w3 are', (-1.0) * &
+          write(259,*) 'Frequencies w0, w1, w2, w3 are (a.u.)', (-1.0) * &
                        sum(openrsp_cfg_real_freqs((k-1)*3 + 1: (k-1)*3 + 3)), ' ,', &
                        openrsp_cfg_real_freqs((k-1)*3 + 1), ' ,', &
                        openrsp_cfg_real_freqs((k-1)*3 + 2), ' ,', &
                        openrsp_cfg_real_freqs((k-1)*3 + 3)
+          write(259,*) 'Wavelengths for w0, w1, w2, w3 are (nm)', (-1.0) * &
+                       aunm / sum(openrsp_cfg_real_freqs((k-1)*3 + 1: (k-1)*3 + 3)), ' ,', &
+                       aunm / openrsp_cfg_real_freqs((k-1)*3 + 1), ' ,', &
+                       aunm / openrsp_cfg_real_freqs((k-1)*3 + 2), ' ,', &
+                       aunm / openrsp_cfg_real_freqs((k-1)*3 + 3)
           write(259,*) ' '
           write(259,*) 'PV contribution to 2nd hyperpolarizability'
           write(259,*) '=========================================='
@@ -1556,10 +1658,10 @@ write(320, *) ' '
              write(259,*) ' '
           end do
           ! Follows method by AJT
-          write(259,*) 'Isotropic:', real(((1.0)/(15.0)) * sum ((/ ((ffff_pv(i,i,j,j) + &
+          write(259,*) 'Isotropic (a.u.):', real(((1.0)/(15.0)) * sum ((/ ((ffff_pv(i,i,j,j) + &
                        ffff_pv(i,j,i,j) + ffff_pv(i,j,j,i), i = 1, 3), j = 1, 3) /)))
           ! Follows method by AJT
-          write(259,*) 'Dipole^4', real(sum( (/ ((((ffff_pv(i,j,k,m) * dm(i) * dm(j) * dm(k) * &
+          write(259,*) 'Dipole^4 (a.u.):', real(sum( (/ ((((ffff_pv(i,j,k,m) * dm(i) * dm(j) * dm(k) * &
                                    dm(m), i = 1, 3), j = 1, 3), k = 1, 3), m = 1, 3) /) ))
           write(259,*) ' '
 
