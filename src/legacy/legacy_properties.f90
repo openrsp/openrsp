@@ -58,7 +58,6 @@ contains
 
       type(matrix) :: Db(3)
       type(matrix) :: Dbw
-      type(matrix) :: DSD
       type(matrix) :: Fbw(1)
       type(matrix) :: Gb(3)
       type(matrix) :: Hb
@@ -84,7 +83,6 @@ contains
       call mat_zero_like(D, Gb(2))
       call mat_zero_like(D, Gb(3))
       call rsp_twoint(S%nrow, 1, (/'MAG '/), (/1/), (/3/), D, 3, Gb)
-      DSD = D*S*D
 
       do ib = 1, 3
          call legacy_read_integrals('d<S|/dB'//xyz(ib), Sbl)
@@ -95,7 +93,7 @@ contains
 
          Sb = Sbl - trans(Sbl)
 
-         Db(ib) = D*Sb*D - D*Sb*DSD - DSD*Sb*D
+         Db(ib) = -D*Sb*D
 
          M(1) = Hb + Gb(ib)
          call rsp_twoint(S%nrow, 0, nof, noc, noc, Db(ib), 1, M(1))
@@ -128,7 +126,6 @@ contains
       end do
 
       Dbw = 0
-      DSD = 0
       Fbw = 0
       Gb  = 0
       Hb  = 0
