@@ -49,14 +49,25 @@ contains
    ! Egbw = << GEO(0.0) MAG(0.0) FREQ(91) >>
 
       integer,      intent(in) :: ng
-      type(matrix), intent(in) :: S, D, F
+      type(matrix), intent(in) :: S
+      type(matrix), intent(in) :: D
+      type(matrix), intent(in) :: F
 
       complex(8)    :: aat(ng, 3), temp(ng, 3)
       real(8)       :: temp_real(3, ng)
 
-      type(matrix)  :: Db(3), Dbw(3), Fbw(3), Sb(3), GB(3)
-      type(matrix)  :: Wbw(3)
-      type(matrix)  :: T, X(1), M(1), SL, Y, R(1), HB
+      type(matrix) :: Db(3)
+      type(matrix) :: Dbw
+      type(matrix) :: DSD
+      type(matrix) :: Fbw(1)
+      type(matrix) :: Gb(3)
+      type(matrix) :: Hb
+      type(matrix) :: M(1)
+      type(matrix) :: Sb
+      type(matrix) :: Sbl
+      type(matrix) :: T
+      type(matrix) :: Wbw(3)
+      type(matrix) :: X(1)
 
       integer       :: ib, ig
       character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
@@ -64,63 +75,67 @@ contains
       integer, dimension(0) :: noc
       character(4), dimension(0) :: nof
 
-      call mat_zero_like(D, SL)
-      call mat_zero_like(D, HB)
+      aat = 0.0d0
+
+      call mat_zero_like(D, Sbl)
+      call mat_zero_like(D, Hb)
       call mat_zero_like(D, X(1))
-      call mat_zero_like(D, GB(1))
-      call mat_zero_like(D, GB(2))
-      call mat_zero_like(D, GB(3))
-      call rsp_twoint(S%nrow, 1, (/'MAG '/), (/1/), (/3/), D, 3, GB)
+      call mat_zero_like(D, Gb(1))
+      call mat_zero_like(D, Gb(2))
+      call mat_zero_like(D, Gb(3))
+      call rsp_twoint(S%nrow, 1, (/'MAG '/), (/1/), (/3/), D, 3, Gb)
+      DSD = D*S*D
 
       do ib = 1, 3
-         call legacy_read_integrals('d<S|/dB'//xyz(ib), SL)
+         call legacy_read_integrals('d<S|/dB'//xyz(ib), Sbl)
 
-         call legacy_read_integrals('dh/dB'//xyz(ib)//'  ', HB)
+         call legacy_read_integrals('dh/dB'//xyz(ib)//'  ', Hb)
 
-         ! SL - SR
-         Fbw(ib) = 0.5d0*SL + 0.5d0*trans(SL) ! SL - SR
+         Fbw(1) = 0.5d0*Sbl + 0.5d0*trans(Sbl)
 
-         Sb(ib) = SL - trans(SL)
+         Sb = Sbl - trans(Sbl)
 
-         M(1) = F*D*Sb(ib) - Sb(ib)*D*F
+         Db(ib) = D*Sb*D - D*Sb*DSD - DSD*Sb*D
 
-         Y = D*Sb(ib)*D - D*Sb(ib)*D*S*D - D*S*D*Sb(ib)*D
-         call mat_zero_like(D, R(1))
-         call rsp_twoint(S%nrow, 0, nof, noc, noc, Y, 1, R(1))
-         R(1) = R(1) + HB + GB(ib)
-
-         M(1) = M(1) + R(1)*D*S - S*D*R(1)
-         R = 0
+         M(1) = Hb + Gb(ib)
+         call rsp_twoint(S%nrow, 0, nof, noc, noc, Db(ib), 1, M(1))
+         M(1) = M(1)*D*S - S*D*M(1)
+         M(1) = M(1) + F*D*Sb - Sb*D*F
 
          call rsp_solver_exec(M(1), (/0.0d0/), X(1))
-         Db(ib) = D*S*X(1) - X(1)*S*D
-         Db(ib) = Db(ib) + Y
-         Y = 0
+         Db(ib) = Db(ib) + D*S*X(1) - X(1)*S*D
 
-         ! form RHS = -S*D*SL - SR*D*S - S*Db*S
-         M(1) = -S*D*SL
+         ! form RHS = -S*D*Sbl - Sbr*D*S - S*Db*S
+         M(1) = -S*D*Sbl
          M(1) = M(1) - trans(M(1))
          M(1) = M(1) - S*Db(ib)*S
 
          call rsp_solver_exec(M(1), (/0.0d0/), X(1))
 
-         Dbw(ib) = D*S*X(1) - X(1)*S*D
-         call rsp_twoint(S%nrow, 0, nof, noc, noc, Dbw(ib), 1, Fbw(ib))
-      end do
-      X = 0
-      M = 0
-      SL = 0
-      HB = 0
-      GB = 0
+         Dbw = D*S*X(1) - X(1)*S*D
+         call rsp_twoint(S%nrow, 0, nof, noc, noc, Dbw, 1, Fbw(1))
 
-      do ib = 1, 3
-         Wbw(ib) = Dbw(ib)*F*D + D*Fbw(ib)*D + D*F*Dbw(ib) &
+         temp = 0.0d0
+         call rsp_oneave(1, (/'GEO '/), (/1/), (/ng/), Dbw, 1, (/1, 1, ng/), (/ng/), ng, temp(1, ib))
+         aat = aat + temp
+
+         temp = 0.0d0
+         call rsp_twoave(1, (/'GEO '/), (/1/), (/ng/), D, Dbw, ng, temp(1, ib))
+         aat = aat + temp
+
+         Wbw(ib) = Dbw*F*D + D*Fbw(1)*D + D*F*Dbw &
                  + 0.5d0*Db(ib)*S*D - 0.5d0*D*S*Db(ib)
       end do
-      Fbw = 0
 
-      ! contract the frequency-differentiated response function
-      aat = 0.0d0
+      Dbw = 0
+      DSD = 0
+      Fbw = 0
+      Gb  = 0
+      Hb  = 0
+      M   = 0
+      Sb  = 0
+      Sbl = 0
+      X   = 0
 
       call mat_zero_like(D, T)
       do ig = 1, ng
@@ -130,8 +145,9 @@ contains
             aat(ig, ib) = aat(ig, ib) + dot(Wbw(ib), T) + trace(Wbw(ib), T)
          end do
       end do
-      Wbw = 0
       Db = 0
+      Wbw = 0
+
       do ig = 1, ng
          do ib = 1, 3
             call legacy_read_integrals(prefix_zeros(ig, 2)//' HDB '//xyz(ib), T)
@@ -148,20 +164,6 @@ contains
             aat(ig, ib) = aat(ig, ib) - 2.0d0*temp_real(ib, ig)
          end do
       end do
-
-      temp = 0.0d0
-      do ib = 1, 3
-         call rsp_oneave(1, (/'GEO '/), (/1/), (/ng/), Dbw(ib), 1, (/1, 1, ng/), (/ng/), ng, temp(1, ib))
-      end do
-      aat = aat + temp
-
-      temp = 0.0d0
-      do ib = 1, 3
-         call rsp_twoave(1, (/'GEO '/), (/1/), (/ng/), D, Dbw(ib), ng, temp(1, ib))
-      end do
-      aat = aat + temp
-
-      Dbw = 0
 
       aat = -0.5d0*aat
       call print_tensor(shape(aat), aat, 'AAT')
