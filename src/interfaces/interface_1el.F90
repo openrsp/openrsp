@@ -267,10 +267,13 @@ contains
       !------------------------------------------------
       integer      i
 
+
+           ! MaR: Only one magnetic field supported for now
+
            tmp_ave = 0.0
            ! MaR: THIS IS THE INT CALL STRUCTURE - ADAPT TO AVE AND REMEMBER D
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
-           call gen1int_host_get_int(LONDON, INT_OVERLAP,       &
+           call gen1int_host_get_expt(LONDON, INT_OVERLAP,       &
                                      0,                          &  !multipole moments
                                      0,                          &
                                      count(fbra=='MAG '),        &
@@ -283,6 +286,7 @@ contains
                                      0, (/0/),                   &
                                      UNIQUE_GEO,                 &
                                      .false., .false., .false.,  &  !not implemented yet
+                                     1, (/D/),                   &
                                      propsize, tmp_ave, .false.,   &  !integral matrices
 #ifdef PRG_DIRAC
                                      2, (/1, 1, 2, 2/),          &
@@ -293,6 +297,9 @@ contains
 
           ! MaR: OFFSETS AND LOCATIONS IN MEMORY POSTPONED
           ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
+
+          ! Just magnetic to think about for now
+          ave = tmp_ave
 
    end subroutine
 #endif
@@ -821,6 +828,8 @@ contains
       !------------------------------------------------
       integer      i
 
+           ! MaR: Only one magnetic field supported for now
+
            do i = 1, propsize
              if (.not.isdef(fock(i))) then
                 call mat_init(fock(i), nr_ao, nr_ao)
@@ -853,6 +862,9 @@ contains
 
           ! MaR: OFFSETS AND LOCATIONS IN MEMORY POSTPONED
           ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
+
+          ! MaR: Just magnetic field for now
+          fock = tmp_fock
 
    end subroutine
 #endif
