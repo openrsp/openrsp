@@ -697,6 +697,7 @@ contains
     end if
 
     if (nf == 1 .and. f(1) == 'MAG ') then
+#ifdef PRG_DALTON
        !fixme wild guess
        lwork = 100000000
        allocate(f77_memory(lwork))
@@ -714,6 +715,7 @@ contains
        deallocate(f77_memory)
        deallocate(temp_fmat)
        deallocate(temp_dmat)
+#endif /* ifdef PRG_DALTON */
     end if
 
 #ifdef PRG_DALTON
