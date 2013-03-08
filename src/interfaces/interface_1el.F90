@@ -8,10 +8,12 @@ module interface_1el
    use interface_f77_memory
    use interface_pcm
    use interface_io
+   use interface_1el_dirac
    use rsp_indices_and_addressing, only: get_triang_blks_offset
 
    implicit none
 
+   public interface_1el_init
    public interface_1el_ovlave_tr
    public interface_1el_ovlave_half_diff
    public interface_1el_oneave_tr
@@ -28,7 +30,11 @@ module interface_1el
 
 contains
 
-
+   subroutine interface_1el_init()
+#ifdef PRG_DIRAC
+      call order_1el_integrals()
+#endif
+   end subroutine
 
 #ifdef VAR_LSDALTON
    ! MaR: ROUTINE FOR TENSOR SYMMETRY NONREDUNDANT DATA RETURN

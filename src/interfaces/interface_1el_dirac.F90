@@ -28,18 +28,6 @@ module interface_1el_dirac
 #include "nuclei.h"
 #include "symmet.h"
 
-
-
-    logical :: need_1el_f = .false.
-    logical :: need_1el_g = .false.
-    logical :: need_1el_v = .false.
-    logical :: need_1el_q = .false.
-    logical :: need_1el_b = .false.
-    logical :: need_1el_o = .false.
-    logical :: diamagnetic_via_pn = .false.
-    logical :: nonzero_small_metric = .false.
-    logical :: openrsp_cfg_mllsus = .false.
-
 contains
 
    subroutine order_1el_integrals()
@@ -59,6 +47,17 @@ contains
 !           2. generalize for other hamiltonians
 !              not every combination hamiltonian--property is tested
 !     --------------------------------------------------------------------------
+
+      logical :: need_1el_f = .false.
+      logical :: need_1el_g = .false.
+      logical :: need_1el_v = .false.
+      logical :: need_1el_q = .false.
+      logical :: need_1el_b = .false.
+      logical :: need_1el_o = .true.
+
+      logical :: diamagnetic_via_pn = .false.
+      logical :: nonzero_small_metric = .false.
+      logical :: openrsp_cfg_mllsus = .false.
 
 
 !     decide what to do with the small-small metric
@@ -802,7 +801,7 @@ contains
       real(8)                      :: dummy_dp
       logical                      :: file_exists
       logical                      :: debug_me = .false.
-      real(8), pointer             :: work(:)
+      real(8), allocatable         :: work(:)
       integer                      :: lwork
 !     --------------------------------------------------------------------------
 
@@ -831,18 +830,18 @@ contains
          idimension = n2bbasx
       end if
 
-      call alloc(ptri, nz*idimension)
-      call alloc(op1int, idimension)
+      allocate(ptri(nz*idimension))
+      allocate(op1int(idimension))
       allocate(first(nz))
 
-      if (.not. isdef(P)) call init_mat(P, ntbas(0), ntbas(0))
+!     if (.not. isdef(P)) call init_mat(P, ntbas(0), ntbas(0))
       P%elms = 0.0d0
 
       P%pg_sym = iprpsym(op_index)
       P%ih_sym = iprptim(op_index)
 
       lwork = n2bbasxq*2
-      call di_select_wrk(work, lwork)
+      allocate(work(lwork))
 
       call prpex2(op_index,   &
                   dummy_dp,   &
@@ -855,15 +854,15 @@ contains
                   first,      &
                   work, 1, lwork, 0)
 
-      call di_deselect_wrk(work, lwork)
+      deallocate(work)
       close(file_unit, status = 'keep')
 
       if (debug_me) then
          call mat_print(P, label = 'debug P in AO basis')
       end if
 
-      call dealloc(ptri)
-      call dealloc(op1int)
+      deallocate(ptri)
+      deallocate(op1int)
       deallocate(first)
 
    end subroutine
