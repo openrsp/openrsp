@@ -446,6 +446,7 @@ contains
             deallocate(RR)
          end if
       else if (np==2 .and. all(p==(/'MAGO','MAGO'/))) then
+#ifndef PRG_DIRAC
          do j = 0, dp(2) - 1
             do i = 0, dp(1) - 1
                call load_oneint(xyz(min(c(1)+i,c(2)+j)) &
@@ -456,6 +457,7 @@ contains
                end do
             end do
          end do
+#endif
       ! EL MAG has no nd==0 because MAG anti-symmetric
       else if (np==2 .and. all(p==(/'MAG','EL '/)) .and. nd /= 0) then
          do j = 0, dp(2)-1 !EL indices
