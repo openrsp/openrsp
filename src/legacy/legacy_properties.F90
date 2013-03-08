@@ -719,7 +719,7 @@ contains
       call print_tensor((/3,3/), Ebb, 'London Magnetizability = Ebb', (/-freq,freq/))
    end subroutine
 
-
+#ifdef PRG_DALTON
   subroutine test_grcont(n, nr_atoms, test_london, test_geo)
 
     integer              :: n, nr_atoms
@@ -795,6 +795,7 @@ contains
     deallocate(work)
 
   end subroutine
+#endif /* ifdef PRG_DALTON */
 
 
   subroutine print_tensor(dims, tensor, title, freqs, colwidth, unit)
