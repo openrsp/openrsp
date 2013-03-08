@@ -1655,13 +1655,6 @@ contains
   end subroutine
 #endif
 
-#ifdef VAR_LSDALTON
-  subroutine legacy_read_integrals( prop_lab, prop_int )
-    character*(8), intent(in) :: prop_lab
-    type(matrix), intent(inout) :: prop_int
-    STOP 'legacy_read_integrals not implemented in LSDALTON'
-  end subroutine
-#else
   !> \brief gets property integrals from file AOPROPER
   !> \author Bin Gao
   !> \date 2009-12-08
@@ -1669,14 +1662,15 @@ contains
   !> \param init_prop indicates if initialize the integral matrix
   !> \return prop_int contains the integral matrix
   subroutine legacy_read_integrals( prop_lab, prop_int )
-    character*(8), intent(in) :: prop_lab
-    type(matrix), intent(inout) :: prop_int
-#ifndef VAR_LSDALTON
+
+    character*(8), intent(in)    :: prop_lab
+    type(matrix),  intent(inout) :: prop_int
+
+#ifdef PRG_DALTON
     ! uses NBAST, NNBAST, NNBASX, N2BASX
 #include "inforb.h"
     ! IO units, use LUPROP for file AOPROPER
 #include "inftap.h"
-#endif
     ! external DALTON function finding the corresponding label
     logical FNDLB2
     ! information when calling subroutine FNDLB2
@@ -1684,16 +1678,18 @@ contains
     ! dummy stuff
     integer IDUMMY
     logical anti
+#endif
+
+#ifdef VAR_LSDALTON
+    STOP 'legacy_read_integrals not implemented in LSDALTON'
+#endif
+
+#ifdef PRG_DALTON
     ! one-electron Hamiltonian
     if ( prop_lab == 'ONEHAMIL' ) then
       call QUIT( 'Not implemented!' )
-#ifdef PRG_DIRAC
-    print *, 'fix rdonel call'
-    stop 1
-#else
       anti = .false. !radovan: was undefined, setting it to false
       call RDONEL( 'ONEHAMIL', ANTI, f77_memory(get_f77_memory_next()), NNBASX )
-#endif
       call DSPTSI( NBAST, f77_memory(get_f77_memory_next()), prop_int%elms )
     else
       ! closes file AOPROPER first
@@ -1723,8 +1719,16 @@ contains
                    ''' not found on file ''AOPROPER''!' )
       end if
     end if
+#endif /* #ifdef PRG_DALTON */
+
+#ifdef PRG_DIRAC
+     if (.not. isdef(prop_int)) then
+        call mat_init(prop_int, prop_int%nrow, prop_int%nrow)
+     end if
+#endif /* #ifdef PRG_DIRAC */
+
   end subroutine
-#endif
+
   function prefix_zeros(n, l)
     integer, intent(in) :: n, l !number, length
     character(l)        :: prefix_zeros !resulting n in ascii
