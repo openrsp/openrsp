@@ -31,9 +31,6 @@ module interface_1el
 contains
 
    subroutine interface_1el_init()
-#ifdef PRG_DIRAC
-      call order_1el_integrals()
-#endif
    end subroutine
 
 #ifdef VAR_LSDALTON
@@ -1725,6 +1722,7 @@ contains
      if (.not. isdef(prop_int)) then
         call mat_init(prop_int, prop_int%nrow, prop_int%nrow)
      end if
+     call read_1el_integrals(prop_lab, prop_int)
 #endif /* #ifdef PRG_DIRAC */
 
   end subroutine

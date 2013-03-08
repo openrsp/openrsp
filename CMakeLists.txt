@@ -51,16 +51,16 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_scf.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_xc.F90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_birefringence.f90
+    ${PROJECT_SOURCE_DIR}/src/legacy/legacy_contributions.F90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_openrsp.f90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_openrsp_driver.f90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_properties.F90
-    ${PROJECT_SOURCE_DIR}/src/legacy/legacy_contributions.F90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_vibrational_properties.f90
+    ${PROJECT_SOURCE_DIR}/src/legacy/rsp_equations_old.F90
     ${PROJECT_SOURCE_DIR}/src/openrsp.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_choose_rule.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_contribs.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_equations.f90
-    ${PROJECT_SOURCE_DIR}/src/rsp_equations_old.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_field_tuple.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_general.f90
     ${PROJECT_SOURCE_DIR}/src/rsp_indices_and_addressing.f90

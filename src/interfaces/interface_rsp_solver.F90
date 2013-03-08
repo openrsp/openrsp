@@ -525,7 +525,7 @@ contains
     logical                     :: debug_me = .false.
 
     logical                     :: include_pp_rotations = .true.
-    logical                     :: include_pn_rotations = .true.
+    logical                     :: include_pn_rotations = .false.
 !   ----------------------------------------------------------------------------
 
 #include "dcbbas.h"
