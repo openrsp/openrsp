@@ -136,6 +136,10 @@
          openrsp_cfg_skip_ssss = .false.
       end if
 
+      if (kw_matches(word, '.MAGNET')) then
+         openrsp_cfg_magnetizability = .true.
+      end if
+
       ! MaR: For entering temperature in Kelvin
 
       if (kw_matches(word, '.TMPRTR')) then
