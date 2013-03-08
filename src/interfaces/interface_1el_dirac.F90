@@ -805,20 +805,6 @@ contains
       integer                      :: lwork
 !     --------------------------------------------------------------------------
 
-
-!radovan: please leave the following debug code until i incorporate it
-!         properly
-!     file_unit = lu1int
-!     call opnfil(file_unit, 'X2CMAT', 'UNKNOWN', 'read_1el_integrals')
-!     rewind file_unit
-
-!     op_index = index_on_aoproper(op_name)
-
-!     call x2c_read('prpint2c' // prefix_zeros(op_index, 4), P%elms, size(P%elms), file_unit)
-
-!     close(file_unit, status = 'keep')
-!     return
-
       file_unit = lu1int
       call opnfil(file_unit, 'AOPROPER', 'UNKNOWN', 'read_1el_integrals')
       rewind file_unit
@@ -834,7 +820,6 @@ contains
       allocate(op1int(idimension))
       allocate(first(nz))
 
-!     if (.not. isdef(P)) call init_mat(P, ntbas(0), ntbas(0))
       P%elms = 0.0d0
 
       P%pg_sym = iprpsym(op_index)

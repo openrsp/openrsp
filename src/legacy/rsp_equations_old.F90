@@ -30,6 +30,7 @@
 module rsp_equations_old
 
    use matrix_defop      !matrix type and operators
+   use matrix_lowlevel, only: mat_print
    use legacy_property_contributions !integrals and integral contractions
    use interface_rsp_solver
 
@@ -838,7 +839,7 @@ contains
       logical, save  :: first_complex = .true.
       real(8)        :: gamma_saved
       logical        :: has_imag
-      type(matrix)   :: reFDSp(1), imFDSp(1), reXph(1), imXph(1)
+      type(matrix)   :: reFDSp(1), imFDSp(1), reXph(1), imXph(1), RHS(1)
       ! for resonant equations (real freq coincides with +-an excitation energy).
       ! Excitation energies and densities are stored in solved_eqs.
       ! Excitation and de-excitation should be projected out of the
@@ -868,10 +869,12 @@ contains
       end if
       ! call solver
       do i=1, neq
+
+#ifdef PRG_DALTON
          rhs_norm = norm(FDSp(i))
          print *, 'before response solver: norm(RHS) = ', rhs_norm
 
-         if (rhs_norm < 1d-10) then
+         if (rhs_norm < 1.0d-10) then
             print *, '=> skipping this equation'
             Xph(1) = 0*S0
          else
@@ -880,6 +883,7 @@ contains
             call mat_ensure_alloc(Xph(1), only_alloc=.true.)
             call rsp_solver_exec(FDSp(i:i), freq1(1:1), Xph(1))
          end if
+
          ! if (anti-)symmetric Dp (static with anti-/symmetric FDSp,DSDp),
          ! make sure Dp it comes out completely symmetric
          if (sym /= 0 .and. freq==0) then
@@ -888,6 +892,30 @@ contains
          else
             Dp(i) = Dp(i) + D0*S0*Xph(1) - Xph(1)*S0*D0
          end if
+#endif
+
+#ifdef PRG_DIRAC
+         ! antihermitian part
+         RHS(1) = (FDSp(i) + trans(FDSp(i)))
+         RHS(1) = 0.5d0*RHS(1)
+         rhs_norm = norm(RHS(1))
+         print *, 'before response solver: norm(RHS) = ', rhs_norm
+         if (rhs_norm < 1.0d-10) then
+            print *, '=> skipping this equation'
+            Xph(1) = 0*S0
+         else
+            freq1(1) = dreal(freq)
+            Xph(1) = 0*Dp(i)
+            RHS(1)%ih_sym = -1
+            call mat_ensure_alloc(Xph(1), only_alloc=.true.)
+            call rsp_solver_exec(RHS(1), freq1(1:1), Xph(1))
+            Dp(i) = Dp(i) + D0*S0*Xph(1) - Xph(1)*S0*D0
+          ! call mat_print(Dp(i), label='raboof')
+         end if
+
+         ! hermitian part
+         ! missing ...
+#endif
          Xph(1) = 0
          FDSp(i) = 0
       end do
