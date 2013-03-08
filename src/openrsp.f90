@@ -117,6 +117,7 @@ contains
     type(ctr_arg) :: arg(1)
 
     call interface_molecule_init()
+    call interface_1el_init()
     call interface_io_init()
     call interface_xc_init()
     call interface_pcm_init(wavpcm)
