@@ -238,7 +238,8 @@ contains
 
       if (need_1el_o .or. need_1el_b) then
 
-         f = 0.5d0*cval
+       ! f = 0.5d0*cval
+         f = cval
          blocks = '0++0'
 
          call add_operator('XANGMOM         ',                     &
@@ -309,7 +310,8 @@ contains
          if (diamagnetic_via_pn) then
             f = 0.0d0
          else
-            f = 1.0d0
+          ! f = 1.0d0
+            f = 0.5d0
          end if
 
          irep(1) = 0
