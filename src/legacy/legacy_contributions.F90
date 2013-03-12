@@ -376,7 +376,7 @@ contains
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', A(1))
             do j = 0, nd-1
-               E(1+i+dp(1)*j) = trace(A(1), D(j+1)) / 2 !factor 1/2
+               E(1+i+dp(1)*j) = 0.5d0*trace(A(1), D(j+1))
             end do
          end do
       ! London magnetic, Since anti-symmetric, no unperturbed (nd==0)
