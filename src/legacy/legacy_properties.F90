@@ -688,27 +688,24 @@ contains
       complex(8)                     :: Eoo(3,3), Ebb(3,3)
       type(matrix) :: Db(3), Fb(3), DFD, DFDb(3)
       integer      :: i, j
-      !no-London
+
+
+      Eoo = 0.0d0
+      Ebb = 0.0d0
+
+      ! cgo code
       call pert_dens(S, (/'MAGO'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
-      Eoo = 0
       call prop_oneave(S, (/'MAGO','MAGO'/), (/D/), (/3,3/), Eoo)
-      !call print_tensor( (/3,3/), Eoo, 'E0oo'); Eoo=0
       call prop_oneave(S, (/'MAGO'/), (/Db/), (/3,3/), Eoo)
-      !call print_tensor( (/3,3/), Eoo, 'E1oDo'); Eoo=0
       call print_tensor((/3,3/), Eoo, 'no-London Magnetizability = Eoo', (/-freq,freq/))
-      Db=0; Fb=0
 
 #ifndef PRG_DIRAC
-      !London diamag
+      ! london code
       call pert_dens(S, (/'MAG'/), (/3/), (/D/), (/F/), Db, Fb, freq=(/freq/))
-      Ebb = 0
       call prop_twoave((/'MAG','MAG'/), (/D/), (/3,3/), Ebb)
       DFD = D*F*D
       call prop_oneave(S, (/'MAG','MAG'/), (/D/), (/3,3/), Ebb, &
                        DFD=(/DFD/), freq=(/-freq,freq/))
-      DFD = 0
-      !call print_tensor( (/3,3/), Ebb, 'E0bb-i/2TbbD-SbbW'); Ebb=0
-      !London paramag
       call prop_twoave((/'MAG'/), (/D,Db/), (/3,3/), Ebb)
       do j = 1, 3
          DFDb(j) = Db(j)*(F+(freq/2)*S)*D + D*Fb(j)*D &
@@ -716,10 +713,14 @@ contains
       end do
       call prop_oneave(S, (/'MAG'/), (/Db/), (/3,3/), Ebb, &
                        DFD=DFDb, freq=(/-freq/))
-      Db=0; Fb=0; DFDb=0
-      !call print_tensor( (/3,3/), Ebb, 'E1bDb-i/2TbDb-SbDFDb'); Ebb=0
       call print_tensor((/3,3/), Ebb, 'London Magnetizability = Ebb', (/-freq,freq/))
 #endif /* ifndef PRG_DIRAC */
+
+      Db   = 0
+      Fb   = 0
+      DFD  = 0
+      DFDb = 0
+
    end subroutine
 
 #ifdef PRG_DALTON
