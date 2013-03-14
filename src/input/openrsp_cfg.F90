@@ -27,6 +27,7 @@ module openrsp_cfg
    real(8), allocatable :: openrsp_cfg_imag_freqs(:)
 
    logical :: openrsp_cfg_magnetizability = .false.
+   logical :: openrsp_cfg_vcd = .false.
 
    ! MaR: Temperature (in Kelvin) for purposes where it might apply (default: 298 K)
    real(8) :: openrsp_cfg_temperature = 298.0d0
