@@ -52,7 +52,7 @@ contains
       logical :: need_1el_g = .false.
       logical :: need_1el_v = .false.
       logical :: need_1el_q = .false.
-      logical :: need_1el_b = .false.
+      logical :: need_1el_b = .true.
       logical :: need_1el_o = .true.
 
       logical :: diamagnetic_via_pn = .false.
@@ -239,7 +239,7 @@ contains
 
       if (need_1el_o .or. need_1el_b) then
 
-         f = 1.0d0*cval
+         f = 0.5d0*cval
          blocks = '0++0'
 
          call add_operator('XANGMOM         ',                     &

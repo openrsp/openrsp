@@ -897,7 +897,7 @@ contains
 #ifdef PRG_DIRAC
          ! antihermitian part
          RHS(1) = (FDSp(i) + trans(FDSp(i)))
-         RHS(1) = 0.5d0*RHS(1)
+       ! RHS(1) = 0.5d0*RHS(1)
          rhs_norm = norm(RHS(1))
          print *, 'before response solver: norm(RHS) = ', rhs_norm
          if (rhs_norm < 1.0d-10) then
