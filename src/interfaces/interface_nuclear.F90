@@ -345,17 +345,17 @@ contains
       flc(2, 3) =  1.0d0
       flc(3, 2) = -1.0d0
 
-      aatn = 0.0d0
+      tensor = 0.0d0
       l = 0
       do k = 1, get_nr_atoms()
          do ia = 1, 3
             l = l + 1
             do ib = 1, 3
-               aatn(ib, l) = get_nuc_charge(k)*get_nuc_xyz(lc(ia, ib), k)*flc(ia, ib)
+               tensor(ib, l) = get_nuc_charge(k)*get_nuc_xyz(lc(ia, ib), k)*flc(ia, ib)
             end do
          end do
       end do
-      aatn = 0.25d0*aatn
+      tensor = 0.25d0*tensor
 
    end subroutine
 
