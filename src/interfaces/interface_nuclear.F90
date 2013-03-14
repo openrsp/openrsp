@@ -8,11 +8,11 @@ module interface_nuclear
    public nuclear_potential
    public gradient_nuc
    public hessian_nuc
+   public aatnuc_ifc
 #ifndef VAR_LSDALTON
    public dipnuc_ifc
    public qdrnuc_ifc
    public dpgnuc_ifc
-   public aatnuc_ifc
 #endif
    private
 
@@ -313,32 +313,50 @@ contains
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
     DGN = transpose( DDIPN( :, 1:3*na ) )
   end subroutine
-
-
-  !> Nuclear contribution to the atomic axial tenaor (AAT),
-  !> needed for vibrational circular dichroism (VCD)
-  !> In the quasienergy formalism, the AAT is:
-  !> d^3E/dR(-w)dB(w)dw |w=0
-  subroutine AATNUC_ifc( na, AATN )
-#include "mxcent.h"
-#include "aatens.h"
-    integer, intent(in) :: na
-    real(8), intent(out) :: AATN( 3, 3*na )
-
-    real(8), allocatable :: cstra(:, :)
-    real(8), allocatable :: sctra(:, :)
-
-#ifdef PRG_DIRAC
-    print *, 'fix nucaat call'
-    stop 1
-#else
-    allocate(cstra(3*na, 3*na))
-    allocate(sctra(3*na, 3*na))
-    call NUCAAT( CSTRA, SCTRA, 0 )
-         AATN(:,:) = AATNUC( :, :3*na )
-    deallocate(cstra)
-    deallocate(sctra)
 #endif
-  end subroutine
-#endif
+
+
+   !> Nuclear contribution to the atomic axial tenaor (AAT),
+   !> needed for vibrational circular dichroism (VCD)
+   !> In the quasienergy formalism, the AAT is:
+   !> d^3E/dR(-w)dB(w)dw |w=0
+   subroutine aatnuc_ifc(na, tensor)
+
+      integer, intent(in)  :: na
+      real(8), intent(out) :: tensor(3, 3*na)
+
+      integer :: k, l, ia, ib
+      integer :: lc(3, 3)
+      real(8) :: flc(3, 3)
+
+      lc = 0
+      lc(1, 2) = 3
+      lc(2, 1) = 3
+      lc(1, 3) = 2
+      lc(3, 1) = 2
+      lc(2, 3) = 1
+      lc(3, 2) = 1
+
+      flc = 0.0d0
+      flc(1, 2) =  1.0d0
+      flc(2, 1) = -1.0d0
+      flc(1, 3) = -1.0d0
+      flc(3, 1) =  1.0d0
+      flc(2, 3) =  1.0d0
+      flc(3, 2) = -1.0d0
+
+      aatn = 0.0d0
+      l = 0
+      do k = 1, get_nr_atoms()
+         do ia = 1, 3
+            l = l + 1
+            do ib = 1, 3
+               aatn(ib, l) = get_nuc_charge(k)*get_nuc_xyz(lc(ia, ib), k)*flc(ia, ib)
+            end do
+         end do
+      end do
+      aatn = 0.25d0*aatn
+
+   end subroutine
+
 end module
