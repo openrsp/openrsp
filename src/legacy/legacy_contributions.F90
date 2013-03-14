@@ -11,6 +11,7 @@
 module legacy_property_contributions
 
    use matrix_defop
+   use matrix_lowlevel
    use interface_molecule
    use interface_xc
    use interface_1el
@@ -333,6 +334,12 @@ contains
       real(8)      :: R(6) !scratch
       integer      :: i, j, k, l, ii, jj, kk, ll, na
       type(matrix) :: A(6) !scratch matrices
+#ifdef PRG_DIRAC
+      !> temporary matrix
+      type(matrix) :: T
+      character(2)  :: ij_string, ji_string
+      character(16) :: integral_label
+#endif
       na = get_nr_atoms()
       do i = 1, size(A)
          A(i) = 0*S0 !scratch matrices
@@ -376,7 +383,11 @@ contains
          do i = 0, dp(1)-1
             call load_oneint(xyz(c(1)+i) // 'ANGMOM ', A(1))
             do j = 0, nd-1
+#ifdef PRG_DIRAC
+               E(1+i+dp(1)*j) =       trace(A(1), D(j+1))
+#else
                E(1+i+dp(1)*j) = 0.5d0*trace(A(1), D(j+1))
+#endif
             end do
          end do
       ! London magnetic, Since anti-symmetric, no unperturbed (nd==0)
@@ -384,7 +395,23 @@ contains
          !one-electron contribution
          do i = 0, dp(1)-1
             ! Hamiltonian integrals
+#ifdef PRG_DIRAC
+            integral_label = 'dkin/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, A(1))
+            T = tiny(0.0d0)*A(1)
+            integral_label = 'dnuc/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, T)
+            A(1) = A(1) + T
+            integral_label = 'dbet/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, T)
+            A(1) = A(1) + T
+            integral_label = 'dvec/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, T)
+            A(1) = A(1) + T
+            T = 0
+#else
             call load_oneint('dh/dB' // xyz(c(1)+i) // '  ', A(1))
+#endif
             ! -i/2 Tb in A(1), overlap integrals Sb in A(2)
             if (w(1)==0) then !no -i/2 Tb contribution
                call load_oneint('dS/dB' // xyz(c(1)+i) // '  ', A(2))
@@ -1229,6 +1256,12 @@ contains
       integer      :: i, j, k, ii, jj, kk
       type(matrix) :: A(6) !scratch matrices
       real(8)      :: R(1) !dummy
+#ifdef PRG_DIRAC
+      !> temporary matrix
+      type(matrix)  :: T
+      character(2)  :: ij_string
+      character(16) :: integral_label
+#endif
       if (np==0) then
          call quit('prop_oneint error:' &
                 // ' Unperturbed one-electron integrals requested',get_print_unit())
@@ -1260,7 +1293,23 @@ contains
          do i = 0, dp(1)-1
             F(i+1) = 0*S0
             call mat_ensure_alloc(F(i+1), only_alloc=.true.)
+#ifdef PRG_DIRAC
+            integral_label = 'dkin/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, F(i+1))
+            T = tiny(0.0d0)*F(i+1)
+            integral_label = 'dnuc/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, T)
+            F(i+1) = F(i+1) + T
+            integral_label = 'dbet/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, T)
+            F(i+1) = F(i+1) + T
+            integral_label = 'dvec/dB' // xyz(c(1) + i) // '        '
+            call load_oneint(integral_label, T)
+            F(i+1) = F(i+1) + T
+            T = 0
+#else
             call load_oneint('dh/dB' // xyz(c(1)+i) // '  ', F(i+1))
+#endif
             S(i+1) = 0*S0
             call mat_ensure_alloc(S(i+1), only_alloc=.true.)
             if (w(1)==0) then !no -i/2 Tb contribution
