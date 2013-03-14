@@ -59,7 +59,7 @@ module openrsp
   use matrix_lowlevel,  only: mat_init
   use eri_contractions, only: ctr_arg
   use eri_basis_loops,  only: unopt_geodiff_loop
-  use legacy_properties, only: magnetizability
+  use legacy_properties, only: magnetizability, vcd_aat
   use legacy_vibrational_properties, only: load_vib_modes
   use vib_pv_contribs
   use rsp_sdf_caching
@@ -235,6 +235,10 @@ end subroutine
 
     if (openrsp_cfg_magnetizability) then
        call magnetizability(S, D, F)
+    end if
+
+    if (openrsp_cfg_vcd) then
+       call vcd_aat(3*num_atoms, S, D, F)
     end if
 
     if (openrsp_cfg_general_specify) then

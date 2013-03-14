@@ -140,6 +140,10 @@
          openrsp_cfg_magnetizability = .true.
       end if
 
+      if (kw_matches(word, '.VCD   ')) then
+         openrsp_cfg_vcd = .true.
+      end if
+
       ! MaR: For entering temperature in Kelvin
 
       if (kw_matches(word, '.TMPRTR')) then
