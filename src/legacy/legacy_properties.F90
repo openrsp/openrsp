@@ -45,8 +45,9 @@ module legacy_properties
 contains
 
    subroutine vcd_aat(ng, S, D, F)
-   ! "Atomic axial tensor" = -1/2 * Egbw
-   ! Egbw = << GEO(0.0) MAG(0.0) FREQ(91) >>
+
+      ! "Atomic axial tensor" = -1/2 * Egbw
+      ! Egbw = << G; B, w >> (evaluated at zero w)
 
       integer,      intent(in) :: ng
       type(matrix), intent(in) :: S
@@ -55,6 +56,7 @@ contains
 
       complex(8)    :: aat(ng, 3), temp(ng, 3)
       real(8)       :: temp_real(3, ng)
+      real(8)       :: rhs_norm
 
       type(matrix) :: Db(3)
       type(matrix) :: Dbw
@@ -67,6 +69,7 @@ contains
       type(matrix) :: T
       type(matrix) :: Wbw(3)
       type(matrix) :: X(1)
+      type(matrix) :: RHS(1)
 
       integer       :: ib, ig
       character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
@@ -87,7 +90,21 @@ contains
       do ib = 1, 3
          call legacy_read_integrals('d<S|/dB'//xyz(ib), Sbl)
 
+#ifdef PRG_DALTON
          call legacy_read_integrals('dh/dB'//xyz(ib)//'  ', Hb)
+#endif
+
+#ifdef PRG_DIRAC
+         call mat_zero_like(D, T)
+         call legacy_read_integrals('dkin/dB'//xyz(ib), Hb)
+         call legacy_read_integrals('dnuc/dB'//xyz(ib), T)
+         Hb = Hb + T
+         call legacy_read_integrals('dbet/dB'//xyz(ib), T)
+         Hb = Hb + T
+         call legacy_read_integrals('dvec/dB'//xyz(ib), T)
+         Hb = Hb + T
+         T = 0
+#endif
 
          Fbw(1) = 0.5d0*Sbl + 0.5d0*trans(Sbl)
 
@@ -100,8 +117,26 @@ contains
          M(1) = M(1)*D*S - S*D*M(1)
          M(1) = M(1) + F*D*Sb - Sb*D*F
 
+#ifdef PRG_DALTON
          call rsp_solver_exec(M(1), (/0.0d0/), X(1))
          Db(ib) = Db(ib) + D*S*X(1) - X(1)*S*D
+#endif
+
+#ifdef PRG_DIRAC
+         ! antihermitian part
+         RHS(1) = (M(1) + trans(M(1)))
+         rhs_norm = norm(RHS(1))
+         if (rhs_norm > 1.0d-10) then
+            RHS(1)%ih_sym = -1
+            call rsp_solver_exec(RHS(1), (/0.0d0/), X(1))
+            Db(ib) = Db(ib) + D*S*X(1) - X(1)*S*D
+         end if
+
+         ! hermitian part
+         ! missing ...
+#endif
+
+         call mat_print(Db(ib), label='raboof')
 
          ! form RHS = -S*D*Sbl - Sbr*D*S - S*Db*S
          M(1) = -S*D*Sbl
