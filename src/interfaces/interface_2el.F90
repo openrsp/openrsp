@@ -685,6 +685,7 @@ contains
     type(matrix)  A !scratch
     real(8)          :: dummy(1)
     integer          :: idummy(1)
+    integer          :: nz
     real(8), allocatable :: f77_memory(:)
     real(8), allocatable :: temp_fmat(:)
     real(8), allocatable :: temp_dmat(:)
@@ -697,25 +698,27 @@ contains
     end if
 
     if (nf == 1 .and. f(1) == 'MAG ') then
-#ifdef PRG_DALTON
+       nz = 1
+#ifdef PRG_DIRAC
+       nz = 4
+#endif
        !fixme wild guess
        lwork = 100000000
        allocate(f77_memory(lwork))
 
-       allocate(temp_dmat(nr_ao*nr_ao))
-       call dcopy(nr_ao*nr_ao, dens%elms, 1, temp_dmat, 1)
+       allocate(temp_dmat(nr_ao*nr_ao*nz))
+       call dcopy(nr_ao*nr_ao*nz, dens%elms, 1, temp_dmat, 1)
 
-       allocate(temp_fmat(3*nr_ao*nr_ao))
+       allocate(temp_fmat(3*nr_ao*nr_ao*nz))
        temp_fmat = 0.0d0
-       call grcont(f77_memory, lwork, temp_fmat, (3*nr_ao*nr_ao), .false., .true., 1, &
+       call grcont(f77_memory, lwork, temp_fmat, (3*nr_ao*nr_ao*nz), .false., .true., 1, &
                    0, .false., .true., temp_dmat, 1)
        do i = 1, 3
-          call dcopy(nr_ao*nr_ao, temp_fmat((i-1)*nr_ao*nr_ao + 1), 1, fock(i)%elms, 1)
+          call dcopy(nr_ao*nr_ao*nz, temp_fmat((i-1)*nr_ao*nr_ao*nz + 1), 1, fock(i)%elms, 1)
        end do
        deallocate(f77_memory)
        deallocate(temp_fmat)
        deallocate(temp_dmat)
-#endif /* ifdef PRG_DALTON */
     end if
 
 #ifdef PRG_DALTON
@@ -795,11 +798,11 @@ contains
              call interest_get_int(dens%nrow, dens%elms, fock(i+1)%elms, 1, i+1, 0, dummy)
    
           end do
-
-       else
-          print *, 'error in rsp_twoint: not implemented or in wrong order - ', &
-                  (' ' // f(i), i=1,nf)
-          call quit('error in rsp_twoint: not implemented or in wrong order')
+      !fixme add a not-implemented safeguard
+      !else
+      !   print *, 'error in rsp_twoint: not implemented or in wrong order - ', &
+      !           (' ' // f(i), i=1,nf)
+      !   call quit('error in rsp_twoint: not implemented or in wrong order')
        end if
 #endif
 
@@ -811,5 +814,191 @@ contains
      real(8), pointer            :: ptr(:)
      ptr => arr
   end function
+
+#ifdef PRG_DIRAC
+  subroutine grcont(work,     &
+                    lwork,    &
+                    g,        &
+                    g_dim,    &
+                    geo,      &
+                    london,   &
+                    max_derv, &
+                    iatom_in, &
+                    energy,   &
+                    fock,     &
+                    dmat,     &
+                    nr_dmat)
+
+!   ----------------------------------------------------------------------------
+    real(8)              :: work(*)
+    integer, intent(in)  :: lwork
+
+    real(8), intent(out) :: g(*)
+    integer, intent(in)  :: g_dim
+
+    logical, intent(in)  :: geo
+    logical, intent(in)  :: london
+
+    integer, intent(in)  :: max_derv
+    integer, intent(in)  :: iatom_in
+
+    logical, intent(in)  :: energy
+    logical, intent(in)  :: fock
+
+    real(8), intent(in)  :: dmat(*)
+    integer, intent(in)  :: nr_dmat
+!   ----------------------------------------------------------------------------
+    real(8), allocatable :: tmat(:), fmat(:)
+
+    logical              :: gencnt
+
+    integer              :: i2typ, itype, ifctyp(8), iatom, fmat_dim
+
+    real(8)              :: skip(3, 14, 3)
+    real(8)              :: screen, f
+
+    logical, parameter   :: include_ll_integrals = .true.
+    logical, parameter   :: include_ls_integrals = .false.
+    logical, parameter   :: include_ss_integrals = .false.
+!   ----------------------------------------------------------------------------
+
+#include "mxcent.h"
+#include "cbihr2.h"
+#include "dcbbas.h"
+#include "dcbgen.h"
+#include "dcbgrd.h"
+#include "dorps.h"
+#include "exeinf.h"
+
+    dopert = .true.
+
+    ftronv = .true.
+    relgrd = .true.
+    call rsetsym(.false., relgrd, .false., .false.)
+    call rtroini(.false.)
+
+    call troinv(work, lwork)
+
+    screen = -1.0d0
+
+!   set ifctyp
+    ifctyp    = 0
+    ifctyp(1) = 13 !coulomb and exchange
+    ifctyp(2) = 22 !only exchange
+    ifctyp(3) = 22
+    ifctyp(4) = 22
+    ifctyp(5) = 13 !coulomb and exchange
+    ifctyp(6) = 22 !only exchange
+    ifctyp(7) = 22
+    ifctyp(8) = 22
+
+    iatom = 0
+
+    if (energy) then
+
+      gencnt   = .true.
+      fmat_dim = g_dim
+
+      if (geo) then
+        itype = 2
+      else if (london) then
+        itype = -5
+      else
+        call quit('grcont: differentiated integrals not recognized')
+      end if
+
+    else if (fock) then
+
+      gencnt   = .false.
+      fmat_dim = 3*n2bbasxq*max_derv
+
+      if (geo) then
+        itype = 8
+        iatom = iatom_in
+      else if (london) then
+        itype = -5
+      else
+        call quit('grcont: differentiated integrals not recognized')
+      end if
+
+    else
+      call quit('programming error in call to grcont')
+    end if
+
+    f = 1.0d0
+    if (fock) then
+      if (geo)                        f = 0.25d0
+      if (london .and. max_derv == 1) f = 2.00d0
+      if (london .and. max_derv == 2) f = 4.00d0
+    end if
+
+    allocate(tmat(fmat_dim))
+    allocate(fmat(fmat_dim))
+
+    fmat = 0.0d0
+
+    if (include_ll_integrals) then
+
+      i2typ    = 1
+      intclass = 0
+
+      tmat = 0.0d0
+      call dzero(skip, 3*14*3)
+
+      call twoint(work, lwork, tmat, dmat, 4*nr_dmat, (/0/),             &
+                  ifctyp, (/0.0d0/), (/0/), (/0/), itype,                &
+                  max_derv, iatom, .true., .true., .false., tktime,      &
+                  1, 0, 0, 0, 0, .false., (/0/), i2typ,                  &
+                  icedif, screen, (/0.0d0/), (/0.0d0/), (/0.0d0/), skip, &
+                  relcal, gencnt, (/0.0d0/), (/0.0d0/))
+
+      call daxpy(fmat_dim, f, tmat, 1, fmat, 1)
+
+    end if
+
+    if (include_ls_integrals) then
+
+      i2typ    = 2
+      intclass = 1
+
+      tmat = 0.0d0
+      call dzero(skip, 3*14*3)
+
+      call twoint(work, lwork, tmat, dmat, 4*nr_dmat, (/0/),             &
+                  ifctyp, (/0.0d0/), (/0/), (/0/), itype,                &
+                  max_derv, iatom, .true., .true., .false., tktime,      &
+                  1, 0, 0, 0, 0, .false., (/0/), i2typ,                  &
+                  icedif, screen, (/0.0d0/), (/0.0d0/), (/0.0d0/), skip, &
+                  relcal, gencnt, (/0.0d0/), (/0.0d0/))
+
+      call daxpy(fmat_dim, f, tmat, 1, fmat, 1)
+
+    end if
+
+    if (include_ss_integrals) then
+
+      i2typ    = 3
+      intclass = 2
+
+      tmat = 0.0d0
+      call dzero(skip, 3*14*3)
+
+      call twoint(work, lwork, tmat, dmat, 4*nr_dmat, (/0/),             &
+                  ifctyp, (/0.0d0/), (/0/), (/0/), itype,                &
+                  max_derv, iatom, .true., .true., .false., tktime,      &
+                  1, 0, 0, 0, 0, .false., (/0/), i2typ,                  &
+                  icedif, screen, (/0.0d0/), (/0.0d0/), (/0.0d0/), skip, &
+                  relcal, gencnt, (/0.0d0/), (/0.0d0/))
+
+      call daxpy(fmat_dim, f, tmat, 1, fmat, 1)
+
+    end if
+
+    call dcopy(g_dim, fmat, 1, g, 1)
+
+    deallocate(fmat)
+
+  end subroutine
+#endif /* ifdef PRG_DIRAC */
 
 end module

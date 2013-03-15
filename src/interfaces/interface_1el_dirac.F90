@@ -107,6 +107,7 @@ contains
          call add_class('RM1RN  ', '0++0')
          call add_class('S1MAG  ', '+00'//ss)
          call add_class('S2MAG  ', '+00'//ss)
+         call add_class('S1MAGL ', '+00'//ss)
          call add_class('S1MAGR ', '+00'//ss)
          call add_class('S2MKET ', '+00'//ss)
          call add_class('S2MMIX ', '+00'//ss)
@@ -513,6 +514,19 @@ contains
             s = 'd|S>/dB '
             s(8:8) = i_iter(i)
             call add_operator('d|S>/dB' // i_iter(i) // '        ', &
+                              blocks,                               &
+                              1,                                    &
+                              0,                                    &
+                              1 + irep(i),                          &
+                              (/1 + irep(i)/),                      &
+                              (/f/),                                &
+                              (/s/))
+         end do
+
+         do i = 1, size(i_iter)
+            s = 'd<S|/dB '
+            s(8:8) = i_iter(i)
+            call add_operator('d<S|/dB' // i_iter(i) // '        ', &
                               blocks,                               &
                               1,                                    &
                               0,                                    &
