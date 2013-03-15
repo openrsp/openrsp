@@ -213,6 +213,7 @@ end subroutine
     type(SDF), pointer :: F_already, D_already, S_already
     real(8), dimension(3) :: fld_dum
     real(8), dimension(3) :: dm
+    real(8), dimension(3) :: dm_orig
     character(len=4) :: file_id
     character(20) :: format_line
     integer       :: n_nm, h, j, k, m, ierr
