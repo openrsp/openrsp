@@ -339,6 +339,7 @@ file_id = '    '
 
     end if
 
+    
     if (openrsp_cfg_general_shg) then
 
 
@@ -373,6 +374,17 @@ file_id = '    '
 
        ! Normalize dipole moment - follows procedure by AJT
 
+       open(unit = 320, file='shg_output', status='replace', action='write', iostat=ierr)
+       write(320, *) 'Second harmonic generation output'
+       write(320, *) '================================='
+       write(320, *) ' '
+       write(320, *) 'Dipole moment (Debye): ', dm*0.393456
+       write(320, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+       write(320, *) 'Dipole moment length (normalization factor) (Debye):',  &
+                     ((sum(dm * dm))**0.5)*0.393456
+       write(320, *) ' '
+
+
        if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
 
           dm = (/0d0, 0d0, 1d0/)
@@ -390,14 +402,7 @@ file_id = '    '
        ! Requires that openrsp_cfg_nr_real_freqs is used as freqs. per tuple
        ! That is also currently the default
 
-          open(unit = 320, file='shg_output', status='replace', action='write', iostat=ierr)
-write(320, *) 'Second harmonic generation output'
-write(320, *) '================================='
-write(320, *) ' '
 
-write(320, *) 'Dipole moment (Debye): ', dm*0.393456
-write(320, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
-write(320, *) ' '
 
 
        do k = 1, openrsp_cfg_nr_freq_tuples
@@ -809,6 +814,8 @@ write(320, *) ' '
 
        ! Normalize dipole moment - follows procedure by AJT
 
+       dm_orig = dm
+
        if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
 
           dm = (/0d0, 0d0, 1d0/)
@@ -839,8 +846,10 @@ write(320, *) ' '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
-          write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+          write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
           write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+          write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                         ((sum(dm_orig * dm_orig))**0.5)*0.393456
           write(259, *) ' '
           write(259,*) 'Frequency combination', k
           write(259,*) ' '
@@ -1001,6 +1010,8 @@ write(320, *) ' '
 
        ! Normalize dipole moment - follows procedure by AJT
 
+       dm_orig = dm
+
        if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
 
           dm = (/0d0, 0d0, 1d0/)
@@ -1036,8 +1047,10 @@ write(320, *) ' '
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
              write(259,*) ' '
-             write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+             write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                            ((sum(dm_orig * dm_orig))**0.5)*0.393456
              write(259, *) ' '
              write(259,*) 'Frequency combination', (k - 1) * 2 + h
              write(259,*) ' '
@@ -1138,8 +1151,10 @@ write(320, *) ' '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
-          write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+          write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
           write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+          write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                         ((sum(dm_orig * dm_orig))**0.5)*0.393456
           write(259, *) ' '
           write(259,*) 'Frequency combination', k
           write(259,*) ' '
@@ -1321,6 +1336,8 @@ write(320, *) ' '
 
        ! Normalize dipole moment - follows procedure by AJT
 
+       dm_orig = dm
+
        if ( ((sum(dm * dm))**0.5) < 0.00001 ) then
 
           dm = (/0d0, 0d0, 1d0/)
@@ -1355,8 +1372,10 @@ write(320, *) ' '
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
              write(259,*) ' '
-             write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+             write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                            ((sum(dm_orig * dm_orig))**0.5)*0.393456
              write(259, *) ' '
              write(259,*) 'Frequency combination', (k - 1) * 3 + h
              write(259,*) ' '
@@ -1485,8 +1504,10 @@ write(320, *) ' '
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
              write(259,*) ' '
-             write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+             write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                            ((sum(dm_orig * dm_orig))**0.5)*0.393456
              write(259, *) ' '
              write(259,*) 'Frequency combination', (k - 1) * 3 + h
              write(259,*) ' '
@@ -1637,8 +1658,10 @@ write(320, *) ' '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
-          write(259, *) 'Dipole moment (Debye): ', dm*0.393456
+          write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
           write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+          write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                         ((sum(dm_orig * dm_orig))**0.5)*0.393456
           write(259, *) ' '
           write(259,*) 'Frequency combination', k
           write(259,*) ' '
