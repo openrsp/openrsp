@@ -132,7 +132,7 @@ public rsp_cfg
     write(*,*) 'Starting clock: About to call get_prop routine'
     write(*,*) ' '
     call cpu_time(timing_start)
-call mtrace()
+
     if (present(F_already)) then
 
        call get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
@@ -144,7 +144,7 @@ call mtrace()
                      property_size, prop, F, D, S)
 
    end if
-call muntrace()
+
 
     call cpu_time(timing_end)
     write(*,*) 'Clock stopped: Property was calculated'
