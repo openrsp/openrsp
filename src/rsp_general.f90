@@ -132,7 +132,7 @@ public rsp_cfg
     write(*,*) 'Starting clock: About to call get_prop routine'
     write(*,*) ' '
     call cpu_time(timing_start)
-
+call mtrace()
     if (present(F_already)) then
 
        call get_prop(pert, kn, nr_ao, num_blks, blk_sizes, blk_info, &
@@ -144,7 +144,7 @@ public rsp_cfg
                      property_size, prop, F, D, S)
 
    end if
-
+call muntrace()
 
     call cpu_time(timing_end)
     write(*,*) 'Clock stopped: Property was calculated'
@@ -230,9 +230,9 @@ public rsp_cfg
 
     prop = 0.0
 !     p_diff = prop
-
+! call mtrace()
     call rsp_fds(zeromat, pert, kn, F, D, S)
- 
+!  call muntrace()
     write(*,*) ' '
     write(*,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
     write(*,*) ' '
@@ -521,6 +521,7 @@ public rsp_cfg
     type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket
     type(SDF) :: D
     type(property_cache) :: cache
+    type(matrix) :: D_unp
     type(matrix), allocatable, dimension(:) :: dens_tuple
     type(rsp_field), allocatable, dimension(:) :: nucpot_pert
     integer :: i, j, k, m, n, num_p_tuples, total_num_perturbations, density_order, &
@@ -611,6 +612,9 @@ public rsp_cfg
 !                      p_tuples(1)%n_perturbations, pidoutersmall, &
 !                      ncarray, ncoutersmall, o_whichpert)
 
+    call sdf_getdata_s(D, get_emptypert(), (/1/), D_unp)
+
+
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
        allocate(outer_indices(outer_indices_size,total_num_perturbations - &
@@ -679,7 +683,7 @@ public rsp_cfg
    
              call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), & 
-                            p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/)), &
+                            p_tuples(1)%pdim, D_unp, &
                             nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
                             blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, contrib)
    
@@ -703,8 +707,7 @@ public rsp_cfg
 
              call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
                                       t_matrix_bra, t_matrix_ket, &
-                                      sdf_getdata(D, get_emptypert(), (/1/)), &
-                                      inner_indices_size, contrib)
+                                      D_unp, inner_indices_size, contrib)
 
    
           elseif (num_p_tuples == 2) then
@@ -725,8 +728,7 @@ public rsp_cfg
    
              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                             p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), &
-                             (/1/)), sdf_getdata(D, get_emptypert(), (/1/)) , &
+                             p_tuples(1)%pdim, D_unp, D_unp, &
                              inner_indices_size, contrib)
    
           elseif (num_p_tuples == 2) then
@@ -734,8 +736,7 @@ public rsp_cfg
              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), &
-                             sdf_getdata(D, get_emptypert(), (/1/)) , &
-                             inner_indices_size, contrib)
+                             D_unp, inner_indices_size, contrib)
     
           elseif (num_p_tuples == 3) then
     
@@ -889,8 +890,7 @@ public rsp_cfg
 
        call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
-                       sdf_getdata(D, get_emptypert(), (/1/)) , &
-                       nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
+                       D_unp, nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
                        blk_sizes(1, 1:nblks_tuple(1)), property_size, contrib)
 
        tmp = tmp + contrib
@@ -901,16 +901,14 @@ public rsp_cfg
 
        call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
                                 t_matrix_bra, t_matrix_ket, &
-                                sdf_getdata(D, get_emptypert(), (/1/)), &
-                                inner_indices_size, contrib)
+                                D_unp, inner_indices_size, contrib)
 
        tmp = tmp + contrib
        contrib = 0.0
 
        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
-                       sdf_getdata(D, get_emptypert(), (/1/)) , &
-                       sdf_getdata(D, get_emptypert(), (/1/)) , property_size, contrib)
+                       D_unp, D_unp, property_size, contrib)
 
        tmp = tmp + 0.5*(contrib)
 
@@ -938,6 +936,14 @@ public rsp_cfg
 !  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
 !  merged_blk_info, property_size, prop_forcache)
+
+    D_unp = 0
+
+    do i = 1, num_p_tuples
+   
+       dens_tuple(i) = 0
+   
+    end do
 
     deallocate(merged_blk_info)
     deallocate(nfields)

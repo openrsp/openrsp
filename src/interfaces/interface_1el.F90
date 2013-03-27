@@ -1163,6 +1163,10 @@ contains
 
          end do
 
+         do i = 1, size(oneint_tmp)
+            oneint_tmp = 0
+         end do
+        
          deallocate(address_list)
          deallocate(tmp_index)
 

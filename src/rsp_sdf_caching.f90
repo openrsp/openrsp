@@ -11,7 +11,7 @@ module rsp_sdf_caching
   use rsp_field_tuple
   use rsp_indices_and_addressing
   use matrix_defop
-  use matrix_lowlevel, only: mat_init
+  use matrix_lowlevel, only: mat_init, mat_zero_like
 
   implicit none
 
@@ -86,8 +86,8 @@ module rsp_sdf_caching
     do i = 1, perturbed_matrix_size
     
        ! ASSUME CLOSED SHELL
-       call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol)
-       call mat_init_like_and_zero(data(i), new_element%data(i))
+!        call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol)
+       call mat_zero_like(data(i), new_element%data(i))
 
        new_element%data(i) = data(i)
 
@@ -283,10 +283,8 @@ module rsp_sdf_caching
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol)
-       call mat_init_like_and_zero(data(i), current_element%data(i))
-
-
+!        call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol)
+!        call mat_zero_like(data(i), current_element%data(i))
 
        current_element%data(i) = data(i)
 
