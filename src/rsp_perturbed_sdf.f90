@@ -10,7 +10,7 @@
 module rsp_perturbed_sdf
 
   use matrix_defop
-  use matrix_lowlevel, only: mat_init
+  use matrix_lowlevel, only: mat_init, mat_zero_like
   use rsp_contribs
   use rsp_field_tuple
   use rsp_indices_and_addressing
@@ -127,12 +127,12 @@ module rsp_perturbed_sdf
 
 
     ! ASSUME CLOSED SHELL
-    call mat_init(A, zeromat%nrow, zeromat%ncol)
-    call mat_init_like_and_zero(zeromat, A)
+!     call mat_init(A, zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, A)
 
     ! ASSUME CLOSED SHELL
-    call mat_init(B, zeromat%nrow, zeromat%ncol)
-    call mat_init_like_and_zero(zeromat, B)
+!     call mat_init(B, zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, B)
 
     call sdf_getdata_s(D, get_emptypert(), (/1/), A)
     call sdf_getdata_s(S, get_emptypert(), (/1/), B)
@@ -159,8 +159,8 @@ module rsp_perturbed_sdf
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(Sp(i), zeromat%nrow, zeromat%ncol)
-       call mat_init_like_and_zero(zeromat, Sp(i))
+!        call mat_init(Sp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, Sp(i))
 
     end do
 ! write(*,*) 'Sp a', Sp(1)%elms
@@ -183,14 +183,14 @@ module rsp_perturbed_sdf
     do i = 1, perturbed_matrix_size
 
        ! ASSUME CLOSED SHELL
-       call mat_init(Dp(i), zeromat%nrow, zeromat%ncol)
-       call mat_init_like_and_zero(zeromat, Dp(i))
+!        call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, Dp(i))
 
-       call mat_init(Dh(i), zeromat%nrow, zeromat%ncol)
-       call mat_init_like_and_zero(zeromat, Dh(i))
+!        call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, Dh(i))
 
-       call mat_init(Fp(i), zeromat%nrow, zeromat%ncol)
-       call mat_init_like_and_zero(zeromat, Fp(i))
+!        call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, Fp(i))
 
     end do
 
@@ -257,7 +257,7 @@ module rsp_perturbed_sdf
                           1, Fp(i:i))
 ! write(*,*) 'Fp b3', Fp(1)%elms
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
-            (/ sdf_getdata(D, get_emptypert(), (/1/)), Dp(i) /) , 1, Fp(i:i))
+            (/ A, Dp(i) /) , 1, Fp(i:i))
 ! write(*,*) 'Fp b4', Fp(1)%elms
 
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
@@ -267,11 +267,11 @@ module rsp_perturbed_sdf
        ! 4. Make right-hand side using Dp
 
        ! ASSUME CLOSED SHELL
-       call mat_init(RHS(1), zeromat%nrow, zeromat%ncol)
-       call mat_init_like_and_zero(zeromat, RHS(1))
+!        call mat_init(RHS(1), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, RHS(1))
 
-       call mat_init(X(1), zeromat%nrow, zeromat%ncol)
-       call mat_init_like_and_zero(zeromat, X(1))
+!        call mat_init(X(1), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call mat_zero_like(zeromat, X(1))
 
 ! write(*,*) 'RHS a', RHS(1)%elms
 
@@ -296,7 +296,7 @@ module rsp_perturbed_sdf
                           1, Fp(i:i))
 
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
-            (/ sdf_getdata(D, get_emptypert(), (/1/)), Dh(i) /) , 1, Fp(i:i))
+            (/ A, Dh(i) /) , 1, Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
 
@@ -354,6 +354,9 @@ end if
        Sp(i) = 0
 
     end do
+
+    A = 0
+    B = 0
 
     deallocate(derivative_structure)
     deallocate(ind)
@@ -526,11 +529,11 @@ end if
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     integer, allocatable, dimension(:,:) :: triang_indices_fp, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    type(matrix) :: zeromat
+    type(matrix) :: zeromat, D_unp
     type(matrix), allocatable, dimension(:) :: tmp, lower_order_contribution
     type(matrix), dimension(property_size) :: Fp
     type(f_l_cache) :: fock_lowerorder_cache
-    
+
 !    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
 !    ncouter = nc_only(total_num_perturbations, total_num_perturbations - & 
 !                      p_tuples(1)%n_perturbations, num_p_tuples - 1, &
@@ -608,6 +611,8 @@ end if
 !    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
 !                      p_tuples(1)%n_perturbations, pidoutersmall, &
 !                      ncarray, ncoutersmall, o_whichpert)
+
+    call sdf_getdata_s(D, get_emptypert(), (/1/), D_unp)
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
@@ -700,7 +705,7 @@ end if
 
           call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-               p_tuples(1)%pdim, (/ sdf_getdata(D, get_emptypert(), (/1/)), &
+               p_tuples(1)%pdim, (/ D_unp, &
                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
 
           if (p_tuples(1)%n_perturbations > 0) then
@@ -884,7 +889,7 @@ end if
 
           call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-               p_tuples(1)%pdim, sdf_getdata(D, get_emptypert(), (/1/) ), &
+               p_tuples(1)%pdim, D_unp, &
                property_size, Fp)
 
        end if
@@ -892,7 +897,7 @@ end if
        call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                       p_tuples(1)%pdim, &
-                      (/ sdf_getdata(D, get_emptypert(), (/1/)) /), &
+                      (/ D_unp /), &
                       property_size, Fp)
 
        ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
@@ -900,6 +905,29 @@ end if
        ! even with the extra complexity from the triangularization 
 
     end if
+
+    D_unp = 0
+
+    do i = 1, num_p_tuples
+   
+       dens_tuple(i) = 0
+   
+    end do
+
+    do i = 1, size(tmp)
+
+       tmp(i) = 0
+
+    end do
+
+    do i = 1, size(lower_order_contribution)
+
+       lower_order_contribution(i) = 0
+
+    end do
+
+    deallocate(dens_tuple)
+
 
     deallocate(nfields)
     deallocate(nblks_tuple)
