@@ -1,6 +1,8 @@
 ! commented out by Bin Gao, 2012-11-05
 ! radovan: probably because it made problems with MPI?
+#if !defined(PRG_DALTON)
 #define GRCONT_NOT_AVAILABLE
+#endif
 
 module interface_2el
 
@@ -46,6 +48,11 @@ contains
     type(ctr_arg) arg(1)
     real(8)       r
     integer       h, i, j, k, l, m, n, p, q, ncor
+#if !defined(GRCONT_NOT_AVAILABLE)
+    integer       lwork
+    real(8), allocatable :: f77_memory(:)
+#endif
+
 
     if (any(f == 'EL  ')) then
        ave = 0.0d0
@@ -78,12 +85,17 @@ contains
                                arg)
        tmp = 2.0d0*tmp
 #else
+       !fixme wild guess
+       lwork = 100000000
+       allocate(f77_memory(lwork))
+
        n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,1,1,1), ncor, .true., .false., &
                    1, 0, .true., .false., f77_memory(:n*n*2), 2)
+       deallocate(f77_memory)
 #endif
        ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
        deallocate(tmp)
@@ -126,12 +138,17 @@ contains
           end do
        end do
 #else
+       !fixme wild guess
+       lwork = 100000000
+       allocate(f77_memory(lwork))
+
        n = D1%nrow
        f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
        f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
        call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
                    tmp(:,:,1,1), ncor**2, .true., .false., &
                    2, 0, .true., .false., f77_memory(:n*n*2), 2)
+       deallocate(f77_memory)
 #endif
        h = 0
        do i = 1, ncor
