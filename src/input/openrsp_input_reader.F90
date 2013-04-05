@@ -2,7 +2,7 @@
 ! (c) Radovan Bast and Stefan Knecht
 ! licensed under the GNU Lesser General Public License
 
-module input_reader
+module openrsp_input_reader
 
    implicit none
 
