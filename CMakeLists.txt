@@ -32,7 +32,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_hrr.f90
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_one.f90
     ${PROJECT_SOURCE_DIR}/src/external-interest/module_interest_osr.f90
-    ${PROJECT_SOURCE_DIR}/src/input/input_reader.F90
+    ${PROJECT_SOURCE_DIR}/src/input/openrsp_input_reader.F90
     ${PROJECT_SOURCE_DIR}/src/input/openrsp_cfg.F90
     ${PROJECT_SOURCE_DIR}/src/input/parse_input.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/dalton_ifc.F90
