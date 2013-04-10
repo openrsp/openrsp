@@ -1,6 +1,6 @@
    subroutine read_openrsp_input(file_name, file_unit)
 
-      use input_reader
+      use openrsp_input_reader
 
       implicit none
 
@@ -55,7 +55,7 @@
 
    subroutine read_openrsp_section(word, kw_section)
 
-      use input_reader
+      use openrsp_input_reader
       use openrsp_cfg
 
       implicit none
