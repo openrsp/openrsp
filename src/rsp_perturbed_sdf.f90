@@ -512,7 +512,7 @@ end if
 
     implicit none
     
-    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket
+    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF) :: D
     type(matrix), allocatable, dimension(:) :: dens_tuple
@@ -565,6 +565,10 @@ end if
     allocate(dens_tuple(num_p_tuples))
     allocate(nfields(num_p_tuples))
     allocate(nblks_tuple(num_p_tuples))
+
+    call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
+    t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%n_perturbations)/)
+
 
     do i = 1, num_p_tuples
 
@@ -880,7 +884,7 @@ end if
           t_matrix_bra = get_emptypert()
           t_matrix_ket = get_emptypert()
 
-          call rsp_ovlint_t_matrix(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1), &
+          call rsp_ovlint_t_matrix(zeromat%nrow, t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                    t_matrix_bra, t_matrix_ket, property_size, Fp)
 
        end if

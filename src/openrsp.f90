@@ -1885,12 +1885,11 @@ file_id = '    '
 
     end if
 
-! MaR: This routine is untested
     if (openrsp_cfg_general_efishgcid) then
 
        
        ! FIND CORRECT VALUE: AROUND 137?
-       c0 = 1.0
+       c0 = 137.035999074
 
        fld_dum = 0.0
 
@@ -2018,9 +2017,18 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
        openrsp_cfg_real_freqs(k), openrsp_cfg_real_freqs(k), 0.0d0/)
 
+write(*,*) 'before sort'
+write(*,*) perturbation_tuple%plab
+write(*,*) perturbation_tuple%pid
+write(*,*) perturbation_tuple%freq
+
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
+write(*,*) 'after sort'
+write(*,*) perturbation_tuple%plab
+write(*,*) perturbation_tuple%pid
+write(*,*) perturbation_tuple%freq
 
        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
                            S_already=S_already, zeromat_already=zeromat_already, &
@@ -2083,7 +2091,7 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        open(unit = 258, file='rsp_tensor_Effqfww', status='old', action='read', iostat=ierr)
 
 ! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
-       do i = 1, 3
+       do i = 1, 6
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
@@ -2129,7 +2137,7 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        open(unit = 258, file='rsp_tensor_Effqfw2w', status='old', action='read', iostat=ierr)
 
 ! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
-       do i = 1, 3
+       do i = 1, 6
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
@@ -2147,16 +2155,26 @@ do k = 1, openrsp_cfg_nr_freq_tuples
 
 do i = 1, 3
 
+write(*,*) 'M', i, ' is', M_efishg(i, Effff, Effmfww, Effmfw2w)
+write(*,*) 'L', i, ' is', L_efishg(i, Effff, Effqfww, Effqfw2w)
+write(*,*) 'D', i, ' is', D_efishg(i, Effff)
+
  CID(i) = (1.0/c0) * ( M_efishg(i, Effff, Effmfww, Effmfw2w) + &
           openrsp_cfg_real_freqs(k) *  L_efishg(i, Effff, Effqfww, Effqfw2w) ) / &
-          ( D_efishg(setup_i, Effff) )
+          ( D_efishg(i, Effff) )
 
 end do
 
 
 ! Add output printing
 
-
+write(*,*) ' '
+write(*,*) 'CID values'
+write(*,*) '=========='
+write(*,*) 'CID(1) =', CID(1)
+write(*,*) 'CID(2) =', CID(2)
+write(*,*) 'CID(3) =', CID(3)
+write(*,*) ' '
 
 
 

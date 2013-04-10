@@ -2,7 +2,7 @@ module interface_1el
 
    use openrsp_cfg
    use matrix_defop
-   use matrix_lowlevel, only: mat_init
+   use matrix_lowlevel, only: mat_init, mat_zero_like
    use interface_molecule
    use interface_basis
    use interface_f77_memory
@@ -90,6 +90,7 @@ contains
       real(8), allocatable :: fdi(:,:)
       integer i
       integer order_geo                      !order of total geometric derivatives
+      integer order_mag                      !order of total magnetic derivatives
       integer num_atom                       !number of atoms
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
@@ -103,6 +104,10 @@ contains
 
       if (any(f == 'EL  ')) then
          ave = 0.0
+      else if (any(f == 'ELGR')) then
+         ave = 0.0
+
+
       else
 
       ! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
@@ -126,10 +131,12 @@ contains
 
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
+         ! gets the order of total geometric derivatives
+         order_mag = count(f=='MAG ')
 
-         if (order_geo /= nf) then
-            call quit("interface_1el_ovlave>> only geometric derivatives implemented!")
-         end if
+!          if (order_geo /= nf) then
+!             call quit("interface_1el_ovlave>> only geometric derivatives implemented!")
+!          end if
 
          ! sets the number of total geometric derivatives
          num_atom = get_nr_atoms()
@@ -142,14 +149,16 @@ contains
          if (ierr /= 0) call quit("interface_1el_ovlave>> failed to allocate val_expt!")
          val_expt = 0.0
 
+! MaR: Removing a currently wrong contribution to test other parts of code
+if (order_mag > 0) then
  
         ! MR: PARAMETERS FOR ADAPTED gen1int CALL BELOW ARE MAYBE SPECIFIED 
         ! INCORRECTLY (ALSO LAST ARG)
             ! calculates the expectaion values of overlap matrix
-            call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
+            call gen1int_host_get_expt(LONDON, INT_OVERLAP,       &
                                        0,                          &  !multipole moments
                                        0,                          &
-                                       0, 0, 0,                    &  !magnetic derivatives
+                                       0, 0, order_mag,            &  !magnetic derivatives
                                        0, 0, 0,                    &  !derivatives w.r.t. total RAM
                                        0, 0,                       &  !partial geometric derivatives
                                        order_geo,                  &  !total geometric derivatives
@@ -168,7 +177,45 @@ contains
             val_expt = -val_expt
             ! assigns the output average
 
+else
 
+        ! MR: PARAMETERS FOR ADAPTED gen1int CALL BELOW ARE MAYBE SPECIFIED 
+        ! INCORRECTLY (ALSO LAST ARG)
+            ! calculates the expectaion values of overlap matrix
+            call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
+                                       0,                          &  !multipole moments
+                                       0,                          &
+                                       0, 0, order_mag,            &  !magnetic derivatives
+                                       0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                       0, 0,                       &  !partial geometric derivatives
+                                       order_geo,                  &  !total geometric derivatives
+                                       order_geo,                  &
+                                       0, (/0/),                   &
+                                       UNIQUE_GEO,                 &
+                                       .false., .false., .false.,  &  !not implemented yet
+                                       1, (/DFD/), propsize,       &  !expectation values
+                                       val_expt, .false.,          &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
+                                       1, (/1, 1/),                &
+#endif
+                                       get_print_unit(), 0)
+            val_expt = -val_expt
+            ! assigns the output average
+
+end if
+
+! MaR: Quick fix to get addressing in order
+if (order_mag > 0) then
+
+! write(*,*) 'val expt', val_expt(:,1)
+
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(3,1)
+
+else
             ! MR: ASSIGN DATA TO ave
 
             num_order = sum(order_derv)+order_geo
@@ -201,7 +248,7 @@ contains
         
             deallocate(address_list)
             deallocate(tmp_index)
-    
+end if     
          deallocate(val_expt)
 
       end if
@@ -235,7 +282,7 @@ contains
       !> Fock matrices to which the half-differentiated overlap
       !> contribution is ADDED
       complex(8),  intent(inout):: ave(propsize)
-      complex(8) :: tmp_ave(propsize)
+      real(8) :: tmp_ave(propsize)
       type(matrix) :: D
       STOP 'interface_1el_ovlave_half_diff not implemented for LSDALTON. TK'
    end subroutine
@@ -265,15 +312,18 @@ contains
       !> Fock matrices to which the half-differentiated overlap
       !> contribution is ADDED
       complex(8),  intent(inout):: ave(propsize)
-      complex(8) :: tmp_ave(propsize)
+      real(8) :: tmp_ave(propsize)
       type(matrix) :: D
       !------------------------------------------------
       integer      i
 
 
            ! MaR: Only one magnetic field supported for now
-
            tmp_ave = 0.0
+
+if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
+
+
            ! MaR: THIS IS THE INT CALL STRUCTURE - ADAPT TO AVE AND REMEMBER D
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
            call gen1int_host_get_expt(LONDON, INT_OVERLAP,       &
@@ -304,6 +354,15 @@ contains
           ! Just magnetic to think about for now
           ave = tmp_ave
 
+! if ((count(fbra=='MAG ') == 1) .or. (count(fket=='MAG ') == 1)) then
+! 
+! write(*,*) 'fbra', fbra
+! 
+! write(*,*) tmp_ave
+! 
+! end if
+
+end if
    end subroutine
 #endif
 
@@ -361,9 +420,10 @@ contains
       !> output average
       complex(8),    intent(out) :: ave(propsize)
       !----------------------------------------------
-      integer order_mom                      !order of Cartesian multipole moments
+      integer order_mom, order_elgr          !order of Cartesian multipole moments
       integer num_mom                        !number of Cartesian multipole moments
       integer order_geo                      !order of total geometric derivatives
+      integer order_mag                      !order of total magnetic derivatives
       integer num_atom                       !number of atoms
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
@@ -378,6 +438,8 @@ contains
 
       ! gets the order of Cartesian multipole moments
       order_mom = count(f=='EL  ')
+      order_elgr = count(f=='ELGR')
+      order_mag = count(f=='MAG ')
 
       ! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
 
@@ -398,13 +460,19 @@ contains
 
       if (order_mom > 1) then
          ave = 0.0
+      else if ((order_elgr > 0) .AND. (order_mom > 0)) then
+         ave = 0.0
+      else if ((order_mag > 0) .AND. (order_mom > 0)) then
+         ave = 0.0
+      else if ((order_elgr > 1)) then
+         ave = 0.0
       else
 
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
-         if (order_mom+order_geo/=nf) then
-            call quit("interface_1el_oneave>> only electric and geometric perturbations implemented!")
-         end if
+!          if (order_mom+order_geo/=nf) then
+!             call quit("interface_1el_oneave>> only electric and geometric perturbations implemented!")
+!          end if
 
          ! sets the number of operators and derivatives
          num_mom = (order_mom+1)*(order_mom+2)/2
@@ -421,11 +489,12 @@ contains
          ! MR: PARAMETERS FOR ADAPTED gen1int CALLS BELOW ARE MAYBE SPECIFIED 
          ! INCORRECTLY (ALSO LAST ARG)
          ! electric perturbations
-         if (order_mom/=0) then
+         if (order_mom/=0 .or. order_elgr/=0) then
+
             call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
-                                       order_mom,                   &  !multipole moments
+                                       order_mom + 2*order_elgr,    &  !multipole moments
                                        0,                           &
-                                       0, 0, 0,                     &  !magnetic derivatives
+                                       0, 0, order_mag,             &  !magnetic derivatives
                                        0, 0, 0,                     &  !derivatives w.r.t. total RAM
                                        0, 0,                        &  !partial geometric derivatives
                                        order_geo,                   &  !total geometric derivatives
@@ -441,6 +510,29 @@ contains
                                        1, (/1, 1/),                &
 #endif
                                        get_print_unit(), 0)
+         else if (order_mag > 0) then
+
+            call gen1int_host_get_expt(LONDON, INT_CART_MULTIPOLE, &
+                                       0,    &  !multipole moments
+                                       0,                           &
+                                       0, 0, order_mag,             &  !magnetic derivatives
+                                       0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                       0, 0,                        &  !partial geometric derivatives
+                                       order_geo,                   &  !total geometric derivatives
+                                       order_geo,                   &
+                                       0, (/0/),                    &
+                                       UNIQUE_GEO,                  &
+                                       .false., .false., .false.,   &  !not implemented yet
+                                       1, (/D/), propsize,          &  !expectation values
+                                       val_expt, .false.,           &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),           &
+#else
+                                       1, (/1, 1/),                &
+#endif
+                                       get_print_unit(), 0)
+
+
          ! only geometric perturbations
          else
 
@@ -540,6 +632,25 @@ contains
 
          end if
 
+! MaR: Quick fix to get addressing in order
+if (order_mag > 0) then
+
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(3,1)
+
+
+elseif (order_elgr > 0) then
+
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(4,1)
+ave(4) = val_expt(3,1)
+ave(5) = val_expt(5,1)
+ave(6) = val_expt(6,1)
+
+else
+
          num_order = sum(order_derv)+order_geo
          ! gets the number of unique total geometric derivatives
          if (order_geo/=0) then
@@ -586,6 +697,9 @@ contains
 
          deallocate(address_list)
          deallocate(tmp_index)
+
+end if
+
          deallocate(val_expt)
 
       end if
@@ -833,14 +947,21 @@ contains
 
            ! MaR: Only one magnetic field supported for now
 
+if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
+
            do i = 1, propsize
-             if (.not.isdef(fock(i))) then
-                call mat_init(fock(i), nr_ao, nr_ao)
-             end if
-             if (.not.isdef(tmp_fock(i))) then
-                call mat_init(tmp_fock(i), nr_ao, nr_ao)
-             end if
+! MaR: It should be safe to remove this
+!              if (.not.isdef(fock(i))) then
+!                 call mat_init(fock(i), nr_ao, nr_ao)
+!              end if
+!              if (.not.isdef(tmp_fock(i))) then
+!                 call mat_init(tmp_fock(i), nr_ao, nr_ao)
+!              end if
+                 call mat_zero_like(fock(1), tmp_fock(i))
            end do
+
+
+
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
            call gen1int_host_get_int(LONDON, INT_OVERLAP,        &
                                      0,                          &  !multipole moments
@@ -868,6 +989,17 @@ contains
 
           ! MaR: Just magnetic field for now
           fock = tmp_fock
+
+
+
+do i = 1, propsize
+
+! write(*,*) tmp_fock(i)%elms
+tmp_fock(i) = 0
+
+end do
+
+end if
 
    end subroutine
 #endif

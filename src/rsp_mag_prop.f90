@@ -119,7 +119,8 @@
     implicit none
 
     integer :: setup_i, nu, tau, pi, rho, sigma, pisigma_offset, nusigma_offset
-    complex(8), dimension(3,3,3,3) :: Effff, Effqfww, Effqfw2w
+    complex(8), dimension(3,3,3,3) :: Effff
+    complex(8), dimension(3,3,6,3) :: Effqfww, Effqfw2w
     real(8), dimension(3,3) :: A
     real(8), dimension(3,5) :: C
     complex(8) :: L_efishg
