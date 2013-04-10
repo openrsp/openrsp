@@ -381,11 +381,16 @@ end if
 
        do j = i + 1, p_tuple_st%n_perturbations
 
-          if (p_tuple_st%pdim(j) > current_minimum_pdim) then
+! write(*,*) 'j', j
+
+          if (p_tuple_st%pdim(j) >= current_minimum_pdim) then
 
              if (p_tuple_st%pdim(j) == current_minimum_pdim) then
 
-                if (lle(p_tuple_st%plab(j), current_minimum_plab) .EQV. .TRUE.) then
+                if (lge(p_tuple_st%plab(j), current_minimum_plab) .EQV. .TRUE.) then
+
+
+! write(*,*) p_tuple_st%plab(j), 'lt', current_minimum_plab
 
                    if (p_tuple_st%plab(j) == current_minimum_plab) then
 

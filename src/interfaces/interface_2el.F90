@@ -59,6 +59,11 @@ contains
        return
     end if
 
+    if (any(f == 'ELGR')) then
+       ave = 0.0d0
+       return
+    end if
+
     if (nf==0) then
 
        ! contract second density to Fock matrix, then trace with first
@@ -71,7 +76,7 @@ contains
 
 
 
-    else if (nf==1 .and. f(1)=='GEO ') then
+    else if (nf==1 .and. all(f==(/'GEO '/))) then
 
 #ifdef PRG_DALTON
        ncor = 3 * get_nr_atoms()
@@ -112,8 +117,38 @@ contains
        deallocate(real_ave)
 #endif /* ifdef PRG_DIRAC */
 
+    else if (nf==1 .and. all(f==(/'MAG '/))) then
 
+#ifdef PRG_DALTON
+       
+       allocate(tmp(3,1,1,1))
+       tmp = 0.0
+#ifdef GRCONT_NOT_AVAILABLE
 
+write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
+
+#else
+       !fixme wild guess
+       lwork = 100000000
+       allocate(f77_memory(lwork))
+
+       n = D1%nrow
+       f77_memory(     :n*n)   = reshape(D1%elms,(/n*n/))
+       f77_memory(n*n+1:n*n*2) = reshape(D2%elms,(/n*n/))
+       call GRCONT(f77_memory(n*n*2+1:), size(f77_memory)-n*n*2, &
+                   tmp(:,1,1,1), 3, .false., .true., &
+                   1, 0, .true., .false., f77_memory(:n*n*2), 2)
+       deallocate(f77_memory)
+#endif
+       ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
+! write(*,*) 'tmp from twoave', tmp
+       deallocate(tmp)
+
+#else
+
+write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
+
+#endif /* ifdef PRG_DALTON */
 
 
 
@@ -714,7 +749,7 @@ contains
        return
     end if
 
-    if (nf == 1 .and. f(1) == 'MAG ') then
+    if (nf == 1 .and. all(f==(/'MAG '/))) then
        nz = 1
 #ifdef PRG_DIRAC
        nz = 4
@@ -804,7 +839,7 @@ contains
           call interface_scf_get_g(dens, A)
           fock(1) = fock(1) + A
           A = 0
-       else if (nf==1 .and. f(1)=='GEO ') then
+       else if (nf==1 .and. all(f==(/'MAG '/))) then
           n = nr_ao
           do i = 0, nc(1)-1
              if (iszero(fock(i+1))) then

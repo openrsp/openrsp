@@ -12,7 +12,7 @@
 module rsp_contribs
 
   use matrix_defop
-  use matrix_lowlevel, only: mat_init
+  use matrix_lowlevel, only: mat_init, mat_zero_like
   use interface_molecule
   use interface_io
   use interface_xc
@@ -330,12 +330,6 @@ contains
 
 
 
-
-
-
-
-
-
 !   ! MaR: This routine not tested - awaiting development in integral code
 !   !> Compute half-differentiated overlap contribution to property
   recursive subroutine rsp_ovlave_t_matrix(num_fields, fields, bra, &
@@ -347,16 +341,17 @@ contains
     integer :: ave_offset, tmp_result_offset, merged_triang_size, tmp_ave_size
     integer :: total_num_perturbations
     type(matrix) :: D
-    type(p_tuple) :: fields, bra, ket, merged_p_tuple
+    type(p_tuple) :: fields, bra, ket, merged_p_tuple, bra_static, ket_static
     integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
-    complex(8), dimension(propsize) :: ave, tmp_ave
+    complex(8), dimension(propsize) :: ave
+    complex(8), allocatable, dimension(:) :: tmp_ave
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
                                           blk_sizes_merged, translated_index
     integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
 
 
-under_construction = 1
+under_construction = 0
 
 if (under_construction == 1) then
 
@@ -374,24 +369,28 @@ else
             bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), D, propsize, ave)
 
     else
+   
+! write(*,*) 'bra d 1', bra%n_perturbations, bra%plab, bra%freq
+! write(*,*) 'ket d 1', ket%n_perturbations, ket%plab, ket%freq
 
-       tmp_ave = 0.0
 
-       merged_p_tuple = merge_p_tuple(bra, ket)
+       merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
 
        ! Make frequency independent blocks for bra/ket
+call p_tuple_p1_cloneto_p2(bra, bra_static)
+call p_tuple_p1_cloneto_p2(ket, ket_static)
 
-       bra%freq = 0.0
-       ket%freq = 0.0
+       bra_static%freq = 0.0
+       ket_static%freq = 0.0
 
        allocate(nfields(2))
        allocate(nblks_tuple(2))
     
-       nfields(1) = bra%n_perturbations
-       nblks_tuple(1) = get_num_blks(bra)
+       nfields(1) = bra_static%n_perturbations
+       nblks_tuple(1) = get_num_blks(bra_static)
 
-       nfields(2) = ket%n_perturbations
-       nblks_tuple(2) = get_num_blks(ket)
+       nfields(2) = ket_static%n_perturbations
+       nblks_tuple(2) = get_num_blks(ket_static)
                
        total_num_perturbations = sum(nfields)
 
@@ -400,13 +399,13 @@ else
        allocate(blk_sizes(2, total_num_perturbations))
        allocate(blk_sizes_merged(total_num_perturbations))
     
-       blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra)
+       blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra_static)
        blks_tuple_triang_size(1) = get_triangulated_size(nblks_tuple(1), &
                                    blks_tuple_info(1, 1:nblks_tuple(1), :))
        blk_sizes(1, 1:nblks_tuple(1)) = get_triangular_sizes(nblks_tuple(1), &
        blks_tuple_info(1,1:nblks_tuple(1),2), blks_tuple_info(1,1:nblks_tuple(1),3))
 
-       blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket)
+       blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket_static)
        blks_tuple_triang_size(2) = get_triangulated_size(nblks_tuple(2), &
                                    blks_tuple_info(2, 1:nblks_tuple(2), :))
        blk_sizes(2, 1:nblks_tuple(2)) = get_triangular_sizes(nblks_tuple(2), &
@@ -421,19 +420,24 @@ else
        ! MaR: Not completely sure if this is the correct size
        tmp_ave_size = product(blks_tuple_triang_size)
 
-       call interface_1el_ovlave_half_diff(bra%n_perturbations, bra%plab, &
-            (/(j/j, j = 1, bra%n_perturbations)/), bra%pdim, ket%n_perturbations, ket%plab, &
-            (/(j/j, j = 1, ket%n_perturbations)/), ket%pdim, nblks_tuple, &
+       allocate(tmp_ave(tmp_ave_size))
+       tmp_ave = 0.0
+
+
+       call interface_1el_ovlave_half_diff(bra%n_perturbations, bra_static%plab, &
+            (/(j/j, j = 1, bra_static%n_perturbations)/), bra_static%pdim, &
+            ket_static%n_perturbations, ket_static%plab, &
+            (/(j/j, j = 1, ket_static%n_perturbations)/), ket_static%pdim, nblks_tuple, &
             blks_tuple_info, blk_sizes, D, tmp_ave_size, tmp_ave)
 
        k = 1
-       do j = 1, bra%n_perturbations
-          pids_current_contribution(k) = bra%pid(j)
+       do j = 1, bra_static%n_perturbations
+          pids_current_contribution(k) = bra_static%pid(j)
           k = k + 1
        end do
 
-       do j = 1, ket%n_perturbations
-          pids_current_contribution(k) = ket%pid(j)
+       do j = 1, ket_static%n_perturbations
+          pids_current_contribution(k) = ket_static%pid(j)
           k = k + 1
        end do
 
@@ -450,12 +454,15 @@ else
        allocate(merged_indices(merged_triang_size, total_num_perturbations))
        allocate(translated_index(total_num_perturbations))
 
-
+! write(*,*) 'a'
        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
             merged_triang_size, merged_indices)
+! write(*,*) 'b'
+
+! write(*,*) 'tmp result', tmp_ave
 
        do i = 1, size(merged_indices, 1)
-
+! write(*,*) 'c', i
           ave_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
                    (/sum(nfields)/), &
                    (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
@@ -470,7 +477,7 @@ else
 ! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
 ! because of no frequencies.
     
-          if (bra%n_perturbations == 0) then
+          if (bra_static%n_perturbations == 0) then
     
              tmp_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(2), &
@@ -478,7 +485,7 @@ else
                                  blk_sizes(2,:), blks_tuple_triang_size(2), & 
                                  (/ translated_index(:) /))
     
-          elseif (ket%n_perturbations == 0) then
+          elseif (ket_static%n_perturbations == 0) then
     
              tmp_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(1), &
@@ -495,12 +502,15 @@ else
                                  (/ translated_index(:) /))
     
           end if
-    
+
+
+
           ave(ave_offset) = ave(ave_offset) + &
           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_ave(tmp_result_offset)
 
        end do
 
+       deallocate(tmp_ave)
        deallocate(merged_indices)
        deallocate(translated_index)
        deallocate(nfields)
@@ -595,16 +605,17 @@ end if
     integer :: nr_ao, num_fields, propsize, i, j, k, under_construction, merged_nblks
     integer :: fock_offset, int_result_offset, merged_triang_size, tmp_fock_size
     integer :: total_num_perturbations
-    type(p_tuple) :: fields, bra, ket, merged_p_tuple
+    type(p_tuple) :: fields, bra, ket, merged_p_tuple, tester, bra_static, ket_static
     integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
-    type(matrix), dimension(propsize) :: fock, tmp_fock
+    type(matrix), dimension(propsize) :: fock
+    type(matrix), allocatable, dimension(:) :: tmp_fock
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
                                           blk_sizes_merged, translated_index
     integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
 
 
-under_construction = 1
+under_construction = 0
 
 if (under_construction == 1) then
 
@@ -615,36 +626,52 @@ else
 
     if (num_fields > 0) then
 
+! write(*,*) 'current fields', fields%n_perturbations, fields%plab, fields%freq
+! write(*,*) 'current bra', bra%n_perturbations, bra%plab, bra%freq
+! write(*,*) 'current ket', ket%n_perturbations, ket%plab, ket%freq
+
+tester = p_tuple_getone(fields, 1)
+! write(*,*) 'tester a', tester%n_perturbations, tester%plab, tester%freq
+
        call rsp_ovlint_t_matrix(nr_ao, num_fields - 1, p_tuple_remove_first(fields), &
             merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, propsize, fock)
+
+tester = p_tuple_remove_first(fields)
+tester = p_tuple_getone(fields, 1)
+! write(*,*) 'ket b 1', ket%n_perturbations, ket%plab, ket%freq
+! write(*,*) 'tester b 1', tester%n_perturbations, tester%plab, tester%freq
+tester = merge_p_tuple(ket, p_tuple_getone(fields, 1))
+! write(*,*) 'tester b 2', tester%n_perturbations, tester%plab, tester%freq
 
        call rsp_ovlint_t_matrix(nr_ao, num_fields - 1, p_tuple_remove_first(fields), &
             bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), propsize, fock)
 
+tester = p_tuple_getone(fields, 1)
+! write(*,*) 'tester c', tester%n_perturbations, tester%plab, tester%freq
+
     else
 
-       do i = 1, propsize
-          
-          tmp_fock(i) = 0 * fock(1)
-          call mat_ensure_alloc(tmp_fock(i))
+! write(*,*) 'bra d 1', bra%n_perturbations, bra%plab, bra%freq
+! write(*,*) 'ket d 1', ket%n_perturbations, ket%plab, ket%freq
 
-       end do
 
-       merged_p_tuple = merge_p_tuple(bra, ket)
+       merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
 
        ! Make frequency independent blocks for bra/ket
+call p_tuple_p1_cloneto_p2(bra, bra_static)
+call p_tuple_p1_cloneto_p2(ket, ket_static)
 
-       bra%freq = 0.0
-       ket%freq = 0.0
+       bra_static%freq = 0.0
+       ket_static%freq = 0.0
 
        allocate(nfields(2))
        allocate(nblks_tuple(2))
     
-       nfields(1) = bra%n_perturbations
-       nblks_tuple(1) = get_num_blks(bra)
+       nfields(1) = bra_static%n_perturbations
+       nblks_tuple(1) = get_num_blks(bra_static)
 
-       nfields(2) = ket%n_perturbations
-       nblks_tuple(2) = get_num_blks(ket)
+       nfields(2) = ket_static%n_perturbations
+       nblks_tuple(2) = get_num_blks(ket_static)
                
        total_num_perturbations = sum(nfields)
 
@@ -653,13 +680,13 @@ else
        allocate(blk_sizes(2, total_num_perturbations))
        allocate(blk_sizes_merged(total_num_perturbations))
     
-       blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra)
+       blks_tuple_info(1, :, :) = get_blk_info(nblks_tuple(1), bra_static)
        blks_tuple_triang_size(1) = get_triangulated_size(nblks_tuple(1), &
                                    blks_tuple_info(1, 1:nblks_tuple(1), :))
        blk_sizes(1, 1:nblks_tuple(1)) = get_triangular_sizes(nblks_tuple(1), &
        blks_tuple_info(1,1:nblks_tuple(1),2), blks_tuple_info(1,1:nblks_tuple(1),3))
 
-       blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket)
+       blks_tuple_info(2, :, :) = get_blk_info(nblks_tuple(2), ket_static)
        blks_tuple_triang_size(2) = get_triangulated_size(nblks_tuple(2), &
                                    blks_tuple_info(2, 1:nblks_tuple(2), :))
        blk_sizes(2, 1:nblks_tuple(2)) = get_triangular_sizes(nblks_tuple(2), &
@@ -674,19 +701,28 @@ else
        ! MaR: Not completely sure if this is the correct size
        tmp_fock_size = product(blks_tuple_triang_size)
 
-       call interface_1el_ovlint_half_diff(nr_ao, bra%n_perturbations, bra%plab, &
-            (/(j/j, j = 1, bra%n_perturbations)/), bra%pdim, ket%n_perturbations, ket%plab, &
-            (/(j/j, j = 1, ket%n_perturbations)/), ket%pdim, nblks_tuple, &
+       allocate(tmp_fock(tmp_fock_size))
+
+       do i = 1, tmp_fock_size
+          
+          call mat_zero_like(fock(1), tmp_fock(i))
+
+       end do
+
+       call interface_1el_ovlint_half_diff(nr_ao, bra%n_perturbations, bra_static%plab, &
+            (/(j/j, j = 1, bra_static%n_perturbations)/), bra_static%pdim, &
+            ket_static%n_perturbations, ket_static%plab, &
+            (/(j/j, j = 1, ket_static%n_perturbations)/), ket_static%pdim, nblks_tuple, &
             blks_tuple_info, blk_sizes, tmp_fock_size, tmp_fock)
 
        k = 1
-       do j = 1, bra%n_perturbations
-          pids_current_contribution(k) = bra%pid(j)
+       do j = 1, bra_static%n_perturbations
+          pids_current_contribution(k) = bra_static%pid(j)
           k = k + 1
        end do
 
-       do j = 1, ket%n_perturbations
-          pids_current_contribution(k) = ket%pid(j)
+       do j = 1, ket_static%n_perturbations
+          pids_current_contribution(k) = ket_static%pid(j)
           k = k + 1
        end do
 
@@ -703,12 +739,14 @@ else
        allocate(merged_indices(merged_triang_size, total_num_perturbations))
        allocate(translated_index(total_num_perturbations))
 
-
+! write(*,*) 'a'
        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
             merged_triang_size, merged_indices)
+! write(*,*) 'b'
+
 
        do i = 1, size(merged_indices, 1)
-
+! write(*,*) 'c', i
           fock_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
                    (/sum(nfields)/), &
                    (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
@@ -723,7 +761,7 @@ else
 ! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
 ! because of no frequencies.
     
-          if (bra%n_perturbations == 0) then
+          if (bra_static%n_perturbations == 0) then
     
              int_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(2), &
@@ -731,7 +769,7 @@ else
                                  blk_sizes(2,:), blks_tuple_triang_size(2), & 
                                  (/ translated_index(:) /))
     
-          elseif (ket%n_perturbations == 0) then
+          elseif (ket_static%n_perturbations == 0) then
     
              int_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(1), &
@@ -748,12 +786,21 @@ else
                                  (/ translated_index(:) /))
     
           end if
-    
+
+!     write(*,*) 'fock_offset', fock_offset
+! write(*,*) 'int result offset', int_result_offset
+! write(*,*) 'fock elms', fock(fock_offset)%elms
+! write(*,*) 'tmp fock elms', tmp_fock(int_result_offset)%elms
+! write(*,*) 'fock row col', fock(fock_offset)%nrow, fock(fock_offset)%ncol
+! write(*,*) 'tmp fock row col', tmp_fock(int_result_offset)%nrow, tmp_fock(int_result_offset)%ncol
+
+
+
           fock(fock_offset) = fock(fock_offset) + &
           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
 
        end do
-
+! write(*,*) 'ket d 3', ket%n_perturbations, ket%plab, ket%freq
        deallocate(merged_indices)
        deallocate(translated_index)
        deallocate(nfields)
@@ -763,6 +810,15 @@ else
        deallocate(blk_sizes)
        deallocate(blk_sizes_merged)
        deallocate(merged_blk_info)
+
+
+       do i = 1, tmp_fock_size
+          
+          tmp_fock(i) = 0
+
+       end do
+
+       deallocate(tmp_fock)
 
     end if
 

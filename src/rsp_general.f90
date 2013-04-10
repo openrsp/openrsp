@@ -518,7 +518,7 @@ public rsp_cfg
     implicit none
 
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
-    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket
+    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
     type(SDF) :: D
     type(property_cache) :: cache
     type(matrix) :: D_unp
@@ -560,6 +560,9 @@ public rsp_cfg
  !   pidoutersmall = get_pidoutersmall(total_num_perturbations - &
  !                   p_tuples(1)%n_perturbations, num_p_tuples - 1, &
  !                   p_tuples(2:num_p_tuples))
+
+    call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
+    t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%n_perturbations)/)
 
     allocate(o_whichpert(total_num_perturbations))
     allocate(o_wh_forave(total_num_perturbations))
@@ -705,7 +708,7 @@ public rsp_cfg
              t_matrix_bra = get_emptypert()
              t_matrix_ket = get_emptypert()
 
-             call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
+             call rsp_ovlave_t_matrix(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                       t_matrix_bra, t_matrix_ket, &
                                       D_unp, inner_indices_size, contrib)
 
@@ -715,7 +718,7 @@ public rsp_cfg
              t_matrix_bra = get_emptypert()
              t_matrix_ket = get_emptypert()
 
-             call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
+             call rsp_ovlave_t_matrix(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                       t_matrix_bra, t_matrix_ket, &
                                       dens_tuple(2), inner_indices_size, contrib)
    
@@ -899,7 +902,7 @@ public rsp_cfg
        t_matrix_bra = get_emptypert()
        t_matrix_ket = get_emptypert()
 
-       call rsp_ovlave_t_matrix(p_tuples(1)%n_perturbations, p_tuples(1), &
+       call rsp_ovlave_t_matrix(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                 t_matrix_bra, t_matrix_ket, &
                                 D_unp, inner_indices_size, contrib)
 
