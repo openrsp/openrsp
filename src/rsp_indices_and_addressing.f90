@@ -309,7 +309,7 @@ module rsp_indices_and_addressing
                          blks_info(i,1:nblks_tuple(i),:), &
                          blk_sizes(i, 1:nblks_tuple(i)),  &
                          inds(k:k + nfields(i) - 1))  - 1 )* &
-                         product(blks_sizes(i:ntuple))/blks_sizes(i)
+                         (product(blks_sizes(i:ntuple))/blks_sizes(i))
        k = k + nfields(i)
 
     end do
