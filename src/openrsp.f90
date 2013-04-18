@@ -212,11 +212,12 @@ end subroutine
     type(matrix) :: zeromat_already
     type(SDF), pointer :: F_already, D_already, S_already
     real(8), dimension(3) :: fld_dum
+    real(8), dimension(3*num_atoms) :: geo_dum
     real(8), dimension(3) :: dm
     real(8), dimension(3) :: dm_orig
     character(len=4) :: file_id
     character(20) :: format_line
-    integer       :: n_nm, h, j, k, m, ierr
+    integer       :: n_nm, h, j, k, m, n, ierr
     real(8), allocatable, dimension(:) :: nm_freq, nm_freq_b
     real(8), allocatable, dimension(:) :: hr_intensities_hv, hr_intensities_vv
     real(8), allocatable, dimension(:,:) :: T
@@ -226,7 +227,13 @@ end subroutine
     complex(8), dimension(3) :: CID
     complex(8), allocatable, dimension(:,:) :: egf_cart, egf_nm, ff_pv
     complex(8), allocatable, dimension(:,:,:) :: egff_cart, egff_nm, fff_pv
+    complex(8), allocatable, dimension(:,:,:) :: eggf_cart, eggf_nm, eggg_cart, eggg_nm
     complex(8), allocatable, dimension(:,:,:,:) :: egfff_cart, egfff_nm, ffff_pv
+    complex(8), allocatable, dimension(:,:,:,:) :: eggff_cart, eggff_nm, egggf_cart, egggf_nm
+    complex(8), allocatable, dimension(:,:,:,:) :: egggg_cart, egggg_nm
+    complex(8), allocatable, dimension(:,:,:,:,:) :: eggfff_cart, eggfff_nm
+    complex(8), allocatable, dimension(:,:,:,:,:) :: egggff_cart, egggff_nm
+    complex(8), allocatable, dimension(:,:,:,:,:,:) :: egggfff_cart, egggfff_nm
     complex(8), dimension(3,3,3,3) :: Effff, Effmfww, Effmfw2w
     complex(8), dimension(3,3,6,3) :: Effqfww, Effqfw2w
 
@@ -812,6 +819,207 @@ file_id = '    '
 
        egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
 
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
+       ! Calculate other properties for given orders of anharmonicity
+
+       allocate(eggf_cart(3*num_atoms, 3*num_atoms, 3))
+       allocate(eggf_nm(n_nm, n_nm, 3))
+       allocate(egggf_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3))
+       allocate(egggf_nm(n_nm, n_nm, n_nm, 3))
+       allocate(eggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms))
+       allocate(eggg_nm(n_nm, n_nm, n_nm))
+       allocate(egggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms))
+       allocate(egggg_nm(n_nm, n_nm, n_nm, n_nm))
+
+       if (openrsp_cfg_general_pv_el_anh > 0) then
+
+          ! Calculate Hessian of dipole moment
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggf')
+
+          open(unit = 258, file='rsp_tensor_Eggf', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                read(258,*) fld_dum
+                eggf_cart(i, j, :) = fld_dum
+             end do
+          end do
+
+          close(258)
+
+          eggf_nm = trans_cartnc_1w2d(3*num_atoms, n_nm, eggf_cart, T(:,1:n_nm))
+
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+          if (openrsp_cfg_general_pv_el_anh > 1) then
+
+             ! Calculate cubic force field of dipole moment
+
+             kn = (/1,2/)
+
+             perturbation_tuple%n_perturbations = 4
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggf')
+
+             open(unit = 258, file='rsp_tensor_Egggf', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      read(258,*) fld_dum
+                      egggf_cart(i, j, k, :) = fld_dum
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggf_nm = trans_cartnc_1w3d(3*num_atoms, n_nm, egggf_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+
+          end if
+
+       end if
+
+       if (openrsp_cfg_general_pv_mech_anh > 0) then
+
+          ! Calculate cubic force field
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggg')
+
+          open(unit = 258, file='rsp_tensor_Eggg', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                read(258,*) geo_dum
+                eggg_cart(i, j, :) = geo_dum
+             end do
+          end do
+
+          close(258)
+
+          eggg_nm = trans_cartnc_0w3d(3*num_atoms, n_nm, eggg_cart, T(:,1:n_nm))
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+          if (openrsp_cfg_general_pv_mech_anh > 1) then
+
+             ! Calculate quartic force field
+
+             kn = (/1,2/)
+
+             perturbation_tuple%n_perturbations = 4
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggg')
+
+             open(unit = 258, file='rsp_tensor_Egggg', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      read(258,*) geo_dum
+                      egggg_cart(i, j, k, :)  = geo_dum
+! write(*,*) 'i j k', egggg_cart(i,j,k,:)
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggg_nm = trans_cartnc_0w4d(3*num_atoms, n_nm, egggg_cart, T(:,1:n_nm))
+
+! write(*,*) 'egggg_nm', egggg_nm
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+          end if
+
+       end if
+
+! End calculation of anharmonicity-related response properties
 
        ! Normalize dipole moment - follows procedure by AJT
 
@@ -831,8 +1039,23 @@ file_id = '    '
 
           ! Calculate PV contribution to polarizability
 
-          ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(k), &
-                           openrsp_cfg_real_freqs(k) /), dm_1d = egf_nm)
+          if (openrsp_cfg_general_pv_total_anh > 0) then
+
+             ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(k), &
+                     openrsp_cfg_real_freqs(k) /), dm_1d = egf_nm, dm_2d = eggf_nm, &
+                     dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                     rst_order = openrsp_cfg_general_pv_total_anh)
+
+          else
+
+             ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0)* openrsp_cfg_real_freqs(k), &
+                     openrsp_cfg_real_freqs(k) /), dm_1d = egf_nm, dm_2d = eggf_nm, &
+                     dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                     rst_elec=openrsp_cfg_general_pv_el_anh, &
+                     rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+          end if
+
 
           if (k == 1) then
 
@@ -846,6 +1069,16 @@ file_id = '    '
 
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
+          write(259,*) ' '
+          if (openrsp_cfg_general_pv_total_anh > 0) then
+             write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+             openrsp_cfg_general_pv_total_anh
+          else
+             write(259,*) 'Order of electrical anharmonicity:', &
+             openrsp_cfg_general_pv_el_anh
+             write(259,*) 'Order of mechanical anharmonicity:', &
+             openrsp_cfg_general_pv_mech_anh
+          end if
           write(259,*) ' '
           write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
           write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
@@ -890,11 +1123,6 @@ file_id = '    '
        deallocate(ff_pv)
        deallocate(egf_cart)
        deallocate(egf_nm)
-
-       deallocate(perturbation_tuple%pdim)
-       deallocate(perturbation_tuple%plab)
-       deallocate(perturbation_tuple%pid)
-       deallocate(perturbation_tuple%freq)
 
     end if
 
@@ -1006,8 +1234,313 @@ file_id = '    '
 
        close(258)
 
+
+
        egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
 
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+       ! Calculate other properties for given orders of anharmonicity
+
+
+       allocate(eggf_cart(3*num_atoms, 3*num_atoms, 3))
+       allocate(eggf_nm(n_nm, n_nm, 3))
+       allocate(eggff_cart(3*num_atoms, 3*num_atoms, 3, 3))
+       allocate(eggff_nm(n_nm, n_nm, 3, 3))
+       allocate(egggf_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3))
+       allocate(egggf_nm(n_nm, n_nm, n_nm, 3))
+       allocate(egggff_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3))
+       allocate(egggff_nm(n_nm, n_nm, n_nm, 3, 3))
+       allocate(eggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms))
+       allocate(eggg_nm(n_nm, n_nm, n_nm))
+       allocate(egggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms))
+       allocate(egggg_nm(n_nm, n_nm, n_nm, n_nm))
+
+
+       if (openrsp_cfg_general_pv_el_anh > 0) then
+
+          ! Calculate Hessian of dipole moment
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggf')
+
+          open(unit = 258, file='rsp_tensor_Eggf', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                read(258,*) fld_dum
+! write(*,*) 'i j', i, j, 'fld dum', fld_dum
+                eggf_cart(i, j, :) = fld_dum
+             end do
+          end do
+
+          close(258)
+
+! write(*,*) 'eggf_cart', eggf_cart
+! write(*,*) 'T before', T(:,1:n_nm)
+          eggf_nm = trans_cartnc_1w2d(3*num_atoms, n_nm, eggf_cart, T(:,1:n_nm))
+
+! write(*,*) 'eggf_nm', eggf_nm
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+          ! Calculate Hessian of polarizability
+
+          kn = (/1,2/)
+
+          perturbation_tuple%n_perturbations = 4
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggff')
+
+          open(unit = 258, file='rsp_tensor_Eggff', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                do k = 1, 3
+                   read(258,*) fld_dum
+                   eggff_cart(i, j, k, :) = (-1.0) * fld_dum
+                end do
+             end do
+          end do
+
+! write(*,*) 'eggff_nm', eggff_nm
+
+          close(258)
+
+          eggff_nm = trans_cartnc_2w2d(3*num_atoms, n_nm, eggff_cart, T(:,1:n_nm))
+
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+          if (openrsp_cfg_general_pv_el_anh > 1) then
+
+             ! Calculate cubic force field of dipole moment
+
+             kn = (/1,2/)
+
+             perturbation_tuple%n_perturbations = 4
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggf')
+
+             open(unit = 258, file='rsp_tensor_Egggf', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      read(258,*) fld_dum
+                      egggf_cart(i, j, k, :) = fld_dum
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggf_nm = trans_cartnc_1w3d(3*num_atoms, n_nm, egggf_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+
+             ! Calculate cubic force field of polarizability
+
+             kn = (/2,2/)
+
+             perturbation_tuple%n_perturbations = 5
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggff')
+
+             open(unit = 258, file='rsp_tensor_Egggff', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      do m = 1, 3
+                         read(258,*) fld_dum
+                         egggff_cart(i, j, k, m, :) = (-1.0) * fld_dum
+                      end do
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggff_nm = trans_cartnc_2w3d(3*num_atoms, n_nm, egggff_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+
+          end if
+
+       end if
+
+       if (openrsp_cfg_general_pv_mech_anh > 0) then
+
+          ! Calculate cubic force field
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggg')
+
+          open(unit = 258, file='rsp_tensor_Eggg', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                read(258,*) geo_dum
+                eggg_cart(i, j, :) = geo_dum
+! write(*,*) 'i j', i, j, 'geo dum', geo_dum
+! write(*,*) 'i j', i, j, 'eggg cart', eggg_cart(i, j, :)
+             end do
+          end do
+
+          close(258)
+
+! write(*,*) 'eggg_nm', eggg_cart
+
+          eggg_nm = trans_cartnc_0w3d(3*num_atoms, n_nm, eggg_cart, T(:,1:n_nm))
+
+! write(*,*) 'eggg_nm', eggg_nm
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+          if (openrsp_cfg_general_pv_mech_anh > 1) then
+
+             ! Calculate quartic force field
+
+             kn = (/1,2/)
+
+             perturbation_tuple%n_perturbations = 4
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggg')
+
+             open(unit = 258, file='rsp_tensor_Egggg', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      read(258,*) geo_dum
+                      egggg_cart(i, j, k, :)  = geo_dum
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggg_nm = trans_cartnc_0w4d(3*num_atoms, n_nm, egggg_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+
+          end if
+
+       end if
+
+! End calculation of anharmonicity-related response properties
 
        ! Normalize dipole moment - follows procedure by AJT
 
@@ -1030,9 +1563,26 @@ file_id = '    '
 
              ! Calculate PV contribution to polarizability
 
-             ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
-                              openrsp_cfg_real_freqs((k - 1) * 2 + h), &
-                              openrsp_cfg_real_freqs((k - 1) * 2 + h) /), dm_1d = egf_nm) 
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
+                        openrsp_cfg_real_freqs((k - 1) * 2 + h), &
+                        openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
+                        dm_1d = egf_nm, dm_2d = eggf_nm, &
+                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                        rst_order = openrsp_cfg_general_pv_total_anh)
+
+             else
+
+                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
+                        openrsp_cfg_real_freqs((k - 1) * 2 + h), &
+                        openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
+                        dm_1d = egf_nm, dm_2d = eggf_nm, &
+                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                        rst_elec=openrsp_cfg_general_pv_el_anh, &
+                        rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+             end if
 
 
              if (k * h == 1) then
@@ -1047,6 +1597,16 @@ file_id = '    '
 
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
+             write(259,*) ' '
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+                write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+                openrsp_cfg_general_pv_total_anh
+             else
+                write(259,*) 'Order of electrical anharmonicity:', &
+                openrsp_cfg_general_pv_el_anh
+                write(259,*) 'Order of mechanical anharmonicity:', &
+                openrsp_cfg_general_pv_mech_anh
+             end if
              write(259,*) ' '
              write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
@@ -1089,11 +1649,6 @@ file_id = '    '
 
        end do
 
-       deallocate(perturbation_tuple%pdim)
-       deallocate(perturbation_tuple%plab)
-       deallocate(perturbation_tuple%pid)
-       deallocate(perturbation_tuple%freq)
-
       ! Calculate gradient of polarizability
 
        kn = (/0,2/)
@@ -1122,7 +1677,7 @@ file_id = '    '
        do i = 1, 3*num_atoms
           do j = 1, 3
              read(258,*) fld_dum
-             egff_cart(i, j, :) = fld_dum
+             egff_cart(i, j, :) = (-1.0) * fld_dum
           end do
        end do
 
@@ -1130,14 +1685,42 @@ file_id = '    '
 
        egff_nm = trans_cartnc_2w1d(3*num_atoms, n_nm, egff_cart, T(:,1:n_nm))
 
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
        do k = 1, openrsp_cfg_nr_freq_tuples
 
           ! Calculate PV contribution to 1st hyperpolarizability
 
-          fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
-                   sum(openrsp_cfg_real_freqs((k-1)*2 + 1: (k-1)*2 + 2)), &
-                   openrsp_cfg_real_freqs((k-1)*2 + 1), &
-                   openrsp_cfg_real_freqs((k-1)*2 + 2) /), dm_1d = egf_nm, po_1d = egff_nm)
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                         sum(openrsp_cfg_real_freqs((k-1)*2 + 1: (k-1)*2 + 2)), &
+                         openrsp_cfg_real_freqs((k-1)*2 + 1), &
+                         openrsp_cfg_real_freqs((k-1)*2 + 2) /), &
+                         dm_1d = egf_nm, dm_2d = eggf_nm, &
+                         dm_3d = egggf_nm, po_1d = egff_nm, &
+                         po_2d = eggff_nm, po_3d = egggff_nm, &
+                         fcc = eggg_nm, fcq = egggg_nm, &
+                         rst_order = openrsp_cfg_general_pv_total_anh)
+
+             else
+
+                fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                         sum(openrsp_cfg_real_freqs((k-1)*2 + 1: (k-1)*2 + 2)), &
+                         openrsp_cfg_real_freqs((k-1)*2 + 1), &
+                         openrsp_cfg_real_freqs((k-1)*2 + 2) /), &
+                         dm_1d = egf_nm, dm_2d = eggf_nm, &
+                         dm_3d = egggf_nm, po_1d = egff_nm, &
+                         po_2d = eggff_nm, po_3d = egggff_nm, &
+                         fcc = eggg_nm, fcq = egggg_nm, &
+                         rst_elec=openrsp_cfg_general_pv_el_anh, &
+                         rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+             end if
 
           if (k == 1) then
 
@@ -1151,6 +1734,16 @@ file_id = '    '
 
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
+          write(259,*) ' '
+          if (openrsp_cfg_general_pv_total_anh > 0) then
+             write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+             openrsp_cfg_general_pv_total_anh
+          else
+             write(259,*) 'Order of electrical anharmonicity:', &
+             openrsp_cfg_general_pv_el_anh
+             write(259,*) 'Order of mechanical anharmonicity:', &
+             openrsp_cfg_general_pv_mech_anh
+          end if
           write(259,*) ' '
           write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
           write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
@@ -1210,11 +1803,6 @@ file_id = '    '
        deallocate(egf_nm)
        deallocate(egff_cart)
        deallocate(egff_nm)
-
-       deallocate(perturbation_tuple%pdim)
-       deallocate(perturbation_tuple%plab)
-       deallocate(perturbation_tuple%pid)
-       deallocate(perturbation_tuple%freq)
 
     end if
 
@@ -1321,7 +1909,6 @@ file_id = '    '
        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
                            S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
 
-
        ! Read dipole moment gradient from file and transform to normal mode basis
 
        open(unit = 258, file='rsp_tensor_Egf', status='old', action='read', iostat=ierr)
@@ -1334,6 +1921,388 @@ file_id = '    '
        close(258)
 
        egf_nm = trans_cartnc_1w1d(3*num_atoms, n_nm, egf_cart, T(:,1:n_nm))
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+      ! Calculate other properties for given orders of anharmonicity
+
+
+       allocate(eggf_cart(3*num_atoms, 3*num_atoms, 3))
+       allocate(eggf_nm(n_nm, n_nm, 3))
+       allocate(eggff_cart(3*num_atoms, 3*num_atoms, 3, 3))
+       allocate(eggff_nm(n_nm, n_nm, 3, 3))
+       allocate(eggfff_cart(3*num_atoms, 3*num_atoms, 3, 3, 3))
+       allocate(eggfff_nm(n_nm, n_nm, 3, 3, 3))
+       allocate(egggf_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3))
+       allocate(egggf_nm(n_nm, n_nm, n_nm, 3))
+       allocate(egggff_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3))
+       allocate(egggff_nm(n_nm, n_nm, n_nm, 3, 3))
+       allocate(egggfff_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3))
+       allocate(egggfff_nm(n_nm, n_nm, n_nm, 3, 3, 3))
+       allocate(eggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms))
+       allocate(eggg_nm(n_nm, n_nm, n_nm))
+       allocate(egggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms))
+       allocate(egggg_nm(n_nm, n_nm, n_nm, n_nm))
+
+
+
+       if (openrsp_cfg_general_pv_el_anh > 0) then
+
+          ! Calculate Hessian of dipole moment
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggf')
+
+          open(unit = 258, file='rsp_tensor_Eggf', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                read(258,*) fld_dum
+                eggf_cart(i, j, :) = fld_dum
+             end do
+          end do
+
+          close(258)
+
+          eggf_nm = trans_cartnc_1w2d(3*num_atoms, n_nm, eggf_cart, T(:,1:n_nm))
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+         ! Calculate Hessian of polarizability
+
+          kn = (/1,2/)
+
+          perturbation_tuple%n_perturbations = 4
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggff')
+
+          open(unit = 258, file='rsp_tensor_Eggff', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                do k = 1, 3
+                   read(258,*) fld_dum
+                   eggff_cart(i, j, k, :) = (-1.0) * fld_dum
+                end do
+             end do
+          end do
+
+          close(258)
+
+          eggff_nm = trans_cartnc_2w2d(3*num_atoms, n_nm, eggff_cart, T(:,1:n_nm))
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+          ! Calculate Hessian of first hyperpolarizability
+
+          kn = (/1,3/)
+
+          perturbation_tuple%n_perturbations = 5
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3, 3, 3/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggfff')
+
+          open(unit = 258, file='rsp_tensor_Eggfff', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                do k = 1, 3
+                   do m = 1, 3
+                      read(258,*) fld_dum
+                      eggfff_cart(i, j, k, m, :) = fld_dum
+                   end do
+                end do
+             end do
+          end do
+
+          close(258)
+
+          eggfff_nm = trans_cartnc_3w2d(3*num_atoms, n_nm, eggfff_cart, T(:,1:n_nm))
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+          if (openrsp_cfg_general_pv_el_anh > 1) then
+
+             ! Calculate cubic force field of dipole moment
+
+             kn = (/1,2/)
+
+             perturbation_tuple%n_perturbations = 4
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggf')
+
+             open(unit = 258, file='rsp_tensor_Egggf', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      read(258,*) fld_dum
+                      egggf_cart(i, j, k, :) = fld_dum
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggf_nm = trans_cartnc_1w3d(3*num_atoms, n_nm, egggf_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+
+             ! Calculate cubic force field of polarizability
+
+             kn = (/2,2/)
+
+             perturbation_tuple%n_perturbations = 5
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggff')
+
+             open(unit = 258, file='rsp_tensor_Egggff', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      do m = 1, 3
+                         read(258,*) fld_dum
+                         egggff_cart(i, j, k, m, :) = (-1.0) * fld_dum
+                      end do
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggff_nm = trans_cartnc_2w3d(3*num_atoms, n_nm, egggff_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+             ! Calculate cubic force field of first hyperpolarizability
+
+             kn = (/2,3/)
+
+             perturbation_tuple%n_perturbations = 6
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggfff')
+
+             open(unit = 258, file='rsp_tensor_Egggfff', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      do m = 1, 3
+                         do n = 1, 3
+                            read(258,*) fld_dum
+                            egggfff_cart(i, j, k, m, n, :) = fld_dum
+                         end do
+                      end do
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggfff_nm = trans_cartnc_3w3d(3*num_atoms, n_nm, egggfff_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+
+          end if
+
+       end if
+
+       if (openrsp_cfg_general_pv_mech_anh > 0) then
+
+          ! Calculate cubic force field
+
+          kn = (/1,1/)
+
+          perturbation_tuple%n_perturbations = 3
+          allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+          allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+          perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO '/)
+          perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms/)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+          perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+          perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggg')
+
+          open(unit = 258, file='rsp_tensor_Eggg', status='old', action='read', iostat=ierr)
+
+          do i = 1, 3*num_atoms
+             do j = 1, 3*num_atoms
+                read(258,*) geo_dum
+                eggg_cart(i, j, :) = geo_dum
+             end do
+          end do
+
+          close(258)
+
+          eggg_nm = trans_cartnc_0w3d(3*num_atoms, n_nm, eggg_cart, T(:,1:n_nm))
+
+          deallocate(perturbation_tuple%pdim)
+          deallocate(perturbation_tuple%plab)
+          deallocate(perturbation_tuple%pid)
+          deallocate(perturbation_tuple%freq)
+
+
+          if (openrsp_cfg_general_pv_mech_anh > 1) then
+
+             ! Calculate quartic force field
+
+             kn = (/1,2/)
+
+             perturbation_tuple%n_perturbations = 4
+             allocate(perturbation_tuple%pdim(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%plab(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%pid(perturbation_tuple%n_perturbations))
+             allocate(perturbation_tuple%freq(perturbation_tuple%n_perturbations))
+
+             perturbation_tuple%plab = (/'GEO ', 'GEO ', 'GEO ', 'GEO '/)
+             perturbation_tuple%pdim = (/3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms/)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+             perturbation_tuple%freq = (/(0.0d0*i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
+             perturbation_tuple%pid = (/(i, i = 1, perturbation_tuple%n_perturbations)/)
+
+             call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggg')
+
+             open(unit = 258, file='rsp_tensor_Egggg', status='old', action='read', iostat=ierr)
+
+             do i = 1, 3*num_atoms
+                do j = 1, 3*num_atoms
+                   do k = 1, 3*num_atoms
+                      read(258,*) geo_dum
+                      egggg_cart(i, j, k, :)  = geo_dum
+                   end do
+                end do
+             end do
+
+             close(258)
+
+             egggg_nm = trans_cartnc_0w4d(3*num_atoms, n_nm, egggg_cart, T(:,1:n_nm))
+
+             deallocate(perturbation_tuple%pdim)
+             deallocate(perturbation_tuple%plab)
+             deallocate(perturbation_tuple%pid)
+             deallocate(perturbation_tuple%freq)
+
+          end if
+
+       end if
+
+! End calculation of anharmonicity-related response properties
+
 
        ! Normalize dipole moment - follows procedure by AJT
 
@@ -1354,6 +2323,26 @@ file_id = '    '
           do h = 1, 3
 
              ! Calculate PV contribution to polarizability
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
+                        openrsp_cfg_real_freqs((k - 1) * 3 + h), &
+                        openrsp_cfg_real_freqs((k - 1) * 3 + h) /),  &
+                        dm_1d = egf_nm, dm_2d = eggf_nm, &
+                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                        rst_order = openrsp_cfg_general_pv_total_anh)
+
+             else
+
+                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
+                        openrsp_cfg_real_freqs((k - 1) * 3 + h), &
+                        openrsp_cfg_real_freqs((k - 1) * 3 + h) /),  &
+                        dm_1d = egf_nm, dm_2d = eggf_nm, &
+                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                        rst_elec=openrsp_cfg_general_pv_el_anh, &
+                        rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+             end if
 
              ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
                               openrsp_cfg_real_freqs((k - 1) * 3 + h), &
@@ -1372,6 +2361,16 @@ file_id = '    '
 
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
+             write(259,*) ' '
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+                write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+                openrsp_cfg_general_pv_total_anh
+             else
+                write(259,*) 'Order of electrical anharmonicity:', &
+                openrsp_cfg_general_pv_el_anh
+                write(259,*) 'Order of mechanical anharmonicity:', &
+                openrsp_cfg_general_pv_mech_anh
+             end if
              write(259,*) ' '
              write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
@@ -1415,11 +2414,6 @@ file_id = '    '
 
        end do
 
-       deallocate(perturbation_tuple%pdim)
-       deallocate(perturbation_tuple%plab)
-       deallocate(perturbation_tuple%pid)
-       deallocate(perturbation_tuple%freq)
-
 
        ! Calculate gradient of polarizability
 
@@ -1449,13 +2443,19 @@ file_id = '    '
        do i = 1, 3*num_atoms
           do j = 1, 3
              read(258,*) fld_dum
-             egff_cart(i, j, :) = fld_dum
+             egff_cart(i, j, :) = (-1.0) * fld_dum
           end do
        end do
 
        close(258)
 
        egff_nm = trans_cartnc_2w1d(3*num_atoms, n_nm, egff_cart, T(:,1:n_nm))
+
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
 
        do k = 1, openrsp_cfg_nr_freq_tuples
 
@@ -1465,30 +2465,96 @@ file_id = '    '
 
              if (h == 1) then
 
-                fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
-                         (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 2)), &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 1), &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 2) /), &
-                         dm_1d = egf_nm, po_1d = egff_nm)
+                if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                   fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                            (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 2)), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 1), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 2) /), &
+                            dm_1d = egf_nm, dm_2d = eggf_nm, &
+                            dm_3d = egggf_nm, po_1d = egff_nm, &
+                            po_2d = eggff_nm, po_3d = egggff_nm, &
+                            fcc = eggg_nm, fcq = egggg_nm, &
+                            rst_order = openrsp_cfg_general_pv_total_anh)
+
+                else
+
+                   fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                            (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 2)), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 1), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 2) /), &
+                            dm_1d = egf_nm, dm_2d = eggf_nm, &
+                            dm_3d = egggf_nm, po_1d = egff_nm, &
+                            po_2d = eggff_nm, po_3d = egggff_nm, &
+                            fcc = eggg_nm, fcq = egggg_nm, &
+                            rst_elec=openrsp_cfg_general_pv_el_anh, &
+                            rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+                end if
 
              elseif (h == 2) then
 
-                fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
-                         (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 3)), &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 1), &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 3) /), &
-                         dm_1d = egf_nm, po_1d = egff_nm)
+                if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                   fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                            (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3)), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 1), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3) /), &
+                            dm_1d = egf_nm, dm_2d = eggf_nm, &
+                            dm_3d = egggf_nm, po_1d = egff_nm, &
+                            po_2d = eggff_nm, po_3d = egggff_nm, &
+                            fcc = eggg_nm, fcq = egggg_nm, &
+                            rst_order = openrsp_cfg_general_pv_total_anh)
+
+                else
+
+                   fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                            (openrsp_cfg_real_freqs((k - 1) * 3 + 1) + &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3)), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 1), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3) /), &
+                            dm_1d = egf_nm, dm_2d = eggf_nm, &
+                            dm_3d = egggf_nm, po_1d = egff_nm, &
+                            po_2d = eggff_nm, po_3d = egggff_nm, &
+                            fcc = eggg_nm, fcq = egggg_nm, &
+                            rst_elec=openrsp_cfg_general_pv_el_anh, &
+                            rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+                end if
 
              elseif (h == 3) then
 
-                fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
-                         (openrsp_cfg_real_freqs((k - 1) * 3 + 2) + &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 3)), &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 2), &
-                         openrsp_cfg_real_freqs((k - 1) * 3 + 3) /), &
-                         dm_1d = egf_nm, po_1d = egff_nm)
+                if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                   fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                            (openrsp_cfg_real_freqs((k - 1) * 3 + 2) + &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3)), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 2), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3) /), &
+                            dm_1d = egf_nm, dm_2d = eggf_nm, &
+                            dm_3d = egggf_nm, po_1d = egff_nm, &
+                            po_2d = eggff_nm, po_3d = egggff_nm, &
+                            fcc = eggg_nm, fcq = egggg_nm, &
+                            rst_order = openrsp_cfg_general_pv_total_anh)
+
+                else
+
+                   fff_pv = beta_pv(n_nm, nm_freq, (/ (-1.0) * &
+                            (openrsp_cfg_real_freqs((k - 1) * 3 + 2) + &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3)), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 2), &
+                            openrsp_cfg_real_freqs((k - 1) * 3 + 3) /), &
+                            dm_1d = egf_nm, dm_2d = eggf_nm, &
+                            dm_3d = egggf_nm, po_1d = egff_nm, &
+                            po_2d = eggff_nm, po_3d = egggff_nm, &
+                            fcc = eggg_nm, fcq = egggg_nm, &
+                            rst_elec=openrsp_cfg_general_pv_el_anh, &
+                            rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+                end if
 
              end if
 
@@ -1504,6 +2570,16 @@ file_id = '    '
 
              write(259,*) 'Pure vibrational output'
              write(259,*) '======================='
+             write(259,*) ' '
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+                write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+                openrsp_cfg_general_pv_total_anh
+             else
+                write(259,*) 'Order of electrical anharmonicity:', &
+                openrsp_cfg_general_pv_el_anh
+                write(259,*) 'Order of mechanical anharmonicity:', &
+                openrsp_cfg_general_pv_mech_anh
+             end if
              write(259,*) ' '
              write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
@@ -1590,10 +2666,6 @@ file_id = '    '
 
        end do
 
-       deallocate(perturbation_tuple%pdim)
-       deallocate(perturbation_tuple%plab)
-       deallocate(perturbation_tuple%pid)
-       deallocate(perturbation_tuple%freq)
 
        ! Calculate gradient of first hyperpolarizability
 
@@ -1633,18 +2705,47 @@ file_id = '    '
 
        egfff_nm = trans_cartnc_3w1d(3*num_atoms, n_nm, egfff_cart, T(:,1:n_nm))
 
+       deallocate(perturbation_tuple%pdim)
+       deallocate(perturbation_tuple%plab)
+       deallocate(perturbation_tuple%pid)
+       deallocate(perturbation_tuple%freq)
+
+
        ! Calculate PV contribution to 2nd hyperpolarizability
 
 
        do k = 1, openrsp_cfg_nr_freq_tuples
 
-          ffff_pv = gamma_pv(n_nm, nm_freq, (/ (-1.0) * &
-                             sum(openrsp_cfg_real_freqs((k-1)*3 + 1: (k-1)*3 + 3)), &
-                             openrsp_cfg_real_freqs((k-1)*3 + 1), &
-                             openrsp_cfg_real_freqs((k-1)*3 + 2), &
-                             openrsp_cfg_real_freqs((k-1)*3 + 3)/), &
-                             dm_1d = egf_nm, po_1d = egff_nm, hp_1d = egfff_nm) 
+          if (openrsp_cfg_general_pv_total_anh > 0) then
 
+             ffff_pv = gamma_pv(n_nm, nm_freq, (/ (-1.0) * &
+                       sum(openrsp_cfg_real_freqs((k-1)*3 + 1: (k-1)*3 + 3)), &
+                       openrsp_cfg_real_freqs((k-1)*3 + 1), &
+                       openrsp_cfg_real_freqs((k-1)*3 + 2), &
+                       openrsp_cfg_real_freqs((k-1)*3 + 3)/), &
+                       dm_1d = egf_nm, dm_2d = eggf_nm, &
+                       dm_3d = egggf_nm, po_1d = egff_nm, &
+                       po_2d = eggff_nm, po_3d = egggff_nm, &
+                       hp_1d = egfff_nm, hp_2d = eggfff_nm, &
+                       hp_3d = egggfff_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                       rst_order = openrsp_cfg_general_pv_total_anh)
+
+          else
+
+             ffff_pv = gamma_pv(n_nm, nm_freq, (/ (-1.0) * &
+                       sum(openrsp_cfg_real_freqs((k-1)*3 + 1: (k-1)*3 + 3)), &
+                       openrsp_cfg_real_freqs((k-1)*3 + 1), &
+                       openrsp_cfg_real_freqs((k-1)*3 + 2), &
+                       openrsp_cfg_real_freqs((k-1)*3 + 3)/), &
+                       dm_1d = egf_nm, dm_2d = eggf_nm, &
+                       dm_3d = egggf_nm, po_1d = egff_nm, &
+                       po_2d = eggff_nm, po_3d = egggff_nm, &
+                       hp_1d = egfff_nm, hp_2d = eggfff_nm, &
+                       hp_3d = egggfff_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                       rst_elec=openrsp_cfg_general_pv_el_anh, &
+                       rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+          end if
 
           if (k == 1) then
 
@@ -1659,6 +2760,17 @@ file_id = '    '
           write(259,*) 'Pure vibrational output'
           write(259,*) '======================='
           write(259,*) ' '
+          if (openrsp_cfg_general_pv_total_anh > 0) then
+             write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+             openrsp_cfg_general_pv_total_anh
+          else
+             write(259,*) 'Order of electrical anharmonicity:', &
+             openrsp_cfg_general_pv_el_anh
+             write(259,*) 'Order of mechanical anharmonicity:', &
+             openrsp_cfg_general_pv_mech_anh
+          end if
+          write(259,*) ' '
+
           write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
           write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
           write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
@@ -1715,11 +2827,6 @@ file_id = '    '
        deallocate(egff_nm)
        deallocate(egfff_cart)
        deallocate(egfff_nm)
-
-       deallocate(perturbation_tuple%pdim)
-       deallocate(perturbation_tuple%plab)
-       deallocate(perturbation_tuple%pid)
-       deallocate(perturbation_tuple%freq)
 
     end if
 

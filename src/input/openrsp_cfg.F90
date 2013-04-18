@@ -45,6 +45,10 @@ module openrsp_cfg
    logical :: openrsp_cfg_general_pv2f = .false.
    logical :: openrsp_cfg_general_pv3f = .false.
    logical :: openrsp_cfg_general_pv4f = .false.
+   ! Order of electrical, mechanical, or total anharmonicity (default for all: 0)
+   integer :: openrsp_cfg_general_pv_el_anh = 0
+   integer :: openrsp_cfg_general_pv_mech_anh = 0
+   integer :: openrsp_cfg_general_pv_total_anh = 0
 
    ! MaR: Keywords for SHG (and possibly higher-orders later) calculation
    logical :: openrsp_cfg_general_shg = .false.

@@ -35,6 +35,8 @@ contains
 
 ! Loop over Cartesian coordinates
 
+      tmp = 0.0
+
       do pp = 1, n_c
 	
 ! Add to a temporary variable element for element the Cartesian element projected on the normal coordinate
@@ -65,8 +67,10 @@ contains
     complex(8), 	dimension(n_nm, n_nm)			:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in) 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
+
+        tmp = 0.0
 
 	do qp = 1, n_c
 
@@ -106,9 +110,21 @@ contains
     complex(8), 	dimension(n_nm, n_nm, n_nm)			:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
-      do q = 1, n_nm
+
+! do p = 1, n_c
+! do q = 1, n_c
+! write(*,*) 'i j', p, q
+! write(*,*) A(p,q,:)
+! end do
+! end do
+! write(*,*) 'A', A
+! write(*,*) 'T', T
+
+    do p = 1, n_c
+      do q = 1, n_c
 	do r = 1, n_nm
+
+          tmp = 0.0
 
 	  do rp = 1, n_c
 
@@ -117,15 +133,18 @@ contains
 	  end do
 
 	  Bt(p, q, r) = tmp
+! write(*,*) 'tmp was added as', tmp
 
 	end do
       end do
     end do
-
-    do p = 1, n_nm
+! write(*,*) 'second way'
+    do p = 1, n_c
       do q = 1, n_nm
-	do r = 1, n_nm
+	do r = 1, n_c
 	  
+          tmp = 0.0
+
 	  do qp = 1, n_c
 
 	    tmp = tmp + Bt(p, qp, r) * T(qp, q)
@@ -133,15 +152,17 @@ contains
 	  end do
 
 	  A(p, q, r) = tmp
-
+! write(*,*) 'tmp was added as', tmp
 	end do
       end do
     end do
 
-
+! write(*,*) 'third way'
     do p = 1, n_nm
       do q = 1, n_nm
 	do r = 1, n_nm
+
+          tmp = 0.0
 
 	  do pp = 1, n_c
 
@@ -150,7 +171,7 @@ contains
 	  end do
 
 	  B(p, q, r) = tmp
-
+! write(*,*) 'tmp was added as', tmp
 	end do
       end do
     end do
@@ -169,10 +190,12 @@ contains
     complex(8), 	dimension(n_nm, n_nm, n_nm, n_nm)		:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
-      do q = 1, n_nm
-	do r = 1, n_nm
+    do p = 1, n_c
+      do q = 1, n_c
+	do r = 1, n_c
 	  do s = 1, n_nm
+
+            tmp = 0.0
 
 	    do sp = 1, n_c
 
@@ -187,32 +210,16 @@ contains
 	end do
       end do
 
-    do p = 1, n_nm
-      do q = 1, n_nm
+    do p = 1, n_c
+      do q = 1, n_c
 	do r = 1, n_nm
-	  do s = 1, n_nm
+	  do s = 1, n_c
+
+            tmp = 0.0
 
 	    do rp = 1, n_c
 
-	      tmp = tmp + A(p, q, rp, s) * T(rp, r)
-
-	    end do
-
-	    Bt(p, q, r, s) = tmp
-
-	  end do
-	end do
-      end do
-    end do
-
-    do p = 1, n_nm
-      do q = 1, n_nm
-	do r = 1, n_nm
-	  do s = 1, n_nm
-	  
-	    do qp = 1, n_c
-
-	      tmp = tmp + Bt(p, qp, r, s) * T(qp, q)
+	      tmp = tmp + Bt(p, q, rp, s) * T(rp, r)
 
 	    end do
 
@@ -223,15 +230,37 @@ contains
       end do
     end do
 
+    do p = 1, n_c
+      do q = 1, n_nm
+	do r = 1, n_c
+	  do s = 1, n_c
+
+            tmp = 0.0
+	  
+	    do qp = 1, n_c
+
+	      tmp = tmp + A(p, qp, r, s) * T(qp, q)
+
+	    end do
+
+	    Bt(p, q, r, s) = tmp
+
+	  end do
+	end do
+      end do
+    end do
+
 
     do p = 1, n_nm
       do q = 1, n_nm
 	do r = 1, n_nm
 	  do s = 1, n_nm
 
+            tmp = 0.0
+
 	    do pp = 1, n_c
 
-	      tmp = tmp + A(pp, q, r, s) * T(pp, p)
+	      tmp = tmp + Bt(pp, q, r, s) * T(pp, p)
 
 	    end do
 
@@ -241,6 +270,7 @@ contains
 	end do
       end do
     end do
+
 
 
   end function
@@ -366,7 +396,8 @@ contains
     complex(8), 	dimension(n_nm, n_nm, 3)		:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in) 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
+
+    do p = 1, n_c
       do q = 1, n_nm
 	do i = 1, 3
 	  tmp(i) = 0.0
@@ -404,6 +435,8 @@ contains
 
       end do
     end do       
+
+! write(*,*) 'B', B
       
   end function
 
@@ -418,7 +451,7 @@ contains
     complex(8), 	dimension(n_nm, n_nm, 3, 3)		:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in) 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
 
 	do i = 1, 3
@@ -480,7 +513,7 @@ contains
     complex(8), 	dimension(n_nm, n_nm, 3, 3, 3)			:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
 
 	do i = 1, 3
@@ -551,8 +584,8 @@ contains
     complex(8), 	dimension(n_nm, n_nm, n_nm, 3)			:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
-      do q = 1, n_nm
+    do p = 1, n_c
+      do q = 1, n_c
 	do r = 1, n_nm
 	  
 	  do i = 1, 3
@@ -574,9 +607,9 @@ contains
       end do
     end do
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
-	do r = 1, n_nm
+	do r = 1, n_c
 	  
 	  do i = 1, 3
 	    tmp(i) = 0.0
@@ -637,8 +670,8 @@ contains
     complex(8), 	dimension(n_nm, n_nm, n_nm, 3, 3)		:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
-      do q = 1, n_nm
+    do p = 1, n_c
+      do q = 1, n_c
 	do r = 1, n_nm
 	  
 	  do i = 1, 3
@@ -664,9 +697,9 @@ contains
       end do
     end do
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
-	do r = 1, n_nm
+	do r = 1, n_c
 	  
 	  do i = 1, 3
 	    do j = 1, 3
@@ -734,8 +767,8 @@ contains
     complex(8), 	dimension(n_nm, n_nm, n_nm, 3, 3, 3)			:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 		:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
-      do q = 1, n_nm
+    do p = 1, n_c
+      do q = 1, n_c
 	do r = 1, n_nm
 	  
 	  do i = 1, 3
@@ -765,9 +798,9 @@ contains
       end do
     end do
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
-	do r = 1, n_nm
+	do r = 1, n_c
 	  
 	  do i = 1, 3
 	    do j = 1, 3
@@ -888,7 +921,7 @@ contains
     complex(8), 	dimension(n_nm, n_nm, 3, 3, 3, 3)		:: B ! The resulting NC transformed tensor
     real(8), 	dimension(n_c, n_nm), intent(in)	 	:: T ! The matrix of transformation coefficients
 
-    do p = 1, n_nm
+    do p = 1, n_c
       do q = 1, n_nm
 
 	do i = 1, 3
@@ -2746,11 +2779,22 @@ contains
       do j=1, n_nm
 	do k=1, n_nm
 	  do m=1, 2
+
+! write(*,*) 'i j k', i, j, k
+! write(*,*) 'nm_e_inv', nm_e_inv(i)
+! write(*,*) 'fcq(i, i, j, k) ', fcq(i, i, j, k) 
+! write(*,*) 'lambda_a(j, permopt(m, 1))', lambda_a(j, permopt(m, 1))
 	
 	    pv_dipsq_02 = pv_dipsq_02 + nm_e_inv(i) * fcq(i, i, j, k) * dm_1d(j, perm(m, 1)) * &
 	    dm_1d(k, perm(m, 2)) * lambda_a(j, permopt(m, 1)) * lambda_a(k, permopt(m, 1))
+
+! write(*,*) 'result is', pv_dipsq_02
 	      
 	      do l=1, n_nm
+
+! write(*,*) 'l', l
+! write(*,*) 'fcc', fcc(i, i, j)
+! write(*,*) 'lambda_ab(i, j, permopt(m, 1))', lambda_ab(i, j, permopt(m, 1))
 
 		pv_dipsq_02 = pv_dipsq_02 - fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
 		dm_1d(l, perm(m, 2)) * (nm_e_inv(j)**(2.0)) * lambda_a(k, permopt(m, 1)) * &
@@ -2758,6 +2802,8 @@ contains
 		dm_1d(l, perm(m, 2)) * lambda_ab(i, j, permopt(m, 1)) * lambda_a(k, permopt(m, 1)) * &
 		lambda_a(l, permopt(m, 1))
 
+
+! write(*,*) 'result is', pv_dipsq_02
 
 	      end do
 	   

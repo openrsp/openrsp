@@ -197,6 +197,27 @@
          openrsp_cfg_general_pv4f = .true.
       end if
 
+      ! Order of electrical anharmonicity (default: 0)
+
+      if (kw_matches(word, '.PVEANH')) then
+         call kw_read(word, openrsp_cfg_general_pv_el_anh)
+      end if
+
+      ! Order of mechanical anharmonicity (default: 0)
+
+      if (kw_matches(word, '.PVMANH')) then
+         call kw_read(word, openrsp_cfg_general_pv_mech_anh)
+      end if
+
+      ! Order of total (both electric and mechanical) anharmonicity (default: 0)
+      ! Overrides choices of electrical and mechanical anharmonicity above
+
+      if (kw_matches(word, '.PVTANH')) then
+         call kw_read(word, openrsp_cfg_general_pv_total_anh)
+         openrsp_cfg_general_pv_el_anh = openrsp_cfg_general_pv_total_anh
+         openrsp_cfg_general_pv_mech_anh = openrsp_cfg_general_pv_total_anh
+      end if
+
 !     --------------------------------------------------------------------------
 
       ! MaR: Keywords for SHG (and later possibly higher order) calculations
