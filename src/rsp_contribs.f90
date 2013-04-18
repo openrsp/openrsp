@@ -503,7 +503,7 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
     
           end if
 
-
+! write(*,*) 'i', i, 'ave offset', ave_offset, 'tmp result offset', tmp_result_offset
 
           ave(ave_offset) = ave(ave_offset) + &
           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_ave(tmp_result_offset)

@@ -14,7 +14,7 @@
     ! Define A
     A(1,1) = 0.5
     A(1,2) = 2.0
-    A(1,2) = 1.0
+    A(1,3) = 1.0
     A(2,1) = 0.5
     A(2,2) = 1.0
     A(2,3) = -2.0
@@ -42,7 +42,7 @@
        do mu = 1, 3
 
           R_efishg = R_efishg + A(setup_i, 2) * Effff(lambda, lambda, mu, mu) + &
-                                A(setup_i, 2) * Effff(lambda, mu, mu, lambda) 
+                                A(setup_i, 3) * Effff(lambda, mu, mu, lambda) 
 
        end do
     end do
@@ -63,7 +63,7 @@
     ! Define A
     A(1,1) = 0.5
     A(1,2) = 2.0
-    A(1,2) = 1.0
+    A(1,3) = 1.0
     A(2,1) = 0.5
     A(2,2) = 1.0
     A(2,3) = -2.0
@@ -129,7 +129,7 @@
     ! Define A
     A(1,1) = 0.5
     A(1,2) = 2.0
-    A(1,2) = 1.0
+    A(1,3) = 1.0
     A(2,1) = 0.5
     A(2,2) = 1.0
     A(2,3) = -2.0
@@ -173,7 +173,7 @@
                               ( W_efishg_1(setup_i, C, nu, tau, pi, rho, sigma) * &
                                 Effqfww(nu, tau, pisigma_offset, rho) + &
                                 W_efishg_2(setup_i, C, nu, tau, pi, rho, sigma) * &
-                                Effqfww(pi, tau, nusigma_offset, rho) )
+                                Effqfw2w(pi, tau, nusigma_offset, rho) )
 
                 end do
              end do
