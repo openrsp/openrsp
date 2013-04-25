@@ -1,3 +1,8 @@
+  g_hf.dal       mol.mol -get rsp_tensor_human
+  gg_hf.dal      mol.mol -get rsp_tensor_human
+  ggg_hf.dal     mol.mol -get rsp_tensor_human
+  gggg_hf.dal    mol.mol -get rsp_tensor_human
+
   g_lda.dal      mol.mol -get rsp_tensor_human
   gg_lda.dal     mol.mol -get rsp_tensor_human
   ggg_lda.dal    mol.mol -get rsp_tensor_human
