@@ -9,10 +9,10 @@ module interface_nuclear
    public gradient_nuc
    public hessian_nuc
    public aatnuc_ifc
+   public get_nuc_dipole_gradient
 #ifndef VAR_LSDALTON
    public dipnuc_ifc
    public qdrnuc_ifc
-   public dpgnuc_ifc
 #endif
    private
 
@@ -47,13 +47,13 @@ contains
     ! all orders of nuclear repulsion
     if (field(1) == 'NONE') then
        call nucrep_deriv(ncor/3, charges, coords, deriv, nucpot)
-    ! minus dipole moment 
+    ! minus dipole moment
     else if (field(1) == 'EL  ' .and. deriv == 0) then
        call DIPNUC_ifc(nucpot)
        nucpot = -nucpot !dip = -dE/dF
-    ! minus dipole moment gradient 
+    ! minus dipole moment gradient
     else if (field(1) == 'EL  ' .and. deriv == 1) then
-       call DPGNUC_ifc(na, nucpot)
+       call get_nuc_dipole_gradient(na, nucpot)
        nucpot = -nucpot !d/dR dip = -d2E/dR/dF
     ! minus quadrupole moment
     else if (field(1) == 'ELGR' .and. deriv == 0) then
@@ -271,6 +271,7 @@ contains
     call DIPNUC( (/zero/), (/zero/), 0, .true. )
     DN = DIPMN
   end subroutine
+#endif
 
 
   !> \brief gets the nuclear contribution to quadrupole moments
@@ -296,24 +297,25 @@ contains
   end subroutine
 
 
-  !> \brief gets the nuclear contribution to electric dipole gradient
-  !> \author Bin Gao
-  !> \date 2009-12-10
-  !> \param na is the number of atoms
-  !> \return DGN contains the nuclear contributions to dipole gradient
-  !> \note modified on linsca/linears/VIBCTL_interface.F
-  subroutine DPGNUC_ifc( na, DGN )
-    ! uses MXCOOR
-#include "mxcent.h"
-    ! uses DDIPN
-#include "dipole.h"
-    integer, intent(in) :: na
-    real(8), intent(out) :: DGN( 3*na, 3 )
-    real(8), parameter :: zero = 0.0D+00
-    call DIPNUC( (/zero/), (/zero/), 0, .true. )
-    DGN = transpose( DDIPN( :, 1:3*na ) )
-  end subroutine
-#endif
+   subroutine get_nuc_dipole_gradient(nr_atoms, dipole_gradient)
+
+      integer, intent(in)  :: nr_atoms
+      real(8), intent(out) :: dipole_gradient(3*nr_atoms, 3)
+
+      integer              :: iatom
+      integer              :: ixyz
+      integer              :: n
+
+      dipole_gradient = 0.0d0
+      n = 0
+      do iatom = 1, nr_atoms
+         do ixyz = 1, 3
+            n = n + 1
+            dipole_gradient(n, ixyz) = get_nuc_charge(iatom)
+         end do
+      end do
+
+   end subroutine
 
 
    !> Nuclear contribution to the atomic axial tenaor (AAT),

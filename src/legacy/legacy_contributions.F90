@@ -578,7 +578,7 @@ contains
          ! nd==0 has nuclear repulsion contribution to -dipole gradient
          if (nd==0) then
             allocate(RR((3*na)*3))
-            call DPGNUC_ifc(na, RR(:(3*na)*3))
+            call get_nuc_dipole_gradient(na, RR(:(3*na)*3))
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
                   E(1+i+dp(1)*j) = E(1+i+dp(1)*j) &
