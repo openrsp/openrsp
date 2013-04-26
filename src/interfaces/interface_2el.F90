@@ -839,7 +839,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
           call interface_scf_get_g(dens, A)
           fock(1) = fock(1) + A
           A = 0
-       else if (nf==1 .and. all(f==(/'MAG '/))) then
+       else if (nf==1 .and. all(f==(/'GEO '/))) then
           n = nr_ao
           do i = 0, nc(1)-1
              if (iszero(fock(i+1))) then
