@@ -419,68 +419,59 @@ contains
       if (nr_geo == 4 .and. nr_el == 0) then
          combination_found = .true.
 
-         allocate(dmat_tuple(11))
+         ! Using (k,n) = (1,2)
+
+         allocate(dmat_tuple(8))
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-         do i = 1, nr_atoms*3
+         do l = 1, nr_atoms*3
 
-            call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
+            call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(6))
 
-            do j = 1, i
+            do k = 1, l
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
+
+               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                  p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(8))
+
+               do j = 1, k
 
                call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
 
-               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
-                                  p_tuple_getone(pert, 2)), (/i,j/), dmat_tuple(4))
+               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                  p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(5))
 
-               do k = 1, j
+               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                  p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(7))
 
-                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(5))
+                  do i = 1, j
 
-                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
-                                     p_tuple_getone(pert, 3)), (/i,k/), dmat_tuple(6))
-                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
-                                     p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(7))
-
-
-                  do l = 1, k
-
-                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(8))
-
-
-                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
-                                        p_tuple_getone(pert, 4)), (/i,l/), dmat_tuple(9))
-                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
-                                        p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(10))
-                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
-                                        p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(11))
-
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
                      element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                                blk_info, blk_sizes, (/i, j, k, l/))
 
-                     call xc_integrate(               &
-                             mat_dim=mat_dim,         &
-                             nr_dmat=11,              &
-                          dmat=(/dmat_tuple(1)%elms,  &
-                              dmat_tuple(2)%elms,     &
-                              dmat_tuple(3)%elms,     &
-                              dmat_tuple(4)%elms,     &
-                              dmat_tuple(5)%elms,     &
-                              dmat_tuple(6)%elms,     &
-                              dmat_tuple(7)%elms,     &
-                              dmat_tuple(8)%elms,     &
-                              dmat_tuple(9)%elms,     &
-                              dmat_tuple(10)%elms,    &
-                              dmat_tuple(11)%elms/),  &
-                             energy=xc_energy,        &
-                             get_ave=.true.,          &
-                             fmat=(/0.0d0/),          &
-                             geo_coor=(/i, j, k, l/), &
-                    pert_labels=(/pert%plab/),   &
-                             kn=kn                    &
+                     call xc_integrate(                   &
+                             mat_dim=mat_dim,             &
+                             nr_dmat=8,                   &
+                             dmat=(/dmat_tuple(1)%elms,   &
+                                    dmat_tuple(2)%elms,   &
+                                    dmat_tuple(3)%elms,   &
+                                    dmat_tuple(4)%elms,   &
+                                    dmat_tuple(5)%elms,   &
+                                    dmat_tuple(6)%elms,   &
+                                    dmat_tuple(7)%elms,   &
+                                    dmat_tuple(8)%elms/), &
+                             energy=xc_energy,            &
+                             get_ave=.true.,              &
+                             fmat=(/0.0d0/),              &
+                             geo_coor=(/i, j, k, l/),     &
+                             pert_labels=(/pert%plab/),   &
+                             kn=kn                        &
                           )
+
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
                end do
