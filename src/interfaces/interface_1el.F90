@@ -160,11 +160,11 @@ if (order_mag > 0) then
                                        0,                          &
                                        0, 0, order_mag,            &  !magnetic derivatives
                                        0, 0, 0,                    &  !derivatives w.r.t. total RAM
-                                       0, 0,                       &  !partial geometric derivatives
+                                       0, 0, 0, (/0/),             &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),             &  !geometric derivatives on ket center
                                        order_geo,                  &  !total geometric derivatives
                                        order_geo,                  &
                                        0, (/0/),                   &
-                                       UNIQUE_GEO,                 &
                                        .false., .false., .false.,  &  !not implemented yet
                                        1, (/DFD/), propsize,       &  !expectation values
                                        val_expt, .false.,          &
@@ -187,11 +187,11 @@ else
                                        0,                          &
                                        0, 0, order_mag,            &  !magnetic derivatives
                                        0, 0, 0,                    &  !derivatives w.r.t. total RAM
-                                       0, 0,                       &  !partial geometric derivatives
+                                       0, 0, 0, (/0/),             &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),             &  !geometric derivatives on ket center
                                        order_geo,                  &  !total geometric derivatives
                                        order_geo,                  &
                                        0, (/0/),                   &
-                                       UNIQUE_GEO,                 &
                                        .false., .false., .false.,  &  !not implemented yet
                                        1, (/DFD/), propsize,       &  !expectation values
                                        val_expt, .false.,          &
@@ -332,12 +332,15 @@ if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
                                      count(fbra=='MAG '),        &
                                      count(fket=='MAG '), 0,     &  !magnetic derivatives
                                      0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                     count(fbra=='GEO '),        &  !geometric derivatives on bra center
                                      count(fbra=='GEO '),        &
-                                     count(fket=='GEO '),        &  !partial geometric derivatives
+                                     0, (/0/),                   &
+                                     count(fket=='GEO '),        &  !geometric derivatives on ket center
+                                     count(fket=='GEO '),        &
+                                     0, (/0/),                   &  
                                      0,                          &  !total geometric derivatives
                                      0,                          &
                                      0, (/0/),                   &
-                                     UNIQUE_GEO,                 &
                                      .false., .false., .false.,  &  !not implemented yet
                                      1, (/D/),                   &
                                      propsize, tmp_ave, .false.,   &  !integral matrices
@@ -496,11 +499,11 @@ end if
                                        0,                           &
                                        0, 0, order_mag,             &  !magnetic derivatives
                                        0, 0, 0,                     &  !derivatives w.r.t. total RAM
-                                       0, 0,                        &  !partial geometric derivatives
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on ket center
                                        order_geo,                   &  !total geometric derivatives
                                        order_geo,                   &
                                        0, (/0/),                    &
-                                       UNIQUE_GEO,                  &
                                        .false., .false., .false.,   &  !not implemented yet
                                        1, (/D/), propsize,          &  !expectation values
                                        val_expt, .false.,           &
@@ -517,11 +520,11 @@ end if
                                        0,                           &
                                        0, 0, order_mag,             &  !magnetic derivatives
                                        0, 0, 0,                     &  !derivatives w.r.t. total RAM
-                                       0, 0,                        &  !partial geometric derivatives
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on ket center
                                        order_geo,                   &  !total geometric derivatives
                                        order_geo,                   &
                                        0, (/0/),                    &
-                                       UNIQUE_GEO,                  &
                                        .false., .false., .false.,   &  !not implemented yet
                                        1, (/D/), propsize,          &  !expectation values
                                        val_expt, .false.,           &
@@ -542,11 +545,11 @@ end if
                                        0,                         &
                                        0, 0, 0,                   &  !magnetic derivatives
                                        0, 0, 0,                   &  !derivatives w.r.t. total RAM
-                                       0, 0,                      &  !partial geometric derivatives
+                                       0, 0, 0, (/0/),            &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),            &  !geometric derivatives on ket center
                                        order_geo,                 &  !total geometric derivatives
                                        order_geo,                 &
                                        0, (/0/),                  &
-                                       UNIQUE_GEO,                &
                                        .false., .false., .false., &  !not implemented yet
                                        1, (/D/), propsize,        &  !expectation values
                                        val_expt, .false.,         &
@@ -564,11 +567,11 @@ end if
                                        0,                         &
                                        0, 0, 0,                   &
                                        0, 0, 0,                   &
-                                       0, 0,                      &
+                                       0, 0, 0, (/0/),            &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),            &  !geometric derivatives on ket center
                                        order_geo,                 &
                                        order_geo,                 &
                                        0, (/0/),                  &
-                                       UNIQUE_GEO,                &
                                        .false., .false., .false., &
                                        1, (/D/), propsize,        &
                                        temp, .false.,             &
@@ -585,11 +588,11 @@ end if
                                        0,                         &
                                        0, 0, 0,                   &
                                        0, 0, 0,                   &
-                                       0, 0,                      &
+                                       0, 0, 0, (/0/),            &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),            &  !geometric derivatives on ket center
                                        order_geo,                 &
                                        order_geo,                 &
                                        0, (/0/),                  &
-                                       UNIQUE_GEO,                &
                                        .false., .false., .false., &
                                        1, (/D/), propsize,        &
                                        temp, .false.,             &
@@ -611,11 +614,11 @@ end if
                                           1,                           &
                                           0, 0, 0,                     &
                                           0, 0, 0,                     &
-                                          0, 0,                        &
+                                          0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                          0, 0, 0, (/0/),              &  !geometric derivatives on ket center
                                           order_geo,                   &
                                           order_geo,                   &
                                           0, (/0/),                    &
-                                          UNIQUE_GEO,                  &
                                           .false., .false., .false.,   &
                                           1, (/T/), propsize*3,        &
                                           temp, .false.,               &
@@ -829,11 +832,11 @@ end if
                                    0,                          &
                                    0, 0, 0,                    &  !magnetic derivatives
                                    0, 0, 0,                    &  !derivatives w.r.t. total RAM
-                                   0, 0,                       &  !partial geometric derivatives
+                                   0, 0, 0, (/0/),             &  !geometric derivatives on bra center
+                                   0, 0, 0, (/0/),             &  !geometric derivatives on ket center
                                    order_geo,                  &  !total geometric derivatives
                                    order_geo,                  &
                                    0, (/0/),                   &
-                                   UNIQUE_GEO,                 &
                                    .false., .false., .false.,  &  !not implemented yet
                                    num_ints, ovl_tmp, .false.,     &  !integral matrices
 #ifdef PRG_DIRAC
@@ -969,12 +972,15 @@ if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
                                      count(fbra=='MAG '),        &
                                      count(fket=='MAG '), 0,     &  !magnetic derivatives
                                      0, 0, 0,                    &  !derivatives w.r.t. total RAM
+                                     count(fbra=='GEO '),        &  !geometric derivatives on bra center
                                      count(fbra=='GEO '),        &
-                                     count(fket=='GEO '),        &  !partial geometric derivatives
+                                     0, (/0/),                   &
+                                     count(fket=='GEO '),        &  !geometric derivatives on ket center
+                                     count(fket=='GEO '),        &
+                                     0, (/0/),                   &
                                      0,                          &  !total geometric derivatives
                                      0,                          &
                                      0, (/0/),                   &
-                                     UNIQUE_GEO,                 &
                                      .false., .false., .false.,  &  !not implemented yet
                                      propsize, tmp_fock, .false.,&  !integral matrices
 #ifdef PRG_DIRAC
@@ -1144,11 +1150,11 @@ end if
                                       0,                           &
                                       0, 0, 0,                     &  !magnetic derivatives
                                       0, 0, 0,                     &  !derivatives w.r.t. total RAM
-                                      0, 0,                        &  !partial geometric derivatives
+                                      0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                      0, 0, 0, (/0/),              &  !geometric derivatives on ket center
                                       order_geo,                   &  !total geometric derivatives
                                       order_geo,                   &
                                       0, (/0/),                    &
-                                      UNIQUE_GEO,                  &
                                       .false., .false., .false.,   &  !not implemented yet
                                       num_ints, oneint_tmp, .false.,   &  !integral matrices
 #ifdef PRG_DIRAC
@@ -1173,11 +1179,11 @@ end if
                                       0,                             &
                                       0, 0, 0,                       &
                                       0, 0, 0,                       &
-                                      0, 0,                          &
+                                      0, 0, 0, (/0/),                &  !geometric derivatives on bra center
+                                      0, 0, 0, (/0/),                &  !geometric derivatives on ket center
                                       order_geo,                     &
                                       order_geo,                     &
                                       0, (/0/),                      &
-                                      UNIQUE_GEO,                    &
                                       .false., .false., .false.,     &
                                       num_ints, oneint_tmp, .false., &
                                       2, (/1, 1, 2, 2/),             &
@@ -1189,11 +1195,11 @@ end if
                                       0,                         &
                                       0, 0, 0,                   &
                                       0, 0, 0,                   &
-                                      0, 0,                      &
+                                      0, 0, 0, (/0/),            &  !geometric derivatives on bra center
+                                      0, 0, 0, (/0/),            &  !geometric derivatives on ket center
                                       order_geo,                 &
                                       order_geo,                 &
                                       0, (/0/),                  &
-                                      UNIQUE_GEO,                &
                                       .false., .false., .false., &
                                       num_ints, T, .false.,      &
                                       1, (/2, 2/),               &
@@ -1208,11 +1214,11 @@ end if
                                       1,                           &
                                       0, 0, 0,                     &
                                       0, 0, 0,                     &
-                                      0, 0,                        &
+                                      0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                      0, 0, 0, (/0/),              &  !geometric derivatives on ket center
                                       order_geo,                   &
                                       order_geo,                   &
                                       0, (/0/),                    &
-                                      UNIQUE_GEO,                  &
                                       .false., .false., .false.,   &
                                       3*num_ints, T, .false.,      &
                                       2, (/1, 2, 2, 1/),           &
@@ -1238,11 +1244,11 @@ end if
                                       0,                         &
                                       0, 0, 0,                   &  !magnetic derivatives
                                       0, 0, 0,                   &  !derivatives w.r.t. total RAM
-                                      0, 0,                      &  !partial geometric derivatives
+                                      0, 0, 0, (/0/),            &  !geometric derivatives on bra center
+                                      0, 0, 0, (/0/),            &  !geometric derivatives on ket center
                                       order_geo,                 &  !total geometric derivatives
                                       order_geo,                 &
                                       0, (/0/),                  &
-                                      UNIQUE_GEO,                &
                                       .false., .false., .false., &  !not implemented yet
                                       num_ints, oneint_tmp,      &  !integral matrices
                                       .false., 1, (/1, 1/),      &
