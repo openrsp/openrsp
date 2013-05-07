@@ -44,9 +44,10 @@ contains
                                 order_elec,                    &
                                 0, 0, 0,                       &  !magnetic derivatives
                                 0, 0, 0,                       &  !derivatives w.r.t. total ram
-                                0, 0,                          &  !partial geometric derivatives
+                                0, 0, 0, (/0/),                &  !geometric derivatives on bra center
+                                0, 0, 0, (/0/),                &  !geometric derivatives on ket center
                                 max_num_cent, order_geo_total, &  !total geometric derivatives
-                                0, (/0/), redundant_geo,       &  !total geometric derivatives
+                                0, (/0/),                      &  !total geometric derivatives
                                 .false., .false., .false.,     &  !not implemented
                                 num_ints, M,                   &
                                 write_integrals_to_file,       &
