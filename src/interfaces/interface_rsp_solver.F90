@@ -193,8 +193,8 @@ contains
     ! uses NSYM
 #include "inforb.h"
     ! uses NVARPT (number of solution vectors?)
-    integer IPRLIN, LSYMRF, LSYMPT, LSYMST, &
-            NCONRF, NCONST, NWOPPT, NVARPT
+    !integer IPRLIN, LSYMRF, LSYMPT, LSYMST, &
+    !        NCONRF, NCONST, NWOPPT, NVARPT
 
 #include "inflin.h"
     ! uses LURSP
