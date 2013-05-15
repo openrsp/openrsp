@@ -123,7 +123,8 @@ contains
       type(SDF)                    :: D_sdf
 !     --------------------------------------------------------------------------
       complex(8)                   :: res(property_size) !fixme, allocate
-      integer                      :: i, j, k, l, maxcomp1, maxcomp2, maxcomp3
+      integer                      :: i, j, k, l, m, p
+      integer                      :: maxcomp1, maxcomp2, maxcomp3, maxcomp4
       integer                      :: element
       integer                      :: nr_atoms
       integer                      :: nr_geo
@@ -714,6 +715,422 @@ contains
 
          deallocate(dmat_tuple)
       end if
+
+
+
+      if (nr_geo == 1 .and. nr_el == 4) then
+         combination_found = .true.
+
+         ! Using (k,n) = (0,4)
+
+         allocate(dmat_tuple(16))
+
+         call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+         do i = 1, 3
+
+            call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/i/), dmat_tuple(2))
+
+
+            if (p_tuple_compare(p_tuple_getone(pert, 2) , &
+                p_tuple_getone(pert, 3)) .eqv. .TRUE.) then
+               maxcomp2 = i
+            else
+               maxcomp2 = 3
+            end if
+
+
+            do j = 1, maxcomp2
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/j/), dmat_tuple(3))
+
+               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                  p_tuple_getone(pert, 3)), (/i,j/), dmat_tuple(4))
+
+               if (p_tuple_compare(p_tuple_getone(pert, 3) , &
+                   p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                  maxcomp3 = j
+               else
+                  maxcomp3 = 3
+               end if
+
+               do k = 1, maxcomp3
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/k/), dmat_tuple(5))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 4)), (/i,k/), dmat_tuple(6))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                     p_tuple_getone(pert, 4)), (/j,k/), dmat_tuple(7))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                     p_tuple_getone(pert, 4))), (/i,j,k/), &
+                                     dmat_tuple(8))
+
+                  if (p_tuple_compare(p_tuple_getone(pert, 3) , &
+                     p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                     maxcomp4 = k
+                  else
+                     maxcomp4 = 3
+                  end if
+
+                  do l = 1, maxcomp4
+
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 5), (/l/), dmat_tuple(9))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        p_tuple_getone(pert, 5)), (/i,l/), dmat_tuple(10))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        p_tuple_getone(pert, 5)), (/j,l/), dmat_tuple(11))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                        p_tuple_getone(pert, 5)), (/k,l/), dmat_tuple(12))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        p_tuple_getone(pert, 5))), (/i,j,l/), &
+                                        dmat_tuple(13))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                        p_tuple_getone(pert, 5))), (/i,k,l/), &
+                                        dmat_tuple(14))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                        p_tuple_getone(pert, 5))), (/j,k,l/), &
+                                        dmat_tuple(15))
+
+                     call sdf_getdata_s(D_sdf, p_tuple_remove_first(pert), (/i,j,k,l/), &
+                                        dmat_tuple(16))
+
+                     do m = 1, nr_atoms*3
+
+                        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                                  blk_info, blk_sizes, (/m, i, j, k, l/))
+
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=size(dmat_tuple),    &
+                                dmat=(/(dmat_tuple(p)%elms, p = 1, size(dmat_tuple))/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/m/),         &
+                                pert_labels=(/pert%plab/),   &
+                                kn=kn                   &
+                             )
+
+                        res(element) = cmplx(xc_energy, 0.0d0)
+
+                     end do
+                  end do
+               end do
+            end do
+         end do
+
+
+         deallocate(dmat_tuple)
+      end if
+
+
+     if (nr_geo == 2 .and. nr_el == 3) then
+         combination_found = .true.
+
+         ! Using (k,n) = (1,3)
+
+         allocate(dmat_tuple(16))
+
+         call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+         do i = 1, nr_atoms*3
+
+            call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
+
+            do j = 1, i
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
+
+               do k = 1, 3
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(5))
+
+                  if (p_tuple_compare(p_tuple_getone(pert, 3) , &
+                      p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                     maxcomp2 = k
+                  else
+                     maxcomp2 = 3
+                  end if
+
+                  do l = 1, maxcomp2
+
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(6))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(7))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        p_tuple_getone(pert, 3)), (/k,l/), dmat_tuple(8))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        p_tuple_getone(pert, 4))), (/j,k,l/), &
+                                        dmat_tuple(9))
+
+                     if (p_tuple_compare(p_tuple_getone(pert, 4) , &
+                        p_tuple_getone(pert, 5)) .eqv. .TRUE.) then
+                        maxcomp3 = l
+                     else
+                        maxcomp3 = 3
+                     end if
+
+
+                     do m = 1, maxcomp3
+
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 5), (/m/), dmat_tuple(10))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                           p_tuple_getone(pert, 5)), (/j,m/), dmat_tuple(11))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                           p_tuple_getone(pert, 5)), (/k,m/), dmat_tuple(12))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                           p_tuple_getone(pert, 5)), (/l,m/), dmat_tuple(13))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                           merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                           p_tuple_getone(pert, 5))), (/j,k,m/), &
+                                           dmat_tuple(14))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                           merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                           p_tuple_getone(pert, 5))), (/j,l,m/), &
+                                           dmat_tuple(15))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                           merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                           p_tuple_getone(pert, 5))), (/k,l,m/), &
+                                           dmat_tuple(16))
+
+                        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                                  blk_info, blk_sizes, (/i, j, k, l, m/))
+
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=size(dmat_tuple),    &
+                                dmat=(/(dmat_tuple(p)%elms, p = 1, size(dmat_tuple))/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/i, j/),         &
+                                pert_labels=(/pert%plab/),   &
+                                kn=kn                   &
+                             )
+
+                        res(element) = cmplx(xc_energy, 0.0d0)
+
+                     end do
+                  end do
+               end do
+            end do
+         end do
+
+         deallocate(dmat_tuple)
+
+      end if
+
+
+
+     if (nr_geo == 3 .and. nr_el == 2) then
+         combination_found = .true.
+
+         ! Using (k,n) = (2,2)
+
+         allocate(dmat_tuple(16))
+
+         call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+         do i = 1, nr_atoms*3
+
+            call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
+
+            do j = 1, i
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
+
+               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                  p_tuple_getone(pert, 2)), (/i,j/), dmat_tuple(4))
+
+               do k = 1, j
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(5))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                     p_tuple_getone(pert, 3)), (/i,k/), dmat_tuple(6))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(7))
+
+                  do l = 1, 3
+
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(8))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                        p_tuple_getone(pert, 4)), (/i,l/), dmat_tuple(9))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(10))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(11))
+
+                     if (p_tuple_compare(p_tuple_getone(pert, 4) , &
+                        p_tuple_getone(pert, 5)) .eqv. .TRUE.) then
+                        maxcomp3 = l
+                     else
+                        maxcomp3 = 3
+                     end if
+
+
+                     do m = 1, maxcomp3
+
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 5), (/m/), dmat_tuple(12))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                           p_tuple_getone(pert, 5)), (/i,m/), dmat_tuple(13))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                           p_tuple_getone(pert, 5)), (/j,m/), dmat_tuple(14))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                           p_tuple_getone(pert, 5)), (/k,m/), dmat_tuple(15))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                           p_tuple_getone(pert, 5)), (/l,m/), dmat_tuple(16))
+
+                        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                                  blk_info, blk_sizes, (/i, j, k, l, m/))
+
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=size(dmat_tuple),    &
+                                dmat=(/(dmat_tuple(p)%elms, p = 1, size(dmat_tuple))/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/i, j, k/),         &
+                                pert_labels=(/pert%plab/),   &
+                                kn=kn                   &
+                             )
+
+                        res(element) = cmplx(xc_energy, 0.0d0)
+
+                     end do
+                  end do
+               end do
+            end do
+         end do
+
+         deallocate(dmat_tuple)
+
+      end if
+
+
+     if (nr_geo == 4 .and. nr_el == 1) then
+         combination_found = .true.
+
+         ! Using (k,n) = (2,2)
+
+         allocate(dmat_tuple(16))
+
+         call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
+
+         do i = 1, nr_atoms*3
+
+            call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
+
+            do j = 1, i
+
+               call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
+
+               call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                  p_tuple_getone(pert, 2)), (/i,j/), dmat_tuple(4))
+
+               do k = 1, j
+
+                  call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(5))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                     p_tuple_getone(pert, 3)), (/i,k/), dmat_tuple(6))
+
+                  call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                     p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(7))
+
+                  do l = 1, k
+
+                     call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(8))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                        p_tuple_getone(pert, 4)), (/i,l/), dmat_tuple(9))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                        p_tuple_getone(pert, 4)), (/j,l/), dmat_tuple(10))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                        p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(11))
+
+                     do m = 1, 3
+
+                        call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 5), (/m/), dmat_tuple(12))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 1),  &
+                                           p_tuple_getone(pert, 5)), (/i,m/), dmat_tuple(13))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
+                                           p_tuple_getone(pert, 5)), (/j,m/), dmat_tuple(14))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
+                                           p_tuple_getone(pert, 5)), (/k,m/), dmat_tuple(15))
+
+                        call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                           p_tuple_getone(pert, 5)), (/l,m/), dmat_tuple(16))
+
+                        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
+                                  blk_info, blk_sizes, (/i, j, k, l, m/))
+
+                        call xc_integrate(              &
+                                mat_dim=mat_dim,        &
+                                nr_dmat=size(dmat_tuple),    &
+                                dmat=(/(dmat_tuple(p)%elms, p = 1, size(dmat_tuple))/),  &
+                                energy=xc_energy,       &
+                                get_ave=.true.,         &
+                                fmat=(/0.0d0/),         &
+                                geo_coor=(/i, j, k, l/),         &
+                                pert_labels=(/pert%plab/),   &
+                                kn=kn                   &
+                             )
+
+                        res(element) = cmplx(xc_energy, 0.0d0)
+
+                     end do
+                  end do
+               end do
+            end do
+         end do
+
+         deallocate(dmat_tuple)
+
+      end if
+
+
+
 
       if (.not. combination_found) then
          print *, 'ERROR: unsupported geo-el combination in rsp_xcave_interface', &
