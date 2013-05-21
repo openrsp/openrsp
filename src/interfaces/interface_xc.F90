@@ -719,6 +719,7 @@ contains
 
 
       if (nr_geo == 1 .and. nr_el == 4) then
+         ! radovan: note to myself to consider changing dmats 12 and 13
          combination_found = .true.
 
          ! Using (k,n) = (0,4)
@@ -838,6 +839,7 @@ contains
 
 
      if (nr_geo == 2 .and. nr_el == 3) then
+         ! radovan: note to myself to consider changing dmats 12 and 13
          combination_found = .true.
 
          ! Using (k,n) = (1,3)
