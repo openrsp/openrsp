@@ -374,7 +374,7 @@ contains
          do k = 1, 3
 
             if (p_tuple_compare(p_tuple_getone(pert, 2) , &
-                p_tuple_getone(pert, 3)) .eqv. .TRUE.) then
+                p_tuple_getone(pert, 3))) then
                maxcomp2 = k
 
             else
@@ -561,7 +561,7 @@ contains
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(6))
 
             if (p_tuple_compare(p_tuple_getone(pert, 3) , &
-                p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                p_tuple_getone(pert, 4))) then
                maxcomp2 = l
             else
                maxcomp2 = 3
@@ -638,7 +638,7 @@ contains
             ! Check if electric field 1 and 2 are equivalent (same frequency)
             ! If so, do "nonredundant loop" for field 2, if not, do all 3 components of both field 1 and 2
             if (p_tuple_compare(p_tuple_getone(pert, 2) , &
-                p_tuple_getone(pert, 3)) .eqv. .TRUE.) then
+                p_tuple_getone(pert, 3))) then
                maxcomp2 = i
             else
                maxcomp2 = 3
@@ -659,7 +659,7 @@ contains
                ! If not sorted, we would have risked missing some nonredundancy loop extent limitation by
                ! not comparing fields 1 and 3
                if (p_tuple_compare(p_tuple_getone(pert, 3) , &
-                   p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                   p_tuple_getone(pert, 4))) then
                   maxcomp3 = j
                else
                   maxcomp3 = 3
@@ -733,7 +733,7 @@ contains
 
 
             if (p_tuple_compare(p_tuple_getone(pert, 2) , &
-                p_tuple_getone(pert, 3)) .eqv. .TRUE.) then
+                p_tuple_getone(pert, 3))) then
                maxcomp2 = i
             else
                maxcomp2 = 3
@@ -748,7 +748,7 @@ contains
                                   p_tuple_getone(pert, 3)), (/i,j/), dmat_tuple(4))
 
                if (p_tuple_compare(p_tuple_getone(pert, 3) , &
-                   p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                   p_tuple_getone(pert, 4))) then
                   maxcomp3 = j
                else
                   maxcomp3 = 3
@@ -770,7 +770,7 @@ contains
                                      dmat_tuple(8))
 
                   if (p_tuple_compare(p_tuple_getone(pert, 3) , &
-                     p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                     p_tuple_getone(pert, 4))) then
                      maxcomp4 = k
                   else
                      maxcomp4 = 3
@@ -863,7 +863,7 @@ contains
                                      p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(5))
 
                   if (p_tuple_compare(p_tuple_getone(pert, 3) , &
-                      p_tuple_getone(pert, 4)) .eqv. .TRUE.) then
+                      p_tuple_getone(pert, 4))) then
                      maxcomp2 = k
                   else
                      maxcomp2 = 3
@@ -885,7 +885,7 @@ contains
                                         dmat_tuple(9))
 
                      if (p_tuple_compare(p_tuple_getone(pert, 4) , &
-                        p_tuple_getone(pert, 5)) .eqv. .TRUE.) then
+                        p_tuple_getone(pert, 5))) then
                         maxcomp3 = l
                      else
                         maxcomp3 = 3
@@ -993,7 +993,7 @@ contains
                                         p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(11))
 
                      if (p_tuple_compare(p_tuple_getone(pert, 4) , &
-                        p_tuple_getone(pert, 5)) .eqv. .TRUE.) then
+                        p_tuple_getone(pert, 5))) then
                         maxcomp3 = l
                      else
                         maxcomp3 = 3
