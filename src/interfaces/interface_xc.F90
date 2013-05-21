@@ -719,7 +719,6 @@ contains
 
 
       if (nr_geo == 1 .and. nr_el == 4) then
-         ! radovan: note to myself to consider changing dmats 12 and 13
          combination_found = .true.
 
          ! Using (k,n) = (0,4)
@@ -787,13 +786,13 @@ contains
                      call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
                                         p_tuple_getone(pert, 5)), (/j,l/), dmat_tuple(11))
 
-                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 4),  &
-                                        p_tuple_getone(pert, 5)), (/k,l/), dmat_tuple(12))
-
                      call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
                                         merge_p_tuple(p_tuple_getone(pert, 3),  &
                                         p_tuple_getone(pert, 5))), (/i,j,l/), &
-                                        dmat_tuple(13))
+                                        dmat_tuple(12))
+
+                     call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 4),  &
+                                        p_tuple_getone(pert, 5)), (/k,l/), dmat_tuple(13))
 
                      call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
                                         merge_p_tuple(p_tuple_getone(pert, 4),  &
