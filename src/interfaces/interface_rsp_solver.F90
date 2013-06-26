@@ -1,7 +1,7 @@
 module interface_rsp_solver
 
    use matrix_defop
-   use matrix_lowlevel, only: mat_init
+   use matrix_lowlevel, only: mat_init,mat_set_block,mat_get_block
    use interface_scf
    use interface_f77_memory
    use interface_io
@@ -10,7 +10,7 @@ module interface_rsp_solver
 
    public rsp_mosolver_init
    public rsp_mosolver_splash
-#ifndef VAR_LSDALTON
+#if !defined(VAR_LSDALTON)
    public rsp_solver_exec
 #endif
    public rsp_mosolver_finalize
@@ -57,39 +57,54 @@ contains
   !> \param max_dim_reduc is the maximum dimension of the reduced space to which new basis vectors are added
   !> \param threshold is the convergence threshold of solving response equations
   !> \param optimal_orb indicates if using optimal orbital trial vectors of solving response equations
+  !> \param cpp_damping is the broadening (damping) parameter for complex polarization propagator solver
+  !> \param cpp_used indicates if using the complex polarization propagator solver
   subroutine rsp_mosolver_init(max_num_iterat, &
                                max_dim_hess,   &
                                max_dim_reduc,  &
                                threshold,      &
-                               optimal_orb)
+                               optimal_orb,    &
+                               cpp_damping,    &
+                               cpp_used)
 
     integer, optional, intent(in) :: max_num_iterat
     integer, optional, intent(in) :: max_dim_hess
     integer, optional, intent(in) :: max_dim_reduc
     real(8), optional, intent(in) :: threshold
     logical, optional, intent(in) :: optimal_orb
+    real(8), optional, intent(in) :: cpp_damping
+    logical, optional, intent(in) :: cpp_used
 
-#ifdef PRG_DALTON
+#if defined(PRG_DALTON)
     ! uses NBAST
 #include "inforb.h"
     ! uses LUSIFC
 #include "inftap.h"
+#include "abslrs.h"
     ! error information
     integer ierr
     ! if found information on SIRIFC
     logical found
     ! sets the maximum number of micro iterations of solving the response equations
-    if ( present( max_num_iterat ) ) solver_maxit = max_num_iterat
+    if (present(max_num_iterat)) solver_maxit = max_num_iterat
     ! sets the maximum dimension of the sub-block of the configuration Hessian
-    if ( present( max_dim_hess ) ) solver_maxphp = max_dim_hess
+    if (present(max_dim_hess)) solver_maxphp = max_dim_hess
     ! sets the maximum dimension of the reduced space to which new basis vectors are added
-    if ( present( max_dim_reduc ) ) solver_mxrm = max_dim_reduc
+    if (present(max_dim_reduc)) solver_mxrm = max_dim_reduc
     ! sets the convergence threshold of solving the response equations
-    if ( present( threshold ) ) solver_thresh = threshold
+    if (present(threshold)) solver_thresh = threshold
     ! if using the optimal orbital trial vectors in solving response equations
-    if ( present( optimal_orb ) ) solver_optorb = optimal_orb
-    ! initializes the coefficients of molecular orbitals matrices
+    if (present(optimal_orb)) solver_optorb = optimal_orb
 
+    ! sets the complex polarization propagator solver
+    if (present(cpp_used)) then
+      if (cpp_used) then
+        ABSLRS = .true.
+        if (present(cpp_damping)) ABS_DAMP = cpp_damping
+      end if
+    end if
+
+    ! initializes the coefficients of molecular orbitals matrices
     call mat_init(solver_CMO, NBAST, NBAST)
 
     solver_CMO_OCC = 0*solver_CMO
@@ -97,24 +112,25 @@ contains
     solver_CMO_VIR = 0*solver_CMO
     call mat_ensure_alloc(solver_CMO_VIR, only_alloc=.true.)
     ! gets the coefficients of molecular orbitals
-    call di_get_cmo( solver_CMO, solver_CMO_OCC, solver_CMO_VIR )
+    call di_get_cmo(solver_CMO, solver_CMO_OCC, solver_CMO_VIR)
     ! reads active part of one-electron density matrix (MO)
-    if ( get_is_restricted_scf_calculation() ) then
-      allocate( solver_DV( NNASHX ), stat=ierr )
-      if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
-      call DZERO( solver_DV, NNASHX )
+    if (get_is_restricted_scf_calculation()) then
+      allocate(solver_DV(NNASHX), stat=ierr)
+      if (ierr/=0) call QUIT('rsp_mosolver_init>> failed to allcoate solver_DV!')
+      call DZERO(solver_DV, NNASHX)
       ! opens SIRIFC
-      if ( LUSIFC <= 0 ) &
-        call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', ierr, .false. )
-      rewind( LUSIFC )
-      call rd_sirifc( 'DV', found, solver_DV, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-      if ( .not. found ) call QUIT( 'DV not found on SIRIFC!' )
+      if (LUSIFC<=0) then
+        call GPOPEN(LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', ierr, .false.)
+      end if
+      rewind(LUSIFC)
+      call rd_sirifc('DV', found, solver_DV, f77_memory(get_f77_memory_next()), get_f77_memory_left())
+      if (.not. found) call QUIT('rsp_mosolver_init>> DV not found on SIRIFC!')
     else
-      allocate( solver_DV(1), stat=ierr )
-      if ( ierr /= 0 ) call QUIT( 'Failed to allcoate solver_DV!' )
-      solver_DV(1) = 0.0D+00
+      allocate(solver_DV(1), stat=ierr)
+      if (ierr/=0) call QUIT('rsp_mosolver_init>> failed to allcoate solver_DV!')
+      solver_DV(1) = 0.0
     end if
-#endif /* ifdef PRG_DALTON */
+#endif /* if defined(PRG_DALTON) */
 
   end subroutine
 
@@ -125,12 +141,12 @@ contains
   !> \date 2009-12-08
   subroutine rsp_mosolver_finalize()
 
-#ifdef PRG_DALTON
+#if defined(PRG_DALTON)
     solver_CMO = 0
     solver_CMO_OCC = 0
     solver_CMO_VIR = 0
-    deallocate( solver_DV )
-#endif /* ifdef PRG_DALTON */
+    deallocate(solver_DV)
+#endif /* if defined(PRG_DALTON) */
 
   end subroutine
 
@@ -139,40 +155,38 @@ contains
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \param io is the IO unit to dump
-  subroutine rsp_mosolver_splash( io )
+  subroutine rsp_mosolver_splash(io)
     integer, intent(in) :: io
 
-#ifdef PRG_DALTON
-    write( io, 100 ) &
+#if defined(PRG_DALTON)
+    write(io, 100) &
       'Maximum number of micro iterations of solving the response equations: ', solver_maxit
-    write( io, 100 ) &
+    write(io, 100) &
       'Maximum dimension of the sub-block of the configuration Hessian:      ', solver_maxphp
-    write( io, 100 ) &
+    write(io, 100) &
       'Maximum dimension of the reduced space:                               ', solver_mxrm
-    write( io, 110 ) &
+    write(io, 110) &
       'Convergence threshold of solving the response equations:              ', solver_thresh
-    if ( solver_optorb ) write( io, 100 ) &
+    if (solver_optorb) write(io, 100) &
       'Using the optimal orbital trial vectors in solving the response equations'
-    if ( get_is_restricted_scf_calculation() )  write( io, 100 ) &
+    if (get_is_restricted_scf_calculation())  write(io, 100) &
       'Restricted Hartree-Fock (RHF) calculations'
-    write( io, 100 ) 'IO unit of log file: ', get_print_unit()
+    write(io, 100) 'IO unit of log file: ', get_print_unit()
     ! outputs matrices to check
 100 format('INFO ',A,I6)
 110 format('INFO ',A,E16.8)
-#endif /* ifdef PRG_DALTON */
+#endif /* if defined(PRG_DALTON) */
 
   end subroutine
 
-#ifdef PRG_DALTON
+#if defined(PRG_DALTON)
   !> \brief calls MO response solver in DALTON
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \param RHS is the right hand side vectors (property gradients?)
   !> \param eigval contains the frequencies
   !> \return eigvec contains the solution vectors (AO)
-  subroutine rsp_solver_exec(RHS,    &
-                               eigval, &
-                               eigvec)
+  subroutine rsp_solver_exec(RHS, eigval, eigvec)
 
     type(matrix), intent(in)    :: RHS(*)
     real(8),      intent(in)    :: eigval(*)
@@ -209,6 +223,7 @@ contains
     character*8 :: LAB1 = 'MOSOLVER', LAB2 = '        '
     ! uses KZVAR
 #include "wrkrsp.h"
+#include "abslrs.h"
     ! constants
     real(8), parameter :: half = 5.0D-01
     real(8), parameter :: zero = 0.0D+00
@@ -225,16 +240,22 @@ contains
     KZVAR = KZWOPT
     KZYVAR = KZWOPT + KZWOPT
     KMJWOP = get_f77_memory_next() + KZYVAR
-    if ( KMJWOP+(16*MAXWOP+1)/IRAT > get_f77_memory_total() ) &
-      call STOPIT( 'DALTON_IFC', 'SOL(MO)', KMJWOP+(16*MAXWOP+1)/IRAT, get_f77_memory_total() )
+    if (KMJWOP+(16*MAXWOP+1)/IRAT > get_f77_memory_total()) then
+      call STOPIT('DALTON_IFC', 'SOL(MO)', KMJWOP+(16*MAXWOP+1)/IRAT, get_f77_memory_total())
+    end if
 
     ! open files
     LUSOVE = -1
     LUGDVE = -1
     LUREVE = -1
-    call GPOPEN( LUSOVE, ' ', 'UNKNOWN', ' ', ' ', idummy, .false. )
-    call GPOPEN( LUGDVE, ' ', 'UNKNOWN', ' ', ' ', idummy, .false. )
-    call GPOPEN( LUREVE, ' ', 'UNKNOWN', ' ', ' ', idummy, .false. )
+    call GPOPEN(LUSOVE, ' ', 'UNKNOWN', ' ', ' ', idummy, .false.)
+    call GPOPEN(LUGDVE, ' ', 'UNKNOWN', ' ', ' ', idummy, .false.)
+    call GPOPEN(LUREVE, ' ', 'UNKNOWN', ' ', ' ', idummy, .false.)
+    ! for the complex polarization propagator solver
+    if (ABSLRS) then
+      LUABSVECS = -1
+      call GPOPEN(LUABSVECS, ' ', 'UNKNOWN', ' ', ' ', idummy, .false.)
+    end if
 
     !N ! loops over symmetry
     !N do ISYM = 1, NSYM
@@ -245,14 +266,14 @@ contains
     do IRHS = 1, rsp2_number_of_rhs
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
-      call UTHV( solver_CMO%elms, RHS(IRHS)%elms, solver_CMO%elms, &
-                 ISYM, ISYM, NBAST, NBAST, RHS_MO%elms, f77_memory(get_f77_memory_next()) )
+      call UTHV(solver_CMO%elms, RHS(IRHS)%elms, solver_CMO%elms, &
+                ISYM, ISYM, NBAST, NBAST, RHS_MO%elms, f77_memory(get_f77_memory_next()))
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
-      call PRPORB( RHS_MO%elms, solver_DV, f77_memory(get_f77_memory_next()) )
+      call PRPORB(RHS_MO%elms, solver_DV, f77_memory(get_f77_memory_next()))
       !FIXME: why multiplied by -1
-      call DSCAL( KZVAR, -1.0D+00, f77_memory(get_f77_memory_next()), 1 )
+      call DSCAL(KZVAR, -1.0D+00, f77_memory(get_f77_memory_next()), 1)
       ! writes out right hand side vector
-      call WRITT( LUGDVE, KZYVAR, f77_memory( get_f77_memory_next() : get_f77_memory_next()+KZYVAR-1 ) )
+      call WRITT(LUGDVE, KZYVAR, f77_memory( get_f77_memory_next() : get_f77_memory_next()+KZYVAR-1 ))
       !> \todo ! outputs to check
       !> \todo if ( lprt_dal >= 20 ) then
       !> \todo   call xdump_array2( dims = (/KZVAR,KZVAR/),       &
@@ -260,26 +281,31 @@ contains
       !> \todo                      iout = log_dal,               &
       !> \todo                      label = 'GP Vector (MO) in DALTON_IFC' )
       !> \todo end if
-      call DZERO( RHS_MO%elms, NORBT*NORBT )
+      call DZERO(RHS_MO%elms, NORBT*NORBT)
     end do
 
     ! calculates the linear response vector and writes to file
     !
     ! when doing response calculations, we need to close RSPVEC
-    if ( LURSP > 0 ) call GPCLOSE( LURSP, 'KEEP' )
+    if (LURSP>0) call GPCLOSE(LURSP, 'KEEP')
     ! calls ABACUS solver
-    call ABARSP( solver_ci, get_is_restricted_scf_calculation(), solver_triplet, solver_optorb, &
-                 ISYM, solver_excit, eigval, rsp2_number_of_omegas,      &
-                 solver_nabaty, rsp2_number_of_rhs, LAB1,                &
-                 LUGDVE, LUSOVE, LUREVE, solver_thresh, solver_maxit,    &
-                 1, solver_mxrm, solver_maxphp,                   &
-                 f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+    call ABARSP(solver_ci, get_is_restricted_scf_calculation(),    &
+                solver_triplet, solver_optorb, ISYM, solver_excit, &
+                eigval, rsp2_number_of_omegas, solver_nabaty,      &
+                rsp2_number_of_rhs, LAB1, LUGDVE, LUSOVE, LUREVE,  &
+                solver_thresh, solver_maxit, 1, solver_mxrm,       &
+                solver_maxphp, f77_memory(get_f77_memory_next()),  &
+                get_f77_memory_left())
 
     ! reads the MO solutions and residuals
-    rewind( LUSOVE )
+    if (ABSLRS) then
+      rewind(LUABSVECS)
+    else
+      rewind(LUSOVE)
+    end if
     !N rewind( LUREVE )
-    allocate( mo_eigvec(rsp2_number_of_omegas), stat=ierr )
-    if ( ierr /= 0 ) call QUIT( 'Failed to allocate MO solutions!' )
+    allocate(mo_eigvec(rsp2_number_of_omegas), stat=ierr)
+    if (ierr/=0) call QUIT('Failed to allocate MO solutions!')
     ! loops over solution vectors
     do ISOL = 1, rsp2_number_of_omegas
 
@@ -289,44 +315,52 @@ contains
       call mat_init(mo_eigvec(ISOL), RHS_MO%nrow, RHS_MO%ncol)
 
       ! reads the solution
-      call READT( LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()) )
+      if (ABSLRS) then
+        call READT(LUABSVECS, KZYVAR, f77_memory(get_f77_memory_next()))
+      else
+        call READT(LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()))
+      end if
 
       ! JWOP(1,i): inactive (i)
       ! JWOP(2,i): secondary (a)
       !    i  a
       ! i [0  k*]
       ! a [k  0 ]
-      call SETZY( f77_memory(KMJWOP) )
+      call SETZY(f77_memory(KMJWOP))
       ! This subroutine unpacks the ZY matrix from the vector.
       ! It uses the Z and the Y part of the vector.
-      call GTZYMT( 1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, f77_memory(KMJWOP) )
+      call GTZYMT(1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, f77_memory(KMJWOP))
       ! transforms from MO to AO
-      eigvec(ISOL) = - solver_CMO_OCC*( mo_eigvec(ISOL)*trans( solver_CMO_VIR ) ) &
-                     - solver_CMO_VIR*( mo_eigvec(ISOL)*trans( solver_CMO_OCC ) )
+      eigvec(ISOL) = -solver_CMO_OCC*(mo_eigvec(ISOL)*trans(solver_CMO_VIR)) &
+                     -solver_CMO_VIR*(mo_eigvec(ISOL)*trans(solver_CMO_OCC))
     end do ! loops over solution vectors
 
     ! closes and deletes files
-    if ( LUSOVE > 0 ) call GPCLOSE( LUSOVE, 'DELETE' )
-    if ( LUGDVE > 0 ) call GPCLOSE( LUGDVE, 'DELETE' )
-    if ( LUREVE > 0 ) call GPCLOSE( LUREVE, 'DELETE' )
+    if (LUSOVE>0) call GPCLOSE(LUSOVE, 'DELETE')
+    if (LUGDVE>0) call GPCLOSE(LUGDVE, 'DELETE')
+    if (LUREVE>0) call GPCLOSE(LUREVE, 'DELETE')
+    if (ABSLRS) then
+      if (LUABSVECS>0) call GPCLOSE(LUABSVECS, 'DELETE')
+    end if
+
     ! cleans
     RHS_MO = 0
     do ISOL = 1, rsp2_number_of_omegas
       mo_eigvec(ISOL) = 0
     end do
-    deallocate( mo_eigvec )
+    deallocate(mo_eigvec)
 
   end subroutine
-#endif /* ifdef PRG_DALTON */
+#endif /* if defined(PRG_DALTON) */
 
-#ifdef PRG_DALTON
+#if defined(PRG_DALTON)
   !> \brief gets the coefficients of molecular orbitals
   !> \author Bin Gao
   !> \date 2009-12-08
   !> \return CMO contains the coefficients of molecular orbitals
   !> \return CMO_OCC contains the coefficients of occupied molecular orbitals
   !> \return CMO_VIR contains the coefficients of virtual molecular orbitals
-  subroutine di_get_cmo( CMO, CMO_OCC, CMO_VIR )
+  subroutine di_get_cmo(CMO, CMO_OCC, CMO_VIR)
 
     type(matrix), intent(inout) :: CMO
     type(matrix), intent(inout) :: CMO_OCC
@@ -340,28 +374,35 @@ contains
     ! dummy stuff
     integer idummy
     ! temparary stuff
+    real(8), allocatable :: values(:,:)
     logical found
-    integer i
+    integer ierr
     ! opens SIRIFC
-    if ( LUSIFC <= 0 ) &
-      call GPOPEN( LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false. )
-    rewind( LUSIFC )
+    if (LUSIFC<=0) then
+      call GPOPEN(LUSIFC, 'SIRIFC', 'OLD', ' ', 'UNFORMATTED', idummy, .false.)
+    end if
+    rewind(LUSIFC)
     ! reads the molecular orbital coefficients
-    call rd_sirifc( 'CMO', found, CMO%elms, f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-    if ( .not. found ) call QUIT( 'CMO not found on SIRIFC!' )
-    !N if ( .not. restrict_scf ) CMO%elms = CMO%elms
+    call rd_sirifc('CMO', found, CMO%elms, f77_memory(get_f77_memory_next()), get_f77_memory_left())
+    if (.not.found) call QUIT('CMO not found on SIRIFC!')
+    !N if (.not. restrict_scf) CMO%elms = CMO%elms
     ! generates the occupied and virtual molecular orbitals
-    CMO_OCC%elms(:,:NOCCT,1)   = CMO%elms(:,:NOCCT,1)
-    CMO_OCC%elms(:,NOCCT+1:,1) = 0
-    CMO_VIR%elms(:,:NOCCT,1)   = 0
-    CMO_VIR%elms(:,NOCCT+1:,1) = CMO%elms(:,NOCCT+1:,1)
+    allocate(values(NBAST,NBAST), stat=ierr)
+    if (ierr/=0) call QUIT("di_get_cmo>> failed to allocate values!")
+    call mat_get_block(CMO, 1, NBAST, 1, NOCCT, values)
+    values(:,NOCCT+1:) = 0
+    call mat_set_block(CMO_OCC, 1, NBAST, 1, NBAST, values)
+    call mat_get_block(CMO, 1, NBAST, NOCCT+1, NBAST, values(:,NOCCT+1:))
+    values(:,1:NOCCT) = 0
+    call mat_set_block(CMO_VIR, 1, NBAST, 1, NBAST, values)
+    deallocate(values)
     ! closes SIRIFC
-    if ( LUSIFC > 0 ) call GPCLOSE( LUSIFC, 'KEEP' )
+    if (LUSIFC>0) call GPCLOSE(LUSIFC, 'KEEP')
   end subroutine
-#endif /* ifdef PRG_DALTON */
+#endif /* if defined(PRG_DALTON) */
 
 
-#ifdef PRG_DIRAC
+#if defined(PRG_DIRAC)
   subroutine set_orbrot_indices(irep,       &
                                           length,     &
                                           from_block, &
@@ -1025,6 +1066,6 @@ contains
     end do
 
   end subroutine
-#endif /* ifdef PRG_DIRAC */
+#endif /* if defined(PRG_DIRAC) */
 
 end module

@@ -17,6 +17,11 @@ module openrsp_cfg
    ! the frequency-dependent linear response equations
    logical :: openrsp_cfg_solver_optorb = .false.
 
+   ! broadening (damping) parameter for the complex polarization propagator solver
+   real(8) :: openrsp_cfg_cpp_damping = 0.0
+   ! if using the complex polarization propagator solver
+   logical :: openrsp_cfg_cpp_used = .false.
+
    real(8) :: openrsp_cfg_speed_of_light = 137.0359998d0
    logical :: openrsp_cfg_skip_llss      = .false.
    logical :: openrsp_cfg_skip_ssss      = .true.

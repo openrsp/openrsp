@@ -144,7 +144,9 @@ contains
                            openrsp_cfg_solver_maxphp, &
                            openrsp_cfg_solver_maxred, &
                            openrsp_cfg_solver_thresh, &
-                           openrsp_cfg_solver_optorb)
+                           openrsp_cfg_solver_optorb, &
+                           openrsp_cfg_cpp_damping,   &
+                           openrsp_cfg_cpp_used)
 
     ! initialize and allocate overlap matrix
     call mat_init(S, NBAST, NBAST)

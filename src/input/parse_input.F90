@@ -93,6 +93,13 @@
          openrsp_cfg_solver_optorb = .true.
       end if
 
+      ! reads the broadening (damping) parameter, as such the complex
+      ! polarization propagator solver will be used
+      if (kw_matches(word, '.DAMPING')) then
+         openrsp_cfg_cpp_used = .true.
+         call kw_read(word, openrsp_cfg_cpp_damping)
+      end if
+
       if (kw_matches(word, '.FREQ  ')) then
          call kw_read(word, openrsp_cfg_nr_real_freqs)
          allocate(openrsp_cfg_real_freqs(openrsp_cfg_nr_real_freqs))
