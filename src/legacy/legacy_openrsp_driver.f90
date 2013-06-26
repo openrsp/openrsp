@@ -40,7 +40,7 @@
   !> \date 2009-12-08
   !> \param WORK contains the work memory
   !> \param LWORK is the size of the work memory
-  subroutine openrsp_daldrv_old( WORK, LWORK, WAVPCM )
+  subroutine openrsp_daldrv_old(WORK, LWORK, WAVPCM)
     ! matrix
     use matrix_defop
     use matrix_lowlevel, only: mat_init
@@ -61,7 +61,7 @@
     implicit none
 
     integer LWORK
-    real(8) WORK( LWORK )
+    real(8) WORK(LWORK)
     logical WAVPCM
 
     integer lupri, lucmd, nbast
@@ -122,6 +122,10 @@
     ! true for optimal orbital trial vectors in the iterative solution of
     ! the frequency-dependent linear response equations
     logical :: solver_optorb = .false.
+    ! broadening (damping) parameter for complex polarization propagator solver
+    real(8) :: cpp_damping = 0.0
+    ! indicates if using the complex polarization propagator solver
+    logical :: cpp_used = .false.
 
     ! overlap matrix
     type(matrix) S
@@ -168,31 +172,31 @@
     lupri = get_print_unit()
     lucmd = get_input_unit()
 
-    call QENTER( 'OpenRSP ' )
+    call QENTER('OpenRSP ')
 
     ! prints the header and license information
-    call TITLER( 'OpenRSP: solve response equation using AO basis', '*', -1 )
-    write( LUPRI, 100 ) '-- with Andreas J. Thorvaldsen''s code '// &
+    call TITLER('OpenRSP: solve response equation using AO basis', '*', -1)
+    write(LUPRI, 100) '-- with Andreas J. Thorvaldsen''s code '// &
                         'and the MO response solver in DALTON.'
-    write( LUPRI, '()' )
-    write( LUPRI, 100 ) 'Reference:'
-    write( LUPRI, 100 ) ' Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,'// &
+    write(LUPRI, '()')
+    write(LUPRI, 100) 'Reference:'
+    write(LUPRI, 100) ' Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,'// &
                         ' Poul Jorgensen, and Sonia Coriani, '
-    write( LUPRI, 100 ) ' J. Chem. Phys. 129, 214108 (2008).'
-    write( LUPRI, '()' )
-    if( WAVPCM ) then
-       write( LUPRI, 100 ) '* Wavelet-PCM non-nonequilibrium calculation'
-       write( LUPRI, '()' )
+    write(LUPRI, 100) ' J. Chem. Phys. 129, 214108 (2008).'
+    write(LUPRI, '()')
+    if(WAVPCM) then
+       write(LUPRI, 100) '* Wavelet-PCM non-nonequilibrium calculation'
+       write(LUPRI, '()')
     end if
 
     ! dumps the molecule information
     num_atoms = get_nr_atoms()
-    allocate( aname(num_atoms), stat=ierr )
-    if ( ierr /= 0 ) call QUIT( 'Failed to allocate aname!' )
-    allocate( acharge(num_atoms), stat=ierr )
-    if ( ierr /= 0 ) call QUIT( 'Failed to allocate acharge!' )
-    allocate( acoord(3,num_atoms), stat=ierr )
-    if ( ierr /= 0 ) call QUIT( 'Failed to allocate acoord!' )
+    allocate(aname(num_atoms), stat=ierr)
+    if (ierr /= 0) call QUIT('Failed to allocate aname!')
+    allocate(acharge(num_atoms), stat=ierr)
+    if (ierr /= 0) call QUIT('Failed to allocate acharge!')
+    allocate(acoord(3,num_atoms), stat=ierr)
+    if (ierr /= 0) call QUIT('Failed to allocate acoord!')
 
     do i = 1, num_atoms
        aname(i)     = get_nuc_name(i)
@@ -203,143 +207,147 @@
     end do
 
     ! dumps geometry for PyVib2
-    write( LUPRI, '(2X,A)' ) 'Cartesian Coordinates (a.u.)'
-    write( LUPRI, '(2X,A)' ) '----------------------------'
-    write( LUPRI, '()' )
-    write( LUPRI, '(2X,A,I5)' ) 'Total number of coordinates:', 3*num_atoms
+    write(LUPRI, '(2X,A)') 'Cartesian Coordinates (a.u.)'
+    write(LUPRI, '(2X,A)') '----------------------------'
+    write(LUPRI, '()')
+    write(LUPRI, '(2X,A,I5)') 'Total number of coordinates:', 3*num_atoms
     do i = 1, num_atoms
-      write( LUPRI, '(2X,A,3X," : ",3(I4,2X,A,F15.10))' ) &
+      write(LUPRI, '(2X,A,3X," : ",3(I4,2X,A,F15.10))') &
         aname(i), 3*i-2, 'x', acoord(1,i), 3*i-1, 'y', acoord(2,i), 3*i, 'z', acoord(3,i)
     end do
-    write( LUPRI, '()' )
-    deallocate( aname )
-    deallocate( acharge )
-    deallocate( acoord )
+    write(LUPRI, '()')
+    deallocate(aname)
+    deallocate(acharge)
+    deallocate(acoord)
 
     ! processes the input information
-    read( LUCMD, 110, err=999, end=999 ) word
-    do while( word(1:12) /= '$END RESPONS' )
+    read(LUCMD, 110, err=999, end=999) word
+    do while(word(1:12) /= '$END RESPONS')
       ! reads comments
-      if ( word(1:1) == '!' .or. word(1:1) == '#' ) then
-        read( LUCMD, 110, err=999, end=999 ) word
+      if (word(1:1) == '!' .or. word(1:1) == '#') then
+        read(LUCMD, 110, err=999, end=999) word
         cycle
       end if
-      select case ( trim( word ) )
+      select case(trim(word))
       ! reads print level
-      case ( '.PRINT' )
-        read( LUCMD, *, err=999, end=999 ) level_print
+      case('.PRINT')
+        read(LUCMD, *, err=999, end=999) level_print
       ! reads control information of MO response solver
-      case ( '.MAX IT' )
-        read( LUCMD, *, err=999, end=999 ) solver_maxit
-      case ( '.MAXPHP' )
-        read( LUCMD, *, err=999, end=999 ) solver_maxphp
-      case ('.MAXRED')
-        read( LUCMD, *, err=999, end=999 ) solver_mxrm
-      case ( '.THRESH')
-        read( LUCMD, *, err=999, end=999 ) solver_thresh
-      case ( '.OPTORB')
+      case('.MAX IT')
+        read(LUCMD, *, err=999, end=999) solver_maxit
+      case('.MAXPHP')
+        read(LUCMD, *, err=999, end=999) solver_maxphp
+      case('.MAXRED')
+        read(LUCMD, *, err=999, end=999) solver_mxrm
+      case('.THRESH')
+        read(LUCMD, *, err=999, end=999) solver_thresh
+      case('.OPTORB')
         solver_optorb = .true.
+      ! for the complex polarization propagator solver
+      case(".DAMPING")
+        cpp_used = .true.
+        read(LUCMD, *, err=999, end=999) cpp_damping
       ! reads real frequencies
-      case ( '.FREQ' )
+      case('.FREQ')
         ! reads the number of real frequencies
-        read( LUCMD, * ) num_freq
-        allocate( real_freqs( num_freq ), stat=ierr )
-        if ( ierr /= 0 ) call QUIT( 'Failed to allocate real_freqs!' )
-        backspace( LUCMD )
-        read( LUCMD, *, err=999, end=999 ) num_freq, ( real_freqs(i), i = 1, num_freq )
+        read(LUCMD, *) num_freq
+        allocate(real_freqs(num_freq), stat=ierr)
+        if (ierr /= 0) call QUIT('Failed to allocate real_freqs!')
+        backspace(LUCMD)
+        read(LUCMD, *, err=999, end=999) num_freq, (real_freqs(i), i = 1, num_freq)
       ! reads imaginary frequencies
-      case ( '.IMFREQ' )
+      case('.IMFREQ')
         ! reads the number of imaginary frequencies
-        read( LUCMD, * ) num_freq
-        allocate( imag_freqs( num_freq ), stat=ierr )
-        if ( ierr /= 0 ) call QUIT( 'Failed to allocate imag_freqs!' )
-        backspace( LUCMD )
-        read( LUCMD, *, err=999, end=999 ) num_freq, ( imag_freqs(i), i = 1, num_freq )
+        read(LUCMD, *) num_freq
+        allocate(imag_freqs(num_freq), stat=ierr)
+        if (ierr /= 0) call QUIT('Failed to allocate imag_freqs!')
+        backspace(LUCMD)
+        read(LUCMD, *, err=999, end=999) num_freq, (imag_freqs(i), i = 1, num_freq)
       ! reads calcualted properties
-      case ( '.EFGB' )
+      case('.EFGB')
         openrsp_efgb = .true.
-      case ( '.CME' )
+      case('.CME')
         openrsp_cme = .true.
-      case ( '.ROA' )
+      case('.ROA')
         openrsp_roa = .true.
-      case ( '.CARS' )
+      case('.CARS')
         openrsp_cars = .true.
-      case ( '.JONES' )
+      case('.JONES')
         openrsp_jones = .true.
-      case ( '.POLARIZ' )
+      case('.POLARIZ')
         openrsp_polariz = .true.
-      case ( '.HYPOLAR2' )
+      case('.HYPOLAR2')
         openrsp_hypolar2 = .true.
-      case ( '.HYPOLAR' )
+      case('.HYPOLAR')
         openrsp_hypolar = .true.
-      case ( '.SECHYP3' )
+      case('.SECHYP3')
         openrsp_sechyp3 = .true.
-      case ( '.SECHYP' )
+      case('.SECHYP')
         openrsp_sechyp = .true.
-      case ( '.SECHYP1' )
+      case('.SECHYP1')
         openrsp_sechyp1 = .true.
-      case ( '.VIBBETA' )
+      case('.VIBBETA')
         openrsp_vibbeta = .true.
-      case ( '.VIBSHYP' )
+      case('.VIBSHYP')
         openrsp_vibshyp = .true.
-      case ( '.VCD' )
+      case('.VCD')
         openrsp_vcd = .true.
-      case ( '.MAGNETIZABILITY' )
+      case('.MAGNETIZABILITY')
         openrsp_magnetizability = .true.
       case default
         ! illegal keyword
-        call QUIT( ' Keyword "'//trim(word)//'" is not recognized in OpenRSP!' )
+        call QUIT(' Keyword "'//trim(word)//'" is not recognized in OpenRSP!')
       end select
       ! reads next line
-      read( LUCMD, 110, err=999, end=999 ) word
+      read(LUCMD, 110, err=999, end=999) word
     end do
 
     ! default is static properties
-    if ( .not. allocated(real_freqs) ) then
-      allocate( real_freqs( 1 ), stat=ierr )
-      if ( ierr /= 0 ) call QUIT( 'Failed to allocate real_freqs!' )
+    if (.not. allocated(real_freqs)) then
+      allocate(real_freqs(1), stat=ierr)
+      if (ierr /= 0) call QUIT('Failed to allocate real_freqs!')
       real_freqs = 0.0D+00
     end if
-    if ( .not. allocated(imag_freqs) ) then
-      allocate( imag_freqs( size(real_freqs) ), stat=ierr )
-      if ( ierr /= 0 ) call QUIT( 'Failed to allocate imag_freqs!' )
+    if (.not. allocated(imag_freqs)) then
+      allocate(imag_freqs(size(real_freqs)), stat=ierr)
+      if (ierr /= 0) call QUIT('Failed to allocate imag_freqs!')
       imag_freqs = 0.0D+00
     end if
 
     call interface_f77_memory_init(work_len=lwork, work=work)
 
     ! initializes the MO response solver
-    call rsp_mosolver_init( solver_maxit, solver_maxphp, solver_mxrm, &
-                            solver_thresh, solver_optorb )
+    call rsp_mosolver_init(solver_maxit, solver_maxphp, solver_mxrm, &
+                           solver_thresh, solver_optorb, cpp_damping, cpp_used)
 
     ! sets the control information of openrsp
-    call openrsp_info_set( openrsp_info,       &
-                           LUPRI, level_print, &
-                           real_freqs,         &
-                           imag_freqs,         &
-                           openrsp_efgb,       &
-                           openrsp_cme,        &
-                           openrsp_roa,        &
-                           openrsp_cars,       &
-                           openrsp_jones,      &
-                           openrsp_polariz,    &
-                           openrsp_hypolar2,   &
-                           openrsp_hypolar,    &
-                           openrsp_sechyp3,    &
-                           openrsp_sechyp,     &
-                           openrsp_sechyp1,    &
-                           openrsp_vibbeta,    &
-                           openrsp_vibshyp,    &
-                           openrsp_vcd,        &
-                           openrsp_magnetizability )
-    deallocate( real_freqs )
-    deallocate( imag_freqs )
+    call openrsp_info_set(openrsp_info,       &
+                          LUPRI, level_print, &
+                          real_freqs,         &
+                          imag_freqs,         &
+                          openrsp_efgb,       &
+                          openrsp_cme,        &
+                          openrsp_roa,        &
+                          openrsp_cars,       &
+                          openrsp_jones,      &
+                          openrsp_polariz,    &
+                          openrsp_hypolar2,   &
+                          openrsp_hypolar,    &
+                          openrsp_sechyp3,    &
+                          openrsp_sechyp,     &
+                          openrsp_sechyp1,    &
+                          openrsp_vibbeta,    &
+                          openrsp_vibshyp,    &
+                          openrsp_vcd,        &
+                          openrsp_magnetizability)
+    deallocate(real_freqs)
+    deallocate(imag_freqs)
 
     ! dumps the control information of openrsp
-    call openrsp_info_dump( openrsp_info, LUPRI )
+    call openrsp_info_dump(openrsp_info, LUPRI)
 
     ! dumps the control information of MO response solver
-    call rsp_mosolver_splash( LUPRI )
+    call rsp_mosolver_splash(LUPRI)
 
     ! initialize and allocate matrices
     call mat_init(S, NBAST, NBAST)
@@ -375,7 +383,7 @@
     end if
 
     ! performs the calculations
-    call openrsp_prop_calc(S, D, F, openrsp_info )
+    call openrsp_prop_calc(S, D, F, openrsp_info)
 
     ! cleans
     S = 0
@@ -389,15 +397,15 @@
     call interface_f77_memory_finalize()
 
     ! stamps the date, time and hostname
-    call TSTAMP( ' ', LUPRI )
-    write( LUPRI, '()' )
-    write( LUPRI, 100 ) '** End of OpenRSP Section'
-    write( LUPRI, '()' )
+    call TSTAMP(' ', LUPRI)
+    write(LUPRI, '()')
+    write(LUPRI, 100) '** End of OpenRSP Section'
+    write(LUPRI, '()')
 
-    call QEXIT( 'OpenRSP ' )
+    call QEXIT('OpenRSP ')
     return
 
-999 call QUIT( 'Failed to process input after reading '//trim( word )//'!' )
+999 call QUIT('Failed to process input after reading '//trim(word)//'!')
 
 100  format(1X,'>> ',A,I6)
 110  format(80A)
