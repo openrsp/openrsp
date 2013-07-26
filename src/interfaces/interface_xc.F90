@@ -101,7 +101,6 @@ contains
       end do
 
       call xcint_interface_init(nr_centers=nucind,                                           &
-                                center_charge=charge,                                        &
                                 center_xyz=cord,                                             &
                                 nr_shells=kmax,                                              &
                                 l_quantum_nr=l_quantum_nr,                                   &
