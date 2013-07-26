@@ -66,7 +66,6 @@ module openrsp
   use rsp_mag_prop
 
 ! xcint
-  use interface_ao_specific
   use xcint_integrator
 
   implicit none
@@ -177,8 +176,6 @@ contains
     G  = 0
 
     if (get_is_ks_calculation()) then
-       ! write xcint interface files
-       call interface_ao_write()
 
        ! add xc contribution to the fock matrix
        mat_dim = D%nrow

@@ -35,20 +35,93 @@ module interface_xc
 
 contains
 
-   subroutine interface_xc_init()
-#ifdef VAR_LSDALTON
-     STOP 'interface_xc_init'
-#else
-#include "mxcent.h"
-#include "nuclei.h"
-#include "inforb.h"
+   subroutine set_is_ks_calculation()
+
 #include "maxorb.h"
 #include "infinp.h"
 
       is_ks_calculation = dodft
 
+   end subroutine
+
+   subroutine interface_xc_init()
+
+      use xcint_interface
+
+#include "aovec.h"
+#include "mxcent.h"
+#include "nuclei.h"
+#include "maxorb.h"
+#include "shells.h"
+#include "primit.h"
+
+      integer, allocatable :: nr_primitives_per_shell(:)
+      real(8), allocatable :: primitive_exp(:, :)
+      real(8), allocatable :: contraction_coef(:, :)
+      integer, allocatable :: l_quantum_nr(:)
+      integer, allocatable :: shell_center(:)
+      integer              :: i, j, icount, iprim, ishell, iround
+      logical              :: is_spherical
+
+      allocate(nr_primitives_per_shell(kmax))
+      do iround = 1, 2
+         if (iround == 2) then
+            allocate(primitive_exp(maxval(nr_primitives_per_shell), kmax))
+            allocate(contraction_coef(maxval(nr_primitives_per_shell), kmax))
+         end if
+         do ishell = 1, kmax
+            i = jstrt(ishell) + 1
+            j = jstrt(ishell) + nuco(ishell)
+            icount = 0
+            do iprim = i, j
+               if (dabs(priccf(iprim, numcf(ishell))) > tiny(0.0d0)) then
+                  icount = icount + 1
+                  nr_primitives_per_shell(ishell) = icount
+                  if (iround == 2) then
+                     contraction_coef(icount, ishell) = priccf(iprim, numcf(ishell))
+                     primitive_exp(icount, ishell)    = priexp(iprim)
+                  end if
+               end if
+            end do
+         end do
+      end do
+
+      allocate(l_quantum_nr(kmax))
+      allocate(shell_center(kmax))
+      do ishell = 1, kmax
+         l_quantum_nr(ishell) = nhkt(ishell) - 1
+         shell_center(ishell) = ncent(ishell)
+      end do
+
+      is_spherical = .false.
+      do ishell = 1, kmax
+         if (sphr(ishell)) then
+            is_spherical = .true.
+         end if
+      end do
+
+      call xcint_interface_init(nr_centers=nucind,                                           &
+                                center_charge=charge,                                        &
+                                center_xyz=cord,                                             &
+                                nr_shells=kmax,                                              &
+                                l_quantum_nr=l_quantum_nr,                                   &
+                                shell_center=shell_center,                                   &
+                                nr_primitives_per_shell=nr_primitives_per_shell,             &
+                                max_nr_primitives_per_shell=maxval(nr_primitives_per_shell), &
+                                primitive_exp=primitive_exp,                                 &
+                                contraction_coef=contraction_coef,                           &
+                                is_spherical=is_spherical)
+
+      deallocate(nr_primitives_per_shell)
+      deallocate(primitive_exp)
+      deallocate(contraction_coef)
+      deallocate(l_quantum_nr)
+      deallocate(shell_center)
+
+      call set_is_ks_calculation()
+
       is_initialized = .true.
-#endif
+
    end subroutine
 
    subroutine interface_xc_finalize()
@@ -1261,7 +1334,6 @@ end module
 
    subroutine external_rsp_xcint_interface(nr_ao, dmat, fmat, xc_energy)
 
-      use interface_ao_specific
       use xcint_integrator
 
       integer      :: nr_ao
@@ -1278,7 +1350,6 @@ end module
       xc_energy = 0.0d0
 
 #ifndef PRG_DIRAC
-      call interface_ao_write()
       call xc_integrate(                  &
                         mat_dim=nr_ao,    &
                         nr_dmat=1,        &
