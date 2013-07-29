@@ -46,7 +46,7 @@ contains
 
    subroutine interface_xc_init()
 
-      use xcint_interface
+      use karaoke_interface
 
 #include "aovec.h"
 #include "mxcent.h"
@@ -61,7 +61,7 @@ contains
       integer, allocatable :: l_quantum_nr(:)
       integer, allocatable :: shell_center(:)
       integer              :: i, j, icount, iprim, ishell, iround
-      logical              :: is_spherical
+      character(1)         :: basis_type
 
       allocate(nr_primitives_per_shell(kmax))
       do iround = 1, 2
@@ -93,23 +93,22 @@ contains
          shell_center(ishell) = ncent(ishell)
       end do
 
-      is_spherical = .false.
+      basis_type = 'c'
       do ishell = 1, kmax
          if (sphr(ishell)) then
-            is_spherical = .true.
+            basis_type = 's'
          end if
       end do
 
-      call xcint_interface_init(nr_centers=nucind,                                           &
-                                center_xyz=cord,                                             &
-                                nr_shells=kmax,                                              &
-                                l_quantum_nr=l_quantum_nr,                                   &
-                                shell_center=shell_center,                                   &
-                                nr_primitives_per_shell=nr_primitives_per_shell,             &
-                                max_nr_primitives_per_shell=maxval(nr_primitives_per_shell), &
-                                primitive_exp=primitive_exp,                                 &
-                                contraction_coef=contraction_coef,                           &
-                                is_spherical=is_spherical)
+      call karaoke_init(basis_type=basis_type,                                       &
+                        nr_centers=nucind,                                           &
+                        center_xyz=cord,                                             &
+                        nr_shells=kmax,                                              &
+                        shell_center=shell_center,                                   &
+                        l_quantum_nr=l_quantum_nr,                                   &
+                        nr_primitives_per_shell=nr_primitives_per_shell,             &
+                        primitive_exp=primitive_exp,                                 &
+                        contraction_coef=contraction_coef)
 
       deallocate(nr_primitives_per_shell)
       deallocate(primitive_exp)
