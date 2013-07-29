@@ -100,15 +100,15 @@ contains
          end if
       end do
 
-      call karaoke_init(basis_type=basis_type,                                       &
-                        nr_centers=nucind,                                           &
-                        center_xyz=cord,                                             &
-                        nr_shells=kmax,                                              &
-                        shell_center=shell_center,                                   &
-                        l_quantum_nr=l_quantum_nr,                                   &
-                        nr_primitives_per_shell=nr_primitives_per_shell,             &
-                        primitive_exp=primitive_exp,                                 &
-                        contraction_coef=contraction_coef)
+      call karaoke_init(basis_type,              &
+                        nucind,                  &
+                        cord,                    &
+                        kmax,                    &
+                        shell_center,            &
+                        l_quantum_nr,            &
+                        nr_primitives_per_shell, &
+                        primitive_exp,           &
+                        contraction_coef)
 
       deallocate(nr_primitives_per_shell)
       deallocate(primitive_exp)
