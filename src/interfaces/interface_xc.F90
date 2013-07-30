@@ -46,8 +46,6 @@ contains
 
    subroutine interface_xc_init()
 
-      use karaoke_interface
-
 #include "aovec.h"
 #include "mxcent.h"
 #include "nuclei.h"
