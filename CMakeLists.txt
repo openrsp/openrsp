@@ -50,6 +50,7 @@ set(SOURCES
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_rsp_solver.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_scf.F90
     ${PROJECT_SOURCE_DIR}/src/interfaces/interface_xc.F90
+    ${PROJECT_SOURCE_DIR}/src/interfaces/interface_pe.F90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_birefringence.f90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_contributions.F90
     ${PROJECT_SOURCE_DIR}/src/legacy/legacy_openrsp.f90
