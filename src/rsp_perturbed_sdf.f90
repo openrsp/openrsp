@@ -110,6 +110,7 @@ module rsp_perturbed_sdf
   subroutine get_fds(zeromat, pert, F, D, S)
 
     use interface_rsp_solver, only: rsp_solver_exec
+    use interface_pe
     implicit none
 
     
@@ -256,6 +257,7 @@ module rsp_perturbed_sdf
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
 ! write(*,*) 'Fp b3', Fp(1)%elms
+       call pe_rsp(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dp(i) /) , 1, Fp(i:i))
 ! write(*,*) 'Fp b4', Fp(1)%elms
