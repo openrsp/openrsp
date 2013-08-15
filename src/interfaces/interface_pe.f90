@@ -32,9 +32,6 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     real(8), dimension(:,:), allocatable :: fmat_full, dmat_full
     real(8), dimension(:), allocatable :: fmat_packed, dmat_packed
 
-    logical :: debug
-    debug = .false.
-
     if (.not. peqm) return
 
     if (any(f /= 'EL  ')) then
@@ -47,18 +44,7 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     allocate(dmat_packed(nr_ao * (nr_ao + 1) / 2), dmat_full(nr_ao,nr_ao))
 
     dmat_full(:,:) = dens%elms(:,:,1)
-!    call dgefsp(nr_ao, dmat_full, dmat_packed)
-    call dsitsp(nr_ao, dmat_full, dmat_packed)
-    if (debug) then
-       call dsptge(nr_ao, dmat_packed, dmat_full)
-
-       do i = 1, nr_ao
-          print*, 'i is', i
-          print *,dens%elms(i,:,1)
-          print*, ' '
-          print *,dmat_full(i,:)
-       enddo
-    endif
+    call dgefsp(nr_ao, dmat_full, dmat_packed)
     deallocate(dmat_full)
 
     allocate(fmat_packed(nr_ao * (nr_ao + 1) / 2))
@@ -72,7 +58,7 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     allocate(fmat_full(nr_ao, nr_ao))
     fmat_full = 0.0d0
     call dsptge(nr_ao, fmat_packed, fmat_full)
-    fock(propsize)%elms(:,:,1) = fock(propsize)%elms(:,:,1) + fmat_full(:,:)
+    fock(propsize)%elms(:,:,1) = fock(propsize)%elms(:,:,1) + 2.0d0*fmat_full(:,:)
     deallocate(fmat_full)
     deallocate(fmat_packed)
 
