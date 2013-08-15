@@ -257,7 +257,9 @@ module rsp_perturbed_sdf
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
 ! write(*,*) 'Fp b3', Fp(1)%elms
+
        call pe_rsp(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
+
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dp(i) /) , 1, Fp(i:i))
 ! write(*,*) 'Fp b4', Fp(1)%elms
@@ -296,6 +298,8 @@ module rsp_perturbed_sdf
 
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
+
+       call pe_rsp(zeromat%nrow,0,nof,noc,pert%pdim,Dh(i),1,Fp(i:i))
 
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dh(i) /) , 1, Fp(i:i))
@@ -512,6 +516,7 @@ end if
                                  density_order, D, property_size, Fp, &
                                  fock_lowerorder_cache)
 
+    use interface_pe
     implicit none
     
     type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
@@ -709,6 +714,10 @@ end if
 
           end if
 
+          call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                             p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
+
           call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, (/ D_unp, &
@@ -899,6 +908,11 @@ end if
                property_size, Fp)
 
        end if
+
+       call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+            p_tuples(1)%pdim, D_unp, &
+            property_size, Fp)
 
        call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
