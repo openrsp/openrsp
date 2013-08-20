@@ -38,6 +38,9 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
         stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
     end if
 
+    !Because it is done for rsp_scint_adapt and rsp_twoint?
+    if (nf .ne. 0) return
+
     !fixme wild guess
     lwork = 100000000
     allocate(f77_memory(lwork))
@@ -48,17 +51,22 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     deallocate(dmat_full)
 
     allocate(fmat_packed(nr_ao * (nr_ao + 1) / 2))
+
     fmat_packed = 0.0d0
 
     call pe_master(runtype='response', denmats=dmat_packed,&
                   & fckmats=fmat_packed, nmats=1, dalwrk=f77_memory)
 
     deallocate(dmat_packed, f77_memory)
-
     allocate(fmat_full(nr_ao, nr_ao))
     fmat_full = 0.0d0
+
     call dsptge(nr_ao, fmat_packed, fmat_full)
-    fock(propsize)%elms(:,:,1) = fock(propsize)%elms(:,:,1) + 2.0d0*fmat_full(:,:)
+
+    do i = 1, propsize
+       fock(i)%elms(:,:,1) = fock(i)%elms(:,:,1) + 2.0d0*fmat_full(:,:)
+    enddo
+
     deallocate(fmat_full)
     deallocate(fmat_packed)
 

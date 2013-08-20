@@ -45,7 +45,6 @@ module rsp_perturbed_sdf
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
     ! Then (at final recursion level) get perturbed F, D, S 
-
     if (pert%n_perturbations > 1) then
 
        call make_p_tuple_subset(pert, psub)
@@ -254,14 +253,16 @@ module rsp_perturbed_sdf
 
        ! 3. Complete the particular contribution to Fp
 ! write(*,*) 'Fp b2', Fp(1)%elms
+
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
 ! write(*,*) 'Fp b3', Fp(1)%elms
 
-       call pe_rsp(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
-
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dp(i) /) , 1, Fp(i:i))
+
+       call pe_rsp(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
+
 ! write(*,*) 'Fp b4', Fp(1)%elms
 
        call sdf_add(F, pert, perturbed_matrix_size, Fp)
@@ -289,7 +290,6 @@ module rsp_perturbed_sdf
        call rsp_solver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
        RHS(1) = 0
 
-
        ! 5. Get Dh using the rsp equation solution X
 
        Dh(i) = A*B*X(1) - X(1)*B*A
@@ -299,10 +299,10 @@ module rsp_perturbed_sdf
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
 
-       call pe_rsp(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), 1, Fp(i:i))
-
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dh(i) /) , 1, Fp(i:i))
+
+       call pe_rsp(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), 1, Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
 
@@ -714,14 +714,16 @@ end if
 
           end if
 
-          call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                             p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
-
           call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, (/ D_unp, &
                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
+
+!          if (num_p_tuples <= 2) then
+          call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                             p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
+!          end if
 
           if (p_tuples(1)%n_perturbations > 0) then
 
@@ -909,16 +911,18 @@ end if
 
        end if
 
-!       call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-!            p_tuples(1)%pdim, D_unp, &
-!            property_size, Fp)
-
        call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                       p_tuples(1)%pdim, &
                       (/ D_unp /), &
                       property_size, Fp)
+
+!       if (num_p_tuples <= 2) then
+       call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+            (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+            p_tuples(1)%pdim, D_unp, &
+            property_size, Fp)
+!       end if
 
        ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
        ! It should be possible to just add it to Fp like already done above
