@@ -16,6 +16,7 @@ module rsp_contribs
   use interface_molecule
   use interface_io
   use interface_xc
+  use interface_pe
   use interface_f77_memory
   use interface_1el
   use interface_2el
@@ -48,6 +49,7 @@ module rsp_contribs
   public rsp_ovlint_t_matrix
   public rsp_oneint
   public rsp_xcint_adapt
+  public rsp_pe
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -1147,6 +1149,37 @@ type(matrix) :: Db, Fb
        if (i == ndim+1) exit
     end do
   end subroutine
+
+  subroutine rsp_pe(nr_ao, nf, f, c, nc, dens, propsize, fock)
+
+    use pe_variables, only: peqm
+    use interface_pe, only: pe_rsp
+
+    !> number of fields
+    integer, intent(in) :: nf, propsize, nr_ao
+    !> field labels in std order
+    character(4), intent(in) :: f(nf)
+    !> first and number of- components in each field
+    integer, intent(in) :: c(nf), nc(nf)
+    !> density matrix
+    type(matrix), target, intent(in) :: dens
+    !> Fock matrix to which the PE contribution is ADDED
+    type(matrix), target, intent(inout) :: fock(propsize)
+
+    integer :: i, lwork
+
+    if (.not. peqm) return
+
+    if (any(f /= 'EL  ')) then
+        stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
+    end if
+
+    !Because it is done for rsp_scint_adapt and rsp_twoint?
+    if (nf .eq. 0) then
+       call pe_rsp(dens,fock,nr_ao,propsize)
+    end if
+
+  end subroutine rsp_pe
 
 
 end module

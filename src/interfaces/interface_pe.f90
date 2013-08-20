@@ -11,17 +11,13 @@ module interface_pe
 
 contains
 
-subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
+subroutine pe_rsp(dens, fock, nr_ao, propsize)
 
-    use pe_variables, only: peqm
+!    use pe_variables, only: peqm
     use polarizable_embedding, only: pe_master
 
     !> number of fields
-    integer, intent(in) :: nf, propsize, nr_ao
-    !> field labels in std order
-    character(4), intent(in) :: f(nf)
-    !> first and number of- components in each field
-    integer, intent(in) :: c(nf), nc(nf)
+    integer, intent(in) :: propsize, nr_ao
     !> density matrix
     type(matrix), target, intent(in) :: dens
     !> Fock matrix to which the PE contribution is ADDED
@@ -31,15 +27,6 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     real(8), dimension(:), allocatable :: f77_memory
     real(8), dimension(:,:), allocatable :: fmat_full, dmat_full
     real(8), dimension(:), allocatable :: fmat_packed, dmat_packed
-
-    if (.not. peqm) return
-
-    if (any(f /= 'EL  ')) then
-        stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
-    end if
-
-    !Because it is done for rsp_scint_adapt and rsp_twoint?
-    if (nf .ne. 0) return
 
     !fixme wild guess
     lwork = 100000000
