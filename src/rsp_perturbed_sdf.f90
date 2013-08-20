@@ -109,7 +109,6 @@ module rsp_perturbed_sdf
   subroutine get_fds(zeromat, pert, F, D, S)
 
     use interface_rsp_solver, only: rsp_solver_exec
-    use interface_pe
     implicit none
 
     
@@ -261,7 +260,7 @@ module rsp_perturbed_sdf
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dp(i) /) , 1, Fp(i:i))
 
-       call pe_rsp(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
+       call rsp_pe(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
 
 ! write(*,*) 'Fp b4', Fp(1)%elms
 
@@ -302,7 +301,7 @@ module rsp_perturbed_sdf
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dh(i) /) , 1, Fp(i:i))
 
-       call pe_rsp(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), 1, Fp(i:i))
+       call rsp_pe(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), 1, Fp(i:i))
 
        ! 7. Complete perturbed D with homogeneous part
 
@@ -516,7 +515,6 @@ end if
                                  density_order, D, property_size, Fp, &
                                  fock_lowerorder_cache)
 
-    use interface_pe
     implicit none
     
     type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
@@ -720,7 +718,7 @@ end if
                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
 
 !          if (num_p_tuples <= 2) then
-          call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
 !          end if
@@ -918,7 +916,7 @@ end if
                       property_size, Fp)
 
 !       if (num_p_tuples <= 2) then
-       call pe_rsp(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
             p_tuples(1)%pdim, D_unp, &
             property_size, Fp)
