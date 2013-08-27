@@ -11,17 +11,13 @@ module interface_pe
 
 contains
 
-subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
+subroutine pe_rsp(dens, fock, nr_ao, propsize)
 
-    use pe_variables, only: peqm
+!    use pe_variables, only: peqm
     use polarizable_embedding, only: pe_master
 
     !> number of fields
-    integer, intent(in) :: nf, propsize, nr_ao
-    !> field labels in std order
-    character(4), intent(in) :: f(nf)
-    !> first and number of- components in each field
-    integer, intent(in) :: c(nf), nc(nf)
+    integer, intent(in) :: propsize, nr_ao
     !> density matrix
     type(matrix), target, intent(in) :: dens
     !> Fock matrix to which the PE contribution is ADDED
@@ -31,12 +27,6 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     real(8), dimension(:), allocatable :: f77_memory
     real(8), dimension(:,:), allocatable :: fmat_full, dmat_full
     real(8), dimension(:), allocatable :: fmat_packed, dmat_packed
-
-    if (.not. peqm) return
-
-    if (any(f /= 'EL  ')) then
-        stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
-    end if
 
     !fixme wild guess
     lwork = 100000000
@@ -48,17 +38,22 @@ subroutine pe_rsp(nr_ao, nf, f, c, nc, dens, propsize, fock)
     deallocate(dmat_full)
 
     allocate(fmat_packed(nr_ao * (nr_ao + 1) / 2))
+
     fmat_packed = 0.0d0
 
     call pe_master(runtype='response', denmats=dmat_packed,&
                   & fckmats=fmat_packed, nmats=1, dalwrk=f77_memory)
 
     deallocate(dmat_packed, f77_memory)
-
     allocate(fmat_full(nr_ao, nr_ao))
     fmat_full = 0.0d0
+
     call dsptge(nr_ao, fmat_packed, fmat_full)
-    fock(propsize)%elms(:,:,1) = fock(propsize)%elms(:,:,1) + 2.0d0*fmat_full(:,:)
+
+    do i = 1, propsize
+       fock(i)%elms(:,:,1) = fock(i)%elms(:,:,1) + 2.0d0*fmat_full(:,:)
+    enddo
+
     deallocate(fmat_full)
     deallocate(fmat_packed)
 
