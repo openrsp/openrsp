@@ -6,3 +6,4 @@ external/lib/
 external/matrix-defop-build/
 external/src/
 external/tmp/
+*~
