@@ -1,0 +1,2 @@
+  pe_rsp_beta1.dal   sto_3g.mol -get rsp_tensor_human -pot 2_h2o.pot
+  pe_rsp_beta2.dal   sto_3g.mol -get rsp_tensor_human -pot 2_h2o.pot
