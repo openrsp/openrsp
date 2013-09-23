@@ -652,7 +652,7 @@ class run:
 
          elapsed_str = time.strftime('%Mm%Ss', time.gmtime(elapsed))
 
-         print('%10s %10s %15s %15s %15s %10s' % \
+         print('%9s %10s %15s %15s %15s %10s' % \
              (progress, result_text, self.get_test_name(),        \
               inp_file_strip, mol_file_strip, elapsed_str))
 
@@ -850,7 +850,7 @@ def main(*args):
     # print screen header
 
     print('')
-    print('%10s %10s %15s %15s %15s %10s' % ('progress','result', 'test', 'inp', 'mol/xyz', 'time'))
+    print('%9s %10s %15s %15s %15s %10s' % ('progress','result', 'test', 'inp', 'mol/xyz', 'time'))
     print('')
 
     # run the tests
