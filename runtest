@@ -158,6 +158,16 @@ parser.add_option_group(group)
 
 (options, args) = parser.parse_args()
 
+# save dalton path
+if program_is_dalton:
+    if options.launcher:
+        dalton_launcher_dir = os.path.abspath(options.launcher)
+        if not os.path.isfile(os.path.join(dalton_launcher_dir, 'dalton')):
+            error_message = 'error: launcher not found in %s\n' % launcher
+            error_message += '       try to specify path to your launcher with ./runtest --launcher=path'
+            print(error_message)
+            sys.exit(1)
+
 #-------------------------------------------------------------------------------
 # get list of tests to run
 
@@ -582,15 +592,15 @@ class run:
              command = 'python ' + launcher + ' --inp=%s --mol=%s %s' % (self.inp, self.mol, self.launcher_flags)
          if program_is_dalton:
              if options.launcher:
-                 launcher = options.launcher
+                 launcher = os.path.join(dalton_launcher_dir, 'dalton')
              else:
                  launcher = os.path.join(root_directory, '../../build/dalton')
-             # verify that launcher really exists
-             if not os.path.isfile(launcher):
-                 error_message = 'error: launcher not found in %s' % launcher
-                 error_message += '\n       try to specify path to your launcher with ./runtest --launcher=path'
-                 print(error_message)
-                 sys.exit(1)
+#             # verify that launcher really exists
+#             if not os.path.isfile(launcher):
+#                 error_message = 'error: launcher not found in %s' % launcher
+#                 error_message += '\n       try to specify path to your launcher with ./runtest --launcher=path'
+#                 print(error_message)
+#                 sys.exit(1)
 
              output_prefix = '%s_%s' % (string.replace(self.inp, '.dal', ''), string.replace(self.mol, '.mol', ''))
              command = launcher + \
