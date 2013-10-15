@@ -23,6 +23,7 @@ Developers
 - Jógvan Magnus Haugaard Olsen
 - Kenneth Ruud
 - Magnus Ringholm
+- Michal Repisky
 - Radovan Bast
 - Thomas Kjærgaard
 
