@@ -7,3 +7,4 @@ external/matrix-defop-build/
 external/src/
 external/tmp/
 *~
+*.pyc
