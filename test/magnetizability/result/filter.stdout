@@ -1,5 +1,0 @@
-$ERROR 1.E-9
-Nlines 4:no-London Magnetizability = Eoo
-
-$ERROR 1.E-9
-Nlines 4:London Magnetizability = Ebb

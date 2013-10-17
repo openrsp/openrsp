@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from beholder import Filter
+from beholder_openrsp import OpenRSPTestRun
+
+test_run = OpenRSPTestRun(__file__, sys.argv)
+
+f = Filter()
+f.add(from_string  = 'no-London Magnetizability = Eoo',
+      nr_lines     = 4,
+      tolerance    = 1.0e-9,
+      ignore_below = 1.0e-9)
+f.add(from_string  = 'London Magnetizability = Ebb',
+      nr_lines     = 4,
+      tolerance    = 1.0e-9,
+      ignore_below = 1.0e-9)
+
+test_run.execute(['hf.dal'], ['h2o2.mol', 'hf.mol'], {'stdout': f})
+
+sys.exit(0)
