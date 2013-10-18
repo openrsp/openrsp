@@ -198,6 +198,7 @@ contains
       integer                      :: nr_atoms
       integer                      :: nr_geo
       integer                      :: nr_el
+      integer                      :: ipart
       logical                      :: combination_found
       real(8)                      :: xc_energy
       type(matrix), allocatable, dimension(:) :: dmat_tuple
@@ -440,6 +441,7 @@ contains
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
+         ipart = 0
          do k = 1, 3
 
             if (p_tuple_compare(p_tuple_getone(pert, 2) , &
@@ -460,6 +462,8 @@ contains
                                p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(4))
 
                do i = 1, nr_atoms*3
+                  ipart = ipart + 1
+                  print *, 'computing XC ave GFF contribution', ipart, 'out of', 3*maxcomp2*nr_atoms*3
 
                   element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                             blk_info, blk_sizes, (/i, j, k/))
@@ -484,6 +488,7 @@ contains
          end do
 
          deallocate(dmat_tuple)
+         print *, 'done computing XC ave GFF contribution'
       end if
 
       if (nr_geo == 4 .and. nr_el == 0) then
