@@ -1,6 +1,6 @@
 
 """
-    Beholder - regression test library for lazy people.
+    Beholder - numerically tolerant test library.
 
     Version X.Y
 
@@ -32,38 +32,31 @@ class TestRun():
     #---------------------------------------------------------------------------
     def execute(self,
                 command,
-                success_message='',
-                success_file_name='',
                 stdout_file_name='',
-                stderr_means_crash=True):
+                accepted_errors=[]):
         try:
             process = subprocess.Popen(shlex.split(command),
                                        stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
             stdout, stderr = process.communicate()
-            if stderr_means_crash:
-                # some codes write to stderr even if calculation is successful
-                if stderr != '':
-                    sys.stderr.write('ERROR: crash during %s\n' % command)
-                    sys.exit(-1)
-            if success_message != '':
-                if success_file_name == '':
-                    if success_message not in stdout:
-                        sys.stderr.write('ERROR: crash during %s\n' % command)
-                        sys.exit(-1)
-                else:
-                    f = open(success_file_name, 'r')
-                    if success_message not in f.read():
-                        sys.stderr.write('ERROR: crash during %s\n' % command)
-                        sys.exit(-1)
-                    f.close()
+            for error in accepted_errors:
+                if error in stderr:
+                    # we found an error that we expect/accept
+                    # in this case we do not mark test as red and exit with zero
+                    sys.stderr.write('found error which is expected/accepted: %s\n' % error)
+                    sys.exit(0)
+            if process.returncode != 0:
+                sys.stderr.write('ERROR: crash during %s\n' % command)
+                sys.exit(-1)
             if stdout_file_name != '':
                 f = open(stdout_file_name, 'w')
                 f.write(stdout)
                 f.close()
         except OSError:
             sys.stderr.write('ERROR: could not execute command %s\n' % command)
+            sys.stderr.write('       have you set the correct --binary-dir?\n')
+            sys.stderr.write('       try also --help\n')
             sys.exit(-1)
 
     #---------------------------------------------------------------------------
@@ -80,7 +73,7 @@ class TestRun():
 
     #---------------------------------------------------------------------------
     def _parse_args(self, input_dir, argv):
-        parser = argparse.ArgumentParser(description='Beholder - lightweight regression testing.')
+        parser = argparse.ArgumentParser(description='Beholder - numerically tolerant test library.')
         parser.add_argument('--binary-dir',
                            action='store',
                            default=input_dir,
