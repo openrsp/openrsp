@@ -227,6 +227,28 @@
 
 !     --------------------------------------------------------------------------
 
+      ! MaR: Keywords for ZPVA contribution calculations
+
+      ! ZPVA contribution to alpha
+
+      if (kw_matches(word, '.ZPVA2F')) then
+         openrsp_cfg_general_zpva2f = .true.
+      end if
+
+      ! ZPVA contribution to beta
+
+      if (kw_matches(word, '.ZPVA3F')) then
+         openrsp_cfg_general_zpva3f = .true.
+      end if
+
+      ! ZPVA contribution to gamma
+
+      if (kw_matches(word, '.ZPVA4F')) then
+         openrsp_cfg_general_zpva4f = .true.
+      end if
+
+!     --------------------------------------------------------------------------
+
       ! MaR: Keywords for SHG (and later possibly higher order) calculations
 
       if (kw_matches(word, '.RSPSHG')) then
@@ -266,7 +288,15 @@
          call kw_read(word, openrsp_cfg_general_hypram_freqscale)
       end if
 
+!     --------------------------------------------------------------------------
 
+      ! MaR: Keywords for Cartesian to normal mode transformation routines
+
+      if (kw_matches(word, '.CARTNC')) then
+         openrsp_cfg_general_trans_cartnc = .true.
+         call kw_read(word, openrsp_cfg_general_cartnc_order_geo)         
+         call kw_read(word, openrsp_cfg_general_cartnc_order_field)
+      end if
 
       call check_whether_kw_found(word, kw_section)
 
