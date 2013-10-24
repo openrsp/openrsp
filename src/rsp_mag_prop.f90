@@ -22,7 +22,7 @@
     A(3,2) = 3.0
     A(3,3) = -1.0
 
-    D_efishg = ( A(setup_i,1)  /  225.0 ) * abs( R_efishg(setup_i, A, Effff)**(2.0) )
+    D_efishg = ( A(setup_i,1)  /  225.0 ) * R_efishg(setup_i, A, Effff)**(2.0)
 
   end function
 
@@ -239,27 +239,7 @@
 
     integer :: a, b, c, eps
 
-    eps = 0.0
-
-    if ( (a == 1) .and. (b == 2) .and. (c == 3)) then
-       eps = 1.0
-
-    elseif ( (a == 3) .and. (b == 2) .and. (c == 2)) then
-       eps = 1.0
-
-    elseif ( (a == 2) .and. (b == 3) .and. (c == 1)) then
-       eps = 1.0
-
-    elseif ( (a == 1) .and. (b == 3) .and. (c == 2)) then
-       eps = -1.0
-
-    elseif ( (a == 3) .and. (b == 2) .and. (c == 1)) then
-       eps = -1.0
-
-    elseif ( (a == 2) .and. (b == 1) .and. (c == 3)) then
-       eps = -1.0
-
-    end if
+    eps = (a - b)*(b - c)*(c - a)/2
 
   end function
 
