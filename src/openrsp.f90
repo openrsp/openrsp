@@ -3895,8 +3895,8 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -3907,39 +3907,10 @@ do k = 1, openrsp_cfg_nr_freq_tuples
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effff(i, :, m, j) = (-1.0) * fld_dum
-!               Effff(i, :, m, j) = (-1.0) * fld_dum
+                Effff(i, :, m, j) = -(1.0) * fld_dum
              end do
           end do
        end do
-
-! write(*,*) 'gamma xxxx', Effff(1,1,1,1)
-! write(*,*) 'gamma xxyy', Effff(1,1,2,2)
-! write(*,*) 'gamma xyyx', Effff(1,2,2,1)
-! write(*,*) 'gamma xyxy', Effff(1,2,1,2)
-! write(*,*) 'gamma xxzz', Effff(1,1,3,3)
-! write(*,*) 'gamma xzzx', Effff(1,3,3,1)
-! write(*,*) 'gamma xzxz', Effff(1,3,1,3)
-! write(*,*) 'gamma yyxx', Effff(2,2,1,1)
-! write(*,*) 'gamma yxxy', Effff(2,1,1,2)
-! write(*,*) 'gamma yxyx', Effff(2,1,2,1)
-! write(*,*) 'gamma yyyy', Effff(2,2,2,2)
-! write(*,*) 'gamma yyzz', Effff(2,2,3,3)
-! write(*,*) 'gamma yzzy', Effff(2,3,3,2)
-! write(*,*) 'gamma yzyz', Effff(2,3,2,3)
-! write(*,*) 'gamma zzxx', Effff(3,3,1,1)
-! write(*,*) 'gamma zxxz', Effff(3,1,1,3)
-! write(*,*) 'gamma zxzx', Effff(3,1,3,1)
-! write(*,*) 'gamma zzyy', Effff(3,3,2,2)
-! write(*,*) 'gamma zyyz', Effff(3,2,2,3)
-! write(*,*) 'gamma zyzy', Effff(3,2,3,2)
-! write(*,*) 'gamma zzzz', Effff(3,3,3,3)
-! 
-! 
-! 
-! write(*,*) 'D 1', D_efishg(1, Effff)
-! write(*,*) 'D 2', D_efishg(2, Effff)
-! write(*,*) 'D 3', D_efishg(3, Effff)
 
        close(258)
 
@@ -3970,9 +3941,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, &
-!                            file_id='Effqfww')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effqfww')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -3984,41 +3955,12 @@ do k = 1, openrsp_cfg_nr_freq_tuples
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effqfww(j, :, i, m) = fld_dum
+                Effqfww(j, :, i, m) = (-1.0) * fld_dum/2.0
              end do
           end do
        end do
 
-write(*,*) 'xxxxx', Effqfww(1,1,1,1)
-write(*,*) 'xxxyx', Effqfww(1,1,2,1)
-write(*,*) 'xxyxx', Effqfww(1,1,2,1)
-write(*,*) 'xxzyx', Effqfww(1,1,5,1)
-write(*,*) 'yzzyx', Effqfww(2,3,5,1)
-write(*,*) 'xyyyy', Effqfww(1,2,4,2)
-write(*,*) 'zzzzz', Effqfww(3,3,6,3)
 
-! write(*,*) 'xxxx', Effqfww(1,1,1,1)
-! write(*,*) 'xxyy', Effqfww(1,1,2,2)
-! write(*,*) 'xyyx', Effqfww(1,2,2,1)
-! write(*,*) 'xyxy', Effqfww(1,2,1,2)
-! write(*,*) 'xxzz', Effqfww(1,1,3,3)
-! write(*,*) 'xzzx', Effqfww(1,3,3,1)
-! write(*,*) 'xzxz', Effqfww(1,3,1,3)
-! write(*,*) 'yyxx', Effqfww(2,2,1,1)
-! write(*,*) 'yxxy', Effqfww(2,1,1,2)
-! write(*,*) 'yxyx', Effqfww(2,1,2,1)
-! write(*,*) 'yyyy', Effqfww(2,2,2,2)
-! write(*,*) 'yyzz', Effqfww(2,2,3,3)
-! write(*,*) 'yzzy', Effqfww(2,3,3,2)
-! write(*,*) 'yzyz', Effqfww(2,3,2,3)
-! write(*,*) 'zzxx', Effqfww(3,3,1,1)
-! write(*,*) 'zxxz', Effqfww(3,1,1,3)
-! write(*,*) 'zxzx', Effqfww(3,1,3,1)
-! write(*,*) 'zzyy', Effqfww(3,3,2,2)
-! write(*,*) 'zyyz', Effqfww(3,2,2,3)
-! write(*,*) 'zyzy', Effqfww(3,2,3,2)
-! write(*,*) 'zzzz', Effqfww(3,3,3,3)
-! 
        close(258)
 
        deallocate(perturbation_tuple%pdim)
@@ -4046,9 +3988,9 @@ write(*,*) 'zzzzz', Effqfww(3,3,6,3)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, &
-!                            file_id='Effqfw2w')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effqfw2w')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4060,26 +4002,10 @@ write(*,*) 'zzzzz', Effqfww(3,3,6,3)
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effqfw2w(m, :, i, j) = fld_dum
+                Effqfw2w(m, :, i, j) = (-1.0) * fld_dum/2.0
              end do
           end do
        end do
-
-write(*,*) 'xxxxx', Effqfw2w(1,1,1,1)
-write(*,*) 'xxxyx', Effqfw2w(1,1,2,1)
-write(*,*) 'xxyxx', Effqfw2w(1,1,2,1)
-write(*,*) 'xxzyx', Effqfw2w(1,1,5,1)
-write(*,*) 'yzzyx', Effqfw2w(2,3,5,1)
-write(*,*) 'xyyyy', Effqfw2w(1,2,4,2)
-write(*,*) 'zzzzz', Effqfw2w(3,3,6,3)
-
-!        do i = 1, 6
-!           do j = 1, 3
-!              do m = 1, 3
-!                 Effqfw2w(m, :, i, j) = fld_dum
-!              end do
-!           end do
-!        end do
 
 
        close(258)
@@ -4088,11 +4014,6 @@ write(*,*) 'zzzzz', Effqfw2w(3,3,6,3)
        deallocate(perturbation_tuple%plab)
        deallocate(perturbation_tuple%pid)
        deallocate(perturbation_tuple%freq)
-
-
-write(*,*) 'L', 1, ' is', L_efishg(1, Effff, Effqfww, Effqfw2w)
-write(*,*) 'L', 2, ' is', L_efishg(2, Effff, Effqfww, Effqfw2w)
-write(*,*) 'L', 3, ' is', L_efishg(3, Effff, Effqfww, Effqfw2w)
 
 
        ! Calculate Effmf(w, w, 0)
@@ -4129,34 +4050,11 @@ write(*,*) 'L', 3, ' is', L_efishg(3, Effff, Effqfww, Effqfw2w)
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effmfww(j, :, i, m) = (-1.0) * fld_dum
+                Effmfww(j, :, i, m) = (-1.0) * fld_dum/2.0
              end do
           end do
        end do
 
-write(*,*) ' '
-write(*,*) ' '
-write(*,*) 'xxxx', Effmfww(1,1,1,1)
-write(*,*) 'xxyy', Effmfww(1,1,2,2)
-write(*,*) 'xyyx', Effmfww(1,2,2,1)
-write(*,*) 'xyxy', Effmfww(1,2,1,2)
-write(*,*) 'xxzz', Effmfww(1,1,3,3)
-write(*,*) 'xzzx', Effmfww(1,3,3,1)
-write(*,*) 'xzxz', Effmfww(1,3,1,3)
-write(*,*) 'yyxx', Effmfww(2,2,1,1)
-write(*,*) 'yxxy', Effmfww(2,1,1,2)
-write(*,*) 'yxyx', Effmfww(2,1,2,1)
-write(*,*) 'yyyy', Effmfww(2,2,2,2)
-write(*,*) 'yyzz', Effmfww(2,2,3,3)
-write(*,*) 'yzzy', Effmfww(2,3,3,2)
-write(*,*) 'yzyz', Effmfww(2,3,2,3)
-write(*,*) 'zzxx', Effmfww(3,3,1,1)
-write(*,*) 'zxxz', Effmfww(3,1,1,3)
-write(*,*) 'zxzx', Effmfww(3,1,3,1)
-write(*,*) 'zzyy', Effmfww(3,3,2,2)
-write(*,*) 'zyyz', Effmfww(3,2,2,3)
-write(*,*) 'zyzy', Effmfww(3,2,3,2)
-write(*,*) 'zzzz', Effmfww(3,3,3,3)
 
        close(258)
 
@@ -4181,18 +4079,8 @@ write(*,*) 'zzzz', Effmfww(3,3,3,3)
        perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
        openrsp_cfg_real_freqs(k), openrsp_cfg_real_freqs(k), 0.0d0/)
 
-! write(*,*) 'before sort'
-! write(*,*) perturbation_tuple%plab
-! write(*,*) perturbation_tuple%pid
-! write(*,*) perturbation_tuple%freq
-
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
-
-! write(*,*) 'after sort'
-! write(*,*) perturbation_tuple%plab
-! write(*,*) perturbation_tuple%pid
-! write(*,*) perturbation_tuple%freq
 
        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
                            S_already=S_already, zeromat_already=zeromat_already, &
@@ -4208,7 +4096,7 @@ write(*,*) 'zzzz', Effmfww(3,3,3,3)
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effmfw2w(m, :, i, j) = (-1.0) * fld_dum
+                Effmfw2w(m, :, i, j) = (-1.0) * fld_dum/2.0
              end do
           end do
        end do
@@ -4219,31 +4107,6 @@ write(*,*) 'zzzz', Effmfww(3,3,3,3)
        deallocate(perturbation_tuple%plab)
        deallocate(perturbation_tuple%pid)
        deallocate(perturbation_tuple%freq)
-
-write(*,*) ' '
-write(*,*) ' '
-write(*,*) 'xxxx', Effmfw2w(1,1,1,1)
-write(*,*) 'xxyy', Effmfw2w(1,1,2,2)
-write(*,*) 'xyyx', Effmfw2w(1,2,2,1)
-write(*,*) 'xyxy', Effmfw2w(1,2,1,2)
-write(*,*) 'xxzz', Effmfw2w(1,1,3,3)
-write(*,*) 'xzzx', Effmfw2w(1,3,3,1)
-write(*,*) 'xzxz', Effmfw2w(1,3,1,3)
-write(*,*) 'yyxx', Effmfw2w(2,2,1,1)
-write(*,*) 'yxxy', Effmfw2w(2,1,1,2)
-write(*,*) 'yxyx', Effmfw2w(2,1,2,1)
-write(*,*) 'yyyy', Effmfw2w(2,2,2,2)
-write(*,*) 'yyzz', Effmfw2w(2,2,3,3)
-write(*,*) 'yzzy', Effmfw2w(2,3,3,2)
-write(*,*) 'yzyz', Effmfw2w(2,3,2,3)
-write(*,*) 'zzxx', Effmfw2w(3,3,1,1)
-write(*,*) 'zxxz', Effmfw2w(3,1,1,3)
-write(*,*) 'zxzx', Effmfw2w(3,1,3,1)
-write(*,*) 'zzyy', Effmfw2w(3,3,2,2)
-write(*,*) 'zyyz', Effmfw2w(3,2,2,3)
-write(*,*) 'zyzy', Effmfw2w(3,2,3,2)
-write(*,*) 'zzzz', Effmfw2w(3,3,3,3)
-
 
 
 do i = 1, 3
