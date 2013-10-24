@@ -173,7 +173,7 @@ if (order_mag > 0) then
 #else
                                        1, (/1, 1/),                &
 #endif
-                                       get_print_unit(), 0)
+                                       get_print_unit(), 10)
             val_expt = -val_expt
             ! assigns the output average
 
@@ -323,6 +323,8 @@ end if
 
 if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
 
+if ((count(fbra=='EL  ') == 0) .and. (count(fket=='EL  ') == 0) ) then
+
 
            ! MaR: THIS IS THE INT CALL STRUCTURE - ADAPT TO AVE AND REMEMBER D
            ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALL BELOW
@@ -349,7 +351,7 @@ if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
 #else
                                      1, (/1, 1/),                &
 #endif
-                                     get_print_unit(), 0)
+                                     get_print_unit(), 10)
 
           ! MaR: OFFSETS AND LOCATIONS IN MEMORY POSTPONED
           ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
@@ -364,6 +366,8 @@ if ((count(fbra=='MAG ') > 0) .or. (count(fket=='MAG ') > 0) ) then
 ! write(*,*) tmp_ave
 ! 
 ! end if
+
+end if
 
 end if
    end subroutine
@@ -461,6 +465,8 @@ end if
 
       end if
 
+ave = 0.0
+
       if (order_mom > 1) then
          ave = 0.0
       else if ((order_elgr > 0) .AND. (order_mom > 0)) then
@@ -515,7 +521,7 @@ end if
                                        get_print_unit(), 0)
          else if (order_mag > 0) then
 
-            call gen1int_host_get_expt(LONDON, INT_CART_MULTIPOLE, &
+            call gen1int_host_get_expt(LONDON, INT_ONE_HAMIL, &
                                        0,    &  !multipole moments
                                        0,                           &
                                        0, 0, order_mag,             &  !magnetic derivatives
@@ -533,7 +539,7 @@ end if
 #else
                                        1, (/1, 1/),                &
 #endif
-                                       get_print_unit(), 0)
+                                       get_print_unit(), 10)
 
 
          ! only geometric perturbations
