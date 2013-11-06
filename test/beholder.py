@@ -13,10 +13,10 @@
 import re
 import os
 import sys
-import argparse
 import subprocess
 import shlex
 import shutil
+from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
 class TestRun():
@@ -73,17 +73,17 @@ class TestRun():
 
     #---------------------------------------------------------------------------
     def _parse_args(self, input_dir, argv):
-        parser = argparse.ArgumentParser(description='Beholder - numerically tolerant test library.')
-        parser.add_argument('--binary-dir',
-                           action='store',
-                           default=input_dir,
-                           help='directory containing the binary/launcher [default: %(default)s]')
-        parser.add_argument('--work-dir',
-                           action='store',
-                           default=input_dir,
-                           help='working directory [default: %(default)s]')
-        args = parser.parse_args(args=argv[1:])
-        return (args.binary_dir, args.work_dir)
+        parser = OptionParser(description='Beholder - numerically tolerant test library.')
+        parser.add_option('--binary-dir',
+                          action='store',
+                          default=input_dir,
+                          help='directory containing the binary/launcher [default: %(default)s]')
+        parser.add_option('--work-dir',
+                          action='store',
+                          default=input_dir,
+                          help='working directory [default: %(default)s]')
+        (options, args) = parser.parse_args(args=argv[1:])
+        return (options.binary_dir, options.work_dir)
 
 #-------------------------------------------------------------------------------
 class _SingleFilter():
