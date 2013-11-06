@@ -75,6 +75,7 @@ set(SOURCES
     )
 
 include(ConfigCompilerFlags)
+include(ConfigDocumentation)
 
 add_library(
     openrsp

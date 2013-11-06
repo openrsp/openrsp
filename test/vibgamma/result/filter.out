@@ -1,3 +1,0 @@
-$ERROR 1.E-5
-from:freq/cm-1  freq/au     aa         mb         aa
-to:RSPC Returned from vib_ana_polari

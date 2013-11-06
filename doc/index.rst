@@ -1,46 +1,37 @@
 
 
-About OpenRSP
-=============
+About the OpenRSP project
+=========================
 
-.. toctree::
-   :maxdepth: 2
-
-   copying.rst
-   install.rst
+OpenRSP is a program for the open-ended calculation of response properties. It connects to response equation solution routines, routines for differentiated one-electron and two-electron integral contributions, and routines for exchange/correlation contributions to enable the calculation of response properties to arbitrary order. The program is not yet ready for public release.
 
 
-Interfaces
+Publications
+============
+
+Several projects where results were obtained using the OpenRSP program have already been carried out, and an overview will be posted.
+
+
+Developers
 ==========
 
-.. toctree::
-   :maxdepth: 1
-
-   interfaces_XCint.rst
-
-
-Status and challenges
-=====================
-
-.. toctree::
-   :maxdepth: 1
-
-   challenges_XCint.rst
+- Andreas J. Thorvaldsen
+- Arnfinn H. Steindal
+- Bin Gao
+- Dan Jonsson
+- Daniel Friese
+- Jógvan Magnus Haugaard Olsen
+- Kenneth Ruud
+- Magnus Ringholm
+- Michal Repisky
+- Radovan Bast
+- Thomas Kjærgaard
 
 
-Programing
-==========
+Contributing to OpenRSP
+=======================
 
 .. toctree::
    :maxdepth: 1
-
+ 
    coding_standards.rst
-
-
-Testing
-=======
-
-.. toctree::
-   :maxdepth: 1
-
-   testing.rst

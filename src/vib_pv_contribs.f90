@@ -83,16 +83,20 @@ contains
       end do
     end do
 
+! write(*,*) Bt(1:n_c,1:n_nm)
+
     do p = 1, n_nm
       do q = 1, n_nm
+
+      tmp = 0.0
 
 	do pp = 1, n_c
 
 	  tmp = tmp + Bt(pp, q) * T(pp, q)
 
 	end do
-
-	B(p, q) = tmp
+        B(p, q) = tmp
+	
 
       end do
     end do       
@@ -272,9 +276,299 @@ contains
     end do
 
 
+  end function
+
+
+  function trans_cartnc_0w5d(n_c, n_nm, A, Tm) result(B)
+
+    implicit none
+
+    integer							:: p, q, r, s, t, pp, qp, rp, sp, tp
+    integer, 	intent(in) 					:: n_c, n_nm ! Number of Cartesian and normal coordinates, resp.
+    complex(8)							:: tmp ! Temporary storage
+    complex(8), 	dimension(n_c, n_c, n_c, n_c, n_c)			:: A, Bt ! The tensor being transformed and temporary storage
+    complex(8), 	dimension(n_nm, n_nm, n_nm, n_nm, n_nm)		:: B ! The resulting NC transformed tensor
+    real(8), 	dimension(n_c, n_nm), intent(in)	 	:: Tm ! The matrix of transformation coefficients
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_c
+          do s = 1, n_c
+            do t = 1, n_nm
+
+              tmp = 0.0
+
+              do tp = 1, n_c
+
+                tmp = tmp + A(p, q, r, s, tp) * Tm(tp, t)
+
+              end do
+
+              Bt(p, q, r, s, t) = tmp
+
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_c
+          do s = 1, n_nm
+            do t = 1, n_c
+
+              tmp = 0.0
+
+              do sp = 1, n_c
+
+                tmp = tmp + Bt(p, q, r, sp, t) * Tm(sp, s)
+
+              end do
+
+              A(p, q, r, s, t) = tmp
+
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_nm
+          do s = 1, n_c
+            do t = 1, n_c
+
+              tmp = 0.0
+
+              do rp = 1, n_c
+
+                tmp = tmp + A(p, q, rp, s, t) * Tm(rp, r)
+
+              end do
+
+              Bt(p, q, r, s, t) = tmp
+
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_nm
+        do r = 1, n_c
+          do s = 1, n_c
+            do t = 1, n_c
+
+              tmp = 0.0
+
+              do qp = 1, n_c
+
+                tmp = tmp + Bt(p, qp, r, s, t) * Tm(qp, q)
+
+              end do
+
+              A(p, q, r, s, t) = tmp
+
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_nm
+      do q = 1, n_nm
+        do r = 1, n_nm
+          do s = 1, n_nm
+            do t = 1, n_nm
+
+              tmp = 0.0
+
+              do pp = 1, n_c
+
+                tmp = tmp + A(pp, q, r, s, t) * Tm(pp, p)
+
+              end do
+
+              B(p, q, r, s, t) = tmp
+
+            end do
+          end do
+        end do
+      end do
+    end do
+
 
   end function
 
+
+ function trans_cartnc_0w6d(n_c, n_nm, A, Tm) result(B)
+
+    implicit none
+
+    integer							:: p, q, r, s, t, u, pp, qp, rp, sp, tp, up
+    integer, 	intent(in) 					:: n_c, n_nm ! Number of Cartesian and normal coordinates, resp.
+    complex(8)							:: tmp ! Temporary storage
+    complex(8), 	dimension(n_c, n_c, n_c, n_c, n_c, n_c)	:: A, Bt ! The tensor being transformed and temporary storage
+    complex(8), 	dimension(n_nm, n_nm, n_nm, n_nm, n_nm, n_nm)		:: B ! The resulting NC transformed tensor
+    real(8), 	dimension(n_c, n_nm), intent(in)	 	:: Tm ! The matrix of transformation coefficients
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_c
+          do s = 1, n_c
+            do t = 1, n_c
+              do u = 1, n_nm
+
+                tmp = 0.0
+
+                do up = 1, n_c
+
+                  tmp = tmp + A(p, q, r, s, t, up) * Tm(up, u)
+
+                end do
+
+                Bt(p, q, r, s, t, u) = tmp
+
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_c
+          do s = 1, n_c
+            do t = 1, n_nm
+              do u = 1, n_c
+
+                tmp = 0.0
+
+                do tp = 1, n_c
+
+                  tmp = tmp + Bt(p, q, r, s, tp, u) * Tm(tp, t)
+
+                end do
+
+                A(p, q, r, s, t, u) = tmp
+
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_c
+          do s = 1, n_nm
+            do t = 1, n_c
+              do u = 1, n_c
+
+                tmp = 0.0
+
+                do sp = 1, n_c
+
+                  tmp = tmp + A(p, q, r, sp, t, u) * Tm(sp, s)
+
+                end do
+
+                Bt(p, q, r, s, t, u) = tmp
+
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_c
+        do r = 1, n_nm
+          do s = 1, n_c
+            do t = 1, n_c
+              do u = 1, n_c
+
+                tmp = 0.0
+
+                do rp = 1, n_c
+
+                  tmp = tmp + Bt(p, q, rp, s, t, u) * Tm(rp, r)
+
+                end do
+
+                A(p, q, r, s, t, u) = tmp
+
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_c
+      do q = 1, n_nm
+        do r = 1, n_c
+          do s = 1, n_c
+            do t = 1, n_c
+              do u = 1, n_c
+
+                tmp = 0.0
+
+                do qp = 1, n_c
+
+                  tmp = tmp + A(p, qp, r, s, t, u) * Tm(qp, q)
+
+                end do
+
+                Bt(p, q, r, s, t, u) = tmp
+
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+
+    do p = 1, n_nm
+      do q = 1, n_nm
+        do r = 1, n_nm
+          do s = 1, n_nm
+            do t = 1, n_nm
+              do u = 1, n_nm
+
+                tmp = 0.0
+
+                do pp = 1, n_c
+
+                  tmp = tmp + Bt(pp, q, r, s, t, u) * Tm(pp, p)
+
+                end do
+
+                B(p, q, r, s, t, u) = tmp
+
+              end do
+            end do
+          end do
+        end do
+      end do
+    end do
+
+  end function
 
 
   function trans_cartnc_1w1d(n_c, n_nm, A, T) result(B)
@@ -865,6 +1159,7 @@ contains
   end function
 
 
+
   function trans_cartnc_4w1d(n_c, n_nm, A, T) result(B)
 
     implicit none
@@ -987,7 +1282,101 @@ contains
       
   end function
 
+  function trans_cartnc_4w3d(n_c, n_nm, A, T) result(B)
 
+    implicit none
+
+    integer								:: p, q, r, pp, qp, rp, i, j, k, m
+    integer, 	intent(in) 						:: n_c, n_nm ! Number of Cartesian and normal coordinates, resp.
+    complex(8),	dimension(3, 3, 3, 3)					:: tmp ! Temporary storage
+    complex(8), 	dimension(n_c, n_c, n_c, 3, 3, 3, 3)		:: A, Bt ! The tensor being transformed and temporary storage
+    complex(8), 	dimension(n_nm, n_nm, n_nm, 3, 3, 3, 3)	:: B ! The resulting NC transformed tensor
+    real(8), 	dimension(n_c, n_nm), intent(in)	 		:: T ! The matrix of transformation coefficients
+
+    do p = 1, n_c
+      do q = 1, n_c
+	do r = 1, n_nm
+	  
+        tmp = 0.0
+	  	
+
+	  do rp = 1, n_c
+	    do i = 1, 3
+	      do j = 1, 3
+		do k = 1, 3
+                  do m = 1, 3
+
+		     tmp(i, j, k, m) = tmp(i, j, k, m) + A(p, q, rp, i, j, k, m) * T(rp, r)
+
+                  end do
+		end do
+	      end do
+	    end do
+	  end do
+
+	  Bt(p, q, r, :, :, :, :) = tmp(:, :, :, :)
+
+	end do
+      end do
+    end do
+
+    do p = 1, n_c
+      do q = 1, n_nm
+	do r = 1, n_c
+	  
+        tmp = 0.0
+	  	
+
+	  do qp = 1, n_c
+	    do i = 1, 3
+	      do j = 1, 3
+		do k = 1, 3
+                  do m = 1, 3
+
+		     tmp(i, j, k, m) = tmp(i, j, k, m) + Bt(p, qp, r, i, j, k, m) * T(qp, q)
+
+                  end do
+		end do
+	      end do
+	    end do
+	  end do
+
+	  A(p, q, r, :, :, :, :) = tmp(:, :, :, :)
+
+	end do
+      end do
+    end do
+
+
+    do p = 1, n_nm
+      do q = 1, n_nm
+	do r = 1, n_nm
+	  
+        tmp = 0.0
+	  	
+
+	  do pp = 1, n_c
+	    do i = 1, 3
+	      do j = 1, 3
+		do k = 1, 3
+                  do m = 1, 3
+
+		     tmp(i, j, k, m) = tmp(i, j, k, m) + A(pp, q, r, i, j, k, m) * T(pp, p)
+
+		   end do
+		end do
+	      end do
+	    end do
+	  end do
+
+	  B(p, q, r, :, :, :, :) = tmp(:, :, :, :)
+
+	end do
+      end do
+    end do
+
+
+  end function
 !-------------------------------------------------------------------------------
 !
 ! Contains a few small combinatoric functions (factorization and permutation
@@ -2687,8 +3076,8 @@ contains
 
 	  pv_dipsq_20 = pv_dipsq_20 + dm_2d(i, j, perm(m, 1)) * dm_2d(i, j, perm(m, 2)) * &
 	  (nm_e_inv(i) + nm_e_inv(j)) * lambda_ab(i, j, permopt(m, 1)) + &
-	  dm_3d(i, i, j, perm(m, 1)) * dm_1d(i, perm(m, 2)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1)) + &
-	  dm_1d(i, perm(m, 1)) * dm_3d(i, i, j, perm(m, 2)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1))
+	  dm_3d(i, i, j, perm(m, 1)) * dm_1d(j, perm(m, 2)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1)) + &
+	  dm_1d(j, perm(m, 1)) * dm_3d(i, i, j, perm(m, 2)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1))
 	
 	end do
       end do
@@ -2730,13 +3119,6 @@ contains
 
 	  do m=1, 2
 
-! write(*,*) 'i j k ', i, j, k
-! write(*,*) 'added ', fcc(i, j, k) * dm_2d(i, j, perm(m, 1)) * dm_1d(k, perm(m, 2)) * &
-! 	    (nm_e_inv(i) + nm_e_inv(j)) * lambda_ab(i, j, permopt(m, 1)) * lambda_a(k, permopt(m, 1)) 
-	    
-! write(*,*) 'added also', fcc(j, k, k) * dm_2d(i, j, perm(m, 1)) * dm_1d(i, perm(m, 2)) * (nm_e_inv(j)**(2.0)) * &
-! 	    nm_e_inv(k) * lambda_a(i, permopt(m, 1))
-	
 	    pv_dipsq_11 = pv_dipsq_11 + fcc(i, j, k) * dm_2d(i, j, perm(m, 1)) * dm_1d(k, perm(m, 2)) * &
 	    (nm_e_inv(i) + nm_e_inv(j)) * lambda_ab(i, j, permopt(m, 1)) * lambda_a(k, permopt(m, 1)) + &
 	    fcc(j, k, k) * dm_2d(i, j, perm(m, 1)) * dm_1d(i, perm(m, 2)) * (nm_e_inv(j)**(2.0)) * &
@@ -2780,30 +3162,16 @@ contains
 	do k=1, n_nm
 	  do m=1, 2
 
-! write(*,*) 'i j k', i, j, k
-! write(*,*) 'nm_e_inv', nm_e_inv(i)
-! write(*,*) 'fcq(i, i, j, k) ', fcq(i, i, j, k) 
-! write(*,*) 'lambda_a(j, permopt(m, 1))', lambda_a(j, permopt(m, 1))
-	
 	    pv_dipsq_02 = pv_dipsq_02 + nm_e_inv(i) * fcq(i, i, j, k) * dm_1d(j, perm(m, 1)) * &
 	    dm_1d(k, perm(m, 2)) * lambda_a(j, permopt(m, 1)) * lambda_a(k, permopt(m, 1))
 
-! write(*,*) 'result is', pv_dipsq_02
-	      
 	      do l=1, n_nm
 
-! write(*,*) 'l', l
-! write(*,*) 'fcc', fcc(i, i, j)
-! write(*,*) 'lambda_ab(i, j, permopt(m, 1))', lambda_ab(i, j, permopt(m, 1))
-
-		pv_dipsq_02 = pv_dipsq_02 - fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
+		pv_dipsq_02 = pv_dipsq_02 - nm_e_inv(i) * fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
 		dm_1d(l, perm(m, 2)) * (nm_e_inv(j)**(2.0)) * lambda_a(k, permopt(m, 1)) * &
-		lambda_a(l, permopt(m, 1))  + 2.0 * fcc(i, j, k) * fcc(i, j, l) * dm_1d(k, perm(m, 1)) * &
+		lambda_a(l, permopt(m, 1))  - 2.0 * nm_e_inv(i) * fcc(i, j, k) * fcc(i, j, l) * dm_1d(k, perm(m, 1)) * &
 		dm_1d(l, perm(m, 2)) * lambda_ab(i, j, permopt(m, 1)) * lambda_a(k, permopt(m, 1)) * &
 		lambda_a(l, permopt(m, 1))
-
-
-! write(*,*) 'result is', pv_dipsq_02
 
 	      end do
 	   
@@ -3172,8 +3540,8 @@ contains
 	
 	  pv_dippol_20 = pv_dippol_20 + dm_2d(i, j, perm(m, 1)) * po_2d(i, j, perm(m, 2), perm(m, 3)) * &
 	  (nm_e_inv(i) + nm_e_inv(j)) * lambda_ab(i, j, permopt(m, 1)) + &
-	  dm_3d(i, i, j, perm(m, 1)) * po_1d(i, perm(m, 2), perm(m, 3)) * nm_e_inv(i) * &
-	  lambda_a(j, permopt(m, 1)) + dm_1d(i, perm(m, 1)) * & 
+	  dm_3d(i, i, j, perm(m, 1)) * po_1d(j, perm(m, 2), perm(m, 3)) * nm_e_inv(i) * &
+	  lambda_a(j, permopt(m, 1)) + dm_1d(j, perm(m, 1)) * & 
 	  po_3d(i, i, j, perm(m, 2), perm(m, 3)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1))
 	
 	end do
@@ -3271,9 +3639,9 @@ contains
 	      
 	      do l=1, n_nm
 
-		pv_dippol_02 = pv_dippol_02 - fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
+		pv_dippol_02 = pv_dippol_02 - nm_e_inv(i) * fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
 		po_1d(l, perm(m, 2), perm(m, 3)) * (nm_e_inv(j)**(2.0)) * lambda_a(k, permopt(m, 1)) * &
-		lambda_a(l, permopt(m, 1))  + 2.0 * fcc(i, j, k) * fcc(i, j, l) * dm_1d(k, perm(m, 1)) * &
+		lambda_a(l, permopt(m, 1))  - 2.0 * nm_e_inv(i) * fcc(i, j, k) * fcc(i, j, l) * dm_1d(k, perm(m, 1)) * &
 		po_1d(l, perm(m, 2), perm(m, 3)) * lambda_ab(i, j, permopt(m, 1)) * &
 		lambda_a(k, permopt(m, 1)) * lambda_a(l, permopt(m, 1))
 
@@ -3357,9 +3725,9 @@ contains
 	  pv_polsq_20 = pv_polsq_20 + po_2d(i, j, perm(m, 1), perm(m, 2)) * &
 	  po_2d(i, j, perm(m, 3), perm(m, 4)) * &
 	  (nm_e_inv(i) + nm_e_inv(j)) * lambda_abij(i, j, permopt(m, 3), permopt(m, 4)) + &
-	  po_3d(i, i, j, perm(m, 1), perm(m, 2)) * po_1d(i, perm(m, 3), perm(m, 4)) * & 
+	  po_3d(i, i, j, perm(m, 1), perm(m, 2)) * po_1d(j, perm(m, 3), perm(m, 4)) * & 
 	  nm_e_inv(i) * lambda_aij(j, permopt(m, 3), permopt(m, 4)) + &
-	  po_1d(i, perm(m, 1), perm(m, 2)) * po_3d(i, i, j, perm(m, 3), perm(m, 4)) * &
+	  po_1d(j, perm(m, 1), perm(m, 2)) * po_3d(i, i, j, perm(m, 3), perm(m, 4)) * &
 	  nm_e_inv(i) * lambda_aij(j, permopt(m, 3), permopt(m, 4))
 	
 	end do
@@ -3455,10 +3823,10 @@ contains
 	      
 	      do l=1, n_nm
 
-		pv_polsq_02 = pv_polsq_02 - fcc(i, i, j) * fcc(j, k, l) *  & 
+		pv_polsq_02 = pv_polsq_02 - nm_e_inv(i) * fcc(i, i, j) * fcc(j, k, l) *  & 
 		po_1d(k, perm(m, 1), perm(m, 2)) * po_1d(l, perm(m, 3), perm(m, 4)) * &
 		(nm_e_inv(j)**(2.0)) * lambda_aij(k, permopt(m, 3), permopt(m, 4)) * &
-		lambda_aij(l, permopt(m, 3), permopt(m, 4))  + 2.0 * fcc(i, j, k) * fcc(i, j, l) * &
+		lambda_aij(l, permopt(m, 3), permopt(m, 4))  - 2.0 * nm_e_inv(i) * fcc(i, j, k) * fcc(i, j, l) * &
 		po_1d(k, perm(m, 1), perm(m, 2)) * po_1d(l, perm(m, 3), perm(m, 4)) * &
 		lambda_abij(i, j, permopt(m, 3), permopt(m, 4)) * &
 		lambda_aij(k, permopt(m, 3), permopt(m, 4)) * lambda_aij(l, permopt(m, 3), permopt(m, 4))
@@ -3542,8 +3910,8 @@ contains
 	  pv_diphyp_20 = pv_diphyp_20 + dm_2d(i, j, perm(m, 1)) * & 
 	  hp_2d(i, j, perm(m, 2), perm(m, 3), perm(m, 4)) * (nm_e_inv(i) + nm_e_inv(j)) * &
 	  lambda_ab(i, j, permopt(m, 1)) + dm_3d(i, i, j, perm(m, 1)) * &
-	  hp_1d(i, perm(m, 2), perm(m, 3), perm(m, 4)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1)) + &
-	  dm_1d(i, perm(m, 1)) * hp_3d(i, i, j, perm(m, 2), perm(m, 3), perm(m, 4)) * &
+	  hp_1d(j, perm(m, 2), perm(m, 3), perm(m, 4)) * nm_e_inv(i) * lambda_a(j, permopt(m, 1)) + &
+	  dm_1d(j, perm(m, 1)) * hp_3d(i, i, j, perm(m, 2), perm(m, 3), perm(m, 4)) * &
 	  nm_e_inv(i) * lambda_a(j, permopt(m, 1))
 	
 	end do
@@ -3646,10 +4014,10 @@ contains
 	      
 	      do l=1, n_nm
 
-		pv_diphyp_02 = pv_diphyp_02 - fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
+		pv_diphyp_02 = pv_diphyp_02 - nm_e_inv(i) * fcc(i, i, j) * fcc(j, k, l) * dm_1d(k, perm(m, 1)) * &
 		hp_1d(l, perm(m, 2), perm(m, 3), perm(m, 4)) * (nm_e_inv(j)**(2.0)) * &
 		lambda_a(k, permopt(m, 1)) * &
-		lambda_a(l, permopt(m, 1))  + 2.0 * fcc(i, j, k) * fcc(i, j, l) * dm_1d(k, perm(m, 1)) * &
+		lambda_a(l, permopt(m, 1))  - 2.0 * nm_e_inv(i) * fcc(i, j, k) * fcc(i, j, l) * dm_1d(k, perm(m, 1)) * &
 		hp_1d(l, perm(m, 2), perm(m, 3), perm(m, 4)) * lambda_ab(i, j, permopt(m, 1)) * & 
 		lambda_a(k, permopt(m, 1)) * &
 		lambda_a(l, permopt(m, 1))
@@ -3824,6 +4192,7 @@ contains
       complex(8), dimension(n_nm, n_nm, n_nm),			intent(in) 	:: fcc   ! Cubic force constants
       complex(8), dimension(3, 3)							:: alpha_zpva
 
+    alpha_zpva = 0.0
 
     hbar = 1.0
 
@@ -3889,6 +4258,8 @@ contains
       complex(8), dimension(n_nm, n_nm, n_nm), 	 		intent(in) 	:: fcc   ! Cubic force constants
       complex(8), dimension(3, 3, 3)						:: beta_zpva
 
+
+    beta_zpva = 0.0
 
     hbar = 1.0
 
@@ -3956,6 +4327,7 @@ contains
       complex(8), dimension(n_nm, n_nm, n_nm), 	 		intent(in) 	:: fcc   ! Cubic force constants
       complex(8), dimension(3, 3, 3, 3)						:: gamma_zpva
 
+    gamma_zpva = 0.0
 
     hbar = 1.0
 

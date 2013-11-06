@@ -1,6 +1,0 @@
-$ERROR 1.E-7
-Nlines 13:Final results from SIRIUS
-
-$ERROR 1.E-5
-from:RSPC Calling print_shypol
-to:RSPC Backing from vib_ana_polari

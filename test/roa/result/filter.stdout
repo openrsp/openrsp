@@ -1,6 +1,0 @@
-$ERROR 1.E-6
-Nlines 10:d/dg Polari = -Egff
-$ERROR 1.E-6
-Nlines 10:d/dg G-prime = Egbf
-$ERROR 1.E-6
-Nlines 19:d/dg A-tensor = -Egqf

@@ -42,6 +42,11 @@ public rsp_cfg
 
   type(matrix) :: zeromat
 
+  private
+
+  real(8) :: time_start
+  real(8) :: time_end
+
   contains
 
 ! Supports supplying F, D, S instances through F_already etc.
@@ -238,8 +243,11 @@ public rsp_cfg
     write(*,*) ' '
 
     call property_cache_allocate(energy_cache)
+    call cpu_time(time_start)
     call rsp_energy(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, &
                   property_size, energy_cache, prop)
+    call cpu_time(time_end)
+    print *, 'seconds spent in HF-type contribution', time_end - time_start
 
     write(*,*) ' '
     write(*,*) 'Finished calculating HF energy-type contributions'
@@ -256,7 +264,10 @@ public rsp_cfg
     write(*,*) 'Calculating exchange/correlation contributions'
     write(*,*) ' '
 
+    call cpu_time(time_start)
     call rsp_xcave_interface(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
+    call cpu_time(time_end)
+    print *, 'seconds spent in XC contribution', time_end - time_start
 
     write(*,*) ' '
     write(*,*) 'Finished calculating exchange/correlation contributions'
