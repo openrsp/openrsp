@@ -26,6 +26,11 @@ module rsp_perturbed_sdf
   public rsp_fock_lowerorder
   public get_fock_lowerorder
 
+  private
+
+  real(8) :: time_start
+  real(8) :: time_end
+
   contains
 
   recursive subroutine rsp_fds(zeromat, pert, kn, F, D, S)
@@ -252,15 +257,23 @@ module rsp_perturbed_sdf
 
        ! 3. Complete the particular contribution to Fp
 ! write(*,*) 'Fp b2', Fp(1)%elms
-
+       call cpu_time(time_start)
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
                           1, Fp(i:i))
+       call cpu_time(time_end)
+       print *, 'seconds spent in 2-el particular contribution', time_end - time_start
 ! write(*,*) 'Fp b3', Fp(1)%elms
 
+       call cpu_time(time_start)
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dp(i) /) , 1, Fp(i:i))
+       call cpu_time(time_end)
+       print *, 'seconds spent in XC particular contribution', time_end - time_start
 
+       call cpu_time(time_start)
        call rsp_pe(zeromat%nrow,0,nof,noc,pert%pdim,Dp(i),1,Fp(i:i))
+       call cpu_time(time_end)
+       print *, 'seconds spent in PE particular contribution', time_end - time_start
 
 ! write(*,*) 'Fp b4', Fp(1)%elms
 
@@ -295,13 +308,22 @@ module rsp_perturbed_sdf
 
        ! 6. Make homogeneous contribution to Fock matrix
 
+       call cpu_time(time_start)
        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
                           1, Fp(i:i))
+       call cpu_time(time_end)
+       print *, 'seconds spent in 2-el homogeneous contribution', time_end - time_start
 
+       call cpu_time(time_start)
        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
             (/ A, Dh(i) /) , 1, Fp(i:i))
+       call cpu_time(time_end)
+       print *, 'seconds spent in XC homogeneous contribution', time_end - time_start
 
+       call cpu_time(time_start)
        call rsp_pe(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), 1, Fp(i:i))
+       call cpu_time(time_end)
+       print *, 'seconds spent in PE homogeneous contribution', time_end - time_start
 
        ! 7. Complete perturbed D with homogeneous part
 
@@ -706,22 +728,30 @@ end if
 
           if (num_p_tuples <= 2) then
 
+             call cpu_time(time_start)
              call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
-
+             call cpu_time(time_end)
+             print *, 'seconds spent in 2-el contribution', time_end - time_start
           end if
 
+          call cpu_time(time_start)
           call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, (/ D_unp, &
                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
+          call cpu_time(time_end)
+          print *, 'seconds spent in XC contribution', time_end - time_start
 
-!          if (num_p_tuples <= 2) then
-          call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+          if (num_p_tuples <= 2) then
+             call cpu_time(time_start)
+             call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
-!          end if
+             call cpu_time(time_end)
+             print *, 'seconds spent in PE contribution', time_end - time_start
+          end if
 
           if (p_tuples(1)%n_perturbations > 0) then
 
@@ -902,25 +932,34 @@ end if
 
        if (num_p_tuples <= 2) then
 
+          call cpu_time(time_start)
           call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                p_tuples(1)%pdim, D_unp, &
                property_size, Fp)
+          call cpu_time(time_end)
+          print *, 'seconds spent in 2-el contribution', time_end - time_start
 
        end if
 
+       call cpu_time(time_start)
        call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                       p_tuples(1)%pdim, &
                       (/ D_unp /), &
                       property_size, Fp)
+       call cpu_time(time_end)
+       print *, 'seconds spent in XC contribution', time_end - time_start
 
-!       if (num_p_tuples <= 2) then
-       call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+       if (num_p_tuples <= 2) then
+          call cpu_time(time_start)
+          call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
             p_tuples(1)%pdim, D_unp, &
             property_size, Fp)
-!       end if
+          call cpu_time(time_end)
+          print *, 'seconds spent in PE contribution', time_end - time_start
+       end if
 
        ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
        ! It should be possible to just add it to Fp like already done above

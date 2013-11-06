@@ -55,6 +55,11 @@ module openrsp_cfg
    integer :: openrsp_cfg_general_pv_mech_anh = 0
    integer :: openrsp_cfg_general_pv_total_anh = 0
 
+! MaR: Keywords for ZPVA contribution calculations
+   logical :: openrsp_cfg_general_zpva2f = .true.
+   logical :: openrsp_cfg_general_zpva3f = .true.
+   logical :: openrsp_cfg_general_zpva4f = .true.
+
    ! MaR: Keywords for SHG (and possibly higher-orders later) calculation
    logical :: openrsp_cfg_general_shg = .false.
 
@@ -67,6 +72,11 @@ module openrsp_cfg
    ! MaR: Keywords for hyper-Raman calculation
    logical :: openrsp_cfg_general_hyper_raman = .false.
    real(8) :: openrsp_cfg_general_hypram_freqscale = 1.0d0
+
+   ! MaR: Keywords for Cartesian to normal mode transformation routines
+   logical :: openrsp_cfg_general_trans_cartnc = .false.
+   integer :: openrsp_cfg_general_cartnc_order_field = 0
+   integer :: openrsp_cfg_general_cartnc_order_geo = 0
 
 
 

@@ -140,7 +140,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
                    1, 0, .true., .false., f77_memory(:n*n*2), 2)
        deallocate(f77_memory)
 #endif
-       ave(:nc(1)) = tmp(c(1):c(1)+nc(1)-1,1,1,1)
+     ave(:nc(1)) = 2.0*tmp(c(1):c(1)+nc(1)-1,1,1,1)
 ! write(*,*) 'tmp from twoave', tmp
        deallocate(tmp)
 
