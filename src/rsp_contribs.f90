@@ -16,7 +16,7 @@ module rsp_contribs
   use interface_molecule
   use interface_io
   use interface_xc
-  use interface_pe
+  use interface_pelib
   use interface_f77_memory
   use interface_1el
   use interface_2el
@@ -1153,7 +1153,7 @@ type(matrix) :: Db, Fb
   subroutine rsp_pe(nr_ao, nf, f, c, nc, dens, propsize, fock)
 
     use pe_variables, only: peqm
-    use interface_pe, only: pe_rsp
+    use interface_pelib, only: pe_rsp
 
     !> number of fields
     integer, intent(in) :: nf, propsize, nr_ao
