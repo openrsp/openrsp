@@ -48,6 +48,7 @@ class TestRun():
                     sys.exit(0)
             if process.returncode != 0:
                 sys.stderr.write('ERROR: crash during %s\n' % command)
+                sys.stderr.write(stderr)
                 sys.exit(-1)
             if stdout_file_name != '':
                 f = open(stdout_file_name, 'w')
@@ -134,6 +135,10 @@ class Filter():
         log_ref  = open('%s.reference' % out_name, 'w')
 
         out = open(out_name).readlines()
+
+        if not os.path.exists(ref_name):
+            sys.stderr.write('ERROR: reference output %s not found\n' % ref_name)
+            sys.exit(-1)
         ref = open(ref_name).readlines()
 
         for f in self.filter_list:
