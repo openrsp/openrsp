@@ -2414,98 +2414,99 @@ end do
 
        end if
 
+! MaR: The following code works but is not used at present
 
-       do k = 1, openrsp_cfg_nr_freq_tuples
-
-          do h = 1, 2
-
-             ! Calculate PV contribution to polarizability
-
-             if (openrsp_cfg_general_pv_total_anh > 0) then
-
-                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
-                        openrsp_cfg_real_freqs((k - 1) * 2 + h), &
-                        openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
-                        dm_1d = egf_nm, dm_2d = eggf_nm, &
-                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
-                        rst_order = openrsp_cfg_general_pv_total_anh)
-
-             else
-
-                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
-                        openrsp_cfg_real_freqs((k - 1) * 2 + h), &
-                        openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
-                        dm_1d = egf_nm, dm_2d = eggf_nm, &
-                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
-                        rst_elec=openrsp_cfg_general_pv_el_anh, &
-                        rst_mech=openrsp_cfg_general_pv_mech_anh)
-
-             end if
-
-
-             if (k * h == 1) then
-
-                open(unit=259, file='alpha_pv', status='replace', action='write') 
-
-             else
-
-                open(unit=259, file='alpha_pv', status='old', action='write', position='append') 
-
-             end if
-
-             write(259,*) 'Pure vibrational output'
-             write(259,*) '======================='
-             write(259,*) ' '
-             if (openrsp_cfg_general_pv_total_anh > 0) then
-                write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
-                openrsp_cfg_general_pv_total_anh
-             else
-                write(259,*) 'Order of electrical anharmonicity:', &
-                openrsp_cfg_general_pv_el_anh
-                write(259,*) 'Order of mechanical anharmonicity:', &
-                openrsp_cfg_general_pv_mech_anh
-             end if
-             write(259,*) ' '
-             write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
-             write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
-             write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
-                            ((sum(dm_orig * dm_orig))**0.5)*0.393456
-             write(259, *) ' '
-             write(259,*) 'Frequency combination', (k - 1) * 2 + h
-             write(259,*) ' '
-             write(259,*) 'Frequencies w0, w1 are (a.u.)', (-1.0)* &
-                          openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
-                          openrsp_cfg_real_freqs((k - 1) * 2 + h)
-             write(259,*) 'Wavelengths for w0, w1 are (nm)', (-1.0)* aunm/&
-                          openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
-                          aunm/openrsp_cfg_real_freqs((k - 1) * 2 + h)
-             write(259,*) ' '
-             write(259,*) 'PV contribution to polarizability'
-             write(259,*) '================================='
-             write(259,*) ' '
-             format_line = '(      f20.8)'
-             write(format_line(2:7), '(i6)') size(ff_pv,1)
-          
-             do i = 1, 3
-                write(259, format_line) real(ff_pv(i,:))
-             end do
-             write(259,*) ' '
-             write(259,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
-                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
-             write(259,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
-                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3))) * 1.481847
-             ! Follows method by AJT
-             write(259,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
-                                      i = 1, 3), j = 1, 3) /) ))
-             write(259,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
-                                      i = 1, 3), j = 1, 3) /) )) * 1.481847
-             write(259,*) ' '
-
-             close(259)
-
-          end do
-
-       end do
+!        do k = 1, openrsp_cfg_nr_freq_tuples
+! 
+!           do h = 1, 2
+! 
+!              ! Calculate PV contribution to polarizability
+! 
+!              if (openrsp_cfg_general_pv_total_anh > 0) then
+! 
+!                 ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
+!                         openrsp_cfg_real_freqs((k - 1) * 2 + h), &
+!                         openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
+!                         dm_1d = egf_nm, dm_2d = eggf_nm, &
+!                         dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+!                         rst_order = openrsp_cfg_general_pv_total_anh)
+! 
+!              else
+! 
+!                 ff_pv = alpha_pv(n_nm, nm_freq, (/ (-1.0) * &
+!                         openrsp_cfg_real_freqs((k - 1) * 2 + h), &
+!                         openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
+!                         dm_1d = egf_nm, dm_2d = eggf_nm, &
+!                         dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+!                         rst_elec=openrsp_cfg_general_pv_el_anh, &
+!                         rst_mech=openrsp_cfg_general_pv_mech_anh)
+! 
+!              end if
+! 
+! 
+!              if (k * h == 1) then
+! 
+!                 open(unit=259, file='alpha_pv', status='replace', action='write') 
+! 
+!              else
+! 
+!                 open(unit=259, file='alpha_pv', status='old', action='write', position='append') 
+! 
+!              end if
+! 
+!              write(259,*) 'Pure vibrational output'
+!              write(259,*) '======================='
+!              write(259,*) ' '
+!              if (openrsp_cfg_general_pv_total_anh > 0) then
+!                 write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+!                 openrsp_cfg_general_pv_total_anh
+!              else
+!                 write(259,*) 'Order of electrical anharmonicity:', &
+!                 openrsp_cfg_general_pv_el_anh
+!                 write(259,*) 'Order of mechanical anharmonicity:', &
+!                 openrsp_cfg_general_pv_mech_anh
+!              end if
+!              write(259,*) ' '
+!              write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
+!              write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+!              write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+!                             ((sum(dm_orig * dm_orig))**0.5)*0.393456
+!              write(259, *) ' '
+!              write(259,*) 'Frequency combination', (k - 1) * 2 + h
+!              write(259,*) ' '
+!              write(259,*) 'Frequencies w0, w1 are (a.u.)', (-1.0)* &
+!                           openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
+!                           openrsp_cfg_real_freqs((k - 1) * 2 + h)
+!              write(259,*) 'Wavelengths for w0, w1 are (nm)', (-1.0)* aunm/&
+!                           openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
+!                           aunm/openrsp_cfg_real_freqs((k - 1) * 2 + h)
+!              write(259,*) ' '
+!              write(259,*) 'PV contribution to polarizability'
+!              write(259,*) '================================='
+!              write(259,*) ' '
+!              format_line = '(      f20.8)'
+!              write(format_line(2:7), '(i6)') size(ff_pv,1)
+!           
+!              do i = 1, 3
+!                 write(259, format_line) real(ff_pv(i,:))
+!              end do
+!              write(259,*) ' '
+!              write(259,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
+!                                         (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+!              write(259,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+!                                         (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3))) * 1.481847
+!              ! Follows method by AJT
+!              write(259,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+!                                       i = 1, 3), j = 1, 3) /) ))
+!              write(259,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+!                                       i = 1, 3), j = 1, 3) /) )) * 1.481847
+!              write(259,*) ' '
+! 
+!              close(259)
+! 
+!           end do
+! 
+!        end do
 
       ! Calculate gradient of polarizability
 
@@ -2550,6 +2551,98 @@ end do
 
 
        do k = 1, openrsp_cfg_nr_freq_tuples
+
+! MaR: New code for alpha_pv(-2w;2w)
+!
+          do h = 1, 1
+
+             ! Calculate PV contribution to polarizability
+
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+
+                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-2.0) * &
+                        openrsp_cfg_real_freqs((k - 1) * 2 + h), &
+                        (2.0) * openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
+                        dm_1d = egf_nm, dm_2d = eggf_nm, &
+                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                        rst_order = openrsp_cfg_general_pv_total_anh)
+
+             else
+
+                ff_pv = alpha_pv(n_nm, nm_freq, (/ (-2.0) * &
+                        openrsp_cfg_real_freqs((k - 1) * 2 + h), &
+                        (2.0) * openrsp_cfg_real_freqs((k - 1) * 2 + h) /), &
+                        dm_1d = egf_nm, dm_2d = eggf_nm, &
+                        dm_3d = egggf_nm, fcc = eggg_nm, fcq = egggg_nm, &
+                        rst_elec=openrsp_cfg_general_pv_el_anh, &
+                        rst_mech=openrsp_cfg_general_pv_mech_anh)
+
+             end if
+
+
+             if (k * h == 1) then
+
+                open(unit=259, file='alpha_pv', status='replace', action='write') 
+
+             else
+
+                open(unit=259, file='alpha_pv', status='old', action='write', position='append') 
+
+             end if
+
+             write(259,*) 'Pure vibrational output'
+             write(259,*) '======================='
+             write(259,*) ' '
+             if (openrsp_cfg_general_pv_total_anh > 0) then
+                write(259,*) 'Total order of anharmonicity (mechanical and electrical):', &
+                openrsp_cfg_general_pv_total_anh
+             else
+                write(259,*) 'Order of electrical anharmonicity:', &
+                openrsp_cfg_general_pv_el_anh
+                write(259,*) 'Order of mechanical anharmonicity:', &
+                openrsp_cfg_general_pv_mech_anh
+             end if
+             write(259,*) ' '
+             write(259, *) 'Dipole moment (Debye): ', dm_orig*0.393456
+             write(259, *) 'Conversion factor: 0.393456 (http://www.theochem.ru.nl/units.html)'
+             write(259, *) 'Dipole moment length (normalization factor) (Debye):', &
+                            ((sum(dm_orig * dm_orig))**0.5)*0.393456
+             write(259, *) ' '
+             write(259,*) 'Frequency combination', k
+             write(259,*) ' '
+             write(259,*) 'Frequencies w0, w1 are (a.u.)', (-2.0)* &
+                          openrsp_cfg_real_freqs((k - 1) * 2 + h), ' ,', &
+                          2.0 * openrsp_cfg_real_freqs((k - 1) * 2 + h)
+             write(259,*) 'Wavelengths for w0, w1 are (nm)', (-1.0)* aunm/&
+                          (2.0 * openrsp_cfg_real_freqs((k - 1) * 2 + h)), ' ,', &
+                          aunm/(2.0*openrsp_cfg_real_freqs((k - 1) * 2 + h))
+             write(259,*) ' '
+             write(259,*) 'PV contribution to polarizability'
+             write(259,*) '================================='
+             write(259,*) ' '
+             format_line = '(      f20.8)'
+             write(format_line(2:7), '(i6)') size(ff_pv,1)
+          
+             do i = 1, 3
+                write(259, format_line) real(ff_pv(i,:))
+             end do
+             write(259,*) ' '
+             write(259,*) 'Isotropic (a.u.):', real(((1.0)/(3.0)) * &
+                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3)))
+             write(259,*) 'Isotropic (10^-25 esu):', real(((1.0)/(3.0)) * &
+                                        (ff_pv(1,1) + ff_pv(2,2) + ff_pv(3,3))) * 1.481847
+             ! Follows method by AJT
+             write(259,*) 'Dipole^2 (a.u.):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                      i = 1, 3), j = 1, 3) /) ))
+             write(259,*) 'Dipole^2 (10^-25 esu):', real(sum( (/ ((ff_pv(i,j) * dm(i) * dm(j), &
+                                      i = 1, 3), j = 1, 3) /) )) * 1.481847
+             write(259,*) ' '
+
+             close(259)
+
+          end do
+
+! MaR: End new code
 
           ! Calculate PV contribution to 1st hyperpolarizability
 
