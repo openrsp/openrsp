@@ -56,7 +56,7 @@ class TestRun():
                 f.close()
         except OSError:
             sys.stderr.write('ERROR: could not execute command %s\n' % command)
-            sys.stderr.write('       have you set the correct --binary-dir?\n')
+            sys.stderr.write('       have you set the correct --binary-dir (or -b)?\n')
             sys.stderr.write('       try also --help\n')
             sys.exit(-1)
 
@@ -76,10 +76,12 @@ class TestRun():
     def _parse_args(self, input_dir, argv):
         parser = OptionParser(description='Beholder - numerically tolerant test library.')
         parser.add_option('--binary-dir',
+                          '-b',
                           action='store',
                           default=input_dir,
                           help='directory containing the binary/launcher [default: %(default)s]')
         parser.add_option('--work-dir',
+                          '-w',
                           action='store',
                           default=input_dir,
                           help='working directory [default: %(default)s]')
