@@ -5,3 +5,6 @@
 */*.rsp_tensor
 */*.rsp_tensor_human
 */compare
+*/*.diff
+*/*.reference
+*/*.result
