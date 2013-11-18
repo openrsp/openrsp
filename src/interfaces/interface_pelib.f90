@@ -8,7 +8,7 @@ module interface_pelib
 
     private
 
-    public :: pe_rsp, pe_add_full_operator
+    public :: pe_response_operator, pe_add_full_operator
 
 contains
 
@@ -18,68 +18,59 @@ subroutine pe_add_full_operator(dmat, fmat, energy)
     real(8), dimension(:), intent(out) :: fmat
     real(8), dimension(:), intent(out) :: energy
 
-    integer :: ndim
+    integer :: nbas
     real(8), dimension(1) :: temp
-    real(8), dimension(:), allocatable :: packed_pe_fmat, packed_dmat
+    real(8), dimension(:), allocatable :: packed_fmat, packed_dmat
 
     fmat = 0.0d0
     energy = 0.0d0
-
-    ndim = int(sqrt(real(size(dmat))))
-    allocate(packed_pe_fmat(ndim * (ndim + 1) / 2))
-    allocate(packed_dmat(ndim * (ndim + 1) / 2))
-    packed_pe_fmat = 0.0d0
+    nbas = int(sqrt(real(size(dmat))))
+    allocate(packed_fmat(nbas * (nbas + 1) / 2))
+    allocate(packed_dmat(nbas * (nbas + 1) / 2))
+    packed_fmat = 0.0d0
     packed_dmat = 0.0d0
-    call dgetsp(ndim, dmat, packed_dmat)
-    call pe_master('fock', packed_dmat, packed_pe_fmat, 1, energy, temp)
-    call dsptge(ndim, packed_pe_fmat, fmat)
-    deallocate(packed_pe_fmat, packed_dmat)
+    call dgefsp(nbas, dmat, packed_dmat)
+    call pe_master('fock', packed_dmat, packed_fmat, 1, energy, temp)
+    call dsptge(nbas, packed_fmat, fmat)
+    deallocate(packed_fmat, packed_dmat)
 
 end subroutine pe_add_full_operator
 
-subroutine pe_rsp(dens, fock, nr_ao, propsize)
+subroutine pe_response_operator(dmats, fmats, nbas, ndens)
 
-    !> number of fields
-    integer, intent(in) :: propsize, nr_ao
-    !> density matrix
-    type(matrix), target, intent(in) :: dens
-    !> Fock matrix to which the PE contribution is ADDED
-    type(matrix), target, intent(inout) :: fock(propsize)
+    integer, intent(in) :: nbas, ndens
+    real(8), dimension(:), intent(in) :: dmats
+    real(8), dimension(:), intent(out) :: fmats
 
-    integer :: i, lwork
-    real(8), dimension(:), allocatable :: f77_memory
-    real(8), dimension(:,:), allocatable :: fmat_full, dmat_full
-    real(8), dimension(:), allocatable :: fmat_packed, dmat_packed
+    integer :: i, j, k, l, m
+    integer :: nnbas
+    real(8), dimension(1) :: temp
+    real(8), dimension(:), allocatable :: packed_fmats, packed_dmats
 
-    !fixme wild guess
-    lwork = 100000000
-    allocate(f77_memory(lwork))
-    allocate(dmat_packed(nr_ao * (nr_ao + 1) / 2), dmat_full(nr_ao,nr_ao))
+    fmats = 0.0d0
+    return
+    nnbas = nbas * (nbas + 1) / 2
+    allocate(packed_fmats(ndens * nnbas))
+    allocate(packed_dmats(ndens * nnbas))
+    packed_fmats = 0.0d0
+    packed_dmats = 0.d00
+    do i = 1, ndens
+        j = 1 + (i - 1) * nbas * nbas
+        k = i * nbas*nbas
+        l = 1 + (i - 1) * nnbas
+        m = i * nnbas
+        call dgefsp(nbas, dmats(j), packed_dmats(l))
+    end do
+    call pe_master(runtype='response', denmats=packed_dmats,&
+                  & fckmats=packed_fmats, nmats=ndens, dalwrk=temp)
+    do i = 1, ndens
+        j = 1 + (i - 1) * nnbas
+        k = i * nnbas
+        l = 1 + (i - 1) * nbas * nbas
+        m = i * nbas*nbas
+        call dsptge(nbas, packed_fmats(j), fmats(l))
+    end do
 
-    dmat_full(:,:) = dens%elms(:,:,1)
-    call dgefsp(nr_ao, dmat_full, dmat_packed)
-    deallocate(dmat_full)
-
-    allocate(fmat_packed(nr_ao * (nr_ao + 1) / 2))
-
-    fmat_packed = 0.0d0
-
-    call pe_master(runtype='response', denmats=dmat_packed,&
-                  & fckmats=fmat_packed, nmats=1, dalwrk=f77_memory)
-
-    deallocate(dmat_packed, f77_memory)
-    allocate(fmat_full(nr_ao, nr_ao))
-    fmat_full = 0.0d0
-
-    call dsptge(nr_ao, fmat_packed, fmat_full)
-
-    do i = 1, propsize
-       fock(i)%elms(:,:,1) = fock(i)%elms(:,:,1) + fmat_full(:,:)
-    enddo
-
-    deallocate(fmat_full)
-    deallocate(fmat_packed)
-
-end subroutine pe_rsp
+end subroutine pe_response_operator
 
 end module interface_pelib

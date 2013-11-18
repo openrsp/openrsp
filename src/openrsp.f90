@@ -213,7 +213,7 @@ contains
         call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, pe_dmat, 1)
         call pe_add_full_operator(pe_dmat, pe_fmat, pe_energy)
         call daxpy(mat_dim*mat_dim, 1.0d0, pe_fmat, 1, F%elms, 1)
-		deallocate(pe_fmat, pe_dmat)
+        deallocate(pe_fmat, pe_dmat)
     end if
 
     num_atoms = get_nr_atoms()
