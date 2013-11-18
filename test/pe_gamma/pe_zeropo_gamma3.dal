@@ -16,16 +16,20 @@
 **OPENR
 .CUSTOM
 .SPORDR
-2
+4
 .SPRULE
 0
-1
+3
 .SPPLAB
 EL  
 EL  
+EL  
+EL 
 .FREQ
-1
-0.04
+3
+0.0
+0.0
+0.0
 .THRESH
  1.0d-8
 *END OF AORSP
