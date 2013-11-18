@@ -16,7 +16,6 @@ module rsp_contribs
   use interface_molecule
   use interface_io
   use interface_xc
-  use interface_pelib
   use interface_f77_memory
   use interface_1el
   use interface_2el
@@ -1152,34 +1151,42 @@ type(matrix) :: Db, Fb
 
   subroutine rsp_pe(nr_ao, nf, f, c, nc, dens, propsize, fock)
 
-    use pe_variables, only: peqm
-    use interface_pelib, only: pe_rsp
+    use pe_variables, only: peqm, pe_gspol
+    use interface_pelib
 
+    integer                     :: i, j, k, nr_ao, propsize
     !> number of fields
-    integer, intent(in) :: nf, propsize, nr_ao
+    integer, intent(in)         :: nf
     !> field labels in std order
-    character(4), intent(in) :: f(nf)
+    character(4), intent(in)    :: f(nf)
     !> first and number of- components in each field
-    integer, intent(in) :: c(nf), nc(nf)
-    !> density matrix
-    type(matrix), target, intent(in) :: dens
-    !> Fock matrix to which the PE contribution is ADDED
-    type(matrix), target, intent(inout) :: fock(propsize)
+    integer, intent(in)         :: c(nf), nc(nf)
+    !> output perturbed integrals
+    type(matrix), intent(inout) :: fock!(propsize)
+    !> perturbed density matrix
+    type(matrix), intent(in)    :: dens
 
-    integer :: i, lwork
-
-    if (.not. peqm) return
+    real(8), allocatable        :: pe_dmat(:)
+    real(8), allocatable        :: pe_fmat(:)
 
     if (any(f /= 'EL  ')) then
         stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
     end if
 
-    !Because it is done for rsp_scint_adapt and rsp_twoint?
-    if (nf .eq. 0) then
-       call pe_rsp(dens,fock,nr_ao,propsize)
+    if (.not. peqm .or. pe_gspol) return
+
+    if (nf == 0) then
+        if (propsize /= 1) stop 'ERROR: propsize /= 1'
+        allocate(pe_fmat(nr_ao*nr_ao))
+        allocate(pe_dmat(nr_ao*nr_ao))
+        pe_fmat = 0.0d0
+        pe_dmat = 0.0d0
+        call daxpy(nr_ao*nr_ao, 1.0d0, dens%elms, 1, pe_dmat, 1)
+        call pe_response_operator(pe_dmat, pe_fmat, nr_ao, propsize)
+        call daxpy(nr_ao*nr_ao, 1.0d0, pe_fmat, 1, fock%elms, 1)
+        deallocate(pe_fmat, pe_dmat)
     end if
 
   end subroutine rsp_pe
-
 
 end module
