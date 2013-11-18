@@ -210,7 +210,9 @@ contains
         allocate(pe_dmat(mat_dim*mat_dim))
         pe_fmat = 0.0d0
         pe_dmat = 0.0d0
-        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, pe_dmat, 1)
+        ! since density matrix is divided by two above we need to 
+        ! multiply by two to get the correct density matrix
+        call daxpy(mat_dim*mat_dim, 2.0d0, D%elms, 1, pe_dmat, 1)
         call pe_add_full_operator(pe_dmat, pe_fmat, pe_energy)
         call daxpy(mat_dim*mat_dim, 1.0d0, pe_fmat, 1, F%elms, 1)
         deallocate(pe_fmat, pe_dmat)
