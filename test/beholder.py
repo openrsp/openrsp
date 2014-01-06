@@ -13,10 +13,10 @@
 import re
 import os
 import sys
-import argparse
 import subprocess
 import shlex
 import shutil
+from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
 class TestRun():
@@ -48,6 +48,7 @@ class TestRun():
                     sys.exit(0)
             if process.returncode != 0:
                 sys.stderr.write('ERROR: crash during %s\n' % command)
+                sys.stderr.write(stderr)
                 sys.exit(-1)
             if stdout_file_name != '':
                 f = open(stdout_file_name, 'w')
@@ -55,7 +56,7 @@ class TestRun():
                 f.close()
         except OSError:
             sys.stderr.write('ERROR: could not execute command %s\n' % command)
-            sys.stderr.write('       have you set the correct --binary-dir?\n')
+            sys.stderr.write('       have you set the correct --binary-dir (or -b)?\n')
             sys.stderr.write('       try also --help\n')
             sys.exit(-1)
 
@@ -73,17 +74,19 @@ class TestRun():
 
     #---------------------------------------------------------------------------
     def _parse_args(self, input_dir, argv):
-        parser = argparse.ArgumentParser(description='Beholder - numerically tolerant test library.')
-        parser.add_argument('--binary-dir',
-                           action='store',
-                           default=input_dir,
-                           help='directory containing the binary/launcher [default: %(default)s]')
-        parser.add_argument('--work-dir',
-                           action='store',
-                           default=input_dir,
-                           help='working directory [default: %(default)s]')
-        args = parser.parse_args(args=argv[1:])
-        return (args.binary_dir, args.work_dir)
+        parser = OptionParser(description='Beholder - numerically tolerant test library.')
+        parser.add_option('--binary-dir',
+                          '-b',
+                          action='store',
+                          default=input_dir,
+                          help='directory containing the binary/launcher [default: %(default)s]')
+        parser.add_option('--work-dir',
+                          '-w',
+                          action='store',
+                          default=input_dir,
+                          help='working directory [default: %(default)s]')
+        (options, args) = parser.parse_args(args=argv[1:])
+        return (options.binary_dir, options.work_dir)
 
 #-------------------------------------------------------------------------------
 class _SingleFilter():
@@ -134,6 +137,10 @@ class Filter():
         log_ref  = open('%s.reference' % out_name, 'w')
 
         out = open(out_name).readlines()
+
+        if not os.path.exists(ref_name):
+            sys.stderr.write('ERROR: reference output %s not found\n' % ref_name)
+            sys.exit(-1)
         ref = open(ref_name).readlines()
 
         for f in self.filter_list:
