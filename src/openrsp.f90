@@ -279,6 +279,16 @@ end subroutine
 
              perturbation_tuple%pdim(i) = 3
 
+
+          elseif (openrsp_cfg_specify_plab(i) == 'MAG0') then
+
+             perturbation_tuple%pdim(i) = 3
+
+          elseif (openrsp_cfg_specify_plab(i) == 'ELGR') then
+
+             perturbation_tuple%pdim(i) = 6
+
+             
           else
 
              write(*,*) 'ERROR: Unrecognized field', openrsp_cfg_specify_plab(i)

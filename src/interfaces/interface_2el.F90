@@ -64,6 +64,11 @@ contains
        return
     end if
 
+    if (any(f == 'MAG0')) then
+       ave = 0.0d0
+       return
+    end if
+
     if (nf==0) then
 
        ! contract second density to Fock matrix, then trace with first
