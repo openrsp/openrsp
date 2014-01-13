@@ -90,7 +90,8 @@ contains
       real(8), allocatable :: fdi(:,:)
       integer i
       integer order_geo                      !order of total geometric derivatives
-      integer order_mag                      !order of total magnetic derivatives
+      integer order_mag                      !order of total magnetic (London) derivatives
+      integer order_magnl                    !order of total magnetic (non-London) derivatives
       integer num_atom                       !number of atoms
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
@@ -131,8 +132,10 @@ contains
 
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
-         ! gets the order of total geometric derivatives
+         ! gets the order of total magnetic dipole (London) derivatives
          order_mag = count(f=='MAG ')
+         ! gets the order of total magnetic dipole (non-London) derivatives
+         order_magnl = count(f=='MAG0')
 
 !          if (order_geo /= nf) then
 !             call quit("interface_1el_ovlave>> only geometric derivatives implemented!")
@@ -185,7 +188,7 @@ else
             call gen1int_host_get_expt(NON_LAO, INT_OVERLAP,       &
                                        0,                          &  !multipole moments
                                        0,                          &
-                                       0, 0, order_mag,            &  !magnetic derivatives
+                                       0, 0, order_magnl,            &  !magnetic derivatives
                                        0, 0, 0,                    &  !derivatives w.r.t. total RAM
                                        0, 0, 0, (/0/),             &  !geometric derivatives on bra center
                                        0, 0, 0, (/0/),             &  !geometric derivatives on ket center
@@ -214,6 +217,15 @@ if (order_mag > 0) then
 ave(1) = val_expt(1,1)
 ave(2) = val_expt(2,1)
 ave(3) = val_expt(3,1)
+
+elseif (order_magnl > 0) then
+
+! write(*,*) 'val expt', val_expt(:,1)
+
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(3,1)
+
 
 else
             ! MR: ASSIGN DATA TO ave
@@ -430,7 +442,8 @@ end if
       integer order_mom, order_elgr          !order of Cartesian multipole moments
       integer num_mom                        !number of Cartesian multipole moments
       integer order_geo                      !order of total geometric derivatives
-      integer order_mag                      !order of total magnetic derivatives
+      integer order_mag                      !order of total magnetic (London) derivatives
+      integer order_magnl                    !order of total magnetic (non-London) derivatives
       integer num_atom                       !number of atoms
       integer num_coord                      !number of atomic coordinates
       integer num_geom                       !number of total geometric derivatives
@@ -447,6 +460,7 @@ end if
       order_mom = count(f=='EL  ')
       order_elgr = count(f=='ELGR')
       order_mag = count(f=='MAG ')
+      order_magnl = count(f=='MAG0')
 
       ! CURRENTLY ONLY SUPPORTS ELECTRIC FIELD PERTURBATION IN ADDITION TO GEOMETRIC
 
@@ -472,6 +486,10 @@ ave = 0.0
       else if ((order_elgr > 0) .AND. (order_mom > 0)) then
          ave = 0.0
       else if ((order_mag > 0) .AND. (order_mom > 0)) then
+         ave = 0.0
+      else if ((order_magnl > 0) .AND. (order_mom > 0)) then
+         ave = 0.0
+      else if ((order_magnl > 0) .AND. (count(f=='GEO ') > 0)) then
          ave = 0.0
       else if ((order_elgr > 1)) then
          ave = 0.0
@@ -540,6 +558,32 @@ ave = 0.0
                                        1, (/1, 1/),                &
 #endif
                                        get_print_unit(), 10)
+
+else if (order_magnl > 0) then
+! NOT SURE ABOUT WHICH INTEGRALS TO CALL FOR HERE
+! CALL STRUCTURE MAY BE WRONG
+            call gen1int_host_get_expt(NON_LAO, INT_ONE_HAMIL, &
+                                       0,    &  !multipole moments
+                                       0,                           &
+                                       0, 0, order_magnl,             &  !magnetic derivatives
+                                       0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on ket center
+                                       order_geo,                   &  !total geometric derivatives
+                                       order_geo,                   &
+                                       0, (/0/),                    &
+                                       .false., .false., .false.,   &  !not implemented yet
+                                       1, (/D/), propsize,          &  !expectation values
+                                       val_expt, .false.,           &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),           &
+#else
+                                       1, (/1, 1/),                &
+#endif
+                                       get_print_unit(), 10)
+
+! val_expt = val_expt * 0.5
+! write(*,*) 'val_expt', val_expt
 
 
          ! only geometric perturbations
@@ -641,15 +685,25 @@ ave = 0.0
 
          end if
 
-! MaR: Quick fix to get addressing in order
+! MaR: Quick fixes to get addressing in order
 if (order_mag > 0) then
 
 ave(1) = val_expt(1,1)
 ave(2) = val_expt(2,1)
 ave(3) = val_expt(3,1)
 
+elseif (order_magnl > 0) then
+
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(3,1)
+
+
+
 
 elseif (order_elgr > 0) then
+
+if (order_geo == 0) then
 
 ave(1) = val_expt(1,1)
 ave(2) = val_expt(2,1)
@@ -657,6 +711,24 @@ ave(3) = val_expt(4,1)
 ave(4) = val_expt(3,1)
 ave(5) = val_expt(5,1)
 ave(6) = val_expt(6,1)
+
+else if(order_geo == 1) then
+
+! NEED TO VERIFY ORDERING - THIS IS JUST A GUESS AND LIKELY WRONG
+
+do i = 1, 3*num_atom
+
+ave((i - 1) * 6 + 1) = val_expt( (i - 1) * 6 + 1, 1)
+ave((i - 1) * 6 + 2) = val_expt( (i - 1) * 6 + 2, 1)
+ave((i - 1) * 6 + 3) = val_expt( (i - 1) * 6 + 3, 1)
+ave((i - 1) * 6 + 4) = val_expt( (i - 1) * 6 + 4, 1)
+ave((i - 1) * 6 + 5) = val_expt( (i - 1) * 6 + 5, 1)
+ave((i - 1) * 6 + 6) = val_expt( (i - 1) * 6 + 6, 1)
+
+end do
+
+end if
+
 
 else
 
@@ -805,6 +877,10 @@ end if
 
 
       if (any(f=='EL  ')) then
+
+      elseif (any(f=='MAG0')) then
+
+      elseif (any(f=='ELGR')) then
 
       else
 
@@ -1069,9 +1145,14 @@ end if
       integer order_mom  !order of Cartesian multipole moments
       integer num_mom    !number of Cartesian multipole moments
       integer order_geo  !order of total geometric derivatives
+      integer order_magnl  !number of total magnetic (non-London) derivatives
+      integer order_elgr  !number of total electric field gradient derivatives
       integer num_atom   !number of atoms
       integer num_coord  !number of atomic coordinates
       integer num_geom   !number of total geometric derivatives
+      integer num_magnl   !number of total magnetic (non-London) derivatives
+      integer num_elgr   !number of total magnetic (non-London) derivatives
+      
       integer num_ints   !number of all integral matrices
       integer :: num_addr, num_order
       integer, allocatable :: address_list(:,:)
@@ -1089,6 +1170,13 @@ end if
          allocate(order_derv(num_derv))
          order_derv = (/count(f=='EL  ')/)
 
+      else if (count(f=='MAG0') > 0) then
+
+         num_derv = 1
+
+         allocate(order_derv(num_derv))
+         order_derv = (/count(f=='EL  ')/)
+
       else
 
          num_derv = 0
@@ -1097,7 +1185,8 @@ end if
 
       end if
 
-      if (count(f=='EL  ') > 1) then
+      if (count(f=='EL  ') > 1 .or. (count(f=='EL  ') + count(f=='MAG0') > 1) .or. &
+         (count(f=='EL  ') + count(f=='ELGR') > 1)) then
          call mat_init(A, nr_ao, nr_ao)
          A = 0*oneint(1)
          call mat_ensure_alloc(A)
@@ -1117,16 +1206,26 @@ end if
          order_mom = count(f=='EL  ')
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
-         if (order_mom+order_geo/=nf) then
-           call quit("interface_1el_oneint>> only electric and geometric perturbations implemented!")
+         ! gets the order of magnetic (non-London) derivatives
+         order_magnl = count(f=='MAG0')
+         ! gets the order of electric field gradient derivatives
+         order_elgr = count(f=='ELGR')
+         if (order_mom+order_geo+order_magnl+order_elgr/=nf) then
+           call quit("interface_1el_oneint>> unsupported perturbation(s)")
          end if
 
          ! sets the number of operators and derivatives
-         num_mom = (order_mom+1)*(order_mom+2)/2
+         num_mom = (order_mom+1)*(order_mom+2)/2 
+         num_magnl = (order_magnl+1)*(order_magnl+2)/2
          num_atom = get_nr_atoms()
          num_coord = 3*num_atom
          num_geom = num_coord**order_geo
-         num_ints = num_mom*num_geom
+         if (order_elgr > 0) then
+         num_elgr = 6*order_elgr ! Only works for first order
+         else 
+         num_elgr = 1
+         end if
+         num_ints = num_mom*num_geom*num_magnl*num_elgr
          ! MaR: DISABLED: NOT A VALID WAY OF DISCERNING THIS ANYMORE
 !          if (num_ints/=size(oneint)) then
 !             call quit("interface_1el_oneint>> returning specific components is not implemented!")
@@ -1136,8 +1235,9 @@ end if
          if (order_mom>1) then
             call quit("interface_1el_oneint>> only the first Cartesian multipole moments implemented!")
          end if
-
+! write(*,*) 'oneint size', size(oneint)
          do imat = 1, size(oneint)
+!          write(*,*) 'i', imat
             if (.not.isdef(oneint(imat))) then
                call mat_init(oneint(imat), nr_ao, nr_ao)
             end if
@@ -1146,13 +1246,19 @@ end if
              end if
          end do
 
+
+! write(*,*) 'oneint_tmp 1 before', oneint_tmp(1)%elms
+
 ! MaR: MAY NEED ANOTHER LOOK AT THE VERY LAST ARGUMENT OF THE GEN1INT CALLS BELOW
 ! MaR: NOTE THAT NOTHING HAS BEEN DONE FOR REORDERING THE EXCLUSIVELY DIRAC CASES BELOW
 ! MaR: THERE MAY BE NEED FOR REORDERING OUTPUT FROM THOSE CALLS IF USING GENERAL RSP CODE
          ! electric perturbations
-         if (order_mom/=0) then
+         if ((order_mom)/=0 .or. order_elgr /= 0 ) then
+
+! write(*,*) 'this is the el case', order_elgr, order_mom
+
             call gen1int_host_get_int(NON_LAO, INT_CART_MULTIPOLE, &
-                                      order_mom,                   &  !multipole moments
+                                      order_mom + 2*order_elgr,    &  !multipole moments
                                       0,                           &
                                       0, 0, 0,                     &  !magnetic derivatives
                                       0, 0, 0,                     &  !derivatives w.r.t. total RAM
@@ -1169,6 +1275,31 @@ end if
                                        1, (/1, 1/),                &
 #endif
                                       get_print_unit(), 0)
+
+         else if ((order_magnl) == 1) then
+
+! write(*,*) 'this is the mag0 case'
+
+            call gen1int_host_get_int(NON_LAO, INT_ONE_HAMIL, &
+                                      0,                           &  !multipole moments
+                                      0,                           &
+                                      0, 0, order_magnl,           &  !magnetic derivatives
+                                      0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                      0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                      0, 0, 0, (/0/),              &  !geometric derivatives on ket center
+                                      order_geo,                   &  !total geometric derivatives
+                                      order_geo,                   &
+                                      0, (/0/),                    &
+                                      .false., .false., .false.,   &  !not implemented yet
+                                      num_ints, oneint_tmp, .false.,   &  !integral matrices
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),          &
+#else
+                                       1, (/1, 1/),                &
+#endif
+                                      get_print_unit(), 0)
+
+
 
          ! only geometric perturbations
          else
@@ -1262,6 +1393,47 @@ end if
 #endif
          end if
 
+! write(*,*) 'oneint_tmp 1 after', oneint_tmp(1)%elms
+
+if (order_magnl > 0) then
+
+if (order_mom > 0) then
+
+else
+
+
+
+oneint(1) = oneint_tmp(1)
+oneint(2) = oneint_tmp(2)
+oneint(3) = oneint_tmp(3)
+
+
+! oneint(1)%elms = -1.0*oneint(1)%elms
+! oneint(2)%elms = -1.0*oneint(2)%elms
+! oneint(3)%elms = -1.0*oneint(3)%elms
+
+end if
+
+else if (order_elgr == 1) then
+
+if (order_mom > 0) then
+
+else
+
+oneint(1) = oneint_tmp(1)
+oneint(2) = oneint_tmp(2)
+oneint(3) = oneint_tmp(3)
+oneint(4) = oneint_tmp(4)
+oneint(5) = oneint_tmp(5)
+oneint(6) = oneint_tmp(6)
+
+
+
+end if
+
+
+else
+
          num_order = sum(order_derv)+order_geo
          ! gets the number of unique total geometric derivatives
          if (order_geo/=0) then
@@ -1303,6 +1475,8 @@ end if
             end do
      
             ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+
+! write(*,*) i, ave_offset
             oneint(ave_offset) = oneint_tmp(i)
 
          end do
@@ -1313,6 +1487,8 @@ end if
         
          deallocate(address_list)
          deallocate(tmp_index)
+
+end if
 
       end if
    end subroutine
@@ -1334,6 +1510,7 @@ end if
   !> \param val_ints contains the redudant integral matrices from Gen1Int
   !> \return rsp_expect contains the redudant expectation values for OpenRsp
   !> \return rsp_ints contains the redudant integral matrices for OpenRsp
+
   !> \note all the expectation values and integral matrices are in the order ("EL", "GEO")
   !>       in memory; this routine is implemented temporarily since it will cost much memory
   !>       for assigning integral matrices, it would be better that the integral
