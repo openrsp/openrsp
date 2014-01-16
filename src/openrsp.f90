@@ -298,6 +298,16 @@ end subroutine
 
              perturbation_tuple%pdim(i) = 3
 
+
+          elseif (openrsp_cfg_specify_plab(i) == 'MAG0') then
+
+             perturbation_tuple%pdim(i) = 3
+
+          elseif (openrsp_cfg_specify_plab(i) == 'ELGR') then
+
+             perturbation_tuple%pdim(i) = 6
+
+             
           else
 
              write(*,*) 'ERROR: Unrecognized field', openrsp_cfg_specify_plab(i)
@@ -4007,8 +4017,8 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
+!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                            S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4053,9 +4063,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, &
-                           file_id='Effqfww')
+!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                            S_already=S_already, zeromat_already=zeromat_already, &
+!                            file_id='Effqfww')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4063,11 +4073,13 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        open(unit = 258, file='rsp_tensor_Effqfww', status='old', action='read', iostat=ierr)
 
 ! IMPORTANT: FIND OUT HOW TUPLES ARE SORTED AND READ IN ACCORDINGLY (IT MAY ALREADY BE CORRECT)
+
+! Remaining: (1.0) * fld_dum/2.0, (1.0) * fld_dum!/2.0
        do i = 1, 6
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effqfww(j, :, i, m) = (-1.0) * fld_dum/2.0
+                Effqfww(j, :, i, m) = (1.0) * fld_dum/2.0
              end do
           end do
        end do
@@ -4100,9 +4112,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, &
-                           file_id='Effqfw2w')
+!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                            S_already=S_already, zeromat_already=zeromat_already, &
+!                            file_id='Effqfw2w')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4114,7 +4126,7 @@ do k = 1, openrsp_cfg_nr_freq_tuples
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effqfw2w(m, :, i, j) = (-1.0) * fld_dum/2.0
+                Effqfw2w(:, m, i, j) = (1.0) * fld_dum/2.0
              end do
           end do
        end do
@@ -4127,6 +4139,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        deallocate(perturbation_tuple%pid)
        deallocate(perturbation_tuple%freq)
 
+
+! THIS AND Effmf((w,-2w, 0): Find out about freq. ordering in calculation and ordering when reading
+! tensors in and factors -1 and 1/2 
 
        ! Calculate Effmf(w, w, 0)
 
@@ -4141,16 +4156,16 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%plab = (/'EL  ', 'EL  ', 'MAG ', 'EL  '/)
        perturbation_tuple%pdim = (/3, 3, 3, 3/)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
-       perturbation_tuple%freq = (/openrsp_cfg_real_freqs(k), &
-       openrsp_cfg_real_freqs(k),  -2.0d0 * openrsp_cfg_real_freqs(k), 0.0d0/)
+       perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k),  openrsp_cfg_real_freqs(k), 0.0d0/)
 
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, &
-                           file_id='Emfffww')
+!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                            S_already=S_already, zeromat_already=zeromat_already, &
+!                            file_id='Emfffww')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4162,7 +4177,7 @@ do k = 1, openrsp_cfg_nr_freq_tuples
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effmfww(j, :, i, m) = (-1.0) * fld_dum/2.0
+                Effmfww(j, :, i, m) = (1.0) * fld_dum!/2.0
              end do
           end do
        end do
@@ -4188,15 +4203,15 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%plab = (/'EL  ', 'EL  ', 'MAG ', 'EL  '/)
        perturbation_tuple%pdim = (/3, 3, 3, 3/)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
-       perturbation_tuple%freq = (/-2.0d0 * openrsp_cfg_real_freqs(k), &
-       openrsp_cfg_real_freqs(k), openrsp_cfg_real_freqs(k), 0.0d0/)
+       perturbation_tuple%freq = (/openrsp_cfg_real_freqs(k), &
+       openrsp_cfg_real_freqs(k), -2.0d0 *  openrsp_cfg_real_freqs(k), 0.0d0/)
 
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, &
-                           file_id='Effmfw2w')
+!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+!                            S_already=S_already, zeromat_already=zeromat_already, &
+!                            file_id='Effmfw2w')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4208,7 +4223,7 @@ do k = 1, openrsp_cfg_nr_freq_tuples
           do j = 1, 3
              do m = 1, 3
                 read(258,*) fld_dum
-                Effmfw2w(m, :, i, j) = (-1.0) * fld_dum/2.0
+                Effmfw2w(:, m, i, j) = (1.0) * fld_dum!/2.0
              end do
           end do
        end do
