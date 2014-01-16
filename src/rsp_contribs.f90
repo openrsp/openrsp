@@ -105,7 +105,7 @@ module rsp_contribs
        field_stats('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
        field_stats('EL  ', 'Electric field'                      , 3, F, F, T, F), &
        field_stats('VEL ', 'Velocity'                            , 3, T, F, T, F), &
-       field_stats('MAGO', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
+       field_stats('MAG0', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
        field_stats('MAG ', 'Magnetic field with London orbitals' , 3, T, T, F, F), &
        field_stats('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
        field_stats('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
