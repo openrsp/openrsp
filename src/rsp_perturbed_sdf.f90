@@ -745,17 +745,20 @@ end if
           print *, 'seconds spent in XC contribution', time_end - time_start
 
 !          if (num_p_tuples <= 2) then
-!             call cpu_time(time_start)
-!             call rsp_pe(zeromat%nrow,                                      &
+             call cpu_time(time_start)
+             call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
+                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                             p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
+!             (zeromat%nrow,                                      &
 !                         p_tuples(1)%n_perturbations,                       &
 !                         p_tuples(1)%plab,                                  &
 !                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /),     &
 !                         p_tuples(1)%pdim,                                  &
 !                         (/ D_unp, (dens_tuple(k), k = 2, num_p_tuples) /), &
-!                         property_size,                                     &
+!                         size(tmp),                                         &
 !                         tmp)
-!             call cpu_time(time_end)
-!             print *, 'seconds spent in PE contribution', time_end - time_start
+             call cpu_time(time_end)
+             print *, 'seconds spent in PE contribution', time_end - time_start
 !          end if
 
           if (p_tuples(1)%n_perturbations > 0) then
@@ -957,17 +960,17 @@ end if
        print *, 'seconds spent in XC contribution', time_end - time_start
 
 !       if (num_p_tuples <= 2) then
-!          call cpu_time(time_start)
-!          call rsp_pe(zeromat%nrow,                                 &
-!                      p_tuples(1)%n_perturbations,                  &
-!                      p_tuples(1)%plab,                             &
-!                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /),&
-!                      p_tuples(1)%pdim,                             &
-!                      D_unp,                                        &
-!                      property_size,                                &
-!                      Fp)
-!          call cpu_time(time_end)
-!          print *, 'seconds spent in PE contribution', time_end - time_start
+          call cpu_time(time_start)
+          call rsp_pe(zeromat%nrow,                                 &
+                      p_tuples(1)%n_perturbations,                  &
+                      p_tuples(1)%plab,                             &
+                      (/ (1, j = 1, p_tuples(1)%n_perturbations) /),&
+                      p_tuples(1)%pdim,                             &
+                      D_unp,                                        &
+                      property_size,                                &
+                      Fp)
+          call cpu_time(time_end)
+          print *, 'seconds spent in PE contribution', time_end - time_start
 !       end if
 
        ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
