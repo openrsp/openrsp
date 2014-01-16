@@ -1162,7 +1162,7 @@ type(matrix) :: Db, Fb
     !> first and number of- components in each field
     integer, intent(in)         :: c(nf), nc(nf)
     !> output perturbed integrals
-    type(matrix), intent(inout) :: fock!(propsize)
+    type(matrix), intent(inout) :: fock(propsize)
     !> perturbed density matrix
     type(matrix), intent(in)    :: dens
 
@@ -1183,7 +1183,7 @@ type(matrix) :: Db, Fb
         pe_dmat = 0.0d0
         call daxpy(nr_ao*nr_ao, 1.0d0, dens%elms, 1, pe_dmat, 1)
         call pe_response_operator(pe_dmat, pe_fmat, nr_ao, propsize)
-        call daxpy(nr_ao*nr_ao, 1.0d0, pe_fmat, 1, fock%elms, 1)
+        call daxpy(nr_ao*nr_ao, 1.0d0, pe_fmat, 1, fock(1)%elms, 1)
         deallocate(pe_fmat, pe_dmat)
     end if
 
