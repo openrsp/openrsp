@@ -1,8 +1,9 @@
 
-"""
-    Beholder - numerically tolerant test library.
 
-    Version X.Y
+BEHOLDER_VERSION = 'v0.0.1'
+
+"""
+    Beholder - numerically tolerant, bug intolerant test library.
 
     Copyright (c) 2013, Radovan Bast (lastname at kth.se)
     Licensed under the GNU Lesser General Public License.
@@ -74,7 +75,7 @@ class TestRun():
 
     #---------------------------------------------------------------------------
     def _parse_args(self, input_dir, argv):
-        parser = OptionParser(description='Beholder - numerically tolerant test library.')
+        parser = OptionParser(description='Beholder %s - numerically tolerant, bug intolerant test library.' % BEHOLDER_VERSION)
         parser.add_option('--binary-dir',
                           '-b',
                           action='store',
@@ -93,16 +94,40 @@ class _SingleFilter():
 
     def __init__(self, **kwargs):
 
+        list_of_recognized_keywords = []
+        list_of_recognized_keywords.append('from_re')
+        list_of_recognized_keywords.append('from_string')
+        list_of_recognized_keywords.append('ignore_below')
+        list_of_recognized_keywords.append('ignore_sign')
+        list_of_recognized_keywords.append('mask')
+        list_of_recognized_keywords.append('num_lines')
+        list_of_recognized_keywords.append('re')
+        list_of_recognized_keywords.append('string')
+        list_of_recognized_keywords.append('tolerance')
+        list_of_recognized_keywords.append('to_re')
+        list_of_recognized_keywords.append('to_string')
+
+        for key in kwargs.keys():
+            if key not in list_of_recognized_keywords:
+                sys.stderr.write('ERROR: keyword %s not recognized\n' % key)
+                sys.stderr.write('       available keywords: %s\n' % (', ').join(list_of_recognized_keywords))
+                sys.exit(-1)
+
         self.from_string  = kwargs.get('from_string', '')
         self.to_string    = kwargs.get('to_string', '')
         self.tolerance    = kwargs.get('tolerance', 1.0e-5)
         self.ignore_sign  = kwargs.get('ignore_sign', False)
         self.ignore_below = kwargs.get('ignore_below', 1.0e-40)
-        self.nr_lines     = kwargs.get('nr_lines', 0)
+        self.num_lines    = kwargs.get('num_lines', 0)
         self.mask         = kwargs.get('mask', [])
         self.use_mask     = False
         if self.mask != []:
             self.use_mask = True
+
+        if self.to_string != '':
+            if self.num_lines > 0:
+                sys.stderr.write('ERROR: to_string and num_lines incompatible\n')
+                sys.exit(-1)
 
         self.from_is_re = False
         from_re = kwargs.get('from_re', '')
@@ -115,6 +140,23 @@ class _SingleFilter():
         if to_re != '':
             self.to_string = to_re
             self.to_is_re = True
+            if self.num_lines > 0:
+                sys.stderr.write('ERROR: to_re and num_lines incompatible\n')
+                sys.exit(-1)
+
+        only_string = kwargs.get('string', '')
+        if only_string != '':
+            self.from_string = only_string
+            if self.num_lines > 0:
+                sys.stderr.write('ERROR: string and num_lines incompatible\n')
+                sys.exit(-1)
+            self.num_lines = 1
+
+        only_re = kwargs.get('re', '')
+        if only_re != '':
+            self.from_string = only_re
+            self.num_lines = 1
+            self.from_is_re = True
 
 #-------------------------------------------------------------------------------
 class Filter():
@@ -243,7 +285,7 @@ class Filter():
 
         if f.from_is_re:
             ps = re.compile(r'.*%s' % f.from_string)
-        if f.nr_lines == 0:
+        if f.num_lines == 0:
             if f.to_is_re:
                 pe = re.compile(r'.*%s' % f.to_string)
 
@@ -255,8 +297,8 @@ class Filter():
             else:
                 start_line_matches = (f.from_string in out[i])
             if start_line_matches:
-                if f.nr_lines > 0:
-                    line_l.append(range(i, i+f.nr_lines))
+                if f.num_lines > 0:
+                    line_l.append(range(i, i+f.num_lines))
                 else:
                     for j in range(i, len(out)):
                         f.end_line_matches = False
@@ -269,8 +311,8 @@ class Filter():
                             break
 
         if line_l == []:
-            if f.nr_lines > 0:
-                sys.stderr.write('ERROR: filter [%i lines from "%s"] did not extract anything from file %s\n' % (f.nr_lines, f.from_string, out_name))
+            if f.num_lines > 0:
+                sys.stderr.write('ERROR: filter [%i lines from "%s"] did not extract anything from file %s\n' % (f.num_lines, f.from_string, out_name))
             else:
                 sys.stderr.write('ERROR: filter ["%s" ... "%s"] did not extract anything from file %s\n' % (f.from_string, f.to_string, out_name))
             sys.exit(-1)

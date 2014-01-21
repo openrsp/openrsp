@@ -11,11 +11,11 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f = Filter()
 f.add(from_string  = 'no-London Magnetizability = Eoo',
-      nr_lines     = 4,
+      num_lines    = 4,
       tolerance    = 1.0e-9,
       ignore_below = 1.0e-9)
 f.add(from_string  = 'London Magnetizability = Ebb',
-      nr_lines     = 4,
+      num_lines    = 4,
       tolerance    = 1.0e-9,
       ignore_below = 1.0e-9)
 
