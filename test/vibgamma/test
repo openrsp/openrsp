@@ -15,13 +15,13 @@ f_out.add(from_string = 'freq/cm-1  freq/au     aa         mb         aa',
 
 f_stdout = Filter()
 f_stdout.add(from_string  = 'd/dg dipmom = -Egf',
-             nr_lines     = 4,
+             num_lines    = 4,
              tolerance    = 1.0e-6)
 f_stdout.add(from_string  = 'd/dg Alpha = -Egff',
-             nr_lines     = 10,
+             num_lines    = 10,
              tolerance    = 1.0e-6)
 f_stdout.add(from_string  = 'd/dg Beta = -Egfff',
-             nr_lines     = 28,
+             num_lines    = 28,
              tolerance    = 1.0e-6)
 
 test_run.execute(['vibgamma.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout}, args='-put DALTON.HES')
