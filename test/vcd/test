@@ -11,7 +11,7 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f = Filter()
 f.add(from_string = 'AAT',
-      nr_lines    = 4,
+      num_lines   = 4,
       tolerance   = 1.0e-9)
 
 test_run.execute(['vcd.dal'], ['h2o2.mol'], {'stdout': f})

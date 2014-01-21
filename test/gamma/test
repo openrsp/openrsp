@@ -11,12 +11,12 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f_out = Filter()
 f_out.add(from_string = 'Final results from SIRIUS',
-          nr_lines    = 11,
+          num_lines   = 11,
           tolerance   = 1.0e-7)
 
 f_stdout = Filter()
 f_stdout.add(from_string  = 'gamma = -Effff',
-             nr_lines     = 29,
+             num_lines    = 29,
              tolerance    = 1.0e-7)
 
 test_run.execute(['gamma.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout})

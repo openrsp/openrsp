@@ -28,4 +28,6 @@ class OpenRSPTestRun(TestRun):
                     for suffix in f:
                         out = '%s.%s' % (output_no_suffix, suffix)
                         f[suffix].check(self.work_dir, '%s' % out, 'result/%s' % out)
-                sys.stdout.write('passed\n')
+                    sys.stdout.write('passed\n')
+                else:
+                    sys.stdout.write('finished (no reference)\n')

@@ -19,13 +19,13 @@ f_out.add(from_string  = 'RSPC Calling print_shypol',
 
 f_stdout = Filter()
 f_stdout.add(from_string = 'd/dg Polari = -Egff',
-             nr_lines    = 10,
+             num_lines   = 10,
              tolerance   = 1.0e-6)
 f_stdout.add(from_string = 'd/dg G-prime = Egbf',
-             nr_lines    = 10,
+             num_lines   = 10,
              tolerance   = 1.0e-6)
 f_stdout.add(from_string = 'd/dg A-tensor = -Egqf',
-             nr_lines    = 19,
+             num_lines   = 19,
              tolerance   = 1.0e-6)
 
 test_run.execute(['roa.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout}, args='-put DALTON.HES')

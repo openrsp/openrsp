@@ -11,12 +11,12 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f_out = Filter()
 f_out.add(from_string = 'Final results from SIRIUS',
-          nr_lines    = 11,
+          num_lines   = 11,
           tolerance   = 1.0e-7)
 
 f_stdout = Filter()
 f_stdout.add(from_string  = 'beta = -Efff',
-             nr_lines     = 10,
+             num_lines    = 10,
              tolerance    = 1.0e-7,
              ignore_below = 1.0e-7)
 
