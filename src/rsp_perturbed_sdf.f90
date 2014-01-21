@@ -749,14 +749,6 @@ end if
              call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
-!             (zeromat%nrow,                                      &
-!                         p_tuples(1)%n_perturbations,                       &
-!                         p_tuples(1)%plab,                                  &
-!                         (/ (1, j = 1, p_tuples(1)%n_perturbations) /),     &
-!                         p_tuples(1)%pdim,                                  &
-!                         (/ D_unp, (dens_tuple(k), k = 2, num_p_tuples) /), &
-!                         size(tmp),                                         &
-!                         tmp)
              call cpu_time(time_end)
 !             print *, 'seconds spent in PE contribution', time_end - time_start
           end if

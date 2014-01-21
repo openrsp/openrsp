@@ -1184,15 +1184,19 @@ type(matrix) :: Db, Fb
 
     if (nf == 0) then
         if (propsize /= 1) stop 'ERROR: propsize /= 1'
-        allocate(pe_fmat(nr_ao*nr_ao))
         allocate(pe_dmat(nr_ao*nr_ao))
+        allocate(pe_fmat(nr_ao*nr_ao))
         pe_fmat = 0.0d0
         pe_dmat = 0.0d0
         call daxpy(nr_ao*nr_ao, 1.0d0, dens%elms, 1, pe_dmat, 1)
         call pe_response_operator(pe_dmat, pe_fmat, nr_ao, propsize)
-        call daxpy(nr_ao*nr_ao, 1.0d0, pe_fmat, 1, fock(1)%elms, 1)
-        deallocate(pe_fmat, pe_dmat)
+        deallocate(pe_dmat)
     end if
+
+    do i = 1, propsize
+        call daxpy(nr_ao*nr_ao, 2.0d0, pe_fmat, 1, fock(i)%elms, 1)
+    end do
+    deallocate(pe_fmat)
 
   end subroutine rsp_pe
 
