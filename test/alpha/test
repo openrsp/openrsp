@@ -11,7 +11,7 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f_out = Filter()
 f_out.add(from_string = 'Final results from SIRIUS',
-          nr_lines    = 13,
+          nr_lines    = 11,
           tolerance   = 1.0e-7)
 
 f_stdout = Filter()
