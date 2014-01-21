@@ -48,7 +48,7 @@ subroutine pe_response_operator(dmats, fmats, nbas, ndens)
     real(8), dimension(:), allocatable :: packed_fmats, packed_dmats
 
     fmats = 0.0d0
-    return
+!    return
     nnbas = nbas * (nbas + 1) / 2
     allocate(packed_fmats(ndens * nnbas))
     allocate(packed_dmats(ndens * nnbas))

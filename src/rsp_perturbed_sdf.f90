@@ -744,7 +744,7 @@ end if
           call cpu_time(time_end)
 !           print *, 'seconds spent in XC contribution', time_end - time_start
 
-!          if (num_p_tuples <= 2) then
+          if (num_p_tuples <= 2) then
              call cpu_time(time_start)
              call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -759,7 +759,7 @@ end if
 !                         tmp)
              call cpu_time(time_end)
 !             print *, 'seconds spent in PE contribution', time_end - time_start
-!          end if
+          end if
 
           if (p_tuples(1)%n_perturbations > 0) then
 
@@ -959,7 +959,7 @@ end if
        call cpu_time(time_end)
 !        print *, 'seconds spent in XC contribution', time_end - time_start
 
-!       if (num_p_tuples <= 2) then
+       if (num_p_tuples <= 2) then
           call cpu_time(time_start)
           call rsp_pe(zeromat%nrow,                                 &
                       p_tuples(1)%n_perturbations,                  &
@@ -971,7 +971,7 @@ end if
                       Fp)
           call cpu_time(time_end)
 !          print *, 'seconds spent in PE contribution', time_end - time_start
-!       end if
+       end if
 
        ! MaR: THERE IS NO NEED TO CACHE THE "ALL INNER" CONTRIBUTION
        ! It should be possible to just add it to Fp like already done above
