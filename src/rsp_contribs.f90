@@ -1173,6 +1173,11 @@ type(matrix) :: Db, Fb
         stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
     end if
 
+    if (any(f == 'EL  ')) then
+       ! nothing to add
+       return
+    end if
+
     if (.not. peqm .or. pe_gspol) return
 
     if (nf == 0) then
