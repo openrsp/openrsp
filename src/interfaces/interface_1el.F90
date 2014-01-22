@@ -6,7 +6,6 @@ module interface_1el
    use interface_molecule
    use interface_basis
    use interface_f77_memory
-   use interface_pcm
    use interface_io
    use interface_1el_dirac
    use rsp_indices_and_addressing, only: get_triang_blks_offset

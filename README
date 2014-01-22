@@ -28,8 +28,7 @@
 1. A brief description of the project.
 
    This project is to implement Andreas J. Thorvaldsen's codes into DALTON
-   main branch using its MO solver, so that we could perform such as
-   PCM calculations.
+   main branch using its MO solver.
 
 2. A pointer to the project website (if it has one)
 
