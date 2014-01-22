@@ -1,7 +1,5 @@
 module interface_pelib
 
-    use matrix_defop
-    use matrix_lowlevel
     use polarizable_embedding, only: pe_master
 
     implicit none
