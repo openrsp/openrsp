@@ -17,7 +17,8 @@ f_out.add(from_string = 'Final results from SIRIUS',
 f_stdout = Filter()
 f_stdout.add(from_string  = 'gamma = -Effff',
              num_lines    = 29,
-             tolerance    = 1.0e-7)
+             tolerance    = 1.0e-7,
+             ignore_below = 1.0e-7)
 
 test_run.execute(['gamma.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout})
 
