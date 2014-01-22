@@ -48,6 +48,7 @@ module rsp_contribs
   public rsp_ovlint_t_matrix
   public rsp_oneint
   public rsp_xcint_adapt
+  public rsp_pe
 
   !> Type describing a single field in a response function
   !> or response equation. A response equation (or density)
@@ -1148,5 +1149,51 @@ type(matrix) :: Db, Fb
     end do
   end subroutine
 
+  subroutine rsp_pe(nr_ao, nf, f, c, nc, dens, propsize, fock)
+
+    use pe_variables, only: peqm, pe_gspol
+    use interface_pelib
+
+    integer                     :: i, j, k, nr_ao, propsize
+    !> number of fields
+    integer, intent(in)         :: nf
+    !> field labels in std order
+    character(4), intent(in)    :: f(nf)
+    !> first and number of- components in each field
+    integer, intent(in)         :: c(nf), nc(nf)
+    !> output perturbed integrals
+    type(matrix), intent(inout) :: fock(propsize)
+    !> perturbed density matrix
+    type(matrix), intent(in)    :: dens
+
+    real(8), allocatable        :: pe_dmat(:,:)
+    real(8), allocatable        :: pe_fmat(:,:)
+
+    if (any(f /= 'EL  ')) then
+        stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
+    end if
+
+    if (any(f == 'EL  ')) then
+       return
+    end if
+
+    if (.not. peqm .or. pe_gspol) return
+
+    if (nf == 0) then
+        if (propsize /= 1) stop 'ERROR: propsize /= 1'
+        allocate(pe_dmat(nr_ao,nr_ao))
+        allocate(pe_fmat(nr_ao,nr_ao))
+        pe_fmat = 0.0d0
+        pe_dmat = 0.0d0
+        call daxpy(nr_ao*nr_ao, 1.0d0, dens%elms, 1, pe_dmat, 1)
+        call pe_response_operator(pe_dmat, pe_fmat, nr_ao, propsize)
+        deallocate(pe_dmat)
+        do i = 1, propsize
+            call daxpy(nr_ao*nr_ao, 2.0d0, pe_fmat, 1, fock(i)%elms, 1)
+        end do
+        deallocate(pe_fmat)
+    end if
+
+  end subroutine rsp_pe
 
 end module
