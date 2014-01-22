@@ -3,106 +3,124 @@
    **** OUTPUT FROM DALTON SHELL SCRIPT **** 
    ***************************************** 
 
-   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+   DALTON release 2013.1
 
-   Invocation: /home/bast/dalton/gaobin/openrsp/../build/dalton -d -nobackup -noarch gamma.dal h2o2.mol
+   Invocation: /home/bast/dalton/merge/openrsp-merge/build/dalton -noarch -nobackup gamma.dal h2o2.mol
 
-   Fri Jan 13 18:07:30 CET 2012
+   Thu Jan 23 00:42:20 CET 2014
 
    Calculation: gamma_h2o2  (input files: gamma.dal and h2o2.mol)
-   PID        : 25177
-   Input dir  : /home/bast/dalton/gaobin/openrsp/test/gamma
-   Scratch dir: /scratch/DALTON_scratch/bast/gamma_h2o2
+   PID        : 8964
+   Input dir  : /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma
+   Scratch dir: /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/gamma_h2o2
 
- before response solver: norm(RHS) =    3.9260703322288282     
- before response solver: norm(RHS) =    5.1030147147175269     
- before response solver: norm(RHS) =    4.6122823311966989     
 
- before response solver: norm(RHS) =    3.9260703322288282     
- before response solver: norm(RHS) =    5.1030147147175269     
- before response solver: norm(RHS) =    4.6122823311966998     
+ output from the communication group generator:
+   1 intra-node group has been built.
 
- before response solver: norm(RHS) =    3.9260703322288282     
- before response solver: norm(RHS) =    5.1030147147175269     
- before response solver: norm(RHS) =    4.6122823311966998     
 
- before response solver: norm(RHS) =    3.9260703322288282     
- before response solver: norm(RHS) =    5.1030147147175269     
- before response solver: norm(RHS) =    4.6122823311966998     
+ DALTON: default work memory size used.            64000000
 
- before response solver: norm(RHS) =    3.8564090318062902     
- before response solver: norm(RHS) =    10.763487974586376     
- before response solver: norm(RHS) =    5.0574336832462858     
- before response solver: norm(RHS) =    4.1142210665826093     
- before response solver: norm(RHS) =    28.042467414470867     
- before response solver: norm(RHS) =    6.0836862190877303     
- before response solver: norm(RHS) =    5.2983546799260841     
- before response solver: norm(RHS) =    8.8959356171194344     
- before response solver: norm(RHS) =    9.6848510941501154     
+ DALTON: master work memory size also used for slaves.            64000000
 
- before response solver: norm(RHS) =    3.8564090318062902     
- before response solver: norm(RHS) =    10.763487974586376     
- before response solver: norm(RHS) =    5.0574336832462858     
- before response solver: norm(RHS) =    4.1142210665826093     
- before response solver: norm(RHS) =    28.042467414470867     
- before response solver: norm(RHS) =    6.0836862190877303     
- before response solver: norm(RHS) =    5.2983546799260841     
- before response solver: norm(RHS) =    8.8959356171194344     
- before response solver: norm(RHS) =    9.6848510941501154     
+ Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   1
 
- before response solver: norm(RHS) =    3.8564090318062902     
- before response solver: norm(RHS) =    10.763487974586376     
- before response solver: norm(RHS) =    5.0574336832462858     
- before response solver: norm(RHS) =    4.1142210665826093     
- before response solver: norm(RHS) =    28.042467414470867     
- before response solver: norm(RHS) =    6.0836862190877303     
- before response solver: norm(RHS) =    5.2983546799260841     
- before response solver: norm(RHS) =    8.8959356171194344     
- before response solver: norm(RHS) =    9.6848510941501154     
+   1: Directories for basis set searches:
+     /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma:/home/bast/dalton/merge/openrsp-merge/build/basis
 
-gamma = -Effff w: -0.216 0.072 0.072 0.072
-   38.5265094702   56.6921300024    0.0000000000
-   38.3875241639   57.8254116321    0.0000000000
-    0.0000000000    0.0000000000   89.4726899545
-   38.3875241639   57.8254116321    0.0000000000
-   31.4168503997   97.0240571556    0.0000000000
-    0.0000000000    0.0000000000   99.2709072929
-    0.0000000000    0.0000000000   89.4726899545
-    0.0000000000    0.0000000000   99.2709072929
-   98.8611447468  138.6317017706    0.0000000000
-   38.3875241639   57.8254116321    0.0000000000
-   31.4168503997   97.0240571556    0.0000000000
-    0.0000000000    0.0000000000   99.2709072929
-   31.4168503997   97.0240571556    0.0000000000
-   -3.6231422462 -328.3638775850    0.0000000005
-    0.0000000000   -0.0000000000  136.5576108509
-    0.0000000000    0.0000000000   99.2709072929
-    0.0000000000   -0.0000000000  136.5576108509
-   96.3247361549  187.5690035518   -0.0000000000
-    0.0000000000    0.0000000000   89.4726899545
-    0.0000000000    0.0000000000   99.2709072929
-   98.8611447468  138.6317017706    0.0000000000
-    0.0000000000    0.0000000000   99.2709072929
-    0.0000000000   -0.0000000000  136.5576108509
-   96.3247361549  187.5690035518   -0.0000000000
-   98.8611447468  138.6317017706    0.0000000000
-   96.3247361549  187.5690035518   -0.0000000000
-    0.0000000000    0.0000000000  310.6241508900
+ Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   0
 
-gamma_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/gaobin/openrsp/test/gamma
+   0: Directories for basis set searches:
+     /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma:/home/bast/dalton/merge/openrsp-merge/build/basis
+ before response solver: norm(RHS) =    3.9260702133178711     
+ before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    4.6122822761535645     
+
+ before response solver: norm(RHS) =    3.9260702133178711     
+ before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    4.6122822761535645     
+
+ before response solver: norm(RHS) =    3.9260702133178711     
+ before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    4.6122822761535645     
+
+ before response solver: norm(RHS) =    3.9260702133178711     
+ before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    4.6122822761535645     
+
+ before response solver: norm(RHS) =    3.8564076423645020     
+ before response solver: norm(RHS) =    10.763441085815430     
+ before response solver: norm(RHS) =    5.0574326515197754     
+ before response solver: norm(RHS) =    4.1142220497131348     
+ before response solver: norm(RHS) =    28.042383193969727     
+ before response solver: norm(RHS) =    6.0836887359619141     
+ before response solver: norm(RHS) =    5.2983541488647461     
+ before response solver: norm(RHS) =    8.8959217071533203     
+ before response solver: norm(RHS) =    9.6848526000976563     
+
+ before response solver: norm(RHS) =    3.8564076423645020     
+ before response solver: norm(RHS) =    10.763441085815430     
+ before response solver: norm(RHS) =    5.0574326515197754     
+ before response solver: norm(RHS) =    4.1142220497131348     
+ before response solver: norm(RHS) =    28.042383193969727     
+ before response solver: norm(RHS) =    6.0836887359619141     
+ before response solver: norm(RHS) =    5.2983541488647461     
+ before response solver: norm(RHS) =    8.8959217071533203     
+ before response solver: norm(RHS) =    9.6848526000976563     
+
+ before response solver: norm(RHS) =    3.8564076423645020     
+ before response solver: norm(RHS) =    10.763441085815430     
+ before response solver: norm(RHS) =    5.0574326515197754     
+ before response solver: norm(RHS) =    4.1142220497131348     
+ before response solver: norm(RHS) =    28.042383193969727     
+ before response solver: norm(RHS) =    6.0836887359619141     
+ before response solver: norm(RHS) =    5.2983541488647461     
+ before response solver: norm(RHS) =    8.8959217071533203     
+ before response solver: norm(RHS) =    9.6848526000976563     
+
+gamma = -Effff w:  -0.216   0.072   0.072   0.072
+   38.5265010997   56.6920386733    0.0000000000
+   38.3875373887   57.8254025762    0.0000000000
+    0.0000000000    0.0000000000   89.4726283248
+   38.3875373887   57.8254025762    0.0000000000
+   31.4169603844   97.0238854915   -0.0000000000
+    0.0000000000    0.0000000000   99.2709135752
+    0.0000000000    0.0000000000   89.4726283248
+    0.0000000000    0.0000000000   99.2709135752
+   98.8611002460  138.6315979513    0.0000000000
+   38.3875373887   57.8254025762    0.0000000000
+   31.4169603844   97.0238854915   -0.0000000000
+    0.0000000000    0.0000000000   99.2709135752
+   31.4169603844   97.0238854915   -0.0000000000
+   -3.6228787321 -328.3619339829   -0.0000000005
+    0.0000000000    0.0000000000  136.5578258389
+    0.0000000000    0.0000000000   99.2709135752
+    0.0000000000    0.0000000000  136.5578258389
+   96.3247471426  187.5691704207    0.0000000001
+    0.0000000000    0.0000000000   89.4726283248
+    0.0000000000    0.0000000000   99.2709135752
+   98.8611002460  138.6315979513    0.0000000000
+    0.0000000000    0.0000000000   99.2709135752
+    0.0000000000    0.0000000000  136.5578258389
+   96.3247471426  187.5691704207    0.0000000000
+   98.8611002460  138.6315979513    0.0000000000
+   96.3247471426  187.5691704207    0.0000000001
+    0.0000000000    0.0000000000  310.6243003859
+
+gamma_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma
 ----------------------------------------------------------
-21 informational messages have been issued by Dalton,
+20 informational messages have been issued by Dalton,
 output from 'grep -n INFO'  (max 10 lines):
-183:    INFO: Request for parallel calculation (.PARALL) is ignored because only one CPU process available.
-629:INFO IO unit of log file:      2
-630:INFO Print level:             20
-631:INFO Number of specified real frequencies:           3
-632:INFO Real frequencies:          0.072000    0.072000    0.072000
-633:INFO Number of specified imaginary frequencies:      3
-634:INFO Imaginary frequencies:     0.000000    0.000000    0.000000
-635:INFO Calculate 2nd hyperpolarizability using 2n+1 (2+1+1) rule
-636:INFO Maximum number of micro iterations of solving the response equations:    100
-637:INFO Maximum dimension of the sub-block of the configuration Hessian:           0
+663:INFO IO unit of log file:      2
+664:INFO Print level:             20
+665:INFO Number of specified real frequencies:           3
+666:INFO Real frequencies:          0.072000    0.072000    0.072000
+667:INFO Number of specified imaginary frequencies:      3
+668:INFO Imaginary frequencies:     0.000000    0.000000    0.000000
+669:INFO Calculate 2nd hyperpolarizability using 2n+1 (2+1+1) rule
+670:INFO Maximum number of micro iterations of solving the response equations:    100
+671:INFO Maximum dimension of the sub-block of the configuration Hessian:           0
+672:INFO Maximum dimension of the reduced space:                                  400
 
-   Fri Jan 13 18:07:51 CET 2012
+   Thu Jan 23 00:42:42 CET 2014
    ***************************************** 
