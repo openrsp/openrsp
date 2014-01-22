@@ -43,7 +43,6 @@ module openrsp
   use interface_molecule
   use interface_io
   use interface_xc
-  use interface_pcm
   use interface_scf
   use interface_f77_memory
   use interface_rsp_solver
@@ -101,8 +100,7 @@ module openrsp
 
 contains
 
-  subroutine openrsp_setup(WAVPCM, LWORK, WORK)
-    logical, intent(in)    :: WAVPCM
+  subroutine openrsp_setup(LWORK, WORK)
     integer, intent(in)    :: LWORK
     integer                :: nbast, lupri
     real(8), intent(inout) :: WORK(LWORK)
@@ -124,7 +122,6 @@ contains
     call interface_1el_init()
     call interface_io_init()
     call interface_xc_init()
-    call interface_pcm_init(wavpcm)
     call interface_scf_init()
     call interface_basis_init()
 
@@ -4500,9 +4497,6 @@ end do
     F = 0
 
     call rsp_mosolver_finalize()
-    if (get_is_pcm_calculation()) then
-       call interface_pcm_finalize()
-    end if
     call interface_f77_memory_finalize()
     ! stamp with date, time and hostname
     call TSTAMP(' ', lupri)
@@ -4518,7 +4512,7 @@ end module
 !> \date 2009-12-08
 !> \param WORK contains the work memory
 !> \param LWORK is the size of the work memory
-subroutine openrsp_driver(work, lwork, wavpcm)
+subroutine openrsp_driver(work, lwork)
 
    use openrsp
 
@@ -4526,9 +4520,8 @@ subroutine openrsp_driver(work, lwork, wavpcm)
 
    integer, intent(in)    :: lwork
    real(8), intent(inout) :: work(lwork)
-   logical, intent(in)    :: wavpcm
 
-   call openrsp_setup(wavpcm, lwork, work)
+   call openrsp_setup(lwork, work)
    call openrsp_calc()
    call openrsp_finalize()
 

@@ -3,7 +3,6 @@ module interface_scf
    use openrsp_cfg
    use matrix_defop
    use interface_f77_memory
-   use interface_pcm
    use interface_io
    use interface_basis
    use interface_dirac_gen1int
@@ -204,11 +203,8 @@ contains
 #include "inforb.h"
     ! uses NODC, NODV
 #include "cbione.h"
-    ! use PCM
     ! start of total density matrix (AO) in work memory
     integer work_ao_dens
-    ! start of PCM two-electron contributions
-    integer work_pcm, work_pcm2
     ! parameters for SIRFCK
     integer NDMAT, ISYMDM, IFCTYP
     ! integer constants
@@ -233,23 +229,6 @@ contains
     ! calculates two electron contribution by calling SIRFCK
     call SIRFCK( G%elms, f77_memory(work_ao_dens), NDMAT, &
                  ISYMDM, IFCTYP, .true., f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-    ! PCM two-electron contributions
-    if ( get_is_pcm_calculation() ) then
-      ! assigns the work memory
-      work_pcm = get_f77_memory_next()
-      work_pcm2 = work_pcm + NNBASX
-      call set_f77_memory_next(work_pcm2 + N2BASX)
-      if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_pcmfck2', get_f77_memory_next()-1, get_f77_memory_total() )
-      call WAVPCM_2EL( f77_memory(work_pcm), f77_memory(work_ao_dens), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
-!      call pcm_ao_rsp_2elfock( f77_memory(work_pcm), f77_memory(work_ao_dens) )
-
-      ! transforms to square matrix
-      call DZERO( f77_memory(work_pcm2), N2BASX )
-      call DSPTSI( NBAST, f77_memory(work_pcm), f77_memory(work_pcm2) )
-
-      ! adds to G
-      call DAXPY( N2BASX, 1D0, f77_memory(work_pcm2), 1, G%elms, 1 )
-    end if
     !N if ( .not. restrict_scf ) G%elms = G%elms
     ! cleans
     call set_f77_memory_next(work_ao_dens)
@@ -332,8 +311,6 @@ contains
 #include "inftap.h"
     ! starts of the overlap and one electron Hamiltonian matrices in work memory
     integer work_ham1
-    ! PCM one-electron contributions
-    integer work_pcm
     ! integer constants
     real(8), parameter :: one = 1.0D+00
     ! dummy stuff
@@ -346,21 +323,6 @@ contains
 
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
     call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
-    ! PCM one-electron contributions
-    if ( get_is_pcm_calculation() ) then
-      work_pcm = get_f77_memory_next()
-      call set_f77_memory_next(work_pcm + NNBASX)
-      if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
-#ifdef USE_WAVPCM
-      call pcm_ao_rsp_1elfock( f77_memory(work_pcm) )
-      ! adds to one-electron Hamiltonian
-      f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
-                    = f77_memory( work_ham1 : work_ham1 + NNBASX - 1 ) &
-                    + f77_memory( work_pcm  : work_pcm  + NNBASX - 1 )
-#endif
-      ! cleans
-      call set_f77_memory_next(work_pcm)
-    end if
     ! fills the data into matrices S and H1
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )

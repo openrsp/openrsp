@@ -40,7 +40,7 @@
   !> \date 2009-12-08
   !> \param WORK contains the work memory
   !> \param LWORK is the size of the work memory
-  subroutine openrsp_daldrv_old(WORK, LWORK, WAVPCM)
+  subroutine openrsp_daldrv_old(WORK, LWORK)
     ! matrix
     use matrix_defop
     use matrix_lowlevel, only: mat_init
@@ -49,7 +49,6 @@
     use interface_io
     use interface_basis
     use interface_xc
-    use interface_pcm
     use interface_scf
     use interface_rsp_solver
     use interface_1el
@@ -62,7 +61,6 @@
 
     integer LWORK
     real(8) WORK(LWORK)
-    logical WAVPCM
 
     integer lupri, lucmd, nbast
 
@@ -165,7 +163,6 @@
     call interface_io_init()
     call interface_xc_init()
     call interface_scf_init()
-    call interface_pcm_init(wavpcm)
     call interface_basis_init()
 
     nbast = get_nr_ao()
@@ -184,10 +181,6 @@
                         ' Poul Jorgensen, and Sonia Coriani, '
     write(LUPRI, 100) ' J. Chem. Phys. 129, 214108 (2008).'
     write(LUPRI, '()')
-    if(WAVPCM) then
-       write(LUPRI, 100) '* Wavelet-PCM non-nonequilibrium calculation'
-       write(LUPRI, '()')
-    end if
 
     ! dumps the molecule information
     num_atoms = get_nr_atoms()
@@ -391,9 +384,6 @@
     F = 0
     call openrsp_info_clean(openrsp_info)
     call rsp_mosolver_finalize()
-    if (get_is_pcm_calculation()) then
-       call interface_pcm_finalize()
-    end if
     call interface_f77_memory_finalize()
 
     ! stamps the date, time and hostname
