@@ -114,8 +114,8 @@ contains
     real(8)                :: xc_energy
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
-    real(8), allocatable   :: pe_dmat(:)
-    real(8), allocatable   :: pe_fmat(:)
+    real(8), allocatable   :: pe_dmat(:,:)
+    real(8), allocatable   :: pe_fmat(:,:)
     real(8)                :: pe_energy(1)
 
     type(ctr_arg) :: arg(1)
@@ -206,12 +206,10 @@ contains
 
     if (peqm) then
         mat_dim = D%nrow
-        allocate(pe_fmat(mat_dim*mat_dim))
-        allocate(pe_dmat(mat_dim*mat_dim))
+        allocate(pe_fmat(mat_dim,mat_dim))
+        allocate(pe_dmat(mat_dim,mat_dim))
         pe_fmat = 0.0d0
         pe_dmat = 0.0d0
-        ! since density matrix is divided by two above we need to 
-        ! multiply by two to get the correct density matrix
         call daxpy(mat_dim*mat_dim, 2.0d0, D%elms, 1, pe_dmat, 1)
         call pe_add_full_operator(pe_dmat, pe_fmat, pe_energy)
         call daxpy(mat_dim*mat_dim, 1.0d0, pe_fmat, 1, F%elms, 1)

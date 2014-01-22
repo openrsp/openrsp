@@ -1166,17 +1166,14 @@ type(matrix) :: Db, Fb
     !> perturbed density matrix
     type(matrix), intent(in)    :: dens
 
-    real(8), allocatable        :: pe_dmat(:)
-    real(8), allocatable        :: pe_fmat(:)
+    real(8), allocatable        :: pe_dmat(:,:)
+    real(8), allocatable        :: pe_fmat(:,:)
 
     if (any(f /= 'EL  ')) then
         stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
     end if
 
-!    if (.true.) return
-
     if (any(f == 'EL  ')) then
-       ! nothing to add
        return
     end if
 
@@ -1184,19 +1181,18 @@ type(matrix) :: Db, Fb
 
     if (nf == 0) then
         if (propsize /= 1) stop 'ERROR: propsize /= 1'
-        allocate(pe_dmat(nr_ao*nr_ao))
-        allocate(pe_fmat(nr_ao*nr_ao))
+        allocate(pe_dmat(nr_ao,nr_ao))
+        allocate(pe_fmat(nr_ao,nr_ao))
         pe_fmat = 0.0d0
         pe_dmat = 0.0d0
         call daxpy(nr_ao*nr_ao, 1.0d0, dens%elms, 1, pe_dmat, 1)
         call pe_response_operator(pe_dmat, pe_fmat, nr_ao, propsize)
         deallocate(pe_dmat)
+        do i = 1, propsize
+            call daxpy(nr_ao*nr_ao, 2.0d0, pe_fmat, 1, fock(i)%elms, 1)
+        end do
+        deallocate(pe_fmat)
     end if
-
-    do i = 1, propsize
-        call daxpy(nr_ao*nr_ao, 2.0d0, pe_fmat, 1, fock(i)%elms, 1)
-    end do
-    deallocate(pe_fmat)
 
   end subroutine rsp_pe
 
