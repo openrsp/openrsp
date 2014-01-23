@@ -2,7 +2,7 @@ module legacy_vibrational_properties
 !Calculation and outputting of vibrational (optical) properties.
 !This file is currently common to Dalton and Dirac
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use rsp_equations_old
    use legacy_property_contributions
    use dalton_ifc

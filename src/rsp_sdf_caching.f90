@@ -10,7 +10,7 @@ module rsp_sdf_caching
 
   use rsp_field_tuple
   use rsp_indices_and_addressing
-  use matrix_defop
+  use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_zero_like
 
   implicit none

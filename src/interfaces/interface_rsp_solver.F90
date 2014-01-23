@@ -1,6 +1,6 @@
 module interface_rsp_solver
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel, only: mat_init,mat_set_block,mat_get_block
    use interface_scf
    use interface_f77_memory

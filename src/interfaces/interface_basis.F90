@@ -1,7 +1,7 @@
 module interface_basis
 
    use basis_set, only: cgto
-   use matrix_lowlevel, only : matrix, mat_init
+   use matrix_lowlevel, only : openrsp_matrix, mat_init, matrix => openrsp_matrix
    use eri_contractions, only: ctr_arg, set_eri_contractions_xfac
    use eri_basis_loops, only: unopt_geodiff_loop
    implicit none

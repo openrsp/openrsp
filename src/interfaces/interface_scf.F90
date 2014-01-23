@@ -1,7 +1,7 @@
 module interface_scf
 
    use openrsp_cfg
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use interface_f77_memory
    use interface_io
    use interface_basis

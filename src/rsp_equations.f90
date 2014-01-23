@@ -31,7 +31,7 @@
 
 module rsp_equations
 
-  use matrix_defop !matrix type and operators
+  use matrix_defop, matrix => openrsp_matrix !matrix type and operators
   use rsp_contribs !integrals and integral contractions
 
   implicit none

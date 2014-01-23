@@ -29,7 +29,7 @@
 !> time by #define statements.
 module rsp_equations_old
 
-   use matrix_defop      !matrix type and operators
+   use matrix_defop, matrix => openrsp_matrix      !matrix type and operators
    use matrix_lowlevel, only: mat_print
    use legacy_property_contributions !integrals and integral contractions
    use interface_rsp_solver

@@ -56,7 +56,7 @@ module openrsp
   use rsp_general, only: rsp_prop
   use dalton_ifc
   use openrsp_cfg
-  use matrix_defop
+  use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel,  only: mat_init
   use eri_contractions, only: ctr_arg
   use eri_basis_loops,  only: unopt_geodiff_loop

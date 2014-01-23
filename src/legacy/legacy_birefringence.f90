@@ -5,7 +5,7 @@
 !> This file is currently common to Dalton and Dirac
 module legacy_birefringence
 
-   use matrix_defop          !matrix type and operators
+   use matrix_defop, matrix => openrsp_matrix          !matrix type and operators
    use legacy_property_contributions     !property contractions and integrals
    use rsp_equations_old     !response equation contractor/solver
 

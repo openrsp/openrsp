@@ -4,7 +4,7 @@
 !> ajt/radovan: Response-related testing routines and some calculations
 module legacy_properties
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel
    use legacy_property_contributions
    use rsp_equations_old

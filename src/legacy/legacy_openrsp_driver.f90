@@ -42,7 +42,7 @@
   !> \param LWORK is the size of the work memory
   subroutine openrsp_daldrv_old(WORK, LWORK)
     ! matrix
-    use matrix_defop
+    use matrix_defop, matrix => openrsp_matrix
     use matrix_lowlevel, only: mat_init
     ! interface of DALTON
     use interface_f77_memory
