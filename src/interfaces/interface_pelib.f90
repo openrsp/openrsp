@@ -39,7 +39,8 @@ subroutine pe_add_full_operator(dmat, fmat, energy)
             k = k + 1
         end do
     end do
-    call pe_master('fock', packed_dmat, packed_fmat, 1, energy, temp)
+    call pe_master(runtype='fock', denmats=packed_dmat, fckmats=packed_fmat,&
+                  & nmats=1, energies=energy, dalwrk=temp)
     deallocate(packed_dmat)
     k = 1
     do i = 1, nbas
