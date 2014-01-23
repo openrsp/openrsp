@@ -40,7 +40,7 @@
 !> \date 2009-12-08
 module legacy_openrsp
   ! matrix
-  use matrix_defop
+  use matrix_defop, matrix => openrsp_matrix
   ! response-related testing routines and some calculations
   use legacy_properties
   use legacy_vibrational_properties

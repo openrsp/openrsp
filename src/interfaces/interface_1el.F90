@@ -1,7 +1,7 @@
 module interface_1el
 
    use openrsp_cfg
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel, only: mat_init, mat_zero_like
    use interface_molecule
    use interface_basis

@@ -5,7 +5,7 @@ module interface_xc
 !  you are NOT allowed to introduce anything specific
 !  to a host program outside of interface_xc_init
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use xcint_integrator
    use interface_molecule
    use rsp_field_tuple

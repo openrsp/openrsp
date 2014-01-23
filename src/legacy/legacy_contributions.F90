@@ -10,7 +10,7 @@
 !> and perturbed Fock matrices.
 module legacy_property_contributions
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel
    use interface_molecule
    use interface_xc

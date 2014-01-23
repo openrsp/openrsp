@@ -9,7 +9,7 @@
 
 module rsp_perturbed_sdf
 
-  use matrix_defop
+  use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_zero_like
   use rsp_contribs
   use rsp_field_tuple

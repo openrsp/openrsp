@@ -10,7 +10,7 @@
 module rsp_indices_and_addressing
 
   use rsp_field_tuple
-  use matrix_defop
+  use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_ensure_alloc
 
   implicit none

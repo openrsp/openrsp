@@ -1,6 +1,6 @@
 module interface_1el_dirac
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel, only: mat_print
    use interface_molecule, only: get_nr_atoms
 

@@ -6,7 +6,7 @@
 
 module interface_2el
 
-   use matrix_defop
+   use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel, only: mat_init
    use interface_molecule
    use interface_basis
