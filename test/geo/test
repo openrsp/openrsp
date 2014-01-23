@@ -10,7 +10,7 @@ from beholder_openrsp import OpenRSPTestRun
 test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f = Filter()
-f.add() # all lines
+f.add(tolerance = 1.0e-4) # all lines
 
 for method in ['hf', 'lda', 'b3lyp']:
     for prop in ['g', 'gg', 'ggg', 'gggg']:
