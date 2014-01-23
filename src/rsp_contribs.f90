@@ -1169,6 +1169,8 @@ type(matrix) :: Db, Fb
     real(8), allocatable        :: pe_dmat(:,:)
     real(8), allocatable        :: pe_fmat(:,:)
 
+    if (.not. peqm .or. pe_gspol) return
+
     if (any(f /= 'EL  ')) then
         stop 'ERROR: PE-OpenRSP not implemented for other than EL.'
     end if
@@ -1176,8 +1178,6 @@ type(matrix) :: Db, Fb
     if (any(f == 'EL  ')) then
        return
     end if
-
-    if (.not. peqm .or. pe_gspol) return
 
     if (nf == 0) then
         if (propsize /= 1) stop 'ERROR: propsize /= 1'
