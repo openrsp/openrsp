@@ -3,37 +3,41 @@
    **** OUTPUT FROM DALTON SHELL SCRIPT **** 
    ***************************************** 
 
-   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+   DALTON release 2013.1
 
-   Invocation: /home/bast/dalton/openrsp/external/openrsp/../../build/dalton -d -nobackup -noarch vcd.dal h2o2.mol
+   Invocation: /home/bast/dalton/merge/openrsp-merge/build/dalton -noarch -nobackup vcd.dal h2o2.mol
 
-   Mon Feb 18 15:45:03 CET 2013
+   Thu Jan 23 09:24:39 CET 2014
 
    Calculation: vcd_h2o2  (input files: vcd.dal and h2o2.mol)
-   PID        : 27512
-   Input dir  : /home/bast/dalton/openrsp/external/openrsp/test/vcd
-   Scratch dir: /tmp/DALTON_scratch_bast/bast/vcd_h2o2
+   PID        : 13146
+   Input dir  : /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/vcd
+   Scratch dir: /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/vcd_h2o2
+
+
+ output from the communication group generator:
+   1 intra-node group has been built.
 
 
  DALTON: default work memory size used.            64000000
 
+ DALTON: master work memory size also used for slaves.            64000000
+
+ Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   1
+
+   1: Directories for basis set searches:
+     /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/vcd:/home/bast/dalton/merge/openrsp-merge/build/basis
+
  Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   0
 
    0: Directories for basis set searches:
-     /home/bast/dalton/openrsp/external/openrsp/test/vcd:/home/bast/dalton/openrsp/build/basis
- before response solver: norm(RHS) =    2.38907313346863     
- before response solver: norm(RHS) =    1.17483735084534     
- before response solver: norm(RHS) =    1.86376070976257     
- 
- before response solver: norm(RHS) =    7.63045024871826     
- before response solver: norm(RHS) =    1.59599149227142     
- before response solver: norm(RHS) =    7.01591825485229     
+     /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/vcd:/home/bast/dalton/merge/openrsp-merge/build/basis
 AAT
-  0.043038024814  0.084258385850 -0.488147059070  0.043038024814  0.084258385850  0.488147059070 -0.044039306035 -0.233296591315  0.049834133004 -0.044039306035 -0.233296591316 -0.049834133004
- -0.128306177701 -0.003321153724  0.061492353053 -0.128306177701 -0.003321153724 -0.061492353053  0.274264850351  0.003712433200 -0.106916734175  0.274264850351  0.003712433200  0.106916734175
-  0.634502261915 -0.074709214546 -0.052269085109 -0.634502261915  0.074709214546 -0.052269085109 -0.135985140340  0.116340550603  0.052358745072  0.135985140340 -0.116340550603  0.052358745072
+  0.043038027164  0.084258781899 -0.488146381001  0.043038027164  0.084258781899  0.488146381001 -0.044039189570 -0.233296701096  0.049834231526 -0.044039189569 -0.233296701095 -0.049834231526
+ -0.128306361623 -0.003320932097  0.061492476248 -0.128306361623 -0.003320932097 -0.061492476248  0.274264835920  0.003712212929 -0.106916893779  0.274264835920  0.003712212929  0.106916893779
+  0.634501521622 -0.074708545541 -0.052268905651 -0.634501521622  0.074708545541 -0.052268905651 -0.135985145712  0.116340686326  0.052358619164  0.135985145712 -0.116340686326  0.052358619164
 
-vcd_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/openrsp/external/openrsp/test/vcd
+vcd_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/vcd
 
-   Mon Feb 18 15:45:29 CET 2013
+   Thu Jan 23 09:25:15 CET 2014
    ***************************************** 
