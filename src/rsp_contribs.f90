@@ -13,22 +13,24 @@ module rsp_contribs
 
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_zero_like
-  use interface_molecule
-  use interface_io
-  use interface_xc
-  use interface_f77_memory
-  use interface_1el
-  use interface_2el
-  use interface_scf
-  use interface_basis
-  use dalton_ifc
-  use interface_nuclear
+  use interface_molecule, only: get_nr_atoms
+  use interface_xc, only: rsp_xcint_interface
+  use interface_1el, only: interface_1el_ovlave_tr,        &
+                           interface_1el_ovlint_tr,        &
+                           interface_1el_oneave_tr,        &
+                           interface_1el_oneint_tr,        &
+                           interface_1el_ovlave_half_diff, &
+                           interface_1el_ovlint_half_diff
+  use interface_nuclear, only: nuclear_potential
   use basis_set,  only: cgto
-  use rsp_field_tuple
-  use rsp_sdf_caching
-
-  ! MaR: QUICK-FIX USE STATEMENT TO GET SUPPORT FOR DUMMY rsp_cfg TYPE
-  use rsp_perturbed_matrices
+  use rsp_field_tuple, only: p_tuple, p_tuple_remove_first, p_tuple_getone, &
+                             p_tuple_standardorder, merge_p_tuple, &
+                             p_tuple_p1_cloneto_p2
+  use rsp_indices_and_addressing, only: get_triangular_sizes, get_num_blks, &
+                                        get_blk_info, get_triang_blks_tuple_offset, &
+                                        get_triangulated_size, get_triang_blks_offset, &
+                                        make_triangulated_indices, &
+                                        mat_init_like_and_zero
 
   implicit none
 

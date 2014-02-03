@@ -8,13 +8,15 @@
 
 module rsp_choose_rule
 
-  use rsp_field_tuple
+  use rsp_field_tuple, only: p_tuple
 
   implicit none
 
   public get_bestkn
   public kn_prod
   public rm_dim
+
+  private
 
   contains
 
