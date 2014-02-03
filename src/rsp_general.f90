@@ -11,19 +11,54 @@ module rsp_general
 
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init
-  use rsp_contribs
-  use rsp_field_tuple
-  use rsp_indices_and_addressing
-  use rsp_perturbed_matrices
-  use rsp_perturbed_sdf
-  use rsp_property_caching
-  use rsp_sdf_caching
-  use interface_xc
-  use interface_2el
+  use rsp_contribs, only: rsp_field,           &
+                          rsp_oneave,          &
+                          rsp_ovlave,          &
+                          rsp_ovlave_t_matrix, &
+                          rsp_nucpot
+  use rsp_field_tuple, only: p_tuple,                &
+                             p_tuple_standardorder,  &
+                             p_tuple_remove_first,   &
+                             p_tuple_getone,         &
+                             p_tuple_extend,         &
+                             get_emptypert,          &
+                             p_tuples_standardorder, &
+                             merge_p_tuple,          &
+                             p_tuple_p1_cloneto_p2
+  use rsp_indices_and_addressing, only: get_blk_info,                 &
+                                        get_triangular_sizes,         &
+                                        get_triangulated_size,        &
+                                        get_num_blks,                 &
+                                        kn_skip,                      &
+                                        get_triang_blks_offset,       &
+                                        get_triang_blks_tuple_offset, &
+                                        nc_only,                      &
+                                        nc_onlysmall,                 &
+                                        get_ncarray,                  &
+                                        mat_init_like_and_zero,       &
+                                        make_triangulated_indices,    &
+                                        make_triangulated_tuples_indices
+  use rsp_perturbed_matrices, only: derivative_superstructure_getsize, &
+                                    derivative_superstructure,         &
+                                    rsp_get_matrix_zeta,               &
+                                    rsp_get_matrix_lambda,             &
+                                    rsp_get_matrix_z,                  &
+                                    rsp_get_matrix_w,                  &
+                                    rsp_get_matrix_y
+  use rsp_perturbed_sdf, only: rsp_fds
+  use rsp_property_caching, only: property_cache,          &
+                                  property_cache_already,  &
+                                  property_cache_allocate, &
+                                  property_cache_getdata,  &
+                                  property_cache_add_element
+  use rsp_sdf_caching, only: SDF,                &
+                             sdf_setup_datatype, &
+                             sdf_getdata_s
+  use interface_xc, only: rsp_xcave_interface
+  use interface_2el, only: rsp_twoave
 
   implicit none
 
-public rsp_cfg
   public rsp_prop
   public get_prop
   public rsp_energy

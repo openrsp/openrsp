@@ -32,7 +32,9 @@
 module rsp_equations
 
   use matrix_defop, matrix => openrsp_matrix !matrix type and operators
-  use rsp_contribs !integrals and integral contractions
+  use rsp_contribs, only: rsp_field,      &
+                          rsp_field_anti, &
+                          rsp_field_bas
 
   implicit none
 
