@@ -10,7 +10,7 @@ from beholder_openrsp import OpenRSPTestRun
 test_run = OpenRSPTestRun(__file__, sys.argv)
 
 f = Filter()
-f.add() # all lines
+f.add(tolerance=5.0e-5) # all lines
 
 test_run.execute(['gf_b3lyp.dal', 'ggf_b3lyp.dal', 'gggf_b3lyp.dal', 'ggff_b3lyp.dal'], ['dz.mol'],
                  {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
