@@ -12,10 +12,6 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 f_out = Filter()
 f_out.add(from_string  = 'Raman related properties for freq',
           to_string    = '   **** For definitions, see the DALTON manual and references therein. ****')
-f_out.add(from_string  = 'RSPC Calling print_shypol',
-          to_string    = 'RSPC Backing from vib_ana_polari',
-          tolerance    = 1.0e-5,
-          ignore_below = 1.0e-9)
 
 f_stdout = Filter()
 f_stdout.add(from_string = 'd/dg Polari = -Egff',
