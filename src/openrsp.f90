@@ -40,21 +40,22 @@
 !> \date 2009-12-08
 module openrsp
 
-  use interface_molecule
-  use interface_io
-  use interface_xc
-  use interface_scf
-  use interface_f77_memory
-  use interface_rsp_solver
-  use interface_1el
-  use interface_basis
-  use interface_dirac_gen1int
-  use interface_interest
-  use interface_pelib
+  use interface_molecule, only: get_nr_atoms, interface_molecule_init
+  use interface_io, only: get_print_unit, interface_io_init
+  use interface_xc, only: get_is_ks_calculation, interface_xc_init
+  use interface_scf, only: interface_scf_init,  &
+                           interface_scf_get_s, &
+                           interface_scf_get_d, &
+                           interface_scf_get_g, &
+                           interface_scf_get_h1
+  use interface_f77_memory, only: interface_f77_memory_init, interface_f77_memory_finalize
+  use interface_rsp_solver, only: rsp_mosolver_init, rsp_mosolver_finalize
+  use interface_1el, only: interface_1el_init
+  use interface_basis, only: get_nr_ao, interface_basis_init
+  use interface_pelib, only: pe_add_full_operator
   use pe_variables, only: peqm
   use rsp_field_tuple, only: p_tuple, p_tuple_standardorder
   use rsp_general, only: rsp_prop
-  use dalton_ifc
   use openrsp_cfg
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel,  only: mat_init
@@ -63,8 +64,9 @@ module openrsp
   use legacy_properties, only: magnetizability, vcd_aat
   use legacy_vibrational_properties, only: load_vib_modes
   use vib_pv_contribs
-  use rsp_sdf_caching
-  use rsp_mag_prop
+  use rsp_sdf_caching, only: SDF, sdf_setup_datatype
+  use rsp_mag_prop, only: M_efishg, D_efishg, L_efishg
+  use rsp_indices_and_addressing, only: mat_init_like_and_zero
 
 ! xcint
   use xcint_integrator

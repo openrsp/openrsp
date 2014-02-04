@@ -9,7 +9,10 @@
 
 module rsp_indices_and_addressing
 
-  use rsp_field_tuple
+  use rsp_field_tuple, only: p_tuple,         &
+                             p_tuple_compare, &
+                             p_tuple_getone,  &
+                             p_tuple_deallocate
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_ensure_alloc
 
@@ -51,6 +54,8 @@ module rsp_indices_and_addressing
      integer, allocatable, dimension(:,:) :: t_ind
 
   end type
+
+  private
 
   contains
 
