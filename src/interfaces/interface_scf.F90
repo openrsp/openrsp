@@ -322,7 +322,11 @@ contains
     call set_f77_memory_next(work_ham1 + NNBASX)
 
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'di_get_SH1', get_f77_memory_next()-1, get_f77_memory_total() )
-    call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
+
+    ! call SIRH1 instead of RDONEL to add .FIELD to the hamiltonian
+    ! (SIRH1 will call RDONEL and return if no field)
+    call SIRH1(f77_memory(work_ham1), f77_memory(get_f77_memory_next()), get_f77_memory_left() )
+!    call RDONEL( 'ONEHAMIL', .true., f77_memory(work_ham1), NNBASX )
     ! fills the data into matrices S and H1
     !N N2BASX = NBAST * NBAST
     if ( get_f77_memory_left() < 0 ) call STOPIT( 'DALTON_IFC', 'DSPTSI', get_f77_memory_next()+N2BASX-1, get_f77_memory_total() )
