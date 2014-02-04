@@ -11,9 +11,16 @@ module rsp_perturbed_matrices
 
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init
-  use rsp_field_tuple
-  use rsp_sdf_caching
-!   use rsp_general, only: rsp_cfg
+  use rsp_field_tuple, only: p_tuple,              &
+                             p_tuple_extend,       &
+                             p_tuple_getone,       &
+                             merge_p_tuple,        &
+                             p_tuple_remove_first, &
+                             p_tuple_deallocate
+  use rsp_sdf_caching, only: SDF, &
+                             sdf_getdata_s
+  use rsp_indices_and_addressing, only: kn_skip, &
+                                        mat_init_like_and_zero
 
   implicit none
 

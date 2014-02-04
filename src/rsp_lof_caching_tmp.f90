@@ -8,9 +8,20 @@
 
 module rsp_lof_caching
 
-  use rsp_field_tuple
-  use rsp_sdf_caching
-  use rsp_indices_and_addressing
+  use rsp_field_tuple, only: p_tuple,                &
+                             p_tuple_standardorder,  &
+                             p_tuples_compare,       &
+                             p_tuples_standardorder, &
+                             merge_p_tuple,          &
+                             p_tuple_p1_cloneto_p2
+  use rsp_indices_and_addressing, only: get_num_blks,                 &
+                                        get_blk_info,                 &
+                                        get_triangulated_size,        &
+                                        get_triangular_sizes,         &
+                                        get_ncarray,                  &
+                                        get_triang_blks_tuple_offset, &
+                                        mat_init_like_and_zero,       &
+                                        make_triangulated_indices
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init
 
