@@ -1,6 +1,6 @@
 
 
-BEHOLDER_VERSION = 'v0.0.1'
+BEHOLDER_VERSION = 'v0.0.2'
 
 """
     Beholder - numerically tolerant, bug intolerant test library.
@@ -20,7 +20,7 @@ import shutil
 from optparse import OptionParser
 
 #-------------------------------------------------------------------------------
-class TestRun():
+class TestRun:
 
     #---------------------------------------------------------------------------
     def __init__(self, _file, argv):
@@ -90,7 +90,7 @@ class TestRun():
         return (options.binary_dir, options.work_dir)
 
 #-------------------------------------------------------------------------------
-class _SingleFilter():
+class _SingleFilter:
 
     def __init__(self, **kwargs):
 
@@ -159,7 +159,7 @@ class _SingleFilter():
             self.from_is_re = True
 
 #-------------------------------------------------------------------------------
-class Filter():
+class Filter:
 
     #---------------------------------------------------------------------------
     def __init__(self):
@@ -246,24 +246,24 @@ class Filter():
                         r_ref = abs(r_ref)
                     error = r - r_ref
 
+                    rel_error = error
                     if abs(r_ref) > f.ignore_below:
                         # calculate relative error only for significant ('nonzero') numbers
-                        rel_error = error
                         rel_error /= r_ref
-                        if abs(rel_error) > f.tolerance:
-                            log_diff.write('line %i: %s' % (f_to_line[i]+1, out[f_to_line[i]]))
-                            log_diff.write('    rel error %7.4e > %7.4e\n\n' % (rel_error, f.tolerance))
+                    if abs(rel_error) > f.tolerance:
+                        log_diff.write('line %i: %s' % (f_to_line[i]+1, out[f_to_line[i]]))
+                        log_diff.write('    rel error %7.4e > %7.4e\n\n' % (rel_error, f.tolerance))
             else:
-                log_diff.write('compare floats sizes do not match\n')
+                log_diff.write('extracted sizes do not match\n')
 
-                log_diff.write('own gave %i floats:\n' % len(f_l))
+                log_diff.write('own gave %i numbers:\n' % len(f_l))
                 last_line_printed = -1
                 for i in range(len(f_l)):
                     if (f_to_line[i] != last_line_printed):
                        log_diff.write('    %s' % out[f_to_line[i]])
                        last_line_printed = f_to_line[i]
 
-                log_diff.write('refence gave %i floats:\n' % len(f_l_ref))
+                log_diff.write('reference gave %i numbers:\n' % len(f_l_ref))
                 last_line_printed = -1
                 for i in range(len(f_l_ref)):
                     if (f_to_line_ref[i] != last_line_printed):
