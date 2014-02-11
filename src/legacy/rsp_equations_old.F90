@@ -911,7 +911,6 @@ contains
             call rsp_solver_exec(RHS(1), freq1(1:1), Xph(1))
           ! Dp(i) = Dp(i) + D0*S0*Xph(1) - Xph(1)*S0*D0
             Dp(i) =         D0*S0*Xph(1) - Xph(1)*S0*D0
-          ! call mat_print(Dp(i), label='raboof dmat')
          end if
 
          ! hermitian part

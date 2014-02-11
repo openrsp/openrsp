@@ -12,7 +12,7 @@ test_run = OpenRSPTestRun(__file__, sys.argv)
 f = Filter()
 f.add(ignore_below=1.0e-3) # all lines
 
-test_run.execute(['ff_b3lyp.dal', 'fff_b3lyp.dal', 'ffff_b3lyp.dal', 'fffff_b3lyp.dal'], ['aug-dz.mol'],
+test_run.execute(['ff_m06.dal', 'fff_m06.dal', 'ff_b3lyp.dal', 'fff_b3lyp.dal', 'ffff_b3lyp.dal', 'fffff_b3lyp.dal'], ['aug-dz.mol'],
                  {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
 sys.exit(0)

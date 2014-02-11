@@ -24,12 +24,6 @@ if(CMAKE_Fortran_COMPILER_ID MATCHES GNU) # this is gfortran
             "${CMAKE_Fortran_FLAGS} -ftest-coverage"
             )
     endif()
-
-#   radovan: for magnus, this is how you can set compiler flags for one source file only
-#   set_source_files_properties(openrsp/cgto_diff_eri.f90
-#       PROPERTIES COMPILE_FLAGS
-#       "-raboof"
-#       )
 endif()
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES G95)

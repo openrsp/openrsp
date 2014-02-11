@@ -17,4 +17,9 @@ for method in ['hf', 'lda', 'b3lyp']:
         test_run.execute(['%s_%s.dal' % (prop, method)], ['mol.mol'],
                          {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
+for method in ['m06']:
+    for prop in ['g']:
+        test_run.execute(['%s_%s.dal' % (prop, method)], ['mol.mol'],
+                         {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
+
 sys.exit(0)
