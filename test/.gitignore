@@ -1,8 +1,6 @@
-*/*.out
-*/*.stdout
-*/*.stderr
-*/*.rsp_tensor
-*/*.rsp_tensor_human
 */*.diff
 */*.reference
 */*.result
+*/*.out
+*/*.stdout
+*/*human

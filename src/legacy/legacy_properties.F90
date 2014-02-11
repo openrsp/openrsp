@@ -136,7 +136,7 @@ contains
          ! missing ...
 #endif
 
-!        call mat_print(Db(ib), label='raboof')
+!        call mat_print(Db(ib), label='debug')
 
          ! form RHS = -S*D*Sbl - Sbr*D*S - S*Db*S
          M(1) = -S*D*Sbl

@@ -42,7 +42,7 @@ module openrsp
 
   use interface_molecule, only: get_nr_atoms, interface_molecule_init
   use interface_io, only: get_print_unit, interface_io_init
-  use interface_xc, only: get_is_ks_calculation, interface_xc_init
+  use interface_xc, only: get_is_ks_calculation, interface_xc_init, xcint_wakeup_workers
   use interface_scf, only: interface_scf_init,  &
                            interface_scf_get_s, &
                            interface_scf_get_d, &
@@ -67,9 +67,7 @@ module openrsp
   use rsp_sdf_caching, only: SDF, sdf_setup_datatype
   use rsp_mag_prop, only: M_efishg, D_efishg, L_efishg
   use rsp_indices_and_addressing, only: mat_init_like_and_zero
-
-! xcint
-  use xcint_integrator
+  use iso_c_binding
 
   implicit none
 
@@ -100,6 +98,33 @@ module openrsp
   ! print level to be used here and in solver
   integer :: print_level = 0
 
+interface xcint_integrate
+   subroutine xcint_integrate(num_dmat,        &
+                              dmat,            &
+                              fmat,            &
+                              energy,          &
+                              get_ave,         &
+                              geo_derv_order,  &
+                              geo_coor,        &
+                              num_fields,      &
+                              kn_rule,         &
+                              force_sequential &
+                             ) bind (C, name = "xcint_integrate")
+      use iso_c_binding
+      implicit none
+      integer(c_int), value :: num_dmat
+      real(c_double)        :: dmat(*)
+      real(c_double)        :: fmat(*)
+      real(c_double)        :: energy
+      integer(c_int), value :: get_ave
+      integer(c_int), value :: geo_derv_order
+      integer(c_int)        :: geo_coor(*)
+      integer(c_int), value :: num_fields
+      integer(c_int)        :: kn_rule(2)
+      integer(c_int), value :: force_sequential
+   end subroutine
+end interface
+
 contains
 
   subroutine openrsp_setup(LWORK, WORK)
@@ -108,10 +133,10 @@ contains
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
     type(matrix)           :: G  !two electron Hamiltonian
-    real(8), allocatable   :: xc_dmat(:)
-    real(8), allocatable   :: xc_fmat(:)
+    real(c_double), allocatable   :: xc_dmat(:)
+    real(c_double), allocatable   :: xc_fmat(:)
     integer                :: mat_dim
-    real(8)                :: xc_energy
+    real(c_double)         :: xc_energy
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
     real(8), allocatable   :: pe_dmat(:,:)
@@ -187,17 +212,17 @@ contains
        xc_dmat = 0.0d0
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
-       call xc_integrate(                  &
-                         mat_dim=mat_dim,  &
-                         nr_dmat=1,        &
-                         dmat=xc_dmat,     &
-                         energy=xc_energy, &
-                         get_ave=.false.,  &
-                         fmat=xc_fmat,     &
-                         geo_coor=(/0/),   &
-                         pert_labels=(/'NONE'/), &
-                         kn=(/0, 0/)       &
-                        )
+       call xcint_wakeup_workers()
+       call xcint_integrate(1,         &
+                            xc_dmat,   &
+                            xc_fmat,   &
+                            xc_energy, &
+                            0,   &
+                            0,         &
+                            (/0/),     &
+                            0,         &
+                            (/0, 0/),  &
+                            0)
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
