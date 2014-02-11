@@ -1,9 +1,0 @@
-Installation Instructions
-*************************
-
-Basic Installation
-==================
-
-Type "make linux.x" or "make linuxparallel.x" in the root directory of DALTON,
-just make sure there is -DBUILD_OPENRSP in CPPFLAGS.
-
