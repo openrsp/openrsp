@@ -3,4 +3,5 @@
 */*.result
 */*.out
 */*.stdout
+*/*.stderr
 */*human
