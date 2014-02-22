@@ -246,13 +246,13 @@ class Filter:
                         r_ref = abs(r_ref)
                     error = r - r_ref
 
-                    rel_error = error
                     if abs(r_ref) > f.ignore_below:
                         # calculate relative error only for significant ('nonzero') numbers
+                        rel_error = error
                         rel_error /= r_ref
-                    if abs(rel_error) > f.tolerance:
-                        log_diff.write('line %i: %s' % (f_to_line[i]+1, out[f_to_line[i]]))
-                        log_diff.write('    rel error %7.4e > %7.4e\n\n' % (rel_error, f.tolerance))
+                        if abs(rel_error) > f.tolerance:
+                            log_diff.write('line %i: %s' % (f_to_line[i]+1, out[f_to_line[i]]))
+                            log_diff.write('    rel error %7.4e > %7.4e\n\n' % (rel_error, f.tolerance))
             else:
                 log_diff.write('extracted sizes do not match\n')
 
