@@ -1,7 +1,7 @@
 
 import os
 import sys
-from beholder import TestRun
+from runtest import TestRun
 
 class OpenRSPTestRun(TestRun):
 
