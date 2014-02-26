@@ -187,10 +187,12 @@ contains
          shell_center(ishell) = ncent(ishell)
       end do
 
-      basis_type = 2
+      ! we default to spherical basis
+      basis_type = 1
       do ishell = 1, nr_shells
-         if (sphr(ishell)) then
-            basis_type = 1
+         if ((l_quantum_nr(ishell) > 1) .and. .not. sphr(ishell)) then
+            ! basis is cartesian
+            basis_type = 2
             exit
          end if
       end do
