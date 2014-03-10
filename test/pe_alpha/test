@@ -4,15 +4,14 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from runtest import Filter
-from runtest_openrsp import OpenRSPTestRun
+from runtest_dalton import Filter, TestRun
 
-test_run = OpenRSPTestRun(__file__, sys.argv)
+test = TestRun(__file__, sys.argv)
 
 f = Filter()
 f.add() # all lines
 
-test_run.execute(['pe_alpha.dal'], ['sto_3g.mol'],
+test.run(['pe_alpha.dal'], ['sto_3g.mol'],
                  {'rsp_tensor_human': f}, args='-pot 2_h2o.pot -get rsp_tensor_human')
 
-sys.exit(0)
+sys.exit(test.return_code)

@@ -4,18 +4,17 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from runtest import Filter
-from runtest_openrsp import OpenRSPTestRun
+from runtest_dalton import Filter, TestRun
 
-test_run = OpenRSPTestRun(__file__, sys.argv)
+test = TestRun(__file__, sys.argv)
 
 f = Filter()
 f.add(tolerance=5.0e-5) # all lines
 
-test_run.execute(['gf_b3lyp.dal', 'ggf_b3lyp.dal', 'gggf_b3lyp.dal', 'ggff_b3lyp.dal'], ['dz.mol'],
+test.run(['gf_b3lyp.dal', 'ggf_b3lyp.dal', 'gggf_b3lyp.dal', 'ggff_b3lyp.dal'], ['dz.mol'],
                  {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
-test_run.execute(['gff_b3lyp.dal', 'gfff_b3lyp.dal'], ['aug-dz.mol'],
+test.run(['gff_b3lyp.dal', 'gfff_b3lyp.dal'], ['aug-dz.mol'],
                  {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
-sys.exit(0)
+sys.exit(test.return_code)

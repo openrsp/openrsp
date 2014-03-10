@@ -4,10 +4,9 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from runtest import Filter
-from runtest_openrsp import OpenRSPTestRun
+from runtest_dalton import Filter, TestRun
 
-test_run = OpenRSPTestRun(__file__, sys.argv)
+test = TestRun(__file__, sys.argv)
 
 f = Filter()
 f.add(from_string  = 'd/db G-prime-noL',
@@ -43,6 +42,6 @@ f.add(from_string  = 'd/df d/db A-tensor-Lon',
       tolerance    = 1.0e-6,
       ignore_below = 1.0e-9)
 
-test_run.execute(['jones.dal'], ['h2o2.mol'], {'stdout': f})
+test.run(['jones.dal'], ['h2o2.mol'], {'stdout': f})
 
-sys.exit(0)
+sys.exit(test.return_code)

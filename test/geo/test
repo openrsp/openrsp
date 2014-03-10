@@ -4,22 +4,21 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from runtest import Filter
-from runtest_openrsp import OpenRSPTestRun
+from runtest_dalton import Filter, TestRun
 
-test_run = OpenRSPTestRun(__file__, sys.argv)
+test = TestRun(__file__, sys.argv)
 
 f = Filter()
 f.add(tolerance = 1.0e-4) # all lines
 
 for method in ['hf', 'lda', 'b3lyp']:
     for prop in ['g', 'gg', 'ggg', 'gggg']:
-        test_run.execute(['%s_%s.dal' % (prop, method)], ['mol.mol'],
+        test.run(['%s_%s.dal' % (prop, method)], ['mol.mol'],
                          {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
 for method in ['m06']:
     for prop in ['g']:
-        test_run.execute(['%s_%s.dal' % (prop, method)], ['mol.mol'],
+        test.run(['%s_%s.dal' % (prop, method)], ['mol.mol'],
                          {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
-sys.exit(0)
+sys.exit(test.return_code)
