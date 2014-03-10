@@ -1,6 +1,6 @@
 */*.diff
 */*.reference
-*/*.result
+*/*.filtered
 */*.out
 */*.stdout
 */*.stderr

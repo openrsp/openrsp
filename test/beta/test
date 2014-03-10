@@ -4,10 +4,9 @@ import os
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from runtest import Filter
-from runtest_openrsp import OpenRSPTestRun
+from runtest_dalton import Filter, TestRun
 
-test_run = OpenRSPTestRun(__file__, sys.argv)
+test = TestRun(__file__, sys.argv)
 
 f_out = Filter()
 f_out.add(from_string = 'Final results from SIRIUS',
@@ -20,6 +19,6 @@ f_stdout.add(from_string  = 'beta = -Efff',
              tolerance    = 1.0e-7,
              ignore_below = 1.0e-7)
 
-test_run.execute(['hf.dal', 'hf_2np1.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout})
+test.run(['hf.dal', 'hf_2np1.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout})
 
-sys.exit(0)
+sys.exit(test.return_code)
