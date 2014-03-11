@@ -72,11 +72,13 @@ interface xcint_init
 end interface
 
 interface xcint_set_functional
-   subroutine xcint_set_functional(line, hfx) bind (C, name = "xcint_set_functional")
+   subroutine xcint_set_functional(line, hfx, mu, beta) bind (C, name = "xcint_set_functional")
       use iso_c_binding
       implicit none
       character(c_char) :: line
       real(c_double)    :: hfx
+      real(c_double)    :: mu
+      real(c_double)    :: beta
    end subroutine
 end interface
 
@@ -226,10 +228,12 @@ contains
 
    end subroutine
 
-   subroutine openrsp_set_functional(line, hfx)
-      character(*), intent(in)    :: line
+   subroutine openrsp_set_functional(line, hfx, mu, beta)
+      character(*),   intent(in)  :: line
       real(c_double), intent(out) :: hfx
-      call xcint_set_functional(line//C_NULL_CHAR, hfx)
+      real(c_double), intent(out) :: mu
+      real(c_double), intent(out) :: beta
+      call xcint_set_functional(line//C_NULL_CHAR, hfx, mu, beta)
       is_ks_calculation = .true.
    end subroutine
 
