@@ -54,7 +54,7 @@ module rsp_general
   use rsp_sdf_caching, only: SDF,                &
                              sdf_setup_datatype, &
                              sdf_getdata_s
-  use interface_xc, only: rsp_xcave_interface
+  use interface_xc, only: rsp_xcave_interface, rsp_xcave_interface_new
   use interface_2el, only: rsp_twoave
 
   implicit none
@@ -299,11 +299,17 @@ module rsp_general
     write(*,*) 'Calculating exchange/correlation contributions'
     write(*,*) ' '
 
-    call cpu_time(time_start)
-    call rsp_xcave_interface(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
-    call cpu_time(time_end)
-    print *, 'seconds spent in XC contribution', time_end - time_start
+!     call cpu_time(time_start)
+!     call rsp_xcave_interface(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
+!     call cpu_time(time_end)
 
+!     MaR: Uncomment this and comment out the preceding three lines to enable new xcave interface
+    call cpu_time(time_start)    
+    call rsp_xcave_interface_new(pert, kn, D, property_size, prop)
+    call cpu_time(time_end)
+    
+    
+    print *, 'seconds spent in XC contribution', time_end - time_start
     write(*,*) ' '
     write(*,*) 'Finished calculating exchange/correlation contributions'
     write(*,*) ' '
