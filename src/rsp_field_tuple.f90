@@ -23,6 +23,7 @@ module rsp_field_tuple
   public p_tuples_compare
   public plab_compare
   public pfreq_compare
+  public pid_compare
   public p_tuple_compare
   public make_p_tuple_subset
 
@@ -681,6 +682,29 @@ end if
     end do
 
   end function
+  
+  function pid_compare(npert, pid1, pid2)
+  
+    logical :: pid_compare
+    integer :: npert, i
+    integer, dimension(npert) :: pid1, pid2
+    
+    pid_compare = .TRUE.
+    
+    do i = 1, npert
+    
+       if (.NOT.(pid1(i) == pid2(i))) then
+       
+          pid_compare = .FALSE.
+       
+       end if
+    
+    end do
+    
+  end function
+    
+    
+  
 
 
   function p_tuple_compare(p1, p2)
