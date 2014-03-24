@@ -68,6 +68,7 @@ module openrsp
   use rsp_mag_prop, only: M_efishg, D_efishg, L_efishg
   use rsp_indices_and_addressing, only: mat_init_like_and_zero
   use iso_c_binding
+  use xcint_fortran_interface
 
   implicit none
 
@@ -97,33 +98,6 @@ module openrsp
 
   ! print level to be used here and in solver
   integer :: print_level = 0
-
-interface xcint_integrate
-   subroutine xcint_integrate(num_dmat,        &
-                              dmat,            &
-                              fmat,            &
-                              energy,          &
-                              get_ave,         &
-                              geo_derv_order,  &
-                              geo_coor,        &
-                              num_fields,      &
-                              kn_rule,         &
-                              force_sequential &
-                             ) bind (C, name = "xcint_integrate")
-      use iso_c_binding
-      implicit none
-      integer(c_int), value :: num_dmat
-      real(c_double)        :: dmat(*)
-      real(c_double)        :: fmat(*)
-      real(c_double)        :: energy
-      integer(c_int), value :: get_ave
-      integer(c_int), value :: geo_derv_order
-      integer(c_int)        :: geo_coor(*)
-      integer(c_int), value :: num_fields
-      integer(c_int)        :: kn_rule(2)
-      integer(c_int), value :: force_sequential
-   end subroutine
-end interface
 
 contains
 
