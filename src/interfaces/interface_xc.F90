@@ -85,15 +85,15 @@ contains
 #include "shells.h"
 #include "primit.h"
 
-      integer(c_int), allocatable :: nr_primitives_per_shell(:)
+      integer(c_int), allocatable :: num_primitives_per_shell(:)
       real(c_double), allocatable :: primitive_exp(:, :)
       real(c_double), allocatable :: contraction_coef(:, :)
-      integer(c_int), allocatable :: l_quantum_nr(:)
+      integer(c_int), allocatable :: l_quantum_num(:)
       integer(c_int), allocatable :: shell_center(:)
       integer                     :: i, j, icount, iprim, ishell, iround
       integer(c_int)              :: basis_type
-      integer(c_int)              :: nr_shells
-      integer(c_int)              :: nr_centers
+      integer(c_int)              :: num_shells
+      integer(c_int)              :: num_centers
       real(c_double), allocatable :: center_xyz(:, :)
       integer(c_int), allocatable :: center_element(:)
 
@@ -101,30 +101,30 @@ contains
 
       if (is_initialized) return
 
-      nr_shells = kmax
-      nr_centers = nucind
-      allocate(center_xyz(3, nr_centers))
+      num_shells = kmax
+      num_centers = nucind
+      allocate(center_xyz(3, num_centers))
       center_xyz = cord
 
-      allocate(center_element(nr_centers))
-      do i = 1, nr_centers
+      allocate(center_element(num_centers))
+      do i = 1, num_centers
          center_element(i) = nint(charge(i))
       end do
 
-      allocate(nr_primitives_per_shell(nr_shells))
+      allocate(num_primitives_per_shell(num_shells))
       do iround = 1, 2
          if (iround == 2) then
-            allocate(primitive_exp(maxval(nr_primitives_per_shell), nr_shells))
-            allocate(contraction_coef(maxval(nr_primitives_per_shell), nr_shells))
+            allocate(primitive_exp(maxval(num_primitives_per_shell), num_shells))
+            allocate(contraction_coef(maxval(num_primitives_per_shell), num_shells))
          end if
-         do ishell = 1, nr_shells
+         do ishell = 1, num_shells
             i = jstrt(ishell) + 1
             j = jstrt(ishell) + nuco(ishell)
             icount = 0
             do iprim = i, j
                if (dabs(priccf(iprim, numcf(ishell))) > tiny(0.0d0)) then
                   icount = icount + 1
-                  nr_primitives_per_shell(ishell) = icount
+                  num_primitives_per_shell(ishell) = icount
                   if (iround == 2) then
                      contraction_coef(icount, ishell) = priccf(iprim, numcf(ishell))
                      primitive_exp(icount, ishell)    = priexp(iprim)
@@ -134,17 +134,17 @@ contains
          end do
       end do
 
-      allocate(l_quantum_nr(nr_shells))
-      allocate(shell_center(nr_shells))
-      do ishell = 1, nr_shells
-         l_quantum_nr(ishell) = nhkt(ishell) - 1
+      allocate(l_quantum_num(num_shells))
+      allocate(shell_center(num_shells))
+      do ishell = 1, num_shells
+         l_quantum_num(ishell) = nhkt(ishell) - 1
          shell_center(ishell) = ncent(ishell)
       end do
 
       ! we default to spherical basis
       basis_type = 1
-      do ishell = 1, nr_shells
-         if ((l_quantum_nr(ishell) > 1) .and. .not. sphr(ishell)) then
+      do ishell = 1, num_shells
+         if ((l_quantum_num(ishell) > 1) .and. .not. sphr(ishell)) then
             ! basis is cartesian
             basis_type = 2
             exit
@@ -161,22 +161,22 @@ contains
 
 !     print *, XCINT_SUCCESS
       ierr = xcint_set_basis(basis_type,                                      &
-                             nr_centers,                                      &
+                             num_centers,                                      &
                              reshape(center_xyz, (/size(center_xyz)/)),       &
                              center_element,                                  &
-                             nr_shells,                                       &
+                             num_shells,                                       &
                              shell_center,                                    &
-                             l_quantum_nr,                                    &
-                             nr_primitives_per_shell,                         &
+                             l_quantum_num,                                    &
+                             num_primitives_per_shell,                         &
                              reshape(primitive_exp, (/size(primitive_exp)/)), &
                              reshape(contraction_coef, (/size(contraction_coef)/)))
 
       deallocate(center_xyz)
       deallocate(center_element)
-      deallocate(nr_primitives_per_shell)
+      deallocate(num_primitives_per_shell)
       deallocate(primitive_exp)
       deallocate(contraction_coef)
-      deallocate(l_quantum_nr)
+      deallocate(l_quantum_num)
       deallocate(shell_center)
 
       is_initialized = .true.
@@ -498,10 +498,10 @@ contains
       integer                      :: i, j, k, l, m, n, p
       integer                      :: maxcomp1, maxcomp2, maxcomp3, maxcomp4, maxcomp5, maxcomp6
       integer                      :: element
-      integer                      :: nr_dmat
-      integer                      :: nr_atoms
-      integer                      :: nr_geo
-      integer                      :: nr_el
+      integer                      :: num_dmat
+      integer                      :: num_atoms
+      integer                      :: num_geo
+      integer                      :: num_el
       integer                      :: ipart
       logical                      :: combination_found
       type(matrix),   allocatable  :: dmat_tuple(:)
@@ -517,36 +517,36 @@ contains
 
       if (.not. get_is_ks_calculation()) return
 
-      nr_atoms = get_nr_atoms()
+      num_atoms = get_nr_atoms()
 
-      nr_geo = count(pert%plab == 'GEO ')
-      nr_el  = count(pert%plab == 'EL  ')
+      num_geo = count(pert%plab == 'GEO ')
+      num_el  = count(pert%plab == 'EL  ')
 
 
       combination_found = .false.
 
-      nr_dmat = 2**(nr_geo + nr_el - 1)
+      num_dmat = 2**(num_geo + num_el - 1)
 
-      allocate(dmat_tuple(nr_dmat))
+      allocate(dmat_tuple(num_dmat))
 
       allocate(emptyint(0))
 
       ! MaR: Begin EL only cases
 
-      if (nr_geo == 0 .and. nr_el == 1) then
+      if (num_geo == 0 .and. num_el == 1) then
 
       ! No contribution
 
       end if
 
-      if (nr_geo == 0 .and. nr_el == 2) then
+      if (num_geo == 0 .and. num_el == 2) then
          combination_found = .true.
 
       ! No contribution
 
       end if
 
-      if (nr_geo == 0 .and. nr_el == 3) then
+      if (num_geo == 0 .and. num_el == 3) then
          combination_found = .true.
 
       ! Assumes (k,n) = (0,2)
@@ -554,7 +554,7 @@ contains
 
       end if
 
-      if (nr_geo == 0 .and. nr_el == 4) then
+      if (num_geo == 0 .and. num_el == 4) then
          combination_found = .true.
 
       ! Assumes (k,n) = (0,3)
@@ -562,7 +562,7 @@ contains
 
       end if
 
-      if (nr_geo == 0 .and. nr_el == 5) then
+      if (num_geo == 0 .and. num_el == 5) then
          combination_found = .true.
 
          ! Assumes (k,n) = (2,2)
@@ -660,7 +660,7 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m/))
 
                         call xcint_wakeup_workers()
-                        ierr = xcint_integrate(XCINT_MODE_RKS, nr_dmat,                      &
+                        ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
                                              (/dmat_tuple(1)%elms,   &
                                                dmat_tuple(2)%elms,   &
                                                dmat_tuple(3)%elms,   &
@@ -697,7 +697,7 @@ contains
       end if
 
 
-      if (nr_geo == 0 .and. nr_el == 6) then
+      if (num_geo == 0 .and. num_el == 6) then
          combination_found = .true.
 
          ! Assumes (k,n) = (2,3)
@@ -878,8 +878,8 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m, n/))
 
                         call xcint_wakeup_workers()
-                        ierr = xcint_integrate(XCINT_MODE_RKS, nr_dmat,                      &
-                                             (/(dmat_tuple(i)%elms, i = 1, nr_dmat)/), &
+                        ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
+                                             (/(dmat_tuple(i)%elms, i = 1, num_dmat)/), &
                                                (/0.0d0/),              &
                                                xc_energy,              &
                                                get_ave,                &
@@ -904,11 +904,11 @@ contains
 
       ! End EL only cases
 
-      if (nr_geo == 1 .and. nr_el == 0) then
+      if (num_geo == 1 .and. num_el == 0) then
          combination_found = .true.
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
             element = i
             call xcint_wakeup_workers()
             ierr = xcint_integrate(XCINT_MODE_RKS, 1,                      &
@@ -925,12 +925,12 @@ contains
          end do
       end if
 
-      if (nr_geo == 2 .and. nr_el == 0) then
+      if (num_geo == 2 .and. num_el == 0) then
          combination_found = .true.
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
             do j = 1, i
 
                call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(2))
@@ -956,7 +956,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 1 .and. nr_el == 1) then
+      if (num_geo == 1 .and. num_el == 1) then
          combination_found = .true.
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
@@ -965,7 +965,7 @@ contains
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(2))
 
-            do i = 1, nr_atoms*3
+            do i = 1, num_atoms*3
 
                element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                          blk_info, blk_sizes, (/i, j/))
@@ -988,13 +988,13 @@ contains
          end do
       end if
 
-      if (nr_geo == 3 .and. nr_el == 0) then
+      if (num_geo == 3 .and. num_el == 0) then
          combination_found = .true.
 
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
@@ -1030,7 +1030,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 2 .and. nr_el == 1) then
+      if (num_geo == 2 .and. num_el == 1) then
          combination_found = .true.
 
          ! Set up for (k,n) = (1,1)
@@ -1041,7 +1041,7 @@ contains
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
 
-            do j = 1, nr_atoms*3
+            do j = 1, num_atoms*3
 
                call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
 
@@ -1073,7 +1073,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 1 .and. nr_el == 2) then
+      if (num_geo == 1 .and. num_el == 2) then
          combination_found = .true.
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
@@ -1096,9 +1096,9 @@ contains
             call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 2),  &
                                p_tuple_getone(pert, 3)), (/j,k/), dmat_tuple(4))
 
-               do i = 1, nr_atoms*3
+               do i = 1, num_atoms*3
                   ipart = ipart + 1
-                  print *, 'computing XC ave GFF contribution', ipart, 'out of', 3*maxcomp2*nr_atoms*3
+                  print *, 'computing XC ave GFF contribution', ipart, 'out of', 3*maxcomp2*num_atoms*3
 
                   element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                             blk_info, blk_sizes, (/i, j, k/))
@@ -1125,14 +1125,14 @@ contains
          print *, 'done computing XC ave GFF contribution'
       end if
 
-      if (nr_geo == 4 .and. nr_el == 0) then
+      if (num_geo == 4 .and. num_el == 0) then
          combination_found = .true.
 
          ! Using (k,n) = (1,2)
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-         do l = 1, nr_atoms*3
+         do l = 1, num_atoms*3
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(6))
 
@@ -1186,7 +1186,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 3 .and. nr_el == 1) then
+      if (num_geo == 3 .and. num_el == 1) then
          combination_found = .true.
 
          ! Using (k,n) = (1,2)
@@ -1197,7 +1197,7 @@ contains
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 4), (/l/), dmat_tuple(6))
 
-            do k = 1, nr_atoms*3
+            do k = 1, num_atoms*3
 
                call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 3), (/k/), dmat_tuple(4))
 
@@ -1247,7 +1247,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 2 .and. nr_el == 2) then
+      if (num_geo == 2 .and. num_el == 2) then
          combination_found = .true.
 
          ! Using (k,n) = (1,2)
@@ -1272,7 +1272,7 @@ contains
                call sdf_getdata_s(D_sdf, merge_p_tuple(p_tuple_getone(pert, 3),  &
                                   p_tuple_getone(pert, 4)), (/k,l/), dmat_tuple(8))
 
-               do j = 1, nr_atoms*3
+               do j = 1, num_atoms*3
 
                call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 2), (/j/), dmat_tuple(3))
 
@@ -1315,7 +1315,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 1 .and. nr_el == 3) then
+      if (num_geo == 1 .and. num_el == 3) then
          combination_found = .true.
 
          ! The array of density matrices should have length 4
@@ -1375,7 +1375,7 @@ contains
                call sdf_getdata_s(D_sdf, p_tuple_remove_first(pert), (/i,j,k/), &
                                   dmat_tuple(8))
 
-                  do l = 1, nr_atoms*3
+                  do l = 1, num_atoms*3
 
                      ! Get the offset in the response tensor
                      element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
@@ -1407,7 +1407,7 @@ contains
          end do
       end if
 
-      if (nr_geo == 1 .and. nr_el == 4) then
+      if (num_geo == 1 .and. num_el == 4) then
          combination_found = .true.
 
          ! Using (k,n) = (0,4)
@@ -1492,7 +1492,7 @@ contains
                      call sdf_getdata_s(D_sdf, p_tuple_remove_first(pert), (/i,j,k,l/), &
                                         dmat_tuple(16))
 
-                     do m = 1, nr_atoms*3
+                     do m = 1, num_atoms*3
 
                         element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                                   blk_info, blk_sizes, (/m, i, j, k, l/))
@@ -1509,14 +1509,14 @@ contains
          end do
       end if
 
-      if (nr_geo == 2 .and. nr_el == 3) then
+      if (num_geo == 2 .and. num_el == 3) then
           combination_found = .true.
 
           ! Using (k,n) = (1,3)
 
           call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-          do i = 1, nr_atoms*3
+          do i = 1, num_atoms*3
 
              call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
@@ -1604,14 +1604,14 @@ contains
           end do
       end if
 
-      if (nr_geo == 3 .and. nr_el == 2) then
+      if (num_geo == 3 .and. num_el == 2) then
          combination_found = .true.
 
          ! Using (k,n) = (2,2)
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
@@ -1683,14 +1683,14 @@ contains
          end do
       end if
 
-      if (nr_geo == 4 .and. nr_el == 1) then
+      if (num_geo == 4 .and. num_el == 1) then
          combination_found = .true.
 
          ! Using (k,n) = (2,2)
 
          call sdf_getdata_s(D_sdf, get_emptypert(), (/1/), dmat_tuple(1))
 
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
 
             call sdf_getdata_s(D_sdf, p_tuple_getone(pert, 1), (/i/), dmat_tuple(2))
 
@@ -1758,8 +1758,8 @@ contains
 
       if (.not. combination_found) then
          print *, 'ERROR: unsupported geo-el combination in rsp_xcave_interface', &
-                  nr_geo, &
-                  nr_el
+                  num_geo, &
+                  num_el
          stop 1
       end if
 
@@ -1800,8 +1800,8 @@ contains
       integer              :: ioff
       integer              :: imat, i, j
       integer              :: mat_dim
-      integer              :: nr_atoms
-      integer(c_int)       :: nr_dmat
+      integer              :: num_atoms
+      integer(c_int)       :: num_dmat
       real(c_double), allocatable :: xc_dmat(:)
       real(c_double), allocatable :: xc_fmat(:)
       real(c_double)              :: xc_energy
@@ -1816,13 +1816,13 @@ contains
          return
       end if
 
-      nr_atoms = get_nr_atoms()
-      nr_dmat  = size(D)
+      num_atoms = get_nr_atoms()
+      num_dmat  = size(D)
 
       mat_dim = D(1)%nrow
-      allocate(xc_dmat(mat_dim*mat_dim*nr_dmat))
+      allocate(xc_dmat(mat_dim*mat_dim*num_dmat))
       xc_dmat = 0.0d0
-      do imat = 1, nr_dmat
+      do imat = 1, num_dmat
          call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
       end do
 
@@ -1830,30 +1830,30 @@ contains
 
       if (present(F)) then
          call xcint_wakeup_workers()
-         ierr = xcint_integrate(XCINT_MODE_RKS, nr_dmat,   &
+         ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
                               xc_dmat,   &
                               xc_fmat,   &
                               xc_energy, &
                               get_ave,   &
                               0,         &
                               (/0/),     &
-                              nr_dmat-1, &
+                              num_dmat-1, &
                               (/0, 0/),  &
                               force_sequential)
          call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
       end if
 
       if (present(Fg)) then
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
             call xcint_wakeup_workers()
-            ierr = xcint_integrate(XCINT_MODE_RKS, nr_dmat,   &
+            ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
                                  xc_dmat,   &
                                  xc_fmat,   &
                                  xc_energy, &
                                  get_ave,   &
                                  1,         &
                                  (/i/),     &
-                                 nr_dmat-1, &
+                                 num_dmat-1, &
                                  (/0, 0/),  &
                                  force_sequential)
             call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
@@ -1861,17 +1861,17 @@ contains
       end if
 
       if (present(Fgg)) then
-         do i = 1, nr_atoms*3
+         do i = 1, num_atoms*3
             do j = 1, i
                call xcint_wakeup_workers()
-               ierr = xcint_integrate(XCINT_MODE_RKS, nr_dmat,   &
+               ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
                                     xc_dmat,   &
                                     xc_fmat,   &
                                     xc_energy, &
                                     get_ave,   &
                                     2,         &
                                     (/i, j/),  &
-                                    nr_dmat-1, &
+                                    num_dmat-1, &
                                     (/0, 0/),  &
                                     force_sequential)
                call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
