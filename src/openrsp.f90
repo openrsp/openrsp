@@ -116,6 +116,7 @@ contains
     real(8), allocatable   :: pe_dmat(:,:)
     real(8), allocatable   :: pe_fmat(:,:)
     real(8)                :: pe_energy(1)
+    integer :: ierr
 
     type(ctr_arg) :: arg(1)
 
@@ -187,16 +188,16 @@ contains
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
        call xcint_wakeup_workers()
-       call xcint_integrate(XCINT_MODE_RKS, 1,         &
-                            xc_dmat,   &
-                            xc_fmat,   &
-                            xc_energy, &
-                            0,   &
-                            0,         &
-                            (/0/),     &
-                            0,         &
-                            (/0, 0/),  &
-                            0)
+       ierr = xcint_integrate(XCINT_MODE_RKS, 1,         &
+                              xc_dmat,   &
+                              xc_fmat,   &
+                              xc_energy, &
+                              0,   &
+                              0,         &
+                              (/0/),     &
+                              0,         &
+                              (/0, 0/),  &
+                              0)
        call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
        deallocate(xc_dmat)
        deallocate(xc_fmat)
