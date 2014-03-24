@@ -136,18 +136,16 @@ contains
 #endif
 
 !     print *, XCINT_SUCCESS
-      call xcint_init(basis_type,                                            &
-                      nr_centers,                                            &
-                      reshape(center_xyz, (/size(center_xyz)/)),             &
-                      center_element,                                        &
-                      nr_shells,                                             &
-                      shell_center,                                          &
-                      l_quantum_nr,                                          &
-                      nr_primitives_per_shell,                               &
-                      reshape(primitive_exp, (/size(primitive_exp)/)),       &
-                      reshape(contraction_coef, (/size(contraction_coef)/)), &
-                      1.0d-13,                                               &
-                      17);
+      call xcint_set_basis(basis_type,                                      &
+                           nr_centers,                                      &
+                           reshape(center_xyz, (/size(center_xyz)/)),       &
+                           center_element,                                  &
+                           nr_shells,                                       &
+                           shell_center,                                    &
+                           l_quantum_nr,                                    &
+                           nr_primitives_per_shell,                         &
+                           reshape(primitive_exp, (/size(primitive_exp)/)), &
+                           reshape(contraction_coef, (/size(contraction_coef)/)))
 
       deallocate(center_xyz)
       deallocate(center_element)
@@ -410,7 +408,7 @@ contains
        
 ! Commented out until updated
               
-!        call xcint_integrate(dmat_length,                 &
+!        call xcint_integrate(XCINT_MODE_RKS, dmat_length,                 &
 !                             (/(dmat_tuple(j)%elms, j = 1, dmat_length)/), &
 !                             (/0.0d0/),                   &
 !                             xc_energy,                   &
@@ -638,7 +636,7 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m/))
 
                         call xcint_wakeup_workers()
-                        call xcint_integrate(nr_dmat,                      &
+                        call xcint_integrate(XCINT_MODE_RKS, nr_dmat,                      &
                                              (/dmat_tuple(1)%elms,   &
                                                dmat_tuple(2)%elms,   &
                                                dmat_tuple(3)%elms,   &
@@ -856,7 +854,7 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m, n/))
 
                         call xcint_wakeup_workers()
-                        call xcint_integrate(nr_dmat,                      &
+                        call xcint_integrate(XCINT_MODE_RKS, nr_dmat,                      &
                                              (/(dmat_tuple(i)%elms, i = 1, nr_dmat)/), &
                                                (/0.0d0/),              &
                                                xc_energy,              &
@@ -889,7 +887,7 @@ contains
          do i = 1, nr_atoms*3
             element = i
             call xcint_wakeup_workers()
-            call xcint_integrate(1,                      &
+            call xcint_integrate(XCINT_MODE_RKS, 1,                      &
                                  (/dmat_tuple(1)%elms/), &
                                  (/0.0d0/),              &
                                  xc_energy,              &
@@ -917,7 +915,7 @@ contains
                          blk_info, blk_sizes, (/i, j/))
 
                call xcint_wakeup_workers()
-               call xcint_integrate(2,                      &
+               call xcint_integrate(XCINT_MODE_RKS, 2,                      &
                                     (/dmat_tuple(1)%elms,   &
                                       dmat_tuple(2)%elms/), &
                                     (/0.0d0/),              &
@@ -949,7 +947,7 @@ contains
                          blk_info, blk_sizes, (/i, j/))
 
                call xcint_wakeup_workers()
-               call xcint_integrate(2,                      &
+               call xcint_integrate(XCINT_MODE_RKS, 2,                      &
                                     (/dmat_tuple(1)%elms,   &
                                       dmat_tuple(2)%elms/), &
                                     (/0.0d0/),              &
@@ -988,7 +986,7 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  call xcint_integrate(4,                      &
+                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
                                        (/dmat_tuple(1)%elms,   &
                                          dmat_tuple(2)%elms,   &
                                          dmat_tuple(3)%elms,   &
@@ -1032,7 +1030,7 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  call xcint_integrate(4,                      &
+                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
                                        (/dmat_tuple(1)%elms,   &
                                          dmat_tuple(2)%elms,   &
                                          dmat_tuple(3)%elms,   &
@@ -1082,7 +1080,7 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  call xcint_integrate(4,                      &
+                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
                                        (/dmat_tuple(1)%elms,   &
                                          dmat_tuple(2)%elms,   &
                                          dmat_tuple(3)%elms,   &
@@ -1139,7 +1137,7 @@ contains
                                blk_info, blk_sizes, (/i, j, k, l/))
 
                      call xcint_wakeup_workers()
-                     call xcint_integrate(8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1200,7 +1198,7 @@ contains
                                blk_info, blk_sizes, (/i, j, k, l/))
 
                      call xcint_wakeup_workers()
-                     call xcint_integrate(8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1268,7 +1266,7 @@ contains
                                blk_info, blk_sizes, (/i, j, k, l/))
 
                      call xcint_wakeup_workers()
-                     call xcint_integrate(8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1360,7 +1358,7 @@ contains
                                blk_info, blk_sizes, (/l, i, j, k/))
 
                      call xcint_wakeup_workers()
-                     call xcint_integrate(8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1808,7 +1806,7 @@ contains
 
       if (present(F)) then
          call xcint_wakeup_workers()
-         call xcint_integrate(nr_dmat,   &
+         call xcint_integrate(XCINT_MODE_RKS, nr_dmat,   &
                               xc_dmat,   &
                               xc_fmat,   &
                               xc_energy, &
@@ -1824,7 +1822,7 @@ contains
       if (present(Fg)) then
          do i = 1, nr_atoms*3
             call xcint_wakeup_workers()
-            call xcint_integrate(nr_dmat,   &
+            call xcint_integrate(XCINT_MODE_RKS, nr_dmat,   &
                                  xc_dmat,   &
                                  xc_fmat,   &
                                  xc_energy, &
@@ -1842,7 +1840,7 @@ contains
          do i = 1, nr_atoms*3
             do j = 1, i
                call xcint_wakeup_workers()
-               call xcint_integrate(nr_dmat,   &
+               call xcint_integrate(XCINT_MODE_RKS, nr_dmat,   &
                                     xc_dmat,   &
                                     xc_fmat,   &
                                     xc_energy, &

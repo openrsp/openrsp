@@ -187,7 +187,7 @@ contains
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
        allocate(xc_fmat(mat_dim*mat_dim))
        call xcint_wakeup_workers()
-       call xcint_integrate(1,         &
+       call xcint_integrate(XCINT_MODE_RKS, 1,         &
                             xc_dmat,   &
                             xc_fmat,   &
                             xc_energy, &
