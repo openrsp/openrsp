@@ -11,6 +11,7 @@ module interface_xc
    use rsp_indices_and_addressing
    use rsp_sdf_caching
    use iso_c_binding
+   use xcint_fortran_interface
 
    implicit none
 
@@ -39,76 +40,6 @@ module interface_xc
 #ifdef VAR_MPI
 #include "mpif.h"
 #endif
-
-interface xcint_init
-   subroutine xcint_init(basis_type,              &
-                         nr_centers,              &
-                         center_xyz,              &
-                         center_element,          &
-                         nr_shells,               &
-                         shell_center,            &
-                         l_quantum_nr,            &
-                         nr_primitives_per_shell, &
-                         primitive_exp,           &
-                         contraction_coef,        &
-                         radial_precision,        &
-                         angular_order) bind (C, name = "xcint_init")
-
-      use iso_c_binding
-      implicit none
-
-      integer(c_int), value :: basis_type
-      integer(c_int), value :: nr_centers
-      real(c_double)        :: center_xyz(*)
-      integer(c_int)        :: center_element(*)
-      integer(c_int), value :: nr_shells
-      integer(c_int)        :: shell_center(*)
-      integer(c_int)        :: l_quantum_nr(*)
-      integer(c_int)        :: nr_primitives_per_shell(*)
-      real(c_double)        :: primitive_exp(*)
-      real(c_double)        :: contraction_coef(*)
-      real(c_double), value :: radial_precision
-      integer(c_int), value :: angular_order
-   end subroutine
-end interface
-
-interface xcint_set_functional
-   subroutine xcint_set_functional(line, hfx, mu, beta) bind (C, name = "xcint_set_functional")
-      use iso_c_binding
-      implicit none
-      character(c_char) :: line
-      real(c_double)    :: hfx
-      real(c_double)    :: mu
-      real(c_double)    :: beta
-   end subroutine
-end interface
-
-interface xcint_integrate
-   subroutine xcint_integrate(num_dmat,        &
-                              dmat,            &
-                              fmat,            &
-                              energy,          &
-                              get_ave,         &
-                              geo_derv_order,  &
-                              geo_coor,        &
-                              num_fields,      &
-                              kn_rule,         &
-                              force_sequential &
-                             ) bind (C, name = "xcint_integrate")
-      use iso_c_binding
-      implicit none
-      integer(c_int), value :: num_dmat
-      real(c_double)        :: dmat(*)
-      real(c_double)        :: fmat(*)
-      real(c_double)        :: energy
-      integer(c_int), value :: get_ave
-      integer(c_int), value :: geo_derv_order
-      integer(c_int)        :: geo_coor(*)
-      integer(c_int), value :: num_fields
-      integer(c_int)        :: kn_rule(2)
-      integer(c_int), value :: force_sequential
-   end subroutine
-end interface
 
 contains
 
@@ -204,6 +135,7 @@ contains
       call xcint_set_mpi_comm(MPI_COMM_WORLD)
 #endif
 
+!     print *, XCINT_SUCCESS
       call xcint_init(basis_type,                                            &
                       nr_centers,                                            &
                       reshape(center_xyz, (/size(center_xyz)/)),             &
