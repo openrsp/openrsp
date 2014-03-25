@@ -156,20 +156,19 @@ contains
 #endif
 
       stdout_function = c_funloc(fortran_stdout_function)
-      ierr = xcint_set_stdout_function(stdout_function)
-      ierr = xcint_set_stderr_function(stdout_function)
+      call xcint_set_stdout_function(stdout_function)
+      call xcint_set_stderr_function(stdout_function)
 
-!     print *, XCINT_SUCCESS
-      ierr = xcint_set_basis(basis_type,                                      &
-                             num_centers,                                      &
-                             reshape(center_xyz, (/size(center_xyz)/)),       &
-                             center_element,                                  &
-                             num_shells,                                       &
-                             shell_center,                                    &
-                             l_quantum_num,                                    &
-                             num_primitives_per_shell,                         &
-                             reshape(primitive_exp, (/size(primitive_exp)/)), &
-                             reshape(contraction_coef, (/size(contraction_coef)/)))
+      call xcint_set_basis(basis_type,                                      &
+                           num_centers,                                     &
+                           reshape(center_xyz, (/size(center_xyz)/)),       &
+                           center_element,                                  &
+                           num_shells,                                      &
+                           shell_center,                                    &
+                           l_quantum_num,                                   &
+                           num_primitives_per_shell,                        &
+                           reshape(primitive_exp, (/size(primitive_exp)/)), &
+                           reshape(contraction_coef, (/size(contraction_coef)/)))
 
       deallocate(center_xyz)
       deallocate(center_element)
@@ -432,7 +431,7 @@ contains
 
 ! Commented out until updated
 
-!        ierr = xcint_integrate(XCINT_MODE_RKS, dmat_length,                 &
+!        call xcint_integrate(XCINT_MODE_RKS, dmat_length,                 &
 !                             (/(dmat_tuple(j)%elms, j = 1, dmat_length)/), &
 !                             (/0.0d0/),                   &
 !                             xc_energy,                   &
@@ -660,7 +659,7 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m/))
 
                         call xcint_wakeup_workers()
-                        ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
+                        call xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
                                              (/dmat_tuple(1)%elms,   &
                                                dmat_tuple(2)%elms,   &
                                                dmat_tuple(3)%elms,   &
@@ -878,7 +877,7 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m, n/))
 
                         call xcint_wakeup_workers()
-                        ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
+                        call xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
                                              (/(dmat_tuple(i)%elms, i = 1, num_dmat)/), &
                                                (/0.0d0/),              &
                                                xc_energy,              &
@@ -911,7 +910,7 @@ contains
          do i = 1, num_atoms*3
             element = i
             call xcint_wakeup_workers()
-            ierr = xcint_integrate(XCINT_MODE_RKS, 1,                      &
+            call xcint_integrate(XCINT_MODE_RKS, 1,                      &
                                  (/dmat_tuple(1)%elms/), &
                                  (/0.0d0/),              &
                                  xc_energy,              &
@@ -939,7 +938,7 @@ contains
                          blk_info, blk_sizes, (/i, j/))
 
                call xcint_wakeup_workers()
-               ierr = xcint_integrate(XCINT_MODE_RKS, 2,                      &
+               call xcint_integrate(XCINT_MODE_RKS, 2,                      &
                                     (/dmat_tuple(1)%elms,   &
                                       dmat_tuple(2)%elms/), &
                                     (/0.0d0/),              &
@@ -971,7 +970,7 @@ contains
                          blk_info, blk_sizes, (/i, j/))
 
                call xcint_wakeup_workers()
-               ierr = xcint_integrate(XCINT_MODE_RKS, 2,                      &
+               call xcint_integrate(XCINT_MODE_RKS, 2,                      &
                                     (/dmat_tuple(1)%elms,   &
                                       dmat_tuple(2)%elms/), &
                                     (/0.0d0/),              &
@@ -1010,7 +1009,7 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  ierr = xcint_integrate(XCINT_MODE_RKS, 4,                      &
+                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
                                        (/dmat_tuple(1)%elms,   &
                                          dmat_tuple(2)%elms,   &
                                          dmat_tuple(3)%elms,   &
@@ -1054,7 +1053,7 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  ierr = xcint_integrate(XCINT_MODE_RKS, 4,                      &
+                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
                                        (/dmat_tuple(1)%elms,   &
                                          dmat_tuple(2)%elms,   &
                                          dmat_tuple(3)%elms,   &
@@ -1104,7 +1103,7 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  ierr = xcint_integrate(XCINT_MODE_RKS, 4,                      &
+                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
                                        (/dmat_tuple(1)%elms,   &
                                          dmat_tuple(2)%elms,   &
                                          dmat_tuple(3)%elms,   &
@@ -1161,7 +1160,7 @@ contains
                                blk_info, blk_sizes, (/i, j, k, l/))
 
                      call xcint_wakeup_workers()
-                     ierr = xcint_integrate(XCINT_MODE_RKS, 8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1222,7 +1221,7 @@ contains
                                blk_info, blk_sizes, (/i, j, k, l/))
 
                      call xcint_wakeup_workers()
-                     ierr = xcint_integrate(XCINT_MODE_RKS, 8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1290,7 +1289,7 @@ contains
                                blk_info, blk_sizes, (/i, j, k, l/))
 
                      call xcint_wakeup_workers()
-                     ierr = xcint_integrate(XCINT_MODE_RKS, 8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1382,7 +1381,7 @@ contains
                                blk_info, blk_sizes, (/l, i, j, k/))
 
                      call xcint_wakeup_workers()
-                     ierr = xcint_integrate(XCINT_MODE_RKS, 8,                      &
+                     call xcint_integrate(XCINT_MODE_RKS, 8,                      &
                                           (/dmat_tuple(1)%elms,   &
                                             dmat_tuple(2)%elms,   &
                                             dmat_tuple(3)%elms,   &
@@ -1830,7 +1829,7 @@ contains
 
       if (present(F)) then
          call xcint_wakeup_workers()
-         ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
+         call xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
                               xc_dmat,   &
                               xc_fmat,   &
                               xc_energy, &
@@ -1846,7 +1845,7 @@ contains
       if (present(Fg)) then
          do i = 1, num_atoms*3
             call xcint_wakeup_workers()
-            ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
+            call xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
                                  xc_dmat,   &
                                  xc_fmat,   &
                                  xc_energy, &
@@ -1864,7 +1863,7 @@ contains
          do i = 1, num_atoms*3
             do j = 1, i
                call xcint_wakeup_workers()
-               ierr = xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
+               call xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
                                     xc_dmat,   &
                                     xc_fmat,   &
                                     xc_energy, &
