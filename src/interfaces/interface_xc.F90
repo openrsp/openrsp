@@ -85,16 +85,16 @@ contains
 #include "shells.h"
 #include "primit.h"
 
-      integer(c_int), allocatable :: num_primitives_per_shell(:)
-      real(c_double), allocatable :: primitive_exp(:, :)
-      real(c_double), allocatable :: contraction_coef(:, :)
+      integer(c_int), allocatable :: shell_num_primitives(:)
+      real(c_double), allocatable :: primitive_exp(:)
+      real(c_double), allocatable :: contraction_coef(:)
       integer(c_int), allocatable :: l_quantum_num(:)
       integer(c_int), allocatable :: shell_center(:)
-      integer                     :: i, j, icount, iprim, ishell, iround
+      integer                     :: i, j, icount, iprim, ishell, iround, n, ixyz, icenter
       integer(c_int)              :: basis_type
       integer(c_int)              :: num_shells
       integer(c_int)              :: num_centers
-      real(c_double), allocatable :: center_xyz(:, :)
+      real(c_double), allocatable :: center_xyz(:)
       integer(c_int), allocatable :: center_element(:)
 
       type(c_funptr) :: stdout_function
@@ -103,19 +103,27 @@ contains
 
       num_shells = kmax
       num_centers = nucind
-      allocate(center_xyz(3, num_centers))
-      center_xyz = cord
+      allocate(center_xyz(3*num_centers))
+      n = 1
+      do icenter = 1, num_centers
+         do ixyz = 1, 3
+            center_xyz(n) = cord(ixyz, icenter)
+            n = n + 1
+         end do
+      end do
 
       allocate(center_element(num_centers))
       do i = 1, num_centers
          center_element(i) = nint(charge(i))
       end do
 
-      allocate(num_primitives_per_shell(num_shells))
+      allocate(shell_num_primitives(num_shells))
+      n = 0
       do iround = 1, 2
          if (iround == 2) then
-            allocate(primitive_exp(maxval(num_primitives_per_shell), num_shells))
-            allocate(contraction_coef(maxval(num_primitives_per_shell), num_shells))
+            allocate(primitive_exp(n))
+            allocate(contraction_coef(n))
+            n = 0
          end if
          do ishell = 1, num_shells
             i = jstrt(ishell) + 1
@@ -124,10 +132,11 @@ contains
             do iprim = i, j
                if (dabs(priccf(iprim, numcf(ishell))) > tiny(0.0d0)) then
                   icount = icount + 1
-                  num_primitives_per_shell(ishell) = icount
+                  shell_num_primitives(ishell) = icount
+                  n = n + 1
                   if (iround == 2) then
-                     contraction_coef(icount, ishell) = priccf(iprim, numcf(ishell))
-                     primitive_exp(icount, ishell)    = priexp(iprim)
+                     contraction_coef(n) = priccf(iprim, numcf(ishell))
+                     primitive_exp(n)    = priexp(iprim)
                   end if
                end if
             end do
@@ -159,20 +168,20 @@ contains
       call xcint_set_stdout_function(stdout_function)
       call xcint_set_stderr_function(stdout_function)
 
-      call xcint_set_basis(basis_type,                                      &
-                           num_centers,                                     &
-                           reshape(center_xyz, (/size(center_xyz)/)),       &
-                           center_element,                                  &
-                           num_shells,                                      &
-                           shell_center,                                    &
-                           l_quantum_num,                                   &
-                           num_primitives_per_shell,                        &
-                           reshape(primitive_exp, (/size(primitive_exp)/)), &
-                           reshape(contraction_coef, (/size(contraction_coef)/)))
+      call xcint_set_basis(basis_type,           &
+                           num_centers,          &
+                           center_xyz,           &
+                           center_element,       &
+                           num_shells,           &
+                           shell_center,         &
+                           l_quantum_num,        &
+                           shell_num_primitives, &
+                           primitive_exp,        &
+                           contraction_coef)
 
       deallocate(center_xyz)
       deallocate(center_element)
-      deallocate(num_primitives_per_shell)
+      deallocate(shell_num_primitives)
       deallocate(primitive_exp)
       deallocate(contraction_coef)
       deallocate(l_quantum_num)
