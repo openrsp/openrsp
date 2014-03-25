@@ -142,11 +142,11 @@ contains
       end do
 
       ! we default to spherical basis
-      basis_type = 1
+      basis_type = XCINT_BASIS_SPHERICAL
       do ishell = 1, num_shells
          if ((l_quantum_num(ishell) > 1) .and. .not. sphr(ishell)) then
             ! basis is cartesian
-            basis_type = 2
+            basis_type = XCINT_BASIS_CARTESIAN
             exit
          end if
       end do
