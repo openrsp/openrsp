@@ -15,7 +15,7 @@
       https://github.com/rbast/runtest
 """
 
-RUNTEST_VERSION = 'v0.1.0'
+RUNTEST_VERSION = 'v0.1.2'
 
 import re
 import os
@@ -57,10 +57,18 @@ class TestRun:
 
     #--------------------------------------------------------------------------
     def __init__(self, _file, argv):
+
         self.input_dir = input_dir = os.path.dirname(os.path.realpath(_file))
-        self.binary_dir, self.work_dir, self.verbose = self._parse_args(input_dir, argv)
+
+        options = self._parse_args(input_dir, argv)
+        self.binary_dir = options.binary_dir
+        self.work_dir   = options.work_dir
+        self.verbose    = options.verbose
+        self.skip_run   = options.skip_run
+
         if self.work_dir != self.input_dir:
             self._safe_copy(self.input_dir, self.work_dir)
+
         os.chdir(self.work_dir) # FIXME possibly problematic
 
     #--------------------------------------------------------------------------
@@ -75,6 +83,9 @@ class TestRun:
             - AcceptedError
             - SubprocessError
         """
+        if self.skip_run:
+            return
+
         if sys.platform != "win32":
             command = shlex.split(command)
 
@@ -124,6 +135,11 @@ class TestRun:
                           action='store_true',
                           default=False,
                           help='give more verbose output upon test failure [default: %default]')
+        parser.add_option('--skip-run',
+                          '-s',
+                          action='store_true',
+                          default=False,
+                          help='skip actual calculation(s) [default: %default]')
         (options, args) = parser.parse_args(args=argv[1:])
 
         if sys.platform == "win32":
@@ -131,7 +147,7 @@ class TestRun:
             options.binary_dir = string.replace(options.binary_dir, '/', '\\')
             options.work_dir = string.replace(options.work_dir, '/', '\\')
 
-        return (options.binary_dir, options.work_dir, options.verbose)
+        return options
 
 
 #------------------------------------------------------------------------------
@@ -148,7 +164,8 @@ class _SingleFilter:
                                'ignore_sign',
                                'mask',
                                'num_lines',
-                               'tolerance']
+                               'rel_tolerance',
+                               'abs_tolerance']
 
         # check for unrecognized keywords
         for key in kwargs.keys():
@@ -159,28 +176,37 @@ class _SingleFilter:
                 raise FilterKeywordError(message)
 
         # check for incompatible keywords
-        if ('from_re'   in kwargs.keys() and 'from_string' in kwargs.keys()) or \
-           ('to_re'     in kwargs.keys() and 'to_string'   in kwargs.keys()) or \
-           ('to_string' in kwargs.keys() and 'num_lines'   in kwargs.keys()) or \
-           ('to_re'     in kwargs.keys() and 'num_lines'   in kwargs.keys()) or \
-           ('string'    in kwargs.keys() and 'from_string' in kwargs.keys()) or \
-           ('string'    in kwargs.keys() and 'to_string'   in kwargs.keys()) or \
-           ('string'    in kwargs.keys() and 'from_re'     in kwargs.keys()) or \
-           ('string'    in kwargs.keys() and 'to_re'       in kwargs.keys()) or \
-           ('string'    in kwargs.keys() and 'num_lines'   in kwargs.keys()) or \
-           ('re'        in kwargs.keys() and 'from_string' in kwargs.keys()) or \
-           ('re'        in kwargs.keys() and 'to_string'   in kwargs.keys()) or \
-           ('re'        in kwargs.keys() and 'from_re'     in kwargs.keys()) or \
-           ('re'        in kwargs.keys() and 'to_re'       in kwargs.keys()) or \
-                ('re'        in kwargs.keys() and 'num_lines'   in kwargs.keys()):
-            raise FilterKeywordError('ERROR: incompatible keywords: %s\n' % (', ').join(kwargs.keys()))
+        self._check_incompatible_keywords('from_re'      , 'from_string'  , kwargs)
+        self._check_incompatible_keywords('to_re'        , 'to_string'    , kwargs)
+        self._check_incompatible_keywords('to_string'    , 'num_lines'    , kwargs)
+        self._check_incompatible_keywords('to_re'        , 'num_lines'    , kwargs)
+        self._check_incompatible_keywords('string'       , 'from_string'  , kwargs)
+        self._check_incompatible_keywords('string'       , 'to_string'    , kwargs)
+        self._check_incompatible_keywords('string'       , 'from_re'      , kwargs)
+        self._check_incompatible_keywords('string'       , 'to_re'        , kwargs)
+        self._check_incompatible_keywords('string'       , 'num_lines'    , kwargs)
+        self._check_incompatible_keywords('re'           , 'from_string'  , kwargs)
+        self._check_incompatible_keywords('re'           , 'to_string'    , kwargs)
+        self._check_incompatible_keywords('re'           , 'from_re'      , kwargs)
+        self._check_incompatible_keywords('re'           , 'to_re'        , kwargs)
+        self._check_incompatible_keywords('re'           , 'num_lines'    , kwargs)
+        self._check_incompatible_keywords('rel_tolerance', 'abs_tolerance', kwargs)
 
+        # now continue with keywords
         self.from_string = kwargs.get('from_string', '')
         self.to_string = kwargs.get('to_string', '')
-        self.tolerance = kwargs.get('tolerance', 1.0e-5)
         self.ignore_sign = kwargs.get('ignore_sign', False)
         self.ignore_below = kwargs.get('ignore_below', 1.0e-40)
         self.num_lines = kwargs.get('num_lines', 0)
+
+        if 'rel_tolerance' in kwargs.keys():
+            self.tolerance = kwargs.get('rel_tolerance')
+            self.tolerance_is_relative = True
+        elif 'abs_tolerance' in kwargs.keys():
+            self.tolerance = kwargs.get('abs_tolerance')
+            self.tolerance_is_relative = False
+        else:
+            raise FilterKeywordError('ERROR: you have to specify either rel_tolerance or abs_tolerance\n')
 
         self.mask = kwargs.get('mask', [])
         if self.mask == []:
@@ -213,6 +239,10 @@ class _SingleFilter:
             self.from_string = only_re
             self.num_lines = 1
             self.from_is_re = True
+
+    def _check_incompatible_keywords(self, kw1, kw2, kwargs):
+        if kw1 in kwargs.keys() and kw2 in kwargs.keys():
+            raise FilterKeywordError('ERROR: incompatible keywords: "%s" and "%s"\n' % (kw1, kw2))
 
 
 #------------------------------------------------------------------------------
@@ -309,7 +339,7 @@ class Filter:
                     for w in string_l[line].split():
                         i += 1
                         if (f.use_mask) and (i not in f.mask):
-                            break
+                            continue
                         # do not consider words like TzB1g
                         # otherwise we would extract 1 later
                         if re.match(r'^[0-9\.eEdD\+\-]*$', w):
@@ -333,10 +363,15 @@ class Filter:
                     if abs(r_ref) > f.ignore_below:
                         # calculate relative error only for
                         # significant ('nonzero') numbers
-                        rel_error = (r_out - r_ref) / r_ref
-                        if abs(rel_error) > f.tolerance:
+                        error = r_out - r_ref
+                        if f.tolerance_is_relative:
+                            error /= r_ref
+                        if abs(error) > f.tolerance:
                             log_diff.write('line %i: %s' % (f_to_line_out[i] + 1, out[f_to_line_out[i]]))
-                            log_diff.write('    rel error %7.4e > %7.4e\n\n' % (rel_error, f.tolerance))
+                            if f.tolerance_is_relative:
+                                log_diff.write('    rel error %7.4e > tolerance %7.4e\n\n' % (error, f.tolerance))
+                            else:
+                                log_diff.write('    abs error %7.4e > tolerance %7.4e\n\n' % (error, f.tolerance))
             else:
                 log_diff.write('extracted sizes do not match\n')
 
