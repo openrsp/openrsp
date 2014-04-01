@@ -9,7 +9,7 @@ from runtest_dalton import Filter, TestRun
 test = TestRun(__file__, sys.argv)
 
 f = Filter()
-f.add(tolerance = 1.0e-4) # all lines
+f.add(rel_tolerance = 1.0e-4) # all lines
 
 test.run(['pe_delta1.dal','pe_delta2.dal','pe_delta3.dal'], ['sto_3g.mol'],
                  {'rsp_tensor_human': f}, args='-pot 2_h2o.pot -get rsp_tensor_human')

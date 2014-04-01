@@ -10,18 +10,19 @@ test = TestRun(__file__, sys.argv)
 
 f_out = Filter()
 f_out.add(from_string = 'freq/cm-1  freq/au     aa         mb         aa',
-          to_string   = 'RSPC Returned from vib_ana_polari')
+          to_string   = 'RSPC Returned from vib_ana_polari',
+          rel_tolerance = 1.0e-5)
 
 f_stdout = Filter()
 f_stdout.add(from_string  = 'd/dg dipmom = -Egf',
              num_lines    = 4,
-             tolerance    = 1.0e-6)
+             rel_tolerance    = 1.0e-6)
 f_stdout.add(from_string  = 'd/dg Alpha = -Egff',
              num_lines    = 10,
-             tolerance    = 1.0e-6)
+             rel_tolerance    = 1.0e-6)
 f_stdout.add(from_string  = 'd/dg Beta = -Egfff',
              num_lines    = 28,
-             tolerance    = 1.0e-6)
+             rel_tolerance    = 1.0e-6)
 
 test.run(['vibgamma.dal'], ['h2o2.mol'], {'out': f_out, 'stdout': f_stdout}, args='-put DALTON.HES')
 
