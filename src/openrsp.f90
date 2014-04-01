@@ -108,9 +108,10 @@ contains
     type(matrix)           :: H1 !one electron Hamiltonian
     type(matrix)           :: G  !two electron Hamiltonian
     real(c_double), allocatable   :: xc_dmat(:)
-    real(c_double), allocatable   :: xc_fmat(:)
+    real(c_double), allocatable   :: xc_mat(:)
     integer                :: mat_dim
-    real(c_double)         :: xc_energy
+    real(c_double)         :: xc_energy(1)
+    real(c_double)         :: num_electrons
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
     real(8), allocatable   :: pe_dmat(:,:)
@@ -186,21 +187,24 @@ contains
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
-       allocate(xc_fmat(mat_dim*mat_dim))
+       allocate(xc_mat(mat_dim*mat_dim))
        call xcint_wakeup_workers()
-       call xcint_integrate(XCINT_MODE_RKS, 1,         &
-                            xc_dmat,   &
-                            xc_fmat,   &
-                            xc_energy, &
-                            0,   &
-                            0,         &
-                            (/0/),     &
-                            0,         &
-                            (/0, 0/),  &
-                            0)
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+       call xcint_integrate(XCINT_MODE_RKS, &
+                            0,              &
+                            (/0/),          &
+                            (/0/),          &
+                            1,              &
+                            (/0/),          &
+                            (/1/),          &
+                            xc_dmat,        &
+                            0,              &
+                            xc_energy,      &
+                            1,              &
+                            xc_mat,         &
+                            num_electrons)
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, F%elms, 1)
        deallocate(xc_dmat)
-       deallocate(xc_fmat)
+       deallocate(xc_mat)
     end if
 
     if (peqm) then
