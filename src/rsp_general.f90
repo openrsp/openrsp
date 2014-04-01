@@ -300,14 +300,9 @@ module rsp_general
     write(*,*) ' '
 
     call cpu_time(time_start)
-    call rsp_xcave_interface(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
+!   call rsp_xcave_interface(nr_ao, pert, kn, num_blks, blk_sizes, blk_info, property_size, prop, D)
+    call rsp_xcave_interface_new(pert, kn, D, property_size, prop)
     call cpu_time(time_end)
-
-!     MaR: Uncomment this and comment out the preceding three lines to enable new xcave interface
-!     call cpu_time(time_start)    
-!     call rsp_xcave_interface_new(pert, kn, D, property_size, prop)
-!     call cpu_time(time_end)
-    
     
     print *, 'seconds spent in XC contribution', time_end - time_start
     write(*,*) ' '

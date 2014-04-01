@@ -348,8 +348,6 @@ contains
     type(p_tuple), dimension(:), allocatable :: dmat_perts, enc_perts
     integer, dimension(2) :: kn
     type(SDF) :: D
-! MaR: Uncomment this, add to argument list and handle below when callback functionality is ready
-!     external :: rsp_get_xcave
     integer :: prop_size, element, ind_dmat_perts, rec_prog, enc_length
     complex(8), dimension(prop_size) :: prop, res
     type(p_tuple) :: emptypert
@@ -357,9 +355,15 @@ contains
     integer :: i, j, k, dmat_length, num_blks
     integer, dimension(:), allocatable :: blk_sizes, one_ind, pert_ids
     integer, dimension(:,:), allocatable :: blk_info, indices
-    real(c_double)               :: xc_energy
-    integer(c_int)              :: get_ave
-    integer(c_int)              :: force_sequential
+
+    real(c_double)              :: xc_energy(1)
+    real(c_double)              :: num_electrons
+    real(c_double)              :: dummy_real(1)
+    integer(c_int)              :: num_pert
+    integer(c_int), allocatable :: xc_pert(:)
+    integer(c_int), allocatable :: comp(:)
+    integer(c_int), allocatable :: dmat_to_pert(:)
+    integer(c_int), allocatable :: dmat_to_comp(:)
 
     if (.not. get_is_ks_calculation()) return
 
@@ -367,8 +371,6 @@ contains
 
     dmat_length = 2**(pert%n_perturbations - 1)
     enc_length = 2**pert%n_perturbations
-
-!         dmat_length = pert%n_perturbations * (pert%n_perturbations + 1) / 2
 
     emptypert = get_emptypert()
 
@@ -402,56 +404,64 @@ contains
 
     call make_triangulated_indices(num_blks, blk_info, prop_size, indices)
 
-    write(*,*) 'These p tuples make up the dmat_tuple array', pert_ids
+    num_pert = count(pert%plab == 'GEO ') + count(pert%plab == 'EL  ')
+    allocate(xc_pert(num_pert))
+    allocate(comp(2*num_pert))
+    do j = 1, num_pert
+       if (pert%plab(j) == 'GEO ') then
+          xc_pert(j) = XCINT_PERT_GEO
+       end if
+       if (pert%plab(j) == 'EL  ') then
+          xc_pert(j) = XCINT_PERT_EL
+       end if
+    end do
 
-    write(*,*) 'The perturbation ids of these tuples are as follows (blank line means unperturbed):'
-
+    allocate(dmat_to_pert(dmat_length))
+    allocate(dmat_to_comp(dmat_length))
     do j = 1, dmat_length
-
-       write(*,*) dmat_perts(j)%pid
-
+       dmat_to_pert(j) = pert_ids(j)
+       dmat_to_comp(j) = 1 ! FIXME not used
     end do
 
     do i = 1, prop_size
 
+       comp = 1
+       k = 1
+       do j = 1, count(pert%plab == 'GEO ')
+          comp(k)   = indices(i, j)
+          comp(k+1) = indices(i, j)
+          k = k + 2
+       end do
+
        ! First perturbation is always unperturbed D, handled above
        do j = 2, dmat_length
-
           do k = 1, dmat_perts(j)%n_perturbations
-
              one_ind(k) = indices(i, dmat_perts(j)%pid(k))
-
           end do
-
           call sdf_getdata_s(D, dmat_perts(j), one_ind(1:dmat_perts(j)%n_perturbations), dmat_tuple(j))
-
        end do
 
        element = get_triang_blks_offset(num_blks, pert%n_perturbations, &
                                         blk_info, blk_sizes, indices(i,:))
 
-       call xcint_wakeup_workers()
-
        ! Assumes GEO perturbations come first to set up geo indices
        ! If that handling is moved to host program then no assumptions are necessary
-       ! This routine is not sufficiently general and should be upgraded
-       ! Choice of kn is passed but should not be relevant anymore
-       ! Unsure if dmat tuple is correct w.r.t. what XCInt expects
 
-! Commented out until updated
-
-!        call xcint_integrate(XCINT_MODE_RKS, dmat_length,                 &
-!                             (/(dmat_tuple(j)%elms, j = 1, dmat_length)/), &
-!                             (/0.0d0/),                   &
-!                             xc_energy,                   &
-!                             get_ave,                     &
-!                             count(pert%plab == 'GEO '),  &
-!                             (/ (indices(i, j), j = 1, count(pert%plab == 'GEO ')) /), &
-!                             count(pert%plab == 'EL  '),  &
-!                             kn,                          &
-!                             force_sequential)
-!
-!        res(element) = cmplx(xc_energy, 0.0d0)
+       call xcint_wakeup_workers()
+       call xcint_integrate(XCINT_MODE_RKS,                               &
+                            num_pert,                                     &
+                            xc_pert,                                      &
+                            comp,                                         &
+                            dmat_length,                                  &
+                            dmat_to_pert,                                 &
+                            dmat_to_comp,                                 &
+                            (/(dmat_tuple(j)%elms, j = 1, dmat_length)/), &
+                            1,                                            &
+                            xc_energy,                                    &
+                            0,                                            &
+                            dummy_real,                                   &
+                            num_electrons)
+       res(element) = cmplx(xc_energy(1), 0.0d0)
 
     end do
 
@@ -465,6 +475,10 @@ contains
     deallocate(enc_perts)
     deallocate(pert_ids)
     deallocate(dmat_tuple)
+    deallocate(xc_pert)
+    deallocate(comp)
+    deallocate(dmat_to_pert)
+    deallocate(dmat_to_comp)
 
   end subroutine
 
@@ -503,7 +517,7 @@ contains
       type(SDF)                    :: D_sdf
 !     --------------------------------------------------------------------------
       complex(8)                   :: res(property_size) !fixme, allocate
-      integer                      :: i, j, k, l, m, n, p
+      integer                      :: i, j, k, l, m, n, p, ii
       integer                      :: maxcomp1, maxcomp2, maxcomp3, maxcomp4, maxcomp5, maxcomp6
       integer                      :: element
       integer                      :: num_dmat
@@ -513,13 +527,10 @@ contains
       integer                      :: ipart
       logical                      :: combination_found
       type(matrix),   allocatable  :: dmat_tuple(:)
-      real(c_double)               :: xc_energy
-      integer(c_int)              :: get_ave
-      integer(c_int)              :: force_sequential
+      real(c_double)               :: xc_energy(1)
+      real(c_double)               :: num_electrons
+      real(c_double)               :: dummy_real(1)
 !     --------------------------------------------------------------------------
-
-      get_ave = 1
-      force_sequential = 0
 
       res = 0.0
 
@@ -570,6 +581,7 @@ contains
 
       end if
 
+#ifdef RABOOF
       if (num_geo == 0 .and. num_el == 5) then
          combination_found = .true.
 
@@ -668,31 +680,32 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m/))
 
                         call xcint_wakeup_workers()
-                        call xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
-                                             (/dmat_tuple(1)%elms,   &
-                                               dmat_tuple(2)%elms,   &
-                                               dmat_tuple(3)%elms,   &
-                                               dmat_tuple(4)%elms,   &
-                                               dmat_tuple(5)%elms,   &
-                                               dmat_tuple(6)%elms,   &
-                                               dmat_tuple(7)%elms,   &
-                                               dmat_tuple(8)%elms,   &
-                                               dmat_tuple(9)%elms,   &
-                                               dmat_tuple(10)%elms,   &
-                                               dmat_tuple(11)%elms,   &
-                                               dmat_tuple(12)%elms,   &
-                                               dmat_tuple(13)%elms,   &
-                                               dmat_tuple(14)%elms,   &
-                                               dmat_tuple(15)%elms,   &
-                                               dmat_tuple(16)%elms/), &
-                                               (/0.0d0/),              &
-                                               xc_energy,              &
-                                               get_ave,                &
+                        call xcint_integrate(XCINT_MODE_RKS, num_dmat, &
+                                             (/dmat_tuple(1)%elms,     &
+                                               dmat_tuple(2)%elms,     &
+                                               dmat_tuple(3)%elms,     &
+                                               dmat_tuple(4)%elms,     &
+                                               dmat_tuple(5)%elms,     &
+                                               dmat_tuple(6)%elms,     &
+                                               dmat_tuple(7)%elms,     &
+                                               dmat_tuple(8)%elms,     &
+                                               dmat_tuple(9)%elms,     &
+                                               dmat_tuple(10)%elms,    &
+                                               dmat_tuple(11)%elms,    &
+                                               dmat_tuple(12)%elms,    &
+                                               dmat_tuple(13)%elms,    &
+                                               dmat_tuple(14)%elms,    &
+                                               dmat_tuple(15)%elms,    &
+                                               dmat_tuple(16)%elms/),  &
                                                0,                      &
-                                               emptyint,                   &
+                                               emptyint,               &
                                                5,                      &
                                                kn,                     &
-                                               force_sequential)
+                                               1,                      &
+                                               xc_energy,              &
+                                               0,                      &
+                                               (/0.0d0/),              &
+                                               num_electrons)
 
                         res(element) = cmplx(xc_energy, 0.0d0)
 
@@ -886,16 +899,17 @@ contains
                                   blk_info, blk_sizes, (/i, j, k, l, m, n/))
 
                         call xcint_wakeup_workers()
-                        call xcint_integrate(XCINT_MODE_RKS, num_dmat,                      &
+                        call xcint_integrate(XCINT_MODE_RKS, num_dmat,                  &
                                              (/(dmat_tuple(i)%elms, i = 1, num_dmat)/), &
-                                               (/0.0d0/),              &
-                                               xc_energy,              &
-                                               get_ave,                &
-                                               0,                      &
-                                               emptyint,                   &
-                                               6,                      &
-                                               kn,                     &
-                                               force_sequential)
+                                               0,                                       &
+                                               emptyint,                                &
+                                               6,                                       &
+                                               kn,                                      &
+                                               1,                                       &
+                                               xc_energy,                               &
+                                               0,                                       &
+                                               (/0.0d0/),                               &
+                                               num_electrons)
 
                         res(element) = cmplx(xc_energy, 0.0d0)
 
@@ -919,16 +933,17 @@ contains
          do i = 1, num_atoms*3
             element = i
             call xcint_wakeup_workers()
-            call xcint_integrate(XCINT_MODE_RKS, 1,                      &
+            call xcint_integrate(XCINT_MODE_RKS, 1,      &
                                  (/dmat_tuple(1)%elms/), &
-                                 (/0.0d0/),              &
-                                 xc_energy,              &
-                                 get_ave,                &
                                  1,                      &
                                  (/i/),                  &
                                  0,                      &
                                  kn,                     &
-                                 force_sequential)
+                                 1,                      &
+                                 xc_energy,              &
+                                 0,                      &
+                                 (/0.0d0/),              &
+                                 num_electrons)
             res(element) = cmplx(xc_energy, 0.0d0)
          end do
       end if
@@ -952,12 +967,12 @@ contains
                                       dmat_tuple(2)%elms/), &
                                     (/0.0d0/),              &
                                     xc_energy,              &
-                                    get_ave,                &
+                                    get_xc_energy,                &
                                     2,                      &
                                     (/i, j/),               &
                                     0,                      &
                                     kn,                     &
-                                    force_sequential)
+                                    num_electrons)
 
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
@@ -984,12 +999,12 @@ contains
                                       dmat_tuple(2)%elms/), &
                                     (/0.0d0/),              &
                                     xc_energy,              &
-                                    get_ave,                &
+                                    get_xc_energy,                &
                                     1,                      &
                                     (/i/),                  &
                                     1,                      &
                                     kn,                     &
-                                    force_sequential)
+                                    num_electrons)
 
                res(element) = cmplx(xc_energy, 0.0d0)
             end do
@@ -1025,12 +1040,12 @@ contains
                                          dmat_tuple(4)%elms/), &
                                        (/0.0d0/),              &
                                        xc_energy,              &
-                                       get_ave,                &
+                                       get_xc_energy,                &
                                        3,                      &
                                        (/i, j, k/),            &
                                        0,                      &
                                        kn,                     &
-                                       force_sequential)
+                                       num_electrons)
 
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
@@ -1069,17 +1084,18 @@ contains
                                          dmat_tuple(4)%elms/), &
                                        (/0.0d0/),              &
                                        xc_energy,              &
-                                       get_ave,                &
+                                       get_xc_energy,                &
                                        2,                      &
                                        (/i, j/),               &
                                        1,                      &
                                        kn,                     &
-                                       force_sequential)
+                                       num_electrons)
                   res(element) = cmplx(xc_energy, 0.0d0)
                end do
             end do
          end do
       end if
+#endif /* RABOOF */
 
       if (num_geo == 1 .and. num_el == 2) then
          combination_found = .true.
@@ -1112,27 +1128,28 @@ contains
                             blk_info, blk_sizes, (/i, j, k/))
 
                   call xcint_wakeup_workers()
-                  call xcint_integrate(XCINT_MODE_RKS, 4,                      &
-                                       (/dmat_tuple(1)%elms,   &
-                                         dmat_tuple(2)%elms,   &
-                                         dmat_tuple(3)%elms,   &
-                                         dmat_tuple(4)%elms/), &
-                                       (/0.0d0/),              &
-                                       xc_energy,              &
-                                       get_ave,                &
-                                       1,                      &
-                                       (/i/),                  &
-                                       2,                      &
-                                       kn,                     &
-                                       force_sequential)
+                  call xcint_integrate(XCINT_MODE_RKS,                                   &
+                                       2+1,                                              &
+                                       (/XCINT_PERT_GEO, XCINT_PERT_EL, XCINT_PERT_EL/), &
+                                       (/i, i, 1, 1, 1, 1/),                             &
+                                       4,                                                &
+                                       (/0, 2, 4, 6/),                                   &
+                                       (/1, 1, 1, 1/),                                   &
+                                       (/(dmat_tuple(ii)%elms, ii = 1, 4)/),             &
+                                       1,                                                &
+                                       xc_energy,                                        &
+                                       0,                                                &
+                                       dummy_real,                                       &
+                                       num_electrons)
 
-                  res(element) = cmplx(xc_energy, 0.0d0)
+                  res(element) = cmplx(xc_energy(1), 0.0d0)
                end do
             end do
          end do
          print *, 'done computing XC ave GFF contribution'
       end if
 
+#ifdef RABOOF
       if (num_geo == 4 .and. num_el == 0) then
          combination_found = .true.
 
@@ -1180,12 +1197,12 @@ contains
                                             dmat_tuple(8)%elms/), &
                                           (/0.0d0/),              &
                                           xc_energy,              &
-                                          get_ave,                &
+                                          get_xc_energy,                &
                                           4,                      &
                                           (/i, j, k, l/),         &
                                           0,                      &
                                           kn,                     &
-                                          force_sequential)
+                                          num_electrons)
 
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -1241,12 +1258,12 @@ contains
                                             dmat_tuple(8)%elms/), &
                                           (/0.0d0/),              &
                                           xc_energy,              &
-                                          get_ave,                &
+                                          get_xc_energy,                &
                                           3,                      &
                                           (/i, j, k/),            &
                                           1,                      &
                                           kn,                     &
-                                          force_sequential)
+                                          num_electrons)
 
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -1309,12 +1326,12 @@ contains
                                             dmat_tuple(8)%elms/), &
                                           (/0.0d0/),              &
                                           xc_energy,              &
-                                          get_ave,                &
+                                          get_xc_energy,                &
                                           2,                      &
                                           (/i, j/),               &
                                           2,                      &
                                           kn,                     &
-                                          force_sequential)
+                                          num_electrons)
 
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -1401,12 +1418,12 @@ contains
                                             dmat_tuple(8)%elms/), &
                                           (/0.0d0/),              &
                                           xc_energy,              &
-                                          get_ave,                &
+                                          get_xc_energy,                &
                                           1,                      &
                                           (/l/),                  &
                                           3,                      &
                                           kn,                     &
-                                          force_sequential)
+                                          num_electrons)
 
                      res(element) = cmplx(xc_energy, 0.0d0)
                   end do
@@ -1761,6 +1778,7 @@ contains
             end do
          end do
       end if
+#endif /* RABOOF */
 
       deallocate(dmat_tuple)
 
@@ -1809,16 +1827,16 @@ contains
       integer              :: imat, i, j
       integer              :: mat_dim
       integer              :: num_atoms
-      integer(c_int)       :: num_dmat
+      integer(c_int)              :: num_dmat
+      integer(c_int), allocatable :: pert(:)
+      integer(c_int), allocatable :: comp(:)
+      integer(c_int), allocatable :: dmat_to_pert(:)
+      integer(c_int), allocatable :: dmat_to_comp(:)
       real(c_double), allocatable :: xc_dmat(:)
-      real(c_double), allocatable :: xc_fmat(:)
-      real(c_double)              :: xc_energy
-      integer(c_int)       :: get_ave
-      integer(c_int)       :: force_sequential
+      real(c_double), allocatable :: xc_mat(:)
+      real(c_double)              :: xc_energy(1)
+      real(c_double)              :: num_electrons
 !     ---------------------------------------------------------------------------
-
-      get_ave = 0
-      force_sequential = 0
 
       if (.not. get_is_ks_calculation()) then
          return
@@ -1834,61 +1852,99 @@ contains
          call daxpy(mat_dim*mat_dim, 1.0d0, D(imat)%elms, 1, xc_dmat((imat-1)*mat_dim*mat_dim + 1), 1)
       end do
 
-      allocate(xc_fmat(mat_dim*mat_dim))
+      allocate(xc_mat(mat_dim*mat_dim))
+      allocate(dmat_to_pert(num_dmat))
+      allocate(dmat_to_comp(num_dmat))
+      dmat_to_pert = 1 ! FIXME not used
+      dmat_to_comp = 1
 
       if (present(F)) then
+         allocate(pert(num_dmat-1))
+         allocate(comp(2*(num_dmat-1)))
+         pert = XCINT_PERT_EL
+         comp = 0
          call xcint_wakeup_workers()
-         call xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
-                              xc_dmat,   &
-                              xc_fmat,   &
-                              xc_energy, &
-                              get_ave,   &
-                              0,         &
-                              (/0/),     &
-                              num_dmat-1, &
-                              (/0, 0/),  &
-                              force_sequential)
-         call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+         call xcint_integrate(XCINT_MODE_RKS, &
+                              num_dmat-1,     &
+                              pert,           &
+                              comp,           &
+                              num_dmat,       &
+                              dmat_to_pert,   &
+                              dmat_to_comp,   &
+                              xc_dmat,        &
+                              0,              &
+                              xc_energy,      &
+                              1,              &
+                              xc_mat,         &
+                              num_electrons)
+         call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, F%elms, 1)
       end if
 
       if (present(Fg)) then
+         allocate(pert(1+num_dmat-1))
+         allocate(comp(2*(1+num_dmat-1)))
+         pert = XCINT_PERT_EL
+         pert(1) = XCINT_PERT_GEO
+         comp = 0
          do i = 1, num_atoms*3
+            comp(1) = i
+            comp(2) = i
             call xcint_wakeup_workers()
-            call xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
-                                 xc_dmat,   &
-                                 xc_fmat,   &
-                                 xc_energy, &
-                                 get_ave,   &
-                                 1,         &
-                                 (/i/),     &
-                                 num_dmat-1, &
-                                 (/0, 0/),  &
-                                 force_sequential)
-            call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fg(i)%elms, 1)
+            call xcint_integrate(XCINT_MODE_RKS, &
+                                 1+num_dmat-1,   &
+                                 pert,           &
+                                 comp,           &
+                                 num_dmat,       &
+                              dmat_to_pert,   &
+                              dmat_to_comp,   &
+                                 xc_dmat,        &
+                                 0,              &
+                                 xc_energy,      &
+                                 1,              &
+                                 xc_mat,         &
+                                 num_electrons)
+            call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, Fg(i)%elms, 1)
          end do
       end if
 
       if (present(Fgg)) then
+         allocate(pert(2+num_dmat-1))
+         allocate(comp(2*(2+num_dmat-1)))
+         pert = XCINT_PERT_EL
+         pert(1) = XCINT_PERT_GEO
+         pert(2) = XCINT_PERT_GEO
+         comp = 0
          do i = 1, num_atoms*3
+            comp(1) = i
+            comp(2) = i
             do j = 1, i
+               comp(1) = j
+               comp(2) = j
                call xcint_wakeup_workers()
-               call xcint_integrate(XCINT_MODE_RKS, num_dmat,   &
-                                    xc_dmat,   &
-                                    xc_fmat,   &
-                                    xc_energy, &
-                                    get_ave,   &
-                                    2,         &
-                                    (/i, j/),  &
-                                    num_dmat-1, &
-                                    (/0, 0/),  &
-                                    force_sequential)
-               call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, Fgg(i, j)%elms, 1)
+               call xcint_integrate(XCINT_MODE_RKS, &
+                                    2+num_dmat-1,   &
+                                    pert,           &
+                                    comp,           &
+                                    num_dmat,       &
+                              dmat_to_pert,   &
+                              dmat_to_comp,   &
+                                    xc_dmat,        &
+                                    0,              &
+                                    xc_energy,      &
+                                    1,              &
+                                    xc_mat,         &
+                                    num_electrons)
+               call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, Fgg(i, j)%elms, 1)
             end do
          end do
       end if
 
       deallocate(xc_dmat)
-      deallocate(xc_fmat)
+      deallocate(xc_mat)
+      deallocate(dmat_to_pert)
+      deallocate(dmat_to_comp)
+      if (allocated(pert)) deallocate (pert)
+      if (allocated(comp)) deallocate (comp)
 
    end subroutine
 
