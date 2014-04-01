@@ -11,11 +11,11 @@ test = TestRun(__file__, sys.argv)
 f = Filter()
 f.add(from_string  = 'no-London Magnetizability = Eoo',
       num_lines    = 4,
-      tolerance    = 1.0e-5,
+      rel_tolerance    = 1.0e-5,
       ignore_below = 1.0e-9)
 f.add(from_string  = 'London Magnetizability = Ebb',
       num_lines    = 4,
-      tolerance    = 1.0e-5,
+      rel_tolerance    = 1.0e-5,
       ignore_below = 1.0e-9)
 
 test.run(['hf.dal'], ['h2o2.mol', 'fh.mol'], {'stdout': f})

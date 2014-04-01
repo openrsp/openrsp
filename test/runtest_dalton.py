@@ -26,11 +26,14 @@ class TestRun(runtest.TestRun):
     def run(self, inp_files, mol_files, f=None, args='', accepted_errors=[]):
 
         dalton_script = os.path.normpath(os.path.join(self.binary_dir, 'dalton'))
-        if not os.path.exists(dalton_script):
-            sys.stderr.write('ERROR: dalton script not found in %s\n' % dalton_script)
-            sys.stderr.write('       have you set the correct --binary-dir (or -b)?\n')
-            sys.stderr.write('       try also --help\n')
-            sys.exit(-1)
+        if self.skip_run:
+            sys.stdout.write('\nskipping actual run\n')
+        else:
+            if not os.path.exists(dalton_script):
+                sys.stderr.write('ERROR: dalton script not found in %s\n' % dalton_script)
+                sys.stderr.write('       have you set the correct --binary-dir (or -b)?\n')
+                sys.stderr.write('       try also --help\n')
+                sys.exit(-1)
 
         launcher = '%s -noarch -nobackup %s' % (dalton_script, args)
 
