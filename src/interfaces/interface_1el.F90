@@ -154,6 +154,8 @@ contains
 ! MaR: Removing a currently wrong contribution to test other parts of code
 if (order_mag > 0) then
  
+!  write(*,*) 'mag london'
+ 
         ! MR: PARAMETERS FOR ADAPTED gen1int CALL BELOW ARE MAYBE SPECIFIED 
         ! INCORRECTLY (ALSO LAST ARG)
             ! calculates the expectaion values of overlap matrix
@@ -210,7 +212,7 @@ end if
 
 ! MaR: Quick fix to get addressing in order
 if (order_mag > 0) then
-
+! write(*,*) 'mag london addressing'
 ! write(*,*) 'val expt', val_expt(:,1)
 
 ave(1) = val_expt(1,1)
@@ -368,7 +370,7 @@ if ((count(fbra=='EL  ') == 0) .and. (count(fket=='EL  ') == 0) ) then
           ! MAKE THE CORRESPONDING OVLAVE TYPE ROUTINE
 
           ! Just magnetic to think about for now
-          ave = tmp_ave
+          ave = -tmp_ave
 
 ! if ((count(fbra=='MAG ') == 1) .or. (count(fket=='MAG ') == 1)) then
 ! 
@@ -456,7 +458,7 @@ end if
       integer :: ixyz, i
 
       ! gets the order of Cartesian multipole moments
-      order_mom = count(f=='EL  ')
+      order_mom = count(f=='EL  ') + count(f=='MAG0')
       order_elgr = count(f=='ELGR')
       order_mag = count(f=='MAG ')
       order_magnl = count(f=='MAG0')
@@ -469,6 +471,13 @@ end if
 
          allocate(order_derv(num_derv))
          order_derv = (/count(f=='EL  ')/)
+         
+      else if (count(f=='MAG0') > 0) then
+
+         num_derv = 1
+
+         allocate(order_derv(num_derv))
+         order_derv = (/count(f=='MAG0')/)
 
       else
 
@@ -480,20 +489,24 @@ end if
 
 ave = 0.0
 
+! write(*,*) 'mag, mom a', order_mag, order_mom
+
       if (order_mom > 1) then
          ave = 0.0
       else if ((order_elgr > 0) .AND. (order_mom > 0)) then
          ave = 0.0
-      else if ((order_mag > 0) .AND. (order_mom > 0)) then
+      else if ((order_mag > 0) .AND. (order_mom > 1)) then
          ave = 0.0
-      else if ((order_magnl > 0) .AND. (order_mom > 0)) then
+      else if ((order_magnl > 0) .AND. (count(f=='EL  ') > 0)) then
          ave = 0.0
-      else if ((order_magnl > 0) .AND. (count(f=='GEO ') > 0)) then
-         ave = 0.0
+!       else if ((order_magnl > 0) .AND. (count(f=='GEO ') > 0)) then
+!          ave = 0.0
       else if ((order_elgr > 1)) then
          ave = 0.0
       else
 
+! write(*,*) 'mag, mom b', order_mag, order_mom      
+      
          ! gets the order of total geometric derivatives
          order_geo = count(f=='GEO ')
 !          if (order_mom+order_geo/=nf) then
@@ -515,7 +528,7 @@ ave = 0.0
          ! MR: PARAMETERS FOR ADAPTED gen1int CALLS BELOW ARE MAYBE SPECIFIED 
          ! INCORRECTLY (ALSO LAST ARG)
          ! electric perturbations
-         if (order_mom/=0 .or. order_elgr/=0) then
+         if ((count(f=='EL  ')/=0 .or. order_elgr/=0) .and. (order_mag == 0)) then
 
             call gen1int_host_get_expt(NON_LAO, INT_CART_MULTIPOLE, &
                                        order_mom + 2*order_elgr,    &  !multipole moments
@@ -538,6 +551,36 @@ ave = 0.0
                                        get_print_unit(), 0)
          else if (order_mag > 0) then
 
+!          write(*,*) 'mag, mom c', order_mag, order_mom
+         
+         if (order_mom == 1) then
+         
+!                    write(*,*) 'mag london, order_el', order_mom
+         
+            call gen1int_host_get_expt(LONDON, INT_CART_MULTIPOLE, &
+                                       order_mom,    &  !multipole moments
+                                       0,                           &
+                                       0, 0, order_mag,             &  !magnetic derivatives
+                                       0, 0, 0,                     &  !derivatives w.r.t. total RAM
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on bra center
+                                       0, 0, 0, (/0/),              &  !geometric derivatives on ket center
+                                       order_geo,                   &  !total geometric derivatives
+                                       order_geo,                   &
+                                       0, (/0/),                    &
+                                       .false., .false., .false.,   &  !not implemented yet
+                                       1, (/D/), propsize,          &  !expectation values
+                                       val_expt, .false.,           &
+#ifdef PRG_DIRAC
+                                       2, (/1, 1, 2, 2/),           &
+#else
+                                       1, (/1, 1/),                &
+#endif
+                                       get_print_unit(), 10)
+         
+         else if (order_mom ==0) then
+         
+!                    write(*,*) 'mag london, order_el', order_mom
+         
             call gen1int_host_get_expt(LONDON, INT_ONE_HAMIL, &
                                        0,    &  !multipole moments
                                        0,                           &
@@ -557,6 +600,9 @@ ave = 0.0
                                        1, (/1, 1/),                &
 #endif
                                        get_print_unit(), 10)
+         end if
+         
+
 
 else if (order_magnl > 0) then
 ! NOT SURE ABOUT WHICH INTEGRALS TO CALL FOR HERE
@@ -687,17 +733,43 @@ else if (order_magnl > 0) then
 ! MaR: Quick fixes to get addressing in order
 if (order_mag > 0) then
 
-ave(1) = val_expt(1,1)
-ave(2) = val_expt(2,1)
-ave(3) = val_expt(3,1)
+if (order_mom == 0) then
 
-elseif (order_magnl > 0) then
+! write(*,*) 'mag london addressing'
 
 ave(1) = val_expt(1,1)
 ave(2) = val_expt(2,1)
 ave(3) = val_expt(3,1)
 
+else if (order_mom == 1) then
 
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(3,1)
+
+ave(4) = val_expt(4,1)
+ave(5) = val_expt(5,1)
+ave(6) = val_expt(6,1)
+
+ave(7) = val_expt(7,1)
+ave(8) = val_expt(8,1)
+ave(9) = val_expt(9,1)
+
+
+
+
+end if
+
+
+elseif ((order_magnl > 0) .AND. (order_geo == 0)) then
+
+if (order_geo == 0) then
+
+ave(1) = val_expt(1,1)
+ave(2) = val_expt(2,1)
+ave(3) = val_expt(3,1)
+
+end if
 
 
 elseif (order_elgr > 0) then
@@ -713,7 +785,7 @@ ave(6) = val_expt(6,1)
 
 else if(order_geo == 1) then
 
-! NEED TO VERIFY ORDERING - THIS IS JUST A GUESS AND LIKELY WRONG
+! NEED TO VERIFY ORDERING - THIS IS JUST A GUESS
 
 do i = 1, 3*num_atom
 
@@ -771,6 +843,10 @@ else
             end do
 
             ave_offset = get_triang_blks_offset(nblks, nf, blk_info, blk_sizes, tmp_index)
+!             write(*,*) 'tmp index', tmp_index
+!             write(*,*) 'tmp index', tmp_index
+!             
+!             write(*,*) 'offs', ave_offset, 'addr', i
             ave(ave_offset) = val_expt(i,1)
 
          end do
@@ -1174,7 +1250,7 @@ end if
          num_derv = 1
 
          allocate(order_derv(num_derv))
-         order_derv = (/count(f=='EL  ')/)
+         order_derv = (/count(f=='MAG0')/)
 
       else
 

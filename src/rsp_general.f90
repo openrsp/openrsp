@@ -22,6 +22,7 @@ module rsp_general
                              p_tuple_getone,         &
                              p_tuple_extend,         &
                              get_emptypert,          &
+                             empty_p_tuple,          &
                              p_tuples_standardorder, &
                              merge_p_tuple,          &
                              p_tuple_p1_cloneto_p2
@@ -74,6 +75,12 @@ module rsp_general
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
+  
+  ! NEW 2014
+  
+  public openrsp_get_property_2014
+  
+  ! END NEW 2014
 
   type(matrix) :: zeromat
 
@@ -83,6 +90,304 @@ module rsp_general
   real(8) :: time_end
 
   contains
+  
+  
+  
+  ! NEW 2014  
+
+   subroutine openrsp_get_property_2014(num_perts, pert_dims, pert_first_comp, pert_labels, pert_freqs, &
+                                   kn, get_unpert_scf, get_rsp_solution, get_nucpot_contrib, &
+                                   get_1el_contrib, get_2el_contrib, get_xc_contrib, & 
+                                   id_outp, property_size, rsp_tensor, file_id)
+
+    implicit none
+
+    integer, intent(in) :: num_perts, id_outp
+    integer, dimension(num_perts), intent(in) :: pert_dims, pert_first_comp, pert_labels
+    integer :: i, j, num_blks, property_size
+    integer, dimension(2) :: kn
+    character, optional, dimension(20) :: file_id
+    integer, allocatable, dimension(:) :: blk_sizes
+    integer, allocatable, dimension(:,:) :: blk_info
+    complex(8), dimension(num_perts), intent(in) :: pert_freqs
+    complex(8), allocatable, dimension(:) :: prop
+    real :: timing_start, timing_end
+    type(p_tuple) :: perturbations
+    external :: get_unpert_scf, get_rsp_solution, get_nucpot_contrib
+    external :: get_1el_contrib, get_2el_contrib, get_xc_contrib
+    complex(8), dimension(*), intent(out) :: rsp_tensor
+    type(matrix) :: S_unpert, D_unpert, F_unpert
+    type(SDF), pointer :: S, D, F
+
+!     perturbations%n_perturbations = num_perts
+!     allocate(perturbations%perts(num_perts))
+!     perturbations%perts%pdim = pert_dims
+!     perturbations%perts%pfcomp = pert_first_comp
+!     perturbations%perts%plab = pert_labels
+!     perturbations%perts%pid = (/(i, i = 1, num_perts)/)
+!     perturbations%perts%freq = pert_freqs
+
+    write(id_outp,*) ' '
+    write(id_outp,*) 'OpenRSP lib called'
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating a property of order ', num_perts
+    write(id_outp,*) 'The choice of k, n is ', kn(1), ' and ', kn(2)
+    write(id_outp,*) ' '
+    write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims
+!     write(id_outp,*) 'The first component of each perturbation is:          ', pert_first_comp
+    write(id_outp,*) 'The perturbation labels are:                          ', pert_labels
+    write(id_outp,*) 'The frequencies of the perturbations (real part) are: ', (/(real(pert_freqs(i)), i = 1, num_perts)/)
+    write(id_outp,*) 'The frequencies of the perturbations (imag. part) are:', (/(aimag(pert_freqs(i)), i = 1, num_perts)/)
+    write(id_outp,*) ' '
+ 
+    if ((kn(1) - kn(2) > 1) .OR. .NOT.(kn(1) + kn(2) == num_perts - 1)) then
+
+       write(id_outp,*) 'ERROR: Invalid choice of (k,n)'
+       write(id_outp,*) 'Valid choices for k are integers between and including 0 and ', num_perts/2
+       write(id_outp,*) 'Valid choices of n are such that k + n =', num_perts - 1
+       write(id_outp,*) 'Cannot proceed with calculation: Exiting OpenRSP lib'
+       write(id_outp,*) ' '
+       return
+ 
+    end if
+
+    call get_unpert_scf(S_unpert, D_unpert, F_unpert)
+
+    call sdf_setup_datatype(S, S_unpert)
+    call sdf_setup_datatype(D, D_unpert)
+    call sdf_setup_datatype(F, F_unpert)
+
+
+    num_blks = get_num_blks(perturbations)
+    allocate(blk_info(num_blks, 3))
+    allocate(blk_sizes(num_blks))
+    blk_info = get_blk_info(num_blks, perturbations)
+    blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
+                                     blk_info(1:num_blks, 3))
+
+    property_size = get_triangulated_size(num_blks, blk_info)
+
+    allocate(prop(property_size))
+
+    write(id_outp,*) 'Starting clock: About to call get_prop routine'
+    write(id_outp,*) ' '
+
+    call cpu_time(timing_start)
+
+    call get_prop_2014(perturbations, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_solution, &
+                  get_nucpot_contrib, get_1el_contrib, get_2el_contrib, get_xc_contrib, &
+                  id_outp, property_size, prop)
+
+    call cpu_time(timing_end)
+
+    write(id_outp,*) 'Clock stopped: Property was calculated'
+    write(id_outp,*) 'Time spent in get_prop:',  timing_end - timing_start, ' seconds'
+    write(id_outp,*) ' '
+
+    write(id_outp,*) 'Property was calculated'
+    write(id_outp,*) ' '
+
+    if (present(file_id)) then
+!        open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
+!             status='replace', action='write') 
+!        open(unit=261, file='rsp_tensor_human_' // trim(adjustl(file_id)), &
+!             status='replace', action='write') 
+    else
+       open(unit=260, file='rsp_tensor', &
+            status='replace', action='write') 
+       open(unit=261, file='rsp_tensor_human', &
+            status='replace', action='write') 
+    end if
+
+!     call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
+!     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
+!     blk_info, property_size, prop, 260, 261)
+
+    close(260)
+    close(261)
+
+    if (present(file_id)) then
+!        write(*,*) 'Property was printed to rsp_tensor_' // trim(adjustl(file_id))
+!        write(*,*) 'Property (formatted print) was printed to rsp_tensor_human_' &
+!                    // trim(adjustl(file_id)) 
+    else
+       write(*,*) 'Property was printed to rsp_tensor'
+       write(*,*) 'Property (formatted print) was printed to rsp_tensor_human'
+    end if
+
+    write(*,*) ' '
+    write(*,*) 'End of print'
+
+!     call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
+!     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
+!     blk_info, property_size, prop, id_outp, id_outp)
+
+    open(unit=257, file='totterms', status='old', action='write', position='append') 
+    write(257,*) 'END'
+    close(257)
+
+    open(unit=257, file='cachehit', status='old', action='write', position='append') 
+    write(257,*) 'END'
+    close(257)
+
+    deallocate(blk_info)
+
+  end subroutine
+  
+  
+
+  
+  
+
+  subroutine get_prop_2014(pert, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_solution, &
+                  get_nucpot_contrib, get_1el_contrib, get_2el_contrib, get_xc_contrib, &
+                  id_outp, property_size, prop)
+
+    implicit none
+
+    type(p_tuple) :: pert, emptypert
+    type(p_tuple), dimension(2) :: emptyp_tuples
+    integer :: property_size, num_blks, id_outp
+    integer, dimension(2) :: kn
+    integer, dimension(num_blks) :: blk_sizes
+    integer, dimension(num_blks,3) :: blk_info
+    type(SDF) :: F, D, S
+    external :: get_rsp_solution, get_nucpot_contrib, get_1el_contrib
+    external :: get_2el_contrib, get_xc_contrib
+    complex(8), dimension(property_size) :: prop, p_diff
+    type(property_cache), pointer :: contrib_cache
+
+    call empty_p_tuple(emptypert)
+    emptyp_tuples = (/emptypert, emptypert/)
+
+    prop = 0.0
+
+
+    ! Get all necessary F, D, S derivatives as dictated by
+    ! number of perturbations and kn
+
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating perturbed overlap/density/Fock matrices'
+    write(id_outp,*) ' '
+
+    call cpu_time(time_start)
+!     call rsp_fds(pert, kn, F, D, S, get_rsp_solution, get_1el_contrib, &
+!                  get_2el_contrib, get_xc_contrib, id_outp)
+    call cpu_time(time_end)
+
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(id_outp,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
+    write(id_outp,*) ' '
+
+
+    call property_cache_allocate(contrib_cache)
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating HF-energy type contribs'
+    write(id_outp,*) ' '
+
+    call cpu_time(time_start)
+!     call rsp_energy(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, get_nucpot_contrib, &
+!                     get_1el_contrib, get_2el_contrib, property_size, contrib_cache, prop)
+    call cpu_time(time_end)
+
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(id_outp,*) 'Finished calculating HF energy-type contribs'
+    write(id_outp,*) ' '
+    deallocate(contrib_cache)
+
+
+    write(*,*) ' '
+    write(*,*) 'Calculating exchange/correlation contribs'
+    write(*,*) ' '
+    call cpu_time(time_start)
+!     call rsp_xcave_interface(pert, kn, num_blks, blk_sizes, blk_info, D, &
+!                              get_xc_contrib, property_size, prop)
+    call cpu_time(time_end)
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(*,*) 'Finished calculating exchange/correlation contribs'
+    write(*,*) ' '
+
+
+    call property_cache_allocate(contrib_cache)
+    write(*,*) ' '
+    write(*,*) 'Calculating Pulay n type contribs'
+    write(*,*) ' '
+    call cpu_time(time_start)
+!     call rsp_pulay_n(pert, kn, (/emptypert, emptypert/), S, D, F, &
+!                      get_1el_contrib, property_size, contrib_cache, prop)
+    call cpu_time(time_end)
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(*,*) ' '
+    write(*,*) 'Finished calculating Pulay n type contribs'
+    write(*,*) ' '
+    deallocate(contrib_cache)
+
+    ! There are Lagrangian type contribs only when not using n + 1 rule
+    if (kn(2) < pert%n_perturbations) then
+
+       call property_cache_allocate(contrib_cache)
+       write(*,*) ' '
+       write(*,*) 'Calculating Pulay Lagrangian type contribs'
+       write(*,*) ' '
+       call cpu_time(time_start)
+!        call rsp_pulay_lag(p_tuple_remove_first(pert), kn, &
+!                           (/p_tuple_getone(pert,1), emptypert/), &
+!                           S, D, F, property_size, contrib_cache, prop)
+       call cpu_time(time_end)
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(*,*) ' '
+       write(*,*) 'Finished calculating Pulay Lagrangian type contribs' 
+       write(*,*) ' '
+   
+       deallocate(contrib_cache)
+   
+   
+       call property_cache_allocate(contrib_cache)
+       write(*,*) ' '
+       write(*,*) 'Calculating idempotency Lagrangian type contribs'
+       write(*,*) ' '
+       call cpu_time(time_start)
+!        call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
+!                          (/p_tuple_getone(pert,1), emptypert/), &
+!                          S, D, F, property_size, contrib_cache, prop)
+       call cpu_time(time_end)
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(*,*) ' '
+       write(*,*) 'Finished calculating idempotency Lagrangian type contribs'
+       write(*,*) ' '
+   
+       deallocate(contrib_cache)
+   
+   
+       call property_cache_allocate(contrib_cache)
+       write(*,*) ' '
+       write(*,*) 'Calculating SCF Lagrangian type contribs'
+       write(*,*) ' '
+       call cpu_time(time_start)
+!        call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
+!                          (/p_tuple_getone(pert,1), emptypert/), &
+!                          S, D, F, property_size, contrib_cache, prop)
+       call cpu_time(time_end)
+   
+   
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(*,*) ' '
+       write(*,*) 'Finished calculating SCF Lagrangian type contribs'
+       write(*,*) ' '
+
+       deallocate(contrib_cache)
+
+    end if
+
+  end subroutine
+  
+  
+  ! END NEW 2014
+  
+  
+  
+  
+  
 
 ! Supports supplying F, D, S instances through F_already etc.
 ! (must then also give zeromat_already) or 
@@ -751,6 +1056,9 @@ module rsp_general
                             blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, contrib)
    
           end if
+          
+!           write(*,*) ' '
+!           write(*,*) 'oneave contrib',  real(contrib(1:3))
    
           tmp = tmp + contrib
           contrib = 0.0
@@ -776,7 +1084,11 @@ module rsp_general
    
           end if
    
-          tmp = tmp + contrib
+!    write(*,*) ' '
+!           write(*,*) 'ovlave t contrib', real(contrib(1:3))
+   
+   
+          tmp = tmp - contrib
           contrib = 0.0
    
           if (num_p_tuples == 1) then
@@ -801,7 +1113,11 @@ module rsp_general
                              inner_indices_size, contrib)
     
           end if
-    
+
+!           write(*,*) ' '
+!           write(*,*) 'twoave contrib', real(contrib(1:3))
+   
+              
           tmp = tmp + contrib
     
           if (p_tuples(1)%n_perturbations > 0) then
@@ -812,6 +1128,8 @@ module rsp_general
                          nblks_tuple, (/ (p_tuples(k)%n_perturbations, k = 1, num_p_tuples) /), &
                          blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                          (/inner_indices(j, :), outer_indices(i, :) /)) 
+!     write(*,*) 'indices', (/inner_indices(j, :), outer_indices(i, :) /)
+!     write(*,*) 'offset in cache', offset, 'is j', j
     
                 prop_forcache(offset) = prop_forcache(offset) + tmp(j)
     
@@ -912,6 +1230,10 @@ module rsp_general
     
           end if
    
+!    write(*,*) 'pr indices are', triang_indices_pr(i,:)
+!       write(*,*) 'translated index is', translated_index(:)
+!    write(*,*) 'offset in prop', pr_offset, 'is cache offset', ec_offset
+   
           prop(pr_offset) = prop(pr_offset) + prop_forcache(ec_offset)
    
        end do
@@ -948,6 +1270,9 @@ module rsp_general
                        D_unp, nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
                        blk_sizes(1, 1:nblks_tuple(1)), property_size, contrib)
 
+!                                  write(*,*) ' '
+!           write(*,*) 'oneave contrib', real(contrib(1:3))
+                       
        tmp = tmp + contrib
        contrib = 0.0
 
@@ -958,13 +1283,19 @@ module rsp_general
                                 t_matrix_bra, t_matrix_ket, &
                                 D_unp, inner_indices_size, contrib)
 
-       tmp = tmp + contrib
+!                                           write(*,*) ' '
+!           write(*,*) 'ovlave t mat contrib', real(contrib(1:3))
+                                
+       tmp = tmp - contrib
        contrib = 0.0
 
        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
                        D_unp, D_unp, property_size, contrib)
 
+!                                  write(*,*) ' '
+!           write(*,*) 'twoave contrib', real(contrib(1:3))
+                       
        tmp = tmp + 0.5*(contrib)
 
        prop =  prop + tmp
@@ -1223,6 +1554,12 @@ module rsp_general
        call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
                              p12(2)%n_perturbations, which_index_is_pid, &
                              p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
+ 
+!  if (i == 1) then
+!  
+!  write(*,*) 'Perturbed W', W%elms
+!  
+!  end if
  
        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
                           (/ (j/j, j = 1, p12(1)%n_perturbations) /), &

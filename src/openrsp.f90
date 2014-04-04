@@ -55,7 +55,7 @@ module openrsp
   use interface_pelib, only: pe_add_full_operator
   use pe_variables, only: peqm
   use rsp_field_tuple, only: p_tuple, p_tuple_standardorder
-  use rsp_general, only: rsp_prop
+  use rsp_general, only: rsp_prop, openrsp_get_property_2014
   use openrsp_cfg
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel,  only: mat_init
@@ -75,6 +75,13 @@ module openrsp
   public openrsp_calc
   public openrsp_finalize
 
+  ! NEW 2014
+  
+  public openrsp_calculation_setup
+  public write_rsp_tensor
+  
+  ! END NEW 2014
+  
   private
 
   ! ------------- SCF state and settings ------------
@@ -126,6 +133,47 @@ interface xcint_integrate
 end interface
 
 contains
+
+! NEW 2014
+
+  subroutine openrsp_calculation_setup(num_pert, pert_dims, pert_first_comp, pert_labels, &
+             pert_freqs, scf_routine, rsp_solver_routine, nucpot_routine, oneel_routine, &
+             twoel_routine, xc_routine, prop_size, rsp_tensor, file_id)
+
+    implicit none
+    
+    integer :: num_pert, id_outp, prop_size
+    integer, allocatable, dimension(:) :: pert_labels, pert_dims, pert_first_comp, pert_names
+    integer , dimension(2) :: kn
+    character, dimension(20) :: file_id
+    complex(8), allocatable, dimension(:) :: pert_freqs, rsp_tensor
+    external :: scf_routine, rsp_solver_routine
+    external :: nucpot_routine, oneel_routine, twoel_routine, xc_routine
+    external :: mat_dim, max_mem_mat, unused_iounit, use_disk_for_mat, save_sdf_end
+    
+    call openrsp_get_property_2014(num_pert, pert_names, pert_labels, pert_dims, pert_freqs, &
+                              kn, scf_routine, rsp_solver_routine, nucpot_routine, oneel_routine, &
+                              twoel_routine, xc_routine, id_outp, prop_size, rsp_tensor, file_id)
+                              
+    call write_rsp_tensor(prop_size, rsp_tensor)
+    
+    
+  end subroutine
+  
+  
+  subroutine write_rsp_tensor(prop_size, rsp_tensor)
+  
+    implicit none
+   
+    integer :: prop_size
+    complex(8), dimension(prop_size) :: rsp_tensor
+
+    
+  end subroutine
+
+
+
+! END NEW 2014
 
   subroutine openrsp_setup(LWORK, WORK)
     integer, intent(in)    :: LWORK
@@ -4039,8 +4087,8 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, file_id='Effff')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4085,9 +4133,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, &
-!                            file_id='Effqfww')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effqfww')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4134,9 +4182,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, &
-!                            file_id='Effqfw2w')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effqfw2w')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4185,9 +4233,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, &
-!                            file_id='Emfffww')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Emfffww')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
@@ -4207,6 +4255,11 @@ do k = 1, openrsp_cfg_nr_freq_tuples
 
        close(258)
 
+       
+                 write(*,*) 'Isotropic (a.u.):', real(((1.0)/(15.0)) * sum ((/ ((Effmfww(i,i,j,j) + &
+                       Effmfww(i,j,i,j) + Effmfww(i,j,j,i), i = 1, 3), j = 1, 3) /)))
+       
+       
        deallocate(perturbation_tuple%pdim)
        deallocate(perturbation_tuple%plab)
        deallocate(perturbation_tuple%pid)
@@ -4231,9 +4284,9 @@ do k = 1, openrsp_cfg_nr_freq_tuples
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-!        call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-!                            S_already=S_already, zeromat_already=zeromat_already, &
-!                            file_id='Effmfw2w')
+       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                           S_already=S_already, zeromat_already=zeromat_already, &
+                           file_id='Effmfw2w')
 
 
        ! Read dipole moment gradient from file and transform to normal mode basis
