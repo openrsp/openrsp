@@ -18,7 +18,6 @@ subroutine pe_add_full_operator(dmat, fmat, energy)
 
     integer :: nbas
     integer :: i, j, k
-    real(8), dimension(1) :: temp
     real(8), dimension(:), allocatable :: packed_fmat, packed_dmat
 
     fmat = 0.0d0
@@ -40,7 +39,7 @@ subroutine pe_add_full_operator(dmat, fmat, energy)
         end do
     end do
     call pe_master(runtype='fock', denmats=packed_dmat, fckmats=packed_fmat,&
-                  & nmats=1, energies=energy, dalwrk=temp)
+                  & nmats=1, energies=energy)
     deallocate(packed_dmat)
     k = 1
     do i = 1, nbas
@@ -66,7 +65,6 @@ subroutine pe_response_operator(dmat, fmat, nbas, ndens)
 
     integer :: i, j, k, l, m
     integer :: nnbas
-    real(8), dimension(1) :: temp
     real(8), dimension(:), allocatable :: packed_fmat, packed_dmat
 
     if (ndens > 1) then
@@ -98,7 +96,7 @@ subroutine pe_response_operator(dmat, fmat, nbas, ndens)
 !        call dgefsp(nbas, dmats(j), packed_dmats(l))
 !    end do
     call pe_master(runtype='response', denmats=packed_dmat,&
-                  & fckmats=packed_fmat, nmats=ndens, dalwrk=temp)
+                  & fckmats=packed_fmat, nmats=ndens)
     deallocate(packed_dmat)
     k = 1
     do i = 1, nbas
