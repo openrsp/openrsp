@@ -15,7 +15,7 @@
       https://github.com/rbast/runtest
 """
 
-RUNTEST_VERSION = 'v0.1.2'
+RUNTEST_VERSION = 'v0.1.3'
 
 import re
 import os
@@ -202,11 +202,13 @@ class _SingleFilter:
         if 'rel_tolerance' in kwargs.keys():
             self.tolerance = kwargs.get('rel_tolerance')
             self.tolerance_is_relative = True
+            self.tolerance_is_set = True
         elif 'abs_tolerance' in kwargs.keys():
             self.tolerance = kwargs.get('abs_tolerance')
             self.tolerance_is_relative = False
+            self.tolerance_is_set = True
         else:
-            raise FilterKeywordError('ERROR: you have to specify either rel_tolerance or abs_tolerance\n')
+            self.tolerance_is_set = False
 
         self.mask = kwargs.get('mask', [])
         if self.mask == []:
@@ -307,8 +309,9 @@ class Filter:
         (?: [EeDd] [+-]? \d+ ) ?
         """
 
-        p = re.compile(numeric_const_pattern, re.VERBOSE)
-        pd = re.compile(r'[dD]')
+        pattern_int = re.compile('^-?[0-9]+$', re.VERBOSE)
+        pattern_float = re.compile(numeric_const_pattern, re.VERBOSE)
+        pattern_d = re.compile(r'[dD]')
 
         for f in self.filter_list:
 
@@ -343,11 +346,17 @@ class Filter:
                         # do not consider words like TzB1g
                         # otherwise we would extract 1 later
                         if re.match(r'^[0-9\.eEdD\+\-]*$', w):
+                            is_integer = False
+                            if len(pattern_float.findall(w)) > 0:
+                                is_integer = (pattern_float.findall(w) == pattern_int.findall(w))
                             # apply floating point regex
-                            for m in p.findall(w):
+                            for m in pattern_float.findall(w):
                                 # substitute dD by e
-                                m = pd.sub('e', m)
-                                f_l.append(float(m))
+                                m = pattern_d.sub('e', m)
+                                if is_integer:
+                                    f_l.append(int(m))
+                                else:
+                                    f_l.append(float(m))
                                 f_to_line.append(line)
 
             if len(f_l_out) == len(f_l_ref):
@@ -360,18 +369,30 @@ class Filter:
                         r_out = abs(r_out)
                         r_ref = abs(r_ref)
 
-                    if abs(r_ref) > f.ignore_below:
-                        # calculate relative error only for
-                        # significant ('nonzero') numbers
-                        error = r_out - r_ref
-                        if f.tolerance_is_relative:
-                            error /= r_ref
-                        if abs(error) > f.tolerance:
+                    is_integer_out = isinstance(r_out, int)
+                    is_integer_ref = isinstance(r_ref, int)
+
+                    if is_integer_out and is_integer_ref:
+                        # we compare integers
+                        if r_out != r_ref:
                             log_diff.write('line %i: %s' % (f_to_line_out[i] + 1, out[f_to_line_out[i]]))
+                            log_diff.write('    found integer: %i, expected: %i\n\n' % (r_out, r_ref))
+                    else:
+                        # we compare floats
+                        if not f.tolerance_is_set:
+                            raise FilterKeywordError('ERROR: for floats you have to specify either rel_tolerance or abs_tolerance\n')
+                        if abs(r_ref) > f.ignore_below:
+                            # calculate relative error only for
+                            # significant ('nonzero') numbers
+                            error = r_out - r_ref
                             if f.tolerance_is_relative:
-                                log_diff.write('    rel error %7.4e > tolerance %7.4e\n\n' % (error, f.tolerance))
-                            else:
-                                log_diff.write('    abs error %7.4e > tolerance %7.4e\n\n' % (error, f.tolerance))
+                                error /= r_ref
+                            if abs(error) > f.tolerance:
+                                log_diff.write('line %i: %s' % (f_to_line_out[i] + 1, out[f_to_line_out[i]]))
+                                if f.tolerance_is_relative:
+                                    log_diff.write('    rel error %7.4e > tolerance %7.4e\n\n' % (error, f.tolerance))
+                                else:
+                                    log_diff.write('    abs error %7.4e > tolerance %7.4e\n\n' % (error, f.tolerance))
             else:
                 log_diff.write('extracted sizes do not match\n')
 

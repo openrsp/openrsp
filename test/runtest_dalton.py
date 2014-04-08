@@ -68,6 +68,9 @@ class TestRun(runtest.TestRun):
                         except runtest.BadFilterError as e:
                             sys.stderr.write(e.message)
                             sys.exit(-1)
+                        except runtest.FilterKeywordError as e:
+                            sys.stderr.write(e.message)
+                            sys.exit(-1)
                 except runtest.AcceptedError as e:
                     sys.stdout.write(e.message)
                 except runtest.SubprocessError as e:
