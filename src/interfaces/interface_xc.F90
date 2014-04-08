@@ -160,7 +160,7 @@ contains
       end do
 
 #ifdef VAR_MPI
-      ierr = xcint_set_mpi_comm(MPI_COMM_WORLD)
+      call xcint_set_mpi_comm(MPI_COMM_WORLD)
 #endif
 
       stdout_function = c_funloc(fortran_stdout_function)
