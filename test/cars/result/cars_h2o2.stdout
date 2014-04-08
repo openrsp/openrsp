@@ -3,111 +3,118 @@
    **** OUTPUT FROM DALTON SHELL SCRIPT **** 
    ***************************************** 
 
-   Dalton Release DALTON2011 (DEVELOPMENT VERSION)
+   DALTON release 2013.2
 
-   Invocation: /home/andreas/prog/dalton/build/dalton -d -put DALTON.HES -nobackup -noarch cars.dal h2o2.mol
+   Invocation: /home/bast/devel/dalton/openrsp/build/dalton -noarch -nobackup -put DALTON.HES cars h2o2
 
-   Wed Dec  5 00:36:24 CET 2012
+   Tue Apr  8 10:37:56 CEST 2014
 
    Calculation: cars_h2o2  (input files: cars.dal and h2o2.mol)
-   PID        : 16530
-   Input dir  : /home/andreas/prog/dalton/external/openrsp/test/cars
-   Scratch dir: /tmp/DALTON_scratch_andreas/andreas/cars_h2o2
+   PID        : 21075
+   Input dir  : /home/bast/devel/dalton/openrsp/build/test/cars
+   Scratch dir: /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/cars_h2o2_21075
 
 copying DALTON.HES to scratch directory
+
+ DALTON: default work memory size used.            64000000
+
+ Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   0
+
+   0: Directories for basis set searches:
+     /home/bast/devel/dalton/openrsp/build/test/cars:/home/bast/devel/dalton/openrsp/build/basis
 dipmom = -Ef
-  0.000000000000  0.000000000000  1.315279309487
+  0.000000000000 -0.000000000000  1.315279201538
 
- before response solver: norm(RHS) =    3.92607033222883     
- before response solver: norm(RHS) =    5.10301471471754     
- before response solver: norm(RHS) =    4.61228233119673     
- 
+ before response solver: norm(RHS) =    3.9260702133178711     
+ before response solver: norm(RHS) =    5.1030149459838867     
+ before response solver: norm(RHS) =    4.6122822761535645     
+
 Alpha = -Eff w:  -0.072   0.072
-   5.28781392506   1.32000978813   0.00000000000
-   1.32000971693  17.04932236572   0.00000000000
-   0.00000000000   0.00000000000   9.27218928062
+   5.28781389105   1.32000983700   0.00000000000
+   1.32000976580  17.04932338308   0.00000000000
+   0.00000000000   0.00000000000   9.27218901592
 
- before response solver: norm(RHS) =    3.34565670165841     
- 
- before response solver: norm(RHS) =    3.80210921092579     
- before response solver: norm(RHS) =    17.4236680559325     
- 
- before response solver: norm(RHS) =    4.59115941654186     
- before response solver: norm(RHS) =    5.46071708732021     
- before response solver: norm(RHS) =    8.84366318265682     
- 
+ before response solver: norm(RHS) =    3.3456566333770752     
+
+ before response solver: norm(RHS) =    3.8021094799041748     
+ before response solver: norm(RHS) =    17.423667907714844     
+
+ before response solver: norm(RHS) =    4.5911593437194824     
+ before response solver: norm(RHS) =    5.4607172012329102     
+ before response solver: norm(RHS) =    8.8436632156372070     
+
 d/dg Alpha = -Egff w:   0.000  -0.072   0.072
-  -0.99826387529   0.12410846276  -0.49212084469   0.99826387529  -0.12410846276  -0.49212084469   1.60483715693   0.06481888144   0.49212084469  -1.60483715693  -0.06481888144   0.49212084469
-   2.94142675323   0.09012756096  -1.03083758236  -2.94142675323  -0.09012756096  -1.03083758236   1.29139846713   0.70853663671   1.03083758236  -1.29139846713  -0.70853663671   1.03083758236
-  -2.05027898172  -0.32110212459  -1.68390542730  -2.05027898172  -0.32110212459   1.68390542730   2.05027898172   0.32110212459   2.06599108548   2.05027898172   0.32110212459  -2.06599108548
-   2.94142675323   0.09012756096  -1.03083758236  -2.94142675323  -0.09012756096  -1.03083758236   1.29139846713   0.70853663671   1.03083758236  -1.29139846713  -0.70853663671   1.03083758236
-  -1.18433883129  17.77616850854  -1.92780620690   1.18433883129 -17.77616850854  -1.92780620690   0.76597303137   1.41113797261   1.92780620690  -0.76597303137  -1.41113797261   1.92780620690
-  -0.77244381159  -1.62026989013   1.22360881128  -0.77244381159  -1.62026989013  -1.22360881128   0.77244381159   1.62026989013   2.82024406448   0.77244381159   1.62026989013  -2.82024406448
-  -2.05027898172  -0.32110212459  -1.68390542730  -2.05027898172  -0.32110212459   1.68390542730   2.05027898172   0.32110212459   2.06599108548   2.05027898172   0.32110212459  -2.06599108548
-  -0.77244381159  -1.62026989013   1.22360881128  -0.77244381159  -1.62026989013  -1.22360881128   0.77244381159   1.62026989013   2.82024406448   0.77244381159   1.62026989013  -2.82024406448
-  -1.00120825343   0.05810112410  -5.48204260050   1.00120825343  -0.05810112410  -5.48204260051   1.06208475016   0.61343364544   5.48204260050  -1.06208475016  -0.61343364544   5.48204260051
+  -0.99826385067   0.12410848277  -0.49212084605   0.99826385067  -0.12410848277  -0.49212084605   1.60483711064   0.06481886955   0.49212084605  -1.60483711064  -0.06481886955   0.49212084605
+   2.94142712374   0.09012751311  -1.03083756082  -2.94142712374  -0.09012751311  -1.03083756082   1.29139839389   0.70853659337   1.03083756082  -1.29139839389  -0.70853659337   1.03083756082
+  -2.05027884191  -0.32110215841  -1.68390531923  -2.05027884191  -0.32110215841   1.68390531923   2.05027884191   0.32110215841   2.06599098325   2.05027884191   0.32110215841  -2.06599098325
+   2.94142712374   0.09012751311  -1.03083756082  -2.94142712374  -0.09012751311  -1.03083756082   1.29139839389   0.70853659337   1.03083756082  -1.29139839389  -0.70853659337   1.03083756082
+  -1.18433893825  17.77616865871  -1.92780625926   1.18433893825 -17.77616865871  -1.92780625926   0.76597304247   1.41113769570   1.92780625926  -0.76597304247  -1.41113769570   1.92780625926
+  -0.77244378019  -1.62026982483   1.22360924749  -0.77244378019  -1.62026982483  -1.22360924749   0.77244378019   1.62026982483   2.82024394111   0.77244378019   1.62026982483  -2.82024394111
+  -2.05027884191  -0.32110215841  -1.68390531923  -2.05027884191  -0.32110215841   1.68390531923   2.05027884191   0.32110215841   2.06599098325   2.05027884191   0.32110215841  -2.06599098325
+  -0.77244378019  -1.62026982483   1.22360924749  -0.77244378019  -1.62026982483  -1.22360924749   0.77244378019   1.62026982483   2.82024394111   0.77244378019   1.62026982483  -2.82024394111
+  -1.00120820168   0.05810097884  -5.48204240108   1.00120820168  -0.05810097884  -5.48204240108   1.06208465258   0.61343363863   5.48204240108  -1.06208465258  -0.61343363863   5.48204240108
 
- before response solver: norm(RHS) =    3.38260028625386     
- 
- before response solver: norm(RHS) =    3.81159588497099     
- before response solver: norm(RHS) =    17.7269141353131     
- 
- before response solver: norm(RHS) =    4.61270853100289     
- before response solver: norm(RHS) =    5.49193286036342     
- before response solver: norm(RHS) =    8.93376216276154     
- 
+ before response solver: norm(RHS) =    3.3826003074645996     
+
+ before response solver: norm(RHS) =    3.8115961551666260     
+ before response solver: norm(RHS) =    17.726915359497070     
+
+ before response solver: norm(RHS) =    4.6127085685729980     
+ before response solver: norm(RHS) =    5.4919328689575195     
+ before response solver: norm(RHS) =    8.9337615966796875     
+
 Gamma = -Effff w:  -0.072   0.072  -0.072   0.072
-   25.7105886801   25.7307258264    0.0000000000
-   25.7307258255   23.5187892712    0.0000000000
-    0.0000000000    0.0000000000   73.2668732409
-   25.7307258537   20.9892718493    0.0000000000
-   23.5187892622   -2.6583930557    0.0000000000
-    0.0000000000    0.0000000000   77.9089448217
-    0.0000000000    0.0000000000   69.3825357764
-    0.0000000000    0.0000000000   75.9396413776
-   73.2668728418   77.9089441947    0.0000000000
-   25.7307258255   23.5187892712    0.0000000000
-   20.9892718589   -2.6583931979    0.0000000000
-    0.0000000000    0.0000000000   77.9089444195
-   23.5187892622   -2.6583930557    0.0000000000
-   -2.6583944491 -330.8303945869    0.0000000000
-    0.0000000000    0.0000000000  108.4732415523
-    0.0000000000    0.0000000000   75.9396413776
-    0.0000000000    0.0000000000  104.7780388591
-   77.9089438493  108.4732409463    0.0000000000
-    0.0000000000    0.0000000000   73.2668732409
-    0.0000000000    0.0000000000   77.9089444195
-   69.3825357258   75.9396412788    0.0000000000
-    0.0000000000    0.0000000000   77.9089448217
-    0.0000000000    0.0000000000  108.4732415523
-   75.9396413493  104.7780386231    0.0000000000
-   73.2668728418   77.9089441947    0.0000000000
-   77.9089438493  108.4732409463    0.0000000000
-    0.0000000000    0.0000000000  245.5398405383
+   25.7105860170   25.7307256227    0.0000000000
+   25.7307256218   23.5187946693    0.0000000000
+    0.0000000000    0.0000000000   73.2668747922
+   25.7307256500   20.9892783347    0.0000000000
+   23.5187946602   -2.6583823106    0.0000000000
+    0.0000000000    0.0000000000   77.9089469914
+    0.0000000000    0.0000000000   69.3825390222
+    0.0000000000    0.0000000000   75.9396444877
+   73.2668743932   77.9089463643    0.0000000000
+   25.7307256218   23.5187946693    0.0000000000
+   20.9892783443   -2.6583824529    0.0000000000
+    0.0000000000    0.0000000000   77.9089465891
+   23.5187946602   -2.6583823106    0.0000000000
+   -2.6583837040 -330.8304872173   -0.0000000000
+    0.0000000000   -0.0000000000  108.4732421818
+    0.0000000000    0.0000000000   75.9396444877
+    0.0000000000   -0.0000000000  104.7780403957
+   77.9089460190  108.4732415758    0.0000000000
+    0.0000000000    0.0000000000   73.2668747922
+    0.0000000000    0.0000000000   77.9089465891
+   69.3825389716   75.9396443889    0.0000000000
+    0.0000000000    0.0000000000   77.9089469914
+    0.0000000000   -0.0000000000  108.4732421818
+   75.9396444593  104.7780401596    0.0000000000
+   73.2668743932   77.9089463643    0.0000000000
+   77.9089460190  108.4732415758    0.0000000000
+    0.0000000000    0.0000000000  245.5398143996
 
-cars_h2o2.tar.gz has not been created and has thus not been copied to /home/andreas/prog/dalton/external/openrsp/test/cars
+cars_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/devel/dalton/openrsp/build/test/cars
 ----------------------------------------------------------
 WARNING for ERROR  (Dalton program stopped with exit code 0)
-- THEREFORE scratch directory /tmp/DALTON_scratch_andreas/andreas/cars_h2o2 is not deleted
+- THEREFORE scratch directory /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/cars_h2o2_21075 is not deleted
   by this script so you may restart the calculation, if possible
-  ( /tmp/DALTON_scratch_andreas/andreas/cars_h2o2 may be deleted by your queueing system )
-- REMEMBER to delete /tmp/DALTON_scratch_andreas/andreas/cars_h2o2 yourself !!!
+  ( /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/cars_h2o2_21075 may be deleted by your queueing system )
+- REMEMBER to delete /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/cars_h2o2_21075 yourself !!!
 
 Output from 'grep -n ERROR' :
-163:.MAX ERROR                                        
+209:.MAX ERROR                                        
 ----------------------------------------------------------
 1 informational messages have been issued by Dalton,
 output from 'grep -n INFO'  (max 10 lines):
-211:    INFO: Request for parallel calculation (.PARALL) is ignored because only one CPU process available.
-655:INFO IO unit of log file:      2
-656:INFO Print level:             10
-657:INFO Number of specified real frequencies:           1
-658:INFO Real frequencies:          0.072000
-659:INFO Number of specified imaginary frequencies:      1
-660:INFO Imaginary frequencies:     0.000000
-661:INFO Calculate coherent anti-Stokes Raman Scattering (CARS)
-662:INFO Maximum number of micro iterations of solving the response equations:    100
-663:INFO Maximum dimension of the sub-block of the configuration Hessian:           0
+257:    INFO: Request for parallel calculation (.PARALL) is ignored because only one CPU process available.
+706:INFO IO unit of log file:      2
+707:INFO Print level:             10
+708:INFO Number of specified real frequencies:           1
+709:INFO Real frequencies:          0.072000
+710:INFO Number of specified imaginary frequencies:      1
+711:INFO Imaginary frequencies:     0.000000
+712:INFO Calculate coherent anti-Stokes Raman Scattering (CARS)
+713:INFO Maximum number of micro iterations of solving the response equations:    100
+714:INFO Maximum dimension of the sub-block of the configuration Hessian:           0
 
-   Wed Dec  5 00:39:53 CET 2012
+   Tue Apr  8 10:38:18 CEST 2014
    ***************************************** 

@@ -513,6 +513,8 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        end do
 
+!        write(*,*) 'tmp ave', 0.5 * (sum(bra%freq) - sum(ket%freq)) * real(tmp_ave)
+       
        deallocate(tmp_ave)
        deallocate(merged_indices)
        deallocate(translated_index)
