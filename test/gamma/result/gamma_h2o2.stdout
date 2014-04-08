@@ -3,124 +3,113 @@
    **** OUTPUT FROM DALTON SHELL SCRIPT **** 
    ***************************************** 
 
-   DALTON release 2013.1
+   DALTON release 2013.2
 
-   Invocation: /home/bast/dalton/merge/openrsp-merge/build/dalton -noarch -nobackup gamma.dal h2o2.mol
+   Invocation: /home/bast/devel/dalton/openrsp/build/dalton -noarch -nobackup gamma h2o2
 
-   Thu Jan 23 00:42:20 CET 2014
+   Tue Apr  8 10:37:56 CEST 2014
 
    Calculation: gamma_h2o2  (input files: gamma.dal and h2o2.mol)
-   PID        : 8964
-   Input dir  : /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma
-   Scratch dir: /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/gamma_h2o2
-
-
- output from the communication group generator:
-   1 intra-node group has been built.
+   PID        : 21083
+   Input dir  : /home/bast/devel/dalton/openrsp/build/test/gamma
+   Scratch dir: /home/bast/tmp/dalton_scratch/DALTON_scratch_bast/gamma_h2o2_21083
 
 
  DALTON: default work memory size used.            64000000
 
- DALTON: master work memory size also used for slaves.            64000000
-
- Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   1
-
-   1: Directories for basis set searches:
-     /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma:/home/bast/dalton/merge/openrsp-merge/build/basis
-
  Work memory size (LMWORK+2):    64000002 =  488.28 megabytes; node   0
 
    0: Directories for basis set searches:
-     /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma:/home/bast/dalton/merge/openrsp-merge/build/basis
+     /home/bast/devel/dalton/openrsp/build/test/gamma:/home/bast/devel/dalton/openrsp/build/basis
  before response solver: norm(RHS) =    3.9260702133178711     
- before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    5.1030149459838867     
  before response solver: norm(RHS) =    4.6122822761535645     
 
  before response solver: norm(RHS) =    3.9260702133178711     
- before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    5.1030149459838867     
  before response solver: norm(RHS) =    4.6122822761535645     
 
  before response solver: norm(RHS) =    3.9260702133178711     
- before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    5.1030149459838867     
  before response solver: norm(RHS) =    4.6122822761535645     
 
  before response solver: norm(RHS) =    3.9260702133178711     
- before response solver: norm(RHS) =    5.1030144691467285     
+ before response solver: norm(RHS) =    5.1030149459838867     
  before response solver: norm(RHS) =    4.6122822761535645     
 
- before response solver: norm(RHS) =    3.8564076423645020     
- before response solver: norm(RHS) =    10.763441085815430     
- before response solver: norm(RHS) =    5.0574326515197754     
- before response solver: norm(RHS) =    4.1142220497131348     
- before response solver: norm(RHS) =    28.042383193969727     
- before response solver: norm(RHS) =    6.0836887359619141     
- before response solver: norm(RHS) =    5.2983541488647461     
- before response solver: norm(RHS) =    8.8959217071533203     
- before response solver: norm(RHS) =    9.6848526000976563     
+ before response solver: norm(RHS) =    3.8564088344573975     
+ before response solver: norm(RHS) =    10.763478279113770     
+ before response solver: norm(RHS) =    5.0574336051940918     
+ before response solver: norm(RHS) =    4.1142210960388184     
+ before response solver: norm(RHS) =    28.042449951171875     
+ before response solver: norm(RHS) =    6.0836863517761230     
+ before response solver: norm(RHS) =    5.2983546257019043     
+ before response solver: norm(RHS) =    8.8959331512451172     
+ before response solver: norm(RHS) =    9.6848506927490234     
 
- before response solver: norm(RHS) =    3.8564076423645020     
- before response solver: norm(RHS) =    10.763441085815430     
- before response solver: norm(RHS) =    5.0574326515197754     
- before response solver: norm(RHS) =    4.1142220497131348     
- before response solver: norm(RHS) =    28.042383193969727     
- before response solver: norm(RHS) =    6.0836887359619141     
- before response solver: norm(RHS) =    5.2983541488647461     
- before response solver: norm(RHS) =    8.8959217071533203     
- before response solver: norm(RHS) =    9.6848526000976563     
+ before response solver: norm(RHS) =    3.8564088344573975     
+ before response solver: norm(RHS) =    10.763478279113770     
+ before response solver: norm(RHS) =    5.0574336051940918     
+ before response solver: norm(RHS) =    4.1142210960388184     
+ before response solver: norm(RHS) =    28.042449951171875     
+ before response solver: norm(RHS) =    6.0836863517761230     
+ before response solver: norm(RHS) =    5.2983546257019043     
+ before response solver: norm(RHS) =    8.8959331512451172     
+ before response solver: norm(RHS) =    9.6848506927490234     
 
- before response solver: norm(RHS) =    3.8564076423645020     
- before response solver: norm(RHS) =    10.763441085815430     
- before response solver: norm(RHS) =    5.0574326515197754     
- before response solver: norm(RHS) =    4.1142220497131348     
- before response solver: norm(RHS) =    28.042383193969727     
- before response solver: norm(RHS) =    6.0836887359619141     
- before response solver: norm(RHS) =    5.2983541488647461     
- before response solver: norm(RHS) =    8.8959217071533203     
- before response solver: norm(RHS) =    9.6848526000976563     
+ before response solver: norm(RHS) =    3.8564088344573975     
+ before response solver: norm(RHS) =    10.763478279113770     
+ before response solver: norm(RHS) =    5.0574336051940918     
+ before response solver: norm(RHS) =    4.1142210960388184     
+ before response solver: norm(RHS) =    28.042449951171875     
+ before response solver: norm(RHS) =    6.0836863517761230     
+ before response solver: norm(RHS) =    5.2983546257019043     
+ before response solver: norm(RHS) =    8.8959331512451172     
+ before response solver: norm(RHS) =    9.6848506927490234     
 
 gamma = -Effff w:  -0.216   0.072   0.072   0.072
-   38.5265010997   56.6920386733    0.0000000000
-   38.3875373887   57.8254025762    0.0000000000
-    0.0000000000    0.0000000000   89.4726283248
-   38.3875373887   57.8254025762    0.0000000000
-   31.4169603844   97.0238854915   -0.0000000000
-    0.0000000000    0.0000000000   99.2709135752
-    0.0000000000    0.0000000000   89.4726283248
-    0.0000000000    0.0000000000   99.2709135752
-   98.8611002460  138.6315979513    0.0000000000
-   38.3875373887   57.8254025762    0.0000000000
-   31.4169603844   97.0238854915   -0.0000000000
-    0.0000000000    0.0000000000   99.2709135752
-   31.4169603844   97.0238854915   -0.0000000000
-   -3.6228787321 -328.3619339829   -0.0000000005
-    0.0000000000    0.0000000000  136.5578258389
-    0.0000000000    0.0000000000   99.2709135752
-    0.0000000000    0.0000000000  136.5578258389
-   96.3247471426  187.5691704207    0.0000000001
-    0.0000000000    0.0000000000   89.4726283248
-    0.0000000000    0.0000000000   99.2709135752
-   98.8611002460  138.6315979513    0.0000000000
-    0.0000000000    0.0000000000   99.2709135752
-    0.0000000000    0.0000000000  136.5578258389
-   96.3247471426  187.5691704207    0.0000000000
-   98.8611002460  138.6315979513    0.0000000000
-   96.3247471426  187.5691704207    0.0000000001
-    0.0000000000    0.0000000000  310.6243003859
+   38.5265030521   56.6921135548    0.0000000000
+   38.3875251844   57.8254137948    0.0000000000
+    0.0000000000    0.0000000000   89.4726971185
+   38.3875251844   57.8254137948    0.0000000000
+   31.4168604429   97.0240087983    0.0000000000
+    0.0000000000    0.0000000000   99.2709229291
+    0.0000000000    0.0000000000   89.4726971185
+    0.0000000000    0.0000000000   99.2709229291
+   98.8611482099  138.6316966136    0.0000000000
+   38.3875251844   57.8254137948    0.0000000000
+   31.4168604429   97.0240087983    0.0000000000
+    0.0000000000    0.0000000000   99.2709229291
+   31.4168604429   97.0240087983    0.0000000000
+   -3.6230958438 -328.3636570691    0.0000000005
+    0.0000000000   -0.0000000000  136.5576416341
+    0.0000000000    0.0000000000   99.2709229291
+    0.0000000000   -0.0000000000  136.5576416341
+   96.3247519824  187.5690438743   -0.0000000000
+    0.0000000000    0.0000000000   89.4726971185
+    0.0000000000    0.0000000000   99.2709229291
+   98.8611482099  138.6316966136    0.0000000000
+    0.0000000000    0.0000000000   99.2709229291
+    0.0000000000   -0.0000000000  136.5576416341
+   96.3247519824  187.5690438743   -0.0000000000
+   98.8611482099  138.6316966136    0.0000000000
+   96.3247519824  187.5690438743   -0.0000000000
+    0.0000000000    0.0000000000  310.6241573537
 
-gamma_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/dalton/merge/openrsp-merge/external/openrsp/test/gamma
+gamma_h2o2.tar.gz has not been created and has thus not been copied to /home/bast/devel/dalton/openrsp/build/test/gamma
 ----------------------------------------------------------
-20 informational messages have been issued by Dalton,
+21 informational messages have been issued by Dalton,
 output from 'grep -n INFO'  (max 10 lines):
-663:INFO IO unit of log file:      2
-664:INFO Print level:             20
-665:INFO Number of specified real frequencies:           3
-666:INFO Real frequencies:          0.072000    0.072000    0.072000
-667:INFO Number of specified imaginary frequencies:      3
-668:INFO Imaginary frequencies:     0.000000    0.000000    0.000000
-669:INFO Calculate 2nd hyperpolarizability using 2n+1 (2+1+1) rule
-670:INFO Maximum number of micro iterations of solving the response equations:    100
-671:INFO Maximum dimension of the sub-block of the configuration Hessian:           0
-672:INFO Maximum dimension of the reduced space:                                  400
+220:    INFO: Request for parallel calculation (.PARALL) is ignored because only one CPU process available.
+673:INFO IO unit of log file:      2
+674:INFO Print level:             20
+675:INFO Number of specified real frequencies:           3
+676:INFO Real frequencies:          0.072000    0.072000    0.072000
+677:INFO Number of specified imaginary frequencies:      3
+678:INFO Imaginary frequencies:     0.000000    0.000000    0.000000
+679:INFO Calculate 2nd hyperpolarizability using 2n+1 (2+1+1) rule
+680:INFO Maximum number of micro iterations of solving the response equations:    100
+681:INFO Maximum dimension of the sub-block of the configuration Hessian:           0
 
-   Thu Jan 23 00:42:42 CET 2014
+   Tue Apr  8 10:38:46 CEST 2014
    ***************************************** 
