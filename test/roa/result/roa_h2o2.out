@@ -1,14 +1,14 @@
 
 
-   ****************************************************************************
-   *************** DALTON2011 - An electronic structure program ***************
-   ****************************************************************************
+     ************************************************************************
+     *************** Dalton - An Electronic Structure Program ***************
+     ************************************************************************
 
-    This is output from DALTON Release 2011 (DEVELOPMENT VERSION)
+    This is output from DALTON 2013.2
    ----------------------------------------------------------------------------
     NOTE:
      
-    DALTON is an experimental code for the evaluation of molecular
+    Dalton is an experimental code for the evaluation of molecular
     properties using (MC)SCF, DFT, CI, and CC wave functions.
     The authors accept no responsibility for the performance of
     the code or for the correctness of the results.
@@ -20,107 +20,150 @@
     See the home page "http://daltonprogram.org" for further information.
      
     If results obtained with this code are published,
-    an appropriate citation would be:
+    the appropriate citations would be both of:
      
-    "Dalton, a molecular electronic structure program,
-    Release Dalton2011 (2011), see http://daltonprogram.org"
+       K. Aidas, C. Angeli, K. L. Bak, V. Bakken, R. Bast,
+       L. Boman, O. Christiansen, R. Cimiraglia, S. Coriani,
+       P. Dahle, E. K. Dalskov, U. Ekstroem, T. Enevoldsen,
+       J. J. Eriksen, P. Ettenhuber, B. Fernandez, L. Ferrighi,
+       H. Fliegl, L. Frediani, K. Hald, A. Halkier, C. Haettig,
+       H. Heiberg, T. Helgaker, A. C. Hennum, H. Hettema,
+       E. Hjertenaes, S. Hoest, I.-M. Hoeyvik, M. F. Iozzi,
+       B. Jansik, H. J. Aa. Jensen, D. Jonsson, P. Joergensen,
+       J. Kauczor, S. Kirpekar, T. Kjaergaard, W. Klopper,
+       S. Knecht, R. Kobayashi, H. Koch, J. Kongsted, A. Krapp,
+       K. Kristensen, A. Ligabue, O. B. Lutnaes, J. I. Melo,
+       K. V. Mikkelsen, R. H. Myhre, C. Neiss, C. B. Nielsen,
+       P. Norman, J. Olsen, J. M. H. Olsen, A. Osted,
+       M. J. Packer, F. Pawlowski, T. B. Pedersen, P. F. Provasi,
+       S. Reine, Z. Rinkevicius, T. A. Ruden, K. Ruud, V. Rybkin,
+       P. Salek, C. C. M. Samson, A. Sanchez de Meras, T. Saue,
+       S. P. A. Sauer, B. Schimmelpfennig, K. Sneskov,
+       A. H. Steindal, K. O. Sylvester-Hvid, P. R. Taylor,
+       A. M. Teale, E. I. Tellgren, D. P. Tew, A. J. Thorvaldsen,
+       L. Thoegersen, O. Vahtras, M. A. Watson, D. J. D. Wilson,
+       M. Ziolkowski and H. Aagren,
+       "The Dalton quantum chemistry program system",
+       WIREs Comput. Mol. Sci. 2013. (doi: 10.1002/wcms.1172)
+    
+    and
+    
+       Dalton, a Molecular Electronic Structure Program,
+       Release DALTON2013.2 (2013), see http://daltonprogram.org
    ----------------------------------------------------------------------------
 
     Authors in alphabetical order (major contribution(s) in parenthesis):
 
+  Kestutis Aidas,           Vilnius University,           Lithuania   (QM/MM)
   Celestino Angeli,         University of Ferrara,        Italy       (NEVPT2)
   Keld L. Bak,              UNI-C,                        Denmark     (AOSOPPA, non-adiabatic coupling, magnetic properties)
   Vebjoern Bakken,          University of Oslo,           Norway      (DALTON; geometry optimizer, symmetry detection)
+  Radovan Bast,             KTH Stockholm,                Sweden      (DALTON installation and execution frameworks)
+  Linus Boman,              NTNU,                         Norway      (Cholesky decomposition and subsystems)
   Ove Christiansen,         Aarhus University,            Denmark     (CC module)
   Renzo Cimiraglia,         University of Ferrara,        Italy       (NEVPT2)
   Sonia Coriani,            University of Trieste,        Italy       (CC module, MCD in RESPONS)
   Paal Dahle,               University of Oslo,           Norway      (Parallelization)
   Erik K. Dalskov,          UNI-C,                        Denmark     (SOPPA)
-  Thomas Enevoldsen,        SDU - Odense University,      Denmark     (SOPPA)
+  Thomas Enevoldsen,        Univ. of Southern Denmark,    Denmark     (SOPPA)
+  Janus J. Eriksen,         Aarhus University,            Denmark     (PE-MP2/SOPPA, TDA)
   Berta Fernandez,          U. of Santiago de Compostela, Spain       (doublet spin, ESR in RESPONS)
   Lara Ferrighi,            Aarhus University,            Denmark     (PCM Cubic response)
-  Heike Fliegl,             University of Helsinki,       Finland     (CCSD(R12))
-  Luca Frediani,            University of Tromsoe,        Norway      (PCM)
-  Bin Gao,                  University of Tromsoe,        Norway      (Gen1Int module)
-  Christof Haettig,         Ruhr University Bochum,       Germany     (CC module)
+  Heike Fliegl,             University of Oslo,           Norway      (CCSD(R12))
+  Luca Frediani,            UiT The Arctic U. of Norway,  Norway      (PCM)
+  Bin Gao,                  UiT The Arctic U. of Norway,  Norway      (Gen1Int library)
+  Christof Haettig,         Ruhr-University Bochum,       Germany     (CC module)
   Kasper Hald,              Aarhus University,            Denmark     (CC module)
   Asger Halkier,            Aarhus University,            Denmark     (CC module)
   Hanne Heiberg,            University of Oslo,           Norway      (geometry analysis, selected one-electron integrals)
   Trygve Helgaker,          University of Oslo,           Norway      (DALTON; ABACUS, ERI, DFT modules, London, and much more)
+  Alf Christian Hennum,     University of Oslo,           Norway      (Parity violation)
   Hinne Hettema,            University of Auckland,       New Zealand (quadratic response in RESPONS; SIRIUS supersymmetry)
-  Brano Jansik              University of Aarhus          Denmark     (DFT cubic response)
+  Eirik Hjertenaes,         NTNU,                         Norway      (Cholesky decomposition)
+  Maria Francesca Iozzi,    University of Oslo,           Norway      (RPA)
+  Brano Jansik              Technical Univ. of Ostrava    Czech Rep.  (DFT cubic response)
   Hans Joergen Aa. Jensen,  Univ. of Southern Denmark,    Denmark     (DALTON; SIRIUS, RESPONS, ABACUS modules, London, and much more)
-  Dan Jonsson,              University of Tromsoe,        Norway      (cubic response in RESPONS module)
+  Dan Jonsson,              UiT The Arctic U. of Norway,  Norway      (cubic response in RESPONS module)
   Poul Joergensen,          Aarhus University,            Denmark     (RESPONS, ABACUS, and CC modules)
-  Sheela Kirpekar,          SDU - Odense University,      Denmark     (Mass-velocity & Darwin integrals)
-  Wim Klopper,              University of Karlsruhe,      Germany     (R12 code in CC, SIRIUS, and ABACUS modules)
-  Stefan Knecht,            Univ. of Southern Denmark,    Denmark     (Parallel CI)
-  Rika Kobayashi,           ANU Supercomputer Facility,   Australia   (DIIS in CC, London in MCSCF)
-  Jacob Kongsted,           Univ. of Southern Denmark,    Denmark     (QM/MM code)
-  Henrik Koch,              University of Trondheim,      Norway      (CC module, Cholesky decomposition)
+  Joanna Kauczor,           Linkoeping University,        Sweden      (Complex polarization propagator (CPP) module)
+  Sheela Kirpekar,          Univ. of Southern Denmark,    Denmark     (Mass-velocity & Darwin integrals)
+  Wim Klopper,              KIT Karlsruhe,                Germany     (R12 code in CC, SIRIUS, and ABACUS modules)
+  Stefan Knecht,            ETH Zurich,                   Switzerland (Parallel CI and MCSCF)
+  Rika Kobayashi,           Australian National Univ.,    Australia   (DIIS in CC, London in MCSCF)
+  Henrik Koch,              NTNU,                         Norway      (CC module, Cholesky decomposition)
+  Jacob Kongsted,           Univ. of Southern Denmark,    Denmark     (Polarizable embedding, QM/MM)
   Andrea Ligabue,           University of Modena,         Italy       (CTOCD, AOSOPPA)
   Ola B. Lutnaes,           University of Oslo,           Norway      (DFT Hessian)
   Juan I. Melo,             University of Buenos Aires,   Argentina   (LRESC, Relativistic Effects on NMR Shieldings)
-  Kurt V. Mikkelsen,        University of Copenhagen,     Denmark     (MC-SCRF and QM/MM code)
+  Kurt V. Mikkelsen,        University of Copenhagen,     Denmark     (MC-SCRF and QM/MM)
+  Rolf H. Myhre,            NTNU,                         Norway      (Cholesky, subsystems and ECC2)
   Christian Neiss,          Univ. Erlangen-Nuernberg,     Germany     (CCSD(R12))
-  Christian B. Nielsen,     University of Copenhagen,     Denmark     (QM/MM code)
-  Patrick Norman,           University of Linkoeping,     Sweden      (cubic response and complex response in RESPONS)
+  Christian B. Nielsen,     University of Copenhagen,     Denmark     (QM/MM)
+  Patrick Norman,           Linkoeping University,        Sweden      (Cubic response and complex response in RESPONS)
   Jeppe Olsen,              Aarhus University,            Denmark     (SIRIUS CI/density modules)
-  Anders Osted,             Copenhagen University,        Denmark     (QM/MM code)
+  Jogvan Magnus H. Olsen,   Univ. of Southern Denmark,    Denmark     (Polarizable embedding, PE library, QM/MM)
+  Anders Osted,             Copenhagen University,        Denmark     (QM/MM)
   Martin J. Packer,         University of Sheffield,      UK          (SOPPA)
-  Filip Pawlowski,          Kazimierz Wielki University   Poland      (CC3)
+  Filip Pawlowski,          Kazimierz Wielki University,  Poland      (CC3)
   Thomas B. Pedersen,       University of Oslo,           Norway      (Cholesky decomposition)
   Patricio F. Provasi,      University of Northeastern,   Argentina   (Analysis of coupling constants in localized orbitals)
   Zilvinas Rinkevicius,     KTH Stockholm,                Sweden      (open-shell DFT, ESR)
   Elias Rudberg,            KTH Stockholm,                Sweden      (DFT grid and basis info)
   Torgeir A. Ruden,         University of Oslo,           Norway      (Numerical derivatives in ABACUS)
-  Kenneth Ruud,             University of Tromsoe,        Norway      (DALTON; ABACUS magnetic properties and  much more)
+  Kenneth Ruud,             UiT The Arctic U. of Norway,  Norway      (DALTON; ABACUS magnetic properties and  much more)
   Pawel Salek,              KTH Stockholm,                Sweden      (DALTON; DFT code)
-  Claire C.M. Samson        University of Karlsruhe       Germany     (Boys localization, r12 integrals in ERI)
+  Claire C. M. Samson       University of Karlsruhe       Germany     (Boys localization, r12 integrals in ERI)
   Alfredo Sanchez de Meras, University of Valencia,       Spain       (CC module, Cholesky decomposition)
-  Trond Saue,               CNRS/ULP Toulouse,            France      (direct Fock matrix construction)
+  Trond Saue,               Paul Sabatier University,     France      (direct Fock matrix construction)
   Stephan P. A. Sauer,      University of Copenhagen,     Denmark     (SOPPA(CCSD), SOPPA prop., AOSOPPA, vibrational g-factors)
   Bernd Schimmelpfennig,    Forschungszentrum Karlsruhe,  Germany     (AMFI module)
-  Arnfinn H. Steindal,      University of Tromsoe,        Norway      (parallel QM/MM)
+  Kristian Sneskov,         Aarhus University,            Denmark     (QM/MM, PE-CC)
+  Arnfinn H. Steindal,      UiT The Arctic U. of Norway,  Norway      (parallel QM/MM)
   K. O. Sylvester-Hvid,     University of Copenhagen,     Denmark     (MC-SCRF)
   Peter R. Taylor,          VLSCI/Univ. of Melbourne,     Australia   (Symmetry handling ABACUS, integral transformation)
+  Andrew M. Teale,          University of Nottingham,     England     (DFT-AC, DFT-D)
   David P. Tew,             University of Bristol,        England     (CCSD(R12))
   Olav Vahtras,             KTH Stockholm,                Sweden      (triplet response, spin-orbit, ESR, TDDFT, open-shell DFT)
   David J. Wilson,          La Trobe University,          Australia   (DFT Hessian and DFT magnetizabilities)
-  Hans Agren,               KTH Stockholm,                Sweden      (SIRIUS module, MC-SCRF solvation model)
+  Hans Agren,               KTH Stockholm,                Sweden      (SIRIUS module, RESPONS, MC-SCRF solvation model)
  --------------------------------------------------------------------------------
 
-     Date and time (Linux)  : Thu Dec  6 01:12:25 2012
-     Host name              : barbar                                  
+     Date and time (Linux)  : Tue Apr  8 10:50:34 2014
+     Host name              : donkey                                  
 
  * Work memory size             :    64000000 =  488.28 megabytes.
 
  * Directories for basis set searches:
-   1) /home/andreas/prog/dalton/external/openrsp/test/roa
-   2) /home/andreas/prog/dalton/build/basis
+   1) /home/bast/devel/dalton/openrsp/build/test/roa
+   2) /home/bast/devel/dalton/openrsp/build/basis
 
 
 Compilation information
 -----------------------
 
- Who compiled             | andreas@
- System                   | Linux-3.6.8-1-ARCH
- Processor                | i686
+ Who compiled             | bast
+ Host                     | donkey
+ System                   | Linux-3.11.0-18-generic
+ CMake generator          | Unix Makefiles
+ Processor                | x86_64
  64-bit integers          | OFF
  MPI                      | OFF
- Fortran compiler         | /usr/local/bin/ifort
- Fortran compiler version | ifort (IFORT) 12.1.0 20111011
- Fortran flags            | -g -w -fpp -assume byterecl -traceback -O3 -xW -ip
+ Fortran compiler         | /usr/bin/gfortran
+ Fortran compiler version | GNU Fortran (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
  C compiler               | /usr/bin/gcc
- C compiler version       | gcc (GCC) 4.7.2
- C flags                  | -std=c99 -DRESTRICT=restrict -DFUNDERSCORE=1 -O3 -
-                          | ffast-math -funroll-loops -ftree-vectorize -Wno-un
-                          | used
- Explicit libs            | -L/opt/intel/lib/ia32 -L/opt/intel/mkl/lib/ia32 -l
-                          | mkl_core -lmkl_intel -lmkl_sequential
+ C compiler version       | gcc (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+ C++ compiler             | /usr/bin/g++
+ C++ compiler version     | g++ (Ubuntu/Linaro 4.6.3-1ubuntu5) 4.6.3
+ BLAS                     | /opt/intel/mkl/lib/intel64/libmkl_gf_lp64.so;/opt/
+                          | intel/mkl/lib/intel64/libmkl_sequential.so;/opt/in
+                          | tel/mkl/lib/intel64/libmkl_core.so;/usr/lib/x86_64
+                          | -linux-gnu/libpthread.so;/usr/lib/x86_64-linux-gnu
+                          | /libm.so
+ LAPACK                   | /opt/intel/mkl/lib/intel64/libmkl_lapack95_lp64.a;
+                          | /opt/intel/mkl/lib/intel64/libmkl_gf_lp64.so
  Static linking           | OFF
- Last Git revision        | 7d1884d
- Configuration time       | 2012-12-05 15:14:35.986706
+ Last Git revision        | 027bd9d21c6c04938dce8616dd27107302fa1701
+ Configuration time       | 2014-04-08 10:25:31.800806
 
 
    Content of the .dal input file
@@ -231,7 +274,7 @@ H    -0.69081489 -1.72614891  1.56891868
   Number of symmetry independent centers:    2
   Number of basis sets to read;    2
   Basis set file used for this atomic type with Z =   8 :
-     "/home/andreas/prog/dalton/build/basis/STO-3G"
+     "/home/bast/devel/dalton/openrsp/build/basis/STO-3G"
 
   Atomic type no.    2
   --------------------
@@ -239,7 +282,7 @@ H    -0.69081489 -1.72614891  1.56891868
   Number of symmetry independent centers:    2
   Number of basis sets to read;    2
   Basis set file used for this atomic type with Z =   1 :
-     "/home/andreas/prog/dalton/build/basis/STO-3G"
+     "/home/bast/devel/dalton/openrsp/build/basis/STO-3G"
 
 
                          SYMGRP: Point group information
@@ -285,7 +328,7 @@ Point group: C1
   ----------------------------
 
   Total number of coordinates:   12
-  O       :     1  x   0.0000000000    2  y   1.4078458600    3  z  -0.0988560000
+  O       :     1  x  -0.0000000000    2  y   1.4078458600    3  z  -0.0988560000
   O       :     4  x   0.0000000000    5  y  -1.4078458600    6  z  -0.0988560000
   H       :     7  x   0.6908148900    8  y   1.7261489100    9  z   1.5689186800
   H       :    10  x  -0.6908148900   11  y  -1.7261489100   12  z   1.5689186800
@@ -302,8 +345,12 @@ Point group: C1
  H     :    1.913883    0.970000    1.967747    0.000000
 
 
-  Max interatomic separation is    1.9677 Angstrom (    3.7185 Bohr)
+  Max    interatomic separation is    1.9677 Angstrom (    3.7185 Bohr)
   between atoms    4 and    3, "H     " and "H     ".
+
+  Min HX interatomic separation is    0.9700 Angstrom (    1.8330 Bohr)
+
+  Min YX interatomic separation is    1.4900 Angstrom (    2.8157 Bohr)
 
 
   Bond distances (Angstrom):
@@ -385,8 +432,8 @@ Point group: C1
      ************************** Output from HERINT **************************
      ************************************************************************
 
- >>>> Total CPU  time used in HERMIT:   0.13 seconds
- >>>> Total wall time used in HERMIT:   0.13 seconds
+ >>>> Total CPU  time used in HERMIT:   0.04 seconds
+ >>>> Total wall time used in HERMIT:   0.05 seconds
 
 
                         .----------------------------------.
@@ -420,8 +467,8 @@ Point group: C1
  **********************************************************************
 
  
-     Date and time (Linux)  : Thu Dec  6 01:12:25 2012
-     Host name              : barbar                                  
+     Date and time (Linux)  : Tue Apr  8 10:50:34 2014
+     Host name              : donkey                                  
 
  Title lines from ".mol" input file:
      Hydrogen Peroxide                                                       
@@ -430,7 +477,7 @@ Point group: C1
  Print level on unit LUPRI =   2 is   0
  Print level on unit LUW4  =   2 is   5
 
-     Restricted, closed shell Hartree-Fock calculation.
+@    Restricted, closed shell Hartree-Fock calculation.
  Fock matrices are calculated directly without use of integrals on disk.
 
  Initial molecular orbitals are obtained according to
@@ -438,20 +485,21 @@ Point group: C1
 
      Wave function specification
      ============================
-     For the wave function of type :      >>> HF       <<<
-     Number of closed shell electrons          18
-     Number of electrons in active shells       0
-     Total charge of the molecule               0
+@    Wave function type        >>> HF <<<
+@    Number of closed shell electrons          18
+@    Number of electrons in active shells       0
+@    Total charge of the molecule               0
 
-     Spin multiplicity and 2 M_S                1         0
-     Total number of symmetries                 1
-     Reference state symmetry                   1
+@    Spin multiplicity and 2 M_S                1         0
+@    Total number of symmetries                 1 (point group: C1 )
+@    Reference state symmetry                   1 (irrep name : A  )
 
      Orbital specifications
      ======================
      Abelian symmetry species          All |    1
+                                           |  A  
                                        --- |  ---
-     Occupied SCF orbitals               9 |    9
+@    Occupied SCF orbitals               9 |    9
      Secondary orbitals                  3 |    3
      Total number of orbitals           12 |   12
      Number of basis functions          12 |   12
@@ -462,53 +510,55 @@ Point group: C1
      Threshold for SCF convergence     1.00D-05
 
 
- >>>>> DIIS optimization of Hartree-Fock <<<<<
+ *********************************************
+ ***** DIIS optimization of Hartree-Fock *****
+ *********************************************
 
  C1-DIIS algorithm; max error vectors =   10
 
  Iter      Total energy        Error norm    Delta(E)  DIIS dim.
  -----------------------------------------------------------------------------
-   1  Screening settings (-IFTHRS, DIFDEN)   -6    T
-   1    -148.663388067        9.24235D-01   -1.49D+02    1
+   1  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)   -6    1    T  1.06D-02  1.50D-02
+@  1    -148.663388067        9.24235D-01   -1.49D+02    1
       Virial theorem: -V/T =      2.008971
-      MULPOP  O      -0.23; O      -0.23; H       0.23; H       0.23; 
+@      MULPOP O      -0.23; O      -0.23; H       0.23; H       0.23; 
  -----------------------------------------------------------------------------
-   2  Screening settings (-IFTHRS, DIFDEN)   -6    T
-   2    -148.740322662        2.09082D-01   -7.69D-02    2
-      Virial theorem: -V/T =      2.009075
-      MULPOP  O      -0.20; O      -0.20; H       0.20; H       0.20; 
+   2  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)   -6    2    T  1.41D-02  1.40D-02
+@  2    -148.740248672        2.11028D-01   -7.69D-02    2
+      Virial theorem: -V/T =      2.009092
+@      MULPOP O      -0.19; O      -0.19; H       0.19; H       0.19; 
  -----------------------------------------------------------------------------
-   3  Screening settings (-IFTHRS, DIFDEN)   -6    T
-   3    -148.745131589        1.95803D-02   -4.81D-03    3
-      Virial theorem: -V/T =      2.008544
-      MULPOP  O      -0.19; O      -0.19; H       0.19; H       0.19; 
+   3  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)   -6    3    T  1.39D-02  1.40D-02
+@  3    -148.745128366        2.05945D-02   -4.88D-03    3
+      Virial theorem: -V/T =      2.008554
+@      MULPOP O      -0.19; O      -0.19; H       0.19; H       0.19; 
  -----------------------------------------------------------------------------
-   4  Screening settings (-IFTHRS, DIFDEN)  -10    F
-   4    -148.745172799        2.49376D-03   -4.12D-05    4
+   4  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)  -10    4    F  1.39D-02  1.30D-02
+@  4    -148.745172871        2.41475D-03   -4.45D-05    4
       Virial theorem: -V/T =      2.008448
-      MULPOP  O      -0.19; O      -0.19; H       0.19; H       0.19; 
+@      MULPOP O      -0.19; O      -0.19; H       0.19; H       0.19; 
  -----------------------------------------------------------------------------
-   5  Screening settings (-IFTHRS, DIFDEN)  -10    T
-   5    -148.745174240        1.04596D-03   -1.44D-06    5
+   5  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)  -10    5    T  1.40D-02  1.40D-02
+@  5    -148.745174229        1.06388D-03   -1.36D-06    5
       Virial theorem: -V/T =      2.008450
-      MULPOP  O      -0.19; O      -0.19; H       0.19; H       0.19; 
+@      MULPOP O      -0.19; O      -0.19; H       0.19; H       0.19; 
  -----------------------------------------------------------------------------
-   6  Screening settings (-IFTHRS, DIFDEN)  -10    T
-   6    -148.745174569        1.50709D-04   -3.28D-07    6
+   6  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)  -10    6    T  1.39D-02  1.40D-02
+@  6    -148.745174570        1.30779D-04   -3.41D-07    6
       Virial theorem: -V/T =      2.008452
-      MULPOP  O      -0.19; O      -0.19; H       0.19; H       0.19; 
+@      MULPOP O      -0.19; O      -0.19; H       0.19; H       0.19; 
  -----------------------------------------------------------------------------
-   7  Screening settings (-IFTHRS, DIFDEN)  -10    T
-   7    -148.745174575        4.68277D-05   -6.24D-09    7
+   7  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)  -10    7    T  1.39D-02  1.50D-02
+@  7    -148.745174575        4.44014D-05   -4.50D-09    7
       Virial theorem: -V/T =      2.008452
-      MULPOP  O      -0.19; O      -0.19; H       0.19; H       0.19; 
+@      MULPOP O      -0.19; O      -0.19; H       0.19; H       0.19; 
  -----------------------------------------------------------------------------
-   8  Screening settings (-IFTHRS, DIFDEN)  -10    T
-   8    -148.745174575        6.56000D-06   -6.35D-10    8
+   8  Screening settings (-IFTHRS, JTDIIS, DIFDEN, times)  -10    8    T  1.40D-02  1.40D-02
+@  8    -148.745174575        6.12490D-06   -5.69D-10    8
 
- *** DIIS converged in   8 iterations !
-@    Converged SCF energy, gradient:   -148.745174575403    6.56D-06
-   - total time used in SIRFCK :              0.00 seconds
+@ *** DIIS converged in   8 iterations !
+@     Converged SCF energy, gradient:   -148.745174575410    6.12D-06
+    - total time used in SIRFCK :              0.00 seconds
 
 
  *** SCF orbital energy analysis ***
@@ -520,18 +570,18 @@ Point group: C1
 
  Sym       Hartree-Fock orbital energies
 
-  1    -20.31996436   -20.31920505    -1.38206558    -1.13600218    -0.63429969
-        -0.53608821    -0.46119120    -0.43789826    -0.36313669     0.42139282
-         0.56998381     0.67470712
+1 A     -20.31996440   -20.31920508    -1.38206560    -1.13600219    -0.63429974
+         -0.53608823    -0.46119121    -0.43789827    -0.36313669     0.42139281
+          0.56998378     0.67470710
 
-    E(LUMO) :     0.42139282 au (symmetry 1)
+    E(LUMO) :     0.42139281 au (symmetry 1)
   - E(HOMO) :    -0.36313669 au (symmetry 1)
   ------------------------------------------
-    gap     :     0.78452951 au
+    gap     :     0.78452950 au
 
- >>> Writing SIRIFC interface file <<<
+ >>> Writing SIRIFC interface file
 
- >>>> CPU and wall time for SCF :       0.200       0.207
+ >>>> CPU and wall time for SCF :       0.113       0.118
 
 
                        .-----------------------------------.
@@ -539,24 +589,24 @@ Point group: C1
                        `-----------------------------------'
 
 
-   @ Spin multiplicity:           1
-   @ Spatial symmetry:            1
-   @ Total charge of molecule:    0
+@    Spin multiplicity:           1
+@    Spatial symmetry:            1 ( irrep  A   in C1  )
+@    Total charge of molecule:    0
 
-   @ Final HF energy:            -148.745174575403                 
-   @ Nuclear repulsion:            36.151288508275
-   @ Electronic energy:          -184.896463083678
+@    Final HF energy:            -148.745174575410                 
+@    Nuclear repulsion:            36.151288508275
+@    Electronic energy:          -184.896463083685
 
-   @ Final gradient norm:           0.000006559996
+@    Final gradient norm:           0.000006124897
 
  
-     Date and time (Linux)  : Thu Dec  6 01:12:26 2012
-     Host name              : barbar                                  
+     Date and time (Linux)  : Tue Apr  8 10:50:34 2014
+     Host name              : donkey                                  
 
  (Only coefficients >0.0100 are printed.)
 
- Molecular orbitals for symmetry species  1
- ------------------------------------------
+ Molecular orbitals for symmetry species 1  (A  )
+ ------------------------------------------------
 
     Orbital         1        2        3        4        5        6        7
    1 O   :1s     0.7029  -0.7034  -0.1654  -0.1718  -0.0429  -0.0537   0.0461
@@ -588,12 +638,12 @@ Point group: C1
 
 
 
- >>>> Total CPU  time used in SIRIUS :      0.25 seconds
- >>>> Total wall time used in SIRIUS :      0.26 seconds
+ >>>> Total CPU  time used in SIRIUS :      0.12 seconds
+ >>>> Total wall time used in SIRIUS :      0.12 seconds
 
  
-     Date and time (Linux)  : Thu Dec  6 01:12:26 2012
-     Host name              : barbar                                  
+     Date and time (Linux)  : Tue Apr  8 10:50:34 2014
+     Host name              : donkey                                  
 
  NOTE:    1 informational messages have been issued.
  Check output, result, and error files for "INFO".
@@ -618,7 +668,7 @@ Point group: C1
   ----------------------------
 
   Total number of coordinates:   12
-  O       :    1  x   0.0000000000   2  y   1.4078458600   3  z  -0.0988560000
+  O       :    1  x  -0.0000000000   2  y   1.4078458600   3  z  -0.0988560000
   O       :    4  x   0.0000000000   5  y  -1.4078458600   6  z  -0.0988560000
   H       :    7  x   0.6908148900   8  y   1.7261489100   9  z   1.5689186800
   H       :   10  x  -0.6908148900  11  y  -1.7261489100  12  z   1.5689186800
@@ -671,7 +721,7 @@ RSPC Calling VIBCTL_ifc ...
 
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1       0.00000000     1.40784586    -0.09885600     0.00000000    -1.40784586
+       1      -0.00000000     1.40784586    -0.09885600     0.00000000    -1.40784586
 
                Column   6     Column   7     Column   8     Column   9     Column  10
        1      -0.09885600     0.69081489     1.72614891     1.56891868    -0.69081489
@@ -768,10 +818,10 @@ RSPC Calling VIBCTL_ifc ...
 
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1    -2.514532D-21  -2.373664D-21   4.511970D-21  -2.079543D-22   1.655999D-05
+       1     1.580156D-21  -1.035826D-21   8.864701D-21  -8.436219D-22   1.655999D-05
 
                Column   6     Column   7     Column   8     Column   9     Column  10
-       1    -7.683633D-21   1.057344D-05   5.238010D-05   3.025060D-04  -5.634295D-22
+       1    -6.043342D-21   1.057344D-05   5.238010D-05   3.025060D-04   2.094181D-21
 
                Column  11     Column  12
        1     5.031284D-05   3.026586D-04
@@ -891,32 +941,32 @@ RSPC Calling VIBCTL_ifc ...
       12       0.01457859     0.01453474     0.00134242     0.00271685     0.00053095
 
                Column   6     Column   7     Column   8     Column   9     Column  10
-       1      -0.00113155     0.00007547     0.00002570    -0.00000092    -0.00001432
-       2      -0.00075724     0.00018987     0.00000567    -0.00000017     0.00401653
-       3       0.00038377     0.00555317     0.00001177    -0.00000247     0.00000110
-       4       0.00113155    -0.00007581     0.00569035    -0.00000092    -0.00001521
-       5       0.00075724     0.00018987     0.00000567    -0.00000017     0.00401653
-       6       0.00038377     0.00012913     0.00014347     0.00000247    -0.00000110
-       7       0.01421820     0.00127535    -0.00308032     0.01524029    -0.00000115
-       8      -0.00107124    -0.00305998     0.00147347     0.00000276     0.00401501
-       9      -0.00609072     0.00567641     0.00101819    -0.00631615    -0.00000407
-      10      -0.01421820     0.00108987     0.00386506     0.01524029    -0.00000224
-      11       0.00107123    -0.00298575    -0.00130611     0.00000276     0.00401544
-      12      -0.00609073     0.00000589    -0.00086295     0.00631615     0.00000406
+       1      -0.00113155     0.00007547    -0.00000092     0.00569572     0.00002570
+       2      -0.00075724     0.00018987    -0.00000017     0.00000510     0.00000567
+       3       0.00038377     0.00555317    -0.00000247    -0.00014523     0.00001177
+       4       0.00113155    -0.00007581    -0.00000092     0.00024870     0.00569035
+       5       0.00075724     0.00018987    -0.00000017     0.00000510     0.00000567
+       6       0.00038377     0.00012913     0.00000247    -0.00000397     0.00014347
+       7       0.01421820     0.00127535     0.01524029     0.00374638    -0.00308032
+       8      -0.00107124    -0.00305998     0.00000276    -0.00124763     0.00147347
+       9      -0.00609072     0.00567641    -0.00631615     0.00090130     0.00101819
+      10      -0.01421820     0.00108987     0.01524029    -0.00293217     0.00386506
+      11       0.00107123    -0.00298575     0.00000276     0.00142516    -0.00130611
+      12      -0.00609073     0.00000589     0.00631615    -0.00105051    -0.00086295
 
                Column  11     Column  12
-       1       0.00569572     0.00007350
-       2       0.00000510    -0.00019017
-       3      -0.00014523     0.00012090
-       4       0.00024870    -0.00007323
-       5       0.00000510    -0.00019017
-       6      -0.00000397     0.00555304
-       7       0.00374638    -0.00109443
-       8      -0.00124763     0.00299137
-       9       0.00090130    -0.00000254
-      10      -0.00293217    -0.00127434
-      11       0.00142516     0.00306337
-      12      -0.00105051     0.00567648
+       1      -0.00001432     0.00007350
+       2       0.00401653    -0.00019017
+       3       0.00000110     0.00012090
+       4      -0.00001521    -0.00007323
+       5       0.00401653    -0.00019017
+       6      -0.00000110     0.00555304
+       7      -0.00000115    -0.00109443
+       8       0.00401501     0.00299137
+       9      -0.00000407    -0.00000254
+      10      -0.00000224    -0.00127434
+      11       0.00401544     0.00306337
+      12       0.00000406     0.00567648
     ==== End of matrix output ====
 
 
@@ -1000,22 +1050,17 @@ RSPC Calling VIBCTL_ifc ...
     ==== End of matrix output ====
 
 
-
   Vibrational Frequencies
   -----------------------
 
    mode   irrep     cm-1     hartrees 
   ------------------------------------
-
     1      A       3818.22  0.0173971 
     2      A       3817.26  0.0173927 
     3      A       1588.43  0.0072374 
     4      A       1556.77  0.0070932 
     5      A        893.13  0.0040694 
     6      A        713.66  0.0032517 
-
-
-
 
 
 
@@ -1076,37 +1121,37 @@ RSPC Calling VIBCTL_ifc ...
   frequency:0.0720
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1      -0.96220779     0.03187056    -0.34543408     0.96220779    -0.03187056
-       2       1.71734732     0.34486123    -0.64625358    -1.71734732    -0.34486123
-       3      -1.83287331     0.02027813    -1.10044409    -1.83287331     0.02027813
-       4       1.71734732     0.34486123    -0.64625358    -1.71734732    -0.34486123
-       5      -0.84690424    11.14896226    -1.49613799     0.84690424   -11.14896226
-       6      -0.37899637    -1.59657289     0.82082626    -0.37899637    -1.59657289
-       7      -1.83287331     0.02027813    -1.10044409    -1.83287331     0.02027813
-       8      -0.37899637    -1.59657289     0.82082626    -0.37899637    -1.59657289
-       9      -0.47611367     0.44063107    -3.93415401     0.47611367    -0.44063107
+       1      -0.96220753     0.03187037    -0.34543427     0.96220753    -0.03187037
+       2       1.71734777     0.34486070    -0.64625376    -1.71734777    -0.34486070
+       3      -1.83287322     0.02027817    -1.10044408    -1.83287322     0.02027817
+       4       1.71734777     0.34486070    -0.64625376    -1.71734777    -0.34486070
+       5      -0.84690377    11.14896204    -1.49613808     0.84690377   -11.14896204
+       6      -0.37899633    -1.59657273     0.82082628    -0.37899633    -1.59657273
+       7      -1.83287322     0.02027817    -1.10044408    -1.83287322     0.02027817
+       8      -0.37899633    -1.59657273     0.82082628    -0.37899633    -1.59657273
+       9      -0.47611388     0.44063087    -3.93415399     0.47611388    -0.44063087
 
                Column   6     Column   7     Column   8     Column   9     Column  10
-       1      -0.34543408     1.83437020     0.03370024     0.34543408    -1.83437020
-       2      -0.64625358     1.47853758     0.82623768     0.64625358    -1.47853758
-       3       1.10044409     1.83287331    -0.02027813     1.39598244     1.83287331
-       4      -0.64625358     1.47853758     0.82623768     0.64625358    -1.47853758
-       5      -1.49613799     0.53219580     2.19280584     1.49613799    -0.53219580
-       6      -0.82082626     0.37899637     1.59657289     2.20944535     0.37899637
-       7       1.10044409     1.83287331    -0.02027813     1.39598244     1.83287331
-       8      -0.82082626     0.37899637     1.59657289     2.20944535     0.37899637
-       9      -3.93415401     0.40491346     0.04146895     3.93415401    -0.40491346
+       1      -0.34543427     1.83437015     0.03370026     0.34543427    -1.83437015
+       2      -0.64625376     1.47853749     0.82623778     0.64625376    -1.47853749
+       3       1.10044408     1.83287322    -0.02027817     1.39598265     1.83287322
+       4      -0.64625376     1.47853749     0.82623778     0.64625376    -1.47853749
+       5      -1.49613808     0.53219591     2.19280582     1.49613808    -0.53219591
+       6      -0.82082628     0.37899633     1.59657273     2.20944562     0.37899633
+       7       1.10044408     1.83287322    -0.02027817     1.39598265     1.83287322
+       8      -0.82082628     0.37899633     1.59657273     2.20944562     0.37899633
+       9      -3.93415399     0.40491375     0.04146908     3.93415399    -0.40491375
 
                Column  11     Column  12
-       1      -0.03370024     0.34543408
-       2      -0.82623768     0.64625358
-       3      -0.02027813    -1.39598244
-       4      -0.82623768     0.64625358
-       5      -2.19280584     1.49613799
-       6       1.59657289    -2.20944535
-       7      -0.02027813    -1.39598244
-       8       1.59657289    -2.20944535
-       9      -0.04146895     3.93415401
+       1      -0.03370026     0.34543427
+       2      -0.82623778     0.64625376
+       3      -0.02027817    -1.39598265
+       4      -0.82623778     0.64625376
+       5      -2.19280582     1.49613808
+       6       1.59657273    -2.20944562
+       7      -0.02027817    -1.39598265
+       8       1.59657273    -2.20944562
+       9      -0.04146908     3.93415399
     ==== End of matrix output ====
 
 
@@ -1116,37 +1161,37 @@ RSPC Calling VIBCTL_ifc ...
   frequency:0.0720
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1       0.05255219     0.10205538     0.13462230    -0.05255219    -0.10205538
-       2       0.00610046    -0.24279998     0.28615329    -0.00610046     0.24279998
-       3       0.04449704    -0.07582218     0.21559148     0.04449704    -0.07582218
-       4       0.04605959    -0.03817441    -0.05058255    -0.04605959     0.03817441
-       5       0.09514571    -0.01852566    -0.03603571    -0.09514571     0.01852566
-       6       0.09225873     0.00862435    -0.03256853     0.09225873     0.00862435
-       7      -0.09803797     0.02530778    -0.02598481    -0.09803797     0.02530778
-       8      -0.23139126     0.01689325    -0.04076973    -0.23139126     0.01689325
-       9      -0.10256651    -0.06294861    -0.07704211     0.10256651     0.06294861
+       1       0.05255231     0.10205547     0.13462228    -0.05255231    -0.10205547
+       2       0.00610039    -0.24279949     0.28615332    -0.00610039     0.24279949
+       3       0.04449703    -0.07582218     0.21559147     0.04449703    -0.07582218
+       4       0.04605959    -0.03817429    -0.05058260    -0.04605959     0.03817429
+       5       0.09514565    -0.01852576    -0.03603572    -0.09514565     0.01852576
+       6       0.09225877     0.00862436    -0.03256852     0.09225877     0.00862436
+       7      -0.09803796     0.02530776    -0.02598477    -0.09803796     0.02530776
+       8      -0.23139123     0.01689328    -0.04076976    -0.23139123     0.01689328
+       9      -0.10256652    -0.06294864    -0.07704211     0.10256652     0.06294864
 
                Column   6     Column   7     Column   8     Column   9     Column  10
-       1       0.13462230    -0.11496116     0.01617106    -0.10786080     0.11496116
-       2       0.28615329     0.00597027    -0.06596481    -0.14120184    -0.00597027
-       3      -0.21559148    -0.04449704    -0.00914355    -0.26697545    -0.04449704
-       4      -0.05058255     0.02067146     0.05220460     0.03846284    -0.02067146
-       5      -0.03603571     0.00727680     0.01575759     0.01272219    -0.00727680
-       6       0.03256853    -0.00729299    -0.00862435    -0.00827766    -0.00729299
-       7       0.02598481     0.07127647    -0.01318806     0.01635668     0.07127647
-       8       0.04076973     0.08643981     0.00642027     0.01161152     0.08643981
-       9      -0.07704211     0.08627440     0.00654939     0.07704211    -0.08627440
+       1       0.13462228    -0.11496119     0.01617107    -0.10786080     0.11496119
+       2       0.28615332     0.00597028    -0.06596475    -0.14120187    -0.00597028
+       3      -0.21559147    -0.04449703    -0.00914356    -0.26697544    -0.04449703
+       4      -0.05058260     0.02067146     0.05220463     0.03846289    -0.02067146
+       5      -0.03603572     0.00727682     0.01575767     0.01272222    -0.00727682
+       6       0.03256852    -0.00729303    -0.00862436    -0.00827767    -0.00729303
+       7       0.02598477     0.07127647    -0.01318805     0.01635668     0.07127647
+       8       0.04076976     0.08643978     0.00642022     0.01161156     0.08643978
+       9      -0.07704211     0.08627440     0.00654940     0.07704211    -0.08627440
 
                Column  11     Column  12
-       1      -0.01617106    -0.10786080
-       2       0.06596481    -0.14120184
-       3      -0.00914355     0.26697545
-       4      -0.05220460     0.03846284
-       5      -0.01575759     0.01272219
-       6      -0.00862435     0.00827766
-       7      -0.01318806    -0.01635668
-       8       0.00642027    -0.01161152
-       9      -0.00654939     0.07704211
+       1      -0.01617107    -0.10786080
+       2       0.06596475    -0.14120187
+       3      -0.00914356     0.26697544
+       4      -0.05220463     0.03846289
+       5      -0.01575767     0.01272222
+       6      -0.00862436     0.00827767
+       7      -0.01318805    -0.01635668
+       8       0.00642022    -0.01161156
+       9      -0.00654940     0.07704211
     ==== End of matrix output ====
 
 
@@ -1165,91 +1210,91 @@ RSPC Calling VIBCTL_ifc ...
   frequency:0.0720
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1       1.54794775     0.31798000     0.45253307     1.54794775     0.31798000
-       2       0.40279210    -2.26681250     1.67225381     0.40279210    -2.26681250
-       3       0.70668517     1.99607044     0.99797722    -0.70668517    -1.99607044
-       4      -2.96874868     0.17232121    -0.56053308    -2.96874868     0.17232121
-       5       4.04567047    -1.23916062    -1.76819846     4.04567047    -1.23916062
-       6      -4.03026507     0.73778746    -2.40404598     4.03026507    -0.73778746
-       7      -0.89930279     0.15682926    -0.49182371     0.89930279    -0.15682926
-       8      -0.82994126     0.98866395    -1.37679233     0.82994126    -0.98866395
-       9       0.28414682    -0.05892216    -1.83421088     0.28414682    -0.05892216
-      10      -2.96874868     0.17232121    -0.56053308    -2.96874868     0.17232121
-      11       4.04567047    -1.23916062    -1.76819846     4.04567047    -1.23916062
-      12      -4.03026507     0.73778746    -2.40404598     4.03026507    -0.73778746
-      13       0.28906381    -0.75932228    -0.60940047     0.28906381    -0.75932228
-      14      -0.08114211     7.20955031    -1.02750945    -0.08114211     7.20955031
-      15      -0.35069217    -4.25652975     0.14540463     0.35069217     4.25652975
-      16      -4.01351742     0.84107372    -2.95891907     4.01351742    -0.84107372
-      17      -1.98096392     0.45636076     0.54167941     1.98096392    -0.45636076
-      18      -1.20467367     0.34003005   -10.05943610    -1.20467367     0.34003005
-      19      -0.89930279     0.15682926    -0.49182371     0.89930279    -0.15682926
-      20      -0.82994126     0.98866395    -1.37679233     0.82994126    -0.98866395
-      21       0.28414682    -0.05892216    -1.83421088     0.28414682    -0.05892216
-      22      -4.01351742     0.84107372    -2.95891907     4.01351742    -0.84107372
-      23      -1.98096392     0.45636076     0.54167941     1.98096392    -0.45636076
-      24      -1.20467367     0.34003005   -10.05943610    -1.20467367     0.34003005
-      25      -1.83701157     0.44134228     0.15686740    -1.83701157     0.44134228
-      26      -0.32164999    -4.94273782    -0.64474437    -0.32164999    -4.94273782
-      27      -0.35599301     2.26045931    -1.14338185     0.35599301    -2.26045931
+       1       1.54794774     0.31797978     0.45253300     1.54794774     0.31797978
+       2       0.40279214    -2.26681323     1.67225428     0.40279214    -2.26681323
+       3       0.70668512     1.99607012     0.99797723    -0.70668512    -1.99607012
+       4      -2.96874851     0.17232109    -0.56053308    -2.96874851     0.17232109
+       5       4.04567082    -1.23916053    -1.76819820     4.04567082    -1.23916053
+       6      -4.03026517     0.73778745    -2.40404612     4.03026517    -0.73778745
+       7      -0.89930282     0.15682886    -0.49182404     0.89930282    -0.15682886
+       8      -0.82994145     0.98866311    -1.37679259     0.82994145    -0.98866311
+       9       0.28414665    -0.05892197    -1.83421111     0.28414665    -0.05892197
+      10      -2.96874851     0.17232109    -0.56053308    -2.96874851     0.17232109
+      11       4.04567082    -1.23916053    -1.76819820     4.04567082    -1.23916053
+      12      -4.03026517     0.73778745    -2.40404612     4.03026517    -0.73778745
+      13       0.28906361    -0.75932204    -0.60939997     0.28906361    -0.75932204
+      14      -0.08114238     7.20955110    -1.02750884    -0.08114238     7.20955110
+      15      -0.35069206    -4.25652918     0.14540498     0.35069206     4.25652918
+      16      -4.01351725     0.84107283    -2.95891961     4.01351725    -0.84107283
+      17      -1.98096369     0.45635696     0.54167924     1.98096369    -0.45635696
+      18      -1.20467386     0.34003026   -10.05943652    -1.20467386     0.34003026
+      19      -0.89930282     0.15682886    -0.49182404     0.89930282    -0.15682886
+      20      -0.82994145     0.98866311    -1.37679259     0.82994145    -0.98866311
+      21       0.28414665    -0.05892197    -1.83421111     0.28414665    -0.05892197
+      22      -4.01351725     0.84107283    -2.95891961     4.01351725    -0.84107283
+      23      -1.98096369     0.45635696     0.54167924     1.98096369    -0.45635696
+      24      -1.20467386     0.34003026   -10.05943652    -1.20467386     0.34003026
+      25      -1.83701135     0.44134227     0.15686697    -1.83701135     0.44134227
+      26      -0.32164976    -4.94273787    -0.64474545    -0.32164976    -4.94273787
+      27      -0.35599307     2.26045906    -1.14338221     0.35599307    -2.26045906
 
                Column   6     Column   7     Column   8     Column   9     Column  10
-       1      -0.45253307    -0.07298790    -1.21221813    -1.48909647    -0.07298790
-       2      -1.67225381     1.38568416    -2.86982784    -2.73402889     1.38568416
-       3       0.99797722     1.85822263    -2.51468231    -3.82791141    -1.85822263
-       4       0.56053308     4.31010588     0.93389868     0.52142395     4.31010588
-       5       1.76819846     3.65929003     2.58051782     0.97279438     3.65929003
-       6      -2.40404598     4.70256741     1.67943917     2.40404598    -4.70256741
-       7      -0.49182371     4.08048316     0.05838475     1.59804360    -4.08048316
-       8      -1.37679233     3.35412592     1.86647396     2.71814953    -3.35412592
-       9       1.83421088     3.96075447     0.05892216     4.43868758     3.96075447
-      10       0.56053308     4.31010588     0.93389868     0.52142395     4.31010588
-      11       1.76819846     3.65929003     2.58051782     0.97279438     3.65929003
-      12      -2.40404598     4.70256741     1.67943917     2.40404598    -4.70256741
-      13       0.60940047    -1.02654374     2.54779854    -1.46048078    -1.02654374
-      14       1.02750945    -0.81309602     3.06373035    -1.83501265    -0.81309602
-      15       0.14540463    -1.20387389     4.87520721    -2.97533882     1.20387389
-      16      -2.95891907     5.92708368     1.80759187     4.30027627    -5.92708368
-      17       0.54167941     1.15024283     7.14187475     7.16328109    -1.15024283
-      18      10.05943610     1.20467367     3.90487123    12.60048044     1.20467367
-      19      -0.49182371     4.08048316     0.05838475     1.59804360    -4.08048316
-      20      -1.37679233     3.35412592     1.86647396     2.71814953    -3.35412592
-      21       1.83421088     3.96075447     0.05892216     4.43868758     3.96075447
-      22      -2.95891907     5.92708368     1.80759187     4.30027627    -5.92708368
-      23       0.54167941     1.15024283     7.14187475     7.16328109    -1.15024283
-      24      10.05943610     1.20467367     3.90487123    12.60048044     1.20467367
-      25      -0.15686740     1.09953164    -1.33558041     2.94957725     1.09953164
-      26       0.64474437    -0.57258814    -0.19390251     4.56904153    -0.57258814
-      27      -1.14338185    -0.65434874    -2.36052490     6.80325023     0.65434874
+       1      -0.45253300    -0.07298780    -1.21221800    -1.48909642    -0.07298780
+       2      -1.67225428     1.38568430    -2.86982740    -2.73402895     1.38568430
+       3       0.99797723     1.85822243    -2.51468205    -3.82791118    -1.85822243
+       4       0.56053308     4.31010584     0.93389887     0.52142419     4.31010584
+       5       1.76819820     3.65929012     2.58051786     0.97279439     3.65929012
+       6      -2.40404612     4.70256731     1.67943913     2.40404612    -4.70256731
+       7      -0.49182404     4.08048320     0.05838482     1.59804400    -4.08048320
+       8      -1.37679259     3.35412604     1.86647437     2.71814991    -3.35412604
+       9       1.83421111     3.96075426     0.05892197     4.43868787     3.96075426
+      10       0.56053308     4.31010584     0.93389887     0.52142419     4.31010584
+      11       1.76819820     3.65929012     2.58051786     0.97279439     3.65929012
+      12      -2.40404612     4.70256731     1.67943913     2.40404612    -4.70256731
+      13       0.60939997    -1.02654358     2.54779848    -1.46048113    -1.02654358
+      14       1.02750884    -0.81309584     3.06373016    -1.83501291    -0.81309584
+      15       0.14540498    -1.20387393     4.87520664    -2.97533892     1.20387393
+      16      -2.95891961     5.92708327     1.80759187     4.30027694    -5.92708327
+      17       0.54167924     1.15024284     7.14187413     7.16328171    -1.15024284
+      18      10.05943652     1.20467386     3.90487065    12.60048083     1.20467386
+      19      -0.49182404     4.08048320     0.05838482     1.59804400    -4.08048320
+      20      -1.37679259     3.35412604     1.86647437     2.71814991    -3.35412604
+      21       1.83421111     3.96075426     0.05892197     4.43868787     3.96075426
+      22      -2.95891961     5.92708327     1.80759187     4.30027694    -5.92708327
+      23       0.54167924     1.15024284     7.14187413     7.16328171    -1.15024284
+      24      10.05943652     1.20467386     3.90487065    12.60048083     1.20467386
+      25      -0.15686697     1.09953138    -1.33558049     2.94957755     1.09953138
+      26       0.64474545    -0.57258846    -0.19390276     4.56904186    -0.57258846
+      27      -1.14338221    -0.65434850    -2.36052459     6.80325010     0.65434850
 
                Column  11     Column  12
-       1      -1.21221813     1.48909647
-       2      -2.86982784     2.73402889
-       3       2.51468231    -3.82791141
-       4       0.93389868    -0.52142395
-       5       2.58051782    -0.97279438
-       6      -1.67943917     2.40404598
-       7      -0.05838475     1.59804360
-       8      -1.86647396     2.71814953
-       9       0.05892216    -4.43868758
-      10       0.93389868    -0.52142395
-      11       2.58051782    -0.97279438
-      12      -1.67943917     2.40404598
-      13       2.54779854     1.46048078
-      14       3.06373035     1.83501265
-      15      -4.87520721    -2.97533882
-      16      -1.80759187     4.30027627
-      17      -7.14187475     7.16328109
-      18       3.90487123   -12.60048044
-      19      -0.05838475     1.59804360
-      20      -1.86647396     2.71814953
-      21       0.05892216    -4.43868758
-      22      -1.80759187     4.30027627
-      23      -7.14187475     7.16328109
-      24       3.90487123   -12.60048044
-      25      -1.33558041    -2.94957725
-      26      -0.19390251    -4.56904153
-      27       2.36052490     6.80325023
+       1      -1.21221800     1.48909642
+       2      -2.86982740     2.73402895
+       3       2.51468205    -3.82791118
+       4       0.93389887    -0.52142419
+       5       2.58051786    -0.97279439
+       6      -1.67943913     2.40404612
+       7      -0.05838482     1.59804400
+       8      -1.86647437     2.71814991
+       9       0.05892197    -4.43868787
+      10       0.93389887    -0.52142419
+      11       2.58051786    -0.97279439
+      12      -1.67943913     2.40404612
+      13       2.54779848     1.46048113
+      14       3.06373016     1.83501291
+      15      -4.87520664    -2.97533892
+      16      -1.80759187     4.30027694
+      17      -7.14187413     7.16328171
+      18       3.90487065   -12.60048083
+      19      -0.05838482     1.59804400
+      20      -1.86647437     2.71814991
+      21       0.05892197    -4.43868787
+      22      -1.80759187     4.30027694
+      23      -7.14187413     7.16328171
+      24       3.90487065   -12.60048083
+      25      -1.33558049    -2.94957755
+      26      -0.19390276    -4.56904186
+      27       2.36052459     6.80325010
     ==== End of matrix output ====
 
 
@@ -1293,13 +1338,13 @@ RSPC Calling VIBCTL_ifc ...
   frequency:0.0720
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1       0.00000075     0.03412492     0.00000000     0.00036661    -0.01126690
+       1       0.00000075     0.03412493     0.00000000     0.00036661    -0.01126689
        2       0.00000090     0.04091672     0.00000002    -0.02555343    -0.01140720
-       3      -0.06617848     0.00000145    -0.00929595    -0.00000001     0.00000000
+       3      -0.06617849     0.00000145    -0.00929595    -0.00000001    -0.00000000
        4       0.00000090     0.04091672     0.00000002    -0.02555343    -0.01140720
-       5       0.00000132     0.06019007     0.00000003    -0.05716687    -0.09563806
+       5       0.00000132     0.06019008     0.00000003    -0.05716687    -0.09563806
        6      -0.07646942     0.00000168     0.04725643     0.00000003     0.00000000
-       7      -0.06617848     0.00000145    -0.00929595    -0.00000001     0.00000000
+       7      -0.06617849     0.00000145    -0.00929595    -0.00000001    -0.00000000
        8      -0.07646942     0.00000168     0.04725643     0.00000003     0.00000000
        9       0.00000279     0.12695370    -0.00000002     0.02169036    -0.00181372
 
@@ -1308,7 +1353,7 @@ RSPC Calling VIBCTL_ifc ...
        2       0.02749695
        4       0.02749695
        5      -0.02390601
-       9      -0.03910774
+       9      -0.03910773
     ==== End of matrix output ====
 
 
@@ -1319,21 +1364,21 @@ RSPC Calling VIBCTL_ifc ...
 
                Column   1     Column   2     Column   3     Column   4     Column   5
        1      -0.00000011    -0.00479395     0.00000000    -0.00107012    -0.00026841
-       2      -0.00000011    -0.00480184     0.00000000     0.00115286     0.00186753
+       2      -0.00000011    -0.00480184    -0.00000000     0.00115286     0.00186752
        3       0.00878071    -0.00000019     0.00117065     0.00000000     0.00000000
-       4       0.00000004     0.00171480     0.00000000    -0.00153236     0.00017266
-       5       0.00000001     0.00053955     0.00000000    -0.00052908     0.00013911
-       6       0.00038585    -0.00000001    -0.00032262     0.00000000     0.00000000
-       7      -0.00138494     0.00000003    -0.00064389     0.00000000     0.00000000
-       8      -0.00166228     0.00000004    -0.00008166     0.00000000     0.00000000
-       9       0.00000008     0.00358128     0.00000000     0.00023569     0.00003099
+       4       0.00000004     0.00171481     0.00000000    -0.00153236     0.00017266
+       5       0.00000001     0.00053956     0.00000000    -0.00052908     0.00013911
+       6       0.00038585    -0.00000001    -0.00032262    -0.00000000    -0.00000000
+       7      -0.00138494     0.00000003    -0.00064389    -0.00000000    -0.00000000
+       8      -0.00166228     0.00000004    -0.00008166    -0.00000000     0.00000000
+       9       0.00000008     0.00358128    -0.00000000     0.00023569     0.00003099
 
                Column   6
        1      -0.00215999
        2       0.00260469
        4      -0.00007781
        5      -0.00019673
-       9       0.00176913
+       9       0.00176914
     ==== End of matrix output ====
 
 
@@ -1352,55 +1397,55 @@ RSPC Calling VIBCTL_ifc ...
   frequency:0.0720
 
                Column   1     Column   2     Column   3     Column   4     Column   5
-       1       0.05265212    -0.00000116    -0.03215875    -0.00000002     0.00000000
-       2       0.08042031    -0.00000177    -0.07294598    -0.00000004     0.00000000
-       3      -0.00000230    -0.10470400    -0.00000002     0.05863570    -0.02741431
-       4      -0.07530457     0.00000166     0.02027586     0.00000001     0.00000000
+       1       0.05265211    -0.00000116    -0.03215874    -0.00000002    -0.00000000
+       2       0.08042031    -0.00000177    -0.07294597    -0.00000004    -0.00000000
+       3      -0.00000230    -0.10470399    -0.00000002     0.05863569    -0.02741431
+       4      -0.07530458     0.00000166     0.02027586     0.00000001     0.00000000
        5      -0.08643997     0.00000190     0.07005838     0.00000004     0.00000000
-       6       0.00000316     0.14362698     0.00000003    -0.03993534    -0.03550808
-       7       0.00000217     0.09842042     0.00000001     0.00463710    -0.02435824
-       8       0.00000292     0.13265672     0.00000003    -0.04643532    -0.02818076
-       9      -0.18078465     0.00000397    -0.01894089    -0.00000001     0.00000000
-      10      -0.07530457     0.00000166     0.02027586     0.00000001     0.00000000
+       6       0.00000316     0.14362698     0.00000003    -0.03993533    -0.03550807
+       7       0.00000217     0.09842043     0.00000001     0.00463710    -0.02435824
+       8       0.00000292     0.13265674     0.00000003    -0.04643533    -0.02818075
+       9      -0.18078466     0.00000397    -0.01894089    -0.00000001    -0.00000000
+      10      -0.07530458     0.00000166     0.02027586     0.00000001     0.00000000
       11      -0.08643997     0.00000190     0.07005838     0.00000004     0.00000000
-      12       0.00000316     0.14362698     0.00000003    -0.03993534    -0.03550808
-      13       0.04072746    -0.00000089     0.08249541     0.00000005     0.00000000
-      14       0.04793552    -0.00000105     0.08262224     0.00000005     0.00000000
-      15      -0.00000163    -0.07423137     0.00000010    -0.17389491     0.03121693
-      16       0.00000474     0.21541517     0.00000003    -0.03451983    -0.04178770
-      17       0.00000571     0.25977324     0.00000010    -0.19046420    -0.01440688
-      18      -0.42160255     0.00000927     0.05790679     0.00000003     0.00000000
-      19       0.00000217     0.09842042     0.00000001     0.00463710    -0.02435824
-      20       0.00000292     0.13265672     0.00000003    -0.04643532    -0.02818076
-      21      -0.18078465     0.00000397    -0.01894089    -0.00000001     0.00000000
-      22       0.00000474     0.21541517     0.00000003    -0.03451983    -0.04178770
-      23       0.00000571     0.25977324     0.00000010    -0.19046420    -0.01440688
-      24      -0.42160255     0.00000927     0.05790679     0.00000003     0.00000000
-      25      -0.09337958     0.00000205    -0.05033667    -0.00000003     0.00000000
-      26      -0.12835584     0.00000282    -0.00967626    -0.00000001     0.00000000
-      27       0.00000393     0.17893536    -0.00000007     0.11525921    -0.00380262
+      12       0.00000316     0.14362698     0.00000003    -0.03993533    -0.03550807
+      13       0.04072747    -0.00000089     0.08249541     0.00000005     0.00000000
+      14       0.04793553    -0.00000105     0.08262223     0.00000005     0.00000000
+      15      -0.00000163    -0.07423138     0.00000010    -0.17389489     0.03121693
+      16       0.00000474     0.21541519     0.00000003    -0.03451983    -0.04178769
+      17       0.00000571     0.25977326     0.00000010    -0.19046418    -0.01440685
+      18      -0.42160256     0.00000927     0.05790677     0.00000003     0.00000000
+      19       0.00000217     0.09842043     0.00000001     0.00463710    -0.02435824
+      20       0.00000292     0.13265674     0.00000003    -0.04643533    -0.02818075
+      21      -0.18078466     0.00000397    -0.01894089    -0.00000001    -0.00000000
+      22       0.00000474     0.21541519     0.00000003    -0.03451983    -0.04178769
+      23       0.00000571     0.25977326     0.00000010    -0.19046418    -0.01440685
+      24      -0.42160256     0.00000927     0.05790677     0.00000003     0.00000000
+      25      -0.09337959     0.00000205    -0.05033667    -0.00000003    -0.00000000
+      26      -0.12835584     0.00000282    -0.00967627    -0.00000001    -0.00000000
+      27       0.00000393     0.17893537    -0.00000007     0.11525920    -0.00380262
 
                Column   6
-       3       0.10100198
-       6       0.10699943
-       7       0.09786284
+       3       0.10100197
+       6       0.10699942
+       7       0.09786283
        8       0.05759355
        9       0.00000001
-      12       0.10699943
+      12       0.10699942
       13      -0.00000001
       14      -0.00000001
       15      -0.00108319
-      16       0.11782664
-      17      -0.06564392
+      16       0.11782662
+      17      -0.06564393
       18       0.00000001
-      19       0.09786284
+      19       0.09786283
       20       0.05759355
       21       0.00000001
-      22       0.11782664
-      23      -0.06564392
+      22       0.11782662
+      23      -0.06564393
       24       0.00000001
       25       0.00000001
-      27      -0.09991879
+      27      -0.09991878
     ==== End of matrix output ====
 
      Raman related properties for freq.  0.072000 au  =   632.82 nm
@@ -1408,12 +1453,12 @@ RSPC Calling VIBCTL_ifc ...
 
  Mode    Freq.     Alpha**2   Beta(a)**2   Pol.Int.   Depol.Int.  Dep. Ratio 
 
-    1   3818.22    0.000000    4.385722   17.542886   13.157165    0.750000
-    2   3817.26    0.777610    1.700959   41.796304    5.102876    0.122089
-    3   1588.43    0.000000    0.994709    3.978837    2.984128    0.750000
+    1   3818.22    0.000000    4.385722   17.542889   13.157167    0.750000
+    2   3817.26    0.777611    1.700959   41.796308    5.102876    0.122089
+    3   1588.43    0.000000    0.994709    3.978836    2.984127    0.750000
     4   1556.77    0.019579    0.993539    4.855192    2.980617    0.613903
-    5    893.13    0.187729    1.200126   13.248293    3.600379    0.271762
-    6    713.66    0.002795    1.292746    5.296779    3.878237    0.732188
+    5    893.13    0.187729    1.200126   13.248292    3.600379    0.271762
+    6    713.66    0.002795    1.292745    5.296778    3.878236    0.732188
 
  Mode    Freq.   ConverFac(*E13)  BoltzFac
 
@@ -1432,22 +1477,22 @@ RSPC Calling VIBCTL_ifc ...
  Mode  Freq.     Alpha**2   Beta(a)**2   Pol.Int. DepolInt. 180/0Int.  DepRatio
 
    1   3818.22    0.000000    4.385722   30.7001   26.3143   61.4001    0.8571
-   2   3817.26    0.777610    1.700959   46.8992   10.2058   93.7984    0.2176
+   2   3817.26    0.777611    1.700959   46.8992   10.2058   93.7984    0.2176
    3   1588.43    0.000000    0.994709    6.9630    5.9683   13.9259    0.8571
    4   1556.77    0.019579    0.993539    7.8358    5.9612   15.6716    0.7608
    5    893.13    0.187729    1.200126   16.8487    7.2008   33.6973    0.4274
-   6    713.66    0.002795    1.292746    9.1750    7.7565   18.3500    0.8454
+   6    713.66    0.002795    1.292745    9.1750    7.7565   18.3500    0.8454
 
    **** ROA invariants (*E6, in A**4amu**-1) ****
 
  Mode   Freq.     a*Gm(Lon)  a*Gm(noL)   Beta(Gm)**2 (L/noL)    Beta(A)**2
 
-   1  3818.22      0.0000      0.0000        0.00     -613.09     -455.94
+   1  3818.22      0.0000     -0.0000        0.00     -613.09     -455.94
    2  3817.26      0.0000    -17.2621        0.00      386.28      419.32
    3  1588.43      0.0000      0.0000        0.00      -37.55       68.83
-   4  1556.77      0.0000      5.5485        0.00       44.91      -14.67
-   5   893.13      0.0000      1.2387        0.00      -58.16       -3.87
-   6   713.66      0.0000      0.9035        0.00     -164.37     -234.45
+   4  1556.77     -0.0000      5.5485        0.00       44.91      -14.67
+   5   893.13     -0.0000      1.2387        0.00      -58.16       -3.87
+   6   713.66     -0.0000      0.9035        0.00     -164.37     -234.45
 
    **** Conversion Factor to Cross Section (*E13) and Boltzmann Factor
 
@@ -1499,10 +1544,10 @@ RSPC Calling VIBCTL_ifc ...
 
     1     3818.22     -0.210276     -0.309286     -0.020475     -0.598097
     2     3817.26      0.289839      0.100064     -0.069071      0.269198
-    3     1588.43     -0.121642     -0.055737     -0.061117     -0.050356
-    4     1556.77      0.100261      0.140231      0.157877      0.122585
+    3     1588.43     -0.121642     -0.055737     -0.061117     -0.050357
+    4     1556.77      0.100261      0.140231      0.157877      0.122586
     5      893.13     -0.094774     -0.042171      0.000345     -0.084687
-    6      713.66     -0.133394     -0.293059      0.048278     -0.634395
+    6      713.66     -0.133394     -0.293059      0.048278     -0.634396
 
    **** For definitions, see the DALTON manual and references therein. ****
 
@@ -1545,18 +1590,18 @@ RSPC Calling VIBCTL_ifc ...
   1000.00     1.6058D+08       12514.63         2.7058   5.437435D+12
   1500.00     4.4250D+08       22987.90         6.0907   6.195554D+13
   2000.00     9.0837D+08       35389.91        13.0744   4.203044D+14
- >>>  Time used in VIBCTL     is   0.16 seconds
+ >>>  Time used in VIBCTL     is   0.14 seconds
 RSPC Backing from VIBCTL_ifc ...
 
  
-     Date and time (Linux)  : Thu Dec  6 01:12:46 2012
-     Host name              : barbar                                  
+     Date and time (Linux)  : Tue Apr  8 10:50:45 2014
+     Host name              : donkey                                  
 
  >> ** End of OpenRSP Section
 
- >>>> Total CPU  time used in DALTON:  18.49 seconds
- >>>> Total wall time used in DALTON:  21.02 seconds
+ >>>> Total CPU  time used in DALTON:  10.76 seconds
+ >>>> Total wall time used in DALTON:  10.82 seconds
 
  
-     Date and time (Linux)  : Thu Dec  6 01:12:46 2012
-     Host name              : barbar                                  
+     Date and time (Linux)  : Tue Apr  8 10:50:45 2014
+     Host name              : donkey                                  
