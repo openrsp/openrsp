@@ -27,7 +27,9 @@ contains
 
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
+#ifdef ENABLE_INTEREST
     use interface_interest
+#endif
 
     !> number of fields
     integer,              intent(in)  :: nf, propsize
@@ -720,7 +722,9 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
   subroutine rsp_twoint(nr_ao, nf, f, c, nc, dens, propsize, fock)
     use eri_contractions, only: ctr_arg
     use eri_basis_loops,  only: unopt_geodiff_loop
+#ifdef ENABLE_INTEREST
     use interface_interest
+#endif
     use rsp_indices_and_addressing, only: make_triangulated_indices
     !> number of fields
     integer,              intent(in)    :: nf, propsize
