@@ -250,6 +250,8 @@
 
     integer :: a, b, elgr_offset
 
+    elgr_offset = 0
+
     if ( (a == 1) .and. (b == 1) ) then
        elgr_offset = 1
 
