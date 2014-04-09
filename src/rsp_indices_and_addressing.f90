@@ -1003,6 +1003,9 @@ module rsp_indices_and_addressing
 
     end do
 
+    ! radovan: whichmax was uninitialized, i set it to something
+    whichmax = 1
+
     s = totouter
     j = totouter
     d = pids
