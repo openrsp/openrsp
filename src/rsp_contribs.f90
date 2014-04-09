@@ -1061,6 +1061,13 @@ type(matrix) :: Db, Fb
           all_known_fields(fld_idx(o(i)))%ncomp = tot_ncomp(i)
        end if
     end do
+
+    ! radovan: initialize
+    nmag = 0
+    nel  = 0
+    nbas = 0
+    ngeo = 0
+
     ! if requested, determine whether the nuclear potential, the overlap
     ! integrals, or the Hamiltonian, are preturbed by this tuple of fields
     if (present(nucpot)) &
