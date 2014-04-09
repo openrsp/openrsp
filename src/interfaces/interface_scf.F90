@@ -191,7 +191,9 @@ contains
   !> \return G contains the two electron contribution
   subroutine interface_scf_get_g(D, G)
 
+#ifdef ENABLE_INTEREST
     use interface_interest
+#endif
 
     type(matrix), intent(in),    target :: D
     type(matrix), intent(inout), target :: G
