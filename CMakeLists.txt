@@ -52,6 +52,10 @@ set(SOURCES
     src/legacy/legacy_vibrational_properties.f90
     src/legacy/rsp_equations_old.F90
     src/openrsp.f90
+    src/openrsp_efishgcid.f90
+    src/openrsp_general_pv2f.f90
+    src/openrsp_general_pv3f.f90
+    src/openrsp_general_pv4f.f90
     src/rsp_choose_rule.f90
     src/rsp_contribs.f90
     src/rsp_equations.f90
