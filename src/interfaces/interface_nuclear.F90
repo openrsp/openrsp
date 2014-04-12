@@ -349,7 +349,7 @@ contains
 
       tensor = 0.0d0
       l = 0
-      do k = 1, get_nr_atoms()
+      do k = 1, get_num_atoms()
          do ia = 1, 3
             l = l + 1
             do ib = 1, 3

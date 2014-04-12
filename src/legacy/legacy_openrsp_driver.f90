@@ -183,7 +183,7 @@
     write(LUPRI, '()')
 
     ! dumps the molecule information
-    num_atoms = get_nr_atoms()
+    num_atoms = get_num_atoms()
     allocate(aname(num_atoms), stat=ierr)
     if (ierr /= 0) call QUIT('Failed to allocate aname!')
     allocate(acharge(num_atoms), stat=ierr)
