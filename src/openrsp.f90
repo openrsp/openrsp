@@ -40,7 +40,7 @@
 !> \date 2009-12-08
 module openrsp
 
-  use interface_molecule, only: get_nr_atoms, interface_molecule_init
+  use interface_molecule, only: get_num_atoms, interface_molecule_init
   use interface_io, only: get_print_unit, interface_io_init
   use interface_xc, only: is_ks_calculation, interface_xc_init, xcint_wakeup_workers
   use interface_scf, only: interface_scf_init,  &
@@ -266,7 +266,7 @@ contains
         deallocate(pe_fmat, pe_dmat)
     end if
 
-    num_atoms = get_nr_atoms()
+    num_atoms = get_num_atoms()
 
 end subroutine
 

@@ -13,7 +13,7 @@ module rsp_contribs
 
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_zero_like
-  use interface_molecule, only: get_nr_atoms
+  use interface_molecule, only: get_num_atoms
   use interface_xc, only: rsp_xcint_interface
   use interface_1el, only: interface_1el_ovlave_tr,        &
                            interface_1el_ovlint_tr,        &
@@ -945,7 +945,7 @@ type(matrix) :: Db, Fb
        if (rsp_field_dim(i) /= -1) then
           ! cycle
        else if (f(i) == 'GEO ') then
-          rsp_field_dim(i) = 3 * get_nr_atoms()
+          rsp_field_dim(i) = 3 * get_num_atoms()
        else
           call quit('rsp_field_dim error: Number of comp. unknown for ' // f(i))
        end if
@@ -1057,7 +1057,7 @@ type(matrix) :: Db, Fb
        !           This init should be done in a separate routine, together
        !           with all the other fields' ncomp
        if (tot_ncomp(i) == -1 .and. f(o(i))%label == 'GEO ') then
-          tot_ncomp(i) = 3*get_nr_atoms()
+          tot_ncomp(i) = 3*get_num_atoms()
           all_known_fields(fld_idx(o(i)))%ncomp = tot_ncomp(i)
        end if
     end do

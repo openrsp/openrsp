@@ -141,7 +141,7 @@ contains
 !          end if
 
          ! sets the number of total geometric derivatives
-         num_atom = get_nr_atoms()
+         num_atom = get_num_atoms()
          num_coord = 3*num_atom
          num_geom = num_coord**order_geo
 
@@ -515,7 +515,7 @@ ave = 0.0
 
          ! sets the number of operators and derivatives
          num_mom = (order_mom+1)*(order_mom+2)/2
-         num_atom = get_nr_atoms()
+         num_atom = get_num_atoms()
          num_coord = 3*num_atom
          num_geom = num_coord**order_geo
 
@@ -966,7 +966,7 @@ end if
          end if
 
          ! sets the number of total geometric derivatives
-         num_atom = get_nr_atoms()
+         num_atom = get_num_atoms()
          num_coord = 3*num_atom
          num_geom = num_coord**order_geo
 
@@ -1292,7 +1292,7 @@ end if
          ! sets the number of operators and derivatives
          num_mom = (order_mom+1)*(order_mom+2)/2 
          num_magnl = (order_magnl+1)*(order_magnl+2)/2
-         num_atom = get_nr_atoms()
+         num_atom = get_num_atoms()
          num_coord = 3*num_atom
          num_geom = num_coord**order_geo
          if (order_elgr > 0) then
@@ -1990,7 +1990,7 @@ end if
 #else
     call WRITE_DSOFSO(Dtri, DFDtri)
 #endif
-    nc = 3 * get_nr_atoms()
+    nc = 3 * get_num_atoms()
     HESMOL(:nc,:nc) = 0
     !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
     ! &                  DIFINT,NODC,NODV,DIFDIP,DIFQDP,

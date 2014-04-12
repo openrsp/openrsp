@@ -2,7 +2,7 @@ module interface_1el_dirac
 
    use matrix_defop, matrix => openrsp_matrix
    use matrix_lowlevel, only: mat_print
-   use interface_molecule, only: get_nr_atoms
+   use interface_molecule, only: get_num_atoms
 
    implicit none
 
@@ -164,7 +164,7 @@ contains
          end do
 
          if (need_1el_g) then
-            do iatom = 1, get_nr_atoms()*3
+            do iatom = 1, get_num_atoms()*3
                do i = 1, size(i_iter)
                   s = prefix_zeros(iatom, 2) // ' DPG ' // i_iter(i)
                   call add_operator(s // '        ', &
@@ -222,7 +222,7 @@ contains
          end do
 
          if (need_1el_g) then
-            do iatom = 1, get_nr_atoms()*3
+            do iatom = 1, get_num_atoms()*3
                do ij = 1, size(ij_iter)
                   s = prefix_zeros(iatom, 2) // 'QDG ' // ij_iter(ij)
                   call add_operator(s // '        ', &
@@ -273,7 +273,7 @@ contains
             f = -cval
             blocks = '0++0'
 
-            do iatom = 1, get_nr_atoms()*3
+            do iatom = 1, get_num_atoms()*3
                s1 = prefix_zeros(iatom, 2) // ' DPG Z'
                s2 = prefix_zeros(iatom, 2) // ' DPG Y'
                call add_operator(prefix_zeros(iatom, 3) // 'AMDRX        ', &
@@ -741,7 +741,7 @@ contains
          f = 1.0d0
          blocks = '+00'//ss
 
-         do iatom = 1, get_nr_atoms()*3
+         do iatom = 1, get_num_atoms()*3
             s = 'G1O' // prefix_zeros(iatom, 3) // '  '
             call add_operator(s // '        ', &
                               blocks,          &
@@ -753,7 +753,7 @@ contains
                               (/s/))
          end do
 
-         do iatom = 1, get_nr_atoms()*3
+         do iatom = 1, get_num_atoms()*3
             s = 'G1N' // prefix_zeros(iatom, 3) // '  '
             call add_operator(s // '        ', &
                               blocks,          &
@@ -768,7 +768,7 @@ contains
          f = 2.0d0*cval*cval
          blocks = '000+'
 
-         do iatom = 1, get_nr_atoms()*3
+         do iatom = 1, get_num_atoms()*3
             s = 'G1B' // prefix_zeros(iatom, 3) // '  '
             call add_operator(s // '        ', &
                               blocks,          &
@@ -783,7 +783,7 @@ contains
          f = cval
          blocks = '0++0'
 
-         do iatom = 1, get_nr_atoms()*3
+         do iatom = 1, get_num_atoms()*3
             do i = 1, size(i_iter)
                s      = 'G1K     '
                s(4:4) = i_iter(i)

@@ -340,7 +340,7 @@ contains
       character(2)  :: ij_string, ji_string
       character(16) :: integral_label
 #endif
-      na = get_nr_atoms()
+      na = get_num_atoms()
       do i = 1, size(A)
          A(i) = 0*S0 !scratch matrices
       end do
@@ -674,11 +674,11 @@ contains
          do k = 0, max(0,nd-1)
             !ajt fixme oneint_ave(GG..) misses frequency dependent -i/2 Tgg contribution
             if (present(DFD)) then
-               call oneint_ave(get_nr_atoms(), 'GG', D(k+1), DFD(k+1), RR)
+               call oneint_ave(get_num_atoms(), 'GG', D(k+1), DFD(k+1), RR)
             endif
             if (.not.present(DFD)) then
                A(1) = 0*S0
-               call oneint_ave(get_nr_atoms(), 'GG', D(k+1), A(1), RR)
+               call oneint_ave(get_num_atoms(), 'GG', D(k+1), A(1), RR)
             endif
             do j = 0, dp(2)-1
                do i = 0, dp(1)-1
@@ -859,7 +859,7 @@ contains
       real(8)      :: R(6) !scratch
       integer      :: i, j, k, l, ii, jj, kk, ll, pd, pd1, na
       type(matrix) :: A(6) !scratch matrices
-      na = get_nr_atoms()
+      na = get_num_atoms()
       do i = 1, size(A)
          A(i) = 0*D(1) !scratch matrices
       end do
@@ -1851,7 +1851,7 @@ contains
       real(8), pointer :: wrk(:)
       integer          :: lwrk, na, nb, l
 
-      na = get_nr_atoms()
+      na = get_num_atoms()
       nb = Da%nrow
 
       !ajt MagSus contraction doesn't work, so I disabled this. Use twofck instead
@@ -1943,7 +1943,7 @@ contains
          if (pert_shape(i) /= -1) then
             ! cycle
          else if (p(i) == 'GEO') then
-            pert_shape(i) = 3 * get_nr_atoms()
+            pert_shape(i) = 3 * get_num_atoms()
          else
             call quit('pert_shape error: Number of comp. unknown for ' // p(i),get_print_unit())
          end if

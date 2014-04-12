@@ -86,7 +86,7 @@ contains
     else if (nf==1 .and. all(f==(/'GEO '/))) then
 
 #ifdef PRG_DALTON
-       ncor = 3 * get_nr_atoms()
+       ncor = 3 * get_num_atoms()
        allocate(tmp(ncor,1,1,1))
        tmp = 0.0
 #ifdef GRCONT_NOT_AVAILABLE
@@ -161,7 +161,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
 
     else if (nf==2 .and. all(f==(/'GEO ','GEO '/))) then
 
-       ncor = 3 * get_nr_atoms()
+       ncor = 3 * get_num_atoms()
 #ifdef PRG_DALTON
        allocate(tmp(ncor,ncor,1,1))
        tmp = 0.0
@@ -232,7 +232,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
        stop 1
 #endif
        ! contract FULL cubic in tmp, unsymmetrized divided by six
-       ncor = 3 * get_nr_atoms()
+       ncor = 3 * get_num_atoms()
        allocate(tmp(ncor,ncor,ncor,1))
        tmp = 0.0
        arg(1) = ctr_arg(3, -huge(1), ncor, D1, D2, &
@@ -275,7 +275,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
        print *, 'error: twoave contribution not programmed'
        stop 1
 #endif
-      ncor = 3 * get_nr_atoms()
+      ncor = 3 * get_num_atoms()
        allocate(tmp(ncor,ncor,ncor,ncor))
        tmp = 0.0
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
@@ -329,7 +329,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
        print *, 'error: twoave contribution not programmed'
        stop 1
 #endif
-       ncor = 3 * get_nr_atoms()
+       ncor = 3 * get_num_atoms()
        allocate(tmp_5(ncor,ncor,ncor,ncor,ncor))
        tmp_5 = 0.0
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
@@ -421,7 +421,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
        print *, 'error: twoave contribution not programmed'
        stop 1
 #endif
-       ncor = 3 * get_nr_atoms()
+       ncor = 3 * get_num_atoms()
        allocate(tmp_6(ncor,ncor,ncor,ncor,ncor,ncor))
        tmp_6 = 0.0
        ! contract FULL quartic in tmp, unsymmetrized divided by 24
@@ -805,7 +805,7 @@ write(*,*) 'ERROR: Called for magnetic contribution with GRCONT not available'
 
           if ((nf == count(f == 'GEO '))) then
 
-             ncor = 3 * get_nr_atoms()
+             ncor = 3 * get_num_atoms()
              allocate(indices(propsize, nf))
              call make_triangulated_indices(1, (/1, nf, nc(1)/), propsize, indices)
 

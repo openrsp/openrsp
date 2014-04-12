@@ -10,7 +10,7 @@ module interface_molecule
    public interface_molecule_init
    public interface_molecule_finalize
 
-   public get_nr_atoms
+   public get_num_atoms
    public get_nuc_name
    public get_nuc_charge
    public get_nuc_isotope
@@ -112,9 +112,9 @@ contains
       end if
    end subroutine
 
-   integer function get_nr_atoms()
+   integer function get_num_atoms()
       call check_if_interface_is_initialized()
-      get_nr_atoms = nr_atoms
+      get_num_atoms = nr_atoms
    end function
 
    character(4) function get_nuc_name(i)
