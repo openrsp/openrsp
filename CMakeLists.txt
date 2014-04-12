@@ -85,7 +85,6 @@ if(ENABLE_INTEREST)
 endif()
 
 include(ConfigCompilerFlags)
-include(ConfigDocumentation)
 
 add_library(
     openrsp
