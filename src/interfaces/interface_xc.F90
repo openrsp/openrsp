@@ -590,8 +590,8 @@ contains
             comp(1) = i
             comp(2) = i
             do j = 1, i
-               comp(1) = j
-               comp(2) = j
+               comp(3) = j
+               comp(4) = j
                call xcint_wakeup_workers()
                call xcint_integrate(XCINT_MODE_RKS, &
                                     2+num_dmat-1,   &
