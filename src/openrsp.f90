@@ -42,7 +42,7 @@ module openrsp
 
   use interface_molecule, only: get_nr_atoms, interface_molecule_init
   use interface_io, only: get_print_unit, interface_io_init
-  use interface_xc, only: get_is_ks_calculation, interface_xc_init, xcint_wakeup_workers
+  use interface_xc, only: is_ks_calculation, interface_xc_init, xcint_wakeup_workers
   use interface_scf, only: interface_scf_init,  &
                            interface_scf_get_s, &
                            interface_scf_get_d, &
@@ -227,7 +227,7 @@ contains
     H1 = 0
     G  = 0
 
-    if (get_is_ks_calculation()) then
+    if (is_ks_calculation()) then
 
        ! add xc contribution to the fock matrix
        mat_dim = D%nrow

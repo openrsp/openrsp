@@ -918,7 +918,8 @@ contains
             call twofck('M ', D(1:1), A(1:3))
             ! Kohn-Sham contribution
             if (do_dft) then
-               call di_get_MagDeriv_FxD_DFT(A(4:6), D(1))
+             ! call di_get_MagDeriv_FxD_DFT(A(4:6), D(1))
+               call quit("di_get_MagDeriv_FxD_DFT not implemented")
                do i = 1, 3
                   A(i) = A(i) + A(3+i)
                end do
@@ -939,7 +940,8 @@ contains
                call twofck('M ', D(2+j:2+j), A(1:3))
                ! Kohn-Sham
                if (do_dft) then
-                  call di_get_MagDeriv_GxD_DFT(D(1), D(2+j), A(4:6))
+                ! call di_get_MagDeriv_GxD_DFT(D(1), D(2+j), A(4:6))
+                  call quit("di_get_MagDeriv_GxD_DFT")
                   do i = 1, 3
                      A(i) = A(i) - A(3+i) !negative sign on KS contrib
                   end do
@@ -1683,8 +1685,14 @@ contains
             end do
             ! Kohn-Sham
             if (do_dft) then
-               if (nd==0) call di_get_MagDeriv_FxD_DFT(A(1:3), D(1))
-               if (nd/=0) call di_get_MagDeriv_GxD_DFT(D(1), D(pd1-pd+1+j), A(1:3))
+               if (nd==0) then
+                ! call di_get_MagDeriv_FxD_DFT(A(1:3), D(1))
+                  call quit("di_get_MagDeriv_FxD_DFT not implemented")
+               end if
+               if (nd/=0) then
+                ! call di_get_MagDeriv_GxD_DFT(D(1), D(pd1-pd+1+j), A(1:3))
+                  call quit("di_get_MagDeriv_GxD_DFT not implemented")
+               end if
                do i = 0, df(1)-1
                   if (nd==0) F(1+i+df(1)*j) = F(1+i+df(1)*j) + A(c(1)+i)
                   if (nd/=0) F(1+i+df(1)*j) = F(1+i+df(1)*j) - A(c(1)+i) !negative sign

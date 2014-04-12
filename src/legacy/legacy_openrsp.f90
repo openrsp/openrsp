@@ -46,7 +46,7 @@ module legacy_openrsp
   use legacy_vibrational_properties
   use legacy_birefringence
   use interface_molecule
-  use interface_xc
+  use interface_xc, only: is_ks_calculation
   use dalton_ifc
 
   implicit none
@@ -339,7 +339,7 @@ module legacy_openrsp
     ! temporary stuff
     integer i, j, k, l
 
-    if (get_is_ks_calculation()) then
+    if (is_ks_calculation()) then
        print *, 'ERROR: XC is not supported in this version'
        stop 1
     end if

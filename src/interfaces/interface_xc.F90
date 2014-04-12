@@ -1,68 +1,82 @@
 module interface_xc
 
-!  interface_xc_init is the ONLY routine
-!  that is program specific
-!  you are NOT allowed to introduce anything specific
-!  to a host program outside of interface_xc_init
+   use, intrinsic :: iso_c_binding
 
    use matrix_defop, matrix => openrsp_matrix
-   use interface_molecule
-   use rsp_field_tuple
-   use rsp_indices_and_addressing
-   use rsp_sdf_caching
-   use iso_c_binding
+   use interface_molecule, only: get_nr_atoms
+   use rsp_field_tuple, only: p_tuple,             &
+                              pid_compare,         &
+                              get_emptypert,       &
+                              make_p_tuple_subset, &
+                              p_tuple_p1_cloneto_p2
+   use rsp_indices_and_addressing, only: kn_skip,                &
+                                         get_num_blks,           &
+                                         get_blk_info,           &
+                                         get_triangular_sizes,   &
+                                         get_triang_blks_offset, &
+                                         make_triangulated_indices
+   use rsp_sdf_caching, only: SDF, &
+                              sdf_getdata_s
    use xcint_fortran_interface
 
    implicit none
 
    public interface_xc_init
    public interface_xc_finalize
+
    public xcint_wakeup_workers
-
-   public di_get_MagDeriv_FxD_DFT
-   public di_get_MagDeriv_GxD_DFT
-
    public rsp_xcave_interface
    public rsp_xcint_interface
-
-   public get_is_ks_calculation
+   public is_ks_calculation
    public openrsp_set_functional
 
    private
 
-!  if false the interface will refuse to be accessed
+   ! if false the interface will refuse to be accessed
    logical :: is_initialized = .false.
 
-!  non-allocatables
-   logical :: is_ks_calculation
-
-#ifdef VAR_MPI
-#include "mpif.h"
-#endif
-
-   integer :: ierr
+   ! true if this is a KS calculation
+   logical :: this_is_ks_calculation = .false.
 
 contains
 
    subroutine xcint_wakeup_workers()
-      integer :: num_proc
-      integer :: iprint = 0
 #ifdef VAR_MPI
+
+   ! local variables
+      integer :: num_proc
+      integer :: iprint
+      integer :: ierr
+
+#include "mpif.h"
 #include "iprtyp.h"
 #include "maxorb.h"
 #include "infpar.h"
+
       call MPI_Comm_size(MPI_COMM_WORLD, num_proc, ierr)
       if (num_proc > 1) then
          CALL MPIXBCAST(XCINT_MPI_WAKEUP_SIGNAL, 1,'INTEGER', MASTER)
+         iprint = 0
          CALL MPIXBCAST(iprint, 1,'INTEGER', MASTER)
       end if
 #endif
    end subroutine
 
    integer(c_int) function fortran_stdout_function(string) bind(c)
+
+   ! input
+      ! string to print (c_null_char-terminated)
       character(kind=c_char, len=1), intent(in) :: string(*)
-      integer(c_int) :: i, string_len
+
+   ! local variables
+      integer(c_int) :: i
+      integer(c_int) :: string_len
+
+   ! returns
+      ! 0 upon success
+
 #include "priunit.h"
+
       i = 1
       do while (.true.)
          if (string(i) == c_null_char) then
@@ -73,6 +87,7 @@ contains
       end do
       write(lupri, *) string(1:string_len)
       fortran_stdout_function = 0
+
    end function
 
    subroutine interface_xc_init()
@@ -83,6 +98,9 @@ contains
 #include "maxorb.h"
 #include "shells.h"
 #include "primit.h"
+#ifdef VAR_MPI
+#include "mpif.h"
+#endif
 
       integer(c_int), allocatable :: shell_num_primitives(:)
       real(c_double), allocatable :: primitive_exp(:)
@@ -195,62 +213,32 @@ contains
       real(c_double), intent(out) :: hfx
       real(c_double), intent(out) :: mu
       real(c_double), intent(out) :: beta
+      integer :: ierr
       ierr = xcint_set_functional(line//C_NULL_CHAR, hfx, mu, beta)
-      is_ks_calculation = .true.
+      this_is_ks_calculation = .true.
    end subroutine
 
    subroutine interface_xc_finalize()
-
       is_initialized = .false.
-
+      this_is_ks_calculation = .false.
    end subroutine
 
-   subroutine check_if_interface_is_initialized()
+   subroutine check_if_initialized()
       if (.not. is_initialized) then
-         print *, 'error: you try to access interface_xc'
+         print *, 'ERROR: you try to access interface_xc'
          print *, '       but this interface is not initialized'
          stop 1
       end if
    end subroutine
 
-   logical function get_is_ks_calculation()
-      call check_if_interface_is_initialized()
-      get_is_ks_calculation = is_ks_calculation
+   logical function is_ks_calculation()
+      call check_if_initialized()
+      is_ks_calculation = this_is_ks_calculation
    end function
-
-   !> \brief calculates the magnetic derivative of the F^xc matrix defined in Equation XX of
-   !> \author Bin Gao
-   !> \date 2009-12-10
-   !> \param D
-   !> \return Fx contains the magnetic derivative
-   subroutine di_get_MagDeriv_FxD_DFT( Fx, D )
-     type(matrix), intent(in) :: D
-     type(matrix), intent(inout) :: Fx(3)
-     call QUIT( 'di_get_MagDeriv_FxD_DFT is not implemented!' )
-   end subroutine
-
-
-   !> \brief calculates the magnetic derivative of the G^xc matrix defined in Equation XX of
-   !> \author Bin Gao
-   !> \date 2009-12-10
-   !> \param D
-   !> \param A
-   !> \return Gx contains the magnetic derivative
-   subroutine di_get_MagDeriv_GxD_DFT( D, A, Gx )
-     type(matrix), intent(in) :: D
-     type(matrix), intent(in) :: A
-     type(matrix), intent(inout) :: Gx(3)
-     call QUIT( 'di_get_MagDeriv_GxD_DFT is not implemented!' )
-   end subroutine
-
-
-
 
 
   recursive subroutine rsp_xcave_setup_dmat_perts(pert, sofar, kn, rec_prog, &
                        enc_len, dmat_tuple_len, pert_ids, enc_perts, dmat_perts)
-
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(pert%n_perturbations) :: psub
@@ -260,8 +248,6 @@ contains
     integer, dimension(dmat_tuple_len) :: pert_ids
     type(p_tuple), dimension(dmat_tuple_len) :: dmat_perts
     type(p_tuple), dimension(enc_len) :: enc_perts
-
-!         write(*,*) 'called:', pert%pid
 
     dmat_already = .FALSE.
 
@@ -330,7 +316,6 @@ contains
              sofar = sofar + 1
              call p_tuple_p1_cloneto_p2(pert, dmat_perts(sofar))
              pert_ids(sofar) = rec_prog
-!              write(*,*) 'pert id', dmat_perts(sofar)%pid
 
        end if
 
@@ -340,8 +325,6 @@ contains
 
 
   subroutine rsp_xcave_interface(pert, kn, D,  prop_size, prop)
-
-    implicit none
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(:), allocatable :: dmat_perts, enc_perts
@@ -364,7 +347,7 @@ contains
     integer(c_int), allocatable :: dmat_to_pert(:)
     integer(c_int), allocatable :: dmat_to_comp(:)
 
-    if (.not. get_is_ks_calculation()) return
+    if (.not. is_ks_calculation()) return
 
     res = 0.0
 
@@ -431,7 +414,6 @@ contains
           comp(k+1) = indices(i, j)
           k = k + 2
        end do
-!      print *, 'raboof', pert%plab, comp
 
        ! First perturbation is always unperturbed D, handled above
        do j = 2, dmat_length
@@ -510,7 +492,7 @@ contains
       real(c_double)              :: num_electrons
 !     ---------------------------------------------------------------------------
 
-      if (.not. get_is_ks_calculation()) then
+      if (.not. is_ks_calculation()) then
          return
       end if
 
