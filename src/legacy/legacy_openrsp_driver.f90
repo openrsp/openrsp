@@ -48,7 +48,7 @@
     use interface_f77_memory
     use interface_io
     use interface_basis
-    use interface_xc
+    use interface_xc, only: is_ks_calculation, interface_xc_init
     use interface_scf
     use interface_rsp_solver
     use interface_1el
@@ -370,7 +370,7 @@
     H1 = 0
     G  = 0
 
-    if (get_is_ks_calculation()) then
+    if (is_ks_calculation()) then
        print *, 'ERROR: XC is not supported in this version'
        stop 1
     end if
