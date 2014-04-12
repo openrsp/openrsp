@@ -67,6 +67,7 @@ module openrsp
   use rsp_sdf_caching, only: SDF, sdf_setup_datatype
   use rsp_indices_and_addressing, only: mat_init_like_and_zero
   use iso_c_binding
+  use xcint_fortran_interface
 
   implicit none
 
@@ -103,33 +104,6 @@ module openrsp
 
   ! print level to be used here and in solver
   integer :: print_level = 0
-
-interface xcint_integrate
-   subroutine xcint_integrate(num_dmat,        &
-                              dmat,            &
-                              fmat,            &
-                              energy,          &
-                              get_ave,         &
-                              geo_derv_order,  &
-                              geo_coor,        &
-                              num_fields,      &
-                              kn_rule,         &
-                              force_sequential &
-                             ) bind (C, name = "xcint_integrate")
-      use iso_c_binding
-      implicit none
-      integer(c_int), value :: num_dmat
-      real(c_double)        :: dmat(*)
-      real(c_double)        :: fmat(*)
-      real(c_double)        :: energy
-      integer(c_int), value :: get_ave
-      integer(c_int), value :: geo_derv_order
-      integer(c_int)        :: geo_coor(*)
-      integer(c_int), value :: num_fields
-      integer(c_int)        :: kn_rule(2)
-      integer(c_int), value :: force_sequential
-   end subroutine
-end interface
 
 contains
 
@@ -181,14 +155,16 @@ contains
     type(matrix)           :: H1 !one electron Hamiltonian
     type(matrix)           :: G  !two electron Hamiltonian
     real(c_double), allocatable   :: xc_dmat(:)
-    real(c_double), allocatable   :: xc_fmat(:)
+    real(c_double), allocatable   :: xc_mat(:)
     integer                :: mat_dim
-    real(c_double)         :: xc_energy
+    real(c_double)         :: xc_energy(1)
+    real(c_double)         :: num_electrons
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
     real(8), allocatable   :: pe_dmat(:,:)
     real(8), allocatable   :: pe_fmat(:,:)
     real(8)                :: pe_energy(1)
+    integer :: ierr
 
     type(ctr_arg) :: arg(1)
 
@@ -258,21 +234,24 @@ contains
        allocate(xc_dmat(mat_dim*mat_dim))
        xc_dmat = 0.0d0
        call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
-       allocate(xc_fmat(mat_dim*mat_dim))
+       allocate(xc_mat(mat_dim*mat_dim))
        call xcint_wakeup_workers()
-       call xcint_integrate(1,         &
-                            xc_dmat,   &
-                            xc_fmat,   &
-                            xc_energy, &
-                            0,   &
-                            0,         &
-                            (/0/),     &
-                            0,         &
-                            (/0, 0/),  &
-                            0)
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_fmat, 1, F%elms, 1)
+       call xcint_integrate(XCINT_MODE_RKS, &
+                            0,              &
+                            (/0/),          &
+                            (/0/),          &
+                            1,              &
+                            (/0/),          &
+                            (/1/),          &
+                            xc_dmat,        &
+                            0,              &
+                            xc_energy,      &
+                            1,              &
+                            xc_mat,         &
+                            num_electrons)
+       call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, F%elms, 1)
        deallocate(xc_dmat)
-       deallocate(xc_fmat)
+       deallocate(xc_mat)
     end if
 
     if (peqm) then
@@ -376,7 +355,7 @@ end subroutine
 
              perturbation_tuple%pdim(i) = 6
 
-             
+
           else
 
              write(*,*) 'ERROR: Unrecognized field', openrsp_cfg_specify_plab(i)
@@ -385,7 +364,7 @@ end subroutine
           end if
 
        end do
-       
+
        perturbation_tuple%pid = (/(i, i = 1, openrsp_cfg_specify_order)/)
 
        ! Requires that openrsp_cfg_nr_freq_tuples is set to 1 if no frequencies specified
@@ -541,7 +520,7 @@ if (openrsp_cfg_general_trans_cartnc) then
           allocate(egggffff_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3, 3, 3, 3))
           allocate(egggffff_nm(n_nm, n_nm, n_nm, 3, 3, 3, 3))
 
-          
+
           open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
 
           do i = 1, 3*num_atoms
@@ -629,7 +608,7 @@ if (openrsp_cfg_general_trans_cartnc) then
           allocate(egg_cart(3*num_atoms, 3*num_atoms))
           allocate(egg_nm(n_nm, n_nm))
 !           allocate(geo_dum(3*num_atoms))
-          
+
           open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
 
           do i = 1, 3*num_atoms
@@ -671,7 +650,7 @@ end do
           allocate(eggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms))
           allocate(eggg_nm(n_nm, n_nm, n_nm))
 !           allocate(geo_dum(3*num_atoms))
-          
+
           open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
 
           do i = 1, 3*num_atoms
@@ -711,7 +690,7 @@ end do
           allocate(egggg_cart(3*num_atoms, 3*num_atoms, 3*num_atoms, 3*num_atoms))
           allocate(egggg_nm(n_nm, n_nm, n_nm, n_nm))
 !           allocate(geo_dum(3*num_atoms))
-          
+
           open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
 
           do i = 1, 3*num_atoms
@@ -757,7 +736,7 @@ end do
                                  3*num_atoms, 3*num_atoms))
           allocate(eggggg_nm(n_nm, n_nm, n_nm, n_nm, n_nm))
 !           allocate(geo_dum(3*num_atoms))
-          
+
           open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
 
           do i = 1, 3*num_atoms
@@ -805,7 +784,7 @@ end do
                                  3*num_atoms, 3*num_atoms, 3*num_atoms))
           allocate(egggggg_nm(n_nm, n_nm, n_nm, n_nm, n_nm, n_nm))
 !           allocate(geo_dum(3*num_atoms))
-          
+
           open(unit = 258, file='rsp_tensor', status='old', action='read', iostat=ierr)
 
           do i = 1, 3*num_atoms
@@ -866,7 +845,7 @@ end do
 
 
     end if
-    
+
     if (openrsp_cfg_general_shg) then
 
 
@@ -1264,7 +1243,7 @@ end do
        allocate(nm_freq(n_nm))
 
        nm_freq = nm_freq_b(1:n_nm) * openrsp_cfg_general_hypram_freqscale
-       
+
        deallocate(nm_freq_b)
 
        allocate(egfff_cart(3*num_atoms, 3, 3, 3))
@@ -1337,7 +1316,7 @@ end do
        write(12,101) openrsp_cfg_temperature
        101 format('The temperature is set at', F10.5 ' K.')
        write(12,*) ' '
-       
+
        write(12,102) n_nm
        102 format('The number of normal modes considered in this system is', I5, ' .')
        write(12,*) 'These modes have the following frequencies:'
