@@ -15,7 +15,7 @@
       https://github.com/rbast/runtest
 """
 
-RUNTEST_VERSION = 'v0.1.4'
+RUNTEST_VERSION = 'v0.1.5'
 
 import re
 import os
@@ -435,13 +435,14 @@ class Filter:
                         is_integer = (pattern_float.findall(w) == pattern_int.findall(w))
                     # apply floating point regex
                     for m in pattern_float.findall(w):
+                        index = line.index(m)
                         # substitute dD by e
                         m = pattern_d.sub('e', m)
                         if is_integer:
                             numbers.append(int(m))
                         else:
                             numbers.append(float(m))
-                        location.append((n, line.index(m), len(m)))
+                        location.append((n, index, len(m)))
 
         return numbers, location
 
