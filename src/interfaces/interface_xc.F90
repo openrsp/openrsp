@@ -93,6 +93,7 @@ contains
    ! local
       integer(c_int) :: i
       integer(c_int) :: string_len
+      character(80) :: line
 
    ! returns
       ! 0 upon success
@@ -107,7 +108,20 @@ contains
          end if
          i = i + 1
       end do
-      write(lupri, *) string(1:string_len-1) ! at the end we remove newline
+      do i = 1, 80
+         line(i:i) = ' '
+      end do
+      if (string_len < 81) then
+         ! at the end we remove newline
+         do i = 1, string_len-1
+            line(i:i) = string(i)
+         end do
+      else
+         do i = 1, 80
+            line(i:i) = string(i)
+         end do
+      end if
+      write(lupri, '(a80)') line
       fortran_stdout_function = 0
 
    end function
