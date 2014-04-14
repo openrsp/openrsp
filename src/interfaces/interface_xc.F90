@@ -107,7 +107,7 @@ contains
          end if
          i = i + 1
       end do
-      write(lupri, *) string(1:string_len)
+      write(lupri, *) string(1:string_len-1) ! at the end we remove newline
       fortran_stdout_function = 0
 
    end function
@@ -135,7 +135,6 @@ contains
       integer                     :: n
       integer                     :: ixyz
       integer                     :: icenter
-      type(c_funptr)              :: stdout_function
 
 #include "aovec.h"
 #include "mxcent.h"
@@ -212,10 +211,6 @@ contains
       call xcint_set_mpi_comm(MPI_COMM_WORLD)
 #endif
 
-      stdout_function = c_funloc(fortran_stdout_function)
-      call xcint_set_stdout_function(stdout_function)
-      call xcint_set_stderr_function(stdout_function)
-
       call xcint_set_basis(basis_type,           &
                            num_centers,          &
                            center_xyz,           &
@@ -251,7 +246,14 @@ contains
       real(c_double), intent(out) :: beta
 
    ! local
-      integer :: ierr
+      integer        :: ierr
+      type(c_funptr) :: stdout_function
+
+      stdout_function = c_funloc(fortran_stdout_function)
+      call xcint_set_stdout_function(stdout_function)
+      call xcint_set_stderr_function(stdout_function)
+
+      call xcint_print_splash()
 
       ierr = xcint_set_functional(line//C_NULL_CHAR, hfx, mu, beta)
       if (ierr /= 0) then
