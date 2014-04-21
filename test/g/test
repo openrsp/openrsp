@@ -9,12 +9,11 @@ from runtest_dalton import Filter, TestRun
 test = TestRun(__file__, sys.argv)
 
 f = Filter()
-f.add(rel_tolerance=5.0e-5) # all lines
+f.add(rel_tolerance = 1.0e-4) # all lines
 
-test.run(['gf_b3lyp.dal', 'ggf_b3lyp.dal', 'gggf_b3lyp.dal', 'ggff_b3lyp.dal'], ['dz.mol'],
-                 {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
-
-test.run(['gff_b3lyp.dal', 'gfff_b3lyp.dal'], ['aug-dz.mol'],
+for method in ['hf', 'lda', 'b3lyp', 'm06']:
+    for prop in ['g']:
+        test.run(['%s_%s.dal' % (prop, method)], ['mol.mol'],
                  {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
 sys.exit(test.return_code)
