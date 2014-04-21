@@ -11,7 +11,7 @@ test = TestRun(__file__, sys.argv)
 f = Filter()
 f.add(ignore_below=1.0e-3, rel_tolerance=1.0e-5) # all lines
 
-test.run(['ff_m06.dal', 'fff_m06.dal', 'ff_b3lyp.dal', 'fff_b3lyp.dal', 'ffff_b3lyp.dal'], ['aug-dz.mol'],
-                 {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
+test.run(['ff_m06.dal', 'ff_b3lyp.dal'], ['aug-dz.mol'],
+         {'rsp_tensor_human': f}, args='-get rsp_tensor_human')
 
 sys.exit(test.return_code)
