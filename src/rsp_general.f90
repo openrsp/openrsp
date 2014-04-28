@@ -47,11 +47,7 @@ module rsp_general
                                     rsp_get_matrix_w,                  &
                                     rsp_get_matrix_y
   use rsp_perturbed_sdf, only: rsp_fds
-  use rsp_property_caching, only: property_cache,          &
-                                  property_cache_already,  &
-                                  property_cache_allocate, &
-                                  property_cache_getdata,  &
-                                  property_cache_add_element
+  use rsp_property_caching
   use rsp_sdf_caching, only: SDF,                &
                              sdf_setup_datatype, &
                              sdf_getdata_s
@@ -683,7 +679,489 @@ module rsp_general
 
   end subroutine
 
+! BEGIN NEW 2014
 
+  ! Calculate and add all the energy contribs
+
+  recursive subroutine rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
+                                  p_tuples, density_order, D, get_nucpot_contrib, &
+                                  get_1el_contrib, get_2el_contrib, dryrun, cache, property_size, prop)
+
+    implicit none
+
+    logical :: e_knskip, dryrun
+    type(p_tuple) :: pert
+    integer, dimension(2) :: kn
+    integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size, id_outp
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
+    type(SDF) :: D
+    type(contrib_cache), target :: cache
+    type(contrib_cache), pointer :: cache_next
+    complex(8), dimension(property_size) :: prop
+    external :: get_nucpot_contrib, get_1el_contrib, get_2el_contrib
+
+    if (pert%n_perturbations >= 1) then
+
+       ! The differentiation can do three things:
+       ! 1. Differentiate the energy expression 'directly'
+
+
+    if (p_tuples(1)%n_perturbations == 0) then
+
+       call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations, &
+       kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
+       density_order, D, get_nucpot_contrib, get_1el_contrib, get_2el_contrib, &
+       .TRUE., cache, property_size, prop)
+
+    else
+
+       call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations,  &
+       kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
+       p_tuples(2:size(p_tuples))/), density_order, D, get_nucpot_contrib, &
+       get_1el_contrib, get_2el_contrib, .TRUE., cache, property_size, prop)
+
+    end if
+    
+       ! 2. Differentiate all of the contraction densities in turn
+
+       ! Find the number of terms
+
+       do i = 2, num_p_tuples
+
+          t_new = p_tuples
+
+          if (p_tuples(i)%n_perturbations == 0) then
+
+             t_new(i) = p_tuple_getone(pert, 1)
+
+          else
+
+             t_new(i) = p_tuple_extend(t_new(i), p_tuple_getone(pert, 1))
+
+          end if
+
+          call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations, &
+          kn, num_p_tuples, t_new, density_order + 1, D, get_nucpot_contrib, &
+         get_1el_contrib, get_2el_contrib, .TRUE., cache, property_size, prop)
+
+       end do
+
+       ! Since we are only calculating Hartree-Fock type energy terms here,
+       ! we don't need to go beyond to perturbed contraction density matrices
+       ! (but that is in general needed for XC contribs)
+       if (num_p_tuples < 3) then
+
+          ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
+          ! a(nother) pert D contraction)
+
+          call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations, &
+          kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
+          density_order + 1, D, get_nucpot_contrib, get_1el_contrib, get_2el_contrib, &
+          .TRUE., cache, property_size, prop)
+
+       end if
+
+    ! At the final recursion level: Calculate the contrib (if k,n choice of rule
+    ! allows it) or get it from cache if it was already calculated (and if k,n choice 
+    ! of rule allows it)
+
+    else
+
+       e_knskip = .FALSE.
+
+       do i = 1, num_p_tuples
+ 
+          if (i > 1) then
+
+             if(kn_skip(p_tuples(i)%n_perturbations, p_tuples(i)%pid, kn)) then
+
+                e_knskip = .TRUE.
+
+             end if
+          
+          elseif (i == 1) then
+
+          end if
+
+       end do
+
+
+       if (e_knskip .EQV. .FALSE.) then
+
+          if (contrib_cache_already(cache, num_p_tuples, p_tuples)) then
+
+             if (.NOT.(dryrun)) then
+
+                ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
+                ! THIS CALL (LIKE property_cache_getdata ASSUMES)
+                call contrib_cache_getdata(cache, num_p_tuples, &
+                     p_tuples_standardorder(num_p_tuples, p_tuples), property_size, .FALSE., prop=prop)
+
+             end if
+
+          else
+
+             if (dryrun) then
+
+                call contrib_cache_add_element(cache, num_p_tuples, p_tuples)
+
+             else
+
+                write(id_outp,*) 'ERROR: Contribution should be in cache but was not found'
+
+             end if
+
+          end if
+
+       end if
+
+    end if
+
+    ! After dryrun recursion is done, calculate all necessary cache elements 
+    ! and recurse again to get cache retrieval situations
+    if (pert%npert == total_num_perturbations) then
+
+       cache_next => cache
+
+       ! Cycle to last element of cache
+       do while (cache_next%last .eqv. .FALSE.)
+          cache_next => cache_next%next
+       end do
+
+       write(id_outp,*) 'Calculating energy-type contribs for inner perturbation tuple'
+
+       ! Traverse linked list while getting contribs until at last element again
+       do while (cache_next%last .eqv. .FALSE.)
+          call get_energy_2014(total_num_perturbations, D, property_size, cache_next, prop)
+          cache_next => cache_next%next
+       end do
+
+       ! Do new recursion for cache retrieval situations
+       call rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
+                       p_tuples, density_order, D, get_nucpot_contrib, &
+                       get_1el_contrib, get_2el_contrib, .FALSE., cache_next, property_size, prop)
+
+     end if
+
+  end subroutine
+
+  subroutine get_energy_2014(total_num_perturbations, D, property_size, cache, prop)
+
+    implicit none
+
+    integer :: total_num_perturbations, property_size, blk_sized_merged, merged_nblks
+    integer :: cache_offset, i, j, k, m, istart, iend, inner_nblks, inner_triang_size
+    integer :: nfields, offset, prop_offset, total_contrib_size, total_num_outer, id_outp
+    integer :: merged_triang_size, num_dmat, total_outer_size
+    type(SDF) :: D
+    type(contrib_cache) :: cache
+    type(contrib_cache_outer), pointer :: outer_next
+    complex(8), dimension(property_size) :: prop
+    type(p_tuple) :: emptypert, t_mat_p_tuple, merged_p_tuple, t_matrix_bra, t_matrix_ket
+    type(matrix), allocatable, dimension(:,:) :: dens_tuples
+    type(matrix) :: D_unp
+    integer, allocatable, dimension(:) :: translated_index, blk_sizes_merged, &
+                                          inner_blk_sizes, pids_current_contrib
+    integer, allocatable, dimension(:,:) :: all_outer_indices, inner_indices
+    integer, allocatable, dimension(:,:) :: triang_indices_pr, inner_blks_tuple_info
+    integer, allocatable, dimension(:,:,:) :: merged_blk_info
+    complex(8), allocatable, dimension(:) :: contrib, prop_forcache
+!     integer, allocatable, dimension(:,:,:) :: 
+    external :: get_tmat_contrib
+    
+    
+    total_contrib_size = 0
+    total_num_outer = total_num_perturbations - cache%p_inner%npert
+    
+    inner_nblks = get_num_blks(cache%p_inner)
+    inner_blks_tuple_info = get_blk_info(inner_nblks, cache%p_inner)
+    inner_triang_size = get_triangulated_size(inner_nblks, inner_blks_tuple_info(1:inner_nblks, :))
+    inner_blk_sizes = get_triangular_sizes(inner_nblks, inner_blks_tuple_info(1:inner_nblks, 2), &
+                      inner_blks_tuple_info(1:inner_nblks, 3))
+    
+    call make_triangulated_tuples_indices(1, cache%p_inner%npert, (/inner_nblks/), &
+         inner_blks_tuple_info, (/inner_triang_size/), inner_indices)
+    
+    if (total_num_outer > 0) then
+    
+       do i = 1, cache%num_outer
+    
+          outer_next => cache%contribs_outer%next
+       
+          allocate(outer_next%nblks_tuple(outer_next%num_dmat))
+          allocate(outer_next%blk_sizes(outer_next%num_dmat, total_num_outer))
+          allocate(outer_next%blks_tuple_info(outer_next%num_dmat, total_num_outer, 3))
+          allocate(outer_next%blks_tuple_triang_size((outer_next%num_dmat)))
+       
+          do j = 1, outer_next%num_dmat
+       
+             outer_next%nblks_tuple(j) = get_num_blks(outer_next%outer_p_tuples(j))
+             outer_next%blks_tuple_info(j, :, :) = get_blk_info(outer_next%nblks_tuple(j), & 
+                                                   outer_next%outer_p_tuples(j))
+             outer_next%blks_tuple_triang_size(j) = get_triangulated_size(outer_next%nblks_tuple(j), &
+                                                    outer_next%blks_tuple_info(j, 1:outer_next%nblks_tuple(j), :))
+             outer_next%blk_sizes(j, 1:outer_next%nblks_tuple(j)) = &
+             get_triangular_sizes(outer_next%nblks_tuple(j), &
+             outer_next%blks_tuple_info(i,1:outer_next%nblks_tuple(j),2), &
+             outer_next%blks_tuple_info(i,1:outer_next%nblks_tuple(j),3))
+             outer_next%outer_size = product(outer_next%blks_tuple_triang_size)
+       
+          end do
+       
+          allocate(outer_next%indices(outer_next%outer_size, total_num_outer))
+       
+          ! MaR: Unsure about 2nd argument (maybe total_num_perturbations)
+          call make_triangulated_tuples_indices(outer_next%num_dmat, total_num_outer, & 
+               outer_next%nblks_tuple, outer_next%blks_tuple_info, &
+               outer_next%blks_tuple_triang_size, outer_next%indices)
+       
+          total_outer_size = total_contrib_size + outer_next%outer_size
+       
+    
+       end do
+    
+       allocate(dens_tuples(total_outer_size,2))
+       allocate(contrib(inner_triang_size * total_outer_size))    
+    
+       call empty_p_tuple(emptypert)
+    
+       do i = 1, total_outer_size
+    
+          call sdf_getdata_s(D, emptypert, (/1/), dens_tuples(i, 2))
+    
+       end do
+    
+       m = 0
+    
+       do i = 1, cache%num_outer
+    
+          outer_next => cache%contribs_outer%next
+       
+          do j = 1, outer_next%outer_size
+       
+             m = m + 1
+       
+             istart = 1
+             iend = 0
+       
+             do k = 1, outer_next%num_dmat
+          
+                iend = iend + outer_next%outer_p_tuples(k)%npert
+          
+                call sdf_getdata_s(D, outer_next%outer_p_tuples(k), outer_next%indices(j,istart:iend), &
+                     dens_tuples(m, k))
+                  
+                istart = iend + 1
+       
+             end do
+          
+          end do
+          
+       end do
+     
+       call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+                            cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
+                            dens_tuples(:,1), contrib)
+
+       call empty_p_tuples(t_matrix_bra)
+       call empty_p_tuples(t_matrix_ket)
+
+       t_mat_p_tuple = cache%p_inner
+       t_mat_p_tuple%pid = (/(i, i = 1, t_mat_p_tuple%npert)/)
+
+       ! MaR: Restore this later
+           
+!        call rsp_ovlave_t_matrix(get_tmatrix_contrib, t_mat_p_tuple%npert, t_mat_p_tuple, &
+!                                 t_matrix_bra, t_matrix_ket, &
+!                                 dens_tuples(:,1), total_outer_size, contrib)                         
+                         
+       call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+                            cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
+                            dens_tuples, contrib)
+ 
+     ! Loop to get offset and put in rsp tensor and cache
+    
+       do i = 1, cache%num_outer
+    
+          outer_next => cache%contribs_outer%next
+       
+          do j = 1, outer_next%outer_size
+
+             if (cache%p_inner%npert > 0) then
+          
+                do k = 1, inner_triang_size
+             
+                   ! Merging of blks_tuple_info can give mem issues
+                   offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
+                   total_num_perturbations, (/inner_nblks, outer_next%nblks_tuple(:)/), &
+                   (/cache%p_inner%npert, (outer_next%outer_p_tuples(m)%npert, m = 1, outer_next%num_dmat)/), &
+                   (/inner_blks_tuple_info, (outer_next%blks_tuple_info(m, :, :), m = 1, outer_next%num_dmat)/), &
+                   (/inner_blk_sizes, (outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/), &
+                   (/inner_triang_size, (outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/), &
+                   (/inner_indices(k,:), outer_next%indices(j,:)/))
+
+                   prop_forcache(offset) = prop_forcache(offset) + contrib(k)
+
+                end do
+             
+             else
+             
+                offset = get_triang_blks_tuple_offset(outer_next%num_dmat, total_num_perturbations, &
+                outer_next%nblks_tuple, (/(outer_next%outer_p_tuples(m)%npert, m = 1,outer_next% num_dmat)/), &
+                outer_next%blks_tuple_info, outer_next%blk_sizes, outer_next%blks_tuple_triang_size, &
+                outer_next%indices(j,:))
+
+                prop_forcache(offset) = prop_forcache(offset) + contrib(k)
+
+             end if
+          
+          end do
+          
+                   
+          
+          if (cache%p_inner%npert > 0) then
+    
+             call p1_cloneto_p2(cache%p_inner, merged_p_tuple)
+    
+             do j = 1, outer_next%num_dmat
+    
+                call p1_merge_p2(outer_next%outer_p_tuples(j), merged_p_tuple, merged_p_tuple)
+   
+             end do
+   
+          else
+   
+             call p_tuple_p1_cloneto_p2(outer_next%outer_p_tuples(1), merged_p_tuple)
+   
+             do j = 2, outer_next%num_dmat
+   
+                call p1_merge_p2(outer_next%outer_p_tuples(j), merged_p_tuple, merged_p_tuple)
+   
+             end do
+   
+          end if
+   
+          call p_tuple_ordered(merged_p_tuple, merged_p_tuple)
+   
+          ! MaR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
+          ! PIDS ARE IN STANDARD ORDER? FIND OUT
+   
+          m = 1
+      
+          do j = 1, cache%p_inner%npert
+             pids_current_contrib(j) = cache%p_inner%pid(j)
+             m = m + 1
+          end do
+          
+          do j = 1, outer_next%num_dmat
+             do k = 1, outer_next%outer_p_tuples(j)%npert
+                pids_current_contrib(k) = outer_next%outer_p_tuples(j)%pid(k)
+                m = m + 1
+             end do
+          end do
+    
+          merged_nblks = get_num_blks(merged_p_tuple)
+       
+          allocate(merged_blk_info(1, merged_nblks, 3))
+       
+          merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+          blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+          merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+          merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+    
+          allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
+    
+          call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+                                         merged_triang_size, triang_indices_pr)
+    
+       
+          do j = 1, size(triang_indices_pr, 1)
+    
+             prop_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+                         (/merged_p_tuple%npert/), &
+                         (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+                         (/triang_indices_pr(j, :) /))
+    
+             do k = 1, total_num_perturbations
+    
+                translated_index(k) = triang_indices_pr(j,pids_current_contrib(k))
+    
+             end do
+
+             
+             if (cache%p_inner%npert > 0) then
+
+                ! Merging of blks_tuple_info can give mem issues
+                cache_offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
+                total_num_perturbations, (/inner_nblks, outer_next%nblks_tuple(:)/), &
+                (/cache%p_inner%npert, (outer_next%outer_p_tuples(m)%npert, m = 1, num_dmat)/), &
+                (/inner_blks_tuple_info, (outer_next%blks_tuple_info(m, :, :), m = 1, num_dmat)/), &
+                (/inner_blk_sizes, (outer_next%blk_sizes(m,:), m = 1, num_dmat)/), &
+                (/inner_triang_size, (outer_next%blks_tuple_triang_size(m), m = 1, num_dmat)/), &
+                (/ translated_index(:) /))
+    
+             else
+
+                cache_offset = get_triang_blks_tuple_offset(outer_next%num_dmat, total_num_perturbations, &
+                outer_next%nblks_tuple, (/(outer_next%outer_p_tuples(m)%npert, m = 1, num_dmat)/), &
+                outer_next%blks_tuple_info, outer_next%blk_sizes, outer_next%blks_tuple_triang_size, &
+                (/ translated_index(:) /))
+
+             end if
+   
+             prop(prop_offset) = prop(prop_offset) + prop_forcache(cache_offset)
+   
+          end do
+   
+          outer_next%contrib_size = inner_triang_size * outer_next%outer_size
+          allocate(outer_next%data_ave(outer_next%contrib_size))
+          outer_next%data_ave = prop_forcache
+           
+       end do
+ 
+ 
+    else
+    
+       call get_nucpot_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+                            cache%p_inner%plab, cache%p_inner%freq, prop)
+
+       call empty_p_tuple(emptypert)
+       call sdf_getdata_s(D, emptypert, (/1/), D_unp)
+                            
+       call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+                            cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
+                            (/D_unp/), prop)
+    
+       t_mat_p_tuple = cache%p_inner
+       t_mat_p_tuple%pid = (/(i, i = 1, t_mat_p_tuple%npert)/)
+
+              ! MaR: Restore this later
+           
+!        call rsp_ovlave_t_matrix(get_tmatrix_contrib, t_mat_p_tuple%npert, t_mat_p_tuple, &
+!                                 t_matrix_bra, t_matrix_ket, &
+!                                 (/D_unp/), 1, prop)         
+    
+    
+       call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+                             cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
+                             (/D_unp, D_unp/), prop)
+   
+    end if
+
+!  write(*,*) 'energy contrib'
+!  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
+!  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
+!  merged_blk_info, property_size, prop_forcache)
+
+
+  end subroutine
+
+  ! END NEW 2014
+  
+  
+  
+  
+  
   ! Calculate and add all the energy contributions
 
   recursive subroutine rsp_energy(pert, total_num_perturbations, kn, num_p_tuples, &
