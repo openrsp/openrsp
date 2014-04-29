@@ -1186,16 +1186,16 @@ module rsp_general
 
     if (p_tuples(1)%n_perturbations == 0) then
 
-       p_rf1 = (p_tuple_remove_first(pert)
+       p_rf1 = p_tuple_remove_first(pert)
        p_new1 = (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/)
     
        call rsp_energy(p_rf1, total_num_perturbations, &
-       kn, num_p_tuples, p_new1), &
+       kn, num_p_tuples, p_new1, &
        density_order, D, property_size, cache, prop)
 
     else
 
-       p_rf1 = (p_tuple_remove_first(pert)
+       p_rf1 = p_tuple_remove_first(pert)
        p_new1 = (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
        p_tuples(2:size(p_tuples))/)
 
@@ -1222,7 +1222,7 @@ module rsp_general
 
           end if
 
-          p_rf2 = (p_tuple_remove_first(pert)
+          p_rf2 = p_tuple_remove_first(pert)
           
           call rsp_energy(p_rf2, total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, property_size, cache, prop)
@@ -1237,7 +1237,7 @@ module rsp_general
           ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
           ! a(nother) pert D contraction)
 
-          p_rf3 = (p_tuple_remove_first(pert)
+          p_rf3 = p_tuple_remove_first(pert)
           p_new3 = (/p_tuples(:), p_tuple_getone(pert, 1)/)
           
           call rsp_energy(p_rf3, total_num_perturbations, &
