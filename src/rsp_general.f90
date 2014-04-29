@@ -958,13 +958,13 @@ module rsp_general
           end do
           
        end do
-     
-       call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-                            cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
-                            dens_tuples(:,1), contrib)
+                ! MaR: Restore this later   
+!        call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+!                             cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
+!                             dens_tuples(:,1), contrib)
 
-       call empty_p_tuples(t_matrix_bra)
-       call empty_p_tuples(t_matrix_ket)
+!        call empty_p_tuples(t_matrix_bra)
+!        call empty_p_tuples(t_matrix_ket)
 
        t_mat_p_tuple = cache%p_inner
        t_mat_p_tuple%pid = (/(i, i = 1, t_mat_p_tuple%npert)/)
@@ -975,9 +975,9 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, &
 !                                 dens_tuples(:,1), total_outer_size, contrib)                         
                          
-       call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-                            cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
-                            dens_tuples, contrib)
+!        call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+!                             cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
+!                             dens_tuples, contrib)
  
      ! Loop to get offset and put in rsp tensor and cache
     
@@ -1121,16 +1121,16 @@ module rsp_general
  
  
     else
-    
-       call get_nucpot_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-                            cache%p_inner%plab, cache%p_inner%freq, prop)
+                  ! MaR: Restore this later
+!        call get_nucpot_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+!                             cache%p_inner%plab, cache%p_inner%freq, prop)
 
        call empty_p_tuple(emptypert)
        call sdf_getdata_s(D, emptypert, (/1/), D_unp)
-                            
-       call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-                            cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
-                            (/D_unp/), prop)
+               ! MaR: Restore this later                           
+!        call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+!                             cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
+!                             (/D_unp/), prop)
     
        t_mat_p_tuple = cache%p_inner
        t_mat_p_tuple%pid = (/(i, i = 1, t_mat_p_tuple%npert)/)
@@ -1142,9 +1142,9 @@ module rsp_general
 !                                 (/D_unp/), 1, prop)         
     
     
-       call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-                             cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
-                             (/D_unp, D_unp/), prop)
+!        call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
+!                              cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
+!                              (/D_unp, D_unp/), prop)
    
     end if
 
