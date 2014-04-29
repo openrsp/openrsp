@@ -1170,10 +1170,11 @@ module rsp_general
     implicit none
 
     logical :: e_knskip
-    type(p_tuple) :: pert
+    type(p_tuple) :: pert, p_rf1, p_rf2, p_rf3
     integer, dimension(2) :: kn
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
-    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new, p_new1, p_stord
+    type(p_tuple), dimension(num_p_tuples + 1) :: p_new3
     type(SDF) :: D
     type(property_cache) :: cache
     complex(8), dimension(property_size) :: prop
@@ -1185,16 +1186,21 @@ module rsp_general
 
     if (p_tuples(1)%n_perturbations == 0) then
 
-       call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
-       kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
+       p_rf1 = (p_tuple_remove_first(pert)
+       p_new1 = (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/)
+    
+       call rsp_energy(p_rf1, total_num_perturbations, &
+       kn, num_p_tuples, p_new1), &
        density_order, D, property_size, cache, prop)
 
     else
 
+       p_rf1 = (p_tuple_remove_first(pert)
+       p_new1 = (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
+       p_tuples(2:size(p_tuples))/)
 
-       call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations,  &
-       kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
-       p_tuples(2:size(p_tuples))/), density_order, D, property_size, cache, prop)
+       call rsp_energy(p_rf1, total_num_perturbations,  &
+       kn, num_p_tuples, p_new1, density_order, D, property_size, cache, prop)
 
     end if
     
@@ -1216,7 +1222,9 @@ module rsp_general
 
           end if
 
-          call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
+          p_rf2 = (p_tuple_remove_first(pert)
+          
+          call rsp_energy(p_rf2, total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, property_size, cache, prop)
 
        end do
@@ -1229,8 +1237,11 @@ module rsp_general
           ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
           ! a(nother) pert D contraction)
 
-          call rsp_energy(p_tuple_remove_first(pert), total_num_perturbations, &
-          kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
+          p_rf3 = (p_tuple_remove_first(pert)
+          p_new3 = (/p_tuples(:), p_tuple_getone(pert, 1)/)
+          
+          call rsp_energy(p_rf3, total_num_perturbations, &
+          kn, num_p_tuples + 1, p_new3, &
           density_order + 1, D, property_size, cache, prop)
 
        end if
@@ -1271,6 +1282,8 @@ module rsp_general
 
        if (e_knskip .EQV. .FALSE.) then
 
+          p_stord = p_tuples_standardorder(num_p_tuples, p_tuples)
+       
           open(unit=257, file='totterms', status='old', action='write', &
                position='append') 
           write(257,*) 'T'
@@ -1278,8 +1291,7 @@ module rsp_general
           
 !           write(*,*) 'Evaluating property_cache_already'
 
-          if (property_cache_already(cache, num_p_tuples, &
-              p_tuples_standardorder(num_p_tuples, p_tuples)) .EQV. .TRUE.) then
+          if (property_cache_already(cache, num_p_tuples, p_stord)) then
 
              open(unit=257, file='cachehit', status='old', action='write', &
                   position='append') 
@@ -1290,8 +1302,7 @@ module rsp_general
 
              ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
              ! THIS CALL (LIKE property_cache_getdata ASSUMES)
-             call property_cache_getdata(cache, num_p_tuples, &
-                  p_tuples_standardorder(num_p_tuples, p_tuples), property_size, prop)
+             call property_cache_getdata(cache, num_p_tuples, p_stord, property_size, prop)
 
 !              write(*,*) ' '
        
@@ -1322,8 +1333,7 @@ module rsp_general
 
 
              call get_energy(num_p_tuples, total_num_perturbations, & 
-                  p_tuples_standardorder(num_p_tuples, p_tuples), &
-                  density_order, D, property_size, cache, prop)
+                  p_stord, density_order, D, property_size, cache, prop)
 
                   write(*,*) 'Calculated energy contribution'
                   write(*,*) ' '
