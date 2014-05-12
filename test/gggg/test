@@ -9,7 +9,7 @@ from runtest_dalton import Filter, TestRun
 test = TestRun(__file__, sys.argv)
 
 f = Filter()
-f.add(rel_tolerance = 1.0e-4) # all lines
+f.add(abs_tolerance = 1.0e-5) # all lines
 
 for method in ['hf', 'lda', 'b3lyp']:
     for prop in ['gggg']:
