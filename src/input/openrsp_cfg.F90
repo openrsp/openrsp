@@ -78,6 +78,10 @@ module openrsp_cfg
    integer :: openrsp_cfg_general_cartnc_order_field = 0
    integer :: openrsp_cfg_general_cartnc_order_geo = 0
 
-
+   ! keywords that control the XCint grid (not the Dalton grid)
+   logical :: openrsp_cfg_use_xcint_grid = .false.
+   real(8) :: openrsp_cfg_radint = 1.0d-12
+   real(8) :: openrsp_cfg_angmin = 86
+   real(8) :: openrsp_cfg_angint = 302
 
 end module

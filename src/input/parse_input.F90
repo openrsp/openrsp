@@ -281,7 +281,7 @@
          openrsp_cfg_general_hyper_raman = .true.
       end if
 
-      ! MaR: Normal mode frequency scaling (e.g. to account for 
+      ! MaR: Normal mode frequency scaling (e.g. to account for
       ! lack of correlation or anharmonicity)
 
       if (kw_matches(word, '.FSCALE')) then
@@ -294,9 +294,21 @@
 
       if (kw_matches(word, '.CARTNC')) then
          openrsp_cfg_general_trans_cartnc = .true.
-         call kw_read(word, openrsp_cfg_general_cartnc_order_geo)         
+         call kw_read(word, openrsp_cfg_general_cartnc_order_geo)
          call kw_read(word, openrsp_cfg_general_cartnc_order_field)
       end if
+
+!     --------------------------------------------------------------------------
+
+      ! keywords that control the XCint grid (not the Dalton grid)
+      if (kw_matches(word, '.XCGRID')) then
+         openrsp_cfg_use_xcint_grid = .true.
+         call kw_read(word, openrsp_cfg_radint)
+         call kw_read(word, openrsp_cfg_angmin)
+         call kw_read(word, openrsp_cfg_angint)
+      end if
+
+!     --------------------------------------------------------------------------
 
       call check_whether_kw_found(word, kw_section)
 
