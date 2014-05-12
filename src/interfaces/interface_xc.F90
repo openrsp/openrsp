@@ -18,6 +18,7 @@ module interface_xc
    use rsp_sdf_caching, only: SDF, &
                               sdf_getdata_s
    use xcint_fortran_interface
+   use openrsp_cfg
 
    implicit none
 
@@ -140,6 +141,7 @@ contains
       integer(c_int)              :: basis_type
       integer(c_int)              :: num_shells
       integer(c_int)              :: num_centers
+      integer(c_int)              :: ierr
       integer                     :: i
       integer                     :: j
       integer                     :: icount
@@ -236,6 +238,25 @@ contains
                            primitive_exp,        &
                            contraction_coef)
 
+      if (openrsp_cfg_use_xcint_grid) then
+         ! this generates XCint's internal grid
+         ierr = xcint_generate_grid(openrsp_cfg_radint,   &
+                                    openrsp_cfg_angmin,   &
+                                    openrsp_cfg_angint,   &
+                                    num_centers,          &
+                                    center_xyz,           &
+                                    center_element,       &
+                                    num_shells,           &
+                                    shell_center,         &
+                                    l_quantum_num,        &
+                                    shell_num_primitives, &
+                                    primitive_exp)
+         if (ierr /= 0) then
+            print *, 'OpenRSP ERROR: problem in xcint_generate_grid'
+            stop 1
+         end if
+      end if
+
       deallocate(primitive_exp)
       deallocate(contraction_coef)
       deallocate(center_xyz)
@@ -271,7 +292,7 @@ contains
 
       ierr = xcint_set_functional(line//C_NULL_CHAR, hfx, mu, beta)
       if (ierr /= 0) then
-         print *, 'ERROR: problem in xcint_set_functional'
+         print *, 'OpenRSP ERROR: problem in xcint_set_functional'
          stop 1
       end if
 
