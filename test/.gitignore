@@ -1,7 +1,0 @@
-*/*.diff
-*/*.reference
-*/*.filtered
-*/*.out
-*/*.stdout
-*/*.stderr
-*/*human
