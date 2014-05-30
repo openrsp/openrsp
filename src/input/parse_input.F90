@@ -1,3 +1,13 @@
+module openrsp_input
+
+   implicit none
+
+   private
+
+   public read_openrsp_input
+
+contains
+
    subroutine read_openrsp_input(file_name, file_unit)
 
       use openrsp_input_reader
@@ -313,3 +323,5 @@
       call check_whether_kw_found(word, kw_section)
 
    end subroutine
+
+end module
