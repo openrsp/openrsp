@@ -1894,13 +1894,12 @@ end if
       call save_D_and_DFD_for_ABACUS(.false., D, DFD)
       lwrk = 50*D%nrow**2+10000*D%nrow+50000000
       call f77_memory_select(work_len=lwrk, work=wrk)
-      HESMOL(:3*nr_atoms,:3*nr_atoms) = 0
-      ! SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,DIFINT,NODC,
-      ! &                  NODV,DIFDIP,HFONLY,NCLONE)
+
       call ONEDRV(wrk,lwrk,0,.true.,len(what),.true.,.true., &
                   .true.,.false.,.true.,.false.)
       ! HESMOL will contain either HESSKE+HESSNA or HESFS2 or their sum
-      R(1:9*nr_atoms**2) = reshape(HESMOL(:3*nr_atoms,:3*nr_atoms), (/9*nr_atoms**2/))
+      call quit('untested code, requires hesmol which is gone in Dalton')
+!     R(1:9*nr_atoms**2) = reshape(HESMOL(:3*nr_atoms,:3*nr_atoms), (/9*nr_atoms**2/))
       call f77_memory_deselect(work_len=lwrk, work=wrk)
 #endif
    end subroutine
@@ -1991,10 +1990,6 @@ end if
     call WRITE_DSOFSO(Dtri, DFDtri)
 #endif
     nc = 3 * get_num_atoms()
-    HESMOL(:nc,:nc) = 0
-    !  SUBROUTINE ONEDRV(WORK,LWORK,IPRINT,PROPTY,MAXDIF,
-    ! &                  DIFINT,NODC,NODV,DIFDIP,DIFQDP,
-    ! &                  HFONLY,NCLONE,PCM)
     call ONEDRV(f77_memory, size(f77_memory), 5, .true., size(fld), &
                 .true., .true., .true., .false., .false., &
                 .true., .false., .false.)
@@ -2002,7 +1997,8 @@ end if
     if (size(fld)==1) &
        call quit('error in ONEDRV_ave_ifc: not implemented')
     if (size(fld)==2) &
-       ave = reshape(2*HESMOL(:nc,:nc), (/nc*nc/)) !factor 2 for total dens
+       call quit('untested code, requires hesmol which is gone in Dalton')
+!      ave = reshape(2*HESMOL(:nc,:nc), (/nc*nc/)) !factor 2 for total dens
     deallocate(Dtri)
     deallocate(DFDtri)
   end subroutine
