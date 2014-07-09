@@ -77,6 +77,32 @@ module openrsp_cfg
    logical :: openrsp_cfg_general_trans_cartnc = .false.
    integer :: openrsp_cfg_general_cartnc_order_field = 0
    integer :: openrsp_cfg_general_cartnc_order_geo = 0
+   
+   
+	! OrL: Keyword for Coriolis coupling
+	logical :: openrsp_cfg_general_coriolis = .false.
+	
+	! OrL: Keyword for cubic and quartic force fields
+	logical :: openrsp_cfg_general_cubic_force = .false.
+	logical :: openrsp_cfg_general_quartic_force = .false.
+	
+	! OrL: Keyword for dipole geometrical derivatives
+	logical :: openrsp_cfg_general_dipole_gradient = .false.
+	logical :: openrsp_cfg_general_dipole_hessian = .false.
+	logical :: openrsp_cfg_general_dipole_cubic = .false.
+	
+	! OrL: Keyword for polarizability geometrical derivatives
+	logical :: openrsp_cfg_general_polarizability_gradient = .false.
+	logical :: openrsp_cfg_general_polarizability_hessian = .false.
+	logical :: openrsp_cfg_general_polarizability_cubic = .false.
+	
+	! OrL: Keyword for first hyper-polarizability geometrical derivatives
+	logical :: openrsp_cfg_general_hyper_polarizability_gradient = .false.
+	logical :: openrsp_cfg_general_hyper_polarizability_hessian = .false.
+	logical :: openrsp_cfg_general_hyper_polarizability_cubic = .false.
+	
+	real(8) :: openrsp_cfg_general_polarizability_geom_freq       = 0.0d0
+	real(8) :: openrsp_cfg_general_hyper_polarizability_geom_freq = 0.0d0
 
    ! keywords that control the XCint grid (not the Dalton grid)
    logical :: openrsp_cfg_use_xcint_grid = .false.
