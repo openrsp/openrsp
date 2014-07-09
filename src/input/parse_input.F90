@@ -310,6 +310,94 @@ contains
 
 !     --------------------------------------------------------------------------
 
+!     --------------------------------------------------------------------------
+
+      ! OrL: Keyword for Coriolis coupling
+
+      if (kw_matches(word, '.CORIOL')) then
+         openrsp_cfg_general_coriolis = .true.
+      endif
+      
+!     --------------------------------------------------------------------------
+
+!     --------------------------------------------------------------------------
+
+	! OrL: Keyword for cubic and quartic force fields
+	if (kw_matches(word, '.CUBFF ')) then
+		openrsp_cfg_general_cubic_force = .true.
+	endif
+		
+	if (kw_matches(word, '.QUARFF')) then
+		openrsp_cfg_general_quartic_force = .true.
+	endif
+
+!     --------------------------------------------------------------------------
+
+!     --------------------------------------------------------------------------
+	
+	! OrL: Keyword for dipole geometrical derivatives
+	if (kw_matches(word, '.DIPGRA ')) then
+		openrsp_cfg_general_dipole_gradient = .true.
+	end if
+	
+	if (kw_matches(word, '.DIPHES')) then
+		openrsp_cfg_general_dipole_hessian = .true.
+	end if
+	
+	if (kw_matches(word, '.DIPCUB')) then
+		openrsp_cfg_general_dipole_cubic = .true.
+	end if
+	
+!     --------------------------------------------------------------------------
+
+!     --------------------------------------------------------------------------
+
+	! OrL: Keyword for polarizability geometrical derivatives
+	if (kw_matches(word, '.POLGRA')) then
+		openrsp_cfg_general_polarizability_gradient = .true.
+	end if
+	
+	if (kw_matches(word, '.POLHES')) then
+		openrsp_cfg_general_polarizability_hessian = .true.
+	end if
+	
+	if (kw_matches(word, '.POLCUB')) then
+		openrsp_cfg_general_polarizability_cubic = .true.
+	end if
+	
+!     --------------------------------------------------------------------------
+
+!     --------------------------------------------------------------------------
+
+	! OrL: Keyword for first hyper-polarizability geometrical derivatives
+	if (kw_matches(word, '.FHPGRA')) then
+		openrsp_cfg_general_hyper_polarizability_gradient = .true.
+	end if
+	
+	if (kw_matches(word, '.FHPHES')) then
+		openrsp_cfg_general_hyper_polarizability_hessian = .true.
+	end if
+	
+	if (kw_matches(word, '.FHPCUB')) then
+		openrsp_cfg_general_hyper_polarizability_cubic = .true.
+	end if
+	
+!     --------------------------------------------------------------------------
+
+!     --------------------------------------------------------------------------
+
+ 	if (kw_matches(word, '.FHPFRQ')) then
+         call kw_read(word, openrsp_cfg_general_hyper_polarizability_geom_freq)
+    end if
+    
+    if (kw_matches(word, '.POLFRQ')) then
+         call kw_read(word, openrsp_cfg_general_polarizability_geom_freq)
+    end if
+    
+!     --------------------------------------------------------------------------
+
+!     --------------------------------------------------------------------------
+
       ! keywords that control the XCint grid (not the Dalton grid)
       if (kw_matches(word, '.XCGRID')) then
          openrsp_cfg_use_xcint_grid = .true.
