@@ -720,7 +720,7 @@ contains
 	do pp = 1, n_c
 	  do i = 1, 3
 
-	    tmp(i) = tmp(i) + Bt(pp, q, i) * T(pp, q)
+	    tmp(i) = tmp(i) + Bt(pp, q, i) * T(pp, p)
 
 	  end do
 	end do
@@ -782,7 +782,7 @@ contains
 	  do i = 1, 3
 	    do j = 1, 3
 
-	      tmp(i, j) = tmp(i, j) + Bt(pp, q, i, j) * T(pp, q)
+	      tmp(i, j) = tmp(i, j) + Bt(pp, q, i, j) * T(pp, p)
 
 	    end do
 	  end do
@@ -851,7 +851,7 @@ contains
 	    do j = 1, 3
 	      do k = 1, 3
 
-		tmp(i, j, k) = tmp(i, j, k) + Bt(pp, q, i, j, k) * T(pp, q)
+		tmp(i, j, k) = tmp(i, j, k) + Bt(pp, q, i, j, k) * T(pp, p)
 
 	      end do
 	    end do
@@ -1267,7 +1267,7 @@ contains
 	      do k = 1, 3
 		do m = 1, 3
 
-		  tmp(i, j, k, m) = tmp(i, j, k, m) + Bt(pp, q, i, j, k, m) * T(pp, q)
+		  tmp(i, j, k, m) = tmp(i, j, k, m) + Bt(pp, q, i, j, k, m) * T(pp, p)
 	  
 		end do
 	      end do
