@@ -78,6 +78,10 @@ module openrsp_cfg
    integer :: openrsp_cfg_general_cartnc_order_field = 0
    integer :: openrsp_cfg_general_cartnc_order_geo = 0
    
+   ! MaR: Keyword to suppress calculation of Cartesian basis tensor in conversion routines
+   ! (just perform transformation on tensor which was previously calculated and stored in file)
+   
+   logical :: openrsp_cfg_general_suppress_calc = .false.
    
 	! OrL: Keyword for Coriolis coupling
 	logical :: openrsp_cfg_general_coriolis = .false.

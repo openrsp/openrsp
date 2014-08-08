@@ -307,6 +307,11 @@ contains
          call kw_read(word, openrsp_cfg_general_cartnc_order_geo)
          call kw_read(word, openrsp_cfg_general_cartnc_order_field)
       end if
+      
+      
+      if (kw_matches(word, '.JUSTTR')) then
+         openrsp_cfg_general_suppress_calc = .true.
+      end if
 
 !     --------------------------------------------------------------------------
 

@@ -2256,6 +2256,9 @@ end do
     
     ! OrL: Electric dipole gradient calculation
     if(openrsp_cfg_general_dipole_gradient) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+    
     	kn = (/0,1/)
 
        perturbation_tuple%n_perturbations = 2
@@ -2279,13 +2282,19 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
-        
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                              S_already=S_already, zeromat_already=zeromat_already, file_id='Egf')
+
+                               
+                                      
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
+    
+    end if
         
         ! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
@@ -2353,6 +2362,9 @@ end do
     
     ! OrL: Electric dipole hessian calculation
     if(openrsp_cfg_general_dipole_hessian) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+      
     	kn = (/1,1/)
 
        perturbation_tuple%n_perturbations = 3
@@ -2376,13 +2388,20 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Eggf')
-        
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                              S_already=S_already, zeromat_already=zeromat_already, file_id='Eggf')
+      
+      
+       
+         
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
+        
+     end if   
     	
     	! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
@@ -2455,6 +2474,9 @@ end do
     
     ! OrL: Electric dipole third geometrical derivatives calculation
     if(openrsp_cfg_general_dipole_cubic) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+    
     	kn = (/1,2/)
 
        perturbation_tuple%n_perturbations = 4
@@ -2478,13 +2500,19 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggf')
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                              S_already=S_already, zeromat_already=zeromat_already, file_id='Egggf')
+      
+      
         
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
+     
+      end if
         
         ! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
@@ -2562,6 +2590,9 @@ end do
     
     ! OrL: Polarizability gradient calculation
     if(openrsp_cfg_general_polarizability_gradient) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+    
     	kn = (/1,1/)
 
        perturbation_tuple%n_perturbations = 3
@@ -2586,14 +2617,21 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egff')
-        
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                              S_already=S_already, zeromat_already=zeromat_already, file_id='Egff')
+
+                                 
+                           
+                                   
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
-        
+    
+    end if 
+    
         ! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
 		allocate(nm_freq_b(3*num_atoms))
@@ -2665,6 +2703,9 @@ end do
     
     ! OrL: Polarizability hessian calculation
     if(openrsp_cfg_general_polarizability_hessian) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+    
     	kn = (/1,2/)
 
        perturbation_tuple%n_perturbations = 4
@@ -2689,14 +2730,21 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Eggff')
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                              S_already=S_already, zeromat_already=zeromat_already, file_id='Eggff')
         
+       
+       
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
-        
+      
+      
+      end if
+      
         ! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
 		allocate(nm_freq_b(3*num_atoms))
@@ -2773,6 +2821,9 @@ end do
     
     ! OrL: Polarizability third geometrical derivatives calculation
     if(openrsp_cfg_general_polarizability_cubic) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+    
     	kn = (/2,2/)
 
        perturbation_tuple%n_perturbations = 5
@@ -2797,14 +2848,19 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                           S_already=S_already, zeromat_already=zeromat_already, file_id='Egggff')
-        
+              
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                              S_already=S_already, zeromat_already=zeromat_already, file_id='Egggff')
+       
+       
+       
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
-        
+     
+      end if
+     
         ! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
 		allocate(nm_freq_b(3*num_atoms))
@@ -2886,6 +2942,9 @@ end do
 
 	! OrL: First hyper-polarizability gradient calculation
     if(openrsp_cfg_general_hyper_polarizability_gradient) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+    
     	kn = (/1,2/)
 
        perturbation_tuple%n_perturbations = 4
@@ -2911,13 +2970,20 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                     S_already=S_already, zeromat_already=zeromat_already, file_id='Egfff')
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Egfff')
+        
+       
         
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
+        
+    end if
+        
     	
     	! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
@@ -2995,6 +3061,9 @@ end do
     
     ! OrL: First hyper-polarizability hessian calculation
     if(openrsp_cfg_general_hyper_polarizability_hessian) then
+    
+      if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+      
     	kn = (/2,2/)
 
        perturbation_tuple%n_perturbations = 5
@@ -3020,13 +3089,19 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                     S_already=S_already, zeromat_already=zeromat_already, file_id='Eggfff')
+       
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Eggfff')
+        
+
         
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
+        
+      end if
         
 		! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
@@ -3109,7 +3184,10 @@ end do
     
     ! OrL: First hyper-polarizability third geometrical derivatives calculation
     if(openrsp_cfg_general_hyper_polarizability_cubic) then
-    	kn = (/2,3/)
+
+       if (.NOT.(openrsp_cfg_general_suppress_calc)) then
+       
+        	kn = (/2,3/)
 
        perturbation_tuple%n_perturbations = 6
        allocate(perturbation_tuple%pdim(6))
@@ -3134,14 +3212,20 @@ end do
        call sdf_setup_datatype(D_already, D)
        call sdf_setup_datatype(F_already, F)
 
-       call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
-                     S_already=S_already, zeromat_already=zeromat_already, file_id='Egggfff')
-        
+
+       
+          call rsp_prop(perturbation_tuple, kn, F_already=F_already, D_already=D_already, &
+                        S_already=S_already, zeromat_already=zeromat_already, file_id='Egggfff')
+       
+       
+       
     	deallocate(perturbation_tuple%pdim)
         deallocate(perturbation_tuple%plab)
         deallocate(perturbation_tuple%pid)
         deallocate(perturbation_tuple%freq)
-        
+
+      end if        
+      
     	! Cartesian to reduced normal coordinates transformation 
 		allocate(T(3*num_atoms, 3*num_atoms))
 		allocate(nm_freq_b(3*num_atoms))
