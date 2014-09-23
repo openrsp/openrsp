@@ -80,7 +80,6 @@ contains
 
 
    logical function is_ks_calculation()
-      call check_if_initialized()
       is_ks_calculation = this_is_ks_calculation
    end function
 
