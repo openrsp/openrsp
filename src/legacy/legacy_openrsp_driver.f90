@@ -161,7 +161,9 @@
 
     call interface_molecule_init()
     call interface_io_init()
-    call interface_xc_init()
+    if (is_ks_calculation()) then
+       call interface_xc_init()
+    end if
     call interface_scf_init()
     call interface_basis_init()
 
