@@ -267,7 +267,7 @@ contains
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
       call UTHV(solver_CMO%elms, RHS(IRHS)%elms, solver_CMO%elms, &
-                ISYM, ISYM, NBAST, NBAST, RHS_MO%elms, f77_memory(get_f77_memory_next()))
+                ISYM, ISYM, NORBT, NORBT, RHS_MO%elms, f77_memory(get_f77_memory_next()))
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
       call PRPORB(RHS_MO%elms, solver_DV, f77_memory(get_f77_memory_next()))
       !FIXME: why multiplied by -1
