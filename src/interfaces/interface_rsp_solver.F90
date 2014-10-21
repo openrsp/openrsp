@@ -105,11 +105,16 @@ contains
     end if
 
     ! initializes the coefficients of molecular orbitals matrices
-    call mat_init(solver_CMO, NBAST, NBAST)
+    call mat_init(solver_CMO, NBAST, NORBT)
+    call mat_init(solver_CMO_OCC, NBAST, NORBT)
+    call mat_init(solver_CMO_VIR, NBAST, NORBT)
 
-    solver_CMO_OCC = 0*solver_CMO
+    solver_CMO%elms = 0.0
+    solver_CMO_OCC%elms = 0.0
+    solver_CMO_VIR%elms = 0.0
+!    solver_CMO_OCC = 0*solver_CMO
     call mat_ensure_alloc(solver_CMO_OCC, only_alloc=.true.)
-    solver_CMO_VIR = 0*solver_CMO
+!    solver_CMO_VIR = 0*solver_CMO
     call mat_ensure_alloc(solver_CMO_VIR, only_alloc=.true.)
     ! gets the coefficients of molecular orbitals
     call di_get_cmo(solver_CMO, solver_CMO_OCC, solver_CMO_VIR)
@@ -263,11 +268,14 @@ contains
     ! transforms from AO to MO, and writes RHS (MO) into file
 
     call mat_init(RHS_MO, NORBT, NORBT)
+
     do IRHS = 1, rsp2_number_of_rhs
+
       ! TRANSFORM (ISYM,JSYM) SYMMETRY BLOCK OF THE MATRIX PRPAO
       ! FROM AO SYMMETRY ORBITALS TO MO BASIS
       call UTHV(solver_CMO%elms, RHS(IRHS)%elms, solver_CMO%elms, &
-                ISYM, ISYM, NORBT, NORBT, RHS_MO%elms, f77_memory(get_f77_memory_next()))
+                ISYM, ISYM, NBAST, NBAST, RHS_MO%elms, f77_memory(get_f77_memory_next()))
+
       ! DISTRIBUTE PROPERTY MO INTEGRALS INTO GP VECTORS
       call PRPORB(RHS_MO%elms, solver_DV, f77_memory(get_f77_memory_next()))
       !FIXME: why multiplied by -1
@@ -307,6 +315,7 @@ contains
     allocate(mo_eigvec(rsp2_number_of_omegas), stat=ierr)
     if (ierr/=0) call QUIT('Failed to allocate MO solutions!')
     ! loops over solution vectors
+
     do ISOL = 1, rsp2_number_of_omegas
 
       ! MaR: Next line replaced by mat_init call to avoid strange nonallocation error msg
@@ -316,8 +325,10 @@ contains
 
       ! reads the solution
       if (ABSLRS) then
+
         call READT(LUABSVECS, KZYVAR, f77_memory(get_f77_memory_next()))
       else
+
         call READT(LUSOVE, KZYVAR, f77_memory(get_f77_memory_next()))
       end if
 
@@ -327,12 +338,15 @@ contains
       ! i [0  k*]
       ! a [k  0 ]
       call SETZY(f77_memory(KMJWOP))
+
       ! This subroutine unpacks the ZY matrix from the vector.
       ! It uses the Z and the Y part of the vector.
       call GTZYMT(1, f77_memory(get_f77_memory_next()), KZYVAR, ISYM, mo_eigvec(ISOL)%elms, f77_memory(KMJWOP))
       ! transforms from MO to AO
+
       eigvec(ISOL) = -solver_CMO_OCC*(mo_eigvec(ISOL)*trans(solver_CMO_VIR)) &
                      -solver_CMO_VIR*(mo_eigvec(ISOL)*trans(solver_CMO_OCC))
+
     end do ! loops over solution vectors
 
     ! closes and deletes files
@@ -345,9 +359,11 @@ contains
 
     ! cleans
     RHS_MO = 0
+
     do ISOL = 1, rsp2_number_of_omegas
       mo_eigvec(ISOL) = 0
     end do
+
     deallocate(mo_eigvec)
 
   end subroutine
@@ -391,10 +407,10 @@ contains
     if (ierr/=0) call QUIT("di_get_cmo>> failed to allocate values!")
     call mat_get_block(CMO, 1, NBAST, 1, NOCCT, values)
     values(:,NOCCT+1:) = 0
-    call mat_set_block(CMO_OCC, 1, NBAST, 1, NBAST, values)
-    call mat_get_block(CMO, 1, NBAST, NOCCT+1, NBAST, values(:,NOCCT+1:))
+    call mat_set_block(CMO_OCC, 1, NBAST, 1, NORBT, values)
+    call mat_get_block(CMO, 1, NBAST, NOCCT+1, NORBT, values(:,NOCCT+1:))
     values(:,1:NOCCT) = 0
-    call mat_set_block(CMO_VIR, 1, NBAST, 1, NBAST, values)
+    call mat_set_block(CMO_VIR, 1, NBAST, 1, NORBT, values)
     deallocate(values)
     ! closes SIRIFC
     if (LUSIFC>0) call GPCLOSE(LUSIFC, 'KEEP')
