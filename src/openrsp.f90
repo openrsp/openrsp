@@ -77,7 +77,7 @@ module openrsp
 
   ! NEW 2014
   
-  public openrsp_calculation_setup
+!   public openrsp_calculation_setup
   public write_rsp_tensor
   
   ! END NEW 2014
@@ -109,29 +109,29 @@ contains
 
 ! NEW 2014
 
-  subroutine openrsp_calculation_setup(num_pert, pert_dims, pert_first_comp, pert_labels, &
-             pert_freqs, scf_routine, rsp_solver_routine, nucpot_routine, oneel_routine, &
-             twoel_routine, xc_routine, prop_size, rsp_tensor, file_id)
-
-    implicit none
-    
-    integer :: num_pert, id_outp, prop_size
-    integer, allocatable, dimension(:) :: pert_labels, pert_dims, pert_first_comp, pert_names
-    integer , dimension(2) :: kn
-    character, dimension(20) :: file_id
-    complex(8), allocatable, dimension(:) :: pert_freqs, rsp_tensor
-    external :: scf_routine, rsp_solver_routine
-    external :: nucpot_routine, oneel_routine, twoel_routine, xc_routine
-    external :: mat_dim, max_mem_mat, unused_iounit, use_disk_for_mat, save_sdf_end
-    
-    call openrsp_get_property_2014(num_pert, pert_names, pert_labels, pert_dims, pert_freqs, &
-                              kn, scf_routine, rsp_solver_routine, nucpot_routine, oneel_routine, &
-                              twoel_routine, xc_routine, id_outp, prop_size, rsp_tensor, file_id)
-                              
-    call write_rsp_tensor(prop_size, rsp_tensor)
-    
-    
-  end subroutine
+!   subroutine openrsp_calculation_setup(num_pert, pert_dims, pert_first_comp, pert_labels, &
+!              pert_freqs, scf_routine, rsp_solver_routine, nucpot_routine, oneel_routine, &
+!              twoel_routine, xc_routine, prop_size, rsp_tensor, file_id)
+! 
+!     implicit none
+!     
+!     integer :: num_pert, id_outp, prop_size
+!     integer, allocatable, dimension(:) :: pert_labels, pert_dims, pert_first_comp, pert_names
+!     integer , dimension(2) :: kn
+!     character, dimension(20) :: file_id
+!     complex(8), allocatable, dimension(:) :: pert_freqs, rsp_tensor
+!     external :: scf_routine, rsp_solver_routine
+!     external :: nucpot_routine, oneel_routine, twoel_routine, xc_routine
+!     external :: mat_dim, max_mem_mat, unused_iounit, use_disk_for_mat, save_sdf_end
+!     
+!     call openrsp_get_property_2014(num_pert, pert_names, pert_labels, pert_dims, pert_freqs, &
+!                               kn, scf_routine, rsp_solver_routine, nucpot_routine, oneel_routine, &
+!                               twoel_routine, xc_routine, id_outp, prop_size, rsp_tensor, file_id)
+!                               
+!     call write_rsp_tensor(prop_size, rsp_tensor)
+!     
+!     
+!   end subroutine
   
   
   subroutine write_rsp_tensor(prop_size, rsp_tensor)
