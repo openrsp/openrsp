@@ -46,14 +46,19 @@ module rsp_general
                                     rsp_get_matrix_lambda,             &
                                     rsp_get_matrix_z,                  &
                                     rsp_get_matrix_w,                  &
-                                    rsp_get_matrix_y
+                                    rsp_get_matrix_y,                  &
+                                    rsp_get_matrix_zeta_2014,          &
+                                    rsp_get_matrix_lambda_2014,        &
+                                    rsp_get_matrix_z_2014,             &
+                                    rsp_get_matrix_w_2014,             &
+                                    rsp_get_matrix_y_2014
   use rsp_perturbed_sdf, only: rsp_fds, rsp_fds_2014
   use rsp_property_caching
-  use rsp_sdf_caching, only: SDF,                &
-                             sdf_setup_datatype, &
-                             sdf_getdata_s
+  use rsp_sdf_caching
   use interface_xc, only: rsp_xcave_interface
   use interface_2el, only: rsp_twoave
+  
+  use qmatrix
 
   implicit none
 
@@ -95,7 +100,7 @@ module rsp_general
    subroutine openrsp_get_property_2014(num_perts, pert_dims, pert_first_comp, pert_labels, pert_freqs, &
                                    kn, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                   get_t_mat, get_t_exp, get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
                                    get_xc_exp, id_outp, property_size, rsp_tensor, file_id)
 
     implicit none
@@ -112,10 +117,10 @@ module rsp_general
     real :: timing_start, timing_end
     type(p_tuple) :: perturbations
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
-    external :: get_t_mat, get_t_exp, get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
+    external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*), intent(out) :: rsp_tensor
-    type(matrix) :: S_unpert, D_unpert, F_unpert
-    type(SDF), pointer :: S, D, F
+    type(qmat) :: S_unpert, D_unpert, F_unpert
+    type(SDF_2014), pointer :: S, D, F
 
 !     perturbations%n_perturbations = num_perts
 !     allocate(perturbations%perts(num_perts))
@@ -151,9 +156,9 @@ module rsp_general
 
 !     call get_unpert_scf(S_unpert, D_unpert, F_unpert)
 
-    call sdf_setup_datatype(S, S_unpert)
-    call sdf_setup_datatype(D, D_unpert)
-    call sdf_setup_datatype(F, F_unpert)
+    call sdf_setup_datatype_2014(S, S_unpert)
+    call sdf_setup_datatype_2014(D, D_unpert)
+    call sdf_setup_datatype_2014(F, F_unpert)
 
 
     num_blks = get_num_blks(perturbations)
@@ -174,7 +179,7 @@ module rsp_general
 
     call get_prop_2014(perturbations, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                  get_t_mat, get_t_exp, get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
+                  get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
                   id_outp, property_size, prop)
 
     call cpu_time(timing_end)
@@ -240,7 +245,7 @@ module rsp_general
 
   subroutine get_prop_2014(pert, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                  get_t_mat, get_t_exp, get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
+                  get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
                   id_outp, property_size, prop)
 
     implicit none
@@ -251,9 +256,9 @@ module rsp_general
     integer, dimension(2) :: kn
     integer, dimension(num_blks) :: blk_sizes
     integer, dimension(num_blks,3) :: blk_info
-    type(SDF) :: F, D, S
+    type(SDF_2014) :: F, D, S
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
-    external :: get_t_mat, get_t_exp, get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
+    external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(property_size) :: prop, p_diff
     type(property_cache), pointer :: contrib_cache
 
@@ -271,8 +276,8 @@ module rsp_general
     write(id_outp,*) ' '
 
     call cpu_time(time_start)
-    call rsp_fds_2014(zeromat, pert, kn, F, D, S, get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                 get_t_mat, get_2el_mat, get_xc_mat, id_outp)
+    call rsp_fds_2014(pert, kn, F, D, S, get_rsp_sol, get_ovl_mat, get_1el_mat, &
+                 get_2el_mat, get_xc_mat, id_outp)
     call cpu_time(time_end)
 
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
@@ -287,7 +292,7 @@ module rsp_general
 
     call cpu_time(time_start)
     call rsp_energy_2014(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, get_nucpot, &
-                    get_1el_exp, get_t_exp, get_2el_exp, property_size, contrib_cache, prop)
+                    get_1el_exp, get_ovl_exp, get_2el_exp, property_size, contrib_cache, prop)
     call cpu_time(time_end)
 
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
@@ -349,7 +354,7 @@ module rsp_general
        write(*,*) ' '
        call cpu_time(time_start)
        ! MaR: Unchanged by introduction of callback functionality
-       call rsp_idem_lag(p_tuple_remove_first(pert), kn, &
+       call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
                          (/p_tuple_getone(pert,1), emptypert/), &
                          S, D, F, property_size, contrib_cache, prop)
        call cpu_time(time_end)
@@ -367,7 +372,7 @@ module rsp_general
        write(*,*) ' '
        call cpu_time(time_start)
        ! MaR: Unchanged by introduction of callback functionality
-       call rsp_scfe_lag(p_tuple_remove_first(pert), kn, &
+       call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
                          (/p_tuple_getone(pert,1), emptypert/), &
                          S, D, F, property_size, contrib_cache, prop)
        call cpu_time(time_end)
@@ -701,7 +706,7 @@ module rsp_general
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new, p_new1, p_stord
     type(p_tuple), dimension(num_p_tuples + 1) :: p_new3
     external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
-    type(SDF) :: D
+    type(SDF_2014) :: D
     type(property_cache) :: cache
     complex(8), dimension(property_size) :: prop
 
@@ -1050,23 +1055,23 @@ module rsp_general
 
     subroutine get_energy_2014(num_p_tuples, total_num_perturbations, &
                         p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                        get_t_exp, get_2el_exp, property_size, cache, prop)
+                        get_ovl_exp, get_2el_exp, property_size, cache, prop)
 
     implicit none
 
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
-    type(SDF) :: D
+    type(SDF_2014) :: D
     type(property_cache) :: cache
-    type(matrix) :: D_unp
-    type(matrix), allocatable, dimension(:) :: dens_tuple
+    type(qmat) :: D_unp
+    type(qmat), allocatable, dimension(:) :: dens_tuple
     type(rsp_field), allocatable, dimension(:) :: nucpot_pert
-    external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
+    external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     integer :: i, j, k, m, n, num_p_tuples, total_num_perturbations, density_order, &
-             property_size, offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks
+               property_size, offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
+               outer_indices_size, merged_triang_size, merged_nblks, npert_ext
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ext_ord
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
     integer, dimension(total_num_perturbations) :: ncarray, ncouter, ncinner, pidouter, &
@@ -1099,6 +1104,8 @@ module rsp_general
  !                   p_tuples(1)%n_perturbations, num_p_tuples - 1, &
  !                   p_tuples(2:num_p_tuples))
 
+    call p_tuple_external(p_tuples(1), npert_ext, pert_ext, pert_ext_ord)
+ 
     call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
     t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%n_perturbations)/)
 
@@ -1153,7 +1160,7 @@ module rsp_general
 !                      p_tuples(1)%n_perturbations, pidoutersmall, &
 !                      ncarray, ncoutersmall, o_whichpert)
 
-    call sdf_getdata_s(D, get_emptypert(), (/1/), D_unp)
+    call sdf_getdata_s_2014(D, get_emptypert(), (/1/), D_unp)
 
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
@@ -1186,9 +1193,7 @@ module rsp_general
    
        do i = 1, num_p_tuples
    
-          ! ASSUME CLOSED SHELL
-          call mat_init(dens_tuple(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-          call mat_init_like_and_zero(zeromat, dens_tuple(i))
+          call QMatInit(dens_tuple(i))
    
        end do
    
@@ -1210,7 +1215,7 @@ module rsp_general
    
           do j = 2, num_p_tuples
    
-             call sdf_getdata_s(D, p_tuples(j), outer_indices(i, &
+             call sdf_getdata_s_2014(D, p_tuples(j), outer_indices(i, &
                   dtup_ind+1:dtup_ind + p_tuples(j)%n_perturbations), dens_tuple(j))
    
              dtup_ind = dtup_ind + p_tuples(j)%n_perturbations
@@ -1221,10 +1226,10 @@ module rsp_general
           contrib = 0.0
    
           if (num_p_tuples == 2) then
-   
-             call get_1el_exp(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                              p_tuples(1)%plab, dens_tuple(2), contrib)
+          
+             call get_1el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/dens_tuple(2)/), &
+                              size(contrib), contrib)
+          
              
 !              call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                             (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1247,7 +1252,7 @@ module rsp_general
 
              call rsp_ovlave_t_matrix_2014(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                       t_matrix_bra, t_matrix_ket, &
-                                      dens_tuple(2), get_t_exp, inner_indices_size, contrib)
+                                      dens_tuple(2), get_ovl_exp, inner_indices_size, contrib)
    
           end if
    
@@ -1260,10 +1265,8 @@ module rsp_general
    
           if (num_p_tuples == 2) then
    
-             call get_2el_exp(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                              p_tuples(1)%plab, dens_tuple(2), D_unp, contrib)
-   
+             call get_2el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/dens_tuple(2)/), &
+                              1, (/D_unp/), size(contrib), contrib)
    
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1272,10 +1275,9 @@ module rsp_general
     
           elseif (num_p_tuples == 3) then
           
-             call get_2el_exp(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                              p_tuples(1)%plab, dens_tuple(2), dens_tuple(3), contrib)
-    
+             call get_2el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/dens_tuple(2)/), &
+                              1, (/dens_tuple(3)/), size(contrib), contrib)
+          
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                              p_tuples(1)%pdim, dens_tuple(2), dens_tuple(3), &
@@ -1439,9 +1441,8 @@ module rsp_general
        tmp = tmp + contrib
        contrib = 0.0
 
-       call get_1el_exp(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                              p_tuples(1)%plab, D_unp, contrib)
+       call get_1el_exp(npert_ext, pert_ext, pert_ext_ord, 1, D_unp, &
+                              size(contrib), contrib)
        
 !        call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
@@ -1459,7 +1460,7 @@ module rsp_general
 
        call rsp_ovlave_t_matrix_2014(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                 t_matrix_bra, t_matrix_ket, &
-                                D_unp, get_t_exp, inner_indices_size, contrib)
+                                D_unp, get_ovl_exp, inner_indices_size, contrib)
 
 !                                           write(*,*) ' '
 !           write(*,*) 'ovlave t mat contrib', real(contrib(1:3))
@@ -1467,9 +1468,8 @@ module rsp_general
        tmp = tmp - contrib
        contrib = 0.0
 
-       call get_2el_exp(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                        p_tuples(1)%plab, D_unp, D_unp, contrib)
+       call get_2el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/D_unp/), &
+                              1, (/D_unp/), size(contrib), contrib)
        
 !        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
@@ -1505,14 +1505,17 @@ module rsp_general
 !  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
 !  merged_blk_info, property_size, prop_forcache)
 
-    D_unp = 0
+    call QMatDst(D_unp)
 
     do i = 1, num_p_tuples
    
-       dens_tuple(i) = 0
+       call QMatDst(dens_tuple(i))
    
     end do
 
+    deallocate(pert_ext)
+    deallocate(pert_ext_ord)
+    
     deallocate(merged_blk_info)
     deallocate(nfields)
     deallocate(nblks_tuple)
@@ -2869,7 +2872,7 @@ module rsp_general
 
     type(p_tuple) :: pert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
-    type(SDF) :: S, D, F
+    type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
     integer :: property_size, i
     integer, dimension(2) :: kn
@@ -2945,20 +2948,21 @@ module rsp_general
     type(p_tuple) :: pert, emptypert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
-    type(SDF) :: S, D, F
+    type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    type(matrix) :: W
+    type(qmat) :: W
     external :: get_ovl_exp
     integer :: i, j, k, sstr_incr, offset, total_num_perturbations, &
                property_size, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks
+               outer_indices_size, merged_triang_size, merged_nblks, npert_ext
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ext_ord
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
     integer :: d_supsize
+    integer, dimension(0) :: noc
     integer, dimension(2) :: kn
     integer, allocatable, dimension(:) :: ncarray, ncinner, inner_offsets, &
                                           which_index_is_pid
@@ -2966,6 +2970,9 @@ module rsp_general
     complex(8), allocatable, dimension(:) :: tmp, prop_forcache
     complex(8), dimension(property_size) :: prop
 
+    call p_tuple_external(p12(1), npert_ext, pert_ext, pert_ext_ord)
+
+    
     d_supsize = derivative_superstructure_getsize(p12(2), kn, .FALSE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
@@ -3054,29 +3061,20 @@ module rsp_general
     call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
     
-    ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call mat_init_like_and_zero(zeromat, W)
+    call QMatInit(W)
     
     do i = 1, size(outer_indices, 1)
     
        tmp = 0.0
-       W = zeromat
-       call mat_ensure_alloc(W)
- 
-       call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
+
+
+       call rsp_get_matrix_w_2014(d_supsize, deriv_structb, p12(1)%n_perturbations + &
                              p12(2)%n_perturbations, which_index_is_pid, &
                              p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
  
-!  if (i == 1) then
-!  
-!  write(*,*) 'Perturbed W', W%elms
-!  
-!  end if
  
-       call get_ovl_exp(p12(1)%n_perturbations, p12(1)%pdim, &
-                        (/ (1, j = 1, p12(1)%n_perturbations) /), &
-                        p12(1)%plab, W, tmp)
+       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ext_ord, size(tmp), tmp)
+       
  
 !        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
 !                           (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
@@ -3185,7 +3183,11 @@ module rsp_general
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
    
-    W = 0 
+    call QMatDst(W)
+
+    deallocate(pert_ext)
+    deallocate(pert_ext_ord)
+    
     deallocate(deriv_structb)
     deallocate(ncarray)
     deallocate(ncinner)
@@ -3212,7 +3214,7 @@ module rsp_general
 
     type(p_tuple) :: pert
     type(p_tuple), dimension(2) :: p12
-    type(SDF) :: S, D, F
+    type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
     integer :: property_size, i
     integer, dimension(2) :: kn
@@ -3286,21 +3288,22 @@ module rsp_general
     type(p_tuple) :: pert, emptypert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
-    type(SDF) :: S, D, F
+    type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    type(matrix) :: W
+    type(qmat) :: W
     external :: get_ovl_exp
-    integer :: i, j, k ,m, incr
+    integer :: i, j, k ,m, incr, npert_ext
     integer :: d_supsize, total_num_perturbations, &
              property_size, offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ord_ext
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
     integer, dimension(2) :: kn
+    integer, dimension(0) :: noc
     integer, allocatable, dimension(:) :: ncarray, ncinner, inner_offsets, &
                                           which_index_is_pid
     integer, allocatable, dimension(:) :: outer_ind_b_large
@@ -3308,6 +3311,9 @@ module rsp_general
     complex(8), allocatable, dimension(:) :: tmp, prop_forcache
     complex(8), dimension(property_size) :: prop
 
+    call p_tuple_external(p12(1), npert_ext, pert_ext, pert_ord_ext)
+
+    
     d_supsize = derivative_superstructure_getsize(p12(2), kn, .TRUE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
    
@@ -3390,23 +3396,15 @@ module rsp_general
     call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
 
-    ! ASSUME CLOSED SHELL
-    call mat_init(W, zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call mat_init_like_and_zero(zeromat, W)
+    call QMatInit(W)
 
     do i = 1, size(outer_indices, 1)
 
-       tmp = 0.0
-       W = zeromat
-       call mat_ensure_alloc(W)
-
-       call rsp_get_matrix_w(zeromat, d_supsize, deriv_structb, p12(1)%n_perturbations + &
+       call rsp_get_matrix_w_2014(d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
-       call get_ovl_exp(p12(1)%n_perturbations, p12(1)%pdim, &
-                        (/ (1, j = 1, p12(1)%n_perturbations) /), &
-                        p12(1)%plab, W, tmp)
+       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, size(tmp), tmp)
                             
 !        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
 !                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
@@ -3505,6 +3503,10 @@ module rsp_general
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
 
+
+    deallocate(pert_ext)
+    deallocate(pert_ord_ext)         
+         
     deallocate(deriv_structb)
     deallocate(ncarray)
     deallocate(ncinner)
@@ -3523,7 +3525,7 @@ module rsp_general
     deallocate(triang_indices_pr)
     deallocate(merged_blk_info)
     deallocate(prop_forcache)
-    W = 0
+    call QMatDst(W)
 
   end subroutine
   
@@ -4518,6 +4520,676 @@ module rsp_general
 
   end subroutine
 
+  ! NEW CODE
+  
+  
+  recursive subroutine rsp_idem_lag_2014(pert, kn, p12, S, D, F, &
+                                    property_size, cache, prop)
+
+    implicit none
+
+    type(p_tuple) :: pert
+    type(p_tuple), dimension(2) :: p12
+    type(SDF_2014) :: S, D, F
+    type(property_cache) :: cache
+    integer :: property_size, i
+    integer, dimension(2) :: kn
+    complex(8), dimension(property_size) :: prop
+    
+    if (pert%n_perturbations > 0) then
+
+       call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
+       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, property_size, &
+       cache, prop)
+       call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
+       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, property_size, &
+       cache, prop)
+
+    else
+
+       if (kn_skip(p12(1)%n_perturbations, p12(1)%pid, kn) .EQV. .FALSE.) then
+
+
+
+          open(unit=257, file='totterms', status='old', action='write', &
+               position='append') 
+          write(257,*) 'T'
+          close(257)
+
+          if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
+
+!              write(*,*) 'Getting values from cache'
+!              write(*,*) ' '
+
+             open(unit=257, file='cachehit', status='old', action='write', &
+                  position='append')
+             write(257,*) 'T'
+             close(257)
+
+             call property_cache_getdata(cache, 2, p12, property_size, prop)
+      
+          else
+
+          write(*,*) 'Calculating idempotency lagrange contribution'
+          write(*,*) 'Zeta', p12(1)%pid
+          write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
+
+             ! At lowest level:
+             call get_idem_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
+                               kn, F, D, S, property_size, cache, prop)
+
+             write(*,*) 'Calculated idempotency lagrange contribution'
+             write(*,*) ' '
+
+          end if
+
+       else
+
+!           write(*,*) 'Idempotency lagrange contribution was k-n skipped:'
+!           write(*,*) 'Zeta', p12(1)%pid 
+!           write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
+!           write(*,*) ' '
+
+       end if
+
+    end if
+
+  end subroutine
+
+
+  subroutine get_idem_lag_2014(p12, kn, F, D, S, property_size, cache, prop)
+
+    implicit none
+
+    type(p_tuple) :: pert, emptypert, merged_p_tuple
+    type(p_tuple), dimension(2) :: p12
+    type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
+    type(SDF_2014) :: S, D, F
+    type(property_cache) :: cache
+    type(qmat) :: Zeta, Z
+    integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
+             property_size, offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
+               outer_indices_size, merged_triang_size, merged_nblks
+    integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
+    pids_current_contribution, translated_index
+    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged
+    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
+    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
+    integer, dimension(2) :: kn, d_supsize
+    integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, &
+                                          which_index_is_pid2
+    integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
+    integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
+    real(8) :: tmp_tr
+    complex(8), dimension(property_size) :: prop
+    complex(8), allocatable, dimension(:) :: prop_forcache
+
+    d_supsize = 0
+    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
+                   kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
+                   kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+
+    allocate(deriv_structa(d_supsize(1), 3))
+    allocate(deriv_structb(d_supsize(2), 3))
+
+    incr1 = 0
+    incr2 = 0
+
+    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., & 
+         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+         d_supsize(1), incr1, deriv_structa)
+    call derivative_superstructure(p12(2), kn, .TRUE., &
+         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+         d_supsize(2), incr2, deriv_structb)
+
+    allocate(nfields(2))
+    allocate(nblks_tuple(2))
+
+    do i = 1, 2
+
+       nfields(i) = p12(i)%n_perturbations
+       nblks_tuple(i) = get_num_blks(p12(i))
+
+    end do
+
+    total_num_perturbations = sum(nfields)
+
+    allocate(blks_tuple_info(2, total_num_perturbations, 3))
+    allocate(blks_tuple_triang_size(2))
+    allocate(blk_sizes(2, total_num_perturbations))
+    allocate(blk_sizes_merged(total_num_perturbations))
+
+    do i = 1, 2
+
+       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p12(i))
+       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
+                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
+       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
+       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
+
+    end do
+
+    if (p12(2)%n_perturbations == 0) then
+
+       outer_indices_size = 1
+
+    else
+
+       outer_indices_size = blks_tuple_triang_size(2)
+
+    end if
+
+    inner_indices_size = blks_tuple_triang_size(1)
+
+    allocate(prop_forcache(inner_indices_size * outer_indices_size))
+    allocate(ncarray(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(ncinner(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(outer_ind_a_large(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(outer_ind_b_large(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(outer_indices_a(inner_indices_size, p12(1)%n_perturbations))
+    allocate(outer_indices_b(outer_indices_size, p12(2)%n_perturbations))
+    allocate(which_index_is_pid1(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(which_index_is_pid2(p12(1)%n_perturbations + p12(2)%n_perturbations))
+
+    prop_forcache = 0.0
+
+    ncarray = get_ncarray(p12(1)%n_perturbations + p12(2)%n_perturbations, 2, p12)
+    ncinner = nc_only(p12(1)%n_perturbations + p12(2)%n_perturbations, &
+                      p12(1)%n_perturbations, 1, p12(1), ncarray)
+
+    which_index_is_pid1 = 0
+
+    do i = 1, p12(1)%n_perturbations
+
+       which_index_is_pid1(p12(1)%pid(i)) = i
+
+    end do
+
+    which_index_is_pid2 = 0
+
+    do i = 1, p12(2)%n_perturbations
+
+       which_index_is_pid2(p12(2)%pid(i)) = i
+
+    end do
+
+    call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
+         1:nblks_tuple(1), :), blks_tuple_triang_size(1), outer_indices_a)
+
+
+    call make_triangulated_indices(nblks_tuple(2), blks_tuple_info(2, &
+         1:nblks_tuple(2), :), blks_tuple_triang_size(2), outer_indices_b)
+
+    offset = 0.0
+
+    call QMatInit(Z)
+    call QMatInit(Zeta)
+    
+    do i = 1, size(outer_indices_a, 1)
+
+       call rsp_get_matrix_zeta_2014(p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
+            deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
+            which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), &
+            F, D, S, Zeta)
+
+       do j = 1, size(outer_indices_b, 1)
+
+          call rsp_get_matrix_z_2014(d_supsize(2), deriv_structb, kn, &
+               p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
+               p12(2)%n_perturbations, outer_indices_b(j,:), F, D, S, Z)
+
+          offset = get_triang_blks_tuple_offset(2, total_num_perturbations, nblks_tuple, &
+                   (/ p12(1)%n_perturbations, p12(2)%n_perturbations /), &
+                   blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
+                   (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
+                   
+          call QMatTraceAB(Zeta, Z, dcmplx(tmp_tr))
+          prop_forcache(offset) = prop_forcache(offset) - tmp_tr
+
+       end do
+
+    end do
+
+    call p_tuple_p1_cloneto_p2(p12(1), merged_p_tuple)
+
+    if (p12(2)%n_perturbations > 0) then
+
+       merged_p_tuple = merge_p_tuple(merged_p_tuple, p12(2))
+
+    end if
+
+    merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
+
+! MR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
+! PIDS ARE IN STANDARD ORDER? FIND OUT
+
+    k = 1
+    do i = 1, 2
+       do j = 1, p12(i)%n_perturbations
+          pids_current_contribution(k) = p12(i)%pid(j)
+          k = k + 1
+       end do
+    end do
+
+    merged_nblks = get_num_blks(merged_p_tuple)
+
+    allocate(merged_blk_info(1, merged_nblks, 3))
+
+    merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+    blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+    merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+    merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+
+    allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
+
+    call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+         merged_triang_size, triang_indices_pr)
+
+    do i = 1, size(triang_indices_pr, 1)
+
+       pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+                   (/sum(nfields)/), &
+                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+                   (/triang_indices_pr(i, :) /))
+
+       do j = 1, total_num_perturbations
+
+          translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
+
+       end do
+
+       if (p12(2)%n_perturbations > 0) then
+
+          ca_offset = get_triang_blks_tuple_offset(2, &
+                      total_num_perturbations, nblks_tuple, &
+                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
+                      (/ translated_index(:) /))
+
+       else
+
+          ca_offset = get_triang_blks_tuple_offset(1, &
+                      total_num_perturbations, nblks_tuple(1), &
+                      nfields(1), blks_tuple_info(1, :, :), &
+                      blk_sizes(1,:), blks_tuple_triang_size(1), & 
+                      (/ translated_index(:) /))
+
+       end if
+
+       prop(pr_offset) = prop(pr_offset) + prop_forcache(ca_offset)
+
+    end do
+
+!     write(*,*) 'idempotency contribution'
+!  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
+!  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
+!  merged_blk_info, property_size, prop_forcache)
+
+    call property_cache_add_element(cache, 2, p12,  &
+         inner_indices_size * outer_indices_size, prop_forcache)    
+
+    deallocate(deriv_structa)
+    deallocate(deriv_structb)
+    deallocate(ncarray)
+    deallocate(ncinner)
+    deallocate(outer_ind_a_large)
+    deallocate(outer_ind_b_large)
+    deallocate(outer_indices_a)
+    deallocate(outer_indices_b)
+    deallocate(which_index_is_pid1)
+    deallocate(which_index_is_pid2)
+    deallocate(nfields)
+    deallocate(nblks_tuple)
+    deallocate(blks_tuple_info)
+    deallocate(blks_tuple_triang_size)
+    deallocate(blk_sizes)
+    deallocate(blk_sizes_merged)
+    deallocate(prop_forcache)
+    
+    call QMatDst(Zeta)
+    call QMatDst(Z)
+
+  end subroutine
+
+
+
+  recursive subroutine rsp_scfe_lag_2014(pert, kn, p12, S, D, F, &
+                                    property_size, cache, prop)
+
+    implicit none
+
+    type(p_tuple) :: pert
+    type(p_tuple), dimension(2) :: p12
+    type(SDF_2014) :: S, D, F
+    type(property_cache) :: cache
+    integer :: property_size, i
+    integer, dimension(2) :: kn
+    complex(8), dimension(property_size) :: prop
+    
+    if (pert%n_perturbations > 0) then
+
+       call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
+            (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
+            S, D, F, property_size, cache, prop)
+       call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
+            (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
+            S, D, F, property_size, cache, prop)
+
+    else
+
+       if (kn_skip(p12(1)%n_perturbations, p12(1)%pid, kn) .EQV. .FALSE.) then
+
+
+
+          open(unit=257, file='totterms', status='old', action='write', &
+               position='append') 
+          write(257,*) 'T'
+          close(257)
+
+          if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
+
+             open(unit=257, file='cachehit', status='old', action='write', &
+                  position='append') 
+             write(257,*) 'T'
+             close(257)
+
+!              write(*,*) 'Getting values from cache'
+!              write(*,*) ' '
+
+             call property_cache_getdata(cache, 2, p12, property_size, prop)
+       
+          else
+
+          write(*,*) 'Calculating scfe lagrange contribution'
+          write(*,*) 'Lambda', p12(1)%pid
+          write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
+
+             ! At lowest level:
+             call get_scfe_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
+             kn, F, D, S, property_size, cache, prop)
+
+             write(*,*) 'Calculated scfe lagrange contribution'
+             write(*,*) ' '
+
+          end if
+
+       else
+
+!           write(*,*) 'scfe lagrange contribution was k-n skipped:'
+!           write(*,*) 'Lambda', p12(1)%pid 
+!           write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
+!           write(*,*) ' '
+
+       end if
+
+    end if
+
+  end subroutine
+
+
+  subroutine get_scfe_lag_2014(p12, kn, F, D, S, property_size, cache, prop)
+
+    implicit none
+
+    type(p_tuple) :: pert, emptypert, merged_p_tuple
+    type(p_tuple), dimension(2) :: p12
+    type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
+    type(SDF_2014) :: S, D, F
+    type(property_cache) :: cache
+    type(qmat) :: L, Y
+    integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
+             property_size, offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
+               outer_indices_size, merged_triang_size, merged_nblks
+    integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
+    pids_current_contribution, translated_index
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, nfields, nblks_tuple
+    integer, allocatable, dimension(:) :: blks_tuple_triang_size
+    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
+    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
+    integer, dimension(2) :: kn, d_supsize
+    integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, which_index_is_pid2
+    integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
+    integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
+    real(8) :: tmp_tr
+    complex(8), dimension(property_size) :: prop
+    complex(8), allocatable, dimension(:) :: prop_forcache
+
+    d_supsize = 0
+
+    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
+                   kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
+                   kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+
+    allocate(deriv_structa(d_supsize(1), 3))
+    allocate(deriv_structb(d_supsize(2), 3))
+
+    incr1 = 0
+    incr2 = 0
+
+    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., &
+                    (/get_emptypert(), get_emptypert(), get_emptypert()/), & 
+                    d_supsize(1), incr1, deriv_structa)
+    call derivative_superstructure(p12(2), kn, .TRUE., &
+                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                    d_supsize(2), incr2, deriv_structb)
+
+    allocate(nfields(2))
+    allocate(nblks_tuple(2))
+
+    do i = 1, 2
+
+       nfields(i) = p12(i)%n_perturbations
+       nblks_tuple(i) = get_num_blks(p12(i))
+
+    end do
+
+    total_num_perturbations = sum(nfields)
+
+    allocate(blks_tuple_info(2, total_num_perturbations, 3))
+    allocate(blks_tuple_triang_size(2))
+    allocate(blk_sizes(2, total_num_perturbations))
+    allocate(blk_sizes_merged(total_num_perturbations))
+
+    do i = 1, 2
+
+       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p12(i))
+       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
+                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
+       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
+       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
+
+    end do
+
+    if (p12(2)%n_perturbations == 0) then
+
+       outer_indices_size = 1
+
+    else
+
+       outer_indices_size = blks_tuple_triang_size(2)
+
+    end if
+
+    inner_indices_size = blks_tuple_triang_size(1)
+
+    allocate(prop_forcache(inner_indices_size * outer_indices_size))
+    allocate(ncarray(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(ncinner(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(outer_indices_a(inner_indices_size, p12(1)%n_perturbations))
+    allocate(outer_indices_b(outer_indices_size, p12(2)%n_perturbations))
+    allocate(outer_ind_a_large(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(outer_ind_b_large(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(which_index_is_pid1(p12(1)%n_perturbations + p12(2)%n_perturbations))
+    allocate(which_index_is_pid2(p12(1)%n_perturbations + p12(2)%n_perturbations))
+
+    prop_forcache = 0.0
+
+    ncarray = get_ncarray(p12(1)%n_perturbations + p12(2)%n_perturbations, 2, p12)
+    ncinner = nc_only(p12(1)%n_perturbations + p12(2)%n_perturbations, &
+              p12(1)%n_perturbations, 1, p12(1), ncarray)
+
+    which_index_is_pid1 = 0
+
+    do i = 1, p12(1)%n_perturbations
+
+       which_index_is_pid1(p12(1)%pid(i)) = i
+
+    end do
+
+    which_index_is_pid2 = 0
+
+    do i = 1, p12(2)%n_perturbations
+
+       which_index_is_pid2(p12(2)%pid(i)) = i
+
+    end do
+
+    call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
+         1:nblks_tuple(1), :), blks_tuple_triang_size(1), outer_indices_a)
+
+    call make_triangulated_indices(nblks_tuple(2), blks_tuple_info(2, &
+         1:nblks_tuple(2), :), blks_tuple_triang_size(2), outer_indices_b)
+
+    offset = 0
+
+    ! ASSUME CLOSED SHELL
+    call QMatInit(Y)
+    
+    ! ASSUME CLOSED SHELL
+    call QMatInit(L)
+
+    do i = 1, size(outer_indices_a, 1)
+
+       call rsp_get_matrix_lambda_2014(p_tuple_getone(p12(1), 1), d_supsize(1), &
+            deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
+            which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), D, S, L)
+
+       do j = 1, size(outer_indices_b, 1)
+
+          call rsp_get_matrix_y_2014(d_supsize(2), deriv_structb, &
+               p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
+               p12(2)%n_perturbations, outer_indices_b(j,:), F, D, S, Y)
+
+
+          offset = get_triang_blks_tuple_offset(2, total_num_perturbations, nblks_tuple, &
+                   (/ p12(1)%n_perturbations, p12(2)%n_perturbations /), &
+                   blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
+                   (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
+          
+          call QMatTraceAB(L, Y, dcmplx(tmp_tr))
+          prop_forcache(offset) = prop_forcache(offset) - tmp_tr
+
+       end do
+
+    end do
+
+    call p_tuple_p1_cloneto_p2(p12(1), merged_p_tuple)
+
+    if (p12(2)%n_perturbations > 0) then
+
+       merged_p_tuple = merge_p_tuple(merged_p_tuple, p12(2))
+
+    end if
+
+    merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
+
+    ! MR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
+    ! PIDS ARE IN STANDARD ORDER? FIND OUT
+
+    k = 1
+    do i = 1, 2
+       do j = 1, p12(i)%n_perturbations
+          pids_current_contribution(k) = p12(i)%pid(j)
+          k = k + 1
+       end do
+    end do
+
+    merged_nblks = get_num_blks(merged_p_tuple)
+
+    allocate(merged_blk_info(1, merged_nblks, 3))
+
+    merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
+    blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+    merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+    merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+
+    allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
+
+    call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+         merged_triang_size, triang_indices_pr)
+
+    do i = 1, size(triang_indices_pr, 1)
+
+       pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
+                   (/sum(nfields)/), &
+                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
+                   (/triang_indices_pr(i, :) /))
+
+       do j = 1, total_num_perturbations
+
+          translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
+
+       end do
+
+       if (p12(2)%n_perturbations > 0) then
+
+          ca_offset = get_triang_blks_tuple_offset(2, &
+                      total_num_perturbations, nblks_tuple, &
+                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
+                      (/ translated_index(:) /))
+
+       else
+
+          ca_offset = get_triang_blks_tuple_offset(1, &
+                      total_num_perturbations, nblks_tuple(1), &
+                      nfields(1), blks_tuple_info(1, :, :), &
+                      blk_sizes(1,:), blks_tuple_triang_size(1), & 
+                      (/ translated_index(:) /))
+
+       end if
+
+       prop(pr_offset) = prop(pr_offset) + prop_forcache(ca_offset)
+
+    end do
+
+!     write(*,*) 'scfe contribution'
+!     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
+!     (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
+!     merged_blk_info, property_size, prop_forcache)
+
+    call property_cache_add_element(cache, 2, p12,  &
+         inner_indices_size * outer_indices_size, prop_forcache)    
+
+    deallocate(deriv_structa)
+    deallocate(deriv_structb)
+    deallocate(ncarray)
+    deallocate(ncinner)
+    deallocate(outer_indices_a)
+    deallocate(outer_indices_b)
+    deallocate(outer_ind_a_large)
+    deallocate(outer_ind_b_large)
+    deallocate(which_index_is_pid1)
+    deallocate(which_index_is_pid2)
+    deallocate(nfields)
+    deallocate(nblks_tuple)
+    deallocate(blks_tuple_info)
+    deallocate(blks_tuple_triang_size)
+    deallocate(blk_sizes)
+    deallocate(blk_sizes_merged)
+    deallocate(prop_forcache)
+
+    call QMatDst(L)
+    call QMatDst(Y)
+
+  end subroutine
+  
+  
+  ! END NEW CODE
+  
+  
+  
   recursive subroutine print_rsp_tensor(npert, lvl, pdim, prop, offset)
 
     implicit none

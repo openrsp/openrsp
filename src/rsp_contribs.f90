@@ -25,12 +25,10 @@ module rsp_contribs
   use basis_set,  only: cgto
   use rsp_field_tuple, only: p_tuple, p_tuple_remove_first, p_tuple_getone, &
                              p_tuple_standardorder, merge_p_tuple, &
-                             p_tuple_p1_cloneto_p2
-  use rsp_indices_and_addressing, only: get_triangular_sizes, get_num_blks, &
-                                        get_blk_info, get_triang_blks_tuple_offset, &
-                                        get_triangulated_size, get_triang_blks_offset, &
-                                        make_triangulated_indices, &
-                                        mat_init_like_and_zero
+                             p_tuple_p1_cloneto_p2, p_tuple_external
+  use rsp_indices_and_addressing
+  use qmatrix
+                                        
 
   implicit none
 
@@ -336,21 +334,23 @@ contains
 
 
   recursive subroutine rsp_ovlave_t_matrix_2014(num_fields, fields, bra, &
-                                           ket, D, get_t_exp, propsize, ave)
+                                           ket, D, get_ovl_exp, propsize, ave)
 
     implicit none
 
     integer :: num_fields, propsize, i, j, k, under_construction, merged_nblks
     integer :: ave_offset, tmp_result_offset, merged_triang_size, tmp_ave_size
-    integer :: total_num_perturbations
-    type(matrix) :: D
+    integer :: total_num_perturbations, np_bra, np_ket
+    integer, dimension(0) :: noc
+    type(qmat) :: D
     type(p_tuple) :: fields, bra, ket, merged_p_tuple, bra_static, ket_static
-    external :: get_t_exp
+    external :: get_ovl_exp
     integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
     complex(8), dimension(propsize) :: ave
     complex(8), allocatable, dimension(:) :: tmp_ave
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
-                                          blk_sizes_merged, translated_index
+                                          blk_sizes_merged, translated_index, pert_ext_bra, &
+                                          pert_ext_ket, pert_ext_ord_bra, pert_ext_ord_ket
     integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
 
@@ -367,15 +367,18 @@ else
     if (num_fields > 0) then
 
        call rsp_ovlave_t_matrix_2014(num_fields - 1, p_tuple_remove_first(fields), &
-            merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, D, get_t_exp, propsize, ave)
+            merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, D, get_ovl_exp, propsize, ave)
 
        call rsp_ovlave_t_matrix_2014(num_fields - 1, p_tuple_remove_first(fields), &
-            bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), D, get_t_exp, propsize, ave)
+            bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), D, get_ovl_exp, propsize, ave)
 
     else
    
 ! write(*,*) 'bra d 1', bra%n_perturbations, bra%plab, bra%freq
 ! write(*,*) 'ket d 1', ket%n_perturbations, ket%plab, ket%freq
+
+      call p_tuple_external(bra, np_bra, pert_ext_bra, pert_ext_ord_bra)
+      call p_tuple_external(ket, np_ket, pert_ext_ket, pert_ext_ord_ket)
 
 
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
@@ -428,6 +431,10 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
        tmp_ave = 0.0
 
        ! MaR: Reintroduce one callback functionality is implemented
+       
+         call get_ovl_exp(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
+                          pert_ext_ord_ket, 0, noc, noc, 1, (/D/), tmp_ave_size, tmp_ave)
+         
        
 !        call get_t_exp(p1_spec, p2_spec, D, tmp_ave)
 
@@ -518,6 +525,11 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
        end do
 
 !        write(*,*) 'tmp ave', 0.5 * (sum(bra%freq) - sum(ket%freq)) * real(tmp_ave)
+       
+       deallocate(pert_ext_bra)
+       deallocate(pert_ext_ket)
+       deallocate(pert_ext_ord_bra)
+       deallocate(pert_ext_ord_ket)
        
        deallocate(tmp_ave)
        deallocate(merged_indices)
@@ -1033,21 +1045,24 @@ end if
 
 !   ! MaR: This routine not tested - awaiting development in integral code
 !   !> Compute half-differentiated overlap contribution to Fock matrices
-  recursive subroutine rsp_ovlint_t_matrix_2014(nr_ao, num_fields, fields, bra, &
-                                           ket, get_t_mat, propsize, fock)
+  recursive subroutine rsp_ovlint_t_matrix_2014(num_fields, fields, bra, &
+                                           ket, get_ovl_mat, propsize, fock)
 
     implicit none
 
     integer :: nr_ao, num_fields, propsize, i, j, k, under_construction, merged_nblks
     integer :: fock_offset, int_result_offset, merged_triang_size, tmp_fock_size
-    integer :: total_num_perturbations
+    integer :: total_num_perturbations, np_bra, np_ket
+    integer, dimension(0) :: noc
     type(p_tuple) :: fields, bra, ket, merged_p_tuple, tester, bra_static, ket_static
     integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
-    type(matrix), dimension(propsize) :: fock
-    type(matrix), allocatable, dimension(:) :: tmp_fock
-    external :: get_t_mat
+    type(qmat), dimension(propsize) :: fock
+    type(qmat), allocatable, dimension(:) :: tmp_fock
+    external :: get_ovl_mat
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
-                                          blk_sizes_merged, translated_index
+                                          blk_sizes_merged, translated_index, pert_ext_bra, &
+                                          pert_ext_ord_bra, pert_ext_ket, pert_ext_ord_ket
+                                          
     integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
 
@@ -1070,8 +1085,8 @@ else
 tester = p_tuple_getone(fields, 1)
 ! write(*,*) 'tester a', tester%n_perturbations, tester%plab, tester%freq
 
-       call rsp_ovlint_t_matrix_2014(nr_ao, num_fields - 1, p_tuple_remove_first(fields), &
-            merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, get_t_mat, propsize, fock)
+       call rsp_ovlint_t_matrix_2014(num_fields - 1, p_tuple_remove_first(fields), &
+            merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, get_ovl_mat, propsize, fock)
 
 tester = p_tuple_remove_first(fields)
 tester = p_tuple_getone(fields, 1)
@@ -1080,8 +1095,8 @@ tester = p_tuple_getone(fields, 1)
 tester = merge_p_tuple(ket, p_tuple_getone(fields, 1))
 ! write(*,*) 'tester b 2', tester%n_perturbations, tester%plab, tester%freq
 
-       call rsp_ovlint_t_matrix_2014(nr_ao, num_fields - 1, p_tuple_remove_first(fields), &
-            bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), get_t_mat, propsize, fock)
+       call rsp_ovlint_t_matrix_2014(num_fields - 1, p_tuple_remove_first(fields), &
+            bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), get_ovl_mat, propsize, fock)
 
 tester = p_tuple_getone(fields, 1)
 ! write(*,*) 'tester c', tester%n_perturbations, tester%plab, tester%freq
@@ -1090,6 +1105,9 @@ tester = p_tuple_getone(fields, 1)
 
 ! write(*,*) 'bra d 1', bra%n_perturbations, bra%plab, bra%freq
 ! write(*,*) 'ket d 1', ket%n_perturbations, ket%plab, ket%freq
+
+      call p_tuple_external(bra, np_bra, pert_ext_bra, pert_ext_ord_bra)
+      call p_tuple_external(ket, np_ket, pert_ext_ket, pert_ext_ord_ket)
 
 
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
@@ -1142,11 +1160,14 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        do i = 1, tmp_fock_size
           
-          call mat_zero_like(fock(1), tmp_fock(i))
+          call QMatInit(tmp_fock(i))
 
        end do
 
        ! MaR: Reintroduce one callback functionality is implemented
+       
+         call get_ovl_mat(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
+              pert_ext_ord_ket, 0, noc, noc, tmp_fock_size, tmp_fock)
        
 !        call get_t_mat(p1_spec, p2_spec, D, tmp_fock)
  
@@ -1236,12 +1257,20 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 ! write(*,*) 'tmp fock row col', tmp_fock(int_result_offset)%nrow, tmp_fock(int_result_offset)%ncol
 
 
+! MaR: Frequency factor should be complex in general
+          call QMatrAXPY(dreal(0.5 * (sum(bra%freq) - sum(ket%freq))), tmp_fock(int_result_offset), fock(fock_offset))
 
-          fock(fock_offset) = fock(fock_offset) + &
-          0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
+!           fock(fock_offset) = fock(fock_offset) + &
+!           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
 
        end do
 ! write(*,*) 'ket d 3', ket%n_perturbations, ket%plab, ket%freq
+
+       deallocate(pert_ext_bra)
+       deallocate(pert_ext_ket)
+       deallocate(pert_ext_ord_bra)
+       deallocate(pert_ext_ord_ket)
+       
        deallocate(merged_indices)
        deallocate(translated_index)
        deallocate(nfields)
@@ -1255,7 +1284,7 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        do i = 1, tmp_fock_size
           
-          tmp_fock(i) = 0
+          call QMatDst(tmp_fock(i))
 
        end do
 
