@@ -15,6 +15,7 @@ module rsp_indices_and_addressing
                              p_tuple_deallocate
   use matrix_defop, matrix => openrsp_matrix
   use matrix_lowlevel, only: mat_init, mat_ensure_alloc
+  use qmatrix
 
   implicit none
 
@@ -45,8 +46,25 @@ module rsp_indices_and_addressing
   public get_pidoutersmall
   public sortdimbypid
   public mat_init_like_and_zero
+  
+  public QMatInit
+  public QMatcABC
+  public QMatkABC
+  public QMatAEqB
+  public QMatDst
+  public QMatTraceAB
+  public QMatRAXPY
 
 
+  ! MaR: QMatrix adapted routines to be separated into new module
+  
+  
+  
+  
+  
+  
+  
+  
   ! Define triangulated index block datatype
 
   type triangulated_index_block
@@ -59,6 +77,109 @@ module rsp_indices_and_addressing
 
   contains
 
+  ! MaR: QMatrix adapted routines to be separated into new module
+  
+  ! Initalize matrix
+  subroutine QMatInit(A)
+  
+    implicit none
+    
+    type(qmat) :: A
+    integer :: ierr
+    
+    ierr = QMatCreate(A)
+    
+  end subroutine
+  
+  ! Compute R = kA + B + C (k complex)
+  subroutine QMatcABC(k, A, B, C, R)
+  
+    implicit none
+    
+    type(qmat) :: A, B, C, R
+    integer :: ierr
+    complex(8) :: k
+        
+    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/1.0d0, 1.0d0/), R)
+    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
+  
+  end subroutine
+  
+  ! Compute R = kA + B + C (k real)
+  subroutine QMatkABC(k, A, B, C, R)
+  
+    implicit none
+    
+    type(qmat) :: A, B, C, R
+    integer :: ierr
+    real(8) :: k
+        
+    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 1.0d0/), B, C, (/1.0d0, 1.0d0/), R)
+    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
+  
+  end subroutine
+  
+  ! Take matrix B and copy it into A
+  subroutine QMatAEqB(A, B)
+  
+    implicit none
+    
+    type(qmat) :: A, B
+    integer :: ierr  
+
+    ierr = QMatDuplicate(B, COPY_PATTERN_AND_VALUE, A)
+    
+  end subroutine 
+  
+  ! Destroy matrix
+  subroutine QMatDst(A)
+  
+    implicit none
+    
+    type(qmat) :: A
+    integer :: ierr
+    
+    ierr = QMatDestroy(A)
+  
+  end subroutine
+  
+  ! Get trace of matrix product
+  subroutine QMatTraceAB(A, B, t)
+  
+    implicit none
+    
+    type(qmat) :: A, B
+    complex(8) :: t
+    real(8), dimension(2) :: t_ans
+    integer :: ierr, dim_block_a, dim_block_b
+    
+    ierr = QMatGetDimBlock(A, dim_block_a)
+    ierr = QMatGetDimBlock(A, dim_block_b)
+    ierr = QMatGetMatProdTrace(A, B, MAT_NO_OPERATION, dim_block_a, t_ans)
+    ! What is dimension of answer?
+    
+    t = cmplx(t_ans(1), t_ans(2))
+  
+  end subroutine
+  
+  ! Compute B = kA + B (k real)
+  subroutine QMatRAXPY(k, A, B)
+  
+    implicit none
+    
+    type(qmat) :: A, B
+    integer :: ierr
+    real(8) :: k
+    
+    ierr = QMatAXPY((/k, 0.0d0/), A, B)
+  
+  end subroutine
+  
+  ! End QMatrix adapted routines
+  
+  
+  
+  
   function get_one_tensor_offset(total_num_perturbations, indices, pids, dims)
 
     implicit none

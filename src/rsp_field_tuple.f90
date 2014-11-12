@@ -38,6 +38,9 @@ module rsp_field_tuple
   
   ! NEW 2014
   
+  public p_tuple_external
+  
+  
   
   public p_tuple_dealloc
   public p1_lt_p2
@@ -50,6 +53,7 @@ module rsp_field_tuple
   public p_tuple_ordered
   public p_tuples_ordered
   public make_p_tuple_subsets
+  
   
   ! Perturbation datatype
   type pert
@@ -65,8 +69,13 @@ module rsp_field_tuple
   ! Perturbation tuple datatype
   type p_tuple_2014
 
-     integer :: npert ! Number of perturbations
-     type(pert), allocatable, dimension(:) :: perts
+     integer :: n_perturbations ! Number of perturbations
+     integer, allocatable, dimension(:) :: pdim ! Dimensions of perturbations
+     integer, allocatable, dimension(:) :: plab ! Perturbation labels
+     integer, allocatable, dimension(:) :: pfcomp ! First component is component #pfcomp
+     integer, allocatable, dimension(:) :: pid ! Pert. ID - for k,n rule evaluations
+     complex(8), allocatable, dimension(:) :: freq ! Frequencies of perturbations
+     ! Add other perturbation identification info as needed
 
   end type
   
@@ -90,6 +99,76 @@ module rsp_field_tuple
 
   contains
 
+  ! NEW NOVEMBER 2014
+  
+  subroutine p_tuple_external(pert, num_pert, perturbations, pert_orders)
+  
+    implicit none
+    
+    type(p_tuple) :: pert
+    integer :: num_pert, i, mp, j
+    integer, dimension(pert%n_perturbations) :: plab_int
+    integer, dimension(:), allocatable :: perturbations, pert_orders
+    
+    
+    do i = 1, pert%n_perturbations
+    
+       if (pert%plab(i) == 'GEO ') then
+       
+          plab_int(i) = 1
+       
+       else if (pert%plab(i) == 'EL  ') then
+
+          plab_int(i) = 2
+       
+       else if (pert%plab(i) == 'ELGR') then
+       
+          plab_int(i) = 3
+       
+       else if (pert%plab(i) == 'MAG ') then
+       
+          plab_int(i) = 4
+       
+       else if (pert%plab(i) == 'MAG0 ') then
+    
+          plab_int(i) = 5
+          
+       end if
+    
+    end do
+    
+    mp = maxval(plab_int)
+    
+    j = 0
+    
+    do i = 1, mp
+    
+       if (count(plab_int == i) > 0) then
+          
+          j = j + 1
+       
+       end if
+    
+    end do
+    
+    num_pert = j
+    allocate(perturbations(num_pert))
+    allocate(pert_orders(num_pert))
+    
+    j = 0
+    
+    do i = 1, mp
+    
+       if (count(plab_int == i) > 0) then
+          
+          perturbations(j) = i
+          pert_orders(j) = count(plab_int == i)
+       
+       end if
+    
+    end do
+      
+  end subroutine
   
   ! NEW 2014
   
