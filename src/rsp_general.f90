@@ -106,7 +106,8 @@ module rsp_general
     implicit none
 
     integer, intent(in) :: num_perts, id_outp
-    integer, dimension(num_perts), intent(in) :: pert_dims, pert_first_comp, pert_labels
+    integer, dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
+    character(4), dimension(num_perts), intent(in) :: pert_labels
     integer :: i, j, num_blks, property_size
     integer, dimension(2) :: kn
     character, optional, dimension(20) :: file_id
@@ -122,13 +123,17 @@ module rsp_general
     type(qmat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
 
-!     perturbations%n_perturbations = num_perts
-!     allocate(perturbations%perts(num_perts))
-!     perturbations%perts%pdim = pert_dims
-!     perturbations%perts%pfcomp = pert_first_comp
-!     perturbations%perts%plab = pert_labels
-!     perturbations%perts%pid = (/(i, i = 1, num_perts)/)
-!     perturbations%perts%freq = pert_freqs
+     perturbations%n_perturbations = num_perts
+     allocate(perturbations%pdim(num_perts))
+!      allocate(perturbations%pfcomp(num_perts))
+     allocate(perturbations%plab(num_perts))
+     allocate(perturbations%pid(num_perts))
+     allocate(perturbations%freq(num_perts))
+     perturbations%pdim = pert_dims
+!     %perturbations%perts%pfcomp = pert_first_comp
+     perturbations%plab = pert_labels
+     perturbations%pid = (/(i, i = 1, num_perts)/)
+     perturbations%freq = pert_freqs
 
     write(id_outp,*) ' '
     write(id_outp,*) 'OpenRSP lib called'
