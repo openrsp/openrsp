@@ -66,7 +66,7 @@ module openrsp
   use vib_pv_contribs
   use rsp_sdf_caching, only: SDF, sdf_setup_datatype
   use rsp_indices_and_addressing, only: mat_init_like_and_zero
-  use iso_c_binding
+  !use iso_c_binding
   use xcint_fortran_interface
 
   implicit none
@@ -154,11 +154,11 @@ contains
     real(8), intent(inout) :: WORK(LWORK)
     type(matrix)           :: H1 !one electron Hamiltonian
     type(matrix)           :: G  !two electron Hamiltonian
-    real(c_double), allocatable   :: xc_dmat(:)
-    real(c_double), allocatable   :: xc_mat(:)
+!    real(c_double), allocatable   :: xc_dmat(:)
+!    real(c_double), allocatable   :: xc_mat(:)
     integer                :: mat_dim
-    real(c_double)         :: xc_energy(1)
-    real(c_double)         :: num_electrons
+!    real(c_double)         :: xc_energy(1)
+!    real(c_double)         :: num_electrons
     real(8), target        :: temp(1)
     real(8)                :: ave(100)
     real(8), allocatable   :: pe_dmat(:,:)
@@ -227,32 +227,32 @@ contains
     H1 = 0
     G  = 0
 
-    if (is_ks_calculation()) then
+    !if (is_ks_calculation()) then
 
-       ! add xc contribution to the fock matrix
-       mat_dim = D%nrow
-       allocate(xc_dmat(mat_dim*mat_dim))
-       xc_dmat = 0.0d0
-       call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
-       allocate(xc_mat(mat_dim*mat_dim))
-       call xcint_wakeup_workers()
-       call xcint_integrate(XCINT_MODE_RKS, &
-                            0,              &
-                            (/0/),          &
-                            (/0/),          &
-                            1,              &
-                            (/0/),          &
-                            (/1/),          &
-                            xc_dmat,        &
-                            0,              &
-                            xc_energy,      &
-                            1,              &
-                            xc_mat,         &
-                            num_electrons)
-       call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, F%elms, 1)
-       deallocate(xc_dmat)
-       deallocate(xc_mat)
-    end if
+    !   ! add xc contribution to the fock matrix
+    !   mat_dim = D%nrow
+    !   allocate(xc_dmat(mat_dim*mat_dim))
+    !   xc_dmat = 0.0d0
+    !   call daxpy(mat_dim*mat_dim, 1.0d0, D%elms, 1, xc_dmat, 1)
+    !   allocate(xc_mat(mat_dim*mat_dim))
+    !   call xcint_wakeup_workers()
+    !   call xcint_integrate(XCINT_MODE_RKS, &
+    !                        0,              &
+    !                        (/0/),          &
+    !                        (/0/),          &
+    !                        1,              &
+    !                        (/0/),          &
+    !                        (/1/),          &
+    !                        xc_dmat,        &
+    !                        0,              &
+    !                        xc_energy,      &
+    !                        1,              &
+    !                        xc_mat,         &
+    !                        num_electrons)
+    !   call daxpy(mat_dim*mat_dim, 1.0d0, xc_mat, 1, F%elms, 1)
+    !   deallocate(xc_dmat)
+    !   deallocate(xc_mat)
+    !end if
 
     if (peqm) then
         mat_dim = D%nrow
