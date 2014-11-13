@@ -29,12 +29,6 @@ SET(CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compilers)
 
-# ConfigParentSettings.cmake configures directories where to place module files
-# and where to find header files, this is important if there are module and header
-# file dependencies between libraries and where the parent code needs to enforce
-# a directory structure to compile correctly
-INCLUDE(ConfigParentSettings)
-
 #
 #OPTION(OPENRSP_AUTO_ERROR_EXIT "Enable automatic exit on error." OFF)
 #IF(OPENRSP_AUTO_ERROR_EXIT)
@@ -83,6 +77,12 @@ INCLUDE_DIRECTORIES(${LIB_OPENRSP_PATH}/include)
 # Where we put the compiled Fortran modules
 SET(CMAKE_Fortran_MODULE_DIRECTORY
     ${PROJECT_BINARY_DIR}/modules)
+
+# ConfigParentSettings.cmake configures directories where to place module files
+# and where to find header files, this is important if there are module and header
+# file dependencies between libraries and where the parent code needs to enforce
+# a directory structure to compile correctly
+INCLUDE(ConfigParentSettings)
 
 # what is this?
 set(LIBS)
