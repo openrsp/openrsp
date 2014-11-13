@@ -1436,9 +1436,9 @@ module rsp_general
        tmp = 0.0
        contrib = 0.0
 
-       call get_nucpot(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-                       p_tuples(1)%plab, contrib)
+!        call get_nucpot(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
+!                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!                        p_tuples(1)%plab, contrib)
        
        
        call rsp_nucpot(nucpot_pert, property_size, contrib) 
