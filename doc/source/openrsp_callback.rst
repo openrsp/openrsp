@@ -1,0 +1,285 @@
+.. _chapter-callback-functions:
+
+OpenRSP Callback Functions
+==========================
+
+To use OpenRSP, users should also prepare different callback functions
+needed by OpenRSP. These callback functions will be invoked by OpenRSP
+during calculations to get integral matrices or expectation values of
+different one- and two-electron operators, and exchange-correlation
+functionals, or to solve the response equation. The callback functions
+are slightly different for C and Fortran users, which will be described
+separately in this chapter.
+
+OpenRSP Callback Functions (C version)
+--------------------------------------
+
+An example of C callback functions can be found in the file
+``tests/c/test_c_callback.c``. The detailed information of these callback
+functions are given as follows.
+
+.. function:: get_overlap_mat(bra_num_pert,      \
+                              bra_perturbations, \
+                              bra_pert_orders,   \
+                              ket_num_pert,      \
+                              ket_perturbations, \
+                              ket_pert_orders,   \
+                              num_pert,          \
+                              perturbations,     \
+                              pert_orders,       \
+                              user_ctx,          \
+                              num_int,           \
+                              val_int)
+
+   Callback function for getting integral matrices of overlap integrals,
+   the second last argument for function ``OpenRSPSetPDBS``.
+
+   :param bra_num_pert: number of perturbations on the bra
+   :type bra_num_pert: QInt
+   :param bra_perturbations: the perturbations on the bra
+   :type bra_perturbations: QInt\*
+   :param bra_pert_orders: orders of the perturbations on the bra
+   :type bra_pert_orders: QInt\*
+   :param ket_num_pert: number of perturbations on the ket
+   :type ket_num_pert: QInt
+   :param ket_perturbations: the perturbations on the ket
+   :type ket_perturbations: QInt\*
+   :param ket_pert_orders: orders of the perturbations on the ket
+   :type ket_pert_orders: QInt\*
+   :param num_pert: number of perturbations
+   :type num_pert: QInt
+   :param perturbations: the perturbations
+   :type perturbations: QInt\*
+   :param pert_orders: orders of the perturbations
+   :type pert_orders: QInt\*
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param num_int: number of the integral matrices
+   :type num_int: QInt
+   :param val_int: the integral matrices
+   :type val_int: QMat\*[]
+   :rtype: QVoid
+
+.. function:: get_overlap_exp(bra_num_pert,      \
+                              bra_perturbations, \
+                              bra_pert_orders,   \
+                              ket_num_pert,      \
+                              ket_perturbations, \
+                              ket_pert_orders,   \
+                              num_pert,          \
+                              perturbations,     \
+                              pert_orders,       \
+                              num_dens,          \
+                              ao_dens,           \
+                              user_ctx,          \
+                              num_exp,           \
+                              val_exp)
+
+   Callback function for getting expectation values of overlap integrals,
+   the last argument for function ``OpenRSPSetPDBS``.
+
+   :param bra_num_pert: number of perturbations on the bra
+   :type bra_num_pert: QInt
+   :param bra_perturbations: the perturbations on the bra
+   :type bra_perturbations: QInt\*
+   :param bra_pert_orders: orders of the perturbations on the bra
+   :type bra_pert_orders: QInt\*
+   :param ket_num_pert: number of perturbations on the ket
+   :type ket_num_pert: QInt
+   :param ket_perturbations: the perturbations on the ket
+   :type ket_perturbations: QInt\*
+   :param ket_pert_orders: orders of the perturbations on the ket
+   :type ket_pert_orders: QInt\*
+   :param num_pert: number of perturbations
+   :type num_pert: QInt
+   :param perturbations: the perturbations
+   :type perturbations: QInt\*
+   :param pert_orders: orders of the perturbations
+   :type pert_orders: QInt\*
+   :param num_dens: number of atomic orbital (AO) based density matrices
+   :type num_dens: QInt
+   :param ao_dens: the AO based density matrices
+   :type ao_dens: QMat\*[]
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param num_exp: number of expectation values
+   :type num_exp: QInt
+   :param val_exp: the expectation values
+   :type val_exp: QReal\*
+   :rtype: QVoid
+
+.. function:: get_one_oper_mat(num_pert,      \
+                               perturbations, \
+                               pert_orders,   \
+                               user_ctx,      \
+                               num_int,       \
+                               val_int)
+
+   Callback function for getting integral matrices of a one-electron operator,
+   the second last argument for function ``OpenRSPAddOneOper``.
+
+   :param num_pert: number of perturbations
+   :type num_pert: QInt
+   :param perturbations: the perturbations
+   :type perturbations: QInt\*
+   :param pert_orders: orders of the perturbations
+   :type pert_orders: QInt\*
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param num_int: number of the integral matrices
+   :type num_int: QInt
+   :param val_int: the integral matrices
+   :type val_int: QMat\*[]
+   :rtype: QVoid
+
+.. function:: get_one_oper_exp(num_pert,      \
+                               perturbations, \
+                               pert_orders,   \
+                               num_dens,      \
+                               ao_dens,       \
+                               user_ctx,      \
+                               num_exp,       \
+                               val_exp)
+
+   Callback function for getting expectation values of a one-electron operator,
+   the last argument for function ``OpenRSPAddOneOper``.
+
+   :param num_pert: number of perturbations
+   :type num_pert: QInt
+   :param perturbations: the perturbations
+   :type perturbations: QInt\*
+   :param pert_orders: orders of the perturbations
+   :type pert_orders: QInt\*
+   :param num_dens: number of atomic orbital (AO) based density matrices
+   :type num_dens: QInt
+   :param ao_dens: the AO based density matrices
+   :type ao_dens: QMat\*[]
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param num_exp: number of expectation values
+   :type num_exp: QInt
+   :param val_exp: the expectation values
+   :type val_exp: QReal\*
+   :rtype: QVoid
+
+.. function:: get_two_oper_mat(num_pert,      \
+                               perturbations, \
+                               pert_orders,   \
+                               num_var_dens,  \
+                               var_ao_dens,   \
+                               user_ctx,      \
+                               num_int,       \
+                               val_int)
+
+   Callback function for getting integral matrices of a two-electron operator,
+   the second last argument for function ``OpenRSPAddTwoOper``.
+
+   :param num_pert: number of perturbations
+   :type num_pert: QInt
+   :param perturbations: the perturbations
+   :type perturbations: QInt\*
+   :param pert_orders: orders of the perturbations
+   :type pert_orders: QInt\*
+   :param num_var_dens: number of variable AO based density matrices
+   :type num_var_dens: QInt
+   :param var_ao_dens: the variable AO based density matrices (:math:`\boldsymbol{D}`)
+       for calculating :math:`\boldsymbol{G}(\boldsymbol{D})`
+   :type var_ao_dens: QMat\*[]
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param num_int: number of the integral matrices
+   :type num_int: QInt
+   :param val_int: the integral matrices
+   :type val_int: QMat\*[]
+   :rtype: QVoid
+
+.. function:: get_two_oper_exp(num_pert,       \
+                               perturbations,  \
+                               pert_orders,    \
+                               num_var_dens,   \
+                               var_ao_dens,    \
+                               num_contr_dens, \
+                               contr_ao_dens,  \
+                               user_ctx,       \
+                               num_exp,        \
+                               val_exp)
+
+   Callback function for getting expectation values of a two-electron operator,
+   the last argument for function ``OpenRSPAddTwoOper``.
+
+   :param num_pert: number of perturbations
+   :type num_pert: QInt
+   :param perturbations: the perturbations
+   :type perturbations: QInt\*
+   :param pert_orders: orders of the perturbations
+   :type pert_orders: QInt\*
+   :param num_var_dens: number of variable AO based density matrices
+   :type num_var_dens: QInt
+   :param var_ao_dens: the variable AO based density matrices (:math:`\boldsymbol{D}`)
+       for calculating :math:`\boldsymbol{G}(\boldsymbol{D})`
+   :type var_ao_dens: QMat\*[]
+   :param num_contr_dens: number of contracted AO based density matrices
+   :type num_contr_dens: QInt
+   :param contr_ao_dens: the contracted AO based density matrices (:math:`\boldsymbol{D}`)
+       for calculating :math:`\mathrm{Tr}[\boldsymbol{G}\boldsymbol{D}]`
+   :type contr_ao_dens: QMat\*[]
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param num_exp: number of expectation values
+   :type num_exp: QInt
+   :param val_exp: the expectation values
+   :type val_exp: QReal\*
+   :rtype: QVoid
+
+.. function:: get_rsp_solution(ref_ham,       \
+                               ref_state,     \
+                               ref_overlap,   \
+                               num_freq_sums, \
+                               freq_sums,     \
+                               size_pert,     \
+                               RHS_mat,       \
+                               user_ctx,      \
+                               rsp_param)
+
+   Callback function for solving the response equation, the last argument for
+   function ``OpenRSPSetSolver``.
+
+   :param ref_ham: Hamiltonian of referenced state
+   :type ref_ham: QMat\*
+   :param ref_state: electronic state of referenced state
+   :type ref_state: QMat\*
+   :param ref_overlap: overlap integral matrix of referenced state
+   :type ref_overlap: QMat\*
+   :param num_freq_sums: number of frequency sums on the left hand side
+   :type num_freq_sums: QInt
+   :param freq_sums: the frequency sums on the left hand side
+   :type freq_sums: QReal\*
+   :param size_pert: size of perturbaed matrices
+   :type size_pert: QInt
+   :param RHS_mat: RHS matrices, size is ``size_pert``:math:`\times`
+       ``num_freq_sums``
+   :type RHS_mat: QMat\*[]
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param rsp_param: solved response parameters, size is ``size_pert``:math:`\times`
+       ``num_freq_sums``
+   :type rsp_param: QMat\*[]
+   :rtype: QVoid
+
+OpenRSP Callback Subroutines (Fortran version)
+----------------------------------------------
+
+The callback subroutines of Fortran codes take almost the exact arguments as
+the callback functions of C codes. One difference is the type convention
+between C and Fortran, which has been discussed in Secion :ref:`section-Fortran-convention`.
+Moreover, the pointers of basic types (integer and real numbers) in the C
+codes should be converted to corresponding array in Fortran. The array of
+``QMat`` pointers should be converted to an array of ``type(QMat)`` in Fortran.
+Last, the user-defined callback function/subroutine context should be replaced
+by::
+
+    integer, intent(in) :: len_ctx
+    character(len=1), intent(in) :: user_ctx(len_ctx)
+
+An example of Fortran callback subroutines can be found in the file
+``tests/f90/test_f_callback.F90``.

@@ -1,0 +1,9 @@
+#define OPENRSP_LOOSE_THRSH 0.000001
+#define OPENRSP_C_LOG "test_c_OpenRSP.dat"
+#define NUM_ALL_PERT 3
+#define PERT_DIPOLE 0
+#define MAX_ORDER_DIPOLE 1
+#define PERT_MAGNETIC -1
+#define MAX_ORDER_MAGNETIC 7
+#define PERT_GEOMETRIC -3
+#define MAX_ORDER_GEOMETRIC 7
