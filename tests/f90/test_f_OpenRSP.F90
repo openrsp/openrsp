@@ -30,9 +30,9 @@
     subroutine test_f_OpenRSP(io_log)
 #endif
         use qmatrix, only: QINT,QREAL,QMat
-        use openrsp_mod, only: OpenRSP,                 &
-                               OpenRSPCreate,           &
-                               OpenRSPSetSolver,        &
+        use openrsp_f, only: OpenRSP,                 &
+                             OpenRSPCreate,           &
+                             OpenRSPSetSolver,        &
 #if defined(OPENRSP_PERTURBATION_FREE)
                                OpenRSPSetPerturbations, &
 #endif

@@ -10,7 +10,7 @@ of OpenRSP in their codes::
 
 while Fortran users should use the OpenRSP module::
 
-  use openrsp_mod
+  use openrsp_f
 
 In this chapter, we will describe all the functions defined in OpenRSP
 API for users. These functions should be invoked as::
