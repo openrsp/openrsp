@@ -27,9 +27,9 @@
 #include "qmatrix.h"
 
 /* type of EOM of electrons */
-typedef enum {ELEC_EOM_DMAT=0,
-              ELEC_EOM_CMAT=1,
-              ELEC_EOM_CC=2} ElecEOMType;
+typedef enum {ELEC_AO_D_MATRIX=0,
+              ELEC_MO_C_MATRIX=1,
+              ELEC_COUPLED_CLUSTER=2} ElecEOMType;
 
 /* implementation-specific functions related to the EOM of electrons */
 typedef struct {
