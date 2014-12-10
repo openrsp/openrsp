@@ -22,7 +22,7 @@
 ! basic data types
 #include "api/qmatrix_c_type.h"
 
-module openrsp_mod
+module openrsp_f
 
     use, intrinsic :: iso_c_binding
     use qmatrix, only: QINT,  &
@@ -992,4 +992,4 @@ module openrsp_mod
         end do
     end function OpenRSPDestroy
 
-end module openrsp_mod
+end module openrsp_f

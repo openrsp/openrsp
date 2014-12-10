@@ -143,18 +143,18 @@ SET(OPENRSP_SRCS
     src/openrsp_general_pv2f.f90
     src/openrsp_general_pv3f.f90
     src/openrsp_general_pv4f.f90
-    src/rsp_choose_rule.f90
-    src/rsp_contribs.f90
-    src/rsp_equations.f90
-    src/rsp_field_tuple.f90
-    src/rsp_general.f90
-    src/rsp_indices_and_addressing.f90
-    src/rsp_lof_caching_tmp.f90
-    src/rsp_mag_prop.f90
-    src/rsp_perturbed_matrices.f90
-    src/rsp_perturbed_sdf.f90
-    src/rsp_property_caching.f90
-    src/rsp_sdf_caching.f90
+    src/ao_dens/rsp_choose_rule.f90
+    src/ao_dens/rsp_contribs.f90
+    src/ao_dens/rsp_equations.f90
+    src/ao_dens/rsp_field_tuple.f90
+    src/ao_dens/rsp_general.f90
+    src/ao_dens/rsp_indices_and_addressing.f90
+    src/ao_dens/rsp_lof_caching_tmp.f90
+    src/ao_dens/rsp_mag_prop.f90
+    src/ao_dens/rsp_perturbed_matrices.f90
+    src/ao_dens/rsp_perturbed_sdf.f90
+    src/ao_dens/rsp_property_caching.f90
+    src/ao_dens/rsp_sdf_caching.f90
     src/vib_pv_contribs.f90)
 
 # ??
