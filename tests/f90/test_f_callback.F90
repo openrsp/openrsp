@@ -32,7 +32,6 @@ subroutine get_rsp_solution(ref_ham,       &
                             num_freq_sums, &
                             freq_sums,     &
                             size_pert,     &
-                            num_RHS,       &
                             RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
                             len_ctx,       &
@@ -47,13 +46,12 @@ subroutine get_rsp_solution(ref_ham,       &
     integer(kind=QINT), intent(in) :: num_freq_sums
     real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
     integer(kind=QINT), intent(in) :: size_pert
-    integer(kind=QINT), intent(in) :: num_RHS
-    type(QMat), intent(in) :: RHS_mat(size_pert*num_RHS)
+    type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
     integer(kind=QINT), intent(in) :: len_ctx
     character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-    type(QMat), intent(inout) :: rsp_param(size_pert*num_RHS)
+    type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
     return
 end subroutine get_rsp_solution
 

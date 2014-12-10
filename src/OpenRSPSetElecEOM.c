@@ -33,13 +33,13 @@ QErrorCode OpenRSPSetElecEOM(OpenRSP *open_rsp, const ElecEOMType elec_EOM_type)
 {
     switch (elec_EOM_type) {
     /* density matrix-based response theory */
-    case ELEC_EOM_DMAT:
+    case ELEC_AO_D_MATRIX:
         break;
     /* molecular orbital (MO) coefficient matrix-based response theory */
-    case ELEC_EOM_CMAT:
+    case ELEC_MO_C_MATRIX:
         break;
     /* couple cluster-based response theory */
-    case ELEC_EOM_CC:
+    case ELEC_COUPLED_CLUSTER:
         break;
     default:
         printf("OpenRSPSetElecEOM>> type of EOM of electrons %d\n", elec_EOM_type);

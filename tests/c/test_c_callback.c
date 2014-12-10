@@ -29,7 +29,6 @@ QVoid get_rsp_solution(const QMat *ref_ham,
                        const QInt num_freq_sums,
                        const QReal *freq_sums,
                        const QInt size_pert,
-                       const QInt num_RHS,
                        QMat *RHS_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                        QVoid *user_ctx,

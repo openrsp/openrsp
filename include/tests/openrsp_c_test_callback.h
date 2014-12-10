@@ -33,7 +33,6 @@ extern QVoid get_rsp_solution(const QMat*,
                               const QInt,
                               const QReal*,
                               const QInt,
-                              const QInt,
                               QMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid*,
