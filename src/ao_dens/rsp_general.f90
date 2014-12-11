@@ -107,7 +107,8 @@ module rsp_general
 
     integer, intent(in) :: num_perts, id_outp
     integer, dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
-    character(4), dimension(num_perts), intent(in) :: pert_labels
+    integer, dimension(num_perts), intent(in) :: pert_labels
+    character(4), dimension(5) :: plab_table
     integer :: i, j, num_blks, property_size
     integer, dimension(2) :: kn
     character, optional, dimension(20) :: file_id
@@ -123,6 +124,8 @@ module rsp_general
     type(qmat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
 
+    plab_table = (/'GEO ', 'EL  ', 'ELGR ', 'MAG0', 'MAG ' /)
+    
      perturbations%n_perturbations = num_perts
      allocate(perturbations%pdim(num_perts))
 !      allocate(perturbations%pfcomp(num_perts))
@@ -131,7 +134,12 @@ module rsp_general
      allocate(perturbations%freq(num_perts))
      perturbations%pdim = pert_dims
 !     %perturbations%perts%pfcomp = pert_first_comp
-     perturbations%plab = pert_labels
+
+do i = 1, num_perts
+     perturbations%plab(i) = plab_table(pert_labels(i))
+
+end do
+     
      perturbations%pid = (/(i, i = 1, num_perts)/)
      perturbations%freq = pert_freqs
 
