@@ -82,5 +82,13 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
         ierr = RSPTwoOperDestroy(&open_rsp->two_oper);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperDestroy");
     }
+    /* destroys the linked list of exchange-correlation functionals */
+    if (open_rsp->xc_fun!=NULL) {
+    }
+    /* destroys the context of (derivatives of) nuclear repulsion and nuclei-field interaction */
+    if (open_rsp->nuc_contrib!=NULL) {
+        free(open_rsp->nuc_contrib);
+        open_rsp->nuc_contrib = NULL;
+    }
     return QSUCCESS;
 }

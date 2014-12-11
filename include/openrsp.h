@@ -34,7 +34,9 @@
 /* two-electron operators */
 #include "hamiltonian/rsp_two_oper.h"
 /* exchange-correlation functionals */
-//#include "hamiltonian/rsp_xc_fun.h"
+#include "hamiltonian/rsp_xc_fun.h"
+/* (derivatives of) nuclear repulsion and nuclei-field interaction */
+#include "hamiltonian/rsp_nuc_contrib.h"
 
 #if defined(OPENRSP_PERTURBATION_FREE)
 /* callback function to get the components of a perturbation */
@@ -60,29 +62,29 @@ typedef QVoid (*GetPertRank)(const QInt,
 
 /* context of response theory calculations */
 typedef struct {
-    QBool assembled;            /* indicates if the context of response theory calculations assembled */
+    QBool assembled;             /* indicates if the context of response theory calculations assembled */
     /* EOM and solver */
-    ElecEOM *elec_eom;          /* implementation-specific data of the EOM of electrons */
-    RSPSolver *rsp_solver;      /* response equation solver */
+    ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
+    RSPSolver *rsp_solver;       /* response equation solver */
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* perturbations */
-    QInt num_pert;              /* number of all perturbations involved in calculations */
-    QInt *perturbations;        /* all perturbations involved in calculations */
-    QInt *pert_max_orders;      /* maximum allowed orders of all perturbations */
-    QInt *size_ptr;             /* pointer to the size of each perturbation */
-    QInt *pert_sizes;           /* sizes of all perturbations up to their maximum orders */
+    QInt num_pert;               /* number of all perturbations involved in calculations */
+    QInt *perturbations;         /* all perturbations involved in calculations */
+    QInt *pert_max_orders;       /* maximum allowed orders of all perturbations */
+    QInt *size_ptr;              /* pointer to the size of each perturbation */
+    QInt *pert_sizes;            /* sizes of all perturbations up to their maximum orders */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;            /* user-defined callback function context */
+    QVoid *user_ctx;             /* user-defined callback function context */
 #endif
-    GetPertComp get_pert_comp;  /* user specified function for getting components of a perturbation */
-    GetPertRank get_pert_rank;  /* user specified function for getting rank of a perturbation */
+    GetPertComp get_pert_comp;   /* user specified function for getting components of a perturbation */
+    GetPertRank get_pert_rank;   /* user specified function for getting rank of a perturbation */
 #endif
     /* Hamiltonian */
-    RSPOverlap *overlap;        /* overlap integrals */
-    RSPOneOper *one_oper;       /* linked list of one-electron operators */
-    RSPTwoOper *two_oper;       /* linked list of two-electron operators */
-    //RSPXCFun *xc_fun;           /* linked list of exchange-correlation functionals */
-    //RSPNucFun (*nuc_fun)();
+    RSPOverlap *overlap;         /* overlap integrals */
+    RSPOneOper *one_oper;        /* linked list of one-electron operators */
+    RSPTwoOper *two_oper;        /* linked list of two-electron operators */
+    RSPXCFun *xc_fun;            /* linked list of exchange-correlation functionals */
+    RSPNucContrib *nuc_contrib;  /* (derivatives of) nuclear repulsion and nuclei-field interaction */
 } OpenRSP;
 
 /* APIs of OpenRSP */
@@ -133,7 +135,7 @@ extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
                                     const GetTwoOperMat,
                                     const GetTwoOperExp);
 //extern QErrorCode OpenRSPAddXCFun(OpenRSP*,);
-//extern QErrorCode OpenRSPSetNucFun(OpenRSP*,);
+//extern QErrorCode OpenRSPSetNucContrib(OpenRSP*,);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);
 extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
 extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,

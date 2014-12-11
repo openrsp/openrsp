@@ -46,5 +46,7 @@ QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
     open_rsp->overlap = NULL;
     open_rsp->one_oper = NULL;
     open_rsp->two_oper = NULL;
+    open_rsp->xc_fun = NULL;
+    open_rsp->nuc_contrib = NULL;
     return QSUCCESS;
 }
