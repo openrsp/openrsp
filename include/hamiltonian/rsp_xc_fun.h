@@ -30,7 +30,8 @@
 typedef QVoid (*GetXCFunMat)(const QInt,
                              const QInt*,
                              const QInt*,
-                             const QReal*,
+                             const QInt,
+                             QMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid*,
 #endif
@@ -39,66 +40,69 @@ typedef QVoid (*GetXCFunMat)(const QInt,
 typedef QVoid (*GetXCFunExp)(const QInt,
                              const QInt*,
                              const QInt*,
-                             const QReal*,
                              const QInt,
-                             const QMat*[],
+                             QMat*[],
+                             const QInt,
+                             QMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid*,
 #endif
                              const QInt,
                              QReal*);
 
-/* linked list of one-electron operators */
+/* linked list of exchange-corrrelation functionals */
 typedef struct RSPXCFun RSPXCFun;
 struct RSPXCFun {
-    QInt num_pert;                 /* number of perturbations that the one-electron operator depends on */
-    QInt *perturbations;           /* perturbations that the one-electron operator depends on */
-    QInt *pert_max_orders;         /* maximum allowed orders of the perturbations */
+    QInt num_pert;               /* number of perturbations that the exchange-corrrelation functional depends on */
+    QInt *perturbations;         /* perturbations that the exchange-corrrelation functional depends on */
+    QInt *pert_max_orders;       /* maximum allowed orders of the perturbations */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;               /* user-defined callback function context */
+    QVoid *user_ctx;             /* user-defined callback function context */
 #endif
     GetXCFunMat get_xc_fun_mat;  /* user specified function for getting integral matrices */
     GetXCFunExp get_xc_fun_exp;  /* user specified function for getting expectation values */
-    RSPXCFun *next_oper;           /* pointer to the next one-electron operator */
+    RSPXCFun *next_oper;         /* pointer to the next exchange-corrrelation functional */
 };
 
-/* functions related to the linked list of one-electron operators */
-extern QErrorCode RSPXCFunCreate(RSPXCFun**,
-                                 const QInt,
-                                 const QInt*,
-                                 const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                 QVoid*,
-#endif
-                                 const GetXCFunMat,
-                                 const GetXCFunExp);
-extern QErrorCode RSPXCFunAdd(RSPXCFun*,
-                              const QInt,
-                              const QInt*,
-                              const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                              QVoid*,
-#endif
-                              const GetXCFunMat,
-                              const GetXCFunExp);
-extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
-extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
-extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
-                                 const QInt,
-                                 const QInt*,
-                                 const QInt*,
-                                 const QReal*,
-                                 const QInt,
-                                 QMat*[]);
-extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
-                                 const QInt,
-                                 const QInt*,
-                                 const QInt*,
-                                 const QReal*,
-                                 const QInt,
-                                 const QMat*[],
-                                 const QInt,
-                                 QReal*);
-extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
+/* functions related to the linked list of exchange-corrrelation functionals */
+//extern QErrorCode RSPXCFunCreate(RSPXCFun**,
+//                                 const QInt,
+//                                 const QInt*,
+//                                 const QInt*,
+//#if defined(OPENRSP_C_USER_CONTEXT)
+//                                 QVoid*,
+//#endif
+//                                 const GetXCFunMat,
+//                                 const GetXCFunExp);
+//extern QErrorCode RSPXCFunAdd(RSPXCFun*,
+//                              const QInt,
+//                              const QInt*,
+//                              const QInt*,
+//#if defined(OPENRSP_C_USER_CONTEXT)
+//                              QVoid*,
+//#endif
+//                              const GetXCFunMat,
+//                              const GetXCFunExp);
+//extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
+//extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
+//extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
+//                                 const QInt,
+//                                 const QInt*,
+//                                 const QInt*,
+//                                 const QInt,
+//                                 QMat*[],
+//                                 const QInt,
+//                                 QMat*[]);
+//extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
+//                                 const QInt,
+//                                 const QInt*,
+//                                 const QInt*,
+//                                 const QInt,
+//                                 QMat*[],
+//                                 const QInt,
+//                                 QMat*[],
+//                                 const QInt,
+//                                 QReal*);
+//extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
 
 #endif

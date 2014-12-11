@@ -66,7 +66,7 @@
         type(C_PTR), value, intent(in) :: xc_fun
 !        integer, intent(in) :: id_outp
         integer(kind=C_QINT), value, intent(in) :: property_size
-!        real(kind=C_QREAL), intent(out) :: rsp_tensor(?)
+        real(kind=C_QREAL), intent(out) :: rsp_tensor(2*property_size)
         integer(kind=C_QINT), value, intent(in) :: len_file_tensor
         type(C_PTR), value, intent(in) :: file_rsp_tensor
         ! local variables for converting C arguments to Fortran ones
@@ -102,9 +102,9 @@
                             two_oper,    &
                             xc_fun)
         ! allocates memory for the results
-        allocate(cmplx_rsp_tensor(), stat=ierr)
+        allocate(cmplx_rsp_tensor(property_size), stat=ierr)
         if (ierr/=0) then
-            write(6,"(A,I8)") "OpenRSPGetRSPFun_f>>?", ?
+            write(6,"(A,I8)") "OpenRSPGetRSPFun_f>> property_size", property_size
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for cmplx_rsp_tensor"
         end if
         ! gets the file name of results
@@ -171,7 +171,7 @@
         end if
         ! assigns the results
         jpert = 0
-        do ipert = 1, ?
+        do ipert = 1, property_size
             jpert = jpert+1
             rsp_tensor(jpert) = real(cmplx_rsp_tensor(ipert))
             jpert = jpert+1

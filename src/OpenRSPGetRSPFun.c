@@ -51,134 +51,43 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                             const QInt size_rsp_fun,
                             QReal *rsp_fun)
 {
-    QInt num_var_dens=1; /* */
-    QMat **var_ao_dens; /* */
-    QInt num_int;     /* */
-    QMat **val_int;    /* */
-    QChar mat_label[3];  /* */
-    QInt imat;        /* */
-
-    QErrorCode ierr;  /* error information */
+    //QErrorCode ierr;  /* error information */
     if (open_rsp->assembled==QFALSE) {
         QErrorExit(FILE_AND_LINE, "OpenRSPAssemble() should be invoked before any calculation");
     }
-
-    var_ao_dens = (QMat **)malloc(num_var_dens*sizeof(QMat*));
-    if (var_ao_dens==NULL) {
-        printf("OpenRSPGetRSPFun>> number of variable AO density matrices %"QINT_FMT"\n",
-               num_var_dens);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for var_ao_dens");
+    switch (open_rsp->elec_eom) {
+    /* density matrix-based response theory */
+    case ELEC_AO_D_MATRIX:
+        OpenRSPGetRSPFun_f(num_pert,
+                           //pert_dims,
+                           //pert_first_comp,
+                           //pert_labels,
+                           pert_freqs,
+                           kn_rule,
+                           ref_ham,
+                           ref_overlap,
+                           ref_state,
+                           open_rsp->rsp_solver,
+                           open_rsp->nuc_contrib,
+                           open_rsp->overlap,
+                           open_rsp->one_oper,
+                           open_rsp->two_oper,
+                           open_rsp->xc_fun,
+                           //id_outp,
+                           size_rsp_fun,
+                           rsp_fun,
+                           //len_file_tensor,
+                           //file_rsp_tensor)
+        break;
+    /* molecular orbital (MO) coefficient matrix-based response theory */
+    case ELEC_MO_C_MATRIX:
+        break;
+    /* couple cluster-based response theory */
+    case ELEC_COUPLED_CLUSTER:
+        break;
+    default:
+        printf("OpenRSPGetRSPFun>> type of EOM of electrons %d\n", open_rsp->elec_eom);
+        QErrorExit(FILE_AND_LINE, "invalid type of EOM of electrons");
     }
-    for (imat=0; imat<num_var_dens; imat++) {
-        var_ao_dens[imat] = (QMat *)malloc(sizeof(QMat));
-        if (var_ao_dens[imat]==NULL) {
-            printf("OpenRSPGetRSPFun>> variable AO density matrix %"QINT_FMT"\n",
-                   imat);
-            QErrorExit(FILE_AND_LINE, "failed to allocate memory for var_ao_dens[imat]");
-        }
-        ierr = QMatCreate(var_ao_dens[imat]);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatCreate");
-        ierr = QMatBlockCreate(var_ao_dens[imat], 1);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatBlockCreate");
-        ierr = QMatSetDimMat(var_ao_dens[imat], 2);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatSetDimMat");
-    }
-
-    num_int = 4;
-    val_int = (QMat **)malloc(num_int*sizeof(QMat*));
-    if (val_int==NULL) {
-        printf("OpenRSPGetRSPFun>> number of integral matrices %"QINT_FMT"\n", num_int);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for val_int");
-    }
-    for (imat=0; imat<num_int; imat++) {
-        val_int[imat] = (QMat *)malloc(sizeof(QMat));
-        if (val_int[imat]==NULL) {
-            printf("OpenRSPGetRSPFun>> integral matrix %"QINT_FMT"\n", imat);
-            QErrorExit(FILE_AND_LINE, "failed to allocate memory for val_int[imat]");
-        }
-        ierr = QMatCreate(val_int[imat]);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatCreate");
-        ierr = QMatBlockCreate(val_int[imat], 1);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatBlockCreate");
-        ierr = QMatSetDimMat(val_int[imat], 2);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatSetDimMat");
-    }
-    /* gets overlap integrals */
-    if (open_rsp->overlap!=NULL) {
-        ierr = RSPOverlapGetMat(open_rsp->overlap,
-                                num_pert,          /* bra */
-                                perturbations,
-                                pert_orders,
-                                pert_freqs,
-                                0,                 /* ket */
-                                NULL,
-                                NULL,
-                                NULL,
-                                0,                 /* total */
-                                NULL,
-                                NULL,
-                                num_int,
-                                val_int);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapGetMat");
-        mat_label[0] = 'S';
-        for (imat=0; imat<num_int; imat++) {
-            sprintf(&mat_label[1], "%"QINT_FMT"", imat);
-            ierr = QMatWrite(val_int[imat], mat_label, ASCII_VIEW);
-            QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatWrite(S)");
-        }
-    }
-    /* gets integral matrices of the linked list of one-electron operators */
-    if (open_rsp->one_oper!=NULL) {
-        ierr = RSPOneOperGetMat(open_rsp->one_oper,
-                                num_pert,
-                                perturbations,
-                                pert_orders,
-                                num_int,
-                                val_int);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOneOperGetMat");
-        mat_label[0] = 'h';
-        for (imat=0; imat<num_int; imat++) {
-            sprintf(&mat_label[1], "%"QINT_FMT"", imat);
-            ierr = QMatWrite(val_int[imat], mat_label, ASCII_VIEW);
-            QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatWrite(h)");
-        }
-    }
-    /* gets integral matrices of the linked list of two-electron operators */
-    if (open_rsp->two_oper!=NULL) {
-        ierr = RSPTwoOperGetMat(open_rsp->two_oper,
-                                num_pert,
-                                perturbations,
-                                pert_orders,
-                                num_var_dens,
-                                var_ao_dens,
-                                num_int,
-                                val_int);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperGetMat");
-        mat_label[0] = 'G';
-        for (imat=0; imat<num_int; imat++) {
-            sprintf(&mat_label[1], "%"QINT_FMT"", imat);
-            ierr = QMatWrite(val_int[imat], mat_label, ASCII_VIEW);
-            QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatWrite(G)");
-        }
-    }
-
-    for (imat=0; imat<num_var_dens; imat++) {
-        ierr = QMatDestroy(var_ao_dens[imat]);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatDestroy");
-        free(var_ao_dens[imat]);
-        var_ao_dens[imat] = NULL;
-    }
-    free(var_ao_dens);
-    var_ao_dens = NULL;
-
-    for (imat=0; imat<num_int; imat++) {
-        ierr = QMatDestroy(val_int[imat]);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling QMatDestroy");
-        free(val_int[imat]);
-        val_int[imat] = NULL;
-    }
-    free(val_int);
-    val_int = NULL;
-
     return QSUCCESS;
 }
