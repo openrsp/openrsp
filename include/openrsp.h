@@ -64,7 +64,8 @@ typedef QVoid (*GetPertRank)(const QInt,
 typedef struct {
     QBool assembled;             /* indicates if the context of response theory calculations assembled */
     /* EOM and solver */
-    ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
+    //ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
+    ElecEOMType elec_EOM_type;
     RSPSolver *rsp_solver;       /* response equation solver */
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* perturbations */

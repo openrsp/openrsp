@@ -32,7 +32,8 @@
 QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
 {
     open_rsp->assembled = QFALSE;
-    open_rsp->elec_eom = NULL;
+    //open_rsp->elec_eom = NULL;
+    open_rsp->elec_EOM_type = ELEC_AO_D_MATRIX;
     open_rsp->rsp_solver = NULL;
 #if defined(OPENRSP_PERTURBATION_FREE)
     open_rsp->num_pert = 0;
