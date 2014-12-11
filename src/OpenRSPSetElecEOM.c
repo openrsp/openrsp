@@ -45,6 +45,6 @@ QErrorCode OpenRSPSetElecEOM(OpenRSP *open_rsp, const ElecEOMType elec_EOM_type)
         printf("OpenRSPSetElecEOM>> type of EOM of electrons %d\n", elec_EOM_type);
         QErrorExit(FILE_AND_LINE, "invalid type of EOM of electrons");
     }
-    open_rsp->elec_eom = elec_EOM_type
+    open_rsp->elec_EOM_type = elec_EOM_type;
     return QSUCCESS;
 }

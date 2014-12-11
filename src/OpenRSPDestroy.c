@@ -33,11 +33,11 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
 {
     QErrorCode ierr;  /* error information */
     open_rsp->assembled = QFALSE;
-    if (open_rsp->elec_eom!=NULL) {
-/*FIXME: to implement ierr = xxDestroy(open_rsp->elec_eom); */
-        free(open_rsp->elec_eom);
-        open_rsp->elec_eom = NULL;
-    }
+//    if (open_rsp->elec_eom!=NULL) {
+///*FIXME: to implement ierr = xxDestroy(open_rsp->elec_eom); */
+//        free(open_rsp->elec_eom);
+//        open_rsp->elec_eom = NULL;
+//    }
     /* destroys the context of response equation sovler */
     if (open_rsp->rsp_solver!=NULL) {
         ierr = RSPSolverDestroy(open_rsp->rsp_solver);
