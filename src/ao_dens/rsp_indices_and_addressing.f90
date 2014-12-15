@@ -13,8 +13,8 @@ module rsp_indices_and_addressing
                              p_tuple_compare, &
                              p_tuple_getone,  &
                              p_tuple_deallocate
-  use matrix_defop, matrix => openrsp_matrix
-  use matrix_lowlevel, only: mat_init, mat_ensure_alloc
+  !use matrix_defop, matrix => openrsp_matrix
+  !use matrix_lowlevel, only: mat_init, mat_ensure_alloc
   use qmatrix
 
   implicit none

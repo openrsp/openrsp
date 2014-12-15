@@ -32,8 +32,8 @@
 */
 QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
 {
-    QBool ham_created;  /* indicates if Hamiltonian created or not */
-    QErrorCode ierr;    /* error information */
+    QErrorCode ierr;  /* error information */
+    open_rsp->assembled = QFALSE;
 /*FIXME: to implement ierr = xxAssemble(open_rsp->elec_eom); */
     /* assembles the context of response equation solver */
     if (open_rsp->rsp_solver!=NULL) {
@@ -60,21 +60,15 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
         ierr = RSPOverlapAssemble(open_rsp->overlap);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapAssemble");
     }
-    ham_created = QFALSE;
     /* assembles the linked list of one-electron operators */
     if (open_rsp->one_oper!=NULL) {
         ierr = RSPOneOperAssemble(open_rsp->one_oper);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOneOperAssemble");
-        ham_created = QTRUE;
     }
     /* assembles the linked list of two-electron operators */
     if (open_rsp->two_oper!=NULL) {
         ierr = RSPTwoOperAssemble(open_rsp->two_oper);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperAssemble");
-        ham_created = QTRUE;
-    }
-    if (ham_created==QFALSE) {
-        QErrorExit(FILE_AND_LINE, "Hamiltonian not created");
     }
     open_rsp->assembled = QTRUE;
     return QSUCCESS;

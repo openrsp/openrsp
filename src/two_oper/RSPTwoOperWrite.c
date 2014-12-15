@@ -26,10 +26,10 @@
     \author Bin Gao
     \date 2014-08-06
     \param[RSPTwoOper:struct]{in} two_oper the linked list of two-electron operators
-    \param[FILE]{in} fp_oper file pointer
+    \param[FILE]{inout} fp_oper file pointer
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPTwoOperWrite(RSPTwoOper *two_oper, FILE * fp_oper)
+QErrorCode RSPTwoOperWrite(const RSPTwoOper *two_oper, FILE *fp_oper)
 {
     QInt ioper;            /* incremental recorder over opertors */
     RSPTwoOper *cur_oper;  /* current operator */

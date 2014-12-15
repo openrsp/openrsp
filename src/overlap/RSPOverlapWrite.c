@@ -26,10 +26,10 @@
     \author Bin Gao
     \date 2014-08-05
     \param[RSPOverlap:struct]{in} overlap the overlap integrals
-    \param[FILE]{in} fp_overlap file pointer
+    \param[FILE]{inout} fp_overlap file pointer
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPOverlapWrite(RSPOverlap *overlap, FILE * fp_overlap)
+QErrorCode RSPOverlapWrite(const RSPOverlap *overlap, FILE *fp_overlap)
 {
     QInt ipert;  /* incremental recorder over perturbations */
     fprintf(fp_overlap,

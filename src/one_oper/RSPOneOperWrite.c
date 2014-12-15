@@ -26,10 +26,10 @@
     \author Bin Gao
     \date 2014-07-30
     \param[RSPOneOper:struct]{in} one_oper the linked list of one-electron operators
-    \param[FILE]{in} fp_oper file pointer
+    \param[FILE]{inout} fp_oper file pointer
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPOneOperWrite(RSPOneOper *one_oper, FILE * fp_oper)
+QErrorCode RSPOneOperWrite(const RSPOneOper *one_oper, FILE *fp_oper)
 {
     QInt ioper;            /* incremental recorder over opertors */
     RSPOneOper *cur_oper;  /* current operator */

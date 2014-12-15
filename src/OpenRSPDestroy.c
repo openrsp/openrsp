@@ -87,6 +87,8 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
     }
     /* destroys the context of (derivatives of) nuclear repulsion and nuclei-field interaction */
     if (open_rsp->nuc_contrib!=NULL) {
+        ierr = RSPNucContribDestroy(open_rsp->nuc_contrib);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucContribDestroy");
         free(open_rsp->nuc_contrib);
         open_rsp->nuc_contrib = NULL;
     }
