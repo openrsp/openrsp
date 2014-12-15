@@ -33,8 +33,8 @@
 */
 QErrorCode RSPNucContribCreate(RSPNucContrib *nuc_contrib,
                                const QInt num_atoms,
-                               const QInt *atom_coord,
-                               const QInt *atom_charge)
+                               const QReal *atom_coord,
+                               const QReal *atom_charge)
 {
     QInt iatom,ixyz;
     if (num_atoms>0) {

@@ -25,7 +25,7 @@
 /*% \brief gets expectation values of the linked list of one-electron operators
     \author Bin Gao
     \date 2014-08-03
-    \param[RSPOneOper:struct]{inout} one_oper the linked list of one-electron operators
+    \param[RSPOneOper:struct]{in} one_oper the linked list of one-electron operators
     \param[QInt:int]{in} num_pert number of perturbations
     \param[QInt:int]{in} perturbations the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations

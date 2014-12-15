@@ -84,8 +84,8 @@ extern QErrorCode RSPTwoOperAdd(RSPTwoOper*,
                                 const GetTwoOperMat,
                                 const GetTwoOperExp);
 extern QErrorCode RSPTwoOperAssemble(RSPTwoOper*);
-extern QErrorCode RSPTwoOperWrite(const RSPTwoOper*,FILE*);
-extern QErrorCode RSPTwoOperGetMat(const RSPTwoOper*,
+extern QErrorCode RSPTwoOperWrite(RSPTwoOper*,FILE*);
+extern QErrorCode RSPTwoOperGetMat(RSPTwoOper*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,
@@ -93,7 +93,7 @@ extern QErrorCode RSPTwoOperGetMat(const RSPTwoOper*,
                                    QMat*[],
                                    const QInt,
                                    QMat*[]);
-extern QErrorCode RSPTwoOperGetExp(const RSPTwoOper*,
+extern QErrorCode RSPTwoOperGetExp(RSPTwoOper*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,

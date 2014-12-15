@@ -34,14 +34,17 @@
                              OpenRSPCreate,           &
                              OpenRSPSetSolver,        &
 #if defined(OPENRSP_PERTURBATION_FREE)
-                               OpenRSPSetPerturbations, &
+                             OpenRSPSetPerturbations, &
 #endif
-                               OpenRSPSetPDBS,          &
-                               OpenRSPAddOneOper,       &
-                               OpenRSPAssemble,         &
-                               OpenRSPWrite,            &
-                               OpenRSPGetRSPFun,        &
-                               OpenRSPDestroy
+                             OpenRSPSetPDBS,          &
+                             OpenRSPAddOneOper,       &
+                             OpenRSPSetAtoms,         &
+                             OpenRSPSetDipoleOrigin,  &
+                             OpenRSPSetGaugeOrigin,   &
+                             OpenRSPAssemble,         &
+                             OpenRSPWrite,            &
+                             OpenRSPGetRSPFun,        &
+                             OpenRSPDestroy
         implicit none
         ! IO of standard output
 #if defined(OPENRSP_TEST_EXECUTABLE)
@@ -104,6 +107,13 @@
 #endif
         external get_one_oper_mat
         external get_one_oper_exp
+        ! atoms and origins
+        integer(kind=QINT), parameter :: num_atoms = 2
+        real(kind=QREAL), parameter :: atom_coord(3,num_atoms) = &
+            reshape((/0.0,0.0,0.0, 1.0,1.0,1.0/), (/3_QINT,num_atoms/))
+        real(kind=QREAL), parameter :: atom_charge(num_atoms) = (/1.0, 2.0/)
+        real(kind=QREAL), parameter :: dipole_origin(3) = (/0.1,0.1,0.1/)
+        real(kind=QREAL), parameter :: gauge_origin(3) = (/0.2,0.2,0.2/)
         ! referenced state
         type(QMat) ref_ham
         type(QMat) ref_state
@@ -182,6 +192,21 @@
                                  get_one_oper_exp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPAddOneOper(V) passed"
+
+        ierr = OpenRSPSetAtoms(open_rsp,   &
+                               num_atoms,  &
+                               atom_coord, &
+                               atom_charge)
+        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+        write(io_log,100) "OpenRSPSetAtoms() passed"
+
+        ierr = OpenRSPSetDipoleOrigin(open_rsp, dipole_origin)
+        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+        write(io_log,100) "OpenRSPSetDipoleOrigin() passed"
+
+        ierr = OpenRSPSetGaugeOrigin(open_rsp, gauge_origin)
+        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+        write(io_log,100) "OpenRSPSetGaugeOrigin() passed"
 
         ierr = OpenRSPAssemble(open_rsp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)

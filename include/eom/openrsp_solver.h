@@ -54,8 +54,8 @@ extern QErrorCode RSPSolverCreate(RSPSolver*,
 #endif
                                   const GetRSPSolution);
 extern QErrorCode RSPSolverAssemble(RSPSolver*);
-extern QErrorCode RSPSolverWrite(RSPSolver*,FILE*);
-extern QErrorCode RSPSolverGetSolution(RSPSolver*,
+extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
+extern QErrorCode RSPSolverGetSolution(const RSPSolver*,
                                        const QMat*,
                                        const QMat*,
                                        const QMat*,

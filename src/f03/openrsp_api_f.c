@@ -147,6 +147,41 @@ QErrorCode f03_api_OpenRSPAddTwoOper(QVoid **open_rsp,
     return ierr;
 }
 
+QErrorCode f03_api_OpenRSPSetAtoms(QVoid **open_rsp,
+                                   const QInt num_atoms,
+                                   const QReal *atom_coord,
+                                   const QReal *atom_charge)
+{
+    OpenRSP *c_open_rsp;
+    QErrorCode ierr;
+    c_open_rsp = (OpenRSP *)(*open_rsp);
+    ierr = OpenRSPSetAtoms(c_open_rsp,
+                           num_atoms,   
+                           atom_coord,  
+                           atom_charge);
+    return ierr;
+}
+
+QErrorCode f03_api_OpenRSPSetDipoleOrigin(QVoid **open_rsp,
+                                          const QReal *dipole_origin)
+{
+    OpenRSP *c_open_rsp;
+    QErrorCode ierr;
+    c_open_rsp = (OpenRSP *)(*open_rsp);
+    ierr = OpenRSPSetDipoleOrigin(c_open_rsp, dipole_origin);
+    return ierr;
+}
+
+QErrorCode f03_api_OpenRSPSetGaugeOrigin(QVoid **open_rsp,
+                                          const QReal *gauge_origin)
+{
+    OpenRSP *c_open_rsp;
+    QErrorCode ierr;
+    c_open_rsp = (OpenRSP *)(*open_rsp);
+    ierr = OpenRSPSetGaugeOrigin(c_open_rsp, gauge_origin);
+    return ierr;
+}
+
 QErrorCode f03_api_OpenRSPAssemble(QVoid **open_rsp)
 {
     OpenRSP *c_open_rsp;

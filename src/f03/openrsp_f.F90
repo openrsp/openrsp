@@ -89,7 +89,9 @@ module openrsp_f
     public :: OpenRSPAddOneOper
     public :: OpenRSPAddTwoOper
     !public :: OpenRSPAddXCFun
-    !public :: OpenRSPAddNucFun
+    public :: OpenRSPSetAtoms
+    public :: OpenRSPSetDipoleOrigin
+    public :: OpenRSPSetGaugeOrigin
     public :: OpenRSPAssemble
     public :: OpenRSPWrite
     public :: OpenRSPGetRSPFun
@@ -190,6 +192,31 @@ module openrsp_f
             type(C_FUNPTR), value, intent(in) :: get_two_oper_mat
             type(C_FUNPTR), value, intent(in) :: get_two_oper_exp
         end function f03_api_OpenRSPAddTwoOper
+        integer(C_INT) function f03_api_OpenRSPSetAtoms(open_rsp,    &
+                                                        num_atoms,   &
+                                                        atom_coord,  &
+                                                        atom_charge) &
+            bind(C, name="f03_api_OpenRSPSetAtoms")
+            use, intrinsic :: iso_c_binding
+            type(C_PTR), intent(inout) :: open_rsp
+            integer(kind=C_QINT), value, intent(in) :: num_atoms
+            real(kind=C_QREAL), intent(in) :: atom_coord(3*num_atoms)
+            real(kind=C_QREAL), intent(in) :: atom_charge(num_atoms)
+        end function f03_api_OpenRSPSetAtoms
+        integer(C_INT) function f03_api_OpenRSPSetDipoleOrigin(open_rsp,      &
+                                                               dipole_origin) &
+            bind(C, name="f03_api_OpenRSPSetDipoleOrigin")
+            use, intrinsic :: iso_c_binding
+            type(C_PTR), intent(inout) :: open_rsp
+            real(kind=C_QREAL), intent(in) :: dipole_origin(3)
+        end function f03_api_OpenRSPSetDipoleOrigin
+        integer(C_INT) function f03_api_OpenRSPSetGaugeOrigin(open_rsp,     &
+                                                              gauge_origin) &
+            bind(C, name="f03_api_OpenRSPSetGaugeOrigin")
+            use, intrinsic :: iso_c_binding
+            type(C_PTR), intent(inout) :: open_rsp
+            real(kind=C_QREAL), intent(in) :: gauge_origin(3)
+        end function f03_api_OpenRSPSetGaugeOrigin
         integer(C_INT) function f03_api_OpenRSPAssemble(open_rsp) &
             bind(C, name="f03_api_OpenRSPAssemble")
             use, intrinsic :: iso_c_binding
@@ -886,6 +913,35 @@ module openrsp_f
                                          c_funloc(RSPTwoOperGetMat_f),     &
                                          c_funloc(RSPTwoOperGetExp_f))
     end function OpenRSPAddTwoOper
+
+    function OpenRSPSetAtoms(open_rsp,   &
+                             num_atoms,  &
+                             atom_coord, &
+                             atom_charge) result(ierr)
+        integer(kind=4) :: ierr
+        type(OpenRSP), intent(inout) :: open_rsp
+        integer(kind=QINT), intent(in) :: num_atoms
+        real(kind=QREAL), intent(in) :: atom_coord(3,num_atoms)
+        real(kind=QREAL), intent(in) :: atom_charge(num_atoms)
+        ierr = f03_api_OpenRSPSetAtoms(open_rsp%c_rsp, &
+                                       num_atoms,      &
+                                       atom_coord,     &
+                                       atom_charge)
+    end function OpenRSPSetAtoms
+
+    function OpenRSPSetDipoleOrigin(open_rsp, dipole_origin) result(ierr)
+        integer(kind=4) :: ierr
+        type(OpenRSP), intent(inout) :: open_rsp
+        real(kind=QREAL), intent(in) :: dipole_origin(3)
+        ierr = f03_api_OpenRSPSetDipoleOrigin(open_rsp%c_rsp, dipole_origin)
+    end function OpenRSPSetDipoleOrigin
+
+    function OpenRSPSetGaugeOrigin(open_rsp, gauge_origin) result(ierr)
+        integer(kind=4) :: ierr
+        type(OpenRSP), intent(inout) :: open_rsp
+        real(kind=QREAL), intent(in) :: gauge_origin(3)
+        ierr = f03_api_OpenRSPSetGaugeOrigin(open_rsp%c_rsp, gauge_origin)
+    end function OpenRSPSetGaugeOrigin
 
     function OpenRSPAssemble(open_rsp) result(ierr)
         integer(kind=4) :: ierr
