@@ -63,10 +63,6 @@ typedef QVoid (*GetPertRank)(const QInt,
 /* context of response theory calculations */
 typedef struct {
     QBool assembled;             /* indicates if the context of response theory calculations assembled */
-    /* EOM and solver */
-    //ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
-    ElecEOMType elec_EOM_type;
-    RSPSolver *rsp_solver;       /* response equation solver */
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* perturbations */
     QInt num_pert;               /* number of all perturbations involved in calculations */
@@ -80,6 +76,10 @@ typedef struct {
     GetPertComp get_pert_comp;   /* user specified function for getting components of a perturbation */
     GetPertRank get_pert_rank;   /* user specified function for getting rank of a perturbation */
 #endif
+    /* EOM and solver */
+    //ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
+    ElecEOMType elec_EOM_type;
+    RSPSolver *rsp_solver;       /* response equation solver */
     /* Hamiltonian */
     RSPOverlap *overlap;         /* overlap integrals */
     RSPOneOper *one_oper;        /* linked list of one-electron operators */
@@ -136,7 +136,12 @@ extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
                                     const GetTwoOperMat,
                                     const GetTwoOperExp);
 //extern QErrorCode OpenRSPAddXCFun(OpenRSP*,);
-//extern QErrorCode OpenRSPSetNucContrib(OpenRSP*,);
+extern QErrorCode OpenRSPSetAtoms(OpenRSP*,
+                                  const QInt,
+                                  const QReal*,
+                                  const QReal*);
+extern QErrorCode OpenRSPSetDipoleOrigin(OpenRSP*,const QReal[3]);
+extern QErrorCode OpenRSPSetGaugeOrigin(OpenRSP*,const QReal[3]);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);
 extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
 extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,

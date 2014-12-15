@@ -27,25 +27,30 @@
 /* QMatrix library */
 #include "qmatrix.h"
 
-typedef QVoid (*GetNucContrib)(const QInt,
-                               const QReal*,
-                               const QReal*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
-#endif
-                               QReal*);
-
 /* context of (derivatives of) nuclear repulsion and nuclei-field interaction */
 typedef struct {
-    QInt num_atoms;                 /* number of atoms */
-    QReal *atom_coord;              /* coordinates of atoms */
-    QReal *atom_charge;             /* charges of atoms */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback function context */
-#endif
-    GetNucContrib get_nuc_contrib;  /* user specified function for getting nuclear contributions */
+    QInt num_atoms;          /* number of atoms */
+    QReal *atom_coord;       /* coordinates of atoms */
+    QReal *atom_charge;      /* charges of atoms */
+    QReal dipole_origin[3];  /* dipole origin */
+    QReal gauge_origin[3];   /* gauge origin */
 } RSPNucContrib;
 
 /* functions related to the (derivatives of) nuclear repulsion and nuclei-field interaction */
+extern QErrorCode RSPNucContribCreate(RSPNucContrib*,
+                                      const QInt,
+                                      const QReal*,
+                                      const QReal*);
+extern QErrorCode RSPNucContribSetDipoleOrigin(RSPNucContrib*,const QReal[3]);
+extern QErrorCode RSPNucContribSetGaugeOrigin(RSPNucContrib*,const QReal[3]);
+extern QErrorCode RSPNucContribWrite(const RSPNucContrib*,FILE*);
+extern QErrorCode RSPNucContribGet(const RSPNucContrib*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt*,
+                                   const QInt,
+                                   QReal*);
+extern QErrorCode RSPNucContribGetNumAtoms(const RSPNucContrib*,QInt*);
+extern QErrorCode RSPNucContribDestroy(RSPNucContrib*);
 
 #endif

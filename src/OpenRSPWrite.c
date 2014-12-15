@@ -79,6 +79,11 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
         ierr = RSPTwoOperWrite(open_rsp->two_oper, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperWrite");
     }
+    if (open_rsp->nuc_contrib!=NULL) {
+        fprintf(fp_rsp, "OpenRSPWrite>> nuclear contributions\n");
+        ierr = RSPNucContribWrite(open_rsp->nuc_contrib, fp_rsp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucContribWrite");
+    }
     /* closes the file */
     fclose(fp_rsp);
     return QSUCCESS;

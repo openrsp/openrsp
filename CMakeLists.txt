@@ -112,32 +112,36 @@ IF(OPENRSP_F03_API)
 ENDIF()
 
 # Fortran source codes, to be merged with C source codes
+#SET(OPENRSP_SRCS
+#    ${OPENRSP_SRCS}
+#    src/interfaces/dalton_ifc.F90
+#    src/interfaces/interface_1el.F90
+#    src/interfaces/interface_1el_dirac.F90
+#    src/interfaces/interface_2el.F90
+#    src/interfaces/interface_basis.F90
+#    src/interfaces/interface_dirac_gen1int.F90
+#    src/interfaces/interface_f77_memory.F90
+#    src/interfaces/interface_io.F90
+#    src/interfaces/interface_molecule.F90
+#    src/interfaces/interface_nuclear.F90
+#    src/interfaces/interface_rsp_solver.F90
+#    src/interfaces/interface_scf.F90
+#    src/interfaces/interface_xc.F90
+#    src/interfaces/interface_pelib.f90)
+#SET(OPENRSP_SRCS
+#    ${OPENRSP_SRCS}
+#    src/legacy/legacy_birefringence.f90
+#    src/legacy/legacy_contributions.F90
+#    src/legacy/legacy_openrsp.f90
+#    src/legacy/legacy_openrsp_driver.f90
+#    src/legacy/legacy_properties.F90
+#    src/legacy/legacy_vibrational_properties.f90
+#    src/legacy/rsp_equations_old.F90)
 SET(OPENRSP_SRCS
     ${OPENRSP_SRCS}
     src/input/openrsp_input_reader.F90
     src/input/openrsp_cfg.F90
     src/input/parse_input.F90
-    src/interfaces/dalton_ifc.F90
-    src/interfaces/interface_1el.F90
-    src/interfaces/interface_1el_dirac.F90
-    src/interfaces/interface_2el.F90
-    src/interfaces/interface_basis.F90
-    src/interfaces/interface_dirac_gen1int.F90
-    src/interfaces/interface_f77_memory.F90
-    src/interfaces/interface_io.F90
-    src/interfaces/interface_molecule.F90
-    src/interfaces/interface_nuclear.F90
-    src/interfaces/interface_rsp_solver.F90
-    src/interfaces/interface_scf.F90
-    src/interfaces/interface_xc.F90
-    src/interfaces/interface_pelib.f90
-    src/legacy/legacy_birefringence.f90
-    src/legacy/legacy_contributions.F90
-    src/legacy/legacy_openrsp.f90
-    src/legacy/legacy_openrsp_driver.f90
-    src/legacy/legacy_properties.F90
-    src/legacy/legacy_vibrational_properties.f90
-    src/legacy/rsp_equations_old.F90
     src/openrsp.f90
     src/openrsp_efishgcid.f90
     src/openrsp_general_pv2f.f90
@@ -155,6 +159,9 @@ SET(OPENRSP_SRCS
     src/ao_dens/rsp_perturbed_sdf.f90
     src/ao_dens/rsp_property_caching.f90
     src/ao_dens/rsp_sdf_caching.f90
+    src/ao_dens/rsp_pert_table.F90
+    src/ao_dens/adapter/openrsp_callback_f.F90
+    src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90
     src/vib_pv_contribs.f90)
 
 # ??

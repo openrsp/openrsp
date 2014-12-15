@@ -102,13 +102,13 @@ module rsp_general
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
                                    get_xc_exp, id_outp, property_size, rsp_tensor, file_id)
+    use rsp_pert_table, only: CHAR_PERT_TABLE
 
     implicit none
 
     integer, intent(in) :: num_perts, id_outp
     integer, dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
     integer, dimension(num_perts), intent(in) :: pert_labels
-    character(4), dimension(5) :: plab_table
     integer :: i, j, num_blks, property_size
     integer, dimension(2) :: kn
     character, optional, dimension(20) :: file_id
@@ -124,24 +124,21 @@ module rsp_general
     type(qmat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
 
-    plab_table = (/'GEO ', 'EL  ', 'ELGR ', 'MAG0', 'MAG ' /)
+    perturbations%n_perturbations = num_perts
+    allocate(perturbations%pdim(num_perts))
+!     allocate(perturbations%pfcomp(num_perts))
+    allocate(perturbations%plab(num_perts))
+    allocate(perturbations%pid(num_perts))
+    allocate(perturbations%freq(num_perts))
+    perturbations%pdim = pert_dims
+!    %perturbations%perts%pfcomp = pert_first_comp
+
+    do i = 1, num_perts
+         perturbations%plab(i) = CHAR_PERT_TABLE(pert_labels(i))
+    end do
     
-     perturbations%n_perturbations = num_perts
-     allocate(perturbations%pdim(num_perts))
-!      allocate(perturbations%pfcomp(num_perts))
-     allocate(perturbations%plab(num_perts))
-     allocate(perturbations%pid(num_perts))
-     allocate(perturbations%freq(num_perts))
-     perturbations%pdim = pert_dims
-!     %perturbations%perts%pfcomp = pert_first_comp
-
-do i = 1, num_perts
-     perturbations%plab(i) = plab_table(pert_labels(i))
-
-end do
-     
-     perturbations%pid = (/(i, i = 1, num_perts)/)
-     perturbations%freq = pert_freqs
+    perturbations%pid = (/(i, i = 1, num_perts)/)
+    perturbations%freq = pert_freqs
 
     write(id_outp,*) ' '
     write(id_outp,*) 'OpenRSP lib called'

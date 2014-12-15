@@ -25,12 +25,22 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperGetMat.c
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperGetExp.c
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperDestroy.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribCreate.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribSetDipoleOrigin.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribSetGaugeOrigin.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribWrite.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribGet.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribGetNumAtoms.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribDestroy.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPCreate.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetElecEOM.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetSolver.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetPDBS.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddOneOper.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddTwoOper.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetAtoms.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetDipoleOrigin.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetGaugeOrigin.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAssemble.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPWrite.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPGetRSPFun.c

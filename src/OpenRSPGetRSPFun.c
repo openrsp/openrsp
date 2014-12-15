@@ -59,9 +59,8 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     /* density matrix-based response theory */
     case ELEC_AO_D_MATRIX:
         OpenRSPGetRSPFun_f(num_pert,
-                           //pert_dims,
-                           //pert_first_comp,
-                           //pert_labels,
+                           perturbations,
+                           pert_orders,
                            pert_freqs,
                            kn_rule,
                            ref_ham,
@@ -75,9 +74,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                            open_rsp->xc_fun,
                            //id_outp,
                            size_rsp_fun,
-                           rsp_fun,
-                           //len_file_tensor,
-                           //file_rsp_tensor)
+                           rsp_fun)
         break;
     /* molecular orbital (MO) coefficient matrix-based response theory */
     case ELEC_MO_C_MATRIX:

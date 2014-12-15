@@ -80,14 +80,14 @@ extern QErrorCode RSPOneOperAdd(RSPOneOper*,
                                 const GetOneOperMat,
                                 const GetOneOperExp);
 extern QErrorCode RSPOneOperAssemble(RSPOneOper*);
-extern QErrorCode RSPOneOperWrite(RSPOneOper*,FILE*);
-extern QErrorCode RSPOneOperGetMat(RSPOneOper*,
+extern QErrorCode RSPOneOperWrite(const RSPOneOper*,FILE*);
+extern QErrorCode RSPOneOperGetMat(const RSPOneOper*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,
                                    const QInt,
                                    QMat*[]);
-extern QErrorCode RSPOneOperGetExp(RSPOneOper*,
+extern QErrorCode RSPOneOperGetExp(const RSPOneOper*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,

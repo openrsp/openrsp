@@ -14,27 +14,26 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPSolverWrite().
+   This file implements the function RSPNucContribSetGaugeOrigin().
 
-   2014-08-06, Bin Gao:
+   2014-12-15, Bin Gao:
    * first version
 */
 
-#include "eom/openrsp_solver.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
-/*% \brief writes the context of response equation solver
+/*% \brief sets the coordinates of gauge origin
     \author Bin Gao
-    \date 2014-08-06
-    \param[RSPSolver:struct]{in} rsp_solver the context of response equation solver
-    \param[FILE]{inout} fp_solver file pointer
+    \date 2014-12-15
+    \param[RSPNucContrib:struct]{inout} nuc_contrib the context of nuclear contributions
+    \param[QReal:real]{in} gauge_origin coordinates of gauge origin
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPSolverWrite(const RSPSolver *rsp_solver, FILE *fp_solver)
+QErrorCode RSPNucContribSetGaugeOrigin(RSPNucContrib *nuc_contrib,
+                                       const QReal gauge_origin[3])
 {
-#if defined(OPENRSP_C_USER_CONTEXT)
-    if (rsp_solver->user_ctx!=NULL) {
-        fprintf(fp_solver, "RSPSolverWrite>> user-defined function context given\n");
-    }
-#endif
+    nuc_contrib->gauge_origin[0] = gauge_origin[0];
+    nuc_contrib->gauge_origin[1] = gauge_origin[1];
+    nuc_contrib->gauge_origin[2] = gauge_origin[2];
     return QSUCCESS;
 }

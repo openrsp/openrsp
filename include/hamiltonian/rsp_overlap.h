@@ -81,8 +81,8 @@ extern QErrorCode RSPOverlapCreate(RSPOverlap*,
                                    const GetOverlapMat,
                                    const GetOverlapExp);
 extern QErrorCode RSPOverlapAssemble(RSPOverlap*);
-extern QErrorCode RSPOverlapWrite(RSPOverlap*,FILE*);
-extern QErrorCode RSPOverlapGetMat(RSPOverlap*,
+extern QErrorCode RSPOverlapWrite(const RSPOverlap*,FILE*);
+extern QErrorCode RSPOverlapGetMat(const RSPOverlap*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,
@@ -96,7 +96,7 @@ extern QErrorCode RSPOverlapGetMat(RSPOverlap*,
                                    const QInt*,
                                    const QInt,
                                    QMat*[]);
-extern QErrorCode RSPOverlapGetExp(RSPOverlap*,
+extern QErrorCode RSPOverlapGetExp(const RSPOverlap*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,

@@ -28,7 +28,8 @@ module openrsp_callback_f
     use, intrinsic :: iso_c_binding
     use qmatrix, only: QINT,  &
                        QREAL, &
-                       QMat
+                       QMat,  &
+                       QSUCCESS
 
     implicit none
 
@@ -152,6 +153,9 @@ module openrsp_callback_f
                                 pert_orders,       &
                                 num_int,           &
                                 c_val_int)
+        if (ierr/=QSUCCESS) then
+            stop "f_callback_RSPOneOperGetMat>> failed to call RSPOneOperGetMat"
+        end if
         deallocate(c_val_int)
     end subroutine f_callback_RSPOneOperGetMat
 

@@ -14,27 +14,24 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPSolverWrite().
+   This file implements the function RSPNucContribGetNumAtoms().
 
-   2014-08-06, Bin Gao:
+   2014-12-15, Bin Gao:
    * first version
 */
 
-#include "eom/openrsp_solver.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
-/*% \brief writes the context of response equation solver
+/*% \brief gets the number of atoms
     \author Bin Gao
-    \date 2014-08-06
-    \param[RSPSolver:struct]{in} rsp_solver the context of response equation solver
-    \param[FILE]{inout} fp_solver file pointer
+    \date 2014-12-15
+    \param[RSPNucContrib:struct]{in} nuc_contrib the context of nuclear contributions
+    \param[QInt:int]{out} num_atoms number of atoms
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPSolverWrite(const RSPSolver *rsp_solver, FILE *fp_solver)
+QErrorCode RSPNucContribGetNumAtoms(const RSPNucContrib *nuc_contrib,
+                                    QInt *num_atoms)
 {
-#if defined(OPENRSP_C_USER_CONTEXT)
-    if (rsp_solver->user_ctx!=NULL) {
-        fprintf(fp_solver, "RSPSolverWrite>> user-defined function context given\n");
-    }
-#endif
+    *num_atoms = nuc_contrib->num_atoms;
     return QSUCCESS;
 }

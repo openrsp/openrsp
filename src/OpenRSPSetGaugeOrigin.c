@@ -14,27 +14,29 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPSolverWrite().
+   This file implements the function OpenRSPSetGaugeOrigin().
 
-   2014-08-06, Bin Gao:
+   2014-12-15, Bin Gao:
    * first version
 */
 
-#include "eom/openrsp_solver.h"
+#include "openrsp.h"
 
-/*% \brief writes the context of response equation solver
+/*% \brief sets the coordinates of gauge origin
     \author Bin Gao
-    \date 2014-08-06
-    \param[RSPSolver:struct]{in} rsp_solver the context of response equation solver
-    \param[FILE]{inout} fp_solver file pointer
+    \date 2014-12-15
+    \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+    \param[QReal:real]{in} gauge_origin coordinates of gauge origin
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPSolverWrite(const RSPSolver *rsp_solver, FILE *fp_solver)
+QErrorCode OpenRSPSetGaugeOrigin(OpenRSP *open_rsp,
+                                 const QReal gauge_origin[3])
 {
-#if defined(OPENRSP_C_USER_CONTEXT)
-    if (rsp_solver->user_ctx!=NULL) {
-        fprintf(fp_solver, "RSPSolverWrite>> user-defined function context given\n");
+    QErrorCode ierr;  /* error information */
+    if (open_rsp->nuc_contrib==NULL) {
+        QErrorExit(FILE_AND_LINE, "OpenRSPSetAtoms() should be called at first");
     }
-#endif
+    ierr = RSPNucContribSetGaugeOrigin(open_rsp->nuc_contrib, gauge_origin);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucContribSetGaugeOrigin");
     return QSUCCESS;
 }
