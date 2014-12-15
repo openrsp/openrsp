@@ -33,8 +33,8 @@
 */
 QErrorCode OpenRSPSetAtoms(OpenRSP *open_rsp,
                            const QInt num_atoms,
-                           const QInt *atom_coord,
-                           const QInt *atom_charge)
+                           const QReal *atom_coord,
+                           const QReal *atom_charge)
 {
     QErrorCode ierr;  /* error information */
     /* creates the context of nuclear contributions */

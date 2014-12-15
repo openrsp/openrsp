@@ -25,7 +25,7 @@
 /*% \brief gets integral matrices of the linked list of two-electron operators
     \author Bin Gao
     \date 2014-08-06
-    \param[RSPTwoOper:struct]{inout} two_oper the linked list of two-electron operators
+    \param[RSPTwoOper:struct]{in} two_oper the linked list of two-electron operators
     \param[QInt:int]{in} num_pert number of perturbations
     \param[QInt:int]{in} perturbations the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations

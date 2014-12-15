@@ -69,6 +69,12 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *ext_field_lab = "EXT_FIELD";
 #endif
+    /* atoms and origins */
+    QInt num_atoms = 2;
+    QReal atom_coord[] = {0.0,0.0,0.0, 1.0,1.0,1.0};
+    QReal atom_charge[] = {1.0, 2.0};
+    QReal dipole_origin[3] = {0.1,0.1,0.1};
+    QReal gauge_origin[3] = {0.2,0.2,0.2};
     /* referenced state */
     QMat ref_ham;
     QMat ref_state;
@@ -146,6 +152,21 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
                              &get_one_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(V)");
     fprintf(fp_log, "test_c_OpenRSP>> OpenRSPAddOneOper(V) passed\n");
+
+    ierr = OpenRSPSetAtoms(&open_rsp,
+                           num_atoms,
+                           atom_coord,
+                           atom_charge);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetAtoms");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetAtoms() passed\n");
+
+    ierr = OpenRSPSetDipoleOrigin(&open_rsp, dipole_origin);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetDipoleOrigin");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetDipoleOrigin() passed\n");
+
+    ierr = OpenRSPSetGaugeOrigin(&open_rsp, gauge_origin);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetGaugeOrigin");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetGaugeOrigin() passed\n");
 
     ierr = OpenRSPAssemble(&open_rsp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAssemble");

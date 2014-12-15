@@ -29,7 +29,7 @@
     \param[FILE]{inout} fp_oper file pointer
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPOneOperWrite(const RSPOneOper *one_oper, FILE *fp_oper)
+QErrorCode RSPOneOperWrite(RSPOneOper *one_oper, FILE *fp_oper)
 {
     QInt ioper;            /* incremental recorder over opertors */
     RSPOneOper *cur_oper;  /* current operator */

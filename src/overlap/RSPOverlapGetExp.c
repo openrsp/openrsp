@@ -25,7 +25,7 @@
 /*% \brief gets expectation values of the overlap integrals
     \author Bin Gao
     \date 2014-08-05
-    \param[RSPOverlap:struct]{inout} overlap the overlap integrals
+    \param[RSPOverlap:struct]{in} overlap the overlap integrals
     \param[QInt:int]{in} bra_num_pert number of perturbations on the bra
     \param[QInt:int]{in} bra_perturbations the perturbations on the bra
     \param[QInt:int]{in} bra_pert_orders orders of the perturbations on the bra
@@ -43,7 +43,7 @@
     \param[QReal:real]{out} val_exp the expectation values
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPOverlapGetExp(RSPOverlap *overlap,
+QErrorCode RSPOverlapGetExp(const RSPOverlap *overlap,
                             const QInt bra_num_pert,
                             const QInt *bra_perturbations,
                             const QInt *bra_pert_orders,

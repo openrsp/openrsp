@@ -25,7 +25,7 @@
 /*% \brief solves the response equation
     \author Bin Gao
     \date 2014-08-06
-    \param[RSPSolver:struct]{inout} rsp_solver the context of response equation solver
+    \param[RSPSolver:struct]{in} rsp_solver the context of response equation solver
     \param[QMat:struct]{in} ref_ham Hamiltonian of referenced state
     \param[QMat:struct]{in} ref_state electronic state of referenced state
     \param[QMat:struct]{in} ref_overlap overlap integral matrix of referenced state
@@ -36,7 +36,7 @@
     \param[QMat:struct]{out} rsp_param solved response parameters, size is \var{size_pert}*\var{num_freq_sums}
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPSolverGetSolution(RSPSolver *rsp_solver,
+QErrorCode RSPSolverGetSolution(const RSPSolver *rsp_solver,
                                 const QMat *ref_ham,
                                 const QMat *ref_state,
                                 const QMat *ref_overlap,

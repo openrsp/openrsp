@@ -84,8 +84,8 @@ struct RSPXCFun {
 //                              const GetXCFunMat,
 //                              const GetXCFunExp);
 //extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
-//extern QErrorCode RSPXCFunWrite(const RSPXCFun*,FILE*);
-//extern QErrorCode RSPXCFunGetMat(const RSPXCFun*,
+//extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
+//extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
 //                                 const QInt,
 //                                 const QInt*,
 //                                 const QInt*,
@@ -93,7 +93,7 @@ struct RSPXCFun {
 //                                 QMat*[],
 //                                 const QInt,
 //                                 QMat*[]);
-//extern QErrorCode RSPXCFunGetExp(const RSPXCFun*,
+//extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
 //                                 const QInt,
 //                                 const QInt*,
 //                                 const QInt*,

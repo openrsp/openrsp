@@ -37,7 +37,7 @@ QErrorCode RSPNucContribWrite(const RSPNucContrib *nuc_contrib, FILE *fp_nuc)
             nuc_contrib->num_atoms);
     fprintf(fp_nuc,
             "RSPNucContribWrite>> atom    charge    coordinates\n");
-    for (iatom=0,ixyz=0; iatom<num_atoms; iatom++) {
+    for (iatom=0,ixyz=0; iatom<nuc_contrib->num_atoms; iatom++) {
         fprintf(fp_nuc,
                 "RSPNucContribWrite>> %"QINT_FMT"    %f    [%f, %f, %f]\n",
                 iatom,
