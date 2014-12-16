@@ -44,7 +44,7 @@
                                   !file_rsp_tensor) &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
-        use qmatrix, only: QINT,QREAL,QMat
+        use qmatrix, only: QINT,QREAL,QMat,QSUCCESS
         use openrsp_callback_f
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
@@ -80,7 +80,7 @@
         !type(C_PTR), value, intent(in) :: file_rsp_tensor
         ! local variables for converting C arguments to Fortran ones
         integer(kind=4), parameter :: STDOUT = 6
-        integer num_coord
+        integer(kind=QINT) num_coord
         integer(kind=QINT) f_num_pert
         integer(kind=QINT), allocatable :: f_pert_dims(:)
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
