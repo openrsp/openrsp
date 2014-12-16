@@ -136,8 +136,10 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_int
         type(QMat), intent(inout) :: val_int(num_int)
-        type(C_PTR), allocatable :: c_val_int(:)
-        integer imat
+        type(C_PTR), allocatable :: c_val_int(:)  !C pointers converted from QMat types
+        character(len=1), allocatable :: enc(:)   !encoded data as an array of characters
+        integer(kind=QINT) len_enc                !length of encoded data
+        integer(kind=QINT) imat
         integer(kind=4) ierr
         allocate(c_val_int(num_int), stat=ierr)
         if (ierr/=0) then
@@ -145,7 +147,16 @@ module openrsp_callback_f
             stop "f_callback_RSPOneOperGetMat>> failed to allocate memory for c_val_int"
         end if
         do imat = 1, num_int
-            c_val_int(imat) = c_loc(val_int(imat))
+            ! encodes the QMat type in a character array
+            len_enc = size(transfer(val_int(imat), enc))
+            allocate(enc(len_enc), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,"(A,I8)") "f_callback_RSPOneOperGetMat>> length", len_enc
+                stop "f_callback_RSPOneOperGetMat>> failed to allocate memory for enc"
+            end if
+            enc = transfer(val_int(imat), enc)
+            ! decodes as C pointer
+            c_val_int(imat) = transfer(enc, c_val_int(imat))
         end do
         ierr = RSPOneOperGetMat(ct_saved%one_oper, &
                                 num_pert,          &
