@@ -7,7 +7,7 @@ subroutine openrsp_general_pv3f(num_atoms, S, D, F)
    use openrsp_cfg
    use matrix_lowlevel,  only: mat_init
    use vib_pv_contribs
-   use rsp_indices_and_addressing, only: mat_init_like_and_zero
+!    use rsp_indices_and_addressing, only: mat_init_like_and_zero
    use legacy_vibrational_properties, only: load_vib_modes
 
    implicit none
@@ -126,8 +126,8 @@ subroutine openrsp_general_pv3f(num_atoms, S, D, F)
        perturbation_tuple%pid = (/1, 2/)
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
 
        call sdf_setup_datatype(S_already, S)
