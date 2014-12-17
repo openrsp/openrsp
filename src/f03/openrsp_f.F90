@@ -249,7 +249,7 @@ module openrsp_f
             integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
             integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
             real(kind=C_QREAL), intent(in) :: pert_freqs(num_pert)
-            integer(kind=C_QINT), intent(in) :: kn_rule(3)
+            integer(kind=C_QINT), intent(in) :: kn_rule(2)
             integer(kind=C_QINT), value, intent(in) :: size_rsp_fun
             real(kind=C_QREAL), intent(out) :: rsp_fun(size_rsp_fun)
         end function OpenRSPGetRSPFun
@@ -976,7 +976,7 @@ module openrsp_f
         integer(kind=QINT), intent(in) :: perturbations(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         real(kind=QREAL), intent(in) :: pert_freqs(num_pert)
-        integer(kind=QINT), intent(in) :: kn_rule(3)
+        integer(kind=QINT), intent(in) :: kn_rule(2)
         integer(kind=QINT), intent(in) :: size_rsp_fun
         real(kind=QREAL), intent(out) :: rsp_fun(size_rsp_fun)
         character(len=1), allocatable :: enc(:)  !encoded data as an array of characters
