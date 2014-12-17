@@ -32,6 +32,6 @@ module rsp_pert_table
     integer(kind=QINT), parameter :: RSP_ELGR_PERT = 3
     integer(kind=QINT), parameter :: RSP_MAG0_PERT = 4
     integer(kind=QINT), parameter :: RSP_MAG_PERT = 5
-    character(4), parameter :: CHAR_PERT_TABLE(4) = (/'GEO ', 'EL  ', 'ELGR ', 'MAG0', 'MAG '/)
+    character(4), parameter :: CHAR_PERT_TABLE(5) = (/'GEO ', 'EL  ', 'ELGR', 'MAG0', 'MAG '/)
 
 end module rsp_pert_table
