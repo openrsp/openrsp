@@ -200,7 +200,7 @@ contains
                            openrsp_cfg_cpp_used)
 
     ! initialize and allocate overlap matrix
-    call mat_init(S, NBAST, NBAST)
+!     call mat_init(S, NBAST, NBAST)
 
     ! get the overlap
     call interface_scf_get_s(S)
