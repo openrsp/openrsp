@@ -26,7 +26,7 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_pert,
                          const QInt *perturbations,
                          const QInt *pert_orders,
                          const QReal *pert_freqs,
-                         const QInt kn_rule[],
+                         const QInt kn_rule[2],
                          const QMat *ref_ham,
                          const QMat *ref_overlap,
                          const QMat *ref_state,
@@ -50,7 +50,7 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_pert,
      \param[QInt:int]{in} perturbations the perturbations
      \param[QInt:int]{in} pert_orders orders of the perturbations
      \param[QReal:real]{in} pert_freqs frequencies of the perturbations
-     \param[QInt:int]{in} kn_rule contains the perturbation a and numbers k and n
+     \param[QInt:int]{in} kn_rule contains numbers k and n for the kn rule
      \param[QInt:int]{in} size_rsp_fun size of the response function, equals to
          the product of sizes of \var{perturbations}
      \param[QReal:real]{out} rsp_fun the response function
@@ -64,7 +64,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                             const QInt *perturbations,
                             const QInt *pert_orders,
                             const QReal *pert_freqs,
-                            const QInt kn_rule[],
+                            const QInt kn_rule[2],
                             const QInt size_rsp_fun,
                             QReal *rsp_fun)
 {

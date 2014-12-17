@@ -98,20 +98,18 @@ module rsp_general
   ! NEW 2014  
 
    subroutine openrsp_get_property_2014(num_perts, pert_dims, pert_first_comp, pert_labels, pert_freqs, &
-                                   kn, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
+                                   kn_rule, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
                                    get_xc_exp, id_outp, rsp_tensor, file_id)
-    use rsp_pert_table, only: CHAR_PERT_TABLE
-
     implicit none
 
     integer(kind=QINT), intent(in) :: num_perts
     integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
-    integer(kind=QINT), dimension(num_perts), intent(in) :: pert_labels
+    character(4), dimension(num_perts), intent(in) :: pert_labels
     integer :: i, j, num_blks
-    integer(kind=QINT), intent(in), dimension(2) :: kn
+    integer(kind=QINT), intent(in), dimension(2) :: kn_rule
     character, optional, dimension(20) :: file_id
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
@@ -123,6 +121,7 @@ module rsp_general
     complex(8), dimension(*) :: rsp_tensor
     type(qmat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
+    integer kn(2)
 
     perturbations%n_perturbations = num_perts
     allocate(perturbations%pdim(num_perts))
@@ -134,11 +133,14 @@ module rsp_general
 !    %perturbations%perts%pfcomp = pert_first_comp
 
     do i = 1, num_perts
-         perturbations%plab(i) = CHAR_PERT_TABLE(pert_labels(i))
+         perturbations%plab(i) = pert_labels(i)
     end do
     
     perturbations%pid = (/(i, i = 1, num_perts)/)
     perturbations%freq = pert_freqs
+
+    kn(1) = kn_rule(1)
+    kn(2) = kn_rule(2)
 
     write(id_outp,*) ' '
     write(id_outp,*) 'OpenRSP lib called'
@@ -272,7 +274,7 @@ module rsp_general
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
 
-    prop = 0.0
+    !prop = 0.0
 
 
     ! Get all necessary F, D, S derivatives as dictated by
@@ -431,7 +433,7 @@ module rsp_general
         
     num_blks_full = get_num_blks(pert)
     
-    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    blk_info_full = get_blk_info(num_blks_full, pert)
     p_size = get_triangulated_size(num_blks_full, blk_info_full)
     
     deallocate(blk_info_full)
@@ -1206,7 +1208,9 @@ module rsp_general
                        
        tmp = tmp + 0.5*(contrib)
 
-       prop =  prop + tmp
+       do i = 1, inner_indices_size
+           prop(i) =  prop(i) + tmp(i)
+       end do
 
        call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 
@@ -1605,7 +1609,7 @@ module rsp_general
         
     num_blks_full = get_num_blks(pert)
     
-    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    blk_info_full = get_blk_info(num_blks_full, pert)
     p_size = get_triangulated_size(num_blks_full, blk_info_full)
     
     deallocate(blk_info_full)
@@ -1958,7 +1962,7 @@ module rsp_general
         
     num_blks_full = get_num_blks(pert)
     
-    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    blk_info_full = get_blk_info(num_blks_full, pert)
     p_size = get_triangulated_size(num_blks_full, blk_info_full)
     
     deallocate(blk_info_full)
@@ -2294,7 +2298,7 @@ module rsp_general
         
     num_blks_full = get_num_blks(pert)
     
-    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    blk_info_full = get_blk_info(num_blks_full, pert)
     p_size = get_triangulated_size(num_blks_full, blk_info_full)
     
     deallocate(blk_info_full)
@@ -2379,7 +2383,8 @@ module rsp_general
     integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer, dimension(2) :: kn, d_supsize
+    integer, dimension(2) :: kn
+    integer, dimension(2) :: d_supsize
     integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, &
                                           which_index_is_pid2
     integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
@@ -2636,7 +2641,7 @@ module rsp_general
         
     num_blks_full = get_num_blks(pert)
     
-    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    blk_info_full = get_blk_info(num_blks_full, pert)
     p_size = get_triangulated_size(num_blks_full, blk_info_full)
     
     deallocate(blk_info_full)
@@ -2721,7 +2726,8 @@ module rsp_general
     integer, allocatable, dimension(:) :: blks_tuple_triang_size
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer, dimension(2) :: kn, d_supsize
+    integer, dimension(2) :: kn
+    integer, dimension(2) :: d_supsize
     integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, which_index_is_pid2
     integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b

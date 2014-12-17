@@ -1,5 +1,16 @@
 !! Give future long- and short-term developments
 
+new 2014
+
+(1) src/ao_dens/adapter/openrsp_callback_f.F90
+(2) adds simple callback functions returning integrals and expectationa values
+(3) makes it compile and run properly
+(4) gradually place files in src/interfaces and src/input to DALTON and LSDALTON
+
+I (Gao) will take (1) and (2).
+
+==================================
+
 * JONES
 
 Calculation of 2nd magnetic derivative of overlap matrix, bra part

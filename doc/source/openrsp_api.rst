@@ -255,8 +255,8 @@ Functions of OpenRSP API (C version)
    :type pert_orders: QInt\*
    :param pert_freqs: frequencies of the perturbations
    :type pert_freqs: QReal\*
-   :param kn_rule: contains the perturbation :math:`a` and numbers :math:`k` and :math:`n`
-   :type kn_rule: QInt[3]
+   :param kn_rule: contains the numbers :math:`k` and :math:`n` for the kn rule
+   :type kn_rule: QInt[2]
    :param size_rsp_fun: size of the response function, equals to the
        product of sizes of ``perturbations``
    :type size_rsp_fun: QInt
