@@ -9,8 +9,8 @@
 
 module rsp_perturbed_matrices
 
-  use matrix_defop, matrix => openrsp_matrix
-  use matrix_lowlevel, only: mat_init
+!  use matrix_defop, matrix => openrsp_matrix
+!  use matrix_lowlevel, only: mat_init
   use rsp_field_tuple, only: p_tuple,              &
                              p_tuple_extend,       &
                              p_tuple_getone,       &
@@ -34,11 +34,11 @@ module rsp_perturbed_matrices
   public rsp_get_matrix_lambda_2014
   public rsp_get_matrix_zeta_2014
 
-  type rsp_cfg
-
-     type(matrix) :: zeromat
-
-  end type
+!  type rsp_cfg
+!
+!     type(matrix) :: zeromat
+!
+!  end type
   contains
 
   recursive function derivative_superstructure_getsize(pert, kn, &
@@ -47,7 +47,7 @@ module rsp_perturbed_matrices
     implicit none
 
     logical :: primed
-    type(matrix) :: zeromat
+!    type(matrix) :: zeromat
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     integer, dimension(2) :: kn
@@ -121,7 +121,7 @@ module rsp_perturbed_matrices
     logical :: primed
     integer :: i, superstructure_size, new_element_position
     integer, dimension(2) :: kn    
-    type(matrix) :: zeromat
+!    type(matrix) :: zeromat
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     type(p_tuple), dimension(superstructure_size, 3) :: derivative_structure

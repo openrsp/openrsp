@@ -166,6 +166,45 @@ Functions of OpenRSP API (C version)
    :type get_two_oper_exp: GetTwoOperExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
+.. function:: OpenRSPSetAtoms(open_rsp,   \
+                              num_atoms,  \
+                              atom_coord, \
+                              atom_charge)
+
+   Sets the context of atoms for the nuclear contributions.
+
+   :param open_rsp: context of response theory calculations
+   :type open_rsp: OpenRSP\*
+   :param num_atoms: number of atoms
+   :type num_atoms: QInt
+   :param atom_coord: coordinates of atoms
+   :type atom_coord: QReal\*
+   :param atom_charge: charges of atoms
+   :type atom_charge: QReal\*
+   :rtype: QErrorCode
+
+.. function:: OpenRSPSetDipoleOrigin(open_rsp, \
+                                     dipole_origin)
+
+   Sets the coordinates of dipole origin.
+
+   :param open_rsp: context of response theory calculations
+   :type open_rsp: OpenRSP\*
+   :param dipole_origin: coordinates of dipole origin
+   :type dipole_origin: QReal[3]
+   :rtype: QErrorCode
+
+.. function:: OpenRSPSetGaugeOrigin(open_rsp, \
+                                    gauge_origin)
+
+   Sets the coordinates of gauge origin.
+
+   :param open_rsp: context of response theory calculations
+   :type open_rsp: OpenRSP\*
+   :param gauge_origin: coordinates of gauge origin
+   :type gauge_origin: QReal[3]
+   :rtype: QErrorCode
+
 .. function:: OpenRSPAssemble(open_rsp)
 
    Assembles the context of response theory calculations and checks its validity,
@@ -238,12 +277,13 @@ Functions of OpenRSP API (C version)
 Functions of OpenRSP API (Fortran version)
 ------------------------------------------
 
-Functions of OpenRSP API (Fortran) take exact the same name and arguments as those
-of the C version. The only differences are the (i) argument types and (ii) callback
-functions (subroutines for Fortran). The latter will be described in
-Chapter :ref:`chapter-callback-functions`. The former relates to the convention of
-types in Fortran, please refer to the manual of `QMatrix library <http://repo.ctcc.no/projects/qmatrix>`_
-and the following table for the convention:
+Functions of OpenRSP API (Fortran) are similar to those of the C version, except
+that an extra ``_f`` should be appended to each function. Other differences are
+the (ii) argument types and (iii) callback functions (subroutines for Fortran).
+The latter will be described in Chapter :ref:`chapter-callback-functions`. The
+former relates to the convention of types in Fortran, please refer to the manual
+of `QMatrix library <http://repo.ctcc.no/projects/qmatrix>`_ and the following
+table for the convention:
 
 .. list-table::
    :header-rows: 1

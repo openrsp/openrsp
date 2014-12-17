@@ -23,7 +23,7 @@
 
 #include "openrsp.h"
 
-QErrorCode f03_api_OpenRSPCreate(QVoid **open_rsp)
+QErrorCode f_api_OpenRSPCreate(QVoid **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;
@@ -36,206 +36,32 @@ QErrorCode f03_api_OpenRSPCreate(QVoid **open_rsp)
     return ierr;
 }
 
-QErrorCode f03_api_OpenRSPSetElecEOM(QVoid **open_rsp,
-                                     const QInt elec_eom_type)
+QErrorCode f_api_OpenRSPSetElecEOM(QVoid **open_rsp,
+                                   const QInt elec_EOM_type)
 {
     OpenRSP *c_open_rsp;
+    ElecEOMType c_elec_EOM_type;
     QErrorCode ierr;
+    /* should be consistent with what defined in src/f03/openrsp_f.F90 */
+    switch (elec_EOM_type) {
+    case 0:
+        c_elec_EOM_type = ELEC_AO_D_MATRIX;
+        break;
+    case 1:
+        c_elec_EOM_type = ELEC_MO_C_MATRIX;
+        break;
+    case 2:
+        c_elec_EOM_type = ELEC_COUPLED_CLUSTER;
+        break;
+    default:
+        return QFAILURE;
+    }
     c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetElecEOM(c_open_rsp, elec_eom_type);
+    ierr = OpenRSPSetElecEOM(c_open_rsp, c_elec_EOM_type);
     return ierr;
 }
 
-QErrorCode f03_api_OpenRSPSetSolver(QVoid **open_rsp,
-                                    QVoid *user_ctx,
-                                    const QVoid *get_rsp_solution)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetSolver(c_open_rsp,
-                            user_ctx,
-                            get_rsp_solution);
-    return ierr;
-}
-
-#if defined(OPENRSP_PERTURBATION_FREE)
-QErrorCode f03_api_OpenRSPSetPerturbations(QVoid **open_rsp,
-                                           const QInt num_pert,
-                                           const QInt *perturbations,
-                                           const QInt *pert_max_orders,
-                                           const QInt *pert_sizes,
-                                           QVoid *user_ctx,
-                                           const QVoid *get_pert_comp,
-                                           const QVoid *get_pert_rank)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetPerturbations(c_open_rsp,
-                                   num_pert,
-                                   perturbations,
-                                   pert_max_orders,
-                                   pert_sizes,
-                                   user_ctx,
-                                   get_pert_comp,
-                                   get_pert_rank);
-    return ierr;
-}
-#endif
-
-QErrorCode f03_api_OpenRSPSetPDBS(QVoid **open_rsp,
-                                  const QInt num_pert,
-                                  const QInt *perturbations,
-                                  const QInt *pert_max_orders,
-                                  QVoid *user_ctx,
-                                  const QVoid *get_overlap_mat,
-                                  const QVoid *get_overlap_exp)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetPDBS(c_open_rsp,
-                          num_pert,
-                          perturbations,
-                          pert_max_orders,
-                          user_ctx,
-                          get_overlap_mat,
-                          get_overlap_exp);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPAddOneOper(QVoid **open_rsp,
-                                     const QInt num_pert,
-                                     const QInt *perturbations,
-                                     const QInt *pert_max_orders,
-                                     QVoid *user_ctx,
-                                     const QVoid *get_one_oper_mat,
-                                     const QVoid *get_one_oper_exp)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPAddOneOper(c_open_rsp,
-                             num_pert,
-                             perturbations,
-                             pert_max_orders,
-                             user_ctx,
-                             get_one_oper_mat,
-                             get_one_oper_exp);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPAddTwoOper(QVoid **open_rsp,
-                                     const QInt num_pert,
-                                     const QInt *perturbations,
-                                     const QInt *pert_max_orders,
-                                     QVoid *user_ctx,
-                                     const QVoid *get_two_oper_mat,
-                                     const QVoid *get_two_oper_exp)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPAddTwoOper(c_open_rsp,
-                             num_pert,
-                             perturbations,
-                             pert_max_orders,
-                             user_ctx,
-                             get_two_oper_mat,
-                             get_two_oper_exp);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPSetAtoms(QVoid **open_rsp,
-                                   const QInt num_atoms,
-                                   const QReal *atom_coord,
-                                   const QReal *atom_charge)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetAtoms(c_open_rsp,
-                           num_atoms,   
-                           atom_coord,  
-                           atom_charge);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPSetDipoleOrigin(QVoid **open_rsp,
-                                          const QReal *dipole_origin)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetDipoleOrigin(c_open_rsp, dipole_origin);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPSetGaugeOrigin(QVoid **open_rsp,
-                                          const QReal *gauge_origin)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPSetGaugeOrigin(c_open_rsp, gauge_origin);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPAssemble(QVoid **open_rsp)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPAssemble(c_open_rsp);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPWrite(const QVoid **open_rsp, const QChar *file_name)
-{
-    OpenRSP *c_open_rsp;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    ierr = OpenRSPWrite(c_open_rsp, file_name);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPGetRSPFun(QVoid **open_rsp,
-                                    const QVoid *ref_ham,
-                                    const QVoid *ref_state,
-                                    const QVoid *ref_overlap,
-                                    const QInt num_pert,
-                                    const QInt *perturbations,
-                                    const QInt *pert_orders,
-                                    const QReal *pert_freqs,
-                                    const QInt *kn_rule,
-                                    const QInt size_rsp_fun,
-                                    QReal *rsp_fun)
-{
-    OpenRSP *c_open_rsp;
-    QMat *c_ref_ham;
-    QMat *c_ref_state;
-    QMat *c_ref_overlap;
-    QErrorCode ierr;
-    c_open_rsp = (OpenRSP *)(*open_rsp);
-    c_ref_ham = (QMat *)ref_ham;
-    c_ref_state = (QMat *)ref_state;
-    c_ref_overlap = (QMat *)ref_overlap;
-    ierr = OpenRSPGetRSPFun(c_open_rsp,
-                            c_ref_ham,
-                            c_ref_state,
-                            c_ref_overlap,
-                            num_pert,
-                            perturbations,
-                            pert_orders,
-                            pert_freqs,
-                            kn_rule,
-                            size_rsp_fun,
-                            rsp_fun);
-    return ierr;
-}
-
-QErrorCode f03_api_OpenRSPDestroy(QVoid **open_rsp)
+QErrorCode f_api_OpenRSPDestroy(QVoid **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;

@@ -39,7 +39,7 @@
                                   xc_fun,          &
                                   !id_outp,         &
                                   property_size,   &
-                                  rsp_tensor)
+                                  rsp_tensor)      &
                                   !len_file_tensor, &
                                   !file_rsp_tensor) &
         bind(C, name="OpenRSPGetRSPFun_f")
@@ -48,16 +48,6 @@
         use openrsp_callback_f
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
-        interface
-            integer(C_INT) function RSPNucContribGetNumAtoms(nuc_contrib, &
-                                                             num_atoms)   &
-                bind(C, name="RSPNucContribGetNumAtoms")
-                use, intrinsic :: iso_c_binding
-                implicit none
-                type(C_PTR), value, intent(in) :: nuc_contrib
-                integer(kind=C_QINT), intent(out) :: num_atoms
-            end function RSPNucContribGetNumAtoms
-        end interface
         implicit none
         integer(kind=C_QINT), value, intent(in) :: num_pert
         integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
@@ -73,6 +63,16 @@
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
+        interface
+            integer(C_INT) function RSPNucContribGetNumAtoms(nuc_contrib, &
+                                                             num_atoms)   &
+                bind(C, name="RSPNucContribGetNumAtoms")
+                use, intrinsic :: iso_c_binding
+                implicit none
+                type(C_PTR), value, intent(in) :: nuc_contrib
+                integer(kind=C_QINT), intent(out) :: num_atoms
+            end function RSPNucContribGetNumAtoms
+        end interface
         !integer, intent(in) :: id_outp
         integer(kind=C_QINT), value, intent(in) :: property_size
         real(kind=C_QREAL), intent(out) :: rsp_tensor(2*property_size)
@@ -84,7 +84,7 @@
         integer(kind=QINT) f_num_pert
         integer(kind=QINT), allocatable :: f_pert_dims(:)
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
-        integer(kind=QINT), allocatable :: f_pert_labels(:)
+        character(4), allocatable :: f_pert_labels(:)
         complex(kind=QREAL), allocatable :: f_pert_freqs(:)
         type(QMat), pointer :: f_F_unpert
         type(QMat), pointer :: f_S_unpert
