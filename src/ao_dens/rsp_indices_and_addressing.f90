@@ -13,8 +13,8 @@ module rsp_indices_and_addressing
                              p_tuple_compare, &
                              p_tuple_getone,  &
                              p_tuple_deallocate
-  !use matrix_defop, matrix => openrsp_matrix
-  !use matrix_lowlevel, only: mat_init, mat_ensure_alloc
+!  use matrix_defop, matrix => openrsp_matrix
+!  use matrix_lowlevel, only: mat_init, mat_ensure_alloc
   use qmatrix
 
   implicit none
@@ -45,7 +45,7 @@ module rsp_indices_and_addressing
   public make_outerwhichpert
   public get_pidoutersmall
   public sortdimbypid
-  public mat_init_like_and_zero
+!  public mat_init_like_and_zero
   
   public QMatInit
   public QMatcABC
@@ -85,7 +85,7 @@ module rsp_indices_and_addressing
     implicit none
     
     type(qmat) :: A
-    integer :: ierr
+    integer(kind=4) :: ierr
     
     ierr = QMatCreate(A)
     
@@ -97,7 +97,7 @@ module rsp_indices_and_addressing
     implicit none
     
     type(qmat) :: A, B, C, R
-    integer :: ierr
+    integer(kind=4) :: ierr
     complex(8) :: k
         
     ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/1.0d0, 1.0d0/), R)
@@ -111,7 +111,7 @@ module rsp_indices_and_addressing
     implicit none
     
     type(qmat) :: A, B, C, R
-    integer :: ierr
+    integer(kind=4) :: ierr
     real(8) :: k
         
     ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 1.0d0/), B, C, (/1.0d0, 1.0d0/), R)
@@ -125,7 +125,7 @@ module rsp_indices_and_addressing
     implicit none
     
     type(qmat) :: A, B
-    integer :: ierr  
+    integer(kind=4) :: ierr  
 
     ierr = QMatDuplicate(B, COPY_PATTERN_AND_VALUE, A)
     
@@ -137,7 +137,7 @@ module rsp_indices_and_addressing
     implicit none
     
     type(qmat) :: A
-    integer :: ierr
+    integer(kind=4) :: ierr
     
     ierr = QMatDestroy(A)
   
@@ -151,7 +151,8 @@ module rsp_indices_and_addressing
     type(qmat) :: A, B
     complex(8) :: t
     real(8), dimension(2) :: t_ans
-    integer :: ierr, dim_block_a, dim_block_b
+    integer(kind=4) :: ierr
+    integer(kind=QINT) dim_block_a, dim_block_b
     
     ierr = QMatGetDimBlock(A, dim_block_a)
     ierr = QMatGetDimBlock(A, dim_block_b)
@@ -168,7 +169,7 @@ module rsp_indices_and_addressing
     implicit none
     
     type(qmat) :: A, B
-    integer :: ierr
+    integer(kind=4) :: ierr
     real(8) :: k
     
     ierr = QMatAXPY((/k, 0.0d0/), A, B)
@@ -1163,12 +1164,12 @@ module rsp_indices_and_addressing
 
   end subroutine
 
-! Written by AJT. Initializes matrix B from A and explicitly zeroes B
-    subroutine mat_init_like_and_zero(A, B)
-      type(matrix), intent(in)    :: A
-      type(matrix), intent(inout) :: B
-      B = 0*A
-      call mat_ensure_alloc(B)
-    end subroutine 
+!! Written by AJT. Initializes matrix B from A and explicitly zeroes B
+!    subroutine mat_init_like_and_zero(A, B)
+!      type(matrix), intent(in)    :: A
+!      type(matrix), intent(inout) :: B
+!      B = 0*A
+!      call mat_ensure_alloc(B)
+!    end subroutine 
 
 end module
