@@ -22,6 +22,23 @@
 
 #include "openrsp.h"
 
+QVoid OpenRSPGetRSPFun_f(const QInt num_pert,
+                         const QInt *perturbations,
+                         const QInt *pert_orders,
+                         const QReal *pert_freqs,
+                         const QInt kn_rule[],
+                         const QMat *ref_ham,
+                         const QMat *ref_overlap,
+                         const QMat *ref_state,
+                         RSPSolver *rsp_solver,
+                         RSPNucContrib *nuc_contrib,
+                         RSPOverlap *overlap,
+                         RSPOneOper *one_oper,
+                         RSPTwoOper *two_oper,
+                         RSPXCFun *xc_fun,
+                         const QInt size_rsp_fun,
+                         QReal *rsp_fun);
+
 /*@% \brief gets the response function for given perturbations
      \author Bin Gao
      \date 2014-07-31
@@ -55,7 +72,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     if (open_rsp->assembled==QFALSE) {
         QErrorExit(FILE_AND_LINE, "OpenRSPAssemble() should be invoked before any calculation");
     }
-    switch (open_rsp->elec_eom) {
+    switch (open_rsp->elec_EOM_type) {
     /* density matrix-based response theory */
     case ELEC_AO_D_MATRIX:
         OpenRSPGetRSPFun_f(num_pert,
@@ -74,7 +91,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                            open_rsp->xc_fun,
                            //id_outp,
                            size_rsp_fun,
-                           rsp_fun)
+                           rsp_fun);
         break;
     /* molecular orbital (MO) coefficient matrix-based response theory */
     case ELEC_MO_C_MATRIX:
@@ -83,7 +100,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     case ELEC_COUPLED_CLUSTER:
         break;
     default:
-        printf("OpenRSPGetRSPFun>> type of EOM of electrons %d\n", open_rsp->elec_eom);
+        printf("OpenRSPGetRSPFun>> type of EOM of electrons %d\n", open_rsp->elec_EOM_type);
         QErrorExit(FILE_AND_LINE, "invalid type of EOM of electrons");
     }
     return QSUCCESS;
