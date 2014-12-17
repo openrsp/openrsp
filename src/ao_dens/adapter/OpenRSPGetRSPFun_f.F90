@@ -188,7 +188,6 @@
         !                                   f_callback_RSPXCFunGetMat,       &
         !                                   f_callback_RSPXCFunGetExp,       &
         !                                   STDOUT,                          &
-        !                                   property_size,                   &
         !                                   f_rsp_tensor,                    &
         !                                   f_file_tensor)
         !    ! cleans up
@@ -215,7 +214,6 @@
                                            f_callback_RSPXCFunGetMat,       &
                                            f_callback_RSPXCFunGetExp,       &
                                            STDOUT,                          &
-                                           property_size,                   &
                                            f_rsp_tensor)
         !end if
         ! assigns the results
