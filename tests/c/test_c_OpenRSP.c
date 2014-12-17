@@ -84,7 +84,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
     QInt vib_alpha_perturbations[2] = {PERT_DIPOLE,PERT_GEOMETRIC};
     QInt vib_alpha_pert_orders[2] = {1,1};
     QReal vib_alpha_pert_freqs[2] = {0.1,0};
-    QInt kn_rule[3] = {0,1,0};
+    QInt kn_rule[2] = {1,0};
     QInt size_rsp_fun = 9;
     QReal rsp_fun[9];
 
@@ -127,7 +127,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
                           &get_overlap_mat,
                           &get_overlap_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetPDBS");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetPDBS passed\n");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetPDBS() passed\n");
 
     ierr = OpenRSPAddOneOper(&open_rsp,
                              oneham_num_pert,

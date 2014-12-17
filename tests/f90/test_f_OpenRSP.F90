@@ -123,7 +123,7 @@
         integer(kind=QINT) :: vib_alpha_perturbations(vib_alpha_num_pert) = (/PERT_DIPOLE,PERT_GEOMETRIC/)
         integer(kind=QINT) :: vib_alpha_pert_orders(vib_alpha_num_pert) = (/1,1/)
         real(kind=QREAL) :: vib_alpha_pert_freqs(vib_alpha_num_pert) = (/0.1,0.0/)
-        integer(kind=QINT) :: kn_rule(3) = (/0,1,0/)
+        integer(kind=QINT) :: kn_rule(2) = (/1,0/)
         integer(kind=QINT) :: size_rsp_fun = 9
         real(kind=QREAL) :: rsp_fun(9)
  
