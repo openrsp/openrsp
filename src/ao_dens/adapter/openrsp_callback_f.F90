@@ -46,7 +46,7 @@ module openrsp_callback_f
         type(C_PTR) :: xc_fun = C_NULL_PTR
     end type RSP_CTX
 
-    type(RSP_CTX), save, private :: ct_saved
+    type(RSP_CTX), save, private :: ctx_saved
 
     public :: RSP_CTX_Create
     public :: RSP_CTX_Destroy
@@ -98,7 +98,7 @@ module openrsp_callback_f
         ctx_saved%rsp_solver = rsp_solver
         ctx_saved%nuc_contrib = nuc_contrib
         ctx_saved%overlap = overlap
-        ct_saved%one_oper = one_oper
+        ctx_saved%one_oper = one_oper
         ctx_saved%two_oper = two_oper
         ctx_saved%xc_fun = xc_fun
     end subroutine RSP_CTX_Create
@@ -158,11 +158,11 @@ module openrsp_callback_f
             ! decodes as C pointer
             c_val_int(imat) = transfer(enc, c_val_int(imat))
         end do
-        ierr = RSPOneOperGetMat(ct_saved%one_oper, &
-                                num_pert,          &
-                                perturbations,     &
-                                pert_orders,       &
-                                num_int,           &
+        ierr = RSPOneOperGetMat(ctx_saved%one_oper, &
+                                num_pert,           &
+                                perturbations,      &
+                                pert_orders,        &
+                                num_int,            &
                                 c_val_int)
         if (ierr/=QSUCCESS) then
             stop "f_callback_RSPOneOperGetMat>> failed to call RSPOneOperGetMat"
