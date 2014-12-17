@@ -102,7 +102,7 @@ module rsp_sdf_caching
     
        ! ASSUME CLOSED SHELL
 !        call mat_init(new_element%data(i), data(i)%nrow, data(i)%ncol)
-       call mat_zero_like(data(i), new_element%data(i))
+!        call mat_zero_like(data(i), new_element%data(i))
 
        new_element%data(i) = data(i)
 
@@ -262,9 +262,9 @@ module rsp_sdf_caching
     if (found .eqv. .TRUE.) then
 
        ! ASSUME CLOSED SHELL
-       call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
-                     next_element%data(offset)%ncol)
-       call mat_init_like_and_zero(next_element%data(offset), sdf_getdata)
+!        call mat_init(sdf_getdata, next_element%data(offset)%nrow, &
+!                      next_element%data(offset)%ncol)
+!        call mat_init_like_and_zero(next_element%data(offset), sdf_getdata)
 
        sdf_getdata = next_element%data(offset)
 

@@ -7,7 +7,7 @@ subroutine openrsp_efishgcid(num_atoms, S, D, F)
    use openrsp_cfg
    use matrix_lowlevel,  only: mat_init
    use rsp_mag_prop, only: M_efishg, D_efishg, L_efishg
-   use rsp_indices_and_addressing, only: mat_init_like_and_zero
+!    use rsp_indices_and_addressing, only: mat_init_like_and_zero
 
    implicit none
 
@@ -45,8 +45,8 @@ subroutine openrsp_efishgcid(num_atoms, S, D, F)
        Effqfw2w = 0.0
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)

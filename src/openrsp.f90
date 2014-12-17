@@ -65,7 +65,7 @@ module openrsp
   use legacy_vibrational_properties, only: load_vib_modes
   use vib_pv_contribs
   use rsp_sdf_caching, only: SDF, sdf_setup_datatype
-  use rsp_indices_and_addressing, only: mat_init_like_and_zero
+!   use rsp_indices_and_addressing, only: mat_init_like_and_zero
   !use iso_c_binding
   use xcint_fortran_interface
 
@@ -421,8 +421,8 @@ file_id = '    '
              if (k == 1) then
 
                 ! ASSUME CLOSED SHELL
-                call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-                call mat_init_like_and_zero(S, zeromat_already)
+!                 call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!                 call mat_init_like_and_zero(S, zeromat_already)
 
 
                 call sdf_setup_datatype(S_already, S)
@@ -1273,8 +1273,8 @@ end do
           if (k == 1) then
 
              ! ASSUME CLOSED SHELL
-             call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-             call mat_init_like_and_zero(S, zeromat_already)
+!              call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!              call mat_init_like_and_zero(S, zeromat_already)
 
              call sdf_setup_datatype(S_already, S)
              call sdf_setup_datatype(D_already, D)
@@ -1625,8 +1625,8 @@ end do
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
        ! ASSUME CLOSED SHELL
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
 
        call sdf_setup_datatype(S_already, S)
@@ -1761,8 +1761,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -1863,8 +1863,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2275,8 +2275,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2381,8 +2381,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2493,8 +2493,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2610,8 +2610,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2723,8 +2723,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2841,8 +2841,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -2963,8 +2963,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -3082,8 +3082,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4, 5/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
@@ -3205,8 +3205,8 @@ end do
        perturbation_tuple = p_tuple_standardorder(perturbation_tuple)
        perturbation_tuple%pid = (/1, 2, 3, 4, 5, 6/)
 
-       call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
-       call mat_init_like_and_zero(S, zeromat_already)
+!        call mat_init(zeromat_already, S%nrow, S%ncol, is_zero=.true.)
+!        call mat_init_like_and_zero(S, zeromat_already)
 
        call sdf_setup_datatype(S_already, S)
        call sdf_setup_datatype(D_already, D)
