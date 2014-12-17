@@ -101,7 +101,7 @@ module rsp_general
                                    kn, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, id_outp, property_size, rsp_tensor, file_id)
+                                   get_xc_exp, id_outp, rsp_tensor, file_id)
     use rsp_pert_table, only: CHAR_PERT_TABLE
 
     implicit none
@@ -110,19 +110,17 @@ module rsp_general
     integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
     integer(kind=QINT), dimension(num_perts), intent(in) :: pert_labels
-    integer(kind=QINT), intent(in) :: property_size
     integer :: i, j, num_blks
     integer(kind=QINT), intent(in), dimension(2) :: kn
     character, optional, dimension(20) :: file_id
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
     complex(8), dimension(num_perts), intent(in) :: pert_freqs
-    complex(8), allocatable, dimension(:) :: prop
     real :: timing_start, timing_end
     type(p_tuple) :: perturbations
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
-    complex(8), dimension(*), intent(out) :: rsp_tensor
+    complex(8), dimension(*) :: rsp_tensor
     type(qmat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
 
@@ -180,9 +178,6 @@ module rsp_general
     blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
                                      blk_info(1:num_blks, 3))
 
-    property_size = get_triangulated_size(num_blks, blk_info)
-
-    allocate(prop(property_size))
 
     write(id_outp,*) 'Starting clock: About to call get_prop routine'
     write(id_outp,*) ' '
@@ -192,7 +187,7 @@ module rsp_general
     call get_prop_2014(perturbations, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, property_size, prop)
+                  id_outp, rsp_tensor)
 
     call cpu_time(timing_end)
 
@@ -217,7 +212,7 @@ module rsp_general
 
 !     call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
 !     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-!     blk_info, property_size, prop, 260, 261)
+!     blk_info, prop, 260, 261)
 
     close(260)
     close(261)
@@ -236,7 +231,7 @@ module rsp_general
 
 !     call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
 !     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-!     blk_info, property_size, prop, id_outp, id_outp)
+!     blk_info, prop, id_outp, id_outp)
 
     open(unit=257, file='totterms', status='old', action='write', position='append') 
     write(257,*) 'END'
@@ -258,20 +253,20 @@ module rsp_general
   subroutine get_prop_2014(pert, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, property_size, prop)
+                  id_outp, prop)
 
     implicit none
 
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: emptyp_tuples
-    integer :: property_size, num_blks, id_outp
+    integer :: num_blks, id_outp
     integer, dimension(2) :: kn
     integer, dimension(num_blks) :: blk_sizes
     integer, dimension(num_blks,3) :: blk_info
     type(SDF_2014) :: F, D, S
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
-    complex(8), dimension(property_size) :: prop, p_diff
+    complex(8), dimension(*) :: prop, p_diff
     type(property_cache), pointer :: contrib_cache
 
     call empty_p_tuple(emptypert)
@@ -304,7 +299,7 @@ module rsp_general
 
     call cpu_time(time_start)
     call rsp_energy_2014(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, get_nucpot, &
-                    get_1el_exp, get_ovl_exp, get_2el_exp, property_size, contrib_cache, prop)
+                    get_1el_exp, get_ovl_exp, get_2el_exp, contrib_cache, prop)
     call cpu_time(time_end)
 
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
@@ -319,7 +314,7 @@ module rsp_general
     call cpu_time(time_start)
     ! CHANGE TO USE CALLBACK FUNCTIONALITY
 !     call rsp_xcave_interface(pert, kn, num_blks, blk_sizes, blk_info, D, &
-!                              get_xc_exp, property_size, prop)
+!                              get_xc_exp, prop)
     call cpu_time(time_end)
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
     write(*,*) 'Finished calculating exchange/correlation contribs'
@@ -332,7 +327,7 @@ module rsp_general
     write(*,*) ' '
     call cpu_time(time_start)
     call rsp_pulay_n_2014(pert, kn, (/emptypert, emptypert/), S, D, F, &
-                     get_ovl_exp, property_size, contrib_cache, prop)
+                     get_ovl_exp, contrib_cache, prop)
     call cpu_time(time_end)
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
     write(*,*) ' '
@@ -350,7 +345,7 @@ module rsp_general
        call cpu_time(time_start)
        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
                           (/p_tuple_getone(pert,1), emptypert/), &
-                          S, D, F, get_ovl_exp, property_size, contrib_cache, prop)
+                          S, D, F, get_ovl_exp, contrib_cache, prop)
        call cpu_time(time_end)
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
        write(*,*) ' '
@@ -368,7 +363,7 @@ module rsp_general
        ! MaR: Unchanged by introduction of callback functionality
        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
                          (/p_tuple_getone(pert,1), emptypert/), &
-                         S, D, F, property_size, contrib_cache, prop)
+                         S, D, F, contrib_cache, prop)
        call cpu_time(time_end)
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
        write(*,*) ' '
@@ -386,7 +381,7 @@ module rsp_general
        ! MaR: Unchanged by introduction of callback functionality
        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
                          (/p_tuple_getone(pert,1), emptypert/), &
-                         S, D, F, property_size, contrib_cache, prop)
+                         S, D, F, contrib_cache, prop)
        call cpu_time(time_end)
    
    
@@ -415,20 +410,20 @@ module rsp_general
 
   recursive subroutine rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
                                 p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                                get_t_exp, get_2el_exp, property_size, cache, prop)
+                                get_t_exp, get_2el_exp, cache, prop)
 
     implicit none
 
     logical :: e_knskip
     type(p_tuple) :: pert, p_rf1, p_rf2, p_rf3
     integer, dimension(2) :: kn
-    integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size
+    integer :: num_p_tuples, density_order, i, j, total_num_perturbations
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new, p_new1, p_stord
     type(p_tuple), dimension(num_p_tuples + 1) :: p_new3
     external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
     type(SDF_2014) :: D
     type(property_cache) :: cache
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
 
     if (pert%n_perturbations >= 1) then
 
@@ -443,7 +438,7 @@ module rsp_general
        call rsp_energy_2014(p_rf1, total_num_perturbations, &
        kn, num_p_tuples, p_new1, &
        density_order, D, get_nucpot, get_1el_exp, &
-       get_t_exp, get_2el_exp, property_size, cache, prop)
+       get_t_exp, get_2el_exp, cache, prop)
 
     else
 
@@ -453,7 +448,7 @@ module rsp_general
 
        call rsp_energy_2014(p_rf1, total_num_perturbations,  &
        kn, num_p_tuples, p_new1, density_order, D, get_nucpot, get_1el_exp, &
-       get_t_exp, get_2el_exp, property_size, cache, prop)
+       get_t_exp, get_2el_exp, cache, prop)
 
     end if
     
@@ -479,7 +474,7 @@ module rsp_general
           
           call rsp_energy_2014(p_rf2, total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, get_nucpot, get_1el_exp, &
-          get_t_exp, get_2el_exp, property_size, cache, prop)
+          get_t_exp, get_2el_exp, cache, prop)
 
        end do
 
@@ -497,7 +492,7 @@ module rsp_general
           call rsp_energy_2014(p_rf3, total_num_perturbations, &
           kn, num_p_tuples + 1, p_new3, &
           density_order + 1, D, get_nucpot, get_1el_exp, &
-          get_t_exp, get_2el_exp,property_size, cache, prop)
+          get_t_exp, get_2el_exp, cache, prop)
 
        end if
 
@@ -557,7 +552,7 @@ module rsp_general
 
              ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
              ! THIS CALL (LIKE property_cache_getdata ASSUMES)
-             call property_cache_getdata(cache, num_p_tuples, p_stord, property_size, prop)
+             call property_cache_getdata(cache, num_p_tuples, p_stord, prop)
 
 !              write(*,*) ' '
        
@@ -589,7 +584,7 @@ module rsp_general
 
              call get_energy_2014(num_p_tuples, total_num_perturbations, & 
                   p_stord, density_order, D, get_nucpot, get_1el_exp, &
-                  get_t_exp, get_2el_exp, property_size, cache, prop)
+                  get_t_exp, get_2el_exp, cache, prop)
 
                   write(*,*) 'Calculated energy contribution'
                   write(*,*) ' '
@@ -611,19 +606,19 @@ module rsp_general
 ! MaR: Contains new work: Integrate this later when callback functionality is implemented
 !   recursive subroutine rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
 !                                   p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-!                                   get_t_exp, get_2el_exp, dryrun, cache, property_size, prop)
+!                                   get_t_exp, get_2el_exp, dryrun, cache, prop)
 ! 
 !     implicit none
 ! 
 !     logical :: e_knskip, dryrun
 !     type(p_tuple) :: pert
 !     integer, dimension(2) :: kn
-!     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, property_size, id_outp
+!     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, id_outp
 !     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
 !     type(SDF) :: D
 !     type(contrib_cache), target :: cache
 !     type(contrib_cache), pointer :: cache_next
-!     complex(8), dimension(property_size) :: prop
+!     complex(8), dimension(*) :: prop
 !     external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
 ! 
 !     if (pert%n_perturbations >= 1) then
@@ -637,7 +632,7 @@ module rsp_general
 !        call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations, &
 !        kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
 !        density_order, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, &
-!        .TRUE., cache, property_size, prop)
+!        .TRUE., cache, prop)
 ! 
 !     else
 ! 
@@ -645,7 +640,7 @@ module rsp_general
 !        kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
 !        p_tuples(2:size(p_tuples))/), density_order, D,  &
 !        get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, &
-!        .TRUE., cache, property_size, prop)
+!        .TRUE., cache, prop)
 ! 
 !     end if
 !     
@@ -669,7 +664,7 @@ module rsp_general
 ! 
 !           call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations, &
 !           kn, num_p_tuples, t_new, density_order + 1, D, &
-!           get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, .TRUE., cache, property_size, prop)
+!           get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, .TRUE., cache, prop)
 ! 
 !        end do
 ! 
@@ -684,7 +679,7 @@ module rsp_general
 !           call rsp_energy_2014(p_tuple_remove_first(pert), total_num_perturbations, &
 !           kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
 !           density_order + 1, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, &
-!           .TRUE., cache, property_size, prop)
+!           .TRUE., cache, prop)
 ! 
 !        end if
 ! 
@@ -722,7 +717,7 @@ module rsp_general
 !                 ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
 !                 ! THIS CALL (LIKE property_cache_getdata ASSUMES)
 !                 call contrib_cache_getdata(cache, num_p_tuples, &
-!                      p_tuples_standardorder(num_p_tuples, p_tuples), property_size, .FALSE., prop=prop)
+!                      p_tuples_standardorder(num_p_tuples, p_tuples), .FALSE., prop=prop)
 ! 
 !              end if
 ! 
@@ -760,14 +755,14 @@ module rsp_general
 !        ! Traverse linked list while getting contribs until at last element again
 !        do while (cache_next%last .eqv. .FALSE.)
 !           call get_energy_2014(total_num_perturbations, D, &
-!           get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, property_size, cache_next, prop)
+!           get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, cache_next, prop)
 !           cache_next => cache_next%next
 !        end do
 ! 
 !        ! Do new recursion for cache retrieval situations
 !        call rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
 !                        p_tuples, density_order, D, get_nucpot, get_1el_exp,  &
-!                        get_t_exp, get_2el_exp, .FALSE., cache_next, property_size, prop)
+!                        get_t_exp, get_2el_exp, .FALSE., cache_next, prop)
 ! 
 !      end if
 ! 
@@ -775,7 +770,7 @@ module rsp_general
 
     subroutine get_energy_2014(num_p_tuples, total_num_perturbations, &
                         p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                        get_ovl_exp, get_2el_exp, property_size, cache, prop)
+                        get_ovl_exp, get_2el_exp, cache, prop)
 
     implicit none
 
@@ -788,7 +783,7 @@ module rsp_general
 !    type(rsp_field), allocatable, dimension(:) :: nucpot_pert
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     integer :: i, j, k, m, n, num_p_tuples, total_num_perturbations, density_order, &
-               property_size, offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
+                offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks, npert_ext
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
     integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ext_ord
@@ -800,7 +795,7 @@ module rsp_general
     integer, allocatable, dimension(:) :: inner_offsets, ncoutersmall, pidoutersmall
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     complex(8), allocatable, dimension(:) :: tmp, contrib, prop_forcache
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
 
 !    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
 !    ncouter = nc_only(total_num_perturbations, total_num_perturbations - &
@@ -1156,7 +1151,7 @@ module rsp_general
                        p_tuples(1)%plab, contrib)
        
        
-!       call rsp_nucpot(nucpot_pert, property_size, contrib) 
+!       call rsp_nucpot(nucpot_pert, contrib) 
 
        tmp = tmp + contrib
        contrib = 0.0
@@ -1167,7 +1162,7 @@ module rsp_general
 !        call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                        D_unp, nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
-!                        blk_sizes(1, 1:nblks_tuple(1)), property_size, contrib)
+!                        blk_sizes(1, 1:nblks_tuple(1)), contrib)
 
 !                                  write(*,*) ' '
 !           write(*,*) 'oneave contrib', real(contrib(1:3))
@@ -1193,7 +1188,7 @@ module rsp_general
        
 !        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
-!                        D_unp, D_unp, property_size, contrib)
+!                        D_unp, D_unp, contrib)
 
 !                                  write(*,*) ' '
 !           write(*,*) 'twoave contrib', real(contrib(1:3))
@@ -1223,7 +1218,7 @@ module rsp_general
 !  write(*,*) 'energy contribution'
 !  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
-!  merged_blk_info, property_size, prop_forcache)
+!  merged_blk_info, prop_forcache)
 
     call QMatDst(D_unp)
 
@@ -1262,18 +1257,18 @@ module rsp_general
   ! MaR: Contains some work on multiple density matrices in one call - integrate this into
   ! the new functionality later
 !   subroutine get_energy_2014(total_num_perturbations, D, get_nucpot, get_1el_exp, &
-!                              get_t_exp, get_2el_exp, property_size, cache, prop)
+!                              get_t_exp, get_2el_exp, cache, prop)
 ! 
 !     implicit none
 ! 
-!     integer :: total_num_perturbations, property_size, blk_sized_merged, merged_nblks
+!     integer :: total_num_perturbations, blk_sized_merged, merged_nblks
 !     integer :: cache_offset, i, j, k, m, istart, iend, inner_nblks, inner_triang_size
 !     integer :: nfields, offset, prop_offset, total_contrib_size, total_num_outer, id_outp
 !     integer :: merged_triang_size, num_dmat, total_outer_size
 !     type(SDF) :: D
 !     type(contrib_cache) :: cache
 !     type(contrib_cache_outer), pointer :: outer_next
-!     complex(8), dimension(property_size) :: prop
+!     complex(8), dimension(*) :: prop
 !     type(p_tuple) :: emptypert, t_mat_p_tuple, merged_p_tuple, t_matrix_bra, t_matrix_ket
 !     type(matrix), allocatable, dimension(:,:) :: dens_tuples
 !     type(matrix) :: D_unp
@@ -1568,7 +1563,7 @@ module rsp_general
 ! !  write(*,*) 'energy contrib'
 ! !  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 ! !  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
-! !  merged_blk_info, property_size, prop_forcache)
+! !  merged_blk_info, prop_forcache)
 ! 
 ! 
 !   end subroutine
@@ -1580,7 +1575,7 @@ module rsp_general
   
   
 
-  recursive subroutine rsp_pulay_n_2014(pert, kn, p12, S, D, F, get_ovl_exp, property_size, cache, prop)
+  recursive subroutine rsp_pulay_n_2014(pert, kn, p12, S, D, F, get_ovl_exp, cache, prop)
 
     implicit none
 
@@ -1588,20 +1583,20 @@ module rsp_general
     type(p_tuple), dimension(2) :: p12
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    integer :: property_size, i
+    integer ::  i
     integer, dimension(2) :: kn
     external :: get_ovl_exp
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
     
     if (pert%n_perturbations > 0) then
 
        call rsp_pulay_n_2014(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, &
-       get_ovl_exp, property_size, cache, prop)
+       get_ovl_exp, cache, prop)
 
        call rsp_pulay_n_2014(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, &
-       get_ovl_exp, property_size, cache, prop)
+       get_ovl_exp, cache, prop)
 
     else
 
@@ -1624,7 +1619,7 @@ module rsp_general
              write(257,*) 'T'
              close(257)
 
-             call property_cache_getdata(cache, 2, p12, property_size, prop)
+             call property_cache_getdata(cache, 2, p12, prop)
        
           else
 
@@ -1634,7 +1629,7 @@ module rsp_general
 
 
              call get_pulay_n_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
-                               kn, F, D, S, get_ovl_exp, property_size, cache, prop)
+                               kn, F, D, S, get_ovl_exp, cache, prop)
 
              write(*,*) 'Calculated Pulay k-n contribution'
              write(*,*) ' '
@@ -1655,7 +1650,7 @@ module rsp_general
   end subroutine
 
 
-  subroutine get_pulay_n_2014(p12, kn, F, D, S, get_ovl_exp, property_size, cache, prop)
+  subroutine get_pulay_n_2014(p12, kn, F, D, S, get_ovl_exp, cache, prop)
 
     implicit none
 
@@ -1667,7 +1662,7 @@ module rsp_general
     type(qmat) :: W
     external :: get_ovl_exp
     integer :: i, j, k, sstr_incr, offset, total_num_perturbations, &
-               property_size, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
+                dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks, npert_ext
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
@@ -1682,7 +1677,7 @@ module rsp_general
                                           which_index_is_pid
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     complex(8), allocatable, dimension(:) :: tmp, prop_forcache
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
 
     call p_tuple_external(p12(1), npert_ext, pert_ext, pert_ext_ord)
 
@@ -1892,7 +1887,7 @@ module rsp_general
 !     write(*,*) 'pulay kn contribution'
 !     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !     (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
-!     merged_blk_info, property_size, prop_forcache)
+!     merged_blk_info, prop_forcache)
 
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
@@ -1922,7 +1917,7 @@ module rsp_general
 
   
   recursive subroutine rsp_pulay_lag_2014(pert, kn, p12, S, D, F, &
-                       get_ovl_exp, property_size, cache, prop)
+                       get_ovl_exp, cache, prop)
 
     implicit none
 
@@ -1930,19 +1925,19 @@ module rsp_general
     type(p_tuple), dimension(2) :: p12
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    integer :: property_size, i
+    integer ::  i
     integer, dimension(2) :: kn
     external :: get_ovl_exp
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
     
     if (pert%n_perturbations > 0) then
 
        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
-       S, D, F, get_ovl_exp, property_size, cache, prop)
+       S, D, F, get_ovl_exp, cache, prop)
        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
-       S, D, F, get_ovl_exp, property_size, cache, prop)
+       S, D, F, get_ovl_exp, cache, prop)
 
     else
 
@@ -1965,7 +1960,7 @@ module rsp_general
              write(257,*) 'T'
              close(257)
 
-             call property_cache_getdata(cache, 2, p12, property_size, prop)
+             call property_cache_getdata(cache, 2, p12, prop)
 
           else
 
@@ -1974,7 +1969,7 @@ module rsp_general
        write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
 
              call get_pulay_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
-                               kn, F, D, S, get_ovl_exp, property_size, cache, prop)
+                               kn, F, D, S, get_ovl_exp, cache, prop)
 
              write(*,*) 'Calculated Pulay lagrange contribution'
              write(*,*) ' '
@@ -1995,7 +1990,7 @@ module rsp_general
   end subroutine
 
 
-  subroutine get_pulay_lag_2014(p12, kn, F, D, S, get_ovl_exp, property_size, cache, prop)
+  subroutine get_pulay_lag_2014(p12, kn, F, D, S, get_ovl_exp, cache, prop)
 
     implicit none
 
@@ -2008,7 +2003,7 @@ module rsp_general
     external :: get_ovl_exp
     integer :: i, j, k ,m, incr, npert_ext
     integer :: d_supsize, total_num_perturbations, &
-             property_size, offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
+              offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
@@ -2023,7 +2018,7 @@ module rsp_general
     integer, allocatable, dimension(:) :: outer_ind_b_large
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     complex(8), allocatable, dimension(:) :: tmp, prop_forcache
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
 
     call p_tuple_external(p12(1), npert_ext, pert_ext, pert_ord_ext)
 
@@ -2212,7 +2207,7 @@ module rsp_general
 !     write(*,*) 'pulay lag contribution'
 !     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !     (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
-!     merged_blk_info, property_size, prop_forcache)
+!     merged_blk_info, prop_forcache)
 
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
@@ -2248,7 +2243,7 @@ module rsp_general
   
   
   recursive subroutine rsp_idem_lag_2014(pert, kn, p12, S, D, F, &
-                                    property_size, cache, prop)
+                                     cache, prop)
 
     implicit none
 
@@ -2256,17 +2251,17 @@ module rsp_general
     type(p_tuple), dimension(2) :: p12
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    integer :: property_size, i
+    integer ::  i
     integer, dimension(2) :: kn
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
     
     if (pert%n_perturbations > 0) then
 
        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
-       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, property_size, &
+       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, &
        cache, prop)
        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
-       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, property_size, &
+       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, &
        cache, prop)
 
     else
@@ -2290,7 +2285,7 @@ module rsp_general
              write(257,*) 'T'
              close(257)
 
-             call property_cache_getdata(cache, 2, p12, property_size, prop)
+             call property_cache_getdata(cache, 2, p12, prop)
       
           else
 
@@ -2300,7 +2295,7 @@ module rsp_general
 
              ! At lowest level:
              call get_idem_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
-                               kn, F, D, S, property_size, cache, prop)
+                               kn, F, D, S, cache, prop)
 
              write(*,*) 'Calculated idempotency lagrange contribution'
              write(*,*) ' '
@@ -2321,7 +2316,7 @@ module rsp_general
   end subroutine
 
 
-  subroutine get_idem_lag_2014(p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_idem_lag_2014(p12, kn, F, D, S, cache, prop)
 
     implicit none
 
@@ -2332,7 +2327,7 @@ module rsp_general
     type(property_cache) :: cache
     type(qmat) :: Zeta, Z
     integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
-             property_size, offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
+              offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
@@ -2346,7 +2341,7 @@ module rsp_general
     integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
     real(8) :: tmp_tr
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
     complex(8), allocatable, dimension(:) :: prop_forcache
 
     d_supsize = 0
@@ -2548,7 +2543,7 @@ module rsp_general
 !     write(*,*) 'idempotency contribution'
 !  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
-!  merged_blk_info, property_size, prop_forcache)
+!  merged_blk_info, prop_forcache)
 
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
@@ -2579,7 +2574,7 @@ module rsp_general
 
 
   recursive subroutine rsp_scfe_lag_2014(pert, kn, p12, S, D, F, &
-                                    property_size, cache, prop)
+                                     cache, prop)
 
     implicit none
 
@@ -2587,18 +2582,18 @@ module rsp_general
     type(p_tuple), dimension(2) :: p12
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    integer :: property_size, i
+    integer ::  i
     integer, dimension(2) :: kn
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
     
     if (pert%n_perturbations > 0) then
 
        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
             (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
-            S, D, F, property_size, cache, prop)
+            S, D, F, cache, prop)
        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
             (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
-            S, D, F, property_size, cache, prop)
+            S, D, F, cache, prop)
 
     else
 
@@ -2621,7 +2616,7 @@ module rsp_general
 !              write(*,*) 'Getting values from cache'
 !              write(*,*) ' '
 
-             call property_cache_getdata(cache, 2, p12, property_size, prop)
+             call property_cache_getdata(cache, 2, p12, prop)
        
           else
 
@@ -2631,7 +2626,7 @@ module rsp_general
 
              ! At lowest level:
              call get_scfe_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
-             kn, F, D, S, property_size, cache, prop)
+             kn, F, D, S, cache, prop)
 
              write(*,*) 'Calculated scfe lagrange contribution'
              write(*,*) ' '
@@ -2652,7 +2647,7 @@ module rsp_general
   end subroutine
 
 
-  subroutine get_scfe_lag_2014(p12, kn, F, D, S, property_size, cache, prop)
+  subroutine get_scfe_lag_2014(p12, kn, F, D, S, cache, prop)
 
     implicit none
 
@@ -2663,7 +2658,7 @@ module rsp_general
     type(property_cache) :: cache
     type(qmat) :: L, Y
     integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
-             property_size, offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
+              offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
@@ -2676,7 +2671,7 @@ module rsp_general
     integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
     real(8) :: tmp_tr
-    complex(8), dimension(property_size) :: prop
+    complex(8), dimension(*) :: prop
     complex(8), allocatable, dimension(:) :: prop_forcache
 
     d_supsize = 0
@@ -2881,7 +2876,7 @@ module rsp_general
 !     write(*,*) 'scfe contribution'
 !     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !     (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
-!     merged_blk_info, property_size, prop_forcache)
+!     merged_blk_info, prop_forcache)
 
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
