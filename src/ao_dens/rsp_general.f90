@@ -266,7 +266,7 @@ module rsp_general
     type(SDF_2014) :: F, D, S
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
-    complex(8), dimension(*) :: prop, p_diff
+    complex(8), dimension(*) :: prop
     type(property_cache), pointer :: contrib_cache
 
     call empty_p_tuple(emptypert)
@@ -424,7 +424,18 @@ module rsp_general
     type(SDF_2014) :: D
     type(property_cache) :: cache
     complex(8), dimension(*) :: prop
+    integer :: num_blks_full, p_size
+    integer, allocatable, dimension(:,:) :: blk_info_full
 
+    allocate(blk_info_full(num_blks_full, 3))
+        
+    num_blks_full = get_num_blks(pert)
+    
+    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    p_size = get_triangulated_size(num_blks_full, blk_info_full)
+    
+    deallocate(blk_info_full)
+        
     if (pert%n_perturbations >= 1) then
 
        ! The differentiation can do three things:
@@ -552,7 +563,7 @@ module rsp_general
 
              ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
              ! THIS CALL (LIKE property_cache_getdata ASSUMES)
-             call property_cache_getdata(cache, num_p_tuples, p_stord, prop)
+             call property_cache_getdata(cache, num_p_tuples, p_stord, p_size, prop)
 
 !              write(*,*) ' '
        
@@ -1587,6 +1598,17 @@ module rsp_general
     integer, dimension(2) :: kn
     external :: get_ovl_exp
     complex(8), dimension(*) :: prop
+    integer :: num_blks_full, p_size
+    integer, allocatable, dimension(:,:) :: blk_info_full
+
+    allocate(blk_info_full(num_blks_full, 3))
+        
+    num_blks_full = get_num_blks(pert)
+    
+    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    p_size = get_triangulated_size(num_blks_full, blk_info_full)
+    
+    deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
@@ -1619,7 +1641,7 @@ module rsp_general
              write(257,*) 'T'
              close(257)
 
-             call property_cache_getdata(cache, 2, p12, prop)
+             call property_cache_getdata(cache, 2, p12, p_size, prop)
        
           else
 
@@ -1929,6 +1951,17 @@ module rsp_general
     integer, dimension(2) :: kn
     external :: get_ovl_exp
     complex(8), dimension(*) :: prop
+    integer :: num_blks_full, p_size
+    integer, allocatable, dimension(:,:) :: blk_info_full
+
+    allocate(blk_info_full(num_blks_full, 3))
+        
+    num_blks_full = get_num_blks(pert)
+    
+    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    p_size = get_triangulated_size(num_blks_full, blk_info_full)
+    
+    deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
@@ -1960,7 +1993,7 @@ module rsp_general
              write(257,*) 'T'
              close(257)
 
-             call property_cache_getdata(cache, 2, p12, prop)
+             call property_cache_getdata(cache, 2, p12, p_size, prop)
 
           else
 
@@ -2254,6 +2287,17 @@ module rsp_general
     integer ::  i
     integer, dimension(2) :: kn
     complex(8), dimension(*) :: prop
+    integer :: num_blks_full, p_size
+    integer, allocatable, dimension(:,:) :: blk_info_full
+
+    allocate(blk_info_full(num_blks_full, 3))
+        
+    num_blks_full = get_num_blks(pert)
+    
+    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    p_size = get_triangulated_size(num_blks_full, blk_info_full)
+    
+    deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
@@ -2285,7 +2329,7 @@ module rsp_general
              write(257,*) 'T'
              close(257)
 
-             call property_cache_getdata(cache, 2, p12, prop)
+             call property_cache_getdata(cache, 2, p12, p_size, prop)
       
           else
 
@@ -2585,6 +2629,17 @@ module rsp_general
     integer ::  i
     integer, dimension(2) :: kn
     complex(8), dimension(*) :: prop
+    integer :: num_blks_full, p_size
+    integer, allocatable, dimension(:,:) :: blk_info_full
+
+    allocate(blk_info_full(num_blks_full, 3))
+        
+    num_blks_full = get_num_blks(pert)
+    
+    blk_info_full = get_blk_info(num_blks_full, perturbations)
+    p_size = get_triangulated_size(num_blks_full, blk_info_full)
+    
+    deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
@@ -2616,7 +2671,7 @@ module rsp_general
 !              write(*,*) 'Getting values from cache'
 !              write(*,*) ' '
 
-             call property_cache_getdata(cache, 2, p12, prop)
+             call property_cache_getdata(cache, 2, p12, p_size, prop)
        
           else
 
