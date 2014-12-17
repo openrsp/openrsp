@@ -61,18 +61,18 @@ module rsp_general
 
   implicit none
 
-  public rsp_prop
-  public get_prop
-  public rsp_energy
-  public get_energy
-  public rsp_pulay_kn
-  public get_pulay_kn
-  public rsp_pulay_lag
-  public get_pulay_lag
-  public rsp_idem_lag
-  public get_idem_lag
-  public rsp_scfe_lag
-  public get_scfe_lag
+!   public rsp_prop
+  public get_prop_2014
+  public rsp_energy_2014
+  public get_energy_2014
+  public rsp_pulay_kn_2014
+  public get_pulay_kn_2014
+  public rsp_pulay_lag_2014
+  public get_pulay_lag_2014
+  public rsp_idem_lag_2014
+  public get_idem_lag_2014
+  public rsp_scfe_lag_2014
+  public get_scfe_lag_2014
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
