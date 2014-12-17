@@ -9,15 +9,15 @@
 
 module rsp_perturbed_sdf
 
-  use matrix_defop, matrix => openrsp_matrix
-  use matrix_lowlevel, only: mat_init, mat_zero_like
+!  use matrix_defop, matrix => openrsp_matrix
+!  use matrix_lowlevel, only: mat_init, mat_zero_like
   use rsp_contribs
   use rsp_field_tuple
   use rsp_indices_and_addressing
   use rsp_perturbed_matrices
   use rsp_sdf_caching
   use rsp_lof_caching
-  use interface_2el
+!  use interface_2el
   
   use qmatrix
 
@@ -120,7 +120,7 @@ module rsp_perturbed_sdf
     subroutine get_fds_2014(pert, F, D, S, get_rsp_sol, get_ovl_mat, &
                        get_1el_mat, get_2el_mat, get_xc_mat, id_outp)
 
-    use interface_rsp_solver, only: rsp_solver_exec
+!    use interface_rsp_solver, only: rsp_solver_exec
     implicit none
 
     

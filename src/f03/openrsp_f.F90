@@ -49,9 +49,9 @@ module openrsp_f
     implicit none
 
     ! type of equation of motion (EOM) of electrons
-    integer(kind=QINT), parameter, public :: ELEC_EOM_DMAT = 0
-    integer(kind=QINT), parameter, public :: ELEC_EOM_CMAT = 1
-    integer(kind=QINT), parameter, public :: ELEC_EOM_CC = 2
+    integer(kind=QINT), parameter, public :: ELEC_AO_D_MATRIX = 0
+    integer(kind=QINT), parameter, public :: ELEC_MO_C_MATRIX = 1
+    integer(kind=QINT), parameter, public :: ELEC_COUPLED_CLUSTER = 2
 
     ! linked list of context of callback subroutines of one-electron operators
     type, private :: OneOperList_f
@@ -79,59 +79,59 @@ module openrsp_f
     end type OpenRSP
 
     ! functions provided by the Fortran APIs
-    public :: OpenRSPCreate
-    public :: OpenRSPSetElecEOM
-    public :: OpenRSPSetSolver
+    public :: OpenRSPCreate_f
+    public :: OpenRSPSetElecEOM_f
+    public :: OpenRSPSetSolver_f
 #if defined(OPENRSP_PERTURBATION_FREE)
-    public :: OpenRSPSetPerturbations
+    public :: OpenRSPSetPerturbations_f
 #endif
-    public :: OpenRSPSetPDBS
-    public :: OpenRSPAddOneOper
-    public :: OpenRSPAddTwoOper
-    !public :: OpenRSPAddXCFun
-    public :: OpenRSPSetAtoms
-    public :: OpenRSPSetDipoleOrigin
-    public :: OpenRSPSetGaugeOrigin
-    public :: OpenRSPAssemble
-    public :: OpenRSPWrite
-    public :: OpenRSPGetRSPFun
-    !public :: OpenRSPGetResidue
-    public :: OpenRSPDestroy
+    public :: OpenRSPSetPDBS_f
+    public :: OpenRSPAddOneOper_f
+    public :: OpenRSPAddTwoOper_f
+    !public :: OpenRSPAddXCFun_f
+    public :: OpenRSPSetAtoms_f
+    public :: OpenRSPSetDipoleOrigin_f
+    public :: OpenRSPSetGaugeOrigin_f
+    public :: OpenRSPAssemble_f
+    public :: OpenRSPWrite_f
+    public :: OpenRSPGetRSPFun_f
+    !public :: OpenRSPGetResidue_f
+    public :: OpenRSPDestroy_f
 
     interface 
-        integer(C_INT) function f03_api_OpenRSPCreate(open_rsp) &
-            bind(C, name="f03_api_OpenRSPCreate")
+        integer(C_INT) function f_api_OpenRSPCreate(open_rsp) &
+            bind(C, name="f_api_OpenRSPCreate")
             use, intrinsic :: iso_c_binding
             type(C_PTR), intent(inout) :: open_rsp
-        end function f03_api_OpenRSPCreate
-        integer(C_INT) function f03_api_OpenRSPSetElecEOM(open_rsp,      &
-                                                          elec_eom_type) &
-            bind(C, name="f03_api_OpenRSPSetElecEOM")
+        end function f_api_OpenRSPCreate
+        integer(C_INT) function f_api_OpenRSPSetElecEOM(open_rsp,      &
+                                                        elec_EOM_type) &
+            bind(C, name="f_api_OpenRSPSetElecEOM")
             use, intrinsic :: iso_c_binding
             type(C_PTR), intent(inout) :: open_rsp
-            integer(kind=C_QINT), value, intent(in) :: elec_eom_type
-        end function f03_api_OpenRSPSetElecEOM
-        integer(C_INT) function f03_api_OpenRSPSetSolver(open_rsp,         &
-                                                         user_ctx,         &
-                                                         get_rsp_solution) &
-            bind(C, name="f03_api_OpenRSPSetSolver")
+            integer(kind=C_QINT), value, intent(in) :: elec_EOM_type
+        end function f_api_OpenRSPSetElecEOM
+        integer(C_INT) function OpenRSPSetSolver(open_rsp,         &
+                                                 user_ctx,         &
+                                                 get_rsp_solution) &
+            bind(C, name="OpenRSPSetSolver")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             type(C_PTR), value, intent(in) :: user_ctx
             type(C_FUNPTR), value, intent(in) :: get_rsp_solution
-        end function f03_api_OpenRSPSetSolver
+        end function OpenRSPSetSolver
 #if defined(OPENRSP_PERTURBATION_FREE)
-        integer(C_INT) function f03_api_OpenRSPSetPerturbations(open_rsp,        &
-                                                                num_pert,        &
-                                                                perturbations,   &
-                                                                pert_max_orders, &
-                                                                pert_sizes,      &
-                                                                user_ctx,        &
-                                                                get_pert_comp,   &
-                                                                get_pert_rank)   &
-            bind(C, name="f03_api_OpenRSPSetPerturbations")
+        integer(C_INT) function OpenRSPSetPerturbations(open_rsp,        &
+                                                        num_pert,        &
+                                                        perturbations,   &
+                                                        pert_max_orders, &
+                                                        pert_sizes,      &
+                                                        user_ctx,        &
+                                                        get_pert_comp,   &
+                                                        get_pert_rank)   &
+            bind(C, name="OpenRSPSetPerturbations")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: num_pert
             integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
             integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
@@ -139,109 +139,109 @@ module openrsp_f
             type(C_PTR), value, intent(in) :: user_ctx
             type(C_FUNPTR), value, intent(in) :: get_pert_comp
             type(C_FUNPTR), value, intent(in) :: get_pert_rank
-        end function f03_api_OpenRSPSetPerturbations
+        end function OpenRSPSetPerturbations
 #endif
-        integer(C_INT) function f03_api_OpenRSPSetPDBS(open_rsp,        &
-                                                       num_pert,        &
-                                                       perturbations,   &
-                                                       pert_max_orders, &
-                                                       user_ctx,        &
-                                                       get_overlap_mat, &
-                                                       get_overlap_exp) &
-            bind(C, name="f03_api_OpenRSPSetPDBS")
+        integer(C_INT) function OpenRSPSetPDBS(open_rsp,        &
+                                               num_pert,        &
+                                               perturbations,   &
+                                               pert_max_orders, &
+                                               user_ctx,        &
+                                               get_overlap_mat, &
+                                               get_overlap_exp) &
+            bind(C, name="OpenRSPSetPDBS")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: num_pert
             integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
             integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
             type(C_PTR), value, intent(in) :: user_ctx
             type(C_FUNPTR), value, intent(in) :: get_overlap_mat
             type(C_FUNPTR), value, intent(in) :: get_overlap_exp
-        end function f03_api_OpenRSPSetPDBS
-        integer(C_INT) function f03_api_OpenRSPAddOneOper(open_rsp,         &
-                                                          num_pert,         &
-                                                          perturbations,    &
-                                                          pert_max_orders,  &
-                                                          user_ctx,         &
-                                                          get_one_oper_mat, &
-                                                          get_one_oper_exp) &
-            bind(C, name="f03_api_OpenRSPAddOneOper")
+        end function OpenRSPSetPDBS
+        integer(C_INT) function OpenRSPAddOneOper(open_rsp,         &
+                                                  num_pert,         &
+                                                  perturbations,    &
+                                                  pert_max_orders,  &
+                                                  user_ctx,         &
+                                                  get_one_oper_mat, &
+                                                  get_one_oper_exp) &
+            bind(C, name="OpenRSPAddOneOper")
             use, intrinsic :: iso_c_binding  
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: num_pert
             integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
             integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
             type(C_PTR), value, intent(in) :: user_ctx
             type(C_FUNPTR), value, intent(in) :: get_one_oper_mat
             type(C_FUNPTR), value, intent(in) :: get_one_oper_exp
-        end function f03_api_OpenRSPAddOneOper
-        integer(C_INT) function f03_api_OpenRSPAddTwoOper(open_rsp,         &
-                                                          num_pert,         &
-                                                          perturbations,    &
-                                                          pert_max_orders,  &
-                                                          user_ctx,         &
-                                                          get_two_oper_mat, &
-                                                          get_two_oper_exp) &
-            bind(C, name="f03_api_OpenRSPAddTwoOper")
+        end function OpenRSPAddOneOper
+        integer(C_INT) function OpenRSPAddTwoOper(open_rsp,         &
+                                                  num_pert,         &
+                                                  perturbations,    &
+                                                  pert_max_orders,  &
+                                                  user_ctx,         &
+                                                  get_two_oper_mat, &
+                                                  get_two_oper_exp) &
+            bind(C, name="OpenRSPAddTwoOper")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: num_pert
             integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
             integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
             type(C_PTR), value, intent(in) :: user_ctx
             type(C_FUNPTR), value, intent(in) :: get_two_oper_mat
             type(C_FUNPTR), value, intent(in) :: get_two_oper_exp
-        end function f03_api_OpenRSPAddTwoOper
-        integer(C_INT) function f03_api_OpenRSPSetAtoms(open_rsp,    &
-                                                        num_atoms,   &
-                                                        atom_coord,  &
-                                                        atom_charge) &
-            bind(C, name="f03_api_OpenRSPSetAtoms")
+        end function OpenRSPAddTwoOper
+        integer(C_INT) function OpenRSPSetAtoms(open_rsp,    &
+                                                num_atoms,   &
+                                                atom_coord,  &
+                                                atom_charge) &
+            bind(C, name="OpenRSPSetAtoms")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: num_atoms
             real(kind=C_QREAL), intent(in) :: atom_coord(3*num_atoms)
             real(kind=C_QREAL), intent(in) :: atom_charge(num_atoms)
-        end function f03_api_OpenRSPSetAtoms
-        integer(C_INT) function f03_api_OpenRSPSetDipoleOrigin(open_rsp,      &
-                                                               dipole_origin) &
-            bind(C, name="f03_api_OpenRSPSetDipoleOrigin")
+        end function OpenRSPSetAtoms
+        integer(C_INT) function OpenRSPSetDipoleOrigin(open_rsp,      &
+                                                       dipole_origin) &
+            bind(C, name="OpenRSPSetDipoleOrigin")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             real(kind=C_QREAL), intent(in) :: dipole_origin(3)
-        end function f03_api_OpenRSPSetDipoleOrigin
-        integer(C_INT) function f03_api_OpenRSPSetGaugeOrigin(open_rsp,     &
-                                                              gauge_origin) &
-            bind(C, name="f03_api_OpenRSPSetGaugeOrigin")
+        end function OpenRSPSetDipoleOrigin
+        integer(C_INT) function OpenRSPSetGaugeOrigin(open_rsp,     &
+                                                      gauge_origin) &
+            bind(C, name="OpenRSPSetGaugeOrigin")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             real(kind=C_QREAL), intent(in) :: gauge_origin(3)
-        end function f03_api_OpenRSPSetGaugeOrigin
-        integer(C_INT) function f03_api_OpenRSPAssemble(open_rsp) &
-            bind(C, name="f03_api_OpenRSPAssemble")
+        end function OpenRSPSetGaugeOrigin
+        integer(C_INT) function OpenRSPAssemble(open_rsp) &
+            bind(C, name="OpenRSPAssemble")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
-        end function f03_api_OpenRSPAssemble
-        integer(C_INT) function f03_api_OpenRSPWrite(open_rsp, file_name) &
-            bind(C, name="f03_api_OpenRSPWrite")
+            type(C_PTR), value, intent(in) :: open_rsp
+        end function OpenRSPAssemble
+        integer(C_INT) function OpenRSPWrite(open_rsp, file_name) &
+            bind(C, name="OpenRSPWrite")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(in) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             character(C_CHAR), intent(in) :: file_name(*)
-        end function f03_api_OpenRSPWrite
-        integer(C_INT) function f03_api_OpenRSPGetRSPFun(open_rsp,      &
-                                                         ref_ham,       &
-                                                         ref_state,     &
-                                                         ref_overlap,   &
-                                                         num_pert,      &
-                                                         perturbations, &
-                                                         pert_orders,   &
-                                                         pert_freqs,    &
-                                                         kn_rule,       &
-                                                         size_rsp_fun,  &
-                                                         rsp_fun)       &
-            bind(C, name="f03_api_OpenRSPGetRSPFun")
+        end function OpenRSPWrite
+        integer(C_INT) function OpenRSPGetRSPFun(open_rsp,      &
+                                                 ref_ham,       &
+                                                 ref_state,     &
+                                                 ref_overlap,   &
+                                                 num_pert,      &
+                                                 perturbations, &
+                                                 pert_orders,   &
+                                                 pert_freqs,    &
+                                                 kn_rule,       &
+                                                 size_rsp_fun,  &
+                                                 rsp_fun)       &
+            bind(C, name="OpenRSPGetRSPFun")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             type(C_PTR), value, intent(in) :: ref_ham
             type(C_PTR), value, intent(in) :: ref_state
             type(C_PTR), value, intent(in) :: ref_overlap
@@ -252,20 +252,20 @@ module openrsp_f
             integer(kind=C_QINT), intent(in) :: kn_rule(3)
             integer(kind=C_QINT), value, intent(in) :: size_rsp_fun
             real(kind=C_QREAL), intent(out) :: rsp_fun(size_rsp_fun)
-        end function f03_api_OpenRSPGetRSPFun
-        integer(C_INT) function f03_api_OpenRSPDestroy(open_rsp) &
-            bind(C, name="f03_api_OpenRSPDestroy")
+        end function OpenRSPGetRSPFun
+        integer(C_INT) function f_api_OpenRSPDestroy(open_rsp) &
+            bind(C, name="f_api_OpenRSPDestroy")
             use, intrinsic :: iso_c_binding
             type(C_PTR), intent(inout) :: open_rsp
-        end function f03_api_OpenRSPDestroy
+        end function f_api_OpenRSPDestroy
     end interface
 
     contains
 
-    function OpenRSPCreate(open_rsp) result(ierr)
+    function OpenRSPCreate_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
-        ierr = f03_api_OpenRSPCreate(open_rsp%c_rsp)
+        ierr = f_api_OpenRSPCreate(open_rsp%c_rsp)
         nullify(open_rsp%solver_fun)
 #if defined(OPENRSP_PERTURBATION_FREE)
         nullify(open_rsp%pert_fun)
@@ -273,20 +273,20 @@ module openrsp_f
         nullify(open_rsp%overlap_fun)
         nullify(open_rsp%list_one_oper)
         nullify(open_rsp%list_two_oper)
-    end function OpenRSPCreate
+    end function OpenRSPCreate_f
 
-    function OpenRSPSetElecEOM(open_rsp, elec_eom_type) result(ierr)
+    function OpenRSPSetElecEOM_f(open_rsp, elec_EOM_type) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
-        integer(kind=QINT), intent(in) :: elec_eom_type
-        ierr = f03_api_OpenRSPSetElecEOM(open_rsp%c_rsp, elec_eom_type)
-    end function OpenRSPSetElecEOM
+        integer(kind=QINT), intent(in) :: elec_EOM_type
+        ierr = f_api_OpenRSPSetElecEOM(open_rsp%c_rsp, elec_EOM_type)
+    end function OpenRSPSetElecEOM_f
 
-    function OpenRSPSetSolver(open_rsp,        &
+    function OpenRSPSetSolver_f(open_rsp,        &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                              user_ctx,        &
+                                user_ctx,        &
 #endif
-                              get_rsp_solution) result(ierr)
+                                get_rsp_solution) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -352,22 +352,22 @@ module openrsp_f
                                user_ctx,            &
 #endif
                                get_rsp_solution)
-        ierr = f03_api_OpenRSPSetSolver(open_rsp%c_rsp,             &
-                                        c_loc(open_rsp%solver_fun), &
-                                        c_funloc(RSPSolverGetSolution_f))
-    end function OpenRSPSetSolver
+        ierr = OpenRSPSetSolver(open_rsp%c_rsp,             &
+                                c_loc(open_rsp%solver_fun), &
+                                c_funloc(RSPSolverGetSolution_f))
+    end function OpenRSPSetSolver_f
 
 #if defined(OPENRSP_PERTURBATION_FREE)
-    function OpenRSPSetPerturbations(open_rsp,        &
-                                     num_pert,        &
-                                     perturbations,   &
-                                     pert_max_orders, &
-                                     pert_sizes,      &
+    function OpenRSPSetPerturbations_f(open_rsp,        &
+                                       num_pert,        &
+                                       perturbations,   &
+                                       pert_max_orders, &
+                                       pert_sizes,      &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                     user_ctx,        &
+                                       user_ctx,        &
 #endif
-                                     get_pert_comp,   &
-                                     get_pert_rank) result(ierr)
+                                       get_pert_comp,   &
+                                       get_pert_rank) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_pert
@@ -465,26 +465,26 @@ module openrsp_f
 #endif
                              get_pert_comp,     &
                              get_pert_rank)
-        ierr = f03_api_OpenRSPSetPerturbations(open_rsp%c_rsp,             &
-                                               num_pert,                   &
-                                               perturbations,              &
-                                               pert_max_orders,            &
-                                               pert_sizes,                 &
-                                               c_loc(open_rsp%pert_fun),   &
-                                               c_funloc(RSPPertGetComp_f), &
-                                               c_funloc(RSPPertGetRank_f))
-    end function OpenRSPSetPerturbations
+        ierr = OpenRSPSetPerturbations(open_rsp%c_rsp,             &
+                                       num_pert,                   &
+                                       perturbations,              &
+                                       pert_max_orders,            &
+                                       pert_sizes,                 &
+                                       c_loc(open_rsp%pert_fun),   &
+                                       c_funloc(RSPPertGetComp_f), &
+                                       c_funloc(RSPPertGetRank_f))
+    end function OpenRSPSetPerturbations_f
 #endif
 
-    function OpenRSPSetPDBS(open_rsp,        &
-                            num_pert,        &
-                            perturbations,   &
-                            pert_max_orders, &
+    function OpenRSPSetPDBS_f(open_rsp,        &
+                              num_pert,        &
+                              perturbations,   &
+                              pert_max_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                            user_ctx,        &
+                              user_ctx,        &
 #endif
-                            get_overlap_mat, &
-                            get_overlap_exp) result(ierr)
+                              get_overlap_mat, &
+                              get_overlap_exp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_pert
@@ -633,24 +633,24 @@ module openrsp_f
 #endif
                                 get_overlap_mat,      &
                                 get_overlap_exp)
-        ierr = f03_api_OpenRSPSetPDBS(open_rsp%c_rsp,               &
-                                      num_pert,                     &
-                                      perturbations,                &
-                                      pert_max_orders,              &
-                                      c_loc(open_rsp%overlap_fun),  &
-                                      c_funloc(RSPOverlapGetMat_f), &
-                                      c_funloc(RSPOverlapGetExp_f))
-    end function OpenRSPSetPDBS
+        ierr = OpenRSPSetPDBS(open_rsp%c_rsp,               &
+                              num_pert,                     &
+                              perturbations,                &
+                              pert_max_orders,              &
+                              c_loc(open_rsp%overlap_fun),  &
+                              c_funloc(RSPOverlapGetMat_f), &
+                              c_funloc(RSPOverlapGetExp_f))
+    end function OpenRSPSetPDBS_f
 
-    function OpenRSPAddOneOper(open_rsp,         &
-                               num_pert,         &
-                               perturbations,    &
-                               pert_max_orders,  &
+    function OpenRSPAddOneOper_f(open_rsp,         &
+                                 num_pert,         &
+                                 perturbations,    &
+                                 pert_max_orders,  &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                               user_ctx,         &
+                                 user_ctx,         &
 #endif
-                               get_one_oper_mat, &
-                               get_one_oper_exp) result(ierr)
+                                 get_one_oper_mat, &
+                                 get_one_oper_exp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_pert
@@ -761,24 +761,24 @@ module openrsp_f
 #endif
                                 get_one_oper_mat,          &
                                 get_one_oper_exp)
-        ierr = f03_api_OpenRSPAddOneOper(open_rsp%c_rsp,                   &
-                                         num_pert,                         &
-                                         perturbations,                    &
-                                         pert_max_orders,                  &
-                                         c_loc(cur_one_oper%one_oper_fun), &
-                                         c_funloc(RSPOneOperGetMat_f),     &
-                                         c_funloc(RSPOneOperGetExp_f))
-    end function OpenRSPAddOneOper
+        ierr = OpenRSPAddOneOper(open_rsp%c_rsp,                   &
+                                 num_pert,                         &
+                                 perturbations,                    &
+                                 pert_max_orders,                  &
+                                 c_loc(cur_one_oper%one_oper_fun), &
+                                 c_funloc(RSPOneOperGetMat_f),     &
+                                 c_funloc(RSPOneOperGetExp_f))
+    end function OpenRSPAddOneOper_f
 
-    function OpenRSPAddTwoOper(open_rsp,         &
-                               num_pert,         &
-                               perturbations,    &
-                               pert_max_orders,  &
+    function OpenRSPAddTwoOper_f(open_rsp,         &
+                                 num_pert,         &
+                                 perturbations,    &
+                                 pert_max_orders,  &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                               user_ctx,         &
+                                 user_ctx,         &
 #endif
-                               get_two_oper_mat, &
-                               get_two_oper_exp) result(ierr)
+                                 get_two_oper_mat, &
+                                 get_two_oper_exp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_pert
@@ -905,73 +905,73 @@ module openrsp_f
 #endif
                                 get_two_oper_mat,          &
                                 get_two_oper_exp)
-        ierr = f03_api_OpenRSPAddTwoOper(open_rsp%c_rsp,                   &
-                                         num_pert,                         &
-                                         perturbations,                    &
-                                         pert_max_orders,                  &
-                                         c_loc(cur_two_oper%two_oper_fun), &
-                                         c_funloc(RSPTwoOperGetMat_f),     &
-                                         c_funloc(RSPTwoOperGetExp_f))
-    end function OpenRSPAddTwoOper
+        ierr = OpenRSPAddTwoOper(open_rsp%c_rsp,                   &
+                                 num_pert,                         &
+                                 perturbations,                    &
+                                 pert_max_orders,                  &
+                                 c_loc(cur_two_oper%two_oper_fun), &
+                                 c_funloc(RSPTwoOperGetMat_f),     &
+                                 c_funloc(RSPTwoOperGetExp_f))
+    end function OpenRSPAddTwoOper_f
 
-    function OpenRSPSetAtoms(open_rsp,   &
-                             num_atoms,  &
-                             atom_coord, &
-                             atom_charge) result(ierr)
+    function OpenRSPSetAtoms_f(open_rsp,   &
+                               num_atoms,  &
+                               atom_coord, &
+                               atom_charge) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_atoms
         real(kind=QREAL), intent(in) :: atom_coord(3,num_atoms)
         real(kind=QREAL), intent(in) :: atom_charge(num_atoms)
-        ierr = f03_api_OpenRSPSetAtoms(open_rsp%c_rsp, &
-                                       num_atoms,      &
-                                       atom_coord,     &
-                                       atom_charge)
-    end function OpenRSPSetAtoms
+        ierr = OpenRSPSetAtoms(open_rsp%c_rsp, &
+                               num_atoms,      &
+                               atom_coord,     &
+                               atom_charge)
+    end function OpenRSPSetAtoms_f
 
-    function OpenRSPSetDipoleOrigin(open_rsp, dipole_origin) result(ierr)
+    function OpenRSPSetDipoleOrigin_f(open_rsp, dipole_origin) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         real(kind=QREAL), intent(in) :: dipole_origin(3)
-        ierr = f03_api_OpenRSPSetDipoleOrigin(open_rsp%c_rsp, dipole_origin)
-    end function OpenRSPSetDipoleOrigin
+        ierr = OpenRSPSetDipoleOrigin(open_rsp%c_rsp, dipole_origin)
+    end function OpenRSPSetDipoleOrigin_f
 
-    function OpenRSPSetGaugeOrigin(open_rsp, gauge_origin) result(ierr)
+    function OpenRSPSetGaugeOrigin_f(open_rsp, gauge_origin) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         real(kind=QREAL), intent(in) :: gauge_origin(3)
-        ierr = f03_api_OpenRSPSetGaugeOrigin(open_rsp%c_rsp, gauge_origin)
-    end function OpenRSPSetGaugeOrigin
+        ierr = OpenRSPSetGaugeOrigin(open_rsp%c_rsp, gauge_origin)
+    end function OpenRSPSetGaugeOrigin_f
 
-    function OpenRSPAssemble(open_rsp) result(ierr)
+    function OpenRSPAssemble_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
-        ierr = f03_api_OpenRSPAssemble(open_rsp%c_rsp)
-    end function OpenRSPAssemble
+        ierr = OpenRSPAssemble(open_rsp%c_rsp)
+    end function OpenRSPAssemble_f
 
-    function OpenRSPWrite(open_rsp, file_name) result(ierr)
+    function OpenRSPWrite_f(open_rsp, file_name) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(in) :: open_rsp
         character*(*), intent(in) :: file_name
-        ierr = f03_api_OpenRSPWrite(open_rsp%c_rsp, file_name//C_NULL_CHAR)
-    end function OpenRSPWrite
+        ierr = OpenRSPWrite(open_rsp%c_rsp, file_name//C_NULL_CHAR)
+    end function OpenRSPWrite_f
 
-    function OpenRSPGetRSPFun(open_rsp,      &
-                              ref_ham,       &
-                              ref_state,     &
-                              ref_overlap,   &
-                              num_pert,      &
-                              perturbations, &
-                              pert_orders,   &
-                              pert_freqs,    &
-                              kn_rule,       &
-                              size_rsp_fun,  &
-                              rsp_fun) result(ierr)
+    function OpenRSPGetRSPFun_f(open_rsp,      &
+                                ref_ham,       &
+                                ref_state,     &
+                                ref_overlap,   &
+                                num_pert,      &
+                                perturbations, &
+                                pert_orders,   &
+                                pert_freqs,    &
+                                kn_rule,       &
+                                size_rsp_fun,  &
+                                rsp_fun) result(ierr)
         integer(kind=4) :: ierr
-        type(OpenRSP), intent(inout) :: open_rsp
-        type(QMat), target, intent(in) :: ref_ham
-        type(QMat), target, intent(in) :: ref_state
-        type(QMat), target, intent(in) :: ref_overlap
+        type(OpenRSP), intent(in) :: open_rsp
+        type(QMat), intent(in) :: ref_ham
+        type(QMat), intent(in) :: ref_state
+        type(QMat), intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_pert
         integer(kind=QINT), intent(in) :: perturbations(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
@@ -979,27 +979,53 @@ module openrsp_f
         integer(kind=QINT), intent(in) :: kn_rule(3)
         integer(kind=QINT), intent(in) :: size_rsp_fun
         real(kind=QREAL), intent(out) :: rsp_fun(size_rsp_fun)
-        ierr = f03_api_OpenRSPGetRSPFun(open_rsp%c_rsp,     &
-                                        c_loc(ref_ham),     &
-                                        c_loc(ref_state),   &
-                                        c_loc(ref_overlap), &
-                                        num_pert,           &
-                                        perturbations,      &
-                                        pert_orders,        &
-                                        pert_freqs,         &
-                                        kn_rule,            &
-                                        size_rsp_fun,       &
-                                        rsp_fun)
-    end function OpenRSPGetRSPFun
+        character(len=1), allocatable :: enc(:)  !encoded data as an array of characters
+        integer(kind=QINT) len_enc               !length of encoded data
+        type(C_PTR) c_ref_ham                    !Hamiltonian of referenced state
+        type(C_PTR) c_ref_state                  !electronic state of referenced state
+        type(C_PTR) c_ref_overlap                !overlap integral matrix of referenced state
+        ! converts Hamiltonian to C pointer
+        len_enc = size(transfer(ref_ham, enc))
+        allocate(enc(len_enc), stat=ierr)
+        if (ierr/=0) return
+        enc = transfer(ref_ham, enc)          !encodes the QMat type in a character array
+        c_ref_ham = transfer(enc, c_ref_ham)  !decodes as C pointer
+        deallocate(enc)
+        ! converts electronic state to C pointer
+        len_enc = size(transfer(ref_state, enc))
+        allocate(enc(len_enc), stat=ierr)
+        if (ierr/=0) return
+        enc = transfer(ref_state, enc)
+        c_ref_state = transfer(enc, c_ref_state)
+        deallocate(enc)
+        ! converts overlap to C pointer
+        len_enc = size(transfer(ref_overlap, enc))
+        allocate(enc(len_enc), stat=ierr)
+        if (ierr/=0) return     
+        enc = transfer(ref_overlap, enc)          
+        c_ref_overlap = transfer(enc, c_ref_overlap)
+        deallocate(enc)
+        ierr = OpenRSPGetRSPFun(open_rsp%c_rsp, &
+                                c_ref_ham,      &
+                                c_ref_state,    &
+                                c_ref_overlap,  &
+                                num_pert,       &
+                                perturbations,  &
+                                pert_orders,    &
+                                pert_freqs,     &
+                                kn_rule,        &
+                                size_rsp_fun,   &
+                                rsp_fun)
+    end function OpenRSPGetRSPFun_f
 
-    function OpenRSPDestroy(open_rsp) result(ierr)
+    function OpenRSPDestroy_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         type(OneOperList_f), pointer :: cur_one_oper   !current one-electron operator
         type(OneOperList_f), pointer :: next_one_oper  !next one-electron operator
         type(TwoOperList_f), pointer :: cur_two_oper   !current two-electron operator
         type(TwoOperList_f), pointer :: next_two_oper  !next two-electron operator
-        ierr = f03_api_OpenRSPDestroy(open_rsp%c_rsp)
+        ierr = f_api_OpenRSPDestroy(open_rsp%c_rsp)
         ! cleans up callback subroutine of response equation solver
         if (associated(open_rsp%solver_fun)) then
             call RSPSolverDestroy_f(open_rsp%solver_fun)
@@ -1046,6 +1072,6 @@ module openrsp_f
             nullify(cur_two_oper)
             cur_two_oper => next_two_oper
         end do
-    end function OpenRSPDestroy
+    end function OpenRSPDestroy_f
 
 end module openrsp_f

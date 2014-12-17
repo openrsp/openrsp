@@ -9,14 +9,15 @@
 !> response function tensors.
 module rsp_general
 
-  use matrix_defop, matrix => openrsp_matrix
-  use matrix_lowlevel, only: mat_init
-  use rsp_contribs, only: rsp_field,           &
-                          rsp_oneave,          &
-                          rsp_ovlave,          &
-                          rsp_ovlave_t_matrix, &
-                          rsp_ovlave_t_matrix_2014, &
-                          rsp_nucpot
+!  use matrix_defop, matrix => openrsp_matrix
+!  use matrix_lowlevel, only: mat_init
+!  use rsp_contribs, only: rsp_field,           &
+!                          rsp_oneave,          &
+!                          rsp_ovlave,          &
+!                          rsp_ovlave_t_matrix, &
+!                          rsp_ovlave_t_matrix_2014, &
+!                          rsp_nucpot
+  use rsp_contribs, only: rsp_ovlave_t_matrix_2014
   use rsp_field_tuple, only: p_tuple,                &
                              p_tuple_standardorder,  &
                              p_tuple_remove_first,   &
@@ -41,21 +42,21 @@ module rsp_general
                                         make_triangulated_tuples_indices
   use rsp_perturbed_matrices, only: derivative_superstructure_getsize, &
                                     derivative_superstructure,         &
-                                    rsp_get_matrix_zeta,               &
-                                    rsp_get_matrix_lambda,             &
-                                    rsp_get_matrix_z,                  &
-                                    rsp_get_matrix_w,                  &
-                                    rsp_get_matrix_y,                  &
+                                    !rsp_get_matrix_zeta,               &
+                                    !rsp_get_matrix_lambda,             &
+                                    !rsp_get_matrix_z,                  &
+                                    !rsp_get_matrix_w,                  &
+                                    !rsp_get_matrix_y,                  &
                                     rsp_get_matrix_zeta_2014,          &
                                     rsp_get_matrix_lambda_2014,        &
                                     rsp_get_matrix_z_2014,             &
                                     rsp_get_matrix_w_2014,             &
                                     rsp_get_matrix_y_2014
-  use rsp_perturbed_sdf, only: rsp_fds, rsp_fds_2014
+  use rsp_perturbed_sdf, only: rsp_fds_2014
   use rsp_property_caching
   use rsp_sdf_caching
-  use interface_xc, only: rsp_xcave_interface
-  use interface_2el, only: rsp_twoave
+!  use interface_xc, only: rsp_xcave_interface
+!  use interface_2el, only: rsp_twoave
   
   use qmatrix
 
@@ -65,8 +66,8 @@ module rsp_general
   public get_prop_2014
   public rsp_energy_2014
   public get_energy_2014
-  public rsp_pulay_kn_2014
-  public get_pulay_kn_2014
+  public rsp_pulay_n_2014
+  public get_pulay_n_2014
   public rsp_pulay_lag_2014
   public get_pulay_lag_2014
   public rsp_idem_lag_2014
@@ -83,7 +84,7 @@ module rsp_general
   
   ! END NEW 2014
 
-  type(matrix) :: zeromat
+!  type(matrix) :: zeromat
 
   private
 
@@ -105,11 +106,13 @@ module rsp_general
 
     implicit none
 
-    integer, intent(in) :: num_perts, id_outp
-    integer, dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
-    integer, dimension(num_perts), intent(in) :: pert_labels
-    integer :: i, j, num_blks, property_size
-    integer, dimension(2) :: kn
+    integer(kind=QINT), intent(in) :: num_perts
+    integer(kind=4), intent(in) :: id_outp
+    integer(kind=QINT), dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
+    integer(kind=QINT), dimension(num_perts), intent(in) :: pert_labels
+    integer(kind=QINT), intent(in) :: property_size
+    integer :: i, j, num_blks
+    integer(kind=QINT), intent(in), dimension(2) :: kn
     character, optional, dimension(20) :: file_id
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
@@ -782,7 +785,7 @@ module rsp_general
     type(property_cache) :: cache
     type(qmat) :: D_unp
     type(qmat), allocatable, dimension(:) :: dens_tuple
-    type(rsp_field), allocatable, dimension(:) :: nucpot_pert
+!    type(rsp_field), allocatable, dimension(:) :: nucpot_pert
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     integer :: i, j, k, m, n, num_p_tuples, total_num_perturbations, density_order, &
                property_size, offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
@@ -807,7 +810,7 @@ module rsp_general
 !                      p_tuples(1), ncarray)
 
     allocate(dens_tuple(num_p_tuples))
-    allocate(nucpot_pert(p_tuples(1)%n_perturbations))
+!    allocate(nucpot_pert(p_tuples(1)%n_perturbations))
  !   allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
  !   allocate(ncinnersmall(p_tuples(1)%n_perturbations))
  !   allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
@@ -1138,22 +1141,22 @@ module rsp_general
        ! MR: THIS IS THE CASE 'ALL INDICES ARE INNER INDICES'
        ! THIS TERM OCCURS ONLY ONCE AND DOES NOT NEED TO BE CACHED
 
-       do i = 1, p_tuples(1)%n_perturbations
-
-          nucpot_pert(i) = rsp_field(p_tuples(1)%plab(i), p_tuples(1)%freq(i), 1, &
-                                     p_tuples(1)%pdim(i))
-
-       end do
+!       do i = 1, p_tuples(1)%n_perturbations
+!
+!          nucpot_pert(i) = rsp_field(p_tuples(1)%plab(i), p_tuples(1)%freq(i), 1, &
+!                                     p_tuples(1)%pdim(i))
+!
+!       end do
 
        tmp = 0.0
        contrib = 0.0
 
-!        call get_nucpot(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-!                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
-!                        p_tuples(1)%plab, contrib)
+       call get_nucpot(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
+                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+                       p_tuples(1)%plab, contrib)
        
        
-       call rsp_nucpot(nucpot_pert, property_size, contrib) 
+!       call rsp_nucpot(nucpot_pert, property_size, contrib) 
 
        tmp = tmp + contrib
        contrib = 0.0
@@ -1240,7 +1243,7 @@ module rsp_general
     deallocate(blks_tuple_triang_size)
     deallocate(blk_sizes)
     deallocate(blk_sizes_merged)
-    deallocate(nucpot_pert)
+!    deallocate(nucpot_pert)
     deallocate(dens_tuple)
 !    deallocate(ncoutersmall)
 !    deallocate(ncinnersmall)

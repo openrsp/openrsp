@@ -50,71 +50,71 @@ module rsp_contribs
 !  public rsp_xcint_adapt
 !  public rsp_pe
 
-  !> Type describing a single field in a response function
-  !> or response equation. A response equation (or density)
-  !> corresponds to an array of prop_field. Similarly
-  !> a response function corresponds to an array of prop_field
-  !> whose freqs sum to zero.
-  type rsp_field
-     sequence
-     !> 4-char pert label
-     character(4) :: label
-     !> frequency
-     complex(8)   :: freq
-     !> first component
-     integer      :: comp
-     !> number of components
-     integer      :: ncomp
-  end type
-
-  !> private struct to collect properties of perturbing "fields"
-  type field_stats
-     !> four-letter abbreviation
-     character(4)  :: label
-     !> long name
-     character(64) :: name
-     !> number of components (when known, -1 otherwise)
-     integer       :: ncomp
-     !> anti-symmetric (1,3,5th ord.) perturbed integrals
-     logical       :: anti
-     !> basis dependent (sa. GEO and MAG)
-     logical       :: bas
-     !> one-electron operator linear in field strength (EL)
-     logical       :: lin
-     !> one-electron operator quadratic in field strength (MAGO)
-     logical       :: quad
-  end type
-
-
-  ! to compactify the table below
-  logical, parameter :: T = .true.
-  logical, parameter :: F = .false.
-
-
-  !> ajt nov09: AUX0..AUX9 are 10 configurable basis-independent 1-electron
-  !>            perturbations, configured by setting the corresponding
-  !>            HERMIT integral label in prop_auxlab(0:9).
-  !> ajt jan10: EXCI is a ZERO (no) perturbation, and is introduced to
-  !>            allow the same code to contract response functions and
-  !>            "generalized transition moments".
-  !> ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
-  !>            allow the same code to contract response functions and
-  !>            frequency-differentiated response functions.
-  type(field_stats) :: all_known_fields(12) = &                  !nc an ba ln qu
-     (/field_stats('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
-       field_stats('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
-       field_stats('EL  ', 'Electric field'                      , 3, F, F, T, F), &
-       field_stats('VEL ', 'Velocity'                            , 3, T, F, T, F), &
-       field_stats('MAG0', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
-       field_stats('MAG ', 'Magnetic field with London orbitals' , 3, T, T, F, F), &
-       field_stats('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
-       field_stats('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
-       field_stats('GEO ', 'Nuclear coordinates'                 ,-1, F, T, F, F), & !-1=mol-dep
-       field_stats('NUCM', 'Nuclear magnetic moment'             ,-1, F, T, F, T), & !-1=mol-dep
-       field_stats('AOCC', 'AO contraction coefficients'         ,-1, F, T, F, F), & !-1=mol-dep
-       field_stats('AOEX', 'AO exponents'                        ,-1, F, T, F, F)/)  !-1=mol-dep
-
-  character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
+!  !> Type describing a single field in a response function
+!  !> or response equation. A response equation (or density)
+!  !> corresponds to an array of prop_field. Similarly
+!  !> a response function corresponds to an array of prop_field
+!  !> whose freqs sum to zero.
+!  type rsp_field
+!     sequence
+!     !> 4-char pert label
+!     character(4) :: label
+!     !> frequency
+!     complex(8)   :: freq
+!     !> first component
+!     integer      :: comp
+!     !> number of components
+!     integer      :: ncomp
+!  end type
+!
+!  !> private struct to collect properties of perturbing "fields"
+!  type field_stats
+!     !> four-letter abbreviation
+!     character(4)  :: label
+!     !> long name
+!     character(64) :: name
+!     !> number of components (when known, -1 otherwise)
+!     integer       :: ncomp
+!     !> anti-symmetric (1,3,5th ord.) perturbed integrals
+!     logical       :: anti
+!     !> basis dependent (sa. GEO and MAG)
+!     logical       :: bas
+!     !> one-electron operator linear in field strength (EL)
+!     logical       :: lin
+!     !> one-electron operator quadratic in field strength (MAGO)
+!     logical       :: quad
+!  end type
+!
+!
+!  ! to compactify the table below
+!  logical, parameter :: T = .true.
+!  logical, parameter :: F = .false.
+!
+!
+!  !> ajt nov09: AUX0..AUX9 are 10 configurable basis-independent 1-electron
+!  !>            perturbations, configured by setting the corresponding
+!  !>            HERMIT integral label in prop_auxlab(0:9).
+!  !> ajt jan10: EXCI is a ZERO (no) perturbation, and is introduced to
+!  !>            allow the same code to contract response functions and
+!  !>            "generalized transition moments".
+!  !> ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
+!  !>            allow the same code to contract response functions and
+!  !>            frequency-differentiated response functions.
+!  type(field_stats) :: all_known_fields(12) = &                  !nc an ba ln qu
+!     (/field_stats('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
+!       field_stats('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
+!       field_stats('EL  ', 'Electric field'                      , 3, F, F, T, F), &
+!       field_stats('VEL ', 'Velocity'                            , 3, T, F, T, F), &
+!       field_stats('MAG0', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
+!       field_stats('MAG ', 'Magnetic field with London orbitals' , 3, T, T, F, F), &
+!       field_stats('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
+!       field_stats('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
+!       field_stats('GEO ', 'Nuclear coordinates'                 ,-1, F, T, F, F), & !-1=mol-dep
+!       field_stats('NUCM', 'Nuclear magnetic moment'             ,-1, F, T, F, T), & !-1=mol-dep
+!       field_stats('AOCC', 'AO contraction coefficients'         ,-1, F, T, F, F), & !-1=mol-dep
+!       field_stats('AOEX', 'AO exponents'                        ,-1, F, T, F, F)/)  !-1=mol-dep
+!
+!  character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
 
   private
 

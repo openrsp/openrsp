@@ -30,21 +30,21 @@
     subroutine test_f_OpenRSP(io_log)
 #endif
         use qmatrix, only: QINT,QREAL,QMat
-        use openrsp_f, only: OpenRSP,                 &
-                             OpenRSPCreate,           &
-                             OpenRSPSetSolver,        &
+        use openrsp_f, only: OpenRSP,                   &
+                             OpenRSPCreate_f,           &
+                             OpenRSPSetSolver_f,        &
 #if defined(OPENRSP_PERTURBATION_FREE)
-                             OpenRSPSetPerturbations, &
+                             OpenRSPSetPerturbations_f, &
 #endif
-                             OpenRSPSetPDBS,          &
-                             OpenRSPAddOneOper,       &
-                             OpenRSPSetAtoms,         &
-                             OpenRSPSetDipoleOrigin,  &
-                             OpenRSPSetGaugeOrigin,   &
-                             OpenRSPAssemble,         &
-                             OpenRSPWrite,            &
-                             OpenRSPGetRSPFun,        &
-                             OpenRSPDestroy
+                             OpenRSPSetPDBS_f,          &
+                             OpenRSPAddOneOper_f,       &
+                             OpenRSPSetAtoms_f,         &
+                             OpenRSPSetDipoleOrigin_f,  &
+                             OpenRSPSetGaugeOrigin_f,   &
+                             OpenRSPAssemble_f,         &
+                             OpenRSPWrite_f,            &
+                             OpenRSPGetRSPFun_f,        &
+                             OpenRSPDestroy_f
         implicit none
         ! IO of standard output
 #if defined(OPENRSP_TEST_EXECUTABLE)
@@ -130,109 +130,109 @@
         ! error information
         integer(kind=4) ierr
 
-        ierr = OpenRSPCreate(open_rsp)
+        ierr = OpenRSPCreate_f(open_rsp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPCreate() passed"
+        write(io_log,100) "OpenRSPCreate_f() passed"
 
-        ierr = OpenRSPSetSolver(open_rsp,   &
+        ierr = OpenRSPSetSolver_f(open_rsp,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                solver_lab, &
+                                  solver_lab, &
 #endif
-                                get_rsp_solution)
+                                  get_rsp_solution)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetSolver() passed"
+        write(io_log,100) "OpenRSPSetSolver_f() passed"
 
 #if defined(OPENRSP_PERTURBATION_FREE)
-        ierr = OpenRSPSetPerturbations(open_rsp,            &
-                                       NUM_ALL_PERT,        &
-                                       ALL_PERTURBATIONS,   &
-                                       ALL_PERT_MAX_ORDERS, &
-                                       ALL_PERT_SIZES,      &
+        ierr = OpenRSPSetPerturbations_f(open_rsp,            &
+                                         NUM_ALL_PERT,        &
+                                         ALL_PERTURBATIONS,   &
+                                         ALL_PERT_MAX_ORDERS, &
+                                         ALL_PERT_SIZES,      &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       pert_lab,            &
+                                         pert_lab,            &
 #endif
-                                       get_pert_comp,       &
-                                       get_pert_rank)
+                                         get_pert_comp,       &
+                                         get_pert_rank)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetPerturbations() passed"
+        write(io_log,100) "OpenRSPSetPerturbations_f() passed"
 #endif
 
-        ierr = OpenRSPSetPDBS(open_rsp,              &
-                              overlap_num_pert,      &
-                              overlap_perturbations, &
-                              overlap_pert_orders,   &
+        ierr = OpenRSPSetPDBS_f(open_rsp,              &
+                                overlap_num_pert,      &
+                                overlap_perturbations, &
+                                overlap_pert_orders,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                              overlap_lab,           &
+                                overlap_lab,           &
 #endif
-                              get_overlap_mat,       &
-                              get_overlap_exp)
+                                get_overlap_mat,       &
+                                get_overlap_exp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetPDBS passed"
+        write(io_log,100) "OpenRSPSetPDBS_f() passed"
 
-        ierr = OpenRSPAddOneOper(open_rsp,             &
-                                 oneham_num_pert,      &
-                                 oneham_perturbations, &
-                                 oneham_pert_orders,   &
+        ierr = OpenRSPAddOneOper_f(open_rsp,             &
+                                   oneham_num_pert,      &
+                                   oneham_perturbations, &
+                                   oneham_pert_orders,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                 oneham_lab,           &
+                                   oneham_lab,           &
 #endif
-                                 get_one_oper_mat,     &
-                                 get_one_oper_exp)
+                                   get_one_oper_mat,     &
+                                   get_one_oper_exp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPAddOneOper(h) passed"
+        write(io_log,100) "OpenRSPAddOneOper_f(h) passed"
 
-        ierr = OpenRSPAddOneOper(open_rsp,                &
-                                 ext_field_num_pert,      &
-                                 ext_field_perturbations, &
-                                 ext_field_pert_orders,   &
+        ierr = OpenRSPAddOneOper_f(open_rsp,                &
+                                   ext_field_num_pert,      &
+                                   ext_field_perturbations, &
+                                   ext_field_pert_orders,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                 ext_field_lab,           &
+                                   ext_field_lab,           &
 #endif
-                                 get_one_oper_mat,        &
-                                 get_one_oper_exp)
+                                   get_one_oper_mat,        &
+                                   get_one_oper_exp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPAddOneOper(V) passed"
+        write(io_log,100) "OpenRSPAddOneOper_f(V) passed"
 
-        ierr = OpenRSPSetAtoms(open_rsp,   &
-                               num_atoms,  &
-                               atom_coord, &
-                               atom_charge)
+        ierr = OpenRSPSetAtoms_f(open_rsp,   &
+                                 num_atoms,  &
+                                 atom_coord, &
+                                 atom_charge)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetAtoms() passed"
+        write(io_log,100) "OpenRSPSetAtoms_f() passed"
 
-        ierr = OpenRSPSetDipoleOrigin(open_rsp, dipole_origin)
+        ierr = OpenRSPSetDipoleOrigin_f(open_rsp, dipole_origin)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetDipoleOrigin() passed"
+        write(io_log,100) "OpenRSPSetDipoleOrigin_f() passed"
 
-        ierr = OpenRSPSetGaugeOrigin(open_rsp, gauge_origin)
+        ierr = OpenRSPSetGaugeOrigin_f(open_rsp, gauge_origin)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetGaugeOrigin() passed"
+        write(io_log,100) "OpenRSPSetGaugeOrigin_f() passed"
 
-        ierr = OpenRSPAssemble(open_rsp)
+        ierr = OpenRSPAssemble_f(open_rsp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPAssemble() passed"
+        write(io_log,100) "OpenRSPAssemble_f() passed"
 
-        ierr = OpenRSPWrite(open_rsp, OPENRSP_F_LOG)
+        ierr = OpenRSPWrite_f(open_rsp, OPENRSP_F_LOG)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPWrite() passed"
+        write(io_log,100) "OpenRSPWrite_f() passed"
 
-        ierr = OpenRSPGetRSPFun(open_rsp,                &
-                                ref_ham,                 &
-                                ref_state,               &
-                                ref_overlap,             &
-                                vib_alpha_num_pert,      &
-                                vib_alpha_perturbations, &
-                                vib_alpha_pert_orders,   &
-                                vib_alpha_pert_freqs,    &
-                                kn_rule,                 &
-                                size_rsp_fun,            &
-                                rsp_fun)
+        ierr = OpenRSPGetRSPFun_f(open_rsp,                &
+                                  ref_ham,                 &
+                                  ref_state,               &
+                                  ref_overlap,             &
+                                  vib_alpha_num_pert,      &
+                                  vib_alpha_perturbations, &
+                                  vib_alpha_pert_orders,   &
+                                  vib_alpha_pert_freqs,    &
+                                  kn_rule,                 &
+                                  size_rsp_fun,            &
+                                  rsp_fun)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPGetRSPFun() passed"
+        write(io_log,100) "OpenRSPGetRSPFun_f() passed"
 
-        ierr = OpenRSPDestroy(open_rsp)
+        ierr = OpenRSPDestroy_f(open_rsp)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPDestroy() passed"
+        write(io_log,100) "OpenRSPDestroy_f() passed"
 
 100     format("test_f_OpenRSP>> ",A)
 #if defined(OPENRSP_TEST_EXECUTABLE)

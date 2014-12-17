@@ -137,32 +137,37 @@ ENDIF()
 #    src/legacy/legacy_properties.F90
 #    src/legacy/legacy_vibrational_properties.f90
 #    src/legacy/rsp_equations_old.F90)
+#
+#    src/ao_dens/rsp_equations.f90
+#
+#    src/input/openrsp_input_reader.F90
+#    src/input/openrsp_cfg.F90
+#    src/input/parse_input.F90
+#    src/openrsp.f90
+#    src/openrsp_efishgcid.f90
+#    src/openrsp_general_pv2f.f90
+#    src/openrsp_general_pv3f.f90
+#    src/openrsp_general_pv4f.f90
+#
+#    src/ao_dens/rsp_mag_prop.f90
+#
+#    src/vib_pv_contribs.f90
+#
 SET(OPENRSP_SRCS
     ${OPENRSP_SRCS}
-    src/input/openrsp_input_reader.F90
-    src/input/openrsp_cfg.F90
-    src/input/parse_input.F90
-    src/openrsp.f90
-    src/openrsp_efishgcid.f90
-    src/openrsp_general_pv2f.f90
-    src/openrsp_general_pv3f.f90
-    src/openrsp_general_pv4f.f90
     src/ao_dens/rsp_choose_rule.f90
     src/ao_dens/rsp_contribs.f90
-    src/ao_dens/rsp_equations.f90
     src/ao_dens/rsp_field_tuple.f90
     src/ao_dens/rsp_general.f90
     src/ao_dens/rsp_indices_and_addressing.f90
     src/ao_dens/rsp_lof_caching_tmp.f90
-    src/ao_dens/rsp_mag_prop.f90
     src/ao_dens/rsp_perturbed_matrices.f90
     src/ao_dens/rsp_perturbed_sdf.f90
     src/ao_dens/rsp_property_caching.f90
     src/ao_dens/rsp_sdf_caching.f90
     src/ao_dens/rsp_pert_table.F90
     src/ao_dens/adapter/openrsp_callback_f.F90
-    src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90
-    src/vib_pv_contribs.f90)
+    src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90)
 
 # ??
 IF(ENABLE_INTEREST)
