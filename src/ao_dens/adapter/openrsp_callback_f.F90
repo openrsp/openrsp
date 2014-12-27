@@ -113,19 +113,93 @@ module openrsp_callback_f
         ctx_saved%xc_fun = C_NULL_PTR
     end subroutine RSP_CTX_Destroy
 
-    subroutine f_callback_RSPSolverGetSolution()
+    ! callback subroutine to get the solution of linear response eigenvalue equation
+    subroutine f_callback_RSPSolverGetSolution(ref_ham,       &
+                                               ref_state,     &
+                                               ref_overlap,   &
+                                               num_freq_sums, &
+                                               freq_sums,     &
+                                               size_pert,     &
+                                               RHS_mat,       &
+                                               rsp_param)
+        type(QMat), intent(in) :: ref_ham
+        type(QMat), intent(in) :: ref_state
+        type(QMat), intent(in) :: ref_overlap
+        integer(kind=QINT), intent(in) :: num_freq_sums
+        real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
+        integer(kind=QINT), intent(in) :: size_pert
+        type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+        type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
     end subroutine f_callback_RSPSolverGetSolution
 
-    subroutine f_callback_RSPNucContribGet()
+    ! callback subroutine to get nuclear contributions
+    subroutine f_callback_RSPNucContribGet(num_pert,      &
+                                           perturbations, &
+                                           pert_orders,   &
+                                           size_contrib,  &
+                                           val_contrib)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=QINT), intent(in) :: size_contrib
+        real(kind=QREAL), intent(inout) :: val_contrib(size_contrib)
     end subroutine f_callback_RSPNucContribGet
 
-    subroutine f_callback_RSPOverlapGetMat()
+    ! callback subroutine to get (perturbed) overlap integral matrices
+    subroutine f_callback_RSPOverlapGetMat(bra_num_pert,      &
+                                           bra_perturbations, &
+                                           bra_pert_orders,   &
+                                           ket_num_pert,      &
+                                           ket_perturbations, &
+                                           ket_pert_orders,   &
+                                           num_pert,          &
+                                           perturbations,     &
+                                           pert_orders,       &
+                                           num_int,           &
+                                           val_int)
+        integer(kind=QINT), intent(in) :: bra_num_pert
+        integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+        integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
+        integer(kind=QINT), intent(in) :: ket_num_pert
+        integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+        integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=QINT), intent(in) :: num_int
+        type(QMat), intent(inout) :: val_int(num_int)
     end subroutine f_callback_RSPOverlapGetMat
 
-    subroutine f_callback_RSPOverlapGetExp()
+    ! callback subroutine to get expectation values of (perturbed) overlap integrals
+    subroutine f_callback_RSPOverlapGetExp(bra_num_pert,      &
+                                           bra_perturbations, &
+                                           bra_pert_orders,   &
+                                           ket_num_pert,      &
+                                           ket_perturbations, &
+                                           ket_pert_orders,   &
+                                           num_pert,          &
+                                           perturbations,     &
+                                           pert_orders,       &
+                                           num_dens,          &
+                                           ao_dens,           &
+                                           num_exp,           &
+                                           val_exp)
+        integer(kind=QINT), intent(in) :: bra_num_pert
+        integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+        integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
+        integer(kind=QINT), intent(in) :: ket_num_pert
+        integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+        integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=QINT), intent(in) :: num_dens
+        type(QMat), intent(in) :: ao_dens(num_dens)
+        integer(kind=QINT), intent(in) :: num_exp
+        real(kind=QREAL), intent(inout) :: val_exp(num_exp)
     end subroutine f_callback_RSPOverlapGetExp
 
-    ! callback subroutine to get the integral matrices of one-electron operator
+    ! callback subroutine to get (perturbed) one-electron integral matrices
     subroutine f_callback_RSPOneOperGetMat(num_pert,      &
                                            perturbations, &
                                            pert_orders,   &
@@ -170,18 +244,66 @@ module openrsp_callback_f
         deallocate(c_val_int)
     end subroutine f_callback_RSPOneOperGetMat
 
-    subroutine f_callback_RSPOneOperGetExp()
+    ! callback subroutine to get expectation values of (perturbed) one-electron integrals
+    subroutine f_callback_RSPOneOperGetExp(num_pert,      &
+                                           perturbations, &
+                                           pert_orders,   &
+                                           num_dens,      &
+                                           ao_dens,       &
+                                           num_exp,       &
+                                           val_exp)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=QINT), intent(in) :: num_dens
+        type(QMat), intent(in) :: ao_dens(num_dens)
+        integer(kind=QINT), intent(in) :: num_exp
+        real(kind=QREAL), intent(inout) :: val_exp(num_exp)
     end subroutine f_callback_RSPOneOperGetExp
 
-    subroutine f_callback_RSPTwoOperGetMat()
+    ! callback subroutine to get (perturbed) two-electron integral matrices
+    subroutine f_callback_RSPTwoOperGetMat(num_pert,       &
+                                           perturbations,  &
+                                           pert_orders,    &
+                                           num_var_dens,   &
+                                           var_ao_dens,    &
+                                           num_int,        &
+                                           val_int)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=QINT), intent(in) :: num_var_dens
+        type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+        integer(kind=QINT), intent(in) :: num_int
+        type(QMat), intent(inout) :: val_int(num_int)
     end subroutine f_callback_RSPTwoOperGetMat
 
-    subroutine f_callback_RSPTwoOperGetExp()
+    ! callback subroutine to get expectation values of (perturbed) two-electron integrals
+    subroutine f_callback_RSPTwoOperGetExp(num_pert,       &
+                                           perturbations,  &
+                                           pert_orders,    &
+                                           num_var_dens,   &
+                                           var_ao_dens,    &
+                                           num_contr_dens, &
+                                           contr_ao_dens,  &
+                                           num_exp,        &
+                                           val_exp)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=QINT), intent(in) :: num_var_dens
+        type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+        integer(kind=QINT), intent(in) :: num_contr_dens
+        type(QMat), intent(in) :: contr_ao_dens(num_contr_dens)
+        integer(kind=QINT), intent(in) :: num_exp
+        real(kind=QREAL), intent(inout) :: val_exp(num_exp)
     end subroutine f_callback_RSPTwoOperGetExp
 
+    ! callback subroutine to get (perturbed) exchange-correlation functional matrices
     subroutine f_callback_RSPXCFunGetMat()
     end subroutine f_callback_RSPXCFunGetMat
 
+    ! callback subroutine to get expectation values of (perturbed) exchange-correlation functional
     subroutine f_callback_RSPXCFunGetExp()
     end subroutine f_callback_RSPXCFunGetExp
 

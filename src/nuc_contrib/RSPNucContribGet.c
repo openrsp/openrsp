@@ -30,7 +30,7 @@
     \param[QInt:int]{in} perturbations the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} size_contrib size of nuclear contributions
-    \param[QReal:real]{out} val_contrib the nuclear contributions
+    \param[QReal:real]{inout} val_contrib the nuclear contributions
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPNucContribGet(const RSPNucContrib *nuc_contrib,

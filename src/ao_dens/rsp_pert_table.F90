@@ -27,11 +27,11 @@ module rsp_pert_table
 
     public
 
-    integer(kind=QINT), parameter :: RSP_GEO_PERT = 1
-    integer(kind=QINT), parameter :: RSP_EL_PERT = 2
-    integer(kind=QINT), parameter :: RSP_ELGR_PERT = 3
-    integer(kind=QINT), parameter :: RSP_MAG0_PERT = 4
-    integer(kind=QINT), parameter :: RSP_MAG_PERT = 5
+    integer(kind=QINT), parameter :: RSP_GEO_PERT = 1_QINT
+    integer(kind=QINT), parameter :: RSP_EL_PERT = 2_QINT
+    integer(kind=QINT), parameter :: RSP_ELGR_PERT = 3_QINT
+    integer(kind=QINT), parameter :: RSP_MAG0_PERT = 4_QINT
+    integer(kind=QINT), parameter :: RSP_MAG_PERT = 5_QINT
     character(4), parameter :: CHAR_PERT_TABLE(5) = (/'GEO ', 'EL  ', 'ELGR', 'MAG0', 'MAG '/)
 
 end module rsp_pert_table
