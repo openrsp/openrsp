@@ -86,10 +86,8 @@
         end do
 #if defined(OPENRSP_F_USER_CONTEXT)
         write(6,"(10A)") "get_one_oper_mat_f>> label ", user_ctx
-        if (all(user_ctx==oneham_context)) then
-            write(6,100) "one-electron Hamiltonian"
-        else if (all(user_ctx==ext_field_context)) then
-            write(6,100) "external field"
+        if (all(user_ctx==overlap_context)) then
+            write(6,100) "overlap integrals"
         else
             write(6,100) "unknown one-electron operator"
             stop

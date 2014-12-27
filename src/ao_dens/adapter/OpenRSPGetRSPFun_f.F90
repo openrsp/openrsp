@@ -136,7 +136,7 @@
                 end select
                 f_pert_first_comp(jpert) = 1  !always starting from 1 for the time being
                 f_pert_labels(jpert) = CHAR_PERT_TABLE(perturbations(ipert))
-                f_pert_freqs(jpert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert))
+                f_pert_freqs(jpert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
             end do
         end do
         ! gets the matrices
