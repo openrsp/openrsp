@@ -54,9 +54,9 @@
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         real(kind=C_QREAL), intent(in) :: pert_freqs(2*num_pert)
         integer(kind=C_QINT), intent(in) :: kn(2)
-        type(C_PTR), intent(in) :: F_unpert
-        type(C_PTR), intent(in) :: S_unpert
-        type(C_PTR), intent(in) :: D_unpert
+        type(C_PTR), value, intent(in) :: F_unpert
+        type(C_PTR), value, intent(in) :: S_unpert
+        type(C_PTR), value, intent(in) :: D_unpert
         type(C_PTR), value, intent(in) :: rsp_solver
         type(C_PTR), value, intent(in) :: nuc_contrib
         type(C_PTR), value, intent(in) :: overlap
