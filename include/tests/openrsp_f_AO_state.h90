@@ -1,4 +1,4 @@
-    !unperturbed overlap integrals
+    ! unperturbed overlap integrals
     real(kind=QREAL) :: values_overlap(1024) = (/                                    &
         1.000000000000000_QREAL,  0.233689906059163_QREAL,  0.167279759595895_QREAL, &
         0.000000000000000_QREAL,  0.000000000000000_QREAL,  0.000000000000000_QREAL, &
@@ -342,7 +342,7 @@
         0.053333157577861_QREAL, -0.042707676853505_QREAL,  0.006967627675958_QREAL, &
         0.107356188553075_QREAL,  0.327910319525025_QREAL,  0.658292049339330_QREAL, &
         1.000000000000001_QREAL/)
-    !unperturbed density matrix
+    ! unperturbed density matrix
     real(kind=QREAL) :: values_density(1024) = (/                                    &
         2.087480403033148_QREAL, -0.193220905215921_QREAL, -0.272123064643867_QREAL, &
         0.013288793188953_QREAL, -0.032709761721841_QREAL,  0.033685116580784_QREAL, &
@@ -686,7 +686,7 @@
         0.009541603704437_QREAL, -0.006279254394456_QREAL,  0.003372259967548_QREAL, &
        -0.008304733655132_QREAL, -0.006860196243468_QREAL,  0.069290848486701_QREAL, &
         0.038551760656296_QREAL/)
-    !unperturbed Fock matrix
+    ! unperturbed Fock matrix
     real(kind=QREAL) :: values_Fock(1024) = (/                                       &
       -20.632274495919347_QREAL, -5.141049902525445_QREAL, -3.649348247710690_QREAL, &
        -0.007051562069756_QREAL,  0.014889563995715_QREAL, -0.018454432509332_QREAL, &
