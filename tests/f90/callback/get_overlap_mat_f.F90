@@ -59,6 +59,8 @@
 #endif
         integer(kind=QINT), intent(in) :: num_int
         type(QMat), intent(inout) :: val_int(num_int)
+! defined perturbations and their maximum orders
+#include "tests/openrsp_f_perturbations.h90"
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1) :: overlap_context(7) = (/"O","V","E","R","L","A","P"/)
 #endif
@@ -66,6 +68,26 @@
         integer(kind=QINT) ipert
         integer(kind=QINT) imat
         integer(kind=4) ierr
+#if defined(OPENRSP_F_USER_CONTEXT)
+        if (any(user_ctx/=overlap_context)) then
+            write(6,100) "get_overlap_mat_f>> unknown one-electron operator"
+            stop
+        end if
+#endif
+        ! overlap integrals
+        if (num_pert==0 .and. bra_num_pert==0 .and. ket_num_pert==0) then
+        else if (num_pert==1 .and. bra_num_pert==0 .and. ket_num_pert==0) then
+          if (perturbations(1)==PERT_GEOMETRIC) then
+          else if (perturbations(1)==PERT_DIPOLE) then
+          else if (perturbations(1)==PERT_MAGNETIC) then
+          else
+          end if
+        else if (num_pert==0 .and. bra_num_pert==1 .and. ket_num_pert==0) then
+        else if (num_pert==0 .and. bra_num_pert==0 .and. ket_num_pert==1) then
+        else
+            write(6,100) "get_overlap_mat_f>> not implemented"
+            stop
+        end if
         write(6,100) "bra_num_pert", bra_num_pert
         do ipert = 1, bra_num_pert
             write(6,100) "bra_pert.",              &
@@ -84,15 +106,6 @@
                          perturbations(ipert), &
                          pert_orders(ipert)
         end do
-#if defined(OPENRSP_F_USER_CONTEXT)
-        write(6,"(10A)") "get_one_oper_mat_f>> label ", user_ctx
-        if (all(user_ctx==overlap_context)) then
-            write(6,100) "overlap integrals"
-        else
-            write(6,100) "unknown one-electron operator"
-            stop
-        end if
-#endif
         return
 100     format("get_overlap_mat_f>> ",A,2I6)
     end subroutine get_overlap_mat_f

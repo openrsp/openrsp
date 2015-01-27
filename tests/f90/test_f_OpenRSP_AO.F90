@@ -96,10 +96,13 @@
         type(QMat) D_unpert
         type(QMat) S_unpert
         ! polarizability
-        integer(kind=QINT), parameter :: ALPHA_NUM_PERT = 1_QINT
-        integer(kind=QINT), parameter :: ALPHA_PERTUBRATIONS(ALPHA_NUM_PERT) = (/PERT_DIPOLE/)
-        integer(kind=QINT), parameter :: ALPHA_PERT_ORDER(ALPHA_NUM_PERT) = (/1_QINT/)
-        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*ALPHA_NUM_PERT) = (/0.1_QREAL,0.0_QREAL/)
+        integer(kind=QINT), parameter :: ALPHA_NUM_PERT = 2_QINT
+        integer(kind=QINT), parameter :: ALPHA_PERTUBRATIONS(ALPHA_NUM_PERT) = (/ &
+            PERT_DIPOLE,PERT_DIPOLE/)
+        integer(kind=QINT), parameter :: ALPHA_PERT_ORDER(ALPHA_NUM_PERT) = (/ &
+            1_QINT,1_QINT/)
+        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*ALPHA_NUM_PERT) = (/ &
+            -0.072_QREAL,0.0_QREAL,0.072_QREAL,0.0_QREAL/)
         ! kn rule and response functions
         integer(kind=QINT) kn_rule(2)
         integer(kind=QINT) size_rsp_fun
