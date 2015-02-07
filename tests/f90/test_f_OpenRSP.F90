@@ -52,8 +52,8 @@
 #include "tests/openrsp_f_molecule.h90"
         ! context of response theory calculations
         type(OpenRSP) open_rsp
-        ! all perturbations involved in calculations
-        integer(kind=QINT), parameter :: ALL_PERTURBATIONS(NUM_ALL_PERT) = (/ &
+        ! labels of all perturbations
+        integer(kind=QINT), parameter :: ALL_PERT_LABELS(NUM_ALL_PERT) = (/ &
             PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC/)
         ! maximum allowed orders of all perturbations
         integer(kind=QINT), parameter :: ALL_PERT_MAX_ORDERS(NUM_ALL_PERT) = (/ &
@@ -84,7 +84,7 @@
         ! sets information of all perturbations
         ierr = OpenRSPSetPerturbations_f(open_rsp,            &
                                          NUM_ALL_PERT,        &
-                                         ALL_PERTURBATIONS,   &
+                                         ALL_PERT_LABELS,     &
                                          ALL_PERT_MAX_ORDERS, &
                                          ALL_PERT_SIZES,      &
 #if defined(OPENRSP_F_USER_CONTEXT)

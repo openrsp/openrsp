@@ -59,8 +59,8 @@
         ! callback subroutine of linear response equation solver
         external get_rsp_solution_f
         ! overlap integrals with London atomic orbitals
-        integer(kind=QINT), parameter :: overlap_num_pert = 2
-        integer(kind=QINT) :: overlap_perturbations(overlap_num_pert) = (/ &
+        integer(kind=QINT), parameter :: overlap_num_pert = 2_QINT
+        integer(kind=QINT) :: overlap_pert_labels(overlap_num_pert) = (/ &
             PERT_GEOMETRIC,PERT_MAGNETIC/)
         integer(kind=QINT) :: overlap_pert_orders(overlap_num_pert) = (/ &
             MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC/)
@@ -70,8 +70,8 @@
         external get_overlap_mat_f
         external get_overlap_exp_f
         ! one-electron Hamiltonian
-        integer(kind=QINT), parameter :: oneham_num_pert = 2
-        integer(kind=QINT) :: oneham_perturbations(oneham_num_pert) = (/ &
+        integer(kind=QINT), parameter :: oneham_num_pert = 2_QINT
+        integer(kind=QINT) :: oneham_pert_labels(oneham_num_pert) = (/ &
             PERT_GEOMETRIC,PERT_MAGNETIC/)
         integer(kind=QINT) :: oneham_pert_orders(oneham_num_pert) = (/ &
             MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC/)
@@ -79,8 +79,8 @@
         character(len=1) :: oneham_context(6) = (/"O","N","E","H","A","M"/)
 #endif
         ! external field
-        integer(kind=QINT), parameter :: ext_field_num_pert = 3
-        integer(kind=QINT) :: ext_field_perturbations(ext_field_num_pert) = (/ &
+        integer(kind=QINT), parameter :: ext_field_num_pert = 3_QINT
+        integer(kind=QINT) :: ext_field_pert_labels(ext_field_num_pert) = (/ &
             PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC/)
         integer(kind=QINT) :: ext_field_pert_orders(ext_field_num_pert) = (/ &
             MAX_ORDER_GEOMETRIC,MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC/)
@@ -90,23 +90,26 @@
         external get_one_oper_mat_f
         external get_one_oper_exp_f
         ! referenced state
-#include "tests/openrsp_f_AO_dim.h90"
-#include "tests/openrsp_f_AO_state.h90"
+#include "tests/ao_dens/openrsp_f_ao_dims.h90"
+#include "tests/ao_dens/openrsp_f_ao_fock.h90"
+#include "tests/ao_dens/openrsp_f_ao_density.h90"
+#include "tests/ao_dens/openrsp_f_ao_overlap.h90"
         type(QMat) F_unpert
         type(QMat) D_unpert
         type(QMat) S_unpert
         ! polarizability
-        integer(kind=QINT), parameter :: ALPHA_NUM_PERT = 2_QINT
-        integer(kind=QINT), parameter :: ALPHA_PERTUBRATIONS(ALPHA_NUM_PERT) = (/ &
+        integer(kind=QINT), parameter :: ALPHA_NUM_PROPS = 1_QINT
+        integer(kind=QINT), parameter :: ALPHA_NUM_PERT(ALPHA_NUM_PROPS) = (/2_QINT/)
+        integer(kind=QINT), parameter :: ALPHA_PERT_LABELS(sum(ALPHA_NUM_PERT)) = (/ &
             PERT_DIPOLE,PERT_DIPOLE/)
-        integer(kind=QINT), parameter :: ALPHA_PERT_ORDER(ALPHA_NUM_PERT) = (/ &
+        integer(kind=QINT), parameter :: ALPHA_NUM_FREQS(sum(ALPHA_NUM_PERT)) = (/ &
             1_QINT,1_QINT/)
-        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*ALPHA_NUM_PERT) = (/ &
+        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*sum(ALPHA_NUM_FREQS)) = (/ &
             -0.072_QREAL,0.0_QREAL,0.072_QREAL,0.0_QREAL/)
-        ! kn rule and response functions
-        integer(kind=QINT) kn_rule(2)
-        integer(kind=QINT) size_rsp_fun
-        real(kind=QREAL) rsp_fun(18)
+        integer(kind=QINT), parameter :: ALPHA_KN_RULES(ALPHA_NUM_PROPS) = (/0_QINT/)
+        ! response functions
+        integer(kind=QINT) size_rsp_funs
+        real(kind=QREAL) rsp_funs(18)
         ! error information
         integer(kind=4) ierr
 
@@ -125,40 +128,40 @@
         write(io_log,100) "OpenRSPSetSolver_f() passed"
 
         ! sets the context of perturbation dependent basis sets
-        ierr = OpenRSPSetPDBS_f(open_rsp,              &
-                                overlap_num_pert,      &
-                                overlap_perturbations, &
-                                overlap_pert_orders,   &
+        ierr = OpenRSPSetPDBS_f(open_rsp,            &
+                                overlap_num_pert,    &
+                                overlap_pert_labels, &
+                                overlap_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                overlap_context,       &
+                                overlap_context,     &
 #endif
-                                get_overlap_mat_f,     &
+                                get_overlap_mat_f,   &
                                 get_overlap_exp_f)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPSetPDBS_f() passed"
 
         ! adds one-electron Hamiltonian
-        ierr = OpenRSPAddOneOper_f(open_rsp,             &
-                                   oneham_num_pert,      &
-                                   oneham_perturbations, &
-                                   oneham_pert_orders,   &
+        ierr = OpenRSPAddOneOper_f(open_rsp,           &
+                                   oneham_num_pert,    &
+                                   oneham_pert_labels, &
+                                   oneham_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   oneham_context,       &
+                                   oneham_context,     &
 #endif
-                                   get_one_oper_mat_f,   &
+                                   get_one_oper_mat_f, &
                                    get_one_oper_exp_f)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPAddOneOper_f(h) passed"
 
         ! adds external field
-        ierr = OpenRSPAddOneOper_f(open_rsp,                &
-                                   ext_field_num_pert,      &
-                                   ext_field_perturbations, &
-                                   ext_field_pert_orders,   &
+        ierr = OpenRSPAddOneOper_f(open_rsp,              &
+                                   ext_field_num_pert,    &
+                                   ext_field_pert_labels, &
+                                   ext_field_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   ext_field_context,       &
+                                   ext_field_context,     &
 #endif
-                                   get_one_oper_mat_f,      &
+                                   get_one_oper_mat_f,    &
                                    get_one_oper_exp_f)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPAddOneOper_f(V) passed"
@@ -186,7 +189,7 @@
                                idx_block_col=(/IDX_BLOCK_COL/), &
                                data_type=(/QREALMAT/))
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDimMat(A=F_unpert, dim_mat=NUM_ROW_SET)
+        ierr = QMatSetDimMat(A=F_unpert, dim_mat=NUM_AO)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ierr = QMatAssemble(A=F_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
@@ -194,10 +197,10 @@
                              idx_block_row=IDX_BLOCK_ROW, &
                              idx_block_col=IDX_BLOCK_COL, &
                              idx_first_row=IDX_FIRST_ROW, &
-                             num_row_set=NUM_ROW_SET,     &
+                             num_row_set=NUM_AO,          &
                              idx_first_col=IDX_FIRST_COL, &
-                             num_col_set=NUM_COL_SET,     &
-                             values_real=values_Fock)
+                             num_col_set=NUM_AO,          &
+                             values_real=values_fock)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ! sets the unperturbed density matrix
         ierr = QMatCreate(A=D_unpert)
@@ -212,7 +215,7 @@
                                idx_block_col=(/IDX_BLOCK_COL/), &
                                data_type=(/QREALMAT/))
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDimMat(A=D_unpert, dim_mat=NUM_ROW_SET)
+        ierr = QMatSetDimMat(A=D_unpert, dim_mat=NUM_AO)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ierr = QMatAssemble(A=D_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
@@ -220,9 +223,9 @@
                              idx_block_row=IDX_BLOCK_ROW, &
                              idx_block_col=IDX_BLOCK_COL, &
                              idx_first_row=IDX_FIRST_ROW, &
-                             num_row_set=NUM_ROW_SET,     &
+                             num_row_set=NUM_AO,          &
                              idx_first_col=IDX_FIRST_COL, &
-                             num_col_set=NUM_COL_SET,     &
+                             num_col_set=NUM_AO,          &
                              values_real=values_density)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ! sets the unperturbed overlap integrals
@@ -238,7 +241,7 @@
                                idx_block_col=(/IDX_BLOCK_COL/), &
                                data_type=(/QREALMAT/))
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDimMat(A=S_unpert, dim_mat=NUM_ROW_SET)
+        ierr = QMatSetDimMat(A=S_unpert, dim_mat=NUM_AO)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ierr = QMatAssemble(A=S_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
@@ -246,26 +249,26 @@
                              idx_block_row=IDX_BLOCK_ROW, &
                              idx_block_col=IDX_BLOCK_COL, &
                              idx_first_row=IDX_FIRST_ROW, &
-                             num_row_set=NUM_ROW_SET,     &
+                             num_row_set=NUM_AO,          &
                              idx_first_col=IDX_FIRST_COL, &
-                             num_col_set=NUM_COL_SET,     &
+                             num_col_set=NUM_AO,          &
                              values_real=values_overlap)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
 
         ! gets the polarizability
-        kn_rule = (/0,1/)
-        size_rsp_fun = 9
-        ierr = OpenRSPGetRSPFun_f(open_rsp,            &
-                                  F_unpert,            &
-                                  D_unpert,            &
-                                  S_unpert,            &
-                                  ALPHA_NUM_PERT,      &
-                                  ALPHA_PERTUBRATIONS, &
-                                  ALPHA_PERT_ORDER,    &
-                                  ALPHA_PERT_FREQ,     &
-                                  kn_rule,             &
-                                  size_rsp_fun,        &
-                                  rsp_fun)
+        size_rsp_funs = 9_QINT
+        ierr = OpenRSPGetRSPFun_f(open_rsp,          &
+                                  F_unpert,          &
+                                  D_unpert,          &
+                                  S_unpert,          &
+                                  ALPHA_NUM_PROPS,   &
+                                  ALPHA_NUM_PERT,    &
+                                  ALPHA_PERT_LABELS, &
+                                  ALPHA_NUM_FREQS,   &
+                                  ALPHA_PERT_FREQ,   &
+                                  ALPHA_KN_RULES,    &
+                                  size_rsp_funs,     &
+                                  rsp_funs)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPGetRSPFun_f() passed"
 

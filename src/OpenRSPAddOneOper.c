@@ -28,8 +28,7 @@
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QInt:int]{in} num_pert number of perturbations that the one-electron
          operator depends on
-     \param[QInt:int]{in} perturbations perturbations that the one-electron operator
-         depends on
+     \param[QInt:int]{in} pert_labels labels of the perturbations
      \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
      \param[QVoid:void]{in} user_ctx user-defined callback function context
      \param[GetOneOperMat:void]{in} get_one_oper_mat user specified function for
@@ -40,7 +39,7 @@
 */
 QErrorCode OpenRSPAddOneOper(OpenRSP *open_rsp,
                              const QInt num_pert,
-                             const QInt *perturbations,
+                             const QInt *pert_labels,
                              const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid *user_ctx,
@@ -53,7 +52,7 @@ QErrorCode OpenRSPAddOneOper(OpenRSP *open_rsp,
     if (open_rsp->one_oper==NULL) {
         ierr = RSPOneOperCreate(&open_rsp->one_oper,
                                 num_pert,
-                                perturbations,
+                                pert_labels,
                                 pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                 user_ctx,
@@ -66,7 +65,7 @@ QErrorCode OpenRSPAddOneOper(OpenRSP *open_rsp,
     else {
         ierr = RSPOneOperAdd(open_rsp->one_oper,
                              num_pert,
-                             perturbations,
+                             pert_labels,
                              pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                              user_ctx,

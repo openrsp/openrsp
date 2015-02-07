@@ -33,20 +33,20 @@ module rsp_two_oper_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine TwoOperGetMat_f(num_pert,      &
-                                   perturbations, &
-                                   pert_orders,   &
-                                   num_var_dens,  &
-                                   var_ao_dens,   &
+        subroutine TwoOperGetMat_f(num_pert,     &
+                                   pert_labels,  &
+                                   pert_orders,  &
+                                   num_var_dens, &
+                                   var_ao_dens,  &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,       &
-                                   user_ctx,      &
+                                   len_ctx,      &
+                                   user_ctx,     &
 #endif
-                                   num_int,       &
+                                   num_int,      &
                                    val_int)
             use qmatrix, only: QINT,QREAL,QMat
             integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: perturbations(num_pert)
+            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_var_dens
             type(QMat), intent(in) :: var_ao_dens(num_var_dens)
@@ -58,7 +58,7 @@ module rsp_two_oper_f
             type(QMat), intent(inout) :: val_int(num_int)
         end subroutine TwoOperGetMat_f
         subroutine TwoOperGetExp_f(num_pert,       &
-                                   perturbations,  &
+                                   pert_labels,    &
                                    pert_orders,    &
                                    num_var_dens,   &
                                    var_ao_dens,    &
@@ -72,7 +72,7 @@ module rsp_two_oper_f
                                    val_exp)
             use qmatrix, only: QINT,QREAL,QMat
             integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: perturbations(num_pert)
+            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_var_dens
             type(QMat), intent(in) :: var_ao_dens(num_var_dens)
@@ -127,20 +127,20 @@ module rsp_two_oper_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_two_oper_mat(num_pert,      &
-                                        perturbations, &
-                                        pert_orders,   &
-                                        num_var_dens,  &
-                                        var_ao_dens,   &
+            subroutine get_two_oper_mat(num_pert,     &
+                                        pert_labels,  &
+                                        pert_orders,  &
+                                        num_var_dens, &
+                                        var_ao_dens,  &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,       &
-                                        user_ctx,      &
+                                        len_ctx,      &
+                                        user_ctx,     &
 #endif
-                                        num_int,       &
+                                        num_int,      &
                                         val_int)
                 use qmatrix, only: QINT,QREAL,QMat
                 integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: perturbations(num_pert)
+                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_var_dens
                 type(QMat), intent(in) :: var_ao_dens(num_var_dens)
@@ -152,7 +152,7 @@ module rsp_two_oper_f
                 type(QMat), intent(inout) :: val_int(num_int)
             end subroutine get_two_oper_mat
             subroutine get_two_oper_exp(num_pert,       &
-                                        perturbations,  &
+                                        pert_labels,    &
                                         pert_orders,    &
                                         num_var_dens,   &
                                         var_ao_dens,    &
@@ -166,7 +166,7 @@ module rsp_two_oper_f
                                         val_exp)
                 use qmatrix, only: QINT,QREAL,QMat
                 integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: perturbations(num_pert)
+                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_var_dens
                 type(QMat), intent(in) :: var_ao_dens(num_var_dens)
@@ -199,24 +199,24 @@ module rsp_two_oper_f
     !  \author Bin Gao
     !  \date 2014-08-06
     !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} perturbations the perturbations
+    !  \param[integer]{in} pert_labels labels of the perturbations
     !  \param[integer]{in} pert_orders orders of the perturbations
     !  \param[integer]{in} num_var_dens number of variable AO based density matrices
     !  \param[C_PTR:type]{in} var_ao_dens the variable AO based density matrices
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPTwoOperGetMat_f(num_pert,      &
-                                  perturbations, &
-                                  pert_orders,   &
-                                  num_var_dens,  &
-                                  var_ao_dens,   &
-                                  user_ctx,      &
-                                  num_int,       &
-                                  val_int)       &
+    subroutine RSPTwoOperGetMat_f(num_pert,     &
+                                  pert_labels,  &
+                                  pert_orders,  &
+                                  num_var_dens, &
+                                  var_ao_dens,  &
+                                  user_ctx,     &
+                                  num_int,      &
+                                  val_int)      &
         bind(C, name="RSPTwoOperGetMat_f")
         integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_var_dens
         type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
@@ -276,7 +276,7 @@ module rsp_two_oper_f
         call c_f_pointer(user_ctx, two_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
         call two_oper_fun%get_two_oper_mat(num_pert,              &
-                                           perturbations,         &
+                                           pert_labels,           &
                                            pert_orders,           &
                                            num_var_dens,          &
                                            f_var_ao_dens,         &
@@ -297,7 +297,7 @@ module rsp_two_oper_f
     !  \author Bin Gao
     !  \date 2014-08-06
     !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} perturbations the perturbations
+    !  \param[integer]{in} pert_labels labels of the perturbations
     !  \param[integer]{in} pert_orders orders of the perturbations
     !  \param[integer]{in} num_var_dens number of variable AO based density matrices
     !  \param[C_PTR:type]{in} var_ao_dens the variable AO based density matrices
@@ -307,7 +307,7 @@ module rsp_two_oper_f
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
     subroutine RSPTwoOperGetExp_f(num_pert,       &
-                                  perturbations,  &
+                                  pert_labels,    &
                                   pert_orders,    &
                                   num_var_dens,   &
                                   var_ao_dens,    &
@@ -318,7 +318,7 @@ module rsp_two_oper_f
                                   val_exp)        &
         bind(C, name="RSPTwoOperGetExp_f")
         integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_var_dens
         type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
@@ -380,7 +380,7 @@ module rsp_two_oper_f
         call c_f_pointer(user_ctx, two_oper_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
         call two_oper_fun%get_two_oper_exp(num_pert,              &
-                                           perturbations,         &
+                                           pert_labels,           &
                                            pert_orders,           &
                                            num_var_dens,          &
                                            f_var_ao_dens,         &

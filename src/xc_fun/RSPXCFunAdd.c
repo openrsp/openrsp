@@ -28,8 +28,7 @@
     \param[RSPTwoOper:struct]{inout} two_oper the linked list of two-electron operators
     \param[QInt:int]{in} num_pert number of perturbations that the two-electron
         operator depends on
-    \param[QInt:int]{in} perturbations perturbations that the two-electron operator
-        depends on
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
     \param[QVoid:void]{in} user_ctx user-defined callback function context
     \param[GetTwoOperMat:void]{in} get_two_oper_mat user specified function for
@@ -40,7 +39,7 @@
 */
 QErrorCode RSPTwoOperAdd(RSPTwoOper *two_oper,
                          const QInt num_pert,
-                         const QInt *perturbations,
+                         const QInt *pert_labels,
                          const QInt *pert_max_orders,
                          QVoid *user_ctx,
                          const GetTwoOperMat get_two_oper_mat,
@@ -52,7 +51,7 @@ QErrorCode RSPTwoOperAdd(RSPTwoOper *two_oper,
     /* creates the new operator */
     ierr = RSPTwoOperCreate(&new_oper,
                             num_pert,
-                            perturbations,
+                            pert_labels,
                             pert_max_orders,
                             user_ctx,
                             get_two_oper_mat,

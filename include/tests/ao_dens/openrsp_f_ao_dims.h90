@@ -9,5 +9,5 @@
     integer(kind=QINT), parameter :: IDX_FIRST_ROW = 1_QINT
     integer(kind=QINT), parameter :: IDX_FIRST_COL = 1_QINT
 #endif
-    integer(kind=QINT), parameter :: NUM_ROW_SET = 32_QINT
-    integer(kind=QINT), parameter :: NUM_COL_SET = 32_QINT
+    integer(kind=QINT), parameter :: NUM_AO = 32_QINT
+    integer(kind=QINT), parameter :: SIZE_AO_MAT = NUM_AO*NUM_AO

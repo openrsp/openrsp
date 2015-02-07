@@ -27,7 +27,7 @@
     \date 2014-12-15
     \param[RSPNucContrib:struct]{in} nuc_contrib the context of nuclear contributions
     \param[QInt:int]{in} num_pert number of perturbations
-    \param[QInt:int]{in} perturbations the perturbations
+     \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} size_contrib size of nuclear contributions
     \param[QReal:real]{inout} val_contrib the nuclear contributions
@@ -35,7 +35,7 @@
 */
 QErrorCode RSPNucContribGet(const RSPNucContrib *nuc_contrib,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt size_contrib,
                             QReal *val_contrib)

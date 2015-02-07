@@ -24,33 +24,47 @@
 
 #define OPENRSP_F_TEST_SRC "tests/f90/callback/get_overlap_exp_f.F90"
 
-    subroutine get_overlap_exp_f(bra_num_pert,      &
-                                 bra_perturbations, &
-                                 bra_pert_orders,   &
-                                 ket_num_pert,      &
-                                 ket_perturbations, &
-                                 ket_pert_orders,   &
-                                 num_pert,          &
-                                 perturbations,     &
-                                 pert_orders,       &
-                                 num_dens,          &
-                                 ao_dens,           &
+    subroutine get_overlap_exp_f(bra_num_pert,    &
+                                 bra_pert_labels, &
+                                 bra_pert_orders, &
+                                 ket_num_pert,    &
+                                 ket_pert_labels, &
+                                 ket_pert_orders, &
+                                 num_pert,        &
+                                 pert_labels,     &
+                                 pert_orders,     &
+                                 num_dens,        &
+                                 ao_dens,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                 len_ctx,           &
-                                 user_ctx,          &
+                                 len_ctx,         &
+                                 user_ctx,        &
 #endif
-                                 num_exp,           &
+                                 num_exp,         &
                                  val_exp)
-        use qmatrix, only: QINT,QREAL,QMat
+        use qmatrix, only: QINT,                &
+                           QREAL,               &
+                           QSYMMAT,             &
+                           QREALMAT,            &
+                           MAT_NO_OPERATION,    &
+                           QMat,                &
+                           QMatCreate,          &
+                           QMatBlockCreate,     &
+                           QMatSetSymType,      &
+                           QMatSetDataType,     &
+                           QMatSetDimMat,       &
+                           QMatAssemble,        &
+                           QMatSetValues,       &
+                           QMatGetMatProdTrace, &
+                           QMatDestroy
         implicit none
         integer(kind=QINT), intent(in) :: bra_num_pert
-        integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+        integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
         integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
         integer(kind=QINT), intent(in) :: ket_num_pert
-        integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+        integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
         integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
         integer(kind=QINT), intent(in) :: num_pert
-        integer(kind=QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_dens
         type(QMat), intent(in) :: ao_dens(num_dens)
@@ -59,41 +73,108 @@
         character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
         integer(kind=QINT), intent(in) :: num_exp
-        real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+        real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
+! defined perturbations and their maximum orders
+#include "tests/openrsp_f_perturbations.h90"
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1) :: overlap_context(7) = (/"O","V","E","R","L","A","P"/)
 #endif
-        integer(kind=QINT) ipert
-        write(6,100) "bra_num_pert", bra_num_pert
-        do ipert = 1, bra_num_pert
-            write(6,100) "bra_pert.",              &
-                         bra_perturbations(ipert), &
-                         bra_pert_orders(ipert)
-        end do
-        write(6,100) "ket_num_pert", ket_num_pert
-        do ipert = 1, ket_num_pert
-            write(6,100) "ket_pert.",              &
-                         ket_perturbations(ipert), &
-                         ket_pert_orders(ipert)
-        end do
-        write(6,100) "num_pert", num_pert
-        do ipert = 1, num_pert
-            write(6,100) "pert.",              &
-                         perturbations(ipert), &
-                         pert_orders(ipert)
-        end do
-        write(6,100) "num_dens", num_dens
+#include "tests/ao_dens/openrsp_f_ao_dims.h90"
+#include "tests/ao_dens/openrsp_f_ao_overlap.h90"
+        type(QMat) val_int(1)
+        integer(kind=QINT) idens
+        integer(kind=4) ierr
 #if defined(OPENRSP_F_USER_CONTEXT)
-        write(6,"(10A)") "get_overlap_exp_f>> label ", user_ctx
-        if (all(user_ctx==overlap_context)) then
-            write(6,100) "overlap integrals"
-        else
+        if (all(user_ctx/=overlap_context)) then
             write(6,100) "unknown one-electron operator"
-            stop
+            call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
         end if
 #endif
+        ! overlap integrals
+        if (num_pert==0 .and. bra_num_pert==0 .and. ket_num_pert==0) then
+            ierr = QMatCreate(A=val_int(1))
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            ierr = QMatBlockCreate(A=val_int(1), dim_block=1_QINT)
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            ierr = QMatSetSymType(A=val_int(1), sym_type=QSYMMAT)
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            ierr = QMatSetDataType(A=val_int(1),                    &
+                                   num_blocks=1_QINT,               &
+                                   idx_block_row=(/IDX_BLOCK_ROW/), &
+                                   idx_block_col=(/IDX_BLOCK_COL/), &
+                                   data_type=(/QREALMAT/))
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            ierr = QMatSetDimMat(A=val_int(1), dim_mat=NUM_AO)
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            ierr = QMatAssemble(A=val_int(1))
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            ierr = QMatSetValues(A=val_int(1),                &
+                                 idx_block_row=IDX_BLOCK_ROW, &
+                                 idx_block_col=IDX_BLOCK_COL, &
+                                 idx_first_row=IDX_FIRST_ROW, &
+                                 num_row_set=NUM_AO,          &
+                                 idx_first_col=IDX_FIRST_COL, &
+                                 num_col_set=NUM_AO,          &
+                                 values_real=values_overlap)
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            do idens = 1, num_dens
+                ierr = QMatGetMatProdTrace(A=val_int(1),          &
+                                           B=ao_dens(idens),      &
+                                           op_B=MAT_NO_OPERATION, &
+                                           num_blocks=1_QINT,     &
+                                           trace=val_exp(2*idens-1:2*idens))
+                call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            end do
+            ierr = QMatDestroy(A=val_int(1))
+            call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+        else if (num_pert==1 .and. bra_num_pert==0 .and. ket_num_pert==0) then
+            if (pert_labels(1)==PERT_GEOMETRIC) then
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            ! zero integrals
+            else if (pert_labels(1)==PERT_DIPOLE) then
+                val_exp = 0
+            else if (pert_labels(1)==PERT_MAGNETIC) then
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            else
+                write(6,100) "unknown perturbations"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            end if
+        else if (num_pert==0 .and. bra_num_pert==1 .and. ket_num_pert==0) then
+            if (bra_pert_labels(1)==PERT_GEOMETRIC) then
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            ! zero integrals
+            else if (bra_pert_labels(1)==PERT_DIPOLE) then
+                val_exp = 0
+            else if (bra_pert_labels(1)==PERT_MAGNETIC) then
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            else
+                write(6,100) "unknown perturbations"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            end if
+        else if (num_pert==0 .and. bra_num_pert==0 .and. ket_num_pert==1) then
+            if (ket_pert_labels(1)==PERT_GEOMETRIC) then
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            ! zero integrals
+            else if (ket_pert_labels(1)==PERT_DIPOLE) then
+                val_exp = 0
+            else if (ket_pert_labels(1)==PERT_MAGNETIC) then
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            else
+                write(6,100) "unknown perturbations"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            end if
+        else
+            write(6,100) "not implemented"
+            call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+        end if
         return
-100     format("get_overlap_exp_f>> ",A,2I6)
+100     format("get_overlap_exp_f>> ",A)
     end subroutine get_overlap_exp_f
 
 #undef OPENRSP_F_TEST_SRC

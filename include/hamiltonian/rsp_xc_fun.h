@@ -54,7 +54,7 @@ typedef QVoid (*GetXCFunExp)(const QInt,
 typedef struct RSPXCFun RSPXCFun;
 struct RSPXCFun {
     QInt num_pert;               /* number of perturbations that the exchange-corrrelation functional depends on */
-    QInt *perturbations;         /* perturbations that the exchange-corrrelation functional depends on */
+    QInt *pert_labels;           /* labels of the perturbations */
     QInt *pert_max_orders;       /* maximum allowed orders of the perturbations */
 #if defined(OPENRSP_C_USER_CONTEXT)
     QVoid *user_ctx;             /* user-defined callback function context */

@@ -52,11 +52,11 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
             "OpenRSPWrite>> number of all perturbations involved in calculations %"QINT_FMT"\n",
             open_rsp->num_pert);
     fprintf(fp_rsp,
-            "OpenRSPWrite>> perturbation    maximum-order    sizes-up-to-maximum-order\n");
+            "OpenRSPWrite>> label           maximum-order    sizes-up-to-maximum-order\n");
     for (ipert=0; ipert<open_rsp->num_pert; ipert++) {
         fprintf(fp_rsp,
                 "OpenRSPWrite>>  %"QINT_FMT"               %"QINT_FMT"               ",
-                open_rsp->perturbations[ipert],
+                open_rsp->pert_labels[ipert],
                 open_rsp->pert_max_orders[ipert]);
         for (isize=open_rsp->size_ptr[ipert]; isize<open_rsp->size_ptr[ipert+1]; isize++) {
             fprintf(fp_rsp, " %"QINT_FMT"", open_rsp->pert_sizes[isize]);

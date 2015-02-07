@@ -27,7 +27,7 @@
     \date 2014-07-31
     \param[RSPOneOper:struct]{in} one_oper the linked list of one-electron operators
     \param[QInt:int]{in} num_pert number of perturbations
-    \param[QInt:int]{in} perturbations the perturbations
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_int number of the integral matrices
     \param[QMat:struct]{inout} val_int the integral matrices
@@ -35,7 +35,7 @@
 */
 QErrorCode RSPOneOperGetMat(RSPOneOper *one_oper,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_int,
                             QMat *val_int[])
@@ -45,7 +45,7 @@ QErrorCode RSPOneOperGetMat(RSPOneOper *one_oper,
     cur_oper = one_oper;
     do {
         cur_oper->get_one_oper_mat(num_pert,
-                                   perturbations,
+                                   pert_labels,
                                    pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                    cur_oper->user_ctx,

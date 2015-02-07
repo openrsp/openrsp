@@ -66,7 +66,7 @@ typedef struct {
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* perturbations */
     QInt num_pert;               /* number of all perturbations involved in calculations */
-    QInt *perturbations;         /* all perturbations involved in calculations */
+    QInt *pert_labels;           /* labels of all perturbations */
     QInt *pert_max_orders;       /* maximum allowed orders of all perturbations */
     QInt *size_ptr;              /* pointer to the size of each perturbation */
     QInt *pert_sizes;            /* sizes of all perturbations up to their maximum orders */
@@ -151,8 +151,9 @@ extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,
+                                   const QInt*,
                                    const QReal*,
-                                   const QInt[2],
+                                   const QInt*,
                                    const QInt,
                                    QReal*);
 //extern QErrorCode OpenRSPGetResidue(OpenRSP*,);

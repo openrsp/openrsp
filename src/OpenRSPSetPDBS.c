@@ -27,7 +27,7 @@
      \date 2014-07-30
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QInt:int]{in} num_pert number of perturbations that the basis sets depend on
-     \param[QInt:int]{in} perturbations perturbations that the basis set depend on
+     \param[QInt:int]{in} pert_labels labels of the perturbations
      \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
      \param[QVoid:void]{in} user_ctx user-defined callback function context
      \param[GetOverlapMat:void]{in} get_overlap_mat user specified function for
@@ -38,7 +38,7 @@
 */
 QErrorCode OpenRSPSetPDBS(OpenRSP *open_rsp,
                           const QInt num_pert,
-                          const QInt *perturbations,
+                          const QInt *pert_labels,
                           const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                           QVoid *user_ctx,
@@ -60,7 +60,7 @@ QErrorCode OpenRSPSetPDBS(OpenRSP *open_rsp,
     }
     ierr = RSPOverlapCreate(open_rsp->overlap,
                             num_pert,
-                            perturbations,
+                            pert_labels,
                             pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                             user_ctx,

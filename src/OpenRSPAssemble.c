@@ -46,7 +46,7 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* assembles the context of perturbations */
     if (open_rsp->num_pert<1 ||
-        open_rsp->perturbations==NULL ||
+        open_rsp->pert_labels==NULL ||
         open_rsp->pert_max_orders==NULL ||
         open_rsp->size_ptr==NULL ||
         open_rsp->pert_sizes==NULL ||

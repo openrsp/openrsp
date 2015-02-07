@@ -54,7 +54,7 @@ typedef QVoid (*GetTwoOperExp)(const QInt,
 typedef struct RSPTwoOper RSPTwoOper;
 struct RSPTwoOper {
     QInt num_pert;                   /* number of perturbations that the two-electron operator depends on */
-    QInt *perturbations;             /* perturbations that the two-electron operator depends on */
+    QInt *pert_labels;               /* labels of the perturbations */
     QInt *pert_max_orders;           /* maximum allowed orders of the perturbations */
 #if defined(OPENRSP_C_USER_CONTEXT)
     QVoid *user_ctx;                 /* user-defined callback function context */

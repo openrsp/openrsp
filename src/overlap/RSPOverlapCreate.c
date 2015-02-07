@@ -27,7 +27,7 @@
     \date 2014-08-05
     \param[RSPOverlap:struct]{inout} overlap the overlap integrals
     \param[QInt:int]{in} num_pert number of perturbations that the overlap integrals depend on
-    \param[QInt:int]{in} perturbations perturbations that the overlap integrals depend on
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
     \param[QVoid:void]{in} user_ctx user-defined callback function context
     \param[GetOverlapMat:void]{in} get_overlap_mat user specified function for
@@ -38,7 +38,7 @@
 */
 QErrorCode RSPOverlapCreate(RSPOverlap *overlap,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                             QVoid *user_ctx,
@@ -54,10 +54,10 @@ QErrorCode RSPOverlapCreate(RSPOverlap *overlap,
         printf("RSPOverlapCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
         QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
     }
-    overlap->perturbations = (QInt *)malloc(num_pert*sizeof(QInt));
-    if (overlap->perturbations==NULL) {
+    overlap->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (overlap->pert_labels==NULL) {
         printf("RSPOverlapCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for perturbations");
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_labels");
     }
     overlap->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
     if (overlap->pert_max_orders==NULL) {
@@ -65,23 +65,23 @@ QErrorCode RSPOverlapCreate(RSPOverlap *overlap,
         QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_max_orders");
     }
     for (ipert=0; ipert<num_pert; ipert++) {
-        /* each element of \var{perturbations} should be unique */
+        /* each element of \var{pert_labels} should be unique */
         for (jpert=0; jpert<ipert; jpert++) {
-            if (perturbations[jpert]==perturbations[ipert]) {
+            if (pert_labels[jpert]==pert_labels[ipert]) {
                 printf("RSPOverlapCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
                        jpert,
-                       perturbations[jpert]);
+                       pert_labels[jpert]);
                 printf("RSPOverlapCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
                        ipert,
-                       perturbations[ipert]);
+                       pert_labels[ipert]);
                 QErrorExit(FILE_AND_LINE, "same perturbation not allowed");
             }
         }
-        overlap->perturbations[ipert] = perturbations[ipert];
+        overlap->pert_labels[ipert] = pert_labels[ipert];
         if (pert_max_orders[ipert]<1) {
             printf("RSPOverlapCreate>> order of %"QINT_FMT"-th perturbation (%"QINT_FMT") is %"QINT_FMT"\n",
                    ipert,
-                   perturbations[ipert],
+                   pert_labels[ipert],
                    pert_max_orders[ipert]);
             QErrorExit(FILE_AND_LINE, "only positive order allowed");
         }

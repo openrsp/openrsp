@@ -33,7 +33,7 @@ module rsp_pert_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine GetPertComp_f(perturbation,    &
+        subroutine GetPertComp_f(pert_label,      &
                                  pert_order,      &
                                  pert_rank,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -44,7 +44,7 @@ module rsp_pert_f
                                  pert_components, &
                                  pert_comp_orders)
             use qmatrix, only: QINT
-            integer(kind=QINT), intent(in) :: perturbation
+            integer(kind=QINT), intent(in) :: pert_label
             integer(kind=QINT), intent(in) :: pert_order
             integer(kind=QINT), intent(in) :: pert_rank
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -55,7 +55,7 @@ module rsp_pert_f
             integer(kind=QINT), intent(out) :: pert_components(pert_order)
             integer(kind=QINT), intent(out) :: pert_comp_orders(pert_order)
         end subroutine GetPertComp_f
-        subroutine GetPertRank_f(perturbation,     &
+        subroutine GetPertRank_f(pert_label,       &
                                  pert_num_comp,    &
                                  pert_components,  &
                                  pert_comp_orders, &
@@ -65,7 +65,7 @@ module rsp_pert_f
 #endif
                                  pert_rank)
             use qmatrix, only: QINT
-            integer(kind=QINT), intent(in) :: perturbation
+            integer(kind=QINT), intent(in) :: pert_label
             integer(kind=QINT), intent(in) :: pert_num_comp
             integer(kind=QINT), intent(in) :: pert_components(pert_num_comp)
             integer(kind=QINT), intent(in) :: pert_comp_orders(pert_num_comp)
@@ -117,7 +117,7 @@ module rsp_pert_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_pert_comp(perturbation,    &
+            subroutine get_pert_comp(pert_label,      &
                                      pert_order,      &
                                      pert_rank,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -128,7 +128,7 @@ module rsp_pert_f
                                      pert_components, &
                                      pert_comp_orders)
                 use qmatrix, only: QINT
-                integer(kind=QINT), intent(in) :: perturbation
+                integer(kind=QINT), intent(in) :: pert_label
                 integer(kind=QINT), intent(in) :: pert_order
                 integer(kind=QINT), intent(in) :: pert_rank
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -139,7 +139,7 @@ module rsp_pert_f
                 integer(kind=QINT), intent(out) :: pert_components(pert_order)
                 integer(kind=QINT), intent(out) :: pert_comp_orders(pert_order)
             end subroutine get_pert_comp
-            subroutine get_pert_rank(perturbation,     &
+            subroutine get_pert_rank(pert_label,       &
                                      pert_num_comp,    &
                                      pert_components,  &
                                      pert_comp_orders, &
@@ -149,7 +149,7 @@ module rsp_pert_f
 #endif
                                      pert_rank)
                 use qmatrix, only: QINT
-                integer(kind=QINT), intent(in) :: perturbation
+                integer(kind=QINT), intent(in) :: pert_label
                 integer(kind=QINT), intent(in) :: pert_num_comp
                 integer(kind=QINT), intent(in) :: pert_components(pert_num_comp)
                 integer(kind=QINT), intent(in) :: pert_comp_orders(pert_num_comp)
@@ -177,14 +177,14 @@ module rsp_pert_f
     !% \brief calls Fortran callback subroutine to get components of a perturbation
     !  \author Bin Gao
     !  \date 2014-08-18
-    !  \param[integer]{in} perturbation the perturbation
+    !  \param[integer]{in} pert_label lable of the perturbation
     !  \param[integer]{in} pert_order the order of the perturbation
     !  \param[integer]{in} pert_rank the rank of the perturbation
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{out} pert_num_comp number of components of the perturbation
     !  \param[integer]{out} pert_components components of the perturbation
     !% \param[integer]{out} pert_comp_orders orders of the components
-    subroutine RSPPertGetComp_f(perturbation,     &
+    subroutine RSPPertGetComp_f(pert_label,       &
                                 pert_order,       &
                                 pert_rank,        &
                                 user_ctx,         &
@@ -192,7 +192,7 @@ module rsp_pert_f
                                 pert_components,  &
                                 pert_comp_orders) &
         bind(C, name="RSPPertGetComp_f")
-        integer(kind=C_QINT), value, intent(in) :: perturbation
+        integer(kind=C_QINT), value, intent(in) :: pert_label
         integer(kind=C_QINT), value, intent(in) :: pert_order
         integer(kind=C_QINT), value, intent(in) :: pert_rank
         type(C_PTR), value, intent(in) :: user_ctx
@@ -203,7 +203,7 @@ module rsp_pert_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, pert_fun)
         ! invokes Fortran callback subroutine to get components of the perturbation
-        call pert_fun%get_pert_comp(perturbation,      &
+        call pert_fun%get_pert_comp(pert_label,        &
                                     pert_order,        &
                                     pert_rank,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -222,20 +222,20 @@ module rsp_pert_f
     !      a perturbation with its components
     !  \author Bin Gao
     !  \date 2014-08-18
-    !  \param[integer]{in} perturbation the perturbation
+    !  \param[integer]{in} pert_label lable of the perturbation
     !  \param[integer]{in} pert_num_comp number of components of the perturbation
     !  \param[integer]{in} pert_components components of the perturbation
     !  \param[integer]{in} pert_comp_orders orders of the components
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !% \param[integer]{out} pert_rank the rank of the perturbation
-    subroutine RSPPertGetRank_f(perturbation,     &
+    subroutine RSPPertGetRank_f(pert_label,       &
                                 pert_num_comp,    &
                                 pert_components,  &
                                 pert_comp_orders, &
                                 user_ctx,         &
                                 pert_rank)        &
         bind(C, name="RSPPertGetRank_f")
-        integer(kind=C_QINT), value, intent(in) :: perturbation
+        integer(kind=C_QINT), value, intent(in) :: pert_label
         integer(kind=C_QINT), value, intent(in) :: pert_num_comp
         integer(kind=C_QINT), intent(in) :: pert_components(pert_num_comp)
         integer(kind=C_QINT), intent(in) :: pert_comp_orders(pert_num_comp)
@@ -245,7 +245,7 @@ module rsp_pert_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, pert_fun)
         ! invokes Fortran callback subroutine to get the rank of the perturbation
-        call pert_fun%get_pert_rank(perturbation,      &
+        call pert_fun%get_pert_rank(pert_label,        &
                                     pert_num_comp,     &
                                     pert_components,   &
                                     pert_comp_orders,  &
