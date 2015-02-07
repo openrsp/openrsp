@@ -161,6 +161,8 @@ module rsp_field_tuple
     
        if (count(plab_int == i) > 0) then
           
+!FIXME Gao: j should be increment of 1?
+          j = j+1
           perturbations(j) = i
           pert_orders(j) = count(plab_int == i)
        

@@ -14,7 +14,7 @@
 !!  You should have received a copy of the GNU Lesser General Public License
 !!  along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 !!
-!!  This file implements the callback subroutine get_one_oper_mat_f.
+!!  This file implements the callback subroutine get_two_oper_mat_f.
 !!
 !!  2014-08-03, Bin Gao
 !!  * first version
@@ -22,9 +22,9 @@
 ! configuration file of QMatrix library
 #include "qmatrix_config.h"
 
-#define OPENRSP_F_TEST_SRC "tests/f90/callback/get_one_oper_mat_f.F90"
+#define OPENRSP_F_TEST_SRC "tests/f90/callback/get_two_oper_mat_f.F90"
 
-    subroutine get_one_oper_mat_f(num_pert,    &
+    subroutine get_two_oper_mat_f(num_pert,    &
                                   pert_labels, &
                                   pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -56,8 +56,6 @@
 #endif
         integer(kind=QINT), intent(in) :: num_int
         type(QMat), intent(inout) :: val_int(num_int)
-! defined perturbations and their maximum orders
-#include "tests/openrsp_f_perturbations.h90"
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1) :: oneham_context(6) = (/"O","N","E","H","A","M"/)
         character(len=1) :: ext_field_context(9) = (/"E","X","T","_","F","I", "E", "L", "D"/)
@@ -77,22 +75,22 @@
                 ! checks if the matrix is assembled or not
                 do imat = 1, num_int
                     ierr = QMatIsAssembled(A=val_int(imat), assembled=assembled)
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     if (.not.assembled) then
                         ierr = QMatBlockCreate(A=val_int(imat), dim_block=1_QINT)
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         ierr = QMatSetSymType(A=val_int(imat), sym_type=QSYMMAT)
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         ierr = QMatSetDataType(A=val_int(imat),                 &
                                                num_blocks=1_QINT,               &
                                                idx_block_row=(/IDX_BLOCK_ROW/), &
                                                idx_block_col=(/IDX_BLOCK_COL/), &
                                                data_type=(/QREALMAT/))
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         ierr = QMatSetDimMat(A=val_int(imat), dim_mat=NUM_AO)
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         ierr = QMatAssemble(A=val_int(imat))
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     end if
                 end do
                 ! dipole length integrals
@@ -105,14 +103,14 @@
                                              num_row_set=NUM_AO,          &
                                              idx_first_col=IDX_FIRST_COL, &
                                              num_col_set=NUM_AO,          &
-                                             values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT))
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                                             values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     end do
                 ! zero integrals
                 else
                     do imat = 1, num_int
                         ierr = QMatZeroEntries(A=val_int(imat))
-                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     end do
                 end if
             else
@@ -129,22 +127,22 @@
             ! checks if the matrix is assembled or not
             do imat = 1, num_int
                 ierr = QMatIsAssembled(A=val_int(imat), assembled=assembled)
-                call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                 if (.not.assembled) then
                     ierr = QMatBlockCreate(A=val_int(imat), dim_block=1_QINT)
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     ierr = QMatSetSymType(A=val_int(imat), sym_type=QSYMMAT)
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     ierr = QMatSetDataType(A=val_int(imat),                 &
                                            num_blocks=1_QINT,               &
                                            idx_block_row=(/IDX_BLOCK_ROW/), &
                                            idx_block_col=(/IDX_BLOCK_COL/), &
                                            data_type=(/QREALMAT/))
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     ierr = QMatSetDimMat(A=val_int(imat), dim_mat=NUM_AO)
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     ierr = QMatAssemble(A=val_int(imat))
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                 end if
             end do
             ! dipole length integrals
@@ -157,14 +155,14 @@
                                          num_row_set=NUM_AO,          &
                                          idx_first_col=IDX_FIRST_COL, &
                                          num_col_set=NUM_AO,          &
-                                         values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT))
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                                         values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                 end do
             ! zero integrals
             else
                 do imat = 1, num_int
                     ierr = QMatZeroEntries(A=val_int(imat))
-                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                 end do
             end if
         else
@@ -173,7 +171,7 @@
         end if
 #endif
         return
-100     format("get_one_oper_mat_f>> ",A)
-    end subroutine get_one_oper_mat_f
+100     format("get_two_oper_mat_f>> ",A)
+    end subroutine get_two_oper_mat_f
 
 #undef OPENRSP_F_TEST_SRC

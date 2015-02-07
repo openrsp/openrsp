@@ -1,5 +1,5 @@
     ! dipole length integrals
-    real(kind=QREAL) :: values_DIPLEN(3072) = (/                                     &
+    real(kind=QREAL) :: values_diplen(3072) = (/                                     &
         0.000000000000000_QREAL,  0.000000000000000_QREAL,  0.000000000000000_QREAL, &
         0.072707780629670_QREAL,  0.000000000000000_QREAL,  0.000000000000000_QREAL, &
         0.010019000953422_QREAL,  0.000000000000000_QREAL,  0.000000000000000_QREAL, &

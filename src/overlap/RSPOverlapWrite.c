@@ -35,11 +35,11 @@ QErrorCode RSPOverlapWrite(const RSPOverlap *overlap, FILE *fp_overlap)
     fprintf(fp_overlap,
             "RSPOverlapWrite>> number of perturbations that overlap integrals depend on %"QINT_FMT"\n",
             overlap->num_pert);
-    fprintf(fp_overlap, "RSPOverlapWrite>> perturbation    maximum-order\n");
+    fprintf(fp_overlap, "RSPOverlapWrite>> label           maximum-order\n");
     for (ipert=0; ipert<overlap->num_pert; ipert++) {
         fprintf(fp_overlap,
                 "RSPOverlapWrite>>       %"QINT_FMT"                  %"QINT_FMT"\n",
-                overlap->perturbations[ipert],
+                overlap->pert_labels[ipert],
                 overlap->pert_max_orders[ipert]);
     }
 #if defined(OPENRSP_C_USER_CONTEXT)

@@ -42,11 +42,11 @@ QErrorCode RSPTwoOperWrite(RSPTwoOper *two_oper, FILE *fp_oper)
         fprintf(fp_oper,
                 "RSPTwoOperWrite>> number of perturbations that the operator depends on %"QINT_FMT"\n",
                 cur_oper->num_pert);
-        fprintf(fp_oper, "RSPTwoOperWrite>> perturbation    maximum-order\n");
+        fprintf(fp_oper, "RSPTwoOperWrite>> label           maximum-order\n");
         for (ipert=0; ipert<cur_oper->num_pert; ipert++) {
             fprintf(fp_oper,
                     "RSPTwoOperWrite>>       %"QINT_FMT"                  %"QINT_FMT"\n",
-                    cur_oper->perturbations[ipert],
+                    cur_oper->pert_labels[ipert],
                     cur_oper->pert_max_orders[ipert]);
         }
 #if defined(OPENRSP_C_USER_CONTEXT)

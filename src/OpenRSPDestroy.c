@@ -46,9 +46,9 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* destroys the context of perturbations */
     open_rsp->num_pert = 0;
-    if (open_rsp->perturbations!=NULL) {
-        free(open_rsp->perturbations);
-        open_rsp->perturbations = NULL;
+    if (open_rsp->pert_labels!=NULL) {
+        free(open_rsp->pert_labels);
+        open_rsp->pert_labels = NULL;
     }
     if (open_rsp->pert_max_orders!=NULL) {
         free(open_rsp->pert_max_orders);

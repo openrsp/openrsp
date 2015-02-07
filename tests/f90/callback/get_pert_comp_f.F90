@@ -24,7 +24,7 @@
 
 #define OPENRSP_F_TEST_SRC "tests/f90/callback/get_pert_comp_f.F90"
 
-    subroutine get_pert_comp_f(perturbation,    &
+    subroutine get_pert_comp_f(pert_label,      &
                                pert_order,      &
                                pert_rank,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -36,7 +36,7 @@
                                pert_comp_orders)
         use qmatrix, only: QINT
         implicit none
-        integer(kind=QINT), intent(in) :: perturbation
+        integer(kind=QINT), intent(in) :: pert_label
         integer(kind=QINT), intent(in) :: pert_order
         integer(kind=QINT), intent(in) :: pert_rank
 #if defined(OPENRSP_F_USER_CONTEXT)

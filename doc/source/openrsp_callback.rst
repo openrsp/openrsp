@@ -14,21 +14,21 @@ separately in this chapter.
 OpenRSP Callback Functions (C version)
 --------------------------------------
 
-An example of C callback functions can be found in the file
-``tests/c/test_c_callback.c``. The detailed information of these callback
+Examples of C callback functions can be found in the directory
+``tests/c/callback``. The detailed information of these callback
 functions are given as follows.
 
-.. function:: get_overlap_mat(bra_num_pert,      \
-                              bra_perturbations, \
-                              bra_pert_orders,   \
-                              ket_num_pert,      \
-                              ket_perturbations, \
-                              ket_pert_orders,   \
-                              num_pert,          \
-                              perturbations,     \
-                              pert_orders,       \
-                              user_ctx,          \
-                              num_int,           \
+.. function:: get_overlap_mat(bra_num_pert,    \
+                              bra_pert_labels, \
+                              bra_pert_orders, \
+                              ket_num_pert,    \
+                              ket_pert_labels, \
+                              ket_pert_orders, \
+                              num_pert,        \
+                              pert_labels,     \
+                              pert_orders,     \
+                              user_ctx,        \
+                              num_int,         \
                               val_int)
 
    Callback function for getting integral matrices of overlap integrals,
@@ -36,20 +36,20 @@ functions are given as follows.
 
    :param bra_num_pert: number of perturbations on the bra
    :type bra_num_pert: QInt
-   :param bra_perturbations: the perturbations on the bra
-   :type bra_perturbations: QInt\*
+   :param bra_pert_labels: labels of the perturbations on the bra
+   :type bra_pert_labels: QInt\*
    :param bra_pert_orders: orders of the perturbations on the bra
    :type bra_pert_orders: QInt\*
    :param ket_num_pert: number of perturbations on the ket
    :type ket_num_pert: QInt
-   :param ket_perturbations: the perturbations on the ket
-   :type ket_perturbations: QInt\*
+   :param ket_pert_labels: labels of the perturbations on the ket
+   :type ket_pert_labels: QInt\*
    :param ket_pert_orders: orders of the perturbations on the ket
    :type ket_pert_orders: QInt\*
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_orders: orders of the perturbations
    :type pert_orders: QInt\*
    :param user_ctx: user-defined callback function context
@@ -60,19 +60,19 @@ functions are given as follows.
    :type val_int: QMat\*[]
    :rtype: QVoid
 
-.. function:: get_overlap_exp(bra_num_pert,      \
-                              bra_perturbations, \
-                              bra_pert_orders,   \
-                              ket_num_pert,      \
-                              ket_perturbations, \
-                              ket_pert_orders,   \
-                              num_pert,          \
-                              perturbations,     \
-                              pert_orders,       \
-                              num_dens,          \
-                              ao_dens,           \
-                              user_ctx,          \
-                              num_exp,           \
+.. function:: get_overlap_exp(bra_num_pert,    \
+                              bra_pert_labels, \
+                              bra_pert_orders, \
+                              ket_num_pert,    \
+                              ket_pert_labels, \
+                              ket_pert_orders, \
+                              num_pert,        \
+                              pert_labels,     \
+                              pert_orders,     \
+                              num_dens,        \
+                              ao_dens,         \
+                              user_ctx,        \
+                              num_exp,         \
                               val_exp)
 
    Callback function for getting expectation values of overlap integrals,
@@ -80,20 +80,20 @@ functions are given as follows.
 
    :param bra_num_pert: number of perturbations on the bra
    :type bra_num_pert: QInt
-   :param bra_perturbations: the perturbations on the bra
-   :type bra_perturbations: QInt\*
+   :param bra_pert_labels: labels of the perturbations on the bra
+   :type bra_pert_labels: QInt\*
    :param bra_pert_orders: orders of the perturbations on the bra
    :type bra_pert_orders: QInt\*
    :param ket_num_pert: number of perturbations on the ket
    :type ket_num_pert: QInt
-   :param ket_perturbations: the perturbations on the ket
-   :type ket_perturbations: QInt\*
+   :param ket_pert_labels: labels of the perturbations on the ket
+   :type ket_pert_labels: QInt\*
    :param ket_pert_orders: orders of the perturbations on the ket
    :type ket_pert_orders: QInt\*
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_orders: orders of the perturbations
    :type pert_orders: QInt\*
    :param num_dens: number of atomic orbital (AO) based density matrices
@@ -108,11 +108,11 @@ functions are given as follows.
    :type val_exp: QReal\*
    :rtype: QVoid
 
-.. function:: get_one_oper_mat(num_pert,      \
-                               perturbations, \
-                               pert_orders,   \
-                               user_ctx,      \
-                               num_int,       \
+.. function:: get_one_oper_mat(num_pert,    \
+                               pert_labels, \
+                               pert_orders, \
+                               user_ctx,    \
+                               num_int,     \
                                val_int)
 
    Callback function for getting integral matrices of a one-electron operator,
@@ -120,8 +120,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_orders: orders of the perturbations
    :type pert_orders: QInt\*
    :param user_ctx: user-defined callback function context
@@ -132,13 +132,13 @@ functions are given as follows.
    :type val_int: QMat\*[]
    :rtype: QVoid
 
-.. function:: get_one_oper_exp(num_pert,      \
-                               perturbations, \
-                               pert_orders,   \
-                               num_dens,      \
-                               ao_dens,       \
-                               user_ctx,      \
-                               num_exp,       \
+.. function:: get_one_oper_exp(num_pert,    \
+                               pert_labels, \
+                               pert_orders, \
+                               num_dens,    \
+                               ao_dens,     \
+                               user_ctx,    \
+                               num_exp,     \
                                val_exp)
 
    Callback function for getting expectation values of a one-electron operator,
@@ -146,8 +146,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_orders: orders of the perturbations
    :type pert_orders: QInt\*
    :param num_dens: number of atomic orbital (AO) based density matrices
@@ -162,13 +162,13 @@ functions are given as follows.
    :type val_exp: QReal\*
    :rtype: QVoid
 
-.. function:: get_two_oper_mat(num_pert,      \
-                               perturbations, \
-                               pert_orders,   \
-                               num_var_dens,  \
-                               var_ao_dens,   \
-                               user_ctx,      \
-                               num_int,       \
+.. function:: get_two_oper_mat(num_pert,     \
+                               pert_labels,  \
+                               pert_orders,  \
+                               num_var_dens, \
+                               var_ao_dens,  \
+                               user_ctx,     \
+                               num_int,      \
                                val_int)
 
    Callback function for getting integral matrices of a two-electron operator,
@@ -176,8 +176,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_orders: orders of the perturbations
    :type pert_orders: QInt\*
    :param num_var_dens: number of variable AO based density matrices
@@ -194,7 +194,7 @@ functions are given as follows.
    :rtype: QVoid
 
 .. function:: get_two_oper_exp(num_pert,       \
-                               perturbations,  \
+                               pert_labels,    \
                                pert_orders,    \
                                num_var_dens,   \
                                var_ao_dens,    \
@@ -209,8 +209,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_orders: orders of the perturbations
    :type pert_orders: QInt\*
    :param num_var_dens: number of variable AO based density matrices
@@ -281,5 +281,5 @@ by::
     integer, intent(in) :: len_ctx
     character(len=1), intent(in) :: user_ctx(len_ctx)
 
-An example of Fortran callback subroutines can be found in the file
-``tests/f90/test_f_callback.F90``.
+Examples of Fortran callback subroutines can be found in the directory
+``tests/f90/callback``.

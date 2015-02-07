@@ -33,7 +33,7 @@ Files and Directories of OpenRSP
 
 #. ``PKG-INFO``: PKG-INFO metadata file.
 
-#. ``qmatrix.bib``: OpenRSP citation.
+#. ``openrsp.bib``: OpenRSP citation.
 
 #. ``README``: A very important file ;-).
 

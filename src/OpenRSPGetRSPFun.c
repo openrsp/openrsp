@@ -22,11 +22,12 @@
 
 #include "openrsp.h"
 
-QVoid OpenRSPGetRSPFun_f(const QInt num_pert,
-                         const QInt *perturbations,
-                         const QInt *pert_orders,
+QVoid OpenRSPGetRSPFun_f(const QInt num_props,
+                         const QInt *num_pert,
+                         const QInt *pert_labels,
+                         const QInt *num_freqs,
                          const QReal *pert_freqs,
-                         const QInt kn_rule[2],
+                         const QInt *kn_rules,
                          const QMat *ref_ham,
                          const QMat *ref_overlap,
                          const QMat *ref_state,
@@ -36,8 +37,8 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_pert,
                          RSPOneOper *one_oper,
                          RSPTwoOper *two_oper,
                          RSPXCFun *xc_fun,
-                         const QInt size_rsp_fun,
-                         QReal *rsp_fun);
+                         const QInt size_rsp_funs,
+                         QReal *rsp_funs);
 
 /*@% \brief gets the response function for given perturbations
      \author Bin Gao
@@ -46,27 +47,28 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_pert,
      \param[QMat:struct]{in} ref_ham Hamiltonian of referenced state
      \param[QMat:struct]{in} ref_state electronic state of referenced state
      \param[QMat:struct]{in} ref_overlap overlap integral matrix of referenced state
-     \param[QInt:int]{in} num_pert number of perturbations
-     \param[QInt:int]{in} perturbations the perturbations
-     \param[QInt:int]{in} pert_orders orders of the perturbations
-     \param[QReal:real]{in} pert_freqs frequencies of the perturbations
-     \param[QInt:int]{in} kn_rule contains numbers k and n for the kn rule
-     \param[QInt:int]{in} size_rsp_fun size of the response function, equals to
-         the product of sizes of \var{perturbations}
-     \param[QReal:real]{out} rsp_fun the response function
+     \param[QInt:int]{in} num_props number of properties to calculate
+     \param[QInt:int]{in} num_pert number of different perturbations for each property
+     \param[QInt:int]{in} pert_labels labels of different perturbations for each property
+     \param[QInt:int]{in} num_freqs number of different frequencies for each perturbation
+     \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation
+     \param[QInt:int]{in} kn_rules number k for the kn rule for each property
+     \param[QInt:int]{in} size_rsp_funs size of the response functions
+     \param[QReal:real]{out} rsp_funs the response functions
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                             const QMat *ref_ham,
                             const QMat *ref_state,
                             const QMat *ref_overlap,
-                            const QInt num_pert,
-                            const QInt *perturbations,
-                            const QInt *pert_orders,
+                            const QInt num_props,
+                            const QInt *num_pert,
+                            const QInt *pert_labels,
+                            const QInt *num_freqs,
                             const QReal *pert_freqs,
-                            const QInt kn_rule[2],
-                            const QInt size_rsp_fun,
-                            QReal *rsp_fun)
+                            const QInt *kn_rules,
+                            const QInt size_rsp_funs,
+                            QReal *rsp_funs)
 {
     //QErrorCode ierr;  /* error information */
     if (open_rsp->assembled==QFALSE) {
@@ -75,11 +77,12 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     switch (open_rsp->elec_EOM_type) {
     /* density matrix-based response theory */
     case ELEC_AO_D_MATRIX:
-        OpenRSPGetRSPFun_f(num_pert,
-                           perturbations,
-                           pert_orders,
+        OpenRSPGetRSPFun_f(num_props,
+                           num_pert,
+                           pert_labels,
+                           num_freqs,
                            pert_freqs,
-                           kn_rule,
+                           kn_rules,
                            ref_ham,
                            ref_overlap,
                            ref_state,
@@ -90,8 +93,8 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                            open_rsp->two_oper,
                            open_rsp->xc_fun,
                            //id_outp,
-                           size_rsp_fun,
-                           rsp_fun);
+                           size_rsp_funs,
+                           rsp_funs);
         break;
     /* molecular orbital (MO) coefficient matrix-based response theory */
     case ELEC_MO_C_MATRIX:

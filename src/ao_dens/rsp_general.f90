@@ -97,23 +97,26 @@ module rsp_general
   
   ! NEW 2014  
 
-   subroutine openrsp_get_property_2014(num_perts, pert_dims, pert_first_comp, pert_labels, pert_freqs, &
-                                   kn_rule, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
+   subroutine openrsp_get_property_2014(nprops, np, pert_dims, pert_first_comp, pert_labels, num_freq_cfgs, pert_freqs, &
+                                   kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
                                    get_xc_exp, id_outp, rsp_tensor, file_id)
     implicit none
 
-    integer(kind=QINT), intent(in) :: num_perts
+    integer(kind=QINT), intent(in) :: nprops
+    integer(kind=QINT), dimension(nprops), intent(in) :: np, num_freq_cfgs
     integer(kind=4), intent(in) :: id_outp
-    integer(kind=QINT), dimension(num_perts), intent(in) :: pert_dims, pert_first_comp
-    character(4), dimension(num_perts), intent(in) :: pert_labels
+    integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
+    character(4), dimension(sum(np)), intent(in) :: pert_labels
     integer :: i, j, num_blks
-    integer(kind=QINT), intent(in), dimension(2) :: kn_rule
+    integer(kind=QINT), intent(in), dimension(nprops) :: kn_rules
+    integer, dimension(2) :: kn_rule
     character, optional, dimension(20) :: file_id
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
-    complex(8), dimension(num_perts), intent(in) :: pert_freqs
+    complex(8), dimension(dot_product(np, num_freq_cfgs)), intent(in) :: pert_freqs
+    integer(kind=QINT) num_perts
     real :: timing_start, timing_end
     type(p_tuple) :: perturbations
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
@@ -122,6 +125,25 @@ module rsp_general
     type(qmat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
     integer kn(2)
+
+    if (nprops/=1) then
+       write(*,*) 'ERROR: Only one property at a time supported for now'
+
+    else
+
+    if (num_freq_cfgs(1)/=1) then
+
+       write(*,*) 'ERROR: Only one frequency configuration for each property supported for now'
+
+    else
+
+    num_perts = np(1)
+
+    kn_rule(1) = kn_rules(1)
+    kn_rule(2) = num_perts - 1 - kn_rules(1)
+
+
+
 
     perturbations%n_perturbations = num_perts
     allocate(perturbations%pdim(num_perts))
@@ -137,7 +159,7 @@ module rsp_general
     end do
     
     perturbations%pid = (/(i, i = 1, num_perts)/)
-    perturbations%freq = pert_freqs
+    perturbations%freq = pert_freqs(1:num_perts)
 
     kn(1) = kn_rule(1)
     kn(2) = kn_rule(2)
@@ -244,6 +266,10 @@ module rsp_general
     close(257)
 
     deallocate(blk_info)
+
+  end if
+
+  end if
 
   end subroutine
   

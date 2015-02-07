@@ -78,16 +78,20 @@ module rsp_indices_and_addressing
   contains
 
   ! MaR: QMatrix adapted routines to be separated into new module
-  
-  ! Initalize matrix
-  subroutine QMatInit(A)
+  ! Gao: adds an optional matrix B for initializing the structure of A
+  ! Initialize matrix
+  subroutine QMatInit(A, B)
   
     implicit none
     
-    type(qmat) :: A
+    type(QMat), intent(inout) :: A
+    type(QMat), optional, intent(in) :: B
     integer(kind=4) :: ierr
     
     ierr = QMatCreate(A)
+    if (present(B)) then
+        ierr = QMatDuplicate(B, COPY_PATTERN_ONLY, A)
+    end if
     
   end subroutine
   
@@ -127,6 +131,7 @@ module rsp_indices_and_addressing
     type(qmat) :: A, B
     integer(kind=4) :: ierr  
 
+    ierr = QMatCreate(A)
     ierr = QMatDuplicate(B, COPY_PATTERN_AND_VALUE, A)
     
   end subroutine 

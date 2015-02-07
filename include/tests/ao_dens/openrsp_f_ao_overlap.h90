@@ -1,5 +1,5 @@
     ! overlap integrals
-    real(kind=QREAL) :: values_OVERLAP(1024) = (/                                    &
+    real(kind=QREAL) :: values_overlap(1024) = (/                                    &
         1.000000000000000_QREAL,  0.233689906059163_QREAL,  0.167279759595895_QREAL, &
         0.000000000000000_QREAL,  0.000000000000000_QREAL,  0.000000000000000_QREAL, &
         0.000000000000000_QREAL,  0.000000000000000_QREAL,  0.000000000000000_QREAL, &

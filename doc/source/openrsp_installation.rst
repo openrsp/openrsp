@@ -42,7 +42,7 @@ that you are able to check if OpenRSP has been successfully compiled. A detailed
 list of the parameters controlling the compilation is given in the following table:
 
 .. list-table::
-   :widths: 30 50 20
+   :widths: 35 45 20
    :header-rows: 1
 
    * - CMake parameters

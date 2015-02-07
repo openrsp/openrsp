@@ -37,7 +37,7 @@ QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
     open_rsp->rsp_solver = NULL;
 #if defined(OPENRSP_PERTURBATION_FREE)
     open_rsp->num_pert = 0;
-    open_rsp->perturbations = NULL;
+    open_rsp->pert_labels = NULL;
     open_rsp->pert_max_orders = NULL;
     open_rsp->size_ptr = NULL;
     open_rsp->pert_sizes = NULL;

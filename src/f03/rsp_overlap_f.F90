@@ -22,10 +22,12 @@
 ! basic data types
 #include "api/qmatrix_c_type.h"
 
+#define OPENRSP_API_SRC "src/f03/rsp_overlap_f.F90"
+
 module rsp_overlap_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT,QREAL,QMat
+    use qmatrix, only: QINT,QREAL,QMat,QcMat_C_F_POINTER
 
     implicit none
 
@@ -33,30 +35,30 @@ module rsp_overlap_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine OverlapGetMat_f(bra_num_pert,      &
-                                   bra_perturbations, &
-                                   bra_pert_orders,   &
-                                   ket_num_pert,      &
-                                   ket_perturbations, &
-                                   ket_pert_orders,   &
-                                   num_pert,          &
-                                   perturbations,     &
-                                   pert_orders,       &
+        subroutine OverlapGetMat_f(bra_num_pert,    &
+                                   bra_pert_labels, &
+                                   bra_pert_orders, &
+                                   ket_num_pert,    &
+                                   ket_pert_labels, &
+                                   ket_pert_orders, &
+                                   num_pert,        &
+                                   pert_labels,     &
+                                   pert_orders,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,           &
-                                   user_ctx,          &
+                                   len_ctx,         &
+                                   user_ctx,        &
 #endif
-                                   num_int,           &
+                                   num_int,         &
                                    val_int)
             use qmatrix, only: QINT,QREAL,QMat
             integer(kind=QINT), intent(in) :: bra_num_pert
-            integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+            integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
             integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
             integer(kind=QINT), intent(in) :: ket_num_pert
-            integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+            integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
             integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
             integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: perturbations(num_pert)
+            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
@@ -65,32 +67,32 @@ module rsp_overlap_f
             integer(kind=QINT), intent(in) :: num_int
             type(QMat), intent(inout) :: val_int(num_int)
         end subroutine OverlapGetMat_f
-        subroutine OverlapGetExp_f(bra_num_pert,      &
-                                   bra_perturbations, &
-                                   bra_pert_orders,   &
-                                   ket_num_pert,      &
-                                   ket_perturbations, &
-                                   ket_pert_orders,   &
-                                   num_pert,          &
-                                   perturbations,     &
-                                   pert_orders,       &
-                                   num_dens,          &
-                                   ao_dens,           &
+        subroutine OverlapGetExp_f(bra_num_pert,    &
+                                   bra_pert_labels, &
+                                   bra_pert_orders, &
+                                   ket_num_pert,    &
+                                   ket_pert_labels, &
+                                   ket_pert_orders, &
+                                   num_pert,        &
+                                   pert_labels,     &
+                                   pert_orders,     &
+                                   num_dens,        &
+                                   ao_dens,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,           &
-                                   user_ctx,          &
+                                   len_ctx,         &
+                                   user_ctx,        &
 #endif
-                                   num_exp,           &
+                                   num_exp,         &
                                    val_exp)
             use qmatrix, only: QINT,QREAL,QMat
             integer(kind=QINT), intent(in) :: bra_num_pert
-            integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+            integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
             integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
             integer(kind=QINT), intent(in) :: ket_num_pert
-            integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+            integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
             integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
             integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: perturbations(num_pert)
+            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_dens
             type(QMat), intent(in) :: ao_dens(num_dens)
@@ -143,30 +145,30 @@ module rsp_overlap_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_overlap_mat(bra_num_pert,      &
-                                       bra_perturbations, &
-                                       bra_pert_orders,   &
-                                       ket_num_pert,      &
-                                       ket_perturbations, &
-                                       ket_pert_orders,   &
-                                       num_pert,          &
-                                       perturbations,     &
-                                       pert_orders,       &
+            subroutine get_overlap_mat(bra_num_pert,    &
+                                       bra_pert_labels, &
+                                       bra_pert_orders, &
+                                       ket_num_pert,    &
+                                       ket_pert_labels, &
+                                       ket_pert_orders, &
+                                       num_pert,        &
+                                       pert_labels,     &
+                                       pert_orders,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,           &
-                                       user_ctx,          &
+                                       len_ctx,         &
+                                       user_ctx,        &
 #endif
-                                       num_int,           &
+                                       num_int,         &
                                        val_int)
                 use qmatrix, only: QINT,QREAL,QMat
                 integer(kind=QINT), intent(in) :: bra_num_pert
-                integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+                integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
                 integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
                 integer(kind=QINT), intent(in) :: ket_num_pert
-                integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+                integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
                 integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
                 integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: perturbations(num_pert)
+                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
@@ -175,32 +177,32 @@ module rsp_overlap_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QMat), intent(inout) :: val_int(num_int)
             end subroutine get_overlap_mat
-            subroutine get_overlap_exp(bra_num_pert,      &
-                                       bra_perturbations, &
-                                       bra_pert_orders,   &
-                                       ket_num_pert,      &
-                                       ket_perturbations, &
-                                       ket_pert_orders,   &
-                                       num_pert,          &
-                                       perturbations,     &
-                                       pert_orders,       &
-                                       num_dens,          &
-                                       ao_dens,           &
+            subroutine get_overlap_exp(bra_num_pert,    &
+                                       bra_pert_labels, &
+                                       bra_pert_orders, &
+                                       ket_num_pert,    &
+                                       ket_pert_labels, &
+                                       ket_pert_orders, &
+                                       num_pert,        &
+                                       pert_labels,     &
+                                       pert_orders,     &
+                                       num_dens,        &
+                                       ao_dens,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,           &
-                                       user_ctx,          &
+                                       len_ctx,         &
+                                       user_ctx,        &
 #endif
-                                       num_exp,           &
+                                       num_exp,         &
                                        val_exp)
                 use qmatrix, only: QINT,QREAL,QMat
                 integer(kind=QINT), intent(in) :: bra_num_pert
-                integer(kind=QINT), intent(in) :: bra_perturbations(bra_num_pert)
+                integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
                 integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
                 integer(kind=QINT), intent(in) :: ket_num_pert
-                integer(kind=QINT), intent(in) :: ket_perturbations(ket_num_pert)
+                integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
                 integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
                 integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: perturbations(num_pert)
+                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_dens
                 type(QMat), intent(in) :: ao_dens(num_dens)
@@ -230,38 +232,38 @@ module rsp_overlap_f
     !  \author Bin Gao
     !  \date 2014-08-05
     !  \param[integer]{in} bra_num_pert number of perturbations on the bra
-    !  \param[integer]{in} bra_perturbations the perturbations on the bra
+    !  \param[integer]{in} bra_pert_labels labels of the perturbations on the bra
     !  \param[integer]{in} bra_pert_orders orders of the perturbations on the bra
     !  \param[integer]{in} ket_num_pert number of perturbations on the ket
-    !  \param[integer]{in} ket_perturbations the perturbations on the ket
+    !  \param[integer]{in} ket_pert_labels labels of the perturbations on the ket
     !  \param[integer]{in} ket_pert_orders orders of the perturbations on the ket
     !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} perturbations the perturbations
+    !  \param[integer]{in} pert_labels labels of the perturbations
     !  \param[integer]{in} pert_orders orders of the perturbations
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPOverlapGetMat_f(bra_num_pert,      &
-                                  bra_perturbations, &
-                                  bra_pert_orders,   &
-                                  ket_num_pert,      &
-                                  ket_perturbations, &
-                                  ket_pert_orders,   &
-                                  num_pert,          &
-                                  perturbations,     &
-                                  pert_orders,       &
-                                  user_ctx,          &
-                                  num_int,           &
-                                  val_int)           &
+    subroutine RSPOverlapGetMat_f(bra_num_pert,    &
+                                  bra_pert_labels, &
+                                  bra_pert_orders, &
+                                  ket_num_pert,    &
+                                  ket_pert_labels, &
+                                  ket_pert_orders, &
+                                  num_pert,        &
+                                  pert_labels,     &
+                                  pert_orders,     &
+                                  user_ctx,        &
+                                  num_int,         &
+                                  val_int)         &
         bind(C, name="RSPOverlapGetMat_f")
         integer(kind=C_QINT), value, intent(in) :: bra_num_pert
-        integer(kind=C_QINT), intent(in) :: bra_perturbations(bra_num_pert)
+        integer(kind=C_QINT), intent(in) :: bra_pert_labels(bra_num_pert)
         integer(kind=C_QINT), intent(in) :: bra_pert_orders(bra_num_pert)
         integer(kind=C_QINT), value, intent(in) :: ket_num_pert
-        integer(kind=C_QINT), intent(in) :: ket_perturbations(ket_num_pert)
+        integer(kind=C_QINT), intent(in) :: ket_pert_labels(ket_num_pert)
         integer(kind=C_QINT), intent(in) :: ket_pert_orders(ket_num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
@@ -281,31 +283,33 @@ module rsp_overlap_f
             write(STDOUT,"(A,I8)") "RSPOverlapGetMat_f>> num_int", num_int
             stop "RSPOverlapGetMat_f>> failed to allocate memory for f_val_int"
         end if
-        do imat = 1, num_int
-            ! encodes the C pointer in a character array
-            len_enc = size(transfer(val_int(imat), enc))
-            allocate(enc(len_enc), stat=ierr)
-            if (ierr/=0) then
-                write(STDOUT,"(A,I8)") "RSPOverlapGetMat_f>> length", len_enc
-                stop "RSPOverlapGetMat_f>> failed to allocate memory for enc"
-            end if
-            enc = transfer(val_int(imat), enc)
-            ! decodes as QMat type
-            f_val_int(imat) = transfer(enc, f_val_int(imat))
-            ! cleans up
-            deallocate(enc)
-        end do
+        ierr = QcMat_C_F_POINTER(A=f_val_int, c_A=val_int)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
+        !do imat = 1, num_int
+        !    ! encodes the C pointer in a character array
+        !    len_enc = size(transfer(val_int(imat), enc))
+        !    allocate(enc(len_enc), stat=ierr)
+        !    if (ierr/=0) then
+        !        write(STDOUT,"(A,I8)") "RSPOverlapGetMat_f>> length", len_enc
+        !        stop "RSPOverlapGetMat_f>> failed to allocate memory for enc"
+        !    end if
+        !    enc = transfer(val_int(imat), enc)
+        !    ! decodes as QMat type
+        !    f_val_int(imat) = transfer(enc, f_val_int(imat))
+        !    ! cleans up
+        !    deallocate(enc)
+        !end do
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, overlap_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
         call overlap_fun%get_overlap_mat(bra_num_pert,         &
-                                         bra_perturbations,    &
+                                         bra_pert_labels,      &
                                          bra_pert_orders,      &
                                          ket_num_pert,         &
-                                         ket_perturbations,    &
+                                         ket_pert_labels,      &
                                          ket_pert_orders,      &
                                          num_pert,             &
-                                         perturbations,        &
+                                         pert_labels,          &
                                          pert_orders,          &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                          overlap_fun%len_ctx,  &
@@ -322,42 +326,42 @@ module rsp_overlap_f
     !  \author Bin Gao
     !  \date 2014-08-05
     !  \param[integer]{in} bra_num_pert number of perturbations on the bra
-    !  \param[integer]{in} bra_perturbations the perturbations on the bra
+    !  \param[integer]{in} bra_pert_labels labels of the perturbations on the bra
     !  \param[integer]{in} bra_pert_orders orders of the perturbations on the bra
     !  \param[integer]{in} ket_num_pert number of perturbations on the ket
-    !  \param[integer]{in} ket_perturbations the perturbations on the ket
+    !  \param[integer]{in} ket_pert_labels labels of the perturbations on the ket
     !  \param[integer]{in} ket_pert_orders orders of the perturbations on the ket
     !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} perturbations the perturbations
+    !  \param[integer]{in} pert_labels labels of the perturbations
     !  \param[integer]{in} pert_orders orders of the perturbations
     !  \param[integer]{in} num_dens number of atomic orbital (AO) based density matrices
     !  \param[C_PTR:type]{inout} ao_dens the AO based density matrices
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
-    subroutine RSPOverlapGetExp_f(bra_num_pert,      &
-                                  bra_perturbations, &
-                                  bra_pert_orders,   &
-                                  ket_num_pert,      &    
-                                  ket_perturbations, &
-                                  ket_pert_orders,   &
-                                  num_pert,          &
-                                  perturbations,     &
-                                  pert_orders,       &
-                                  num_dens,          &
-                                  ao_dens,           &
-                                  user_ctx,          &
-                                  num_exp,           &
-                                  val_exp)           &
+    subroutine RSPOverlapGetExp_f(bra_num_pert,    &
+                                  bra_pert_labels, &
+                                  bra_pert_orders, &
+                                  ket_num_pert,    &    
+                                  ket_pert_labels, &
+                                  ket_pert_orders, &
+                                  num_pert,        &
+                                  pert_labels,     &
+                                  pert_orders,     &
+                                  num_dens,        &
+                                  ao_dens,         &
+                                  user_ctx,        &
+                                  num_exp,         &
+                                  val_exp)         &
         bind(C, name="RSPOverlapGetExp_f")
         integer(kind=C_QINT), value, intent(in) :: bra_num_pert
-        integer(kind=C_QINT), intent(in) :: bra_perturbations(bra_num_pert)
+        integer(kind=C_QINT), intent(in) :: bra_pert_labels(bra_num_pert)
         integer(kind=C_QINT), intent(in) :: bra_pert_orders(bra_num_pert)
         integer(kind=C_QINT), value, intent(in) :: ket_num_pert
-        integer(kind=C_QINT), intent(in) :: ket_perturbations(ket_num_pert)
+        integer(kind=C_QINT), intent(in) :: ket_pert_labels(ket_num_pert)
         integer(kind=C_QINT), intent(in) :: ket_pert_orders(ket_num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_dens
         type(C_PTR), intent(in) :: ao_dens(num_dens)
@@ -397,13 +401,13 @@ module rsp_overlap_f
         call c_f_pointer(user_ctx, overlap_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
         call overlap_fun%get_overlap_exp(bra_num_pert,         &
-                                         bra_perturbations,    &
+                                         bra_pert_labels,      &
                                          bra_pert_orders,      &
                                          ket_num_pert,         &
-                                         ket_perturbations,    &
+                                         ket_pert_labels,      &
                                          ket_pert_orders,      &
                                          num_pert,             &
-                                         perturbations,        &
+                                         pert_labels,          &
                                          pert_orders,          &
                                          num_dens,             &
                                          f_ao_dens,            &
@@ -434,3 +438,5 @@ module rsp_overlap_f
     end subroutine RSPOverlapDestroy_f
 
 end module rsp_overlap_f
+
+#undef OPENRSP_API_SRC

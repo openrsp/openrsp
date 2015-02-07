@@ -27,7 +27,7 @@
     \date 2014-08-06
     \param[RSPTwoOper:struct]{in} two_oper the linked list of two-electron operators
     \param[QInt:int]{in} num_pert number of perturbations
-    \param[QInt:int]{in} perturbations the perturbations
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_var_dens number of variable AO based density matrices
     \param[QMat:struct]{in} var_ao_dens the variable AO based density matrices
@@ -37,7 +37,7 @@
 */
 QErrorCode RSPTwoOperGetMat(RSPTwoOper *two_oper,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_var_dens,
                             QMat *var_ao_dens[],
@@ -49,7 +49,7 @@ QErrorCode RSPTwoOperGetMat(RSPTwoOper *two_oper,
     cur_oper = two_oper;
     do {
         cur_oper->get_two_oper_mat(num_pert,
-                                   perturbations,
+                                   pert_labels,
                                    pert_orders,
                                    num_var_dens,
                                    var_ao_dens,

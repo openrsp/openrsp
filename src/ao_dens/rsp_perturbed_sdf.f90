@@ -207,13 +207,13 @@ module rsp_perturbed_sdf
 
        ! ASSUME CLOSED SHELL
 !        call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Dp(i))
+    call QMatInit(Dp(i), Sp(1))
 
 !        call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Dh(i))
+    call QMatInit(Dh(i), Sp(1))
 
 !        call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Fp(i))
+    call QMatInit(Fp(i), Sp(1))
 
     end do
 
@@ -646,7 +646,8 @@ end if
     allocate(blk_sizes_merged(total_num_perturbations))
     allocate(o_whichpert(total_num_perturbations))
     allocate(o_wh_forave(total_num_perturbations))
-    allocate(dens_tuple(num_p_tuples))
+    !FIXME Gao: we do not need dens_tuple(1)?
+    allocate(dens_tuple(2:num_p_tuples))
     allocate(nfields(num_p_tuples))
     allocate(nblks_tuple(num_p_tuples))
 
@@ -706,6 +707,21 @@ end if
 
     call sdf_getdata_s_2014(D, get_emptypert(), (/1/), D_unp)
 
+    !FIXME Gao: we should allocate and initialize lower_order_contribution and
+    !           dens_tuple in the if statement where they are used, also their
+    !           deallocation should be moved
+    do j = 1, size(lower_order_contribution)
+       call QMatInit(lower_order_contribution(j))
+    end do
+
+    do j = 1, size(tmp)
+       call QMatInit(tmp(j))
+    end do
+
+    do i = 2, num_p_tuples
+       call QMatInit(dens_tuple(j))
+    end do
+
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
        k = 1
@@ -717,24 +733,6 @@ end if
              k = k + 1
 
           end do
-       end do
-
-       do j = 1, size(lower_order_contribution)
-
-          call QMatInit(lower_order_contribution(j))
- 
-       end do
-
-       do j = 1, size(tmp)
-
-          call QMatInit(tmp(j))
-
-       end do
-
-       do i = 2, num_p_tuples
-
-          call QMatInit(dens_tuple(j))
-
        end do
 
        allocate(outer_indices(outer_indices_size,total_num_perturbations - &
@@ -759,14 +757,6 @@ end if
              call sdf_getdata_s_2014(D, p_tuples(j), (/ &
                              (outer_indices(i,o_wh_forave(p_tuples(j)%pid(k))), &
                              k = 1, p_tuples(j)%n_perturbations) /), dens_tuple(j))
-
-          end do
-
-          ! MaR: IS THIS ZEROING OF tmp REDUNDANT?
-
-          do j = 1, size(tmp)
-
-             call QMatInit(tmp(j))
 
           end do
 
@@ -816,7 +806,6 @@ end if
                 blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                 (/inner_indices(j, :), outer_indices(i, :) /)) 
 
-                call QMatInit(lower_order_contribution(offset))
                 call QMatAEqB(lower_order_contribution(offset),tmp(j))
 
              end do
@@ -831,7 +820,6 @@ end if
              blks_tuple_info(2:num_p_tuples, :, :), blk_sizes(2:num_p_tuples,:), & 
              blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
 
-             call QMatInit(lower_order_contribution(offset))
              call QMatAEqB(lower_order_contribution(offset),tmp(1))
 
           end if
@@ -1025,7 +1013,7 @@ end if
 
     call QMatDst(D_unp)
 
-    do i = 1, num_p_tuples
+    do i = 2, num_p_tuples
    
        call QMatDst(dens_tuple(i))
    

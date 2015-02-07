@@ -29,8 +29,7 @@
     \param[RSPTwoOper:struct]{inout} two_oper the linked list of two-electron operators
     \param[QInt:int]{in} num_pert number of perturbations that the two-electron
         operator depends on
-    \param[QInt:int]{in} perturbations perturbations that the two-electron operator
-        depends on
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
     \param[QVoid:void]{in} user_ctx user-defined callback function context
     \param[GetTwoOperMat:void]{in} get_two_oper_mat user specified function for
@@ -41,7 +40,7 @@
 */
 QErrorCode RSPTwoOperCreate(RSPTwoOper **two_oper,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_max_orders,
                             QVoid *user_ctx,
                             const GetTwoOperMat get_two_oper_mat,
@@ -60,10 +59,10 @@ QErrorCode RSPTwoOperCreate(RSPTwoOper **two_oper,
         printf("RSPTwoOperCreate>> number of perturbations %d\n", num_pert);
         QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
     }
-    new_oper->perturbations = (QInt *)malloc(num_pert*sizeof(QInt));
-    if (new_oper->perturbations==NULL) {
+    new_oper->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (new_oper->pert_labels==NULL) {
         printf("RSPTwoOperCreate>> number of perturbations %d\n", num_pert);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for perturbations");
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_labels");
     }
     new_oper->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
     if (new_oper->pert_max_orders==NULL) {
@@ -71,23 +70,23 @@ QErrorCode RSPTwoOperCreate(RSPTwoOper **two_oper,
         QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_max_orders");
     }
     for (ipert=0; ipert<num_pert; ipert++) {
-        /* each element of \var{perturbations} should be unique */
+        /* each element of \var{pert_labels} should be unique */
         for (jpert=0; jpert<ipert; jpert++) {
-            if (perturbations[jpert]==perturbations[ipert]) {
+            if (pert_labels[jpert]==pert_labels[ipert]) {
                 printf("RSPTwoOperCreate>> perturbation %d is %d\n",
                        jpert,
-                       perturbations[jpert]);
+                       pert_labels[jpert]);
                 printf("RSPTwoOperCreate>> perturbation %d is %d\n",
                        ipert,
-                       perturbations[ipert]);
+                       pert_labels[ipert]);
                 QErrorExit(FILE_AND_LINE, "same perturbation not allowed");
             }
         }
-        new_oper->perturbations[ipert] = perturbations[ipert];
+        new_oper->pert_labels[ipert] = pert_labels[ipert];
         if (pert_max_orders[ipert]<1) {
             printf("RSPTwoOperCreate>> order of %d-th perturbation (%d) is %d\n",
                    ipert,
-                   perturbations[ipert],
+                   pert_labels[ipert],
                    pert_max_orders[ipert]);
             QErrorExit(FILE_AND_LINE, "only positive order allowed");
         }

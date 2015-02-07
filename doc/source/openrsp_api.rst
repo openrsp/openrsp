@@ -60,7 +60,7 @@ Functions of OpenRSP API (C version)
 
 .. function:: OpenRSPSetPerturbations(open_rsp,        \
                                       num_pert,        \
-                                      perturbations,   \
+                                      pert_labels,     \
                                       pert_max_orders, \
                                       pert_sizes,      \
                                       user_ctx,        \
@@ -73,8 +73,8 @@ Functions of OpenRSP API (C version)
    :type open_rsp: OpenRSP\*
    :param num_pert: number of all perturbations involved in calculations
    :type num_pert: QInt
-   :param perturbations: all perturbations involved in calculations
-   :type perturbations: QInt\*
+   :param pert_labels: labels of all perturbations involved in calculations
+   :type pert_labels: QInt\*
    :param pert_max_orders: maximum allowed orders of all perturbations
    :type pert_max_orders: QInt\*
    :param pert_sizes: sizes of all perturbations up to their maximum orders,
@@ -90,7 +90,7 @@ Functions of OpenRSP API (C version)
 
 .. function:: OpenRSPSetPDBS(open_rsp,        \
                              num_pert,        \
-                             perturbations,   \
+                             pert_labels,     \
                              pert_max_orders, \
                              user_ctx,        \
                              get_overlap_mat, \
@@ -102,8 +102,8 @@ Functions of OpenRSP API (C version)
    :type open_rsp: OpenRSP\*
    :param num_pert: number of perturbations that the basis sets depend on
    :type num_pert: QInt
-   :param perturbations: perturbations that the basis set depend on
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_max_orders: maximum allowed orders of the perturbations
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
@@ -116,7 +116,7 @@ Functions of OpenRSP API (C version)
 
 .. function:: OpenRSPAddOneOper(open_rsp,         \
                                 num_pert,         \
-                                perturbations,    \
+                                pert_labels,      \
                                 pert_max_orders,  \
                                 user_ctx,         \
                                 get_one_oper_mat, \
@@ -128,8 +128,8 @@ Functions of OpenRSP API (C version)
    :type open_rsp: OpenRSP\*
    :param num_pert: number of perturbations that the one-electron operator depends on
    :type num_pert: QInt
-   :param perturbations: perturbations that the one-electron operator depends on
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_max_orders: maximum allowed orders of the perturbations
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
@@ -142,7 +142,7 @@ Functions of OpenRSP API (C version)
 
 .. function:: OpenRSPAddTwoOper(open_rsp,         \
                                 num_pert,         \
-                                perturbations,    \
+                                pert_labels,      \
                                 pert_max_orders,  \
                                 user_ctx,         \
                                 get_two_oper_mat, \
@@ -154,8 +154,8 @@ Functions of OpenRSP API (C version)
    :type open_rsp: OpenRSP\*
    :param num_pert: number of perturbations that the two-electron operator depends on
    :type num_pert: QInt
-   :param perturbations: perturbations that the two-electron operator depends on
-   :type perturbations: QInt\*
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
    :param pert_max_orders: maximum allowed orders of the perturbations
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
@@ -225,19 +225,20 @@ Functions of OpenRSP API (C version)
    :type file_name: QChar\*
    :rtype: QErrorCode
 
-.. function:: OpenRSPGetRSPFun(open_rsp,      \
-                               ref_ham,       \
-                               ref_state,     \
-                               ref_overlap,   \
-                               num_pert,      \
-                               perturbations, \
-                               pert_orders,   \
-                               pert_freqs,    \
-                               kn_rule,       \
-                               size_rsp_fun,  \
-                               rsp_fun)
+.. function:: OpenRSPGetRSPFun(open_rsp,       \
+                               ref_ham,        \
+                               ref_state,      \
+                               ref_overlap,    \
+                               num_props,      \
+                               num_pert,       \
+                               pert_labels,    \
+                               num_freqs,      \
+                               pert_freqs,     \
+                               kn_rules,       \
+                               size_rsp_funs,  \
+                               rsp_funs)
 
-   Gets the response function for given perturbations.
+   Gets the response functions for given perturbations.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
@@ -247,21 +248,28 @@ Functions of OpenRSP API (C version)
    :type ref_state: QMat\*
    :param ref_overlap: overlap integral matrix of referenced state
    :type ref_overlap: QMat\*
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param perturbations: the perturbations
-   :type perturbations: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
-   :param pert_freqs: frequencies of the perturbations
+   :param num_props: number of properties to calculate
+   :type num_props: QInt
+   :param num_pert: number of different perturbations for each property,
+       size is the number of properties (``num_props``)
+   :type num_pert: QInt\*
+   :param pert_labels: labels of different perturbations for each property,
+       size is ``sum(num_pert)``
+   :type pert_labels: QInt\*
+   :param num_freqs: number of different frequencies for each perturbation,
+       size is ``sum(num_pert)``
+   :type num_freqs: QInt\*
+   :param pert_freqs: complex frequencies of each perturbation, size is
+       ``2``:math:`\times` ``sum(num_freqs)``
    :type pert_freqs: QReal\*
-   :param kn_rule: contains the numbers :math:`k` and :math:`n` for the kn rule
-   :type kn_rule: QInt[2]
-   :param size_rsp_fun: size of the response function, equals to the
-       product of sizes of ``perturbations``
-   :type size_rsp_fun: QInt
-   :param rsp_fun: the response function
-   :type rsp_fun: QReal\*
+   :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
+       (OpenRSP will determine the number :math:`n`), size is the number of
+       properties (``num_props``)
+   :type kn_rules: QInt\*
+   :param size_rsp_funs: size of the response functions
+   :type size_rsp_funs: QInt
+   :param rsp_funs: the response functions, size is ``size_rsp_funs``
+   :type rsp_funs: QReal\*
    :rtype: QErrorCode
 
 .. function:: OpenRSPDestroy(open_rsp)

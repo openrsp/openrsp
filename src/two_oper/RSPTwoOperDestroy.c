@@ -36,8 +36,8 @@ QErrorCode RSPTwoOperDestroy(RSPTwoOper **two_oper)
     cur_oper = *two_oper;
     while (cur_oper!=NULL) {
         cur_oper->num_pert = 0;
-        free(cur_oper->perturbations);
-        cur_oper->perturbations = NULL;
+        free(cur_oper->pert_labels);
+        cur_oper->pert_labels = NULL;
         free(cur_oper->pert_max_orders);
         cur_oper->pert_max_orders = NULL;
 #if defined(OPENRSP_C_USER_CONTEXT)

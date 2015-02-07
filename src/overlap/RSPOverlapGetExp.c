@@ -27,15 +27,13 @@
     \date 2014-08-05
     \param[RSPOverlap:struct]{in} overlap the overlap integrals
     \param[QInt:int]{in} bra_num_pert number of perturbations on the bra
-    \param[QInt:int]{in} bra_perturbations the perturbations on the bra
+    \param[QInt:int]{in} bra_pert_labels labels of the perturbations on the bra
     \param[QInt:int]{in} bra_pert_orders orders of the perturbations on the bra
-    \param[QReal:real]{in} bra_pert_freqs frequencies of the perturbations on the bra
     \param[QInt:int]{in} ket_num_pert number of perturbations on the ket
-    \param[QInt:int]{in} ket_perturbations the perturbations on the ket
+    \param[QInt:int]{in} ket_pert_labels labels of the perturbations on the ket
     \param[QInt:int]{in} ket_pert_orders orders of the perturbations on the ket
-    \param[QReal:real]{in} ket_pert_freqs frequencies of the perturbations on the ket
     \param[QInt:int]{in} num_pert number of perturbations
-    \param[QInt:int]{in} perturbations the perturbations
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_dens number of atomic orbital (AO) based density matrices
     \param[QMat:struct]{in} ao_dens the AO based density matrices
@@ -45,15 +43,13 @@
 */
 QErrorCode RSPOverlapGetExp(const RSPOverlap *overlap,
                             const QInt bra_num_pert,
-                            const QInt *bra_perturbations,
+                            const QInt *bra_pert_labels,
                             const QInt *bra_pert_orders,
-                            const QReal *bra_pert_freqs,
                             const QInt ket_num_pert,
-                            const QInt *ket_perturbations,
+                            const QInt *ket_pert_labels,
                             const QInt *ket_pert_orders,
-                            const QReal *ket_pert_freqs,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_dens,
                             QMat *ao_dens[],
@@ -61,13 +57,13 @@ QErrorCode RSPOverlapGetExp(const RSPOverlap *overlap,
                             QReal *val_exp)
 {
     overlap->get_overlap_exp(bra_num_pert,
-                             bra_perturbations,
+                             bra_pert_labels,
                              bra_pert_orders,
                              ket_num_pert,
-                             ket_perturbations,
+                             ket_pert_labels,
                              ket_pert_orders,
                              num_pert,
-                             perturbations,
+                             pert_labels,
                              pert_orders,
                              num_dens,
                              ao_dens,

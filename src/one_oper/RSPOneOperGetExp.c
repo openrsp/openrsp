@@ -27,7 +27,7 @@
     \date 2014-08-03
     \param[RSPOneOper:struct]{in} one_oper the linked list of one-electron operators
     \param[QInt:int]{in} num_pert number of perturbations
-    \param[QInt:int]{in} perturbations the perturbations
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_dens number of atomic orbital (AO) based density matrices
     \param[QMat:struct]{in} ao_dens the AO based density matrices
@@ -37,7 +37,7 @@
 */
 QErrorCode RSPOneOperGetExp(RSPOneOper *one_oper,
                             const QInt num_pert,
-                            const QInt *perturbations,
+                            const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_dens,
                             QMat *ao_dens[],
@@ -49,7 +49,7 @@ QErrorCode RSPOneOperGetExp(RSPOneOper *one_oper,
     cur_oper = one_oper;
     do {
         cur_oper->get_one_oper_exp(num_pert,
-                                   perturbations,
+                                   pert_labels,
                                    pert_orders,
                                    num_dens,
                                    ao_dens,

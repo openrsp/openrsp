@@ -23,11 +23,12 @@
 ! data types between C/Fortran
 #include "api/qmatrix_c_type.h"
 
-    subroutine OpenRSPGetRSPFun_f(num_pert,        &
-                                  perturbations,   &
-                                  pert_orders,     &
+    subroutine OpenRSPGetRSPFun_f(num_props,       &
+                                  num_pert,        &
+                                  pert_labels,     &
+                                  num_freqs,       &
                                   pert_freqs,      &
-                                  kn,              &
+                                  kn_rules,        &
                                   F_unpert,        &
                                   S_unpert,        &
                                   D_unpert,        &
@@ -49,11 +50,12 @@
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
         implicit none
-        integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
-        integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-        real(kind=C_QREAL), intent(in) :: pert_freqs(2*num_pert)
-        integer(kind=C_QINT), intent(in) :: kn(2)
+        integer(kind=C_QINT), value, intent(in) :: num_props
+        integer(kind=C_QINT), intent(in) :: num_pert(num_props)
+        integer(kind=C_QINT), intent(in) :: pert_labels(sum(num_pert))
+        integer(kind=C_QINT), intent(in) :: num_freqs(sum(num_pert))
+        real(kind=C_QREAL), intent(in) :: pert_freqs(2*sum(num_freqs))
+        integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
         type(C_PTR), value, intent(in) :: F_unpert
         type(C_PTR), value, intent(in) :: S_unpert
         type(C_PTR), value, intent(in) :: D_unpert
@@ -81,7 +83,7 @@
         ! local variables for converting C arguments to Fortran ones
         integer(kind=4), parameter :: STDOUT = 6
         integer(kind=QINT) num_coord
-        integer(kind=QINT) f_num_pert
+        integer(kind=QINT) num_all_pert
         integer(kind=QINT), allocatable :: f_pert_dims(:)
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
         character(4), allocatable :: f_pert_labels(:)
@@ -92,7 +94,7 @@
         complex(kind=QREAL), allocatable :: f_rsp_tensor(:)
         !character(kind=C_CHAR), pointer :: ptr_file_tensor(:)
         !character, allocatable :: f_file_tensor(:)
-        integer(kind=QINT) ipert, jpert, iorder
+        integer(kind=QINT) ipert, jpert
         integer(kind=4) ierr
         ! gets the number of coordinates
         ierr = RSPNucContribGetNumAtoms(nuc_contrib, num_coord)
@@ -100,44 +102,44 @@
             stop "OpenRSPGetRSPFun_f>> failed to call RSPNucContribGetNumAtoms"
         end if
         num_coord = 3*num_coord
-        ! gets the perturbations
-        f_num_pert = sum(pert_orders)
-        allocate(f_pert_dims(f_num_pert), stat=ierr)
+        ! gets the number of all perturbations
+        num_all_pert = sum(num_pert)
+        ! gets the dimensions and labels of perturbations
+        allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> f_num_pert", f_num_pert
+            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims"
         end if
-        allocate(f_pert_first_comp(f_num_pert), stat=ierr)
+        allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> f_num_pert", f_num_pert
+            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp"
         end if
-        allocate(f_pert_labels(f_num_pert), stat=ierr)
+        allocate(f_pert_labels(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> f_num_pert", f_num_pert
+            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_labels"
         end if
-        allocate(f_pert_freqs(f_num_pert), stat=ierr)
+        do ipert = 1, num_all_pert
+            select case (pert_labels(ipert))
+            case (RSP_GEO_PERT)
+                f_pert_dims(ipert) = num_coord
+            case (RSP_ELGR_PERT)
+                f_pert_dims(ipert) = 6
+            case default
+                f_pert_dims(ipert) = 3
+            end select
+            f_pert_first_comp(ipert) = 1  !always starting from 1 for the time being
+            f_pert_labels(ipert) = CHAR_PERT_TABLE(pert_labels(ipert))
+        end do
+        ! gets the frequencies of perturbations
+        allocate(f_pert_freqs(size(pert_freqs)), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> f_num_pert", f_num_pert
+            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs"
         end if
-        jpert = 0
-        do ipert = 1, num_pert
-            do iorder = 1, pert_orders(ipert)
-                jpert = jpert+1
-                select case (perturbations(ipert))
-                case (RSP_GEO_PERT)
-                    f_pert_dims(jpert) = num_coord
-                case (RSP_ELGR_PERT)
-                    f_pert_dims(jpert) = 6
-                case default
-                    f_pert_dims(jpert) = 3
-                end select
-                f_pert_first_comp(jpert) = 1  !always starting from 1 for the time being
-                f_pert_labels(jpert) = CHAR_PERT_TABLE(perturbations(ipert))
-                f_pert_freqs(jpert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
-            end do
+        do ipert = 1, size(pert_freqs)
+            f_pert_freqs(ipert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
         end do
         ! gets the matrices
         call c_f_pointer(F_unpert, f_F_unpert)
@@ -168,12 +170,14 @@
         !        f_file_tensor(ipert) = ptr_rsp_tensor(ipert)(1:1)
         !    end do
         !    ! gets the properties
-        !    call openrsp_get_property_2014(f_num_pert,                      &
+        !    call openrsp_get_property_2014(num_props,                       &
+        !                                   num_pert,                        &
         !                                   f_pert_dims,                     &
         !                                   f_pert_first_comp,               &
         !                                   f_pert_labels,                   &
+        !                                   num_freqs,                       &
         !                                   f_pert_freqs,                    &
-        !                                   kn,                              &
+        !                                   kn_rules,                        &
         !                                   f_F_unpert,                      &
         !                                   f_S_unpert,                      &
         !                                   f_D_unpert,                      &
@@ -194,12 +198,14 @@
         !    deallocate(f_file_tensor)
         !    nullify(ptr_file_tensor)
         !else
-            call openrsp_get_property_2014(f_num_pert,                      &
+            call openrsp_get_property_2014(num_props,                       &
+                                           num_pert,                        &
                                            f_pert_dims,                     &
                                            f_pert_first_comp,               &
                                            f_pert_labels,                   &
+                                           num_freqs,                       &
                                            f_pert_freqs,                    &
-                                           kn,                              &
+                                           kn_rules,                        &
                                            f_F_unpert,                      &
                                            f_S_unpert,                      &
                                            f_D_unpert,                      &

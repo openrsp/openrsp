@@ -33,18 +33,18 @@ module rsp_one_oper_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine OneOperGetMat_f(num_pert,      &
-                                   perturbations, &
-                                   pert_orders,   &
+        subroutine OneOperGetMat_f(num_pert,    &
+                                   pert_labels, &
+                                   pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,       &
-                                   user_ctx,      &
+                                   len_ctx,     &
+                                   user_ctx,    &
 #endif
-                                   num_int,       &
+                                   num_int,     &
                                    val_int)
             use qmatrix, only: QINT,QREAL,QMat
             integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: perturbations(num_pert)
+            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
@@ -53,20 +53,20 @@ module rsp_one_oper_f
             integer(kind=QINT), intent(in) :: num_int
             type(QMat), intent(inout) :: val_int(num_int)
         end subroutine OneOperGetMat_f
-        subroutine OneOperGetExp_f(num_pert,      &
-                                   perturbations, &
-                                   pert_orders,   &
-                                   num_dens,      &
-                                   ao_dens,       &
+        subroutine OneOperGetExp_f(num_pert,    &
+                                   pert_labels, &
+                                   pert_orders, &
+                                   num_dens,    &
+                                   ao_dens,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,       &
-                                   user_ctx,      &
+                                   len_ctx,     &
+                                   user_ctx,    &
 #endif
-                                   num_exp,       &
+                                   num_exp,     &
                                    val_exp)
             use qmatrix, only: QINT,QREAL,QMat
             integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: perturbations(num_pert)
+            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_dens
             type(QMat), intent(in) :: ao_dens(num_dens)
@@ -119,18 +119,18 @@ module rsp_one_oper_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_one_oper_mat(num_pert,      &
-                                        perturbations, &
-                                        pert_orders,   &
+            subroutine get_one_oper_mat(num_pert,    &
+                                        pert_labels, &
+                                        pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,       &
-                                        user_ctx,      &
+                                        len_ctx,     &
+                                        user_ctx,    &
 #endif
-                                        num_int,       &
+                                        num_int,     &
                                         val_int)
                 use qmatrix, only: QINT,QREAL,QMat
                 integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: perturbations(num_pert)
+                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
@@ -139,20 +139,20 @@ module rsp_one_oper_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QMat), intent(inout) :: val_int(num_int)
             end subroutine get_one_oper_mat
-            subroutine get_one_oper_exp(num_pert,      &
-                                        perturbations, &
-                                        pert_orders,   &
-                                        num_dens,      &
-                                        ao_dens,       &
+            subroutine get_one_oper_exp(num_pert,    &
+                                        pert_labels, &
+                                        pert_orders, &
+                                        num_dens,    &
+                                        ao_dens,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,       &
-                                        user_ctx,      &
+                                        len_ctx,     &
+                                        user_ctx,    &
 #endif
-                                        num_exp,       &
+                                        num_exp,     &
                                         val_exp)
                 use qmatrix, only: QINT,QREAL,QMat
                 integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: perturbations(num_pert)
+                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_dens
                 type(QMat), intent(in) :: ao_dens(num_dens)
@@ -183,20 +183,20 @@ module rsp_one_oper_f
     !  \author Bin Gao
     !  \date 2014-08-02
     !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} perturbations the perturbations
+    !  \param[integer]{in} pert_labels labels of the perturbations
     !  \param[integer]{in} pert_orders orders of the perturbations
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPOneOperGetMat_f(num_pert,      &
-                                  perturbations, &
-                                  pert_orders,   &
-                                  user_ctx,      &
-                                  num_int,       &
-                                  val_int)       &
+    subroutine RSPOneOperGetMat_f(num_pert,    &
+                                  pert_labels, &
+                                  pert_orders, &
+                                  user_ctx,    &
+                                  num_int,     &
+                                  val_int)     &
         bind(C, name="RSPOneOperGetMat_f")
         integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
@@ -234,7 +234,7 @@ module rsp_one_oper_f
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
         call one_oper_fun%get_one_oper_mat(num_pert,              &
-                                           perturbations,         &
+                                           pert_labels,           &
                                            pert_orders,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                            one_oper_fun%len_ctx,  &
@@ -252,24 +252,24 @@ module rsp_one_oper_f
     !  \author Bin Gao
     !  \date 2014-08-02
     !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} perturbations the perturbations
+    !  \param[integer]{in} pert_labels labels of the perturbations
     !  \param[integer]{in} pert_orders orders of the perturbations
     !  \param[integer]{in} num_dens number of atomic orbital (AO) based density matrices
     !  \param[C_PTR:type]{inout} ao_dens the AO based density matrices
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
-    subroutine RSPOneOperGetExp_f(num_pert,      &
-                                  perturbations, &
-                                  pert_orders,   &
-                                  num_dens,      &
-                                  ao_dens,       &
-                                  user_ctx,      &
-                                  num_exp,       &
-                                  val_exp)       &
+    subroutine RSPOneOperGetExp_f(num_pert,    &
+                                  pert_labels, &
+                                  pert_orders, &
+                                  num_dens,    &
+                                  ao_dens,     &
+                                  user_ctx,    &
+                                  num_exp,     &
+                                  val_exp)     &
         bind(C, name="RSPOneOperGetExp_f")
         integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: perturbations(num_pert)
+        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_dens
         type(C_PTR), intent(in) :: ao_dens(num_dens)
@@ -309,7 +309,7 @@ module rsp_one_oper_f
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
         call one_oper_fun%get_one_oper_exp(num_pert,              &
-                                           perturbations,         &
+                                           pert_labels,           &
                                            pert_orders,           &
                                            num_dens,              &
                                            f_ao_dens,             &

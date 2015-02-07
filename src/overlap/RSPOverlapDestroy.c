@@ -31,8 +31,8 @@
 QErrorCode RSPOverlapDestroy(RSPOverlap *overlap)
 {
     overlap->num_pert = 0;
-    free(overlap->perturbations);
-    overlap->perturbations = NULL;
+    free(overlap->pert_labels);
+    overlap->pert_labels = NULL;
     free(overlap->pert_max_orders);
     overlap->pert_max_orders = NULL;
 #if defined(OPENRSP_C_USER_CONTEXT)

@@ -37,7 +37,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 #endif
     OpenRSP open_rsp;                                 /* context of response theory calculations */
     QChar *solver_lab = "SOLVER";
-    const QInt ALL_PERTURBATIONS[NUM_ALL_PERT] = {    /* all perturbations involved in calculations */
+    const QInt ALL_PERT_LABELS[NUM_ALL_PERT] = {      /* labels of all perturbations */
         PERT_DIPOLE,PERT_MAGNETIC,PERT_GEOMETRIC};
     const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT] = {  /* maximum allowed orders of all perturbations */
         MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC,MAX_ORDER_GEOMETRIC};
@@ -50,21 +50,21 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 #endif
     /* overlap integrals with London atomic orbitals */
     QInt overlap_num_pert = 2;
-    QInt overlap_perturbations[2] = {PERT_MAGNETIC,PERT_GEOMETRIC};
+    QInt overlap_pert_labels[2] = {PERT_MAGNETIC,PERT_GEOMETRIC};
     QInt overlap_pert_orders[2] = {MAX_ORDER_MAGNETIC,MAX_ORDER_GEOMETRIC};
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *overlap_lab = "OVERLAP";
 #endif
     /* one-electron Hamiltonian */
     QInt oneham_num_pert = 2;
-    QInt oneham_perturbations[2] = {PERT_MAGNETIC,PERT_GEOMETRIC};
+    QInt oneham_pert_labels[2] = {PERT_MAGNETIC,PERT_GEOMETRIC};
     QInt oneham_pert_orders[2] = {MAX_ORDER_MAGNETIC,MAX_ORDER_GEOMETRIC};
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *oneham_lab = "ONEHAM";
 #endif
     /* external field */
     QInt ext_field_num_pert = 3;
-    QInt ext_field_perturbations[3] = {PERT_DIPOLE,PERT_MAGNETIC,PERT_GEOMETRIC};
+    QInt ext_field_pert_labels[3] = {PERT_DIPOLE,PERT_MAGNETIC,PERT_GEOMETRIC};
     QInt ext_field_pert_orders[3] = {MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC,MAX_ORDER_GEOMETRIC};
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *ext_field_lab = "EXT_FIELD";
@@ -80,13 +80,14 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
     QMat ref_state;
     QMat ref_overlap;
 /*FIXME: to move to test_... */
-    QInt vib_alpha_num_pert = 2;
-    QInt vib_alpha_perturbations[2] = {PERT_DIPOLE,PERT_GEOMETRIC};
-    QInt vib_alpha_pert_orders[2] = {1,1};
-    QReal vib_alpha_pert_freqs[2] = {0.1,0};
-    QInt kn_rule[2] = {1,0};
-    QInt size_rsp_fun = 9;
-    QReal rsp_fun[9];
+    QInt alpha_num_props = 1;
+    QInt alpha_num_pert[1] = {2};
+    QInt alpha_pert_labels[2] = {PERT_DIPOLE,PERT_DIPOLE};
+    QInt alpha_num_freqs[2] = {1,1};
+    QReal alpha_pert_freqs[4] = {-0.072,0.0,0.072,0.0};
+    QInt alpha_kn_rules[1] = {0};
+    QInt size_rsp_funs = 9;
+    QReal rsp_funs[9];
 
     QErrorCode ierr;   /* error information */
 
@@ -105,7 +106,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 #if defined(OPENRSP_PERTURBATION_FREE)
     ierr = OpenRSPSetPerturbations(&open_rsp,
                                    NUM_ALL_PERT,
-                                   ALL_PERTURBATIONS,
+                                   ALL_PERT_LABELS,
                                    ALL_PERT_MAX_ORDERS,
                                    ALL_PERT_SIZES,
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -119,7 +120,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 
     ierr = OpenRSPSetPDBS(&open_rsp,
                           overlap_num_pert,
-                          overlap_perturbations,
+                          overlap_pert_labels,
                           overlap_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                           (QVoid *)overlap_lab,
@@ -131,7 +132,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 
     ierr = OpenRSPAddOneOper(&open_rsp,
                              oneham_num_pert,
-                             oneham_perturbations,
+                             oneham_pert_labels,
                              oneham_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                              (QVoid *)oneham_lab,
@@ -143,7 +144,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 
     ierr = OpenRSPAddOneOper(&open_rsp,
                              ext_field_num_pert,
-                             ext_field_perturbations,
+                             ext_field_pert_labels,
                              ext_field_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                              (QVoid *)ext_field_lab,
@@ -180,13 +181,14 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
                             &ref_ham,
                             &ref_state,
                             &ref_overlap,
-                            vib_alpha_num_pert,
-                            vib_alpha_perturbations,
-                            vib_alpha_pert_orders,
-                            vib_alpha_pert_freqs,
-                            kn_rule,
-                            size_rsp_fun,
-                            rsp_fun);
+                            alpha_num_props,
+                            alpha_num_pert,
+                            alpha_pert_labels,
+                            alpha_num_freqs,
+                            alpha_pert_freqs,
+                            alpha_kn_rules,
+                            size_rsp_funs,
+                            rsp_funs);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPGetRSPFun");
     fprintf(fp_log, "test_c_OpenRSP>> OpenRSPGetRSPFun() passed\n");
 
