@@ -19,7 +19,7 @@ module rsp_perturbed_matrices
                              p_tuple_deallocate
   use rsp_sdf_caching
   use rsp_indices_and_addressing
-  use qmatrix
+  use qcmatrix_f
 
   implicit none
 
@@ -192,13 +192,13 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
     type(sdf_2014) :: F, D, S
-    type(qmat) :: W, A, B, C, T
+    type(QcMat) :: W, A, B, C, T
 
-    call QMatInit(A)
-    call QMatInit(B)
-    call QMatInit(C)
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
 
-    call QMatInit(T)
+    call QcMatInit(T)
 
     do i = 1, superstructure_size
 
@@ -210,8 +210,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
 !      W = W + A * B * C
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, W)
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, W)
             
 
 
@@ -228,9 +228,9 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 !            W = W + ((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) - &
 !                                    frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
                
-          call QMatcABC(((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) - &
+          call QcMatcABC(((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) - &
                         frequency_zero_or_sum(deriv_struct(i,3))), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, W)
+          call QcMatRAXPY(1.0d0, T, W)
                
          
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
@@ -245,8 +245,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           W = W + ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
                
-          call QMatcABC(((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, W)
+          call QcMatcABC(((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, W)
                
 
 
@@ -262,17 +262,17 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           W = W + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * A * B * C
 
-          call QMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, W)   
+          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, W)   
           
        end if
 
     end do
 
-    call QMatDst(A)
-    call QMatDst(B)
-    call QMatDst(C)
-    call QMatDst(T)
+    call QcMatDst(A)
+    call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
 
   end subroutine
 
@@ -288,13 +288,13 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
     type(sdf_2014) :: F, D, S
-    type(qmat) :: Y, A, B, C, T
+    type(QcMat) :: Y, A, B, C, T
 
-    call QMatInit(A)
-    call QMatInit(B)
-    call QMatInit(C)
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
 
-    call QMatInit(T)
+    call QcMatInit(T)
     
     do i = 1, superstructure_size
 
@@ -307,8 +307,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Y = Y + A*B*C
        
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, Y)
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, Y)
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
@@ -317,8 +317,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Y = Y - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
-          call QMatcABC(-1.0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Y)
+          call QcMatcABC(-1.0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Y)
           
        end if
 
@@ -329,8 +329,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Y = Y - A * B * C
         
-       call QMatkABC(-1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, Y)
+       call QcMatkABC(-1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, Y)
 
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
@@ -346,9 +346,9 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 !           Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
 !                                     frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
                                     
-          call QMatcABC(((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
+          call QcMatcABC(((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
                                     frequency_zero_or_sum(deriv_struct(i,3))), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Y)
+          call QcMatRAXPY(1.0d0, T, Y)
 
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
@@ -361,8 +361,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
           
-          call QMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Y)
+          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Y)
 
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
@@ -375,17 +375,17 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
 
-          call QMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Y)
+          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Y)
 
        end if
 
     end do
 
-    call QMatDst(A)
-    call QMatDst(B)
-    call QMatDst(C)
-    call QMatDst(T)
+    call QcMatDst(A)
+    call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
 
 
   end subroutine
@@ -404,13 +404,13 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
     type(sdf_2014) :: F, D, S
-    type(qmat) :: Z, A, B, C, T
+    type(QcMat) :: Z, A, B, C, T
 
-    call QMatInit(A)
-    call QMatInit(B)
-    call QMatInit(C)
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
 
-    call QMatInit(T)
+    call QcMatInit(T)
 
     do i = 1, superstructure_size
 
@@ -423,8 +423,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Z = Z + A*B*C
        
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, Z)
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, Z)
 
     end do
 
@@ -438,16 +438,16 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !         Z = Z - A
         
-        call QMatRAXPY(-1.0d0, A, Z)
+        call QcMatRAXPY(-1.0d0, A, Z)
 
     end if
 
     call p_tuple_deallocate(merged_p_tuple)
 
-    call QMatDst(A)
-    call QMatDst(B)
-    call QMatDst(C)
-    call QMatDst(T)
+    call QcMatDst(A)
+    call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
 
 
   end subroutine
@@ -464,13 +464,13 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
     type(sdf_2014) :: D, S
-    type(qmat) :: L, A, B, C, T
+    type(QcMat) :: L, A, B, C, T
 
-    call QMatInit(A)
-    call QMatInit(B)
-    call QMatInit(C)
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
 
-    call QMatInit(T)
+    call QcMatInit(T)
 
     do i = 1, superstructure_size
 
@@ -486,8 +486,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
        
 !        L = L + A * B * C
        
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, L)            
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, L)            
             
 
         
@@ -498,8 +498,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        L = L - A * B * C
        
-       call QMatkABC(-1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, L)    
+       call QcMatkABC(-1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, L)    
 
        call p_tuple_deallocate(merged_A)
        call p_tuple_deallocate(merged_B)
@@ -507,10 +507,10 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     end do
     
     
-    call QMatDst(A)
-    call QMatDst(B)
-    call QMatDst(C)
-    call QMatDst(T)
+    call QcMatDst(A)
+    call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
 
 
   end subroutine
@@ -529,13 +529,13 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
     type(sdf_2014) :: F, D, S
-    type(qmat) :: Zeta, A, B, C, T
+    type(QcMat) :: Zeta, A, B, C, T
 
-    call QMatInit(A)
-    call QMatInit(B)
-    call QMatInit(C)
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
 
-    call QMatInit(T)
+    call QcMatInit(T)
 
     do i = 1, superstructure_size
 
@@ -551,8 +551,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Zeta = Zeta + A * B * C
        
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, Zeta)   
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, Zeta)   
 
        call sdf_getdata_s_2014(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -561,8 +561,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Zeta = Zeta - A * B * C
 
-       call QMatkABC(-1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, Zeta)   
+       call QcMatkABC(-1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, Zeta)   
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
@@ -573,9 +573,9 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 !           Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
 !                            frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
 
-          call QMatcABC(((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
+          call QcMatcABC(((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
                            frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Zeta)   
+          call QcMatRAXPY(1.0d0, T, Zeta)   
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
@@ -585,8 +585,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
           
-          call QMatcABC(((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Zeta)   
+          call QcMatcABC(((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Zeta)   
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
@@ -596,8 +596,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
           
-          call QMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Zeta)  
+          call QcMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Zeta)  
 
        end if
 
@@ -610,8 +610,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Zeta = Zeta +  A * B * C
        
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(1.0d0, T, Zeta)  
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(1.0d0, T, Zeta)  
 
        call sdf_getdata_s_2014(S, merged_A, get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -620,8 +620,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Zeta = Zeta - A * B * C
        
-       call QMatkABC(1.0d0, A, B, C, T)
-       call QMatRAXPY(-1.0d0, T, Zeta)  
+       call QcMatkABC(1.0d0, A, B, C, T)
+       call QcMatRAXPY(-1.0d0, T, Zeta)  
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -632,9 +632,9 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 !           Zeta = Zeta - ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
 !                         frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
                         
-          call QMatcABC(((-1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
+          call QcMatcABC(((-1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
                         frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Zeta)  
+          call QcMatRAXPY(1.0d0, T, Zeta)  
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
@@ -644,8 +644,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta - ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
           
-          call QMatcABC(((-1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Zeta)  
+          call QcMatcABC(((-1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Zeta)  
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -655,8 +655,8 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
-          call QMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QMatRAXPY(1.0d0, T, Zeta) 
+          call QcMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
+          call QcMatRAXPY(1.0d0, T, Zeta) 
 
        end if
 
@@ -679,16 +679,16 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !        Zeta = Zeta - A
        
-       call QMatRAXPY(-1.0d0, A, Zeta)         
+       call QcMatRAXPY(-1.0d0, A, Zeta)         
 
     end if
 
     call p_tuple_deallocate(merged_p_tuple)
 
-    call QMatDst(A)
-    call QMatDst(B)
-    call QMatDst(C)
-    call QMatDst(T)
+    call QcMatDst(A)
+    call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
 
 
   end subroutine

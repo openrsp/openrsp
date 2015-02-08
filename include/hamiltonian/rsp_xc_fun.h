@@ -23,27 +23,27 @@
 #if !defined(RSP_XC_FUN_H)
 #define RSP_XC_FUN_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetXCFunMat)(const QInt,
                              const QInt*,
                              const QInt*,
                              const QInt,
-                             QMat*[],
+                             QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid*,
 #endif
                              const QInt,
-                             QMat*[]);
+                             QcMat*[]);
 typedef QVoid (*GetXCFunExp)(const QInt,
                              const QInt*,
                              const QInt*,
                              const QInt,
-                             QMat*[],
+                             QcMat*[],
                              const QInt,
-                             QMat*[],
+                             QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid*,
 #endif
@@ -90,17 +90,17 @@ struct RSPXCFun {
 //                                 const QInt*,
 //                                 const QInt*,
 //                                 const QInt,
-//                                 QMat*[],
+//                                 QcMat*[],
 //                                 const QInt,
-//                                 QMat*[]);
+//                                 QcMat*[]);
 //extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
 //                                 const QInt,
 //                                 const QInt*,
 //                                 const QInt*,
 //                                 const QInt,
-//                                 QMat*[],
+//                                 QcMat*[],
 //                                 const QInt,
-//                                 QMat*[],
+//                                 QcMat*[],
 //                                 const QInt,
 //                                 QReal*);
 //extern QErrorCode RSPXCFunDestroy(RSPXCFun**);

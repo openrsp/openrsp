@@ -23,21 +23,21 @@
 #if !defined(OPENRSP_SOLVER_H)
 #define OPENRSP_SOLVER_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* callback function to get the solutions of response equation */
-typedef QVoid (*GetRSPSolution)(const QMat*,
-                                const QMat*,
-                                const QMat*,
+typedef QVoid (*GetRSPSolution)(const QcMat*,
+                                const QcMat*,
+                                const QcMat*,
                                 const QInt,
                                 const QReal*,
                                 const QInt,
-                                QMat*[],
+                                QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                 QVoid*,
 #endif
-                                QMat*[]);
+                                QcMat*[]);
 
 /* context of response equation solver */
 typedef struct {
@@ -56,14 +56,14 @@ extern QErrorCode RSPSolverCreate(RSPSolver*,
 extern QErrorCode RSPSolverAssemble(RSPSolver*);
 extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
 extern QErrorCode RSPSolverGetSolution(const RSPSolver*,
-                                       const QMat*,
-                                       const QMat*,
-                                       const QMat*,
+                                       const QcMat*,
+                                       const QcMat*,
+                                       const QcMat*,
                                        const QInt,
                                        const QReal*,
                                        const QInt,
-                                       QMat*[],
-                                       QMat*[]);
+                                       QcMat*[],
+                                       QcMat*[]);
 extern QErrorCode RSPSolverDestroy(RSPSolver*);
 
 #endif

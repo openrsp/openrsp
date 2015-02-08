@@ -19,7 +19,7 @@ API for users. These functions should be invoked as::
 
 where ``ierr`` contains the error information. Users should check if
 it equals to ``QSUCCESS`` (constant defined in
-`QMatrix library <http://repo.ctcc.no/projects/qmatrix>`_). If not, there
+`QcMatrix library <http://repo.ctcc.no/projects/qmatrix>`_). If not, there
 was error happened in the invoked function, and the calculations should
 stop.
 
@@ -243,11 +243,11 @@ Functions of OpenRSP API (C version)
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
    :param ref_ham: Hamiltonian of referenced state
-   :type ref_ham: QMat\*
+   :type ref_ham: QcMat\*
    :param ref_state: electronic state of referenced state
-   :type ref_state: QMat\*
+   :type ref_state: QcMat\*
    :param ref_overlap: overlap integral matrix of referenced state
-   :type ref_overlap: QMat\*
+   :type ref_overlap: QcMat\*
    :param num_props: number of properties to calculate
    :type num_props: QInt
    :param num_pert: number of different perturbations for each property,
@@ -290,7 +290,7 @@ that an extra ``_f`` should be appended to each function. Other differences are
 the (ii) argument types and (iii) callback functions (subroutines for Fortran).
 The latter will be described in Chapter :ref:`chapter-callback-functions`. The
 former relates to the convention of types in Fortran, please refer to the manual
-of `QMatrix library <http://repo.ctcc.no/projects/qmatrix>`_ and the following
+of `QcMatrix library <http://repo.ctcc.no/projects/qmatrix>`_ and the following
 table for the convention:
 
 .. list-table::
@@ -309,10 +309,10 @@ table for the convention:
 
 We also want to mention that users can also pass their own defined Fortran type
 as the user-defined callback function context to OpenRSP (thanks to the Fortran
-function ``transfer``). For instance, the following code transfers the ``type(QMat)``
+function ``transfer``). For instance, the following code transfers the ``type(QcMat)``
 variable ``A`` to a character array ``enc``::
 
-  type(QMat) A
+  type(QcMat) A
   character(len=1), allocatable :: enc(:)
   integer len_enc
   len_enc = size(transfer(A, enc))
@@ -325,5 +325,5 @@ functions later on, and could be decoded (in the callback functions) as::
   integer, intent(in) :: len_ctx
   character(len=1), intent(in) :: user_ctx(len_ctx)
   ... ...
-  type(QMat) A
+  type(QcMat) A
   A = transfer(enc, A)

@@ -30,10 +30,10 @@
     \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_var_dens number of variable AO based density matrices
-    \param[QMat:struct]{in} var_ao_dens the variable AO based density matrices (\math{D})
+    \param[QcMat:struct]{in} var_ao_dens the variable AO based density matrices (\math{D})
         for calculating \math{G(D)}
     \param[QInt:int]{in} num_int number of the integral matrices
-    \param[QMat:struct]{inout} val_int the integral matrices
+    \param[QcMat:struct]{inout} val_int the integral matrices
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPTwoOperGetMat(RSPTwoOper *two_oper,
@@ -41,9 +41,9 @@ QErrorCode RSPTwoOperGetMat(RSPTwoOper *two_oper,
                             const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_var_dens,
-                            QMat *var_ao_dens[],
+                            QcMat *var_ao_dens[],
                             const QInt num_int,
-                            QMat *val_int[])
+                            QcMat *val_int[])
 {
     RSPTwoOper *cur_oper;  /* current operator */
     /* walks to the last operator */

@@ -23,18 +23,18 @@
 #define OPENRSP_DEBUG
 
 ! basic data types
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
 #define OPENRSP_AO_DENS_CALLBACK "src/ao_dens/adapter/openrsp_callback_f.F90"
 
 module openrsp_callback_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT,     &
-                       QREAL,    &
-                       QMat,     &
-                       QSUCCESS, &
-                       QcMat_C_LOC
+    use qcmatrix_f, only: QINT,     &
+                          QREAL,    &
+                          QcMat,    &
+                          QSUCCESS, &
+                          QcMat_C_LOC
 
     implicit none
 
@@ -155,14 +155,14 @@ module openrsp_callback_f
                                                size_pert,     &
                                                RHS_mat,       &
                                                rsp_param)
-        type(QMat), intent(in) :: ref_ham
-        type(QMat), intent(in) :: ref_state
-        type(QMat), intent(in) :: ref_overlap
+        type(QcMat), intent(in) :: ref_ham
+        type(QcMat), intent(in) :: ref_state
+        type(QcMat), intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_freq_sums
         real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
         integer(kind=QINT), intent(in) :: size_pert
-        type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
-        type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+        type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+        type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
         if (c_associated(ctx_saved%rsp_solver)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_freq_sums, size_pert
@@ -215,7 +215,7 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_int
-        type(QMat), intent(inout) :: val_int(num_int)
+        type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
         integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
@@ -271,7 +271,7 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_dens
-        type(QMat), intent(in) :: ao_dens(num_dens)
+        type(QcMat), intent(in) :: ao_dens(num_dens)
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
         if (c_associated(ctx_saved%overlap)) then
@@ -292,7 +292,7 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_int
-        type(QMat), intent(inout) :: val_int(num_int)
+        type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
         integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
@@ -330,7 +330,7 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_dens
-        type(QMat), intent(in) :: ao_dens(num_dens)
+        type(QcMat), intent(in) :: ao_dens(num_dens)
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
         if (c_associated(ctx_saved%one_oper)) then
@@ -353,9 +353,9 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_var_dens
-        type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+        type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
         integer(kind=QINT), intent(in) :: num_int
-        type(QMat), intent(inout) :: val_int(num_int)
+        type(QcMat), intent(inout) :: val_int(num_int)
         if (c_associated(ctx_saved%two_oper)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_pert, num_var_dens, num_int
@@ -378,9 +378,9 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_var_dens
-        type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+        type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
         integer(kind=QINT), intent(in) :: num_contr_dens
-        type(QMat), intent(in) :: contr_ao_dens(num_contr_dens)
+        type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
         if (c_associated(ctx_saved%two_oper)) then

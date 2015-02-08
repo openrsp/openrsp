@@ -17,7 +17,7 @@ module rsp_lof_caching
   use rsp_indices_and_addressing
 !   use matrix_defop, matrix => openrsp_matrix
 !   use matrix_lowlevel, only: mat_init
-  use qmatrix
+  use qcmatrix_f
 
   implicit none
 
@@ -48,7 +48,7 @@ module rsp_lof_caching
      integer :: num_p_tuples
      ! MaR: Should all of the data attributes be pointers too?
      type(p_tuple), allocatable, dimension(:) :: p_tuples
-     type(qmat), allocatable, dimension(:) :: data ! (Perturbed) matrix data
+     type(QcMat), allocatable, dimension(:) :: data ! (Perturbed) matrix data
 
   end type
   
@@ -306,7 +306,7 @@ module rsp_lof_caching
     integer :: i, num_p_tuples, property_size
     type(f_l_cache_2014) :: new_element
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
-    type(qmat), dimension(property_size) :: data
+    type(QcMat), dimension(property_size) :: data
 
     new_element%last = .TRUE.
     new_element%num_p_tuples = num_p_tuples
@@ -320,8 +320,8 @@ module rsp_lof_caching
 
     do i = 1, property_size
 
-       call QMatInit(new_element%data(i))
-       call QMatAEqB(new_element%data(i), data(i))
+       call QcMatInit(new_element%data(i))
+       call QcMatAEqB(new_element%data(i), data(i))
 
     end do
  
@@ -347,7 +347,7 @@ module rsp_lof_caching
     type(f_l_cache_2014), pointer :: next_element
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st_order
     type(p_tuple) :: merged_p_tuple
-    type(qmat), dimension(property_size) :: Fp
+    type(QcMat), dimension(property_size) :: Fp
 
     next_element => cache
     passedlast = 0
@@ -508,7 +508,7 @@ module rsp_lof_caching
 
           end if
 
-          call QMatRAXPY(1.0d0, next_element%data(cache_offset), Fp(fp_offset))           
+          call QcMatRAXPY(1.0d0, next_element%data(cache_offset), Fp(fp_offset))           
 
        end do
 
@@ -551,7 +551,7 @@ module rsp_lof_caching
     type(f_l_cache_2014), pointer :: new_element_ptr
     type(f_l_cache_2014), pointer :: next_element
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
-    type(qmat), dimension(property_size) :: data
+    type(QcMat), dimension(property_size) :: data
 
     next_element => current_element
 

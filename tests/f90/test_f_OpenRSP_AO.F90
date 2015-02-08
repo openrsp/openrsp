@@ -25,19 +25,19 @@
 #define OPENRSP_F_TEST_SRC "tests/f90/test_f_OpenRSP_AO.F90"
 
     subroutine test_f_OpenRSP_AO(open_rsp, io_log)
-        use qmatrix, only: QINT,            &
-                           QREAL,           &
-                           QSYMMAT,         &
-                           QREALMAT,        &
-                           QMat,            &
-                           QMatCreate,      &
-                           QMatBlockCreate, &
-                           QMatSetSymType,  &
-                           QMatSetDataType, &
-                           QMatSetDimMat,   &
-                           QMatAssemble,    &
-                           QMatSetValues,   &
-                           QMatDestroy
+        use qcmatrix_f, only: QINT,               &
+                              QREAL,              &
+                              QSYMMAT,            &
+                              QREALMAT,           &
+                              QcMat,              &
+                              QcMatCreate_f,      &
+                              QcMatBlockCreate_f, &
+                              QcMatSetSymType_f,  &
+                              QcMatSetDataType_f, &
+                              QcMatSetDimMat_f,   &
+                              QcMatAssemble_f,    &
+                              QcMatSetValues_f,   &
+                              QcMatDestroy_f
         use openrsp_f, only: ELEC_AO_D_MATRIX,    &
                              OpenRSP,             &
                              OpenRSPSetElecEOM_f, &
@@ -94,9 +94,9 @@
 #include "tests/ao_dens/openrsp_f_ao_fock.h90"
 #include "tests/ao_dens/openrsp_f_ao_density.h90"
 #include "tests/ao_dens/openrsp_f_ao_overlap.h90"
-        type(QMat) F_unpert
-        type(QMat) D_unpert
-        type(QMat) S_unpert
+        type(QcMat) F_unpert
+        type(QcMat) D_unpert
+        type(QcMat) S_unpert
         ! polarizability
         integer(kind=QINT), parameter :: ALPHA_NUM_PROPS = 1_QINT
         integer(kind=QINT), parameter :: ALPHA_NUM_PERT(ALPHA_NUM_PROPS) = (/2_QINT/)
@@ -177,82 +177,82 @@
         write(io_log,100) "OpenRSPWrite_f() passed"
 
         ! sets the unperturbed Fock matrix
-        ierr = QMatCreate(A=F_unpert)
+        ierr = QcMatCreate_f(A=F_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatBlockCreate(A=F_unpert, dim_block=1_QINT)
+        ierr = QcMatBlockCreate_f(A=F_unpert, dim_block=1_QINT)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetSymType(A=F_unpert, sym_type=QSYMMAT)
+        ierr = QcMatSetSymType_f(A=F_unpert, sym_type=QSYMMAT)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDataType(A=F_unpert,                      &
-                               num_blocks=1_QINT,               &
-                               idx_block_row=(/IDX_BLOCK_ROW/), &
-                               idx_block_col=(/IDX_BLOCK_COL/), &
-                               data_type=(/QREALMAT/))
+        ierr = QcMatSetDataType_f(A=F_unpert,                      &
+                                  num_blocks=1_QINT,               &
+                                  idx_block_row=(/IDX_BLOCK_ROW/), &
+                                  idx_block_col=(/IDX_BLOCK_COL/), &
+                                  data_type=(/QREALMAT/))
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDimMat(A=F_unpert, dim_mat=NUM_AO)
+        ierr = QcMatSetDimMat_f(A=F_unpert, num_row=NUM_AO, num_col=NUM_AO)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatAssemble(A=F_unpert)
+        ierr = QcMatAssemble_f(A=F_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetValues(A=F_unpert,                  &
-                             idx_block_row=IDX_BLOCK_ROW, &
-                             idx_block_col=IDX_BLOCK_COL, &
-                             idx_first_row=IDX_FIRST_ROW, &
-                             num_row_set=NUM_AO,          &
-                             idx_first_col=IDX_FIRST_COL, &
-                             num_col_set=NUM_AO,          &
-                             values_real=values_fock)
+        ierr = QcMatSetValues_f(A=F_unpert,                  &
+                                idx_block_row=IDX_BLOCK_ROW, &
+                                idx_block_col=IDX_BLOCK_COL, &
+                                idx_first_row=IDX_FIRST_ROW, &
+                                num_row_set=NUM_AO,          &
+                                idx_first_col=IDX_FIRST_COL, &
+                                num_col_set=NUM_AO,          &
+                                values_real=values_fock)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ! sets the unperturbed density matrix
-        ierr = QMatCreate(A=D_unpert)
+        ierr = QcMatCreate_f(A=D_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatBlockCreate(A=D_unpert, dim_block=1_QINT)
+        ierr = QcMatBlockCreate_f(A=D_unpert, dim_block=1_QINT)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetSymType(A=D_unpert, sym_type=QSYMMAT)
+        ierr = QcMatSetSymType_f(A=D_unpert, sym_type=QSYMMAT)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDataType(A=D_unpert,                      &
-                               num_blocks=1_QINT,               &
-                               idx_block_row=(/IDX_BLOCK_ROW/), &
-                               idx_block_col=(/IDX_BLOCK_COL/), &
-                               data_type=(/QREALMAT/))
+        ierr = QcMatSetDataType_f(A=D_unpert,                      &
+                                  num_blocks=1_QINT,               &
+                                  idx_block_row=(/IDX_BLOCK_ROW/), &
+                                  idx_block_col=(/IDX_BLOCK_COL/), &
+                                  data_type=(/QREALMAT/))
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDimMat(A=D_unpert, dim_mat=NUM_AO)
+        ierr = QcMatSetDimMat_f(A=D_unpert, num_row=NUM_AO, num_col=NUM_AO)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatAssemble(A=D_unpert)
+        ierr = QcMatAssemble_f(A=D_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetValues(A=D_unpert,                  &
-                             idx_block_row=IDX_BLOCK_ROW, &
-                             idx_block_col=IDX_BLOCK_COL, &
-                             idx_first_row=IDX_FIRST_ROW, &
-                             num_row_set=NUM_AO,          &
-                             idx_first_col=IDX_FIRST_COL, &
-                             num_col_set=NUM_AO,          &
-                             values_real=values_density)
+        ierr = QcMatSetValues_f(A=D_unpert,                  &
+                                idx_block_row=IDX_BLOCK_ROW, &
+                                idx_block_col=IDX_BLOCK_COL, &
+                                idx_first_row=IDX_FIRST_ROW, &
+                                num_row_set=NUM_AO,          &
+                                idx_first_col=IDX_FIRST_COL, &
+                                num_col_set=NUM_AO,          &
+                                values_real=values_density)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ! sets the unperturbed overlap integrals
-        ierr = QMatCreate(A=S_unpert)
+        ierr = QcMatCreate_f(A=S_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatBlockCreate(A=S_unpert, dim_block=1_QINT)
+        ierr = QcMatBlockCreate_f(A=S_unpert, dim_block=1_QINT)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetSymType(A=S_unpert, sym_type=QSYMMAT)
+        ierr = QcMatSetSymType_f(A=S_unpert, sym_type=QSYMMAT)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDataType(A=S_unpert,                      &
-                               num_blocks=1_QINT,               &
-                               idx_block_row=(/IDX_BLOCK_ROW/), &
-                               idx_block_col=(/IDX_BLOCK_COL/), &
-                               data_type=(/QREALMAT/))
+        ierr = QcMatSetDataType_f(A=S_unpert,                      &
+                                  num_blocks=1_QINT,               &
+                                  idx_block_row=(/IDX_BLOCK_ROW/), &
+                                  idx_block_col=(/IDX_BLOCK_COL/), &
+                                  data_type=(/QREALMAT/))
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetDimMat(A=S_unpert, dim_mat=NUM_AO)
+        ierr = QcMatSetDimMat_f(A=S_unpert, num_row=NUM_AO, num_col=NUM_AO)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatAssemble(A=S_unpert)
+        ierr = QcMatAssemble_f(A=S_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatSetValues(A=S_unpert,                  &
-                             idx_block_row=IDX_BLOCK_ROW, &
-                             idx_block_col=IDX_BLOCK_COL, &
-                             idx_first_row=IDX_FIRST_ROW, &
-                             num_row_set=NUM_AO,          &
-                             idx_first_col=IDX_FIRST_COL, &
-                             num_col_set=NUM_AO,          &
-                             values_real=values_overlap)
+        ierr = QcMatSetValues_f(A=S_unpert,                  &
+                                idx_block_row=IDX_BLOCK_ROW, &
+                                idx_block_col=IDX_BLOCK_COL, &
+                                idx_first_row=IDX_FIRST_ROW, &
+                                num_row_set=NUM_AO,          &
+                                idx_first_col=IDX_FIRST_COL, &
+                                num_col_set=NUM_AO,          &
+                                values_real=values_overlap)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
 
         ! gets the polarizability
@@ -273,11 +273,11 @@
         write(io_log,100) "OpenRSPGetRSPFun_f() passed"
 
         ! cleans
-        ierr = QMatDestroy(A=F_unpert)
+        ierr = QcMatDestroy_f(A=F_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatDestroy(A=D_unpert)
+        ierr = QcMatDestroy_f(A=D_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        ierr = QMatDestroy(A=S_unpert)
+        ierr = QcMatDestroy_f(A=S_unpert)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
 
         return

@@ -36,7 +36,7 @@
     \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_int number of the integral matrices
-    \param[QMat:struct]{inout} val_int the integral matrices
+    \param[QcMat:struct]{inout} val_int the integral matrices
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPOverlapGetMat(const RSPOverlap *overlap,
@@ -50,7 +50,7 @@ QErrorCode RSPOverlapGetMat(const RSPOverlap *overlap,
                             const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_int,
-                            QMat *val_int[])
+                            QcMat *val_int[])
 {
     overlap->get_overlap_mat(bra_num_pert,
                              bra_pert_labels,

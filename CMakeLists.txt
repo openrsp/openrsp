@@ -54,19 +54,19 @@ OPTION(OPENRSP_TEST_EXECUTABLE "Build the test suite excutables." ON)
 OPTION(OPENRSP_CXX_API "Build C++ API." OFF)
 OPTION(OPENRSP_F03_API "Build Fortran 2003 API." OFF)
 
-# OpenRSP needs the QMatrix library as well as the matrix I/O functionality
-SET(QMATRIX_INCLUDE_DIR None CACHE STRING "Sets the include directory of QMatrix library.")
-INCLUDE_DIRECTORIES(${QMATRIX_INCLUDE_DIR})
+# OpenRSP needs the QcMatrix library as well as the matrix I/O functionality
+SET(QCMATRIX_INCLUDE_DIR None CACHE STRING "Sets the include directory of QcMatrix library.")
+INCLUDE_DIRECTORIES(${QCMATRIX_INCLUDE_DIR})
 IF(OPENRSP_F03_API)
-    SET(QMATRIX_MODULE_DIR None CACHE STRING "Sets the module directory of QMatrix library.")
-    INCLUDE_DIRECTORIES(${QMATRIX_MODULE_DIR})
+    SET(QCMATRIX_MODULE_DIR None CACHE STRING "Sets the module directory of QcMatrix library.")
+    INCLUDE_DIRECTORIES(${QCMATRIX_MODULE_DIR})
     # The Fortran API needs the user context in the C part of OpenRSP
     ADD_DEFINITIONS(-DOPENRSP_C_USER_CONTEXT)
     IF(OPENRSP_USER_CONTEXT)
         ADD_DEFINITIONS(-DOPENRSP_F_USER_CONTEXT)
     ENDIF()
 ENDIF()
-SET(QMATRIX_LIB None CACHE STRING "Sets the QMatrix library (xx/libqmatrix.a).")
+SET(QCMATRIX_LIB None CACHE STRING "Sets the QcMatrix library (xx/libqcmatrix.a).")
 
 # What is this?
 option(ENABLE_INTEREST "Build InteRest code" OFF)
@@ -195,14 +195,14 @@ IF(OPENRSP_TEST_EXECUTABLE)
     # Linked libraries for the C test suite
     TARGET_LINK_LIBRARIES(${LIB_OPENRSP_NAME}_c_test
                           ${LIB_OPENRSP_NAME}
-                          ${QMATRIX_LIB})
+                          ${QCMATRIX_LIB})
     # Creates Fortran test suite
     IF(OPENRSP_F03_API)
         ADD_EXECUTABLE(${LIB_OPENRSP_NAME}_f_test ${OPENRSP_F_TEST_SRCS})
         # Linked libraries for the Fortran test suite
         TARGET_LINK_LIBRARIES(${LIB_OPENRSP_NAME}_f_test
                               ${LIB_OPENRSP_NAME}
-                              ${QMATRIX_LIB})
+                              ${QCMATRIX_LIB})
     ENDIF()
 # Creates the OpenRSP library with the test suite
 ELSE()

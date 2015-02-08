@@ -19,8 +19,8 @@
 !!  2014-08-03, Bin Gao
 !!  * first version
 
-! configuration file of QMatrix library
-#include "qmatrix_config.h"
+! configuration file of QcMatrix library
+#include "qcmatrix_config.h"
 
 #define OPENRSP_F_TEST_SRC "tests/f90/callback/get_rsp_solution_f.F90"
 
@@ -36,20 +36,20 @@
                                   user_ctx,      &
 #endif
                                   rsp_param)
-        use qmatrix, only: QINT,QREAL,QMat
+        use qcmatrix_f, only: QINT,QREAL,QcMat
         implicit none
-        type(QMat), intent(in) :: ref_ham
-        type(QMat), intent(in) :: ref_state
-        type(QMat), intent(in) :: ref_overlap
+        type(QcMat), intent(in) :: ref_ham
+        type(QcMat), intent(in) :: ref_state
+        type(QcMat), intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_freq_sums
         real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
         integer(kind=QINT), intent(in) :: size_pert
-        type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+        type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
         integer(kind=QINT), intent(in) :: len_ctx
         character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-        type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+        type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
         return
     end subroutine get_rsp_solution_f
 

@@ -19,7 +19,7 @@ module rsp_perturbed_sdf
   use rsp_lof_caching
 !  use interface_2el
   
-  use qmatrix
+  use qcmatrix_f
 
   implicit none
 
@@ -134,16 +134,16 @@ module rsp_perturbed_sdf
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(SDF_2014) :: F, D, S
     external :: get_rsp_sol, get_ovl_mat, get_1el_mat, get_2el_mat, get_xc_mat
-    type(qmat) :: X(1), RHS(1), A, B, C, zeromat, T, U
-    type(qmat), allocatable, dimension(:) :: Fp, Dp, Sp, Dh
+    type(QcMat) :: X(1), RHS(1), A, B, C, zeromat, T, U
+    type(QcMat), allocatable, dimension(:) :: Fp, Dp, Sp, Dh
     type(f_l_cache_2014), pointer :: fock_lowerorder_cache
 
 
     ! ASSUME CLOSED SHELL
     
-    call QMatInit(A)
-    call QMatInit(B)
-    call QMatInit(C)
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
     
     
     call sdf_getdata_s_2014(D, get_emptypert(), (/1/), A)
@@ -180,7 +180,7 @@ module rsp_perturbed_sdf
 
        ! ASSUME CLOSED SHELL
 !        call mat_init(Sp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Sp(i))
+    call QcMatInit(Sp(i))
 
     end do
 ! write(*,*) 'Sp a', Sp(1)%elms
@@ -207,13 +207,13 @@ module rsp_perturbed_sdf
 
        ! ASSUME CLOSED SHELL
 !        call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Dp(i), Sp(1))
+    call QcMatInit(Dp(i), Sp(1))
 
 !        call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Dh(i), Sp(1))
+    call QcMatInit(Dh(i), Sp(1))
 
 !        call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QMatInit(Fp(i), Sp(1))
+    call QcMatInit(Fp(i), Sp(1))
 
     end do
 
@@ -270,10 +270,10 @@ module rsp_perturbed_sdf
 
 
 !      Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
-       call QMatkABC(-1.0d0, Dp(i), B, A, T)
-       call QMatkABC(-1.0d0, A, B, Dp(i), U)
-       call QMatRAXPY(1.0d0, T, U)
-       call QMatRAXPY(1.0d0, U, Dp(i))
+       call QcMatkABC(-1.0d0, Dp(i), B, A, T)
+       call QcMatkABC(-1.0d0, A, B, Dp(i), U)
+       call QcMatRAXPY(1.0d0, T, U)
+       call QcMatRAXPY(1.0d0, U, Dp(i))
 
 
        
@@ -315,8 +315,8 @@ module rsp_perturbed_sdf
 
        ! 4. Make right-hand side using Dp
 
-    call QMatInit(RHS(1))
-    call QMatInit(X(1))
+    call QcMatInit(RHS(1))
+    call QcMatInit(X(1))
 
        call rsp_get_matrix_y_2014(superstructure_size, derivative_structure, &
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
@@ -331,15 +331,15 @@ module rsp_perturbed_sdf
 !        call get_rsp_sol(RHS(1), 1, (/sum(real(pert%freq(:)))/), X)
 !        call rsp_solver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
 
-       call QMatDst(RHS(1))
+       call QcMatDst(RHS(1))
 
        ! 5. Get Dh using the rsp equation solution X
        
 !        Dh(i) = A*B*X(1) - X(1)*B*A
-       call QMatkABC(-1.0d0, X(1), B, A, T)
-       call QMatkABC(1.0d0, A, B, X(1), U)
-       call QMatRAXPY(1.0d0, T, U)
-       call QMatAEqB(Dh(i), U)
+       call QcMatkABC(-1.0d0, X(1), B, A, T)
+       call QcMatkABC(1.0d0, A, B, X(1), U)
+       call QcMatRAXPY(1.0d0, T, U)
+       call QcMatAEqB(Dh(i), U)
 
        ! 6. Make homogeneous contribution to Fock matrix
 
@@ -380,7 +380,7 @@ module rsp_perturbed_sdf
        ! 7. Complete perturbed D with homogeneous part
 
 !        Dp(i) = Dp(i) + Dh(i)
-       call QMatRAXPY(1.0d0, Dh(i), Dp(i))
+       call QcMatRAXPY(1.0d0, Dh(i), Dp(i))
 
 
 if (perturbed_matrix_size < 10) then
@@ -419,16 +419,16 @@ end if
 
     do i = 1, size(indices, 1)
 
-       call QmatDst(Dh(i))
-       call QmatDst(Dp(i))
-       call QmatDst(Fp(i))
-       call QmatDst(Sp(i))
+       call QcMatDst(Dh(i))
+       call QcMatDst(Dp(i))
+       call QcMatDst(Fp(i))
+       call QcMatDst(Sp(i))
        
     end do
 
     
-    call QmatDst(A)
-    call QmatDst(B)
+    call QcMatDst(A)
+    call QcMatDst(B)
 
     deallocate(derivative_structure)
     deallocate(ind)
@@ -460,7 +460,7 @@ end if
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(SDF_2014) :: D
     external :: get_1el_mat, get_t_mat, get_2el_mat, get_xc_mat
-    type(qmat), dimension(property_size) :: Fp
+    type(QcMat), dimension(property_size) :: Fp
     type(f_l_cache_2014) :: fock_lowerorder_cache
 
     if (pert%n_perturbations >= 1) then
@@ -598,7 +598,7 @@ end if
     type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
     type(p_tuple), dimension(num_p_tuples) :: p_tuples
     type(SDF_2014) :: D
-    type(qmat), allocatable, dimension(:) :: dens_tuple
+    type(QcMat), allocatable, dimension(:) :: dens_tuple
     integer :: i, j, k, m, num_p_tuples, total_num_perturbations, merged_nblks, &
                density_order, property_size, fp_offset, lo_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, offset, npert_ext
@@ -613,9 +613,9 @@ end if
     integer, allocatable, dimension(:,:) :: triang_indices_fp, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
     external :: get_1el_mat, get_ovl_mat, get_2el_mat, get_xc_mat
-    type(qmat) :: zeromat, D_unp
-    type(qmat), allocatable, dimension(:) :: tmp, lower_order_contribution
-    type(qmat), dimension(property_size) :: Fp
+    type(QcMat) :: zeromat, D_unp
+    type(QcMat), allocatable, dimension(:) :: tmp, lower_order_contribution
+    type(QcMat), dimension(property_size) :: Fp
     type(f_l_cache_2014) :: fock_lowerorder_cache
 
 !    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
@@ -711,15 +711,15 @@ end if
     !           dens_tuple in the if statement where they are used, also their
     !           deallocation should be moved
     do j = 1, size(lower_order_contribution)
-       call QMatInit(lower_order_contribution(j))
+       call QcMatInit(lower_order_contribution(j))
     end do
 
     do j = 1, size(tmp)
-       call QMatInit(tmp(j))
+       call QcMatInit(tmp(j))
     end do
 
     do i = 2, num_p_tuples
-       call QMatInit(dens_tuple(j))
+       call QcMatInit(dens_tuple(j))
     end do
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
@@ -806,7 +806,7 @@ end if
                 blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                 (/inner_indices(j, :), outer_indices(i, :) /)) 
 
-                call QMatAEqB(lower_order_contribution(offset),tmp(j))
+                call QcMatAEqB(lower_order_contribution(offset),tmp(j))
 
              end do
 
@@ -820,7 +820,7 @@ end if
              blks_tuple_info(2:num_p_tuples, :, :), blk_sizes(2:num_p_tuples,:), & 
              blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
 
-             call QMatAEqB(lower_order_contribution(offset),tmp(1))
+             call QcMatAEqB(lower_order_contribution(offset),tmp(1))
 
           end if
 
@@ -930,7 +930,7 @@ end if
 
           end if
 
-          call QMatRAXPY(1.0d0, lower_order_contribution(lo_offset), Fp(fp_offset))
+          call QcMatRAXPY(1.0d0, lower_order_contribution(lo_offset), Fp(fp_offset))
 
        end do
 
@@ -1011,23 +1011,23 @@ end if
 
     end if
 
-    call QMatDst(D_unp)
+    call QcMatDst(D_unp)
 
     do i = 2, num_p_tuples
    
-       call QMatDst(dens_tuple(i))
+       call QcMatDst(dens_tuple(i))
    
     end do
 
     do i = 1, size(tmp)
 
-       call QMatDst(tmp(i))
+       call QcMatDst(tmp(i))
 
     end do
 
     do i = 1, size(lower_order_contribution)
 
-       call QMatDst(lower_order_contribution(i))
+       call QcMatDst(lower_order_contribution(i))
 
     end do
 

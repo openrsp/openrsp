@@ -20,14 +20,14 @@
 !!  * first version
 
 ! basic data types
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
 module openrsp_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT,  &
-                       QREAL, &
-                       QMat
+    use qcmatrix_f, only: QINT,  &
+                          QREAL, &
+                          QcMat
     use rsp_solver_f, only: SolverFun_f,       &
                             RSPSolverCreate_f, &
                             RSPSolverDestroy_f
@@ -307,19 +307,19 @@ module openrsp_f
                                         user_ctx,      &
 #endif
                                         rsp_param)
-                use qmatrix, only: QINT,QREAL,QMat
-                type(QMat), intent(in) :: ref_ham
-                type(QMat), intent(in) :: ref_state
-                type(QMat), intent(in) :: ref_overlap
+                use qcmatrix_f, only: QINT,QREAL,QcMat
+                type(QcMat), intent(in) :: ref_ham
+                type(QcMat), intent(in) :: ref_state
+                type(QcMat), intent(in) :: ref_overlap
                 integer(kind=QINT), intent(in) :: num_freq_sums
                 real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
                 integer(kind=QINT), intent(in) :: size_pert
-                type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+                type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-                type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+                type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
             end subroutine get_rsp_solution
             subroutine RSPSolverGetSolution_f(ref_ham,       &
                                               ref_state,     &
@@ -390,7 +390,7 @@ module openrsp_f
                                      pert_num_comp,   &
                                      pert_components, &
                                      pert_comp_orders)
-                use qmatrix, only: QINT
+                use qcmatrix_f, only: QINT
                 integer(kind=QINT), intent(in) :: pert_label
                 integer(kind=QINT), intent(in) :: pert_order
                 integer(kind=QINT), intent(in) :: pert_rank
@@ -411,7 +411,7 @@ module openrsp_f
                                      user_ctx,         &
 #endif
                                      pert_rank)
-                use qmatrix, only: QINT
+                use qcmatrix_f, only: QINT
                 integer(kind=QINT), intent(in) :: pert_label
                 integer(kind=QINT), intent(in) :: pert_num_comp
                 integer(kind=QINT), intent(in) :: pert_components(pert_num_comp)
@@ -511,7 +511,7 @@ module openrsp_f
 #endif
                                        num_int,         &
                                        val_int)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: bra_num_pert
                 integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
                 integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
@@ -526,7 +526,7 @@ module openrsp_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_int
-                type(QMat), intent(inout) :: val_int(num_int)
+                type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_overlap_mat
             subroutine get_overlap_exp(bra_num_pert,    &
                                        bra_pert_labels, &
@@ -545,7 +545,7 @@ module openrsp_f
 #endif
                                        num_exp,         &
                                        val_exp)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: bra_num_pert
                 integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
                 integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
@@ -556,7 +556,7 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_dens
-                type(QMat), intent(in) :: ao_dens(num_dens)
+                type(QcMat), intent(in) :: ao_dens(num_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -671,7 +671,7 @@ module openrsp_f
 #endif
                                         num_int,     &
                                         val_int)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
@@ -680,7 +680,7 @@ module openrsp_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_int
-                type(QMat), intent(inout) :: val_int(num_int)
+                type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_one_oper_mat
             subroutine get_one_oper_exp(num_pert,    &
                                         pert_labels, &
@@ -693,12 +693,12 @@ module openrsp_f
 #endif
                                         num_exp,     &
                                         val_exp)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_dens
-                type(QMat), intent(in) :: ao_dens(num_dens)
+                type(QcMat), intent(in) :: ao_dens(num_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -801,18 +801,18 @@ module openrsp_f
 #endif
                                         num_int,      &
                                         val_int)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_var_dens
-                type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_int
-                type(QMat), intent(inout) :: val_int(num_int)
+                type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_two_oper_mat
             subroutine get_two_oper_exp(num_pert,       &
                                         pert_labels,    &
@@ -827,14 +827,14 @@ module openrsp_f
 #endif
                                         num_exp,        &
                                         val_exp)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_var_dens
-                type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
                 integer(kind=QINT), intent(in) :: num_contr_dens
-                type(QMat), intent(in) :: contr_ao_dens(num_contr_dens)
+                type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -972,9 +972,9 @@ module openrsp_f
                                 rsp_funs) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(in) :: open_rsp
-        type(QMat), target, intent(in) :: ref_ham
-        type(QMat), target, intent(in) :: ref_state
-        type(QMat), target, intent(in) :: ref_overlap
+        type(QcMat), target, intent(in) :: ref_ham
+        type(QcMat), target, intent(in) :: ref_state
+        type(QcMat), target, intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_props
         integer(kind=QINT), intent(in) :: num_pert(num_props)
         integer(kind=QINT), intent(in) :: pert_labels(sum(num_pert))

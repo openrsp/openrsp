@@ -58,7 +58,7 @@ module rsp_general
 !  use interface_xc, only: rsp_xcave_interface
 !  use interface_2el, only: rsp_twoave
   
-  use qmatrix
+  use qcmatrix_f
 
   implicit none
 
@@ -122,7 +122,7 @@ module rsp_general
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: rsp_tensor
-    type(qmat) :: S_unpert, D_unpert, F_unpert
+    type(QcMat) :: S_unpert, D_unpert, F_unpert
     type(SDF_2014), pointer :: S, D, F
     integer kn(2)
 
@@ -817,8 +817,8 @@ module rsp_general
     type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
     type(SDF_2014) :: D
     type(property_cache) :: cache
-    type(qmat) :: D_unp
-    type(qmat), allocatable, dimension(:) :: dens_tuple
+    type(QcMat) :: D_unp
+    type(QcMat), allocatable, dimension(:) :: dens_tuple
 !    type(rsp_field), allocatable, dimension(:) :: nucpot_pert
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     integer :: i, j, k, m, n, num_p_tuples, total_num_perturbations, density_order, &
@@ -947,7 +947,7 @@ module rsp_general
    
        do i = 1, num_p_tuples
    
-          call QMatInit(dens_tuple(i))
+          call QcMatInit(dens_tuple(i))
    
        end do
    
@@ -1261,11 +1261,11 @@ module rsp_general
 !  (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
 !  merged_blk_info, prop_forcache)
 
-    call QMatDst(D_unp)
+    call QcMatDst(D_unp)
 
     do i = 1, num_p_tuples
    
-       call QMatDst(dens_tuple(i))
+       call QcMatDst(dens_tuple(i))
    
     end do
 
@@ -1711,7 +1711,7 @@ module rsp_general
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    type(qmat) :: W
+    type(QcMat) :: W
     external :: get_ovl_exp
     integer :: i, j, k, sstr_incr, offset, total_num_perturbations, &
                 dtup_ind, pr_offset, ca_offset, inner_indices_size, &
@@ -1822,7 +1822,7 @@ module rsp_general
     call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
     
-    call QMatInit(W)
+    call QcMatInit(W)
     
     do i = 1, size(outer_indices, 1)
     
@@ -1944,7 +1944,7 @@ module rsp_general
     call property_cache_add_element(cache, 2, p12,  &
          inner_indices_size * outer_indices_size, prop_forcache)    
    
-    call QMatDst(W)
+    call QcMatDst(W)
 
     deallocate(pert_ext)
     deallocate(pert_ext_ord)
@@ -2062,7 +2062,7 @@ module rsp_general
     type(p_tuple), dimension(:,:), allocatable :: deriv_structb
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    type(qmat) :: W
+    type(QcMat) :: W
     external :: get_ovl_exp
     integer :: i, j, k ,m, incr, npert_ext
     integer :: d_supsize, total_num_perturbations, &
@@ -2168,7 +2168,7 @@ module rsp_general
     call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
          1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
 
-    call QMatInit(W)
+    call QcMatInit(W)
 
     do i = 1, size(outer_indices, 1)
 
@@ -2297,7 +2297,7 @@ module rsp_general
     deallocate(triang_indices_pr)
     deallocate(merged_blk_info)
     deallocate(prop_forcache)
-    call QMatDst(W)
+    call QcMatDst(W)
 
   end subroutine
   
@@ -2399,7 +2399,7 @@ module rsp_general
     type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    type(qmat) :: Zeta, Z
+    type(QcMat) :: Zeta, Z
     integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
               offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks
@@ -2518,8 +2518,8 @@ module rsp_general
 
     offset = 0.0
 
-    call QMatInit(Z)
-    call QMatInit(Zeta)
+    call QcMatInit(Z)
+    call QcMatInit(Zeta)
     
     do i = 1, size(outer_indices_a, 1)
 
@@ -2539,7 +2539,7 @@ module rsp_general
                    blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
                    
-          call QMatTraceAB(Zeta, Z, dcmplx(tmp_tr))
+          call QcMatTraceAB(Zeta, Z, dcmplx(tmp_tr))
           prop_forcache(offset) = prop_forcache(offset) - tmp_tr
 
        end do
@@ -2641,8 +2641,8 @@ module rsp_general
     deallocate(blk_sizes_merged)
     deallocate(prop_forcache)
     
-    call QMatDst(Zeta)
-    call QMatDst(Z)
+    call QcMatDst(Zeta)
+    call QcMatDst(Z)
 
   end subroutine
 
@@ -2742,7 +2742,7 @@ module rsp_general
     type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
     type(SDF_2014) :: S, D, F
     type(property_cache) :: cache
-    type(qmat) :: L, Y
+    type(QcMat) :: L, Y
     integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
               offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks
@@ -2861,10 +2861,10 @@ module rsp_general
     offset = 0
 
     ! ASSUME CLOSED SHELL
-    call QMatInit(Y)
+    call QcMatInit(Y)
     
     ! ASSUME CLOSED SHELL
-    call QMatInit(L)
+    call QcMatInit(L)
 
     do i = 1, size(outer_indices_a, 1)
 
@@ -2884,7 +2884,7 @@ module rsp_general
                    blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
           
-          call QMatTraceAB(L, Y, dcmplx(tmp_tr))
+          call QcMatTraceAB(L, Y, dcmplx(tmp_tr))
           prop_forcache(offset) = prop_forcache(offset) - tmp_tr
 
        end do
@@ -2986,8 +2986,8 @@ module rsp_general
     deallocate(blk_sizes_merged)
     deallocate(prop_forcache)
 
-    call QMatDst(L)
-    call QMatDst(Y)
+    call QcMatDst(L)
+    call QcMatDst(Y)
 
   end subroutine
   

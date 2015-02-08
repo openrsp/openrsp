@@ -13,7 +13,7 @@ installed on your computer:
 #. C, C++ (if C++ APIs built) and/or Fortran 2003 (if Fortran APIs built) compilers,
 
 #. HDF 5 (:math:`\ge1.8`) if it is enabled in
-   `QMatrix library <http://repo.ctcc.no/projects/qmatrix>`_,
+   `QcMatrix library <http://repo.ctcc.no/projects/qmatrix>`_,
 
 #. BLAS and LAPACK libraries.
 
@@ -66,12 +66,12 @@ list of the parameters controlling the compilation is given in the following tab
    * - ``OPENRSP_TEST_EXECUTABLE``
      - Build the test suite excutables.
      - ``ON``
-   * - ``QMATRIX_LIB``
-     - Sets the QMatrix library (``xx/libqmatrix.a``).
+   * - ``QCMATRIX_LIB``
+     - Sets the QcMatrix library (``xx/libqcmatrix.a``).
      - ``None``
-   * - ``QMATRIX_INCLUDE_DIR``
-     - Sets the include directory of QMatrix library.
+   * - ``QCMATRIX_INCLUDE_DIR``
+     - Sets the include directory of QcMatrix library.
      - ``None``
-   * - ``QMATRIX_MODULE_DIR``
-     - Sets the module directory of QMatrix library (if Fortran 2003 API built).
+   * - ``QCMATRIX_MODULE_DIR``
+     - Sets the module directory of QcMatrix library (if Fortran 2003 API built).
      - ``None``

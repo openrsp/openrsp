@@ -15,7 +15,7 @@ module rsp_indices_and_addressing
                              p_tuple_deallocate
 !  use matrix_defop, matrix => openrsp_matrix
 !  use matrix_lowlevel, only: mat_init, mat_ensure_alloc
-  use qmatrix
+  use qcmatrix_f
 
   implicit none
 
@@ -47,16 +47,16 @@ module rsp_indices_and_addressing
   public sortdimbypid
 !  public mat_init_like_and_zero
   
-  public QMatInit
-  public QMatcABC
-  public QMatkABC
-  public QMatAEqB
-  public QMatDst
-  public QMatTraceAB
-  public QMatRAXPY
+  public QcMatInit
+  public QcMatcABC
+  public QcMatkABC
+  public QcMatAEqB
+  public QcMatDst
+  public QcMatTraceAB
+  public QcMatRAXPY
 
 
-  ! MaR: QMatrix adapted routines to be separated into new module
+  ! MaR: QcMatrix adapted routines to be separated into new module
   
   
   
@@ -77,91 +77,91 @@ module rsp_indices_and_addressing
 
   contains
 
-  ! MaR: QMatrix adapted routines to be separated into new module
+  ! MaR: QcMatrix adapted routines to be separated into new module
   ! Gao: adds an optional matrix B for initializing the structure of A
   ! Initialize matrix
-  subroutine QMatInit(A, B)
+  subroutine QcMatInit(A, B)
   
     implicit none
     
-    type(QMat), intent(inout) :: A
-    type(QMat), optional, intent(in) :: B
+    type(QcMat), intent(inout) :: A
+    type(QcMat), optional, intent(in) :: B
     integer(kind=4) :: ierr
     
-    ierr = QMatCreate(A)
+    ierr = QcMatCreate_f(A)
     if (present(B)) then
-        ierr = QMatDuplicate(B, COPY_PATTERN_ONLY, A)
+        ierr = QcMatDuplicate_f(B, COPY_PATTERN_ONLY, A)
     end if
     
   end subroutine
   
   ! Compute R = kA + B + C (k complex)
-  subroutine QMatcABC(k, A, B, C, R)
+  subroutine QcMatcABC(k, A, B, C, R)
   
     implicit none
     
-    type(qmat) :: A, B, C, R
+    type(QcMat) :: A, B, C, R
     integer(kind=4) :: ierr
     complex(8) :: k
         
-    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/1.0d0, 1.0d0/), R)
-    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/1.0d0, 1.0d0/), R)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
   
   end subroutine
   
   ! Compute R = kA + B + C (k real)
-  subroutine QMatkABC(k, A, B, C, R)
+  subroutine QcMatkABC(k, A, B, C, R)
   
     implicit none
     
-    type(qmat) :: A, B, C, R
+    type(QcMat) :: A, B, C, R
     integer(kind=4) :: ierr
     real(8) :: k
         
-    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 1.0d0/), B, C, (/1.0d0, 1.0d0/), R)
-    ierr = QMatGEMM(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 1.0d0/), B, C, (/1.0d0, 1.0d0/), R)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
   
   end subroutine
   
   ! Take matrix B and copy it into A
-  subroutine QMatAEqB(A, B)
+  subroutine QcMatAEqB(A, B)
   
     implicit none
     
-    type(qmat) :: A, B
+    type(QcMat) :: A, B
     integer(kind=4) :: ierr  
 
-    ierr = QMatCreate(A)
-    ierr = QMatDuplicate(B, COPY_PATTERN_AND_VALUE, A)
+    ierr = QcMatCreate_f(A)
+    ierr = QcMatDuplicate_f(B, COPY_PATTERN_AND_VALUE, A)
     
   end subroutine 
   
   ! Destroy matrix
-  subroutine QMatDst(A)
+  subroutine QcMatDst(A)
   
     implicit none
     
-    type(qmat) :: A
+    type(QcMat) :: A
     integer(kind=4) :: ierr
     
-    ierr = QMatDestroy(A)
+    ierr = QcMatDestroy_f(A)
   
   end subroutine
   
   ! Get trace of matrix product
-  subroutine QMatTraceAB(A, B, t)
+  subroutine QcMatTraceAB(A, B, t)
   
     implicit none
     
-    type(qmat) :: A, B
+    type(QcMat) :: A, B
     complex(8) :: t
     real(8), dimension(2) :: t_ans
     integer(kind=4) :: ierr
     integer(kind=QINT) dim_block_a, dim_block_b
     
-    ierr = QMatGetDimBlock(A, dim_block_a)
-    ierr = QMatGetDimBlock(A, dim_block_b)
-    ierr = QMatGetMatProdTrace(A, B, MAT_NO_OPERATION, dim_block_a, t_ans)
+    ierr = QcMatGetDimBlock_f(A, dim_block_a)
+    ierr = QcMatGetDimBlock_f(A, dim_block_b)
+    ierr = QcMatGetMatProdTrace_f(A, B, MAT_NO_OPERATION, dim_block_a, t_ans)
     ! What is dimension of answer?
     
     t = cmplx(t_ans(1), t_ans(2))
@@ -169,19 +169,19 @@ module rsp_indices_and_addressing
   end subroutine
   
   ! Compute B = kA + B (k real)
-  subroutine QMatRAXPY(k, A, B)
+  subroutine QcMatRAXPY(k, A, B)
   
     implicit none
     
-    type(qmat) :: A, B
+    type(QcMat) :: A, B
     integer(kind=4) :: ierr
     real(8) :: k
     
-    ierr = QMatAXPY((/k, 0.0d0/), A, B)
+    ierr = QcMatAXPY_f((/k, 0.0d0/), A, B)
   
   end subroutine
   
-  ! End QMatrix adapted routines
+  ! End QcMatrix adapted routines
   
   
   
