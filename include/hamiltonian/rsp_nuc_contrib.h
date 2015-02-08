@@ -24,8 +24,8 @@
 #if !defined(RSP_NUC_CONTRIB_H)
 #define RSP_NUC_CONTRIB_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* context of (derivatives of) nuclear repulsion and nuclei-field interaction */
 typedef struct {

@@ -26,25 +26,25 @@
     \author Bin Gao
     \date 2014-08-06
     \param[RSPSolver:struct]{in} rsp_solver the context of response equation solver
-    \param[QMat:struct]{in} ref_ham Hamiltonian of referenced state
-    \param[QMat:struct]{in} ref_state electronic state of referenced state
-    \param[QMat:struct]{in} ref_overlap overlap integral matrix of referenced state
+    \param[QcMat:struct]{in} ref_ham Hamiltonian of referenced state
+    \param[QcMat:struct]{in} ref_state electronic state of referenced state
+    \param[QcMat:struct]{in} ref_overlap overlap integral matrix of referenced state
     \param[QInt:int]{in} num_freq_sums number of frequency sums on the left hand side
     \param[QReal:real]{in} freq_sums the frequency sums on the left hand side
     \param[QInt:int]{in} size_pert size of perturbaed matrices
-    \param[QMat:struct]{in} RHS_mat RHS matrices, size is \var{size_pert}*\var{num_freq_sums}
-    \param[QMat:struct]{out} rsp_param solved response parameters, size is \var{size_pert}*\var{num_freq_sums}
+    \param[QcMat:struct]{in} RHS_mat RHS matrices, size is \var{size_pert}*\var{num_freq_sums}
+    \param[QcMat:struct]{out} rsp_param solved response parameters, size is \var{size_pert}*\var{num_freq_sums}
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPSolverGetSolution(const RSPSolver *rsp_solver,
-                                const QMat *ref_ham,
-                                const QMat *ref_state,
-                                const QMat *ref_overlap,
+                                const QcMat *ref_ham,
+                                const QcMat *ref_state,
+                                const QcMat *ref_overlap,
                                 const QInt num_freq_sums,
                                 const QReal *freq_sums,
                                 const QInt size_pert,
-                                QMat *RHS_mat[],
-                                QMat *rsp_param[])
+                                QcMat *RHS_mat[],
+                                QcMat *rsp_param[])
 {
     rsp_solver->get_rsp_solution(ref_ham,
                                  ref_state,

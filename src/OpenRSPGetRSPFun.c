@@ -28,9 +28,9 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_props,
                          const QInt *num_freqs,
                          const QReal *pert_freqs,
                          const QInt *kn_rules,
-                         const QMat *ref_ham,
-                         const QMat *ref_overlap,
-                         const QMat *ref_state,
+                         const QcMat *ref_ham,
+                         const QcMat *ref_overlap,
+                         const QcMat *ref_state,
                          RSPSolver *rsp_solver,
                          RSPNucContrib *nuc_contrib,
                          RSPOverlap *overlap,
@@ -44,9 +44,9 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_props,
      \author Bin Gao
      \date 2014-07-31
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
-     \param[QMat:struct]{in} ref_ham Hamiltonian of referenced state
-     \param[QMat:struct]{in} ref_state electronic state of referenced state
-     \param[QMat:struct]{in} ref_overlap overlap integral matrix of referenced state
+     \param[QcMat:struct]{in} ref_ham Hamiltonian of referenced state
+     \param[QcMat:struct]{in} ref_state electronic state of referenced state
+     \param[QcMat:struct]{in} ref_overlap overlap integral matrix of referenced state
      \param[QInt:int]{in} num_props number of properties to calculate
      \param[QInt:int]{in} num_pert number of different perturbations for each property
      \param[QInt:int]{in} pert_labels labels of different perturbations for each property
@@ -58,9 +58,9 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_props,
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
-                            const QMat *ref_ham,
-                            const QMat *ref_state,
-                            const QMat *ref_overlap,
+                            const QcMat *ref_ham,
+                            const QcMat *ref_state,
+                            const QcMat *ref_overlap,
                             const QInt num_props,
                             const QInt *num_pert,
                             const QInt *pert_labels,

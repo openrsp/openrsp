@@ -19,8 +19,8 @@
 !!  2014-08-03, Bin Gao
 !!  * first version
 
-! configuration file of QMatrix library
-#include "qmatrix_config.h"
+! configuration file of QcMatrix library
+#include "qcmatrix_config.h"
 
 #define OPENRSP_F_TEST_SRC "tests/f90/callback/get_pert_comp_f.F90"
 
@@ -34,7 +34,7 @@
                                pert_num_comp,   &
                                pert_components, &
                                pert_comp_orders)
-        use qmatrix, only: QINT
+        use qcmatrix_f, only: QINT
         implicit none
         integer(kind=QINT), intent(in) :: pert_label
         integer(kind=QINT), intent(in) :: pert_order

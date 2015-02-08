@@ -145,9 +145,9 @@ extern QErrorCode OpenRSPSetGaugeOrigin(OpenRSP*,const QReal[3]);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);
 extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
 extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
-                                   const QMat*,
-                                   const QMat*,
-                                   const QMat*,
+                                   const QcMat*,
+                                   const QcMat*,
+                                   const QcMat*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,

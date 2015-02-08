@@ -20,14 +20,14 @@
 !!  * first version
 
 ! basic data types
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
 #define OPENRSP_API_SRC "src/f03/rsp_overlap_f.F90"
 
 module rsp_overlap_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT,QREAL,QMat,QcMat_C_F_POINTER
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
 
     implicit none
 
@@ -50,7 +50,7 @@ module rsp_overlap_f
 #endif
                                    num_int,         &
                                    val_int)
-            use qmatrix, only: QINT,QREAL,QMat
+            use qcmatrix_f, only: QINT,QREAL,QcMat
             integer(kind=QINT), intent(in) :: bra_num_pert
             integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
             integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
@@ -65,7 +65,7 @@ module rsp_overlap_f
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: num_int
-            type(QMat), intent(inout) :: val_int(num_int)
+            type(QcMat), intent(inout) :: val_int(num_int)
         end subroutine OverlapGetMat_f
         subroutine OverlapGetExp_f(bra_num_pert,    &
                                    bra_pert_labels, &
@@ -84,7 +84,7 @@ module rsp_overlap_f
 #endif
                                    num_exp,         &
                                    val_exp)
-            use qmatrix, only: QINT,QREAL,QMat
+            use qcmatrix_f, only: QINT,QREAL,QcMat
             integer(kind=QINT), intent(in) :: bra_num_pert
             integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
             integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
@@ -95,7 +95,7 @@ module rsp_overlap_f
             integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_dens
-            type(QMat), intent(in) :: ao_dens(num_dens)
+            type(QcMat), intent(in) :: ao_dens(num_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -160,7 +160,7 @@ module rsp_overlap_f
 #endif
                                        num_int,         &
                                        val_int)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: bra_num_pert
                 integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
                 integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
@@ -175,7 +175,7 @@ module rsp_overlap_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_int
-                type(QMat), intent(inout) :: val_int(num_int)
+                type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_overlap_mat
             subroutine get_overlap_exp(bra_num_pert,    &
                                        bra_pert_labels, &
@@ -194,7 +194,7 @@ module rsp_overlap_f
 #endif
                                        num_exp,         &
                                        val_exp)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: bra_num_pert
                 integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
                 integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
@@ -205,7 +205,7 @@ module rsp_overlap_f
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_dens
-                type(QMat), intent(in) :: ao_dens(num_dens)
+                type(QcMat), intent(in) :: ao_dens(num_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -269,12 +269,12 @@ module rsp_overlap_f
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
-        type(QMat), allocatable :: f_val_int(:)     !integral matrices
+        type(QcMat), allocatable :: f_val_int(:)     !integral matrices
         character(len=1), allocatable :: enc(:)     !encoded data as an array of characters
         integer(kind=QINT) len_enc                             !length of encoded data
         integer(kind=4) ierr                                !error information
         integer(kind=QINT) imat                                !incremental recorder over matrices
-        ! converts C pointer to Fortran QMat type, inspired by
+        ! converts C pointer to Fortran QcMat type, inspired by
         ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
         ! and
         ! http://jblevins.org/log/transfer
@@ -294,7 +294,7 @@ module rsp_overlap_f
         !        stop "RSPOverlapGetMat_f>> failed to allocate memory for enc"
         !    end if
         !    enc = transfer(val_int(imat), enc)
-        !    ! decodes as QMat type
+        !    ! decodes as QcMat type
         !    f_val_int(imat) = transfer(enc, f_val_int(imat))
         !    ! cleans up
         !    deallocate(enc)
@@ -369,12 +369,12 @@ module rsp_overlap_f
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(C_QREAL), intent(inout) :: val_exp(num_exp)
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
-        type(QMat), allocatable :: f_ao_dens(:)     !AO based density matrices
+        type(QcMat), allocatable :: f_ao_dens(:)     !AO based density matrices
         character(len=1), allocatable :: enc(:)     !encoded data as an array of characters
         integer(kind=QINT) len_enc                             !length of encoded data
         integer(kind=4) ierr                                !error information
         integer(kind=QINT) imat                                !incremental recorder over matrices
-        ! converts C pointer to Fortran QMat type, inspired by
+        ! converts C pointer to Fortran QcMat type, inspired by
         ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
         ! and
         ! http://jblevins.org/log/transfer
@@ -392,7 +392,7 @@ module rsp_overlap_f
                 stop "RSPOverlapGetExp_f>> failed to allocate memory for enc"
             end if
             enc = transfer(ao_dens(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_ao_dens(imat) = transfer(enc, f_ao_dens(imat))
             ! cleans up
             deallocate(enc)

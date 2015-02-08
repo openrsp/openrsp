@@ -21,7 +21,7 @@
 !!  * first version
 
 ! data types between C/Fortran
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
     subroutine OpenRSPGetRSPFun_f(num_props,       &
                                   num_pert,        &
@@ -45,7 +45,7 @@
                                   !file_rsp_tensor) &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
-        use qmatrix, only: QINT,QREAL,QMat,QSUCCESS
+        use qcmatrix_f, only: QINT,QREAL,QcMat,QSUCCESS
         use openrsp_callback_f
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
@@ -88,9 +88,9 @@
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
         character(4), allocatable :: f_pert_labels(:)
         complex(kind=QREAL), allocatable :: f_pert_freqs(:)
-        type(QMat), pointer :: f_F_unpert
-        type(QMat), pointer :: f_S_unpert
-        type(QMat), pointer :: f_D_unpert
+        type(QcMat), pointer :: f_F_unpert
+        type(QcMat), pointer :: f_S_unpert
+        type(QcMat), pointer :: f_D_unpert
         complex(kind=QREAL), allocatable :: f_rsp_tensor(:)
         !character(kind=C_CHAR), pointer :: ptr_file_tensor(:)
         !character, allocatable :: f_file_tensor(:)

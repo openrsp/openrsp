@@ -23,8 +23,8 @@
 #if !defined(OPENRSP_ELEC_EOM_H)
 #define OPENRSP_ELEC_EOM_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* type of EOM of electrons */
 typedef enum {ELEC_AO_D_MATRIX=0,

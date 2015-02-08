@@ -12,7 +12,7 @@ module rsp_sdf_caching
   use rsp_indices_and_addressing
 !   use matrix_defop, matrix => openrsp_matrix
 !   use matrix_lowlevel, only: mat_init, mat_zero_like
-  use qmatrix
+  use qcmatrix_f
 
   implicit none
 
@@ -51,7 +51,7 @@ module rsp_sdf_caching
      logical :: last
      ! Should all of the data attributes be pointers too?
      type(p_tuple) :: perturb
-     type(qmat), allocatable, dimension(:) :: data ! (Perturbed) matrix data
+     type(QcMat), allocatable, dimension(:) :: data ! (Perturbed) matrix data
 
   end type
 
@@ -281,7 +281,7 @@ module rsp_sdf_caching
     implicit none
 
     type(SDF_2014), pointer :: new_instance
-    type(qmat):: first_data
+    type(QcMat):: first_data
     
     allocate(new_instance)
     new_instance%next => new_instance
@@ -293,7 +293,7 @@ module rsp_sdf_caching
     allocate(new_instance%perturb%freq(0))
     allocate(new_instance%data(1))
     ! MaR: (1) on next line was unexpected but seems to make it compile
-    call QMatAEqB(new_instance%data(1), first_data)
+    call QcMatAEqB(new_instance%data(1), first_data)
  
   end subroutine
 
@@ -308,7 +308,7 @@ module rsp_sdf_caching
 
     type(SDF_2014) :: new_element
     type(p_tuple) :: pert
-    type(qmat), dimension(product(pert%pdim)) :: data
+    type(QcMat), dimension(product(pert%pdim)) :: data
     integer :: i, perturbed_matrix_size
 
     new_element%last = .TRUE.
@@ -318,8 +318,8 @@ module rsp_sdf_caching
 
     do i = 1, perturbed_matrix_size
 
-       call QMatInit(new_element%data(i))
-       call QMatAEqB(new_element%data(i), data(i))
+       call QcMatInit(new_element%data(i))
+       call QcMatAEqB(new_element%data(i), data(i))
        
     end do
  
@@ -336,7 +336,7 @@ module rsp_sdf_caching
     type(SDF_2014), target :: current_element
     type(SDF_2014), pointer :: next_element
     type(p_tuple) :: pert_tuple
-    type(qmat) :: M
+    type(QcMat) :: M
     integer, dimension(pert_tuple%n_perturbations) :: ind, ind_unsorted
     integer :: i, offset, passedlast, nblks, sorted_triangulated_indices
     integer, allocatable, dimension(:,:) :: blk_info
@@ -400,7 +400,7 @@ module rsp_sdf_caching
 
     if (found .eqv. .TRUE.) then
 
-       call QMatAEqB(M, next_element%data(offset))
+       call QcMatAEqB(M, next_element%data(offset))
 
     else
 
@@ -424,7 +424,7 @@ module rsp_sdf_caching
     type(SDF_2014), target :: current_element
     type(SDF_2014), pointer :: next_element
     type(p_tuple) :: pert_tuple
-    type(qmat) :: sdf_getdata_2014
+    type(QcMat) :: sdf_getdata_2014
     integer, dimension(pert_tuple%n_perturbations) :: ind
     integer :: i, offset, passedlast
 
@@ -476,8 +476,8 @@ module rsp_sdf_caching
 
     if (found .eqv. .TRUE.) then
 
-       call QMatInit(sdf_getdata_2014)
-       call QMatAEqB(sdf_getdata_2014, next_element%data(offset))
+       call QcMatInit(sdf_getdata_2014)
+       call QcMatAEqB(sdf_getdata_2014, next_element%data(offset))
 
     else
 
@@ -492,7 +492,7 @@ module rsp_sdf_caching
 
     type(SDF_2014) :: current_element
     integer :: perturbed_matrix_size, i
-    type(qmat), dimension(perturbed_matrix_size) :: data
+    type(QcMat), dimension(perturbed_matrix_size) :: data
 
     do i = 1, perturbed_matrix_size
 
@@ -500,7 +500,7 @@ module rsp_sdf_caching
 !        call mat_init(current_element%data(i), data(i)%nrow, data(i)%ncol)
 !        call mat_zero_like(data(i), current_element%data(i))
 
-       call QMatAEqB(current_element%data(i), data(i))
+       call QcMatAEqB(current_element%data(i), data(i))
 
     end do
 
@@ -521,7 +521,7 @@ module rsp_sdf_caching
     type(SDF_2014), pointer :: new_element_ptr
     type(SDF_2014), pointer :: next_element
     type(p_tuple) :: pert_tuple, p_tuple_st_order
-    type(qmat), dimension(perturbed_matrix_size) :: data
+    type(QcMat), dimension(perturbed_matrix_size) :: data
 
     if (sdf_already_2014(current_element, pert_tuple) .eqv. .TRUE.) then
 

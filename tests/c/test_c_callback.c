@@ -23,17 +23,17 @@
 /* callback functions */
 #include "tests/openrsp_c_test_callback.h"
 
-QVoid get_rsp_solution(const QMat *ref_ham,
-                       const QMat *ref_state,
-                       const QMat *ref_overlap,
+QVoid get_rsp_solution(const QcMat *ref_ham,
+                       const QcMat *ref_state,
+                       const QcMat *ref_overlap,
                        const QInt num_freq_sums,
                        const QReal *freq_sums,
                        const QInt size_pert,
-                       QMat *RHS_mat[],
+                       QcMat *RHS_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                        QVoid *user_ctx,
 #endif
-                       QMat *rsp_param[])
+                       QcMat *rsp_param[])
 {
 }
 
@@ -75,7 +75,7 @@ QVoid get_overlap_mat(const QInt bra_num_pert,
                       QVoid *user_ctx,
 #endif
                       const QInt num_int,
-                      QMat *val_int[])
+                      QcMat *val_int[])
 {
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *overlap_lab;
@@ -131,7 +131,7 @@ QVoid get_overlap_mat(const QInt bra_num_pert,
 #endif
     printf("get_overlap_mat>> num_int %"QINT_FMT"\n", num_int);
     for (imat=0; imat<num_int; imat++) {
-        ierr = QMatSetValues(val_int[imat],
+        ierr = QcMatSetValues(val_int[imat],
                              idx_block_row,
                              idx_block_col,
                              idx_first_row,
@@ -143,7 +143,7 @@ QVoid get_overlap_mat(const QInt bra_num_pert,
         if (ierr!=QSUCCESS) {
             printf("get_overlap_mat>> error happened at %s: %s\n",
                    FILE_AND_LINE,
-                   "calling QMatSetValues");
+                   "calling QcMatSetValues");
             exit(ierr);
         }
     }
@@ -159,7 +159,7 @@ QVoid get_overlap_exp(const QInt bra_num_pert,
                       const QInt *perturbations,
                       const QInt *pert_orders,
                       const QInt num_dens,
-                      QMat *ao_dens[],
+                      QcMat *ao_dens[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                       QVoid *user_ctx,
 #endif
@@ -209,7 +209,7 @@ QVoid get_one_oper_mat(const QInt num_pert,
                        QVoid *user_ctx,
 #endif
                        const QInt num_int,
-                       QMat *val_int[])
+                       QcMat *val_int[])
 {
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *oneham_lab = "ONEHAM";
@@ -260,7 +260,7 @@ QVoid get_one_oper_mat(const QInt num_pert,
 #endif
     printf("get_one_oper_mat>> num_int %"QINT_FMT"\n", num_int);
     for (imat=0; imat<num_int; imat++) {
-        ierr = QMatSetValues(val_int[imat],
+        ierr = QcMatSetValues(val_int[imat],
                              idx_block_row,
                              idx_block_col,
                              idx_first_row,
@@ -272,7 +272,7 @@ QVoid get_one_oper_mat(const QInt num_pert,
         if (ierr!=QSUCCESS) {
             printf("get_one_oper_mat>> error happened at %s: %s\n",
                    FILE_AND_LINE,
-                   "calling QMatSetValues");
+                   "calling QcMatSetValues");
             exit(ierr);
         }
     }
@@ -282,7 +282,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
                        const QInt *perturbations,
                        const QInt *pert_orders,
                        const QInt num_dens,
-                       QMat *ao_dens[],
+                       QcMat *ao_dens[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                        QVoid *user_ctx,
 #endif

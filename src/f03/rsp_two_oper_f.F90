@@ -20,12 +20,12 @@
 !!  * first version
 
 ! basic data types
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
 module rsp_two_oper_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT,QREAL,QMat
+    use qcmatrix_f, only: QINT,QREAL,QcMat
 
     implicit none
 
@@ -44,18 +44,18 @@ module rsp_two_oper_f
 #endif
                                    num_int,      &
                                    val_int)
-            use qmatrix, only: QINT,QREAL,QMat
+            use qcmatrix_f, only: QINT,QREAL,QcMat
             integer(kind=QINT), intent(in) :: num_pert
             integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_var_dens
-            type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+            type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: num_int
-            type(QMat), intent(inout) :: val_int(num_int)
+            type(QcMat), intent(inout) :: val_int(num_int)
         end subroutine TwoOperGetMat_f
         subroutine TwoOperGetExp_f(num_pert,       &
                                    pert_labels,    &
@@ -70,14 +70,14 @@ module rsp_two_oper_f
 #endif
                                    num_exp,        &
                                    val_exp)
-            use qmatrix, only: QINT,QREAL,QMat
+            use qcmatrix_f, only: QINT,QREAL,QcMat
             integer(kind=QINT), intent(in) :: num_pert
             integer(kind=QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=QINT), intent(in) :: pert_orders(num_pert)
             integer(kind=QINT), intent(in) :: num_var_dens
-            type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+            type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
             integer(kind=QINT), intent(in) :: num_contr_dens
-            type(QMat), intent(in) :: contr_ao_dens(num_contr_dens)
+            type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -138,18 +138,18 @@ module rsp_two_oper_f
 #endif
                                         num_int,      &
                                         val_int)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_var_dens
-                type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_int
-                type(QMat), intent(inout) :: val_int(num_int)
+                type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_two_oper_mat
             subroutine get_two_oper_exp(num_pert,       &
                                         pert_labels,    &
@@ -164,14 +164,14 @@ module rsp_two_oper_f
 #endif
                                         num_exp,        &
                                         val_exp)
-                use qmatrix, only: QINT,QREAL,QMat
+                use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: pert_labels(num_pert)
                 integer(kind=QINT), intent(in) :: pert_orders(num_pert)
                 integer(kind=QINT), intent(in) :: num_var_dens
-                type(QMat), intent(in) :: var_ao_dens(num_var_dens)
+                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
                 integer(kind=QINT), intent(in) :: num_contr_dens
-                type(QMat), intent(in) :: contr_ao_dens(num_contr_dens)
+                type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -224,13 +224,13 @@ module rsp_two_oper_f
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
         type(TwoOperFun_f), pointer :: two_oper_fun  !context of callback subroutines
-        type(QMat), allocatable :: f_var_ao_dens(:)  !variable AO based density matrices
-        type(QMat), allocatable :: f_val_int(:)      !integral matrices
+        type(QcMat), allocatable :: f_var_ao_dens(:)  !variable AO based density matrices
+        type(QcMat), allocatable :: f_val_int(:)      !integral matrices
         character(len=1), allocatable :: enc(:)      !encoded data as an array of characters
         integer(kind=QINT) len_enc                   !length of encoded data
         integer(kind=4) ierr                         !error information
         integer(kind=QINT) imat                      !incremental recorder over matrices
-        ! converts C pointer to Fortran QMat type, inspired by
+        ! converts C pointer to Fortran QcMat type, inspired by
         ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
         ! and
         ! http://jblevins.org/log/transfer
@@ -248,7 +248,7 @@ module rsp_two_oper_f
                 stop "RSPTwoOperGetExp_f>> failed to allocate memory for enc"
             end if
             enc = transfer(var_ao_dens(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_var_ao_dens(imat) = transfer(enc, f_var_ao_dens(imat))
             ! cleans up
             deallocate(enc)
@@ -267,7 +267,7 @@ module rsp_two_oper_f
                 stop "RSPTwoOperGetMat_f>> failed to allocate memory for enc"
             end if
             enc = transfer(val_int(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_val_int(imat) = transfer(enc, f_val_int(imat))
             ! cleans up
             deallocate(enc)
@@ -328,13 +328,13 @@ module rsp_two_oper_f
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
         type(TwoOperFun_f), pointer :: two_oper_fun    !context of callback subroutines
-        type(QMat), allocatable :: f_var_ao_dens(:)    !variable AO based density matrices
-        type(QMat), allocatable :: f_contr_ao_dens(:)  !contracted AO based density matrices
+        type(QcMat), allocatable :: f_var_ao_dens(:)    !variable AO based density matrices
+        type(QcMat), allocatable :: f_contr_ao_dens(:)  !contracted AO based density matrices
         character(len=1), allocatable :: enc(:)        !encoded data as an array of characters
         integer(kind=QINT) len_enc                     !length of encoded data
         integer(kind=4) ierr                           !error information
         integer(kind=QINT) imat                        !incremental recorder over matrices
-        ! converts C pointer to Fortran QMat type, inspired by
+        ! converts C pointer to Fortran QcMat type, inspired by
         ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
         ! and
         ! http://jblevins.org/log/transfer
@@ -352,7 +352,7 @@ module rsp_two_oper_f
                 stop "RSPTwoOperGetExp_f>> failed to allocate memory for enc"
             end if
             enc = transfer(var_ao_dens(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_var_ao_dens(imat) = transfer(enc, f_var_ao_dens(imat))
             ! cleans up
             deallocate(enc)
@@ -371,7 +371,7 @@ module rsp_two_oper_f
                 stop "RSPTwoOperGetExp_f>> failed to allocate memory for enc"
             end if
             enc = transfer(contr_ao_dens(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_contr_ao_dens(imat) = transfer(enc, f_contr_ao_dens(imat))
             ! cleans up
             deallocate(enc)

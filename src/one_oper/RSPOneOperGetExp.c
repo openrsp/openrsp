@@ -30,7 +30,7 @@
     \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_dens number of atomic orbital (AO) based density matrices
-    \param[QMat:struct]{in} ao_dens the AO based density matrices
+    \param[QcMat:struct]{in} ao_dens the AO based density matrices
     \param[QInt:int]{in} num_exp number of expectation values
     \param[QReal:real]{out} val_exp the expectation values
     \return[QErrorCode:int] error information
@@ -40,7 +40,7 @@ QErrorCode RSPOneOperGetExp(RSPOneOper *one_oper,
                             const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_dens,
-                            QMat *ao_dens[],
+                            QcMat *ao_dens[],
                             const QInt num_exp,
                             QReal *val_exp)
 {

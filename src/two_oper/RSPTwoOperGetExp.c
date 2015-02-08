@@ -30,10 +30,10 @@
     \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
     \param[QInt:int]{in} num_var_dens number of variable AO based density matrices
-    \param[QMat:struct]{in} var_ao_dens the variable AO based density matrices (\math{D})
+    \param[QcMat:struct]{in} var_ao_dens the variable AO based density matrices (\math{D})
         for calculating \math{G(D)}
     \param[QInt:int]{in} num_contr_dens number of contracted AO based density matrices
-    \param[QMat:struct]{in} contr_ao_dens the contracted AO based density matrices (\math{D})
+    \param[QcMat:struct]{in} contr_ao_dens the contracted AO based density matrices (\math{D})
         for calculating \math{\mathrm{tr}[GD]}
     \param[QInt:int]{in} num_exp number of expectation values
     \param[QReal:real]{out} val_exp the expectation values
@@ -44,9 +44,9 @@ QErrorCode RSPTwoOperGetExp(RSPTwoOper *two_oper,
                             const QInt *pert_labels,
                             const QInt *pert_orders,
                             const QInt num_var_dens,
-                            QMat *var_ao_dens[],
+                            QcMat *var_ao_dens[],
                             const QInt num_contr_dens,
-                            QMat *contr_ao_dens[],
+                            QcMat *contr_ao_dens[],
                             const QInt num_exp,
                             QReal *val_exp)
 {

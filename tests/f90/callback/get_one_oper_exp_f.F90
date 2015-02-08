@@ -19,8 +19,8 @@
 !!  2014-08-03, Bin Gao
 !!  * first version
 
-! configuration file of QMatrix library
-#include "qmatrix_config.h"
+! configuration file of QcMatrix library
+#include "qcmatrix_config.h"
 
 #define OPENRSP_F_TEST_SRC "tests/f90/callback/get_one_oper_exp_f.F90"
 
@@ -35,27 +35,27 @@
 #endif
                                   num_exp,     &
                                   val_exp)
-        use qmatrix, only: QINT,                &
-                           QREAL,               &
-                           QSYMMAT,             &
-                           QREALMAT,            &
-                           MAT_NO_OPERATION,    &
-                           QMat,                &
-                           QMatCreate,          &
-                           QMatBlockCreate,     &
-                           QMatSetSymType,      &
-                           QMatSetDataType,     &
-                           QMatSetDimMat,       &
-                           QMatAssemble,        &
-                           QMatSetValues,       &
-                           QMatGetMatProdTrace, &
-                           QMatDestroy
+        use qcmatrix_f, only: QINT,                   &
+                              QREAL,                  &
+                              QSYMMAT,                &
+                              QREALMAT,               &
+                              MAT_NO_OPERATION,       &
+                              QcMat,                  &
+                              QcMatCreate_f,          &
+                              QcMatBlockCreate_f,     &
+                              QcMatSetSymType_f,      &
+                              QcMatSetDataType_f,     &
+                              QcMatSetDimMat_f,       &
+                              QcMatAssemble_f,        &
+                              QcMatSetValues_f,       &
+                              QcMatGetMatProdTrace_f, &
+                              QcMatDestroy_f
         implicit none
         integer(kind=QINT), intent(in) :: num_pert
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: num_dens
-        type(QMat), intent(in) :: ao_dens(num_dens)
+        type(QcMat), intent(in) :: ao_dens(num_dens)
 #if defined(OPENRSP_F_USER_CONTEXT)
         integer(kind=QINT), intent(in) :: len_ctx
         character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -70,7 +70,7 @@
 #endif
 #include "tests/ao_dens/openrsp_f_ao_dims.h90"
 #include "tests/ao_dens/openrsp_f_ao_diplen.h90"
-        type(QMat) val_int(1)
+        type(QcMat) val_int(1)
         integer(kind=QINT) offset_exp
         integer(kind=QINT) imat
         integer(kind=QINT) idens
@@ -86,40 +86,42 @@
                 if (pert_orders(1)==1) then
                     offset_exp = 0
                     do imat = 1, 3
-                        ierr = QMatCreate(A=val_int(1))
+                        ierr = QcMatCreate_f(A=val_int(1))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        ierr = QMatBlockCreate(A=val_int(1), dim_block=1_QINT)
+                        ierr = QcMatBlockCreate_f(A=val_int(1), dim_block=1_QINT)
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        ierr = QMatSetSymType(A=val_int(1), sym_type=QSYMMAT)
+                        ierr = QcMatSetSymType_f(A=val_int(1), sym_type=QSYMMAT)
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        ierr = QMatSetDataType(A=val_int(1),                    &
-                                               num_blocks=1_QINT,               &
-                                               idx_block_row=(/IDX_BLOCK_ROW/), &
-                                               idx_block_col=(/IDX_BLOCK_COL/), &
-                                               data_type=(/QREALMAT/))
+                        ierr = QcMatSetDataType_f(A=val_int(1),                    &
+                                                  num_blocks=1_QINT,               &
+                                                  idx_block_row=(/IDX_BLOCK_ROW/), &
+                                                  idx_block_col=(/IDX_BLOCK_COL/), &
+                                                  data_type=(/QREALMAT/))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        ierr = QMatSetDimMat(A=val_int(1), dim_mat=NUM_AO)
+                        ierr = QcMatSetDimMat_f(A=val_int(1),   &
+                                                num_row=NUM_AO, &
+                                                num_col=NUM_AO)
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        ierr = QMatAssemble(A=val_int(1))
+                        ierr = QcMatAssemble_f(A=val_int(1))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        ierr = QMatSetValues(A=val_int(1),                &
-                                             idx_block_row=IDX_BLOCK_ROW, &
-                                             idx_block_col=IDX_BLOCK_COL, &
-                                             idx_first_row=IDX_FIRST_ROW, &
-                                             num_row_set=NUM_AO,          &
-                                             idx_first_col=IDX_FIRST_COL, &
-                                             num_col_set=NUM_AO,          &
-                                             values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT)
+                        ierr = QcMatSetValues_f(A=val_int(1),                &
+                                                idx_block_row=IDX_BLOCK_ROW, &
+                                                idx_block_col=IDX_BLOCK_COL, &
+                                                idx_first_row=IDX_FIRST_ROW, &
+                                                num_row_set=NUM_AO,          &
+                                                idx_first_col=IDX_FIRST_COL, &
+                                                num_col_set=NUM_AO,          &
+                                                values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT)
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         do idens = 1, num_dens
-                            ierr = QMatGetMatProdTrace(A=val_int(1),          &
-                                                       B=ao_dens(idens),      &
-                                                       op_B=MAT_NO_OPERATION, &
-                                                       num_blocks=1_QINT,     &
-                                                       trace=val_exp(offset_exp+2*idens-1:offset_exp+2*idens))
+                            ierr = QcMatGetMatProdTrace_f(A=val_int(1),          &
+                                                          B=ao_dens(idens),      &
+                                                          op_B=MAT_NO_OPERATION, &
+                                                          num_blocks=1_QINT,     &
+                                                          trace=val_exp(offset_exp+2*idens-1:offset_exp+2*idens))
                             call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         end do
-                        ierr = QMatDestroy(A=val_int(1))
+                        ierr = QcMatDestroy_f(A=val_int(1))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         offset_exp = offset_exp+num_dens
                     end do
@@ -142,40 +144,42 @@
             if (pert_orders(1)==1) then
                 offset_exp = 0
                 do imat = 1, 3
-                    ierr = QMatCreate(A=val_int(1))
+                    ierr = QcMatCreate_f(A=val_int(1))
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    ierr = QMatBlockCreate(A=val_int(1), dim_block=1_QINT)
+                    ierr = QcMatBlockCreate_f(A=val_int(1), dim_block=1_QINT)
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    ierr = QMatSetSymType(A=val_int(1), sym_type=QSYMMAT)
+                    ierr = QcMatSetSymType_f(A=val_int(1), sym_type=QSYMMAT)
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    ierr = QMatSetDataType(A=val_int(1),                    &
-                                           num_blocks=1_QINT,               &
-                                           idx_block_row=(/IDX_BLOCK_ROW/), &
-                                           idx_block_col=(/IDX_BLOCK_COL/), &
-                                           data_type=(/QREALMAT/))
+                    ierr = QcMatSetDataType_f(A=val_int(1),                    &
+                                              num_blocks=1_QINT,               &
+                                              idx_block_row=(/IDX_BLOCK_ROW/), &
+                                              idx_block_col=(/IDX_BLOCK_COL/), &
+                                              data_type=(/QREALMAT/))
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    ierr = QMatSetDimMat(A=val_int(1), dim_mat=NUM_AO)
+                    ierr = QcMatSetDimMat_f(A=val_int(1),   &
+                                            num_row=NUM_AO, &
+                                            num_col=NUM_AO)
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    ierr = QMatAssemble(A=val_int(1))
+                    ierr = QcMatAssemble_f(A=val_int(1))
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    ierr = QMatSetValues(A=val_int(1),                &
-                                         idx_block_row=IDX_BLOCK_ROW, &
-                                         idx_block_col=IDX_BLOCK_COL, &
-                                         idx_first_row=IDX_FIRST_ROW, &
-                                         num_row_set=NUM_AO,          &
-                                         idx_first_col=IDX_FIRST_COL, &
-                                         num_col_set=NUM_AO,          &
-                                         values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT))
+                    ierr = QcMatSetValues_f(A=val_int(1),                &
+                                            idx_block_row=IDX_BLOCK_ROW, &
+                                            idx_block_col=IDX_BLOCK_COL, &
+                                            idx_first_row=IDX_FIRST_ROW, &
+                                            num_row_set=NUM_AO,          &
+                                            idx_first_col=IDX_FIRST_COL, &
+                                            num_col_set=NUM_AO,          &
+                                            values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT))
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     do idens = 1, num_dens
-                        ierr = QMatGetMatProdTrace(A=val_int(1),          &
-                                                   B=ao_dens(idens),      &
-                                                   op_B=MAT_NO_OPERATION, &
-                                                   num_blocks=1_QINT,     &
-                                                   trace=val_exp(offset_exp+2*idens-1:offset_exp+2*idens))
+                        ierr = QcMatGetMatProdTrace_f(A=val_int(1),          &
+                                                      B=ao_dens(idens),      &
+                                                      op_B=MAT_NO_OPERATION, &
+                                                      num_blocks=1_QINT,     &
+                                                      trace=val_exp(offset_exp+2*idens-1:offset_exp+2*idens))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     end do
-                    ierr = QMatDestroy(A=val_int(1))
+                    ierr = QcMatDestroy_f(A=val_int(1))
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                     offset_exp = offset_exp+num_dens
                 end do

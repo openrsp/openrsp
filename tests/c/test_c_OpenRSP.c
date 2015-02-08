@@ -76,9 +76,9 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
     QReal dipole_origin[3] = {0.1,0.1,0.1};
     QReal gauge_origin[3] = {0.2,0.2,0.2};
     /* referenced state */
-    QMat ref_ham;
-    QMat ref_state;
-    QMat ref_overlap;
+    QcMat ref_ham;
+    QcMat ref_state;
+    QcMat ref_overlap;
 /*FIXME: to move to test_... */
     QInt alpha_num_props = 1;
     QInt alpha_num_pert[1] = {2};

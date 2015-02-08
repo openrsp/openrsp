@@ -29,7 +29,7 @@
 #else
     subroutine test_f_OpenRSP(io_log)
 #endif
-        use qmatrix, only: QINT,QREAL
+        use qcmatrix_f, only: QINT,QREAL
         use openrsp_f, only: OpenRSP,                   &
                              OpenRSPCreate_f,           &
 #if defined(OPENRSP_PERTURBATION_FREE)

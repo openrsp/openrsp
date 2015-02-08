@@ -21,7 +21,7 @@
 
 module rsp_pert_table
 
-    use qmatrix, only: QINT
+    use qcmatrix_f, only: QINT
 
     implicit none
 

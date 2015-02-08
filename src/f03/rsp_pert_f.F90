@@ -20,12 +20,12 @@
 !!  * first version
 
 ! basic data types
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
 module rsp_pert_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT
+    use qcmatrix_f, only: QINT
 
     implicit none
 
@@ -43,7 +43,7 @@ module rsp_pert_f
                                  pert_num_comp,   &
                                  pert_components, &
                                  pert_comp_orders)
-            use qmatrix, only: QINT
+            use qcmatrix_f, only: QINT
             integer(kind=QINT), intent(in) :: pert_label
             integer(kind=QINT), intent(in) :: pert_order
             integer(kind=QINT), intent(in) :: pert_rank
@@ -64,7 +64,7 @@ module rsp_pert_f
                                  user_ctx,         &
 #endif
                                  pert_rank)
-            use qmatrix, only: QINT
+            use qcmatrix_f, only: QINT
             integer(kind=QINT), intent(in) :: pert_label
             integer(kind=QINT), intent(in) :: pert_num_comp
             integer(kind=QINT), intent(in) :: pert_components(pert_num_comp)
@@ -127,7 +127,7 @@ module rsp_pert_f
                                      pert_num_comp,   &
                                      pert_components, &
                                      pert_comp_orders)
-                use qmatrix, only: QINT
+                use qcmatrix_f, only: QINT
                 integer(kind=QINT), intent(in) :: pert_label
                 integer(kind=QINT), intent(in) :: pert_order
                 integer(kind=QINT), intent(in) :: pert_rank
@@ -148,7 +148,7 @@ module rsp_pert_f
                                      user_ctx,         &
 #endif
                                      pert_rank)
-                use qmatrix, only: QINT
+                use qcmatrix_f, only: QINT
                 integer(kind=QINT), intent(in) :: pert_label
                 integer(kind=QINT), intent(in) :: pert_num_comp
                 integer(kind=QINT), intent(in) :: pert_components(pert_num_comp)

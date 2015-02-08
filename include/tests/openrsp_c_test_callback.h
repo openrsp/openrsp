@@ -23,21 +23,21 @@
 #if !defined(OPENRSP_C_TEST_CALLBACK_H)
 #define OPENRSP_C_TEST_CALLBACK_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* callback function to get the solutions of response equation */
-extern QVoid get_rsp_solution(const QMat*,
-                              const QMat*,
-                              const QMat*,
+extern QVoid get_rsp_solution(const QcMat*,
+                              const QcMat*,
+                              const QcMat*,
                               const QInt,
                               const QReal*,
                               const QInt,
-                              QMat*[],
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid*,
 #endif
-                              QMat*[]);
+                              QcMat*[]);
 
 #if defined(OPENRSP_PERTURBATION_FREE)
 /* callback function for getting components of a perturbation */
@@ -76,7 +76,7 @@ extern QVoid get_overlap_mat(const QInt,
                              QVoid*,
 #endif
                              const QInt,
-                             QMat*[]);
+                             QcMat*[]);
 /* callback function for getting expectation values of overlap integrals */
 extern QVoid get_overlap_exp(const QInt,
                              const QInt*,
@@ -88,7 +88,7 @@ extern QVoid get_overlap_exp(const QInt,
                              const QInt*,
                              const QInt*,
                              const QInt,
-                             QMat*[],
+                             QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid*,
 #endif
@@ -102,13 +102,13 @@ extern QVoid get_one_oper_mat(const QInt,
                               QVoid*,
 #endif
                               const QInt,
-                              QMat*[]);
+                              QcMat*[]);
 /* callback function for getting expectation values of one-electron operators */
 extern QVoid get_one_oper_exp(const QInt,
                               const QInt*,
                               const QInt*,
                               const QInt,
-                              QMat*[],
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid*,
 #endif

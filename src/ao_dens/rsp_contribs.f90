@@ -27,7 +27,7 @@ module rsp_contribs
                              p_tuple_standardorder, merge_p_tuple, &
                              p_tuple_p1_cloneto_p2, p_tuple_external
   use rsp_indices_and_addressing
-  use qmatrix
+  use qcmatrix_f
                                         
 
   implicit none
@@ -340,7 +340,7 @@ contains
     integer :: ave_offset, tmp_result_offset, merged_triang_size, tmp_ave_size
     integer :: total_num_perturbations, np_bra, np_ket
     integer, dimension(0) :: noc
-    type(qmat) :: D
+    type(QcMat) :: D
     type(p_tuple) :: fields, bra, ket, merged_p_tuple, bra_static, ket_static
     external :: get_ovl_exp
     integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
@@ -626,8 +626,8 @@ end if
     integer, dimension(0) :: noc
     type(p_tuple) :: fields, bra, ket, merged_p_tuple, tester, bra_static, ket_static
     integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
-    type(qmat), dimension(propsize) :: fock
-    type(qmat), allocatable, dimension(:) :: tmp_fock
+    type(QcMat), dimension(propsize) :: fock
+    type(QcMat), allocatable, dimension(:) :: tmp_fock
     external :: get_ovl_mat
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
                                           blk_sizes_merged, translated_index, pert_ext_bra, &
@@ -730,7 +730,7 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        do i = 1, tmp_fock_size
           
-          call QMatInit(tmp_fock(i))
+          call QcMatInit(tmp_fock(i))
 
        end do
 
@@ -828,7 +828,7 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
 
 ! MaR: Frequency factor should be complex in general
-          call QMatrAXPY(dreal(0.5 * (sum(bra%freq) - sum(ket%freq))), tmp_fock(int_result_offset), fock(fock_offset))
+          call QcMatrAXPY(dreal(0.5 * (sum(bra%freq) - sum(ket%freq))), tmp_fock(int_result_offset), fock(fock_offset))
 
 !           fock(fock_offset) = fock(fock_offset) + &
 !           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
@@ -854,7 +854,7 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        do i = 1, tmp_fock_size
           
-          call QMatDst(tmp_fock(i))
+          call QcMatDst(tmp_fock(i))
 
        end do
 

@@ -23,8 +23,8 @@
 #if !defined(RSP_OVERLAP_H)
 #define RSP_OVERLAP_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetOverlapMat)(const QInt,
@@ -40,7 +40,7 @@ typedef QVoid (*GetOverlapMat)(const QInt,
                                QVoid*,
 #endif
                                const QInt,
-                               QMat*[]);
+                               QcMat*[]);
 typedef QVoid (*GetOverlapExp)(const QInt,
                                const QInt*,
                                const QInt*,
@@ -51,7 +51,7 @@ typedef QVoid (*GetOverlapExp)(const QInt,
                                const QInt*,
                                const QInt*,
                                const QInt,
-                               QMat*[],
+                               QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                QVoid*,
 #endif
@@ -93,7 +93,7 @@ extern QErrorCode RSPOverlapGetMat(const RSPOverlap*,
                                    const QInt*,
                                    const QInt*,
                                    const QInt,
-                                   QMat*[]);
+                                   QcMat*[]);
 extern QErrorCode RSPOverlapGetExp(const RSPOverlap*,
                                    const QInt,
                                    const QInt*,
@@ -105,7 +105,7 @@ extern QErrorCode RSPOverlapGetExp(const RSPOverlap*,
                                    const QInt*,
                                    const QInt*,
                                    const QInt,
-                                   QMat*[],
+                                   QcMat*[],
                                    const QInt,
                                    QReal*);
 extern QErrorCode RSPOverlapDestroy(RSPOverlap*);

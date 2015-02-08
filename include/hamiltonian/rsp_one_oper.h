@@ -23,8 +23,8 @@
 #if !defined(RSP_ONE_OPER_H)
 #define RSP_ONE_OPER_H
 
-/* QMatrix library */
-#include "qmatrix.h"
+/* QcMatrix library */
+#include "qcmatrix.h"
 
 /* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetOneOperMat)(const QInt,
@@ -34,12 +34,12 @@ typedef QVoid (*GetOneOperMat)(const QInt,
                                QVoid*,
 #endif
                                const QInt,
-                               QMat*[]);
+                               QcMat*[]);
 typedef QVoid (*GetOneOperExp)(const QInt,
                                const QInt*,
                                const QInt*,
                                const QInt,
-                               QMat*[],
+                               QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                QVoid*,
 #endif
@@ -86,13 +86,13 @@ extern QErrorCode RSPOneOperGetMat(RSPOneOper*,
                                    const QInt*,
                                    const QInt*,
                                    const QInt,
-                                   QMat*[]);
+                                   QcMat*[]);
 extern QErrorCode RSPOneOperGetExp(RSPOneOper*,
                                    const QInt,
                                    const QInt*,
                                    const QInt*,
                                    const QInt,
-                                   QMat*[],
+                                   QcMat*[],
                                    const QInt,
                                    QReal*);
 extern QErrorCode RSPOneOperDestroy(RSPOneOper**);

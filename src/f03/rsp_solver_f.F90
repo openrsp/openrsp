@@ -20,12 +20,12 @@
 !!  * first version
 
 ! basic data types
-#include "api/qmatrix_c_type.h"
+#include "api/qcmatrix_c_type.h"
 
 module rsp_solver_f
 
     use, intrinsic :: iso_c_binding
-    use qmatrix, only: QINT,QREAL,QMat
+    use qcmatrix_f, only: QINT,QREAL,QcMat
 
     implicit none
 
@@ -45,19 +45,19 @@ module rsp_solver_f
                                user_ctx,      &
 #endif
                                rsp_param)
-            use qmatrix, only: QINT,QREAL,QMat
-            type(QMat), intent(in) :: ref_ham
-            type(QMat), intent(in) :: ref_state
-            type(QMat), intent(in) :: ref_overlap
+            use qcmatrix_f, only: QINT,QREAL,QcMat
+            type(QcMat), intent(in) :: ref_ham
+            type(QcMat), intent(in) :: ref_state
+            type(QcMat), intent(in) :: ref_overlap
             integer(kind=QINT), intent(in) :: num_freq_sums
             real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
             integer(kind=QINT), intent(in) :: size_pert
-            type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+            type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-            type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+            type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
         end subroutine SolverRun_f
     end interface
 
@@ -108,19 +108,19 @@ module rsp_solver_f
                                         user_ctx,      &
 #endif
                                         rsp_param)
-                use qmatrix, only: QINT,QREAL,QMat
-                type(QMat), intent(in) :: ref_ham
-                type(QMat), intent(in) :: ref_state
-                type(QMat), intent(in) :: ref_overlap
+                use qcmatrix_f, only: QINT,QREAL,QcMat
+                type(QcMat), intent(in) :: ref_ham
+                type(QcMat), intent(in) :: ref_state
+                type(QcMat), intent(in) :: ref_overlap
                 integer(kind=QINT), intent(in) :: num_freq_sums
                 real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
                 integer(kind=QINT), intent(in) :: size_pert
-                type(QMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+                type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-                type(QMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+                type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
             end subroutine get_rsp_solution
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -168,12 +168,12 @@ module rsp_solver_f
         type(C_PTR), value, intent(in) :: user_ctx
         type(C_PTR), intent(inout) :: rsp_param(size_pert*num_freq_sums)
         type(SolverFun_f), pointer :: solver_fun   !context of callback subroutine
-        type(QMat), pointer :: f_ref_ham           !Hamiltonian of referenced state
-        type(QMat), pointer :: f_ref_state         !electronic state of referenced state
-        type(QMat), pointer :: f_ref_overlap       !overlap integral matrix of referenced state
+        type(QcMat), pointer :: f_ref_ham           !Hamiltonian of referenced state
+        type(QcMat), pointer :: f_ref_state         !electronic state of referenced state
+        type(QcMat), pointer :: f_ref_overlap       !overlap integral matrix of referenced state
         integer(kind=QINT) size_solution           !size of solution of response equation
-        type(QMat), allocatable :: f_RHS_mat(:)    !RHS matrices
-        type(QMat), allocatable :: f_rsp_param(:)  !response parameters
+        type(QcMat), allocatable :: f_RHS_mat(:)    !RHS matrices
+        type(QcMat), allocatable :: f_rsp_param(:)  !response parameters
         character(len=1), allocatable :: enc(:)    !encoded data as an array of characters
         integer(kind=QINT) len_enc                 !length of encoded data
         integer(kind=4) ierr                       !error information
@@ -182,7 +182,7 @@ module rsp_solver_f
         call c_f_pointer(ref_ham, f_ref_ham)
         call c_f_pointer(ref_state, f_ref_state)
         call c_f_pointer(ref_overlap, f_ref_overlap)
-        ! converts C pointer to Fortran QMat type, inspired by
+        ! converts C pointer to Fortran QcMat type, inspired by
         ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
         ! and
         ! http://jblevins.org/log/transfer
@@ -202,7 +202,7 @@ module rsp_solver_f
                 stop "RSPSolverGetSolution_f>> failed to allocate memory for enc"
             end if
             enc = transfer(RHS_mat(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_RHS_mat(imat) = transfer(enc, f_RHS_mat(imat))
             ! cleans up
             deallocate(enc)
@@ -222,7 +222,7 @@ module rsp_solver_f
                 stop "RSPSolverGetSolution_f>> failed to allocate memory for enc"
             end if
             enc = transfer(rsp_param(imat), enc)
-            ! decodes as QMat type
+            ! decodes as QcMat type
             f_rsp_param(imat) = transfer(enc, f_rsp_param(imat))
             ! cleans up
             deallocate(enc)
