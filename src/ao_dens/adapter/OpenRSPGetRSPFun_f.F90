@@ -53,8 +53,8 @@
         integer(kind=C_QINT), value, intent(in) :: num_props
         integer(kind=C_QINT), intent(in) :: num_pert(num_props)
         integer(kind=C_QINT), intent(in) :: pert_labels(sum(num_pert))
-        integer(kind=C_QINT), intent(in) :: num_freqs(sum(num_pert))
-        real(kind=C_QREAL), intent(in) :: pert_freqs(2*sum(num_freqs))
+        integer(kind=C_QINT), intent(in) :: num_freqs(num_props)
+        real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(num_freqs,num_pert))
         integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
         type(C_PTR), value, intent(in) :: F_unpert
         type(C_PTR), value, intent(in) :: S_unpert

@@ -249,11 +249,11 @@ module openrsp_f
             integer(kind=C_QINT), value, intent(in) :: num_props
             integer(kind=C_QINT), intent(in) :: num_pert(num_props)
             integer(kind=C_QINT), intent(in) :: pert_labels(sum(num_pert))
-            integer(kind=C_QINT), intent(in) :: num_freqs(sum(num_pert))
-            real(kind=C_QREAL), intent(in) :: pert_freqs(2*sum(num_freqs))
+            integer(kind=C_QINT), intent(in) :: num_freqs(num_props)
+            real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(num_freqs,num_pert))
             integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
             integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
-            real(kind=C_QREAL), intent(out) :: rsp_funs(size_rsp_funs)
+            real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         end function OpenRSPGetRSPFun
         integer(C_INT) function f_api_OpenRSPDestroy(open_rsp) &
             bind(C, name="f_api_OpenRSPDestroy")
@@ -978,11 +978,11 @@ module openrsp_f
         integer(kind=QINT), intent(in) :: num_props
         integer(kind=QINT), intent(in) :: num_pert(num_props)
         integer(kind=QINT), intent(in) :: pert_labels(sum(num_pert))
-        integer(kind=QINT), intent(in) :: num_freqs(sum(num_pert))
-        real(kind=QREAL), intent(in) :: pert_freqs(2*sum(num_freqs))
+        integer(kind=QINT), intent(in) :: num_freqs(num_props)
+        real(kind=QREAL), intent(in) :: pert_freqs(2*dot_product(num_freqs,num_pert))
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
         integer(kind=QINT), intent(in) :: size_rsp_funs
-        real(kind=QREAL), intent(out) :: rsp_funs(size_rsp_funs)
+        real(kind=QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         ierr = OpenRSPGetRSPFun(open_rsp%c_rsp,     &
                                 c_loc(ref_ham),     &
                                 c_loc(ref_state),   &

@@ -112,12 +112,11 @@
         ! polarizability
         integer(kind=QINT), parameter :: ALPHA_NUM_PROPS = 1_QINT
         integer(kind=QINT), parameter :: ALPHA_NUM_PERT(ALPHA_NUM_PROPS) = (/2_QINT/)
-        integer(kind=QINT), parameter :: ALPHA_PERT_LABELS(sum(ALPHA_NUM_PERT)) = (/ &
-            PERT_DIPOLE,PERT_DIPOLE/)
-        integer(kind=QINT), parameter :: ALPHA_NUM_FREQS(sum(ALPHA_NUM_PERT)) = (/ &
-            1_QINT,1_QINT/)
-        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*sum(ALPHA_NUM_FREQS)) = (/ &
-            -0.072_QREAL,0.0_QREAL,0.072_QREAL,0.0_QREAL/)
+        integer(kind=QINT), parameter :: ALPHA_PERT_LABELS(sum(ALPHA_NUM_PERT)) &
+            = (/PERT_DIPOLE,PERT_DIPOLE/)
+        integer(kind=QINT), parameter :: ALPHA_NUM_FREQS(ALPHA_NUM_PROPS) = (/1_QINT/)
+        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*dot_product(ALPHA_NUM_FREQS,ALPHA_NUM_PERT)) &
+            = (/-0.072_QREAL,0.0_QREAL,0.072_QREAL,0.0_QREAL/)
         integer(kind=QINT), parameter :: ALPHA_KN_RULES(ALPHA_NUM_PROPS) = (/0_QINT/)
         ! response functions
         integer(kind=QINT) size_rsp_funs
@@ -296,6 +295,7 @@
                                   rsp_funs)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPGetRSPFun_f() passed"
+        write(io_log,110) rsp_funs(1:2*size_rsp_funs)
 
         ! cleans
         ierr = QcMatDestroy_f(A=F_unpert)
@@ -308,6 +308,7 @@
         return
 
 100     format("test_f_OpenRSP_AO>> ",A)
+110     format(3(" (",F16.10,",",F16.10,")"))
     end subroutine test_f_OpenRSP_AO
 
 #undef OPENRSP_F_TEST_SRC
