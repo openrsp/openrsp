@@ -20,7 +20,7 @@
 !!  * first version
 
 ! configuration file of QcMatrix library
-#include "qmatrix_config.h"
+#include "qcmatrix_config.h"
 
 #define OPENRSP_F_TEST_SRC "tests/f90/callback/get_two_oper_exp_f.F90"
 
@@ -71,6 +71,7 @@
         type(QcMat) val_int(1)
         integer(kind=QINT) offset_exp
         integer(kind=QINT) idens
+        integer(kind=QINT) imat
         integer(kind=4) ierr
 #if defined(OPENRSP_F_USER_CONTEXT)
         if (all(user_ctx==oneham_context)) then

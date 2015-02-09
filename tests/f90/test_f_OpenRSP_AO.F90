@@ -44,6 +44,7 @@
                              OpenRSPSetSolver_f,  &
                              OpenRSPSetPDBS_f,    &
                              OpenRSPAddOneOper_f, &
+                             OpenRSPAddTwoOper_f, &
                              OpenRSPAssemble_f,   &
                              OpenRSPWrite_f,      &
                              OpenRSPGetRSPFun_f
@@ -89,6 +90,17 @@
 #endif
         external get_one_oper_mat_f
         external get_one_oper_exp_f
+        ! two-electron Hamiltonian
+        integer(kind=QINT), parameter :: twoel_num_pert = 2_QINT
+        integer(kind=QINT) :: twoel_pert_labels(oneham_num_pert) = (/ &
+            PERT_GEOMETRIC,PERT_MAGNETIC/)
+        integer(kind=QINT) :: twoel_pert_orders(oneham_num_pert) = (/ &
+            MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC/)
+#if defined(OPENRSP_F_USER_CONTEXT)
+        character(len=1) :: twoel_context(6) = (/"N","O","N","L","A","O"/)
+#endif
+        external get_two_oper_mat_f
+        external get_two_oper_exp_f
         ! referenced state
 #include "tests/ao_dens/openrsp_f_ao_dims.h90"
 #include "tests/ao_dens/openrsp_f_ao_fock.h90"
@@ -165,6 +177,19 @@
                                    get_one_oper_exp_f)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPAddOneOper_f(V) passed"
+
+        ! adds two-electron Hamiltonian
+        ierr = OpenRSPAddTwoOper_f(open_rsp,           &
+                                   twoel_num_pert,     &
+                                   twoel_pert_labels,  &
+                                   twoel_pert_orders,  &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                                   twoel_context,      &
+#endif
+                                   get_two_oper_mat_f, &
+                                   get_two_oper_exp_f)
+        call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+        write(io_log,100) "OpenRSPAddTwoOper_f() passed"
 
         ! assembles the context of response theory calculations
         ierr = OpenRSPAssemble_f(open_rsp)
