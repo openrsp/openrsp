@@ -231,6 +231,11 @@ functions are given as follows.
    :type val_exp: QReal\*
    :rtype: QVoid
 
+#remove ref_ham, ref_state, ref_overlap
+#seperate for "response eigenvalue equation" and "linear response equation"
+#OpenRSPSetLinearRSPSolver
+#OpenRSPSetRSPEigenSolver
+
 .. function:: get_rsp_solution(ref_ham,       \
                                ref_state,     \
                                ref_overlap,   \

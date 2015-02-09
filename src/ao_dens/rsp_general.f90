@@ -257,13 +257,13 @@ module rsp_general
 !     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
 !     blk_info, prop, id_outp, id_outp)
 
-    open(unit=257, file='totterms', status='old', action='write', position='append') 
-    write(257,*) 'END'
-    close(257)
-
-    open(unit=257, file='cachehit', status='old', action='write', position='append') 
-    write(257,*) 'END'
-    close(257)
+!    open(unit=257, file='totterms', status='old', action='write', position='append') 
+!    write(257,*) 'END'
+!    close(257)
+!
+!    open(unit=257, file='cachehit', status='old', action='write', position='append') 
+!    write(257,*) 'END'
+!    close(257)
 
     deallocate(blk_info)
 
@@ -573,19 +573,19 @@ module rsp_general
 
           p_stord = p_tuples_standardorder(num_p_tuples, p_tuples)
        
-          open(unit=257, file='totterms', status='old', action='write', &
-               position='append') 
-          write(257,*) 'T'
-          close(257)
+!          open(unit=257, file='totterms', status='old', action='write', &
+!               position='append') 
+!          write(257,*) 'T'
+!          close(257)
           
 !           write(*,*) 'Evaluating property_cache_already'
 
           if (property_cache_already(cache, num_p_tuples, p_stord)) then
 
-             open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append') 
-             write(257,*) 'T'
-             close(257)
+!             open(unit=257, file='cachehit', status='old', action='write', &
+!                  position='append') 
+!             write(257,*) 'T'
+!             close(257)
 
 !              write(*,*) 'Getting values from cache'
 
@@ -945,7 +945,7 @@ module rsp_general
 !          end do
 !       end do
    
-       do i = 1, num_p_tuples
+       do i = 2, num_p_tuples
    
           call QcMatInit(dens_tuple(i))
    
@@ -1263,7 +1263,7 @@ module rsp_general
 
     call QcMatDst(D_unp)
 
-    do i = 1, num_p_tuples
+    do i = 2, num_p_tuples
    
        call QcMatDst(dens_tuple(i))
    
@@ -1656,20 +1656,20 @@ module rsp_general
 
 
 
-          open(unit=257, file='totterms', status='old', action='write', &
-               position='append')
-          write(257,*) 'T'
-          close(257)
+!          open(unit=257, file='totterms', status='old', action='write', &
+!               position='append')
+!          write(257,*) 'T'
+!          close(257)
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
 !              write(*,*) 'Getting values from cache'
 !              write(*,*) ' '
 
-             open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append') 
-             write(257,*) 'T'
-             close(257)
+!             open(unit=257, file='cachehit', status='old', action='write', &
+!                  position='append') 
+!             write(257,*) 'T'
+!             close(257)
 
              call property_cache_getdata(cache, 2, p12, p_size, prop)
        
@@ -1834,7 +1834,7 @@ module rsp_general
                              p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
  
  
-       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ext_ord, size(tmp), tmp)
+       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ext_ord, 1, (/W/), size(tmp), tmp)
        
  
 !        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
@@ -2009,19 +2009,19 @@ module rsp_general
 
 
 
-       open(unit=257, file='totterms', status='old', action='write', position='append') 
-       write(257,*) 'T'
-       close(257)
+!       open(unit=257, file='totterms', status='old', action='write', position='append') 
+!       write(257,*) 'T'
+!       close(257)
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
 !              write(*,*) 'Getting values from cache'
 !              write(*,*) ' '
        
-             open(unit=257, file='cachehit', status='old', action='write', &
-             position='append') 
-             write(257,*) 'T'
-             close(257)
+!             open(unit=257, file='cachehit', status='old', action='write', &
+!             position='append') 
+!             write(257,*) 'T'
+!             close(257)
 
              call property_cache_getdata(cache, 2, p12, p_size, prop)
 
@@ -2344,20 +2344,20 @@ module rsp_general
 
 
 
-          open(unit=257, file='totterms', status='old', action='write', &
-               position='append') 
-          write(257,*) 'T'
-          close(257)
+!          open(unit=257, file='totterms', status='old', action='write', &
+!               position='append') 
+!          write(257,*) 'T'
+!          close(257)
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
 !              write(*,*) 'Getting values from cache'
 !              write(*,*) ' '
 
-             open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append')
-             write(257,*) 'T'
-             close(257)
+!             open(unit=257, file='cachehit', status='old', action='write', &
+!                  position='append')
+!             write(257,*) 'T'
+!             close(257)
 
              call property_cache_getdata(cache, 2, p12, p_size, prop)
       
@@ -2687,17 +2687,17 @@ module rsp_general
 
 
 
-          open(unit=257, file='totterms', status='old', action='write', &
-               position='append') 
-          write(257,*) 'T'
-          close(257)
+!          open(unit=257, file='totterms', status='old', action='write', &
+!               position='append') 
+!          write(257,*) 'T'
+!          close(257)
 
           if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
 
-             open(unit=257, file='cachehit', status='old', action='write', &
-                  position='append') 
-             write(257,*) 'T'
-             close(257)
+!             open(unit=257, file='cachehit', status='old', action='write', &
+!                  position='append') 
+!             write(257,*) 'T'
+!             close(257)
 
 !              write(*,*) 'Getting values from cache'
 !              write(*,*) ' '

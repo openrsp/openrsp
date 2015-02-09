@@ -171,6 +171,14 @@
                 write(6,100) "unknown perturbations"
                 call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
             end if
+        else if (num_pert==0 .and. bra_num_pert==1 .and. ket_num_pert==1) then
+            ! zero integrals
+            if (bra_pert_labels(1)==PERT_DIPOLE .or. ket_pert_labels(1)==PERT_DIPOLE) then
+                val_exp = 0
+            else
+                write(6,100) "unknown perturbations"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            end if
         else
             write(6,100) "not implemented"
             call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)

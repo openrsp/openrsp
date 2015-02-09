@@ -250,17 +250,18 @@ Functions of OpenRSP API (C version)
    :type ref_overlap: QcMat\*
    :param num_props: number of properties to calculate
    :type num_props: QInt
-   :param num_pert: number of different perturbations for each property,
+   :param num_pert: number of perturbations for each property (or in other
+       words the order of time-averaged quasienergy differentiation),
        size is the number of properties (``num_props``)
    :type num_pert: QInt\*
-   :param pert_labels: labels of different perturbations for each property,
+   :param pert_labels: labels of perturbations for each property,
        size is ``sum(num_pert)``
    :type pert_labels: QInt\*
-   :param num_freqs: number of different frequencies for each perturbation,
-       size is ``sum(num_pert)``
+   :param num_freqs: number of different frequency configurations for
+       each property, size is ``num_props``
    :type num_freqs: QInt\*
-   :param pert_freqs: complex frequencies of each perturbation, size is
-       ``2``:math:`\times` ``sum(num_freqs)``
+   :param pert_freqs: complex frequencies of each perturbation over all frequency
+       configurations, size is ``2``:math:`\times` ``dot_product(num_freqs,num_pert)``
    :type pert_freqs: QReal\*
    :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of

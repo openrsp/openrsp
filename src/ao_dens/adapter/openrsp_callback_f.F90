@@ -67,6 +67,28 @@ module openrsp_callback_f
     public :: f_callback_RSPXCFunGetExp
 
     interface
+        integer(C_INT) function RSPSolverGetSolution(rsp_solver,    &
+                                                     ref_ham,       &
+                                                     ref_state,     &
+                                                     ref_overlap,   &
+                                                     num_freq_sums, &
+                                                     freq_sums,     &
+                                                     size_pert,     &
+                                                     RHS_mat,       &
+                                                     rsp_param)     &
+            bind(C, name="RSPSolverGetSolution")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: rsp_solver
+            type(C_PTR), value, intent(in) :: ref_ham
+            type(C_PTR), value, intent(in) :: ref_state
+            type(C_PTR), value, intent(in) :: ref_overlap
+            integer(kind=C_QINT), value, intent(in) :: num_freq_sums
+            real(kind=C_QREAL), intent(in) :: freq_sums(num_freq_sums)
+            integer(kind=C_QINT), value, intent(in) :: size_pert
+            type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+            type(C_PTR), intent(in) :: rsp_param(size_pert*num_freq_sums)
+        end function RSPSolverGetSolution
         integer(C_INT) function RSPOverlapGetMat(overlap,         &
                                                  bra_num_pert,    &
                                                  bra_pert_labels, &
@@ -95,6 +117,38 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPOverlapGetMat
+        integer(C_INT) function RSPOverlapGetExp(overlap,         &
+                                                 bra_num_pert,    &
+                                                 bra_pert_labels, &
+                                                 bra_pert_orders, &
+                                                 ket_num_pert,    &
+                                                 ket_pert_labels, &
+                                                 ket_pert_orders, &
+                                                 num_pert,        &
+                                                 pert_labels,     &
+                                                 pert_orders,     &
+                                                 num_dens,        &
+                                                 ao_dens,         &
+                                                 num_exp,         &
+                                                 val_exp)         &
+            bind(C, name="RSPOverlapGetExp")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: overlap
+            integer(kind=C_QINT), value, intent(in) :: bra_num_pert
+            integer(kind=C_QINT), intent(in) :: bra_pert_labels(bra_num_pert)
+            integer(kind=C_QINT), intent(in) :: bra_pert_orders(bra_num_pert)
+            integer(kind=C_QINT), value, intent(in) :: ket_num_pert
+            integer(kind=C_QINT), intent(in) :: ket_pert_labels(ket_num_pert)
+            integer(kind=C_QINT), intent(in) :: ket_pert_orders(ket_num_pert)
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
+            integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+            integer(kind=C_QINT), value, intent(in) :: num_dens
+            type(C_PTR), intent(in) :: ao_dens(num_dens)
+            integer(kind=C_QINT), value, intent(in) :: num_exp
+            real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
+        end function RSPOverlapGetExp
         integer(C_INT) function RSPOneOperGetMat(one_oper,    &
                                                  num_pert,    &
                                                  pert_labels, &
@@ -111,6 +165,70 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPOneOperGetMat
+        integer(C_INT) function RSPOneOperGetExp(one_oper,    &
+                                                 num_pert,    &
+                                                 pert_labels, &
+                                                 pert_orders, &
+                                                 num_dens,    &
+                                                 ao_dens,     &
+                                                 num_exp,     &
+                                                 val_exp)     &
+            bind(C, name="RSPOneOperGetExp")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: one_oper
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
+            integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+            integer(kind=C_QINT), value, intent(in) :: num_dens
+            type(C_PTR), intent(in) :: ao_dens(num_dens)
+            integer(kind=C_QINT), value, intent(in) :: num_exp
+            real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
+        end function RSPOneOperGetExp
+        integer(C_INT) function RSPTwoOperGetMat(two_oper,     &
+                                                 num_pert,     &
+                                                 pert_labels,  &
+                                                 pert_orders,  &
+                                                 num_var_dens, &
+                                                 var_ao_dens,  &
+                                                 num_int,      &
+                                                 val_int)      &
+            bind(C, name="RSPTwoOperGetMat")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: two_oper
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
+            integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+            integer(kind=C_QINT), value, intent(in) :: num_var_dens
+            type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
+            integer(kind=C_QINT), value, intent(in) :: num_int
+            type(C_PTR), intent(in) :: val_int(num_int)
+        end function RSPTwoOperGetMat
+        integer(C_INT) function RSPTwoOperGetExp(one_oper,       &
+                                                 num_pert,       &
+                                                 pert_labels,    &
+                                                 pert_orders,    &
+                                                 num_var_dens,   &
+                                                 var_ao_dens,    &
+                                                 num_contr_dens, &
+                                                 contr_ao_dens,  &
+                                                 num_exp,        &
+                                                 val_exp)        &
+            bind(C, name="RSPTwoOperGetExp")   
+            use, intrinsic :: iso_c_binding    
+            implicit none
+            type(C_PTR), value, intent(in) :: one_oper
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
+            integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+            integer(kind=C_QINT), value, intent(in) :: num_var_dens
+            type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
+            integer(kind=C_QINT), value, intent(in) :: num_contr_dens
+            type(C_PTR), intent(in) :: contr_ao_dens(num_contr_dens)
+            integer(kind=C_QINT), value, intent(in) :: num_exp
+            real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
+        end function RSPTwoOperGetExp
     end interface
 
     contains
@@ -155,18 +273,49 @@ module openrsp_callback_f
                                                size_pert,     &
                                                RHS_mat,       &
                                                rsp_param)
-        type(QcMat), intent(in) :: ref_ham
-        type(QcMat), intent(in) :: ref_state
-        type(QcMat), intent(in) :: ref_overlap
+        type(QcMat), target, intent(in) :: ref_ham
+        type(QcMat), target, intent(in) :: ref_state
+        type(QcMat), target, intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_freq_sums
         real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
         integer(kind=QINT), intent(in) :: size_pert
         type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
         type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+        type(C_PTR), allocatable :: c_RHS_mat(:)
+        type(C_PTR), allocatable :: c_rsp_param(:)
+        integer(kind=4) ierr
         if (c_associated(ctx_saved%rsp_solver)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_freq_sums, size_pert
 #endif
+            allocate(c_RHS_mat(size_pert*num_freq_sums), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_RHS_mat", &
+                                  size_pert*num_freq_sums
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=RHS_mat, c_A=c_RHS_mat)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_rsp_param(size_pert*num_freq_sums), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_rsp_param", &
+                                  size_pert*num_freq_sums
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=rsp_param, c_A=c_rsp_param)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            ierr = RSPSolverGetSolution(ctx_saved%rsp_solver, &
+                                        c_loc(ref_ham),       &
+                                        c_loc(ref_state),     &
+                                        c_loc(ref_overlap),   &
+                                        num_freq_sums,        &
+                                        freq_sums,            &
+                                        size_pert,            &
+                                        c_RHS_mat,            &
+                                        c_rsp_param)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            deallocate(c_RHS_mat)
+            deallocate(c_rsp_param)
         else
             write(STDOUT,100) "null callback function for linear response equation solver"
             call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
@@ -189,6 +338,8 @@ module openrsp_callback_f
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_pert, size_contrib
 #endif
+            !write(STDOUT,100) "not implemented"
+            !call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
         end if
 100     format("f_callback_RSPNucContribGet>> ",A,2I12)
     end subroutine f_callback_RSPNucContribGet
@@ -274,10 +425,46 @@ module openrsp_callback_f
         type(QcMat), intent(in) :: ao_dens(num_dens)
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
+        type(C_PTR), allocatable :: c_ao_dens(:)
+        real(kind=QREAL), allocatable :: c_val_exp(:)
+        integer(kind=QINT) ival
+        integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", bra_num_pert, ket_num_pert, num_pert, num_dens, num_exp
 #endif
+            allocate(c_ao_dens(num_dens), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_ao_dens", num_dens
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=ao_dens, c_A=c_ao_dens)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_exp(2*num_exp), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = RSPOverlapGetExp(ctx_saved%overlap, &
+                                    bra_num_pert,      &
+                                    bra_pert_labels,   &
+                                    bra_pert_orders,   &
+                                    ket_num_pert,      &
+                                    ket_pert_labels,   &
+                                    ket_pert_orders,   &
+                                    num_pert,          &
+                                    pert_labels,       &
+                                    pert_orders,       &
+                                    num_dens,          &
+                                    c_ao_dens,         &
+                                    num_exp,           &
+                                    c_val_exp)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do ival = 1, num_exp
+                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+            end do
+            deallocate(c_ao_dens)
+            deallocate(c_val_exp)
         end if
 100     format("f_callback_RSPOverlapGetExp>> ",A,5I12)
     end subroutine f_callback_RSPOverlapGetExp
@@ -333,10 +520,40 @@ module openrsp_callback_f
         type(QcMat), intent(in) :: ao_dens(num_dens)
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
+        type(C_PTR), allocatable :: c_ao_dens(:)
+        real(kind=QREAL), allocatable :: c_val_exp(:)
+        integer(kind=QINT) ival
+        integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_pert, num_dens, num_exp
 #endif
+            allocate(c_ao_dens(num_dens), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_ao_dens", num_dens
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=ao_dens, c_A=c_ao_dens)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_exp(2*num_exp), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = RSPOneOperGetExp(ctx_saved%one_oper, &
+                                    num_pert,           &
+                                    pert_labels,        &
+                                    pert_orders,        &
+                                    num_dens,           &
+                                    c_ao_dens,          &
+                                    num_exp,            &
+                                    c_val_exp)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do ival = 1, num_exp
+                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+            end do
+            deallocate(c_ao_dens)
+            deallocate(c_val_exp)
         end if
 100     format("f_callback_RSPOneOperGetExp>> ",A,3I12)
     end subroutine f_callback_RSPOneOperGetExp
@@ -356,10 +573,39 @@ module openrsp_callback_f
         type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
+        type(C_PTR), allocatable :: c_var_ao_dens(:)
+        type(C_PTR), allocatable :: c_val_int(:)
+        integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_pert, num_var_dens, num_int
 #endif
+            allocate(c_var_ao_dens(num_var_dens), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_var_ao_dens", &
+                                  num_var_dens
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=var_ao_dens, c_A=c_var_ao_dens)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_int(num_int), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_int", num_int
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=val_int, c_A=c_val_int)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            ierr = RSPTwoOperGetMat(ctx_saved%two_oper, &
+                                    num_pert,           &
+                                    pert_labels,        &
+                                    pert_orders,        &
+                                    num_var_dens,       &
+                                    c_var_ao_dens,      &
+                                    num_int,            &
+                                    c_val_int)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            deallocate(c_var_ao_dens)
+            deallocate(c_val_int)
         end if
 100     format("f_callback_RSPTwoOperGetMat>> ",A,3I12)
     end subroutine f_callback_RSPTwoOperGetMat
@@ -383,10 +629,53 @@ module openrsp_callback_f
         type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
+        type(C_PTR), allocatable :: c_var_ao_dens(:)
+        type(C_PTR), allocatable :: c_contr_ao_dens(:)
+        real(kind=QREAL), allocatable :: c_val_exp(:)
+        integer(kind=QINT) ival
+        integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_pert, num_var_dens, num_contr_dens, num_exp
 #endif
+            allocate(c_var_ao_dens(num_var_dens), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_var_ao_dens", &
+                                  num_var_dens
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=var_ao_dens, c_A=c_var_ao_dens)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_contr_ao_dens(num_contr_dens), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_contr_ao_dens", &
+                                  num_contr_dens
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=contr_ao_dens, c_A=c_contr_ao_dens)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_exp(2*num_exp), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = RSPTwoOperGetExp(ctx_saved%two_oper, &
+                                    num_pert,           &
+                                    pert_labels,        &
+                                    pert_orders,        &
+                                    num_var_dens,       &
+                                    c_var_ao_dens,      &
+                                    num_contr_dens,     &
+                                    c_contr_ao_dens,    &
+                                    num_exp,            &
+                                    c_val_exp)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do ival = 1, num_exp
+                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+            end do
+            deallocate(c_var_ao_dens)
+            deallocate(c_contr_ao_dens)
+            deallocate(c_val_exp)
         end if
 100     format("f_callback_RSPTwoOperGetExp>> ",A,4I12)
     end subroutine f_callback_RSPTwoOperGetExp
