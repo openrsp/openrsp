@@ -144,6 +144,8 @@ module rsp_perturbed_sdf
     call QcMatInit(A)
     call QcMatInit(B)
     call QcMatInit(C)
+    call QcMatInit(T)
+    call QcMatInit(U)
     
     
     call sdf_getdata_s_2014(D, get_emptypert(), (/1/), A)
@@ -429,6 +431,9 @@ end if
     
     call QcMatDst(A)
     call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
+    call QcMatDst(U)
 
     deallocate(derivative_structure)
     deallocate(ind)

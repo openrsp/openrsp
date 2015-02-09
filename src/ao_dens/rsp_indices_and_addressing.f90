@@ -95,31 +95,39 @@ module rsp_indices_and_addressing
     
   end subroutine
   
-  ! Compute R = kA + B + C (k complex)
+  ! Compute R = kA * B * C (k complex)
   subroutine QcMatcABC(k, A, B, C, R)
   
     implicit none
     
     type(QcMat) :: A, B, C, R
+    type(QcMat) T
     integer(kind=4) :: ierr
     complex(8) :: k
         
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/1.0d0, 1.0d0/), R)
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
-  
+    call QcMatInit(T, A)
+    ! T = kB * C
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/0.0d0, 0.0d0/), T)
+    ! R = A * T
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
+    ierr = QcMatDestroy_f(T)
+
   end subroutine
   
-  ! Compute R = kA + B + C (k real)
+  ! Compute R = kA * B * C (k real)
   subroutine QcMatkABC(k, A, B, C, R)
   
     implicit none
     
     type(QcMat) :: A, B, C, R
+    type(QcMat) T
     integer(kind=4) :: ierr
     real(8) :: k
         
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 1.0d0/), B, C, (/1.0d0, 1.0d0/), R)
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 1.0d0/), A, R, (/1.0d0, 1.0d0/), R)
+    call QcMatInit(T, A)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), B, C, (/0.0d0, 0.0d0/), T)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
+    ierr = QcMatDestroy_f(T)
   
   end subroutine
   

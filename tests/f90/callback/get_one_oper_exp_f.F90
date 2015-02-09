@@ -123,7 +123,7 @@
                         end do
                         ierr = QcMatDestroy_f(A=val_int(1))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                        offset_exp = offset_exp+num_dens
+                        offset_exp = offset_exp+2*num_dens
                     end do
                 ! zero integrals
                 else
@@ -181,7 +181,7 @@
                     end do
                     ierr = QcMatDestroy_f(A=val_int(1))
                     call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-                    offset_exp = offset_exp+num_dens
+                    offset_exp = offset_exp+2*num_dens
                 end do
             ! zero integrals
             else
