@@ -2,6 +2,8 @@
 SET(OPENRSP_F_TEST_SRCS
     ${LIB_OPENRSP_PATH}/tests/f90/callback/get_one_oper_exp_f.F90
     ${LIB_OPENRSP_PATH}/tests/f90/callback/get_one_oper_mat_f.F90
+    ${LIB_OPENRSP_PATH}/tests/f90/callback/get_two_oper_exp_f.F90
+    ${LIB_OPENRSP_PATH}/tests/f90/callback/get_two_oper_mat_f.F90
     ${LIB_OPENRSP_PATH}/tests/f90/callback/get_overlap_exp_f.F90
     ${LIB_OPENRSP_PATH}/tests/f90/callback/get_overlap_mat_f.F90
     ${LIB_OPENRSP_PATH}/tests/f90/callback/get_rsp_solution_f.F90

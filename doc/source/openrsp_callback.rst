@@ -57,7 +57,7 @@ functions are given as follows.
    :param num_int: number of the integral matrices
    :type num_int: QInt
    :param val_int: the integral matrices
-   :type val_int: QMat\*[]
+   :type val_int: QcMat\*[]
    :rtype: QVoid
 
 .. function:: get_overlap_exp(bra_num_pert,    \
@@ -99,7 +99,7 @@ functions are given as follows.
    :param num_dens: number of atomic orbital (AO) based density matrices
    :type num_dens: QInt
    :param ao_dens: the AO based density matrices
-   :type ao_dens: QMat\*[]
+   :type ao_dens: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_exp: number of expectation values
@@ -129,7 +129,7 @@ functions are given as follows.
    :param num_int: number of the integral matrices
    :type num_int: QInt
    :param val_int: the integral matrices
-   :type val_int: QMat\*[]
+   :type val_int: QcMat\*[]
    :rtype: QVoid
 
 .. function:: get_one_oper_exp(num_pert,    \
@@ -153,7 +153,7 @@ functions are given as follows.
    :param num_dens: number of atomic orbital (AO) based density matrices
    :type num_dens: QInt
    :param ao_dens: the AO based density matrices
-   :type ao_dens: QMat\*[]
+   :type ao_dens: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_exp: number of expectation values
@@ -184,13 +184,13 @@ functions are given as follows.
    :type num_var_dens: QInt
    :param var_ao_dens: the variable AO based density matrices (:math:`\boldsymbol{D}`)
        for calculating :math:`\boldsymbol{G}(\boldsymbol{D})`
-   :type var_ao_dens: QMat\*[]
+   :type var_ao_dens: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_int: number of the integral matrices
    :type num_int: QInt
    :param val_int: the integral matrices
-   :type val_int: QMat\*[]
+   :type val_int: QcMat\*[]
    :rtype: QVoid
 
 .. function:: get_two_oper_exp(num_pert,       \
@@ -217,12 +217,12 @@ functions are given as follows.
    :type num_var_dens: QInt
    :param var_ao_dens: the variable AO based density matrices (:math:`\boldsymbol{D}`)
        for calculating :math:`\boldsymbol{G}(\boldsymbol{D})`
-   :type var_ao_dens: QMat\*[]
+   :type var_ao_dens: QcMat\*[]
    :param num_contr_dens: number of contracted AO based density matrices
    :type num_contr_dens: QInt
    :param contr_ao_dens: the contracted AO based density matrices (:math:`\boldsymbol{D}`)
        for calculating :math:`\mathrm{Tr}[\boldsymbol{G}\boldsymbol{D}]`
-   :type contr_ao_dens: QMat\*[]
+   :type contr_ao_dens: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_exp: number of expectation values
@@ -245,11 +245,11 @@ functions are given as follows.
    function ``OpenRSPSetSolver``.
 
    :param ref_ham: Hamiltonian of referenced state
-   :type ref_ham: QMat\*
+   :type ref_ham: QcMat\*
    :param ref_state: electronic state of referenced state
-   :type ref_state: QMat\*
+   :type ref_state: QcMat\*
    :param ref_overlap: overlap integral matrix of referenced state
-   :type ref_overlap: QMat\*
+   :type ref_overlap: QcMat\*
    :param num_freq_sums: number of frequency sums on the left hand side
    :type num_freq_sums: QInt
    :param freq_sums: the frequency sums on the left hand side
@@ -258,12 +258,12 @@ functions are given as follows.
    :type size_pert: QInt
    :param RHS_mat: RHS matrices, size is ``size_pert``:math:`\times`
        ``num_freq_sums``
-   :type RHS_mat: QMat\*[]
+   :type RHS_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param rsp_param: solved response parameters, size is ``size_pert``:math:`\times`
        ``num_freq_sums``
-   :type rsp_param: QMat\*[]
+   :type rsp_param: QcMat\*[]
    :rtype: QVoid
 
 OpenRSP Callback Subroutines (Fortran version)
@@ -274,7 +274,7 @@ the callback functions of C codes. One difference is the type convention
 between C and Fortran, which has been discussed in Secion :ref:`section-Fortran-convention`.
 Moreover, the pointers of basic types (integer and real numbers) in the C
 codes should be converted to corresponding array in Fortran. The array of
-``QMat`` pointers should be converted to an array of ``type(QMat)`` in Fortran.
+``QcMat`` pointers should be converted to an array of ``type(QcMat)`` in Fortran.
 Last, the user-defined callback function/subroutine context should be replaced
 by::
 
