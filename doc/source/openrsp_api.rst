@@ -269,7 +269,7 @@ Functions of OpenRSP API (C version)
    :type kn_rules: QInt\*
    :param size_rsp_funs: size of the response functions
    :type size_rsp_funs: QInt
-   :param rsp_funs: the response functions, size is ``size_rsp_funs``
+   :param rsp_funs: the response functions, size is ``2``:math:`\times` ``size_rsp_funs``
    :type rsp_funs: QReal\*
    :rtype: QErrorCode
 
