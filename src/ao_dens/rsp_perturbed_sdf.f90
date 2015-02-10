@@ -26,6 +26,7 @@ module rsp_perturbed_sdf
 
   public rsp_fds_2014
   public get_fds_2014
+  public get_fds_2014_mc
   public rsp_fock_lowerorder_2014
   public get_fock_lowerorder_2014
 
@@ -448,6 +449,313 @@ end if
   end subroutine
   
   
+  ! Routine with support for multiple right-hand sides
+    subroutine get_fds_2014_mc(pert, F, D, S, get_rsp_sol, get_ovl_mat, &
+                       get_1el_mat, get_2el_mat, get_xc_mat, id_outp)
+
+!    use interface_rsp_solver, only: rsp_solver_exec
+    implicit none
+
+    
+    integer :: sstr_incr, i, j, superstructure_size, nblks, perturbed_matrix_size, id_outp
+    integer :: ierr, npert_ext
+    integer, allocatable, dimension(:) :: ind, blk_sizes, pert_ext, pert_ord_ext
+    integer, allocatable, dimension(:,:) :: blk_info, indices
+    integer, dimension(0) :: noc
+    character(4), dimension(0) :: nof
+    type(p_tuple) :: pert
+    type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
+    type(SDF_2014) :: F, D, S
+    external :: get_rsp_sol, get_ovl_mat, get_1el_mat, get_2el_mat, get_xc_mat
+    type(QcMat) :: A, B, C, zeromat, T, U
+    type(QcMat), allocatable, dimension(:) :: Fp, Dp, Sp, Dh, X, RHS
+    type(f_l_cache_2014), pointer :: fock_lowerorder_cache
+
+
+    ! ASSUME CLOSED SHELL
+    
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
+    call QcMatInit(T)
+    call QcMatInit(U)
+    
+    
+    call sdf_getdata_s_2014(D, get_emptypert(), (/1/), A)
+    call sdf_getdata_s_2014(S, get_emptypert(), (/1/), B)
+    call sdf_getdata_s_2014(F, get_emptypert(), (/1/), C)
+    
+    
+
+    nblks = get_num_blks(pert)
+
+    allocate(blk_info(nblks, 3))
+    allocate(blk_sizes(pert%n_perturbations))
+
+    blk_info = get_blk_info(nblks, pert)
+    perturbed_matrix_size = get_triangulated_size(nblks, blk_info)
+    blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
+
+    allocate(Fp(perturbed_matrix_size))
+    allocate(Dp(perturbed_matrix_size))
+    allocate(Sp(perturbed_matrix_size))
+    allocate(Dh(perturbed_matrix_size))
+
+    ! Process perturbation tuple for external call
+    
+    call p_tuple_external(pert, npert_ext, pert_ext, pert_ord_ext)
+    
+    
+    ! Get the appropriate Fock/density/overlap matrices
+
+    ! 1. Call ovlint and store perturbed overlap matrix
+
+
+    do i = 1, perturbed_matrix_size
+
+       ! ASSUME CLOSED SHELL
+!        call mat_init(Sp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call QcMatInit(Sp(i))
+
+    end do
+! write(*,*) 'Sp a', Sp(1)%elms
+
+    call get_ovl_mat(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, &
+                     perturbed_matrix_size, Sp)
+
+!     call rsp_ovlint(zeromat%nrow, pert%n_perturbations, pert%plab, &
+!                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
+!                        nblks, blk_info, blk_sizes, &
+!                        perturbed_matrix_size, Sp)
+
+! write(*,*) 'Sp b', Sp(1)%elms
+
+    call sdf_add_2014(S, pert, perturbed_matrix_size, Sp)
+
+    deallocate(blk_sizes)
+
+    ! INITIALIZE AND STORE D INSTANCE WITH ZEROES
+    ! THE ZEROES WILL ENSURE THAT TERMS INVOLVING THE HIGHEST ORDER DENSITY MATRICES
+    ! WILL BE ZERO IN THE CONSTRUCTION OF Dp
+
+    do i = 1, perturbed_matrix_size
+
+       ! ASSUME CLOSED SHELL
+!        call mat_init(Dp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call QcMatInit(Dp(i), Sp(1))
+
+!        call mat_init(Dh(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call QcMatInit(Dh(i), Sp(1))
+
+!        call mat_init(Fp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
+    call QcMatInit(Fp(i), Sp(1))
+
+    end do
+
+    call sdf_add_2014(D, pert, perturbed_matrix_size, Dp)
+
+    ! 2. Construct Dp and the initial part of Fp
+    ! a) For the initial part of Fp: Make the initial recursive (lower order) 
+    ! oneint, twoint, and xcint calls as needed
+
+! write(*,*) 'Fp a', Fp(1)%elms
+
+    call f_l_cache_allocate_2014(fock_lowerorder_cache)
+    call rsp_fock_lowerorder_2014(pert, pert%n_perturbations, 1, (/get_emptypert()/), &
+                         get_1el_mat, get_ovl_mat, get_2el_mat, get_xc_mat, 0, D, &
+                         perturbed_matrix_size, Fp, fock_lowerorder_cache)
+
+! write(*,*) 'Fp b', Fp(1)%elms
+
+    deallocate(fock_lowerorder_cache)
+
+    call sdf_add_2014(F, pert, perturbed_matrix_size, Fp)
+
+    ! b) For Dp: Create differentiation superstructure: First dryrun for size, and
+    ! then the actual superstructure call
+
+    superstructure_size = derivative_superstructure_getsize(pert, &
+                          (/pert%n_perturbations, pert%n_perturbations/), .FALSE., &
+                          (/get_emptypert(), get_emptypert(), get_emptypert()/))
+
+    sstr_incr = 0
+
+    allocate(derivative_structure(superstructure_size, 3))
+    allocate(indices(perturbed_matrix_size, pert%n_perturbations))
+    allocate(ind(pert%n_perturbations))
+
+    call derivative_superstructure(pert, (/pert%n_perturbations, &
+         pert%n_perturbations/), .FALSE., &
+         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+         superstructure_size, sstr_incr, derivative_structure)
+    call make_triangulated_indices(nblks, blk_info, perturbed_matrix_size, indices)
+
+    do i = 1, size(indices, 1)
+
+       ind = indices(i, :)
+
+       call rsp_get_matrix_z_2014(superstructure_size, derivative_structure, &
+               (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
+               (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
+               ind, F, D, S, Dp(i))
+
+
+
+
+!      Dp(i) = Dp(i) - A * B * Dp(i) - Dp(i) * B * A
+       call QcMatkABC(-1.0d0, Dp(i), B, A, T)
+       call QcMatkABC(-1.0d0, A, B, Dp(i), U)
+       call QcMatRAXPY(1.0d0, T, U)
+       call QcMatRAXPY(1.0d0, U, Dp(i))
+
+
+    
+       
+
+       call sdf_add_2014(D, pert, perturbed_matrix_size, Dp)
+
+       ! 3. Complete the particular contribution to Fp
+       call cpu_time(time_start)
+       call get_2el_mat(0, noc, noc, 1, (/Dp(i)/), 1, Fp(i:i))
+!        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
+!                           1, Fp(i:i))
+       call cpu_time(time_end)
+!        print *, 'seconds spent in 2-el particular contribution', time_end - time_start
+
+       call cpu_time(time_start)
+       ! MaR: Reintroduce once callback functionality is complete
+!        call get_xc_mat(0, pert%pdim, noc, nof, 2, (/A, Dp(i)/), Fp(i:i))
+!        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+!             (/ A, Dp(i) /) , 1, Fp(i:i))
+       call cpu_time(time_end)
+!       print *, 'seconds spent in XC particular contribution', time_end - time_start
+
+       ! MaR: Considered to be part of the 2el call
+!        call cpu_time(time_start)
+!        call rsp_pe(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i) , 1, Fp(i))
+!        call cpu_time(time_end)
+! !       print *, 'seconds spent in PE particular contribution', time_end - time_start
+
+       call sdf_add_2014(F, pert, perturbed_matrix_size, Fp)
+
+
+       call QcMatInit(RHS(i))
+       call QcMatInit(X(i))
+
+       ! 4. Make right-hand side using Dp
+
+       call rsp_get_matrix_y_2014(superstructure_size, derivative_structure, &
+                pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
+                pert%n_perturbations, ind, F, D, S, RHS(i))
+       
+    end do
+
+    
+    ! Note (MaR): Passing only real part of freq. Is this OK?
+    call get_rsp_sol(1, (/sum(real(pert%freq(:)))/), size(indices, 1), RHS, X)
+
+    
+    do i = 1, size(indices, 1)   
+
+       ! 5. Get Dh using the rsp equation solution X
+       
+!        Dh(i) = A*B*X(1) - X(1)*B*A
+       call QcMatkABC(-1.0d0, X(i), B, A, T)
+       call QcMatkABC(1.0d0, A, B, X(i), U)
+       call QcMatRAXPY(1.0d0, T, U)
+       call QcMatAEqB(Dh(i), U)
+
+       ! 6. Make homogeneous contribution to Fock matrix
+
+       call cpu_time(time_start)
+       call get_2el_mat(0, noc, noc, 1, (/Dh(i)/), 1, Fp(i:i))
+
+       call cpu_time(time_end)
+!        print *, 'seconds spent in 2-el homogeneous contribution', time_end - time_start
+
+       call cpu_time(time_start)
+       ! MaR: Reintroduce once callback functionality is complete
+!        call get_xc_mat(0, pert%pdim, noc, nof, 2, (/A, Dp(i)/), Fp(i:i))
+!        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+!             (/ A, Dh(i) /) , 1, Fp(i:i))
+       call cpu_time(time_end)
+!       print *, 'seconds spent in XC homogeneous contribution', time_end - time_start
+       
+       
+!        call cpu_time(time_start)
+!        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), &
+!                           1, Fp(i:i))
+!        call cpu_time(time_end)
+!        print *, 'seconds spent in 2-el homogeneous contribution', time_end - time_start
+
+!        call cpu_time(time_start)
+!        call rsp_xcint_adapt(zeromat%nrow, 0, nof, noc, pert%pdim, &
+!             (/ A, Dh(i) /) , 1, Fp(i:i))
+!        call cpu_time(time_end)
+!        print *, 'seconds spent in XC homogeneous contribution', time_end - time_start
+
+!        call cpu_time(time_start)
+!        call rsp_pe(zeromat%nrow, 0, nof, noc, pert%pdim, Dh(i), 1, Fp(i))
+!        call cpu_time(time_end)
+!       print *, 'seconds spent in PE homogeneous contribution', time_end - time_start
+
+       ! 7. Complete perturbed D with homogeneous part
+
+!        Dp(i) = Dp(i) + Dh(i)
+       call QcMatRAXPY(1.0d0, Dh(i), Dp(i))
+
+
+       if (perturbed_matrix_size < 10) then
+
+          write(*,*) 'Finished component', i, ':', (float(i)/float(perturbed_matrix_size))*100, '% done'
+  
+       else
+
+          if (mod(i, perturbed_matrix_size/10) == 1) then
+
+             write(*,*) 'Finished component', i, ':', (float(i)/float(perturbed_matrix_size))*100, '% done'
+
+          end if
+
+       end if
+
+    end do
+
+    ! Add the final values to cache
+
+    call sdf_add_2014(F, pert, perturbed_matrix_size, Fp)
+    call sdf_add_2014(D, pert, perturbed_matrix_size, Dp)
+
+    do i = 1, size(indices, 1)
+
+       call QcMatDst(Dh(i))
+       call QcMatDst(Dp(i))
+       call QcMatDst(Fp(i))
+       call QcMatDst(Sp(i))
+       ! Maybe no need to destroy X(i)
+       call QcMatDst(X(i))
+       call QcMatDst(RHS(i))
+       
+    end do
+
+    
+    call QcMatDst(A)
+    call QcMatDst(B)
+    call QcMatDst(C)
+    call QcMatDst(T)
+    call QcMatDst(U)
+
+    deallocate(derivative_structure)
+    deallocate(ind)
+    deallocate(pert_ext)
+    deallocate(pert_ord_ext)
+    deallocate(Fp)
+    deallocate(Dp)
+    deallocate(Sp)
+    deallocate(Dh)
+    deallocate(blk_info)
+
+  end subroutine
   
   
 
