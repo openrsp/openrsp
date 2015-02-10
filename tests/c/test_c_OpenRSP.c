@@ -95,13 +95,13 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate");
     fprintf(fp_log, "test_c_OpenRSP>> OpenRSPCreate() passed\n");
 
-    ierr = OpenRSPSetSolver(&open_rsp,
+    ierr = OpenRSPSetLinearRSPSolver(&open_rsp,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            (QVoid *)solver_lab,
+                                     (QVoid *)solver_lab,
 #endif
-                            &get_rsp_solution);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetSolver");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetSolver() passed\n");
+                                     &get_linear_rsp_solution);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetLinearRSPSolver");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetLinearRSPSolver() passed\n");
 
 #if defined(OPENRSP_PERTURBATION_FREE)
     ierr = OpenRSPSetPerturbations(&open_rsp,

@@ -3,7 +3,7 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverCreate.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverAssemble.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverWrite.c
-    ${LIB_OPENRSP_PATH}/src/solver/RSPSolverGetSolution.c
+    ${LIB_OPENRSP_PATH}/src/solver/RSPSolverGetLinearRSPSolution.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverDestroy.c
     ${LIB_OPENRSP_PATH}/src/overlap/RSPOverlapCreate.c
     ${LIB_OPENRSP_PATH}/src/overlap/RSPOverlapAssemble.c
@@ -34,7 +34,7 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucContribDestroy.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPCreate.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetElecEOM.c
-    ${LIB_OPENRSP_PATH}/src/OpenRSPSetSolver.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetLinearRSPSolver.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetPDBS.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddOneOper.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddTwoOper.c

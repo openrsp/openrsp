@@ -328,7 +328,7 @@ module rsp_perturbed_sdf
        ! Note (MaR): Passing only real part of freq. Is this OK?
        ! MaR: May need to vectorize RHS and X
        
-       call get_rsp_sol(C, A, B, 1, (/sum(real(pert%freq(:)))/), 1, RHS, X)
+       call get_rsp_sol(1, (/sum(real(pert%freq(:)))/), 1, RHS, X)
        
 !        call get_rsp_sol(RHS(1), 1, (/sum(real(pert%freq(:)))/), X)
 !        call rsp_solver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)

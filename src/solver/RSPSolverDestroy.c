@@ -33,6 +33,6 @@ QErrorCode RSPSolverDestroy(RSPSolver *rsp_solver)
 #if defined(OPENRSP_C_USER_CONTEXT)
     rsp_solver->user_ctx = NULL;
 #endif
-    rsp_solver->get_rsp_solution = NULL;
+    rsp_solver->get_linear_rsp_solution = NULL;
     return QSUCCESS;
 }

@@ -14,7 +14,7 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function OpenRSPSetSolver().
+   This file implements the function OpenRSPSetLinearRSPSolver().
 
    2014-08-06, Bin Gao:
    * first version
@@ -22,20 +22,20 @@
 
 #include "openrsp.h"
 
-/*@% \brief sets the context of response equation solver
+/*@% \brief sets the context of linear response equation solver
      \author Bin Gao
      \date 2014-08-06
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QVoid:void]{in} user_ctx user-defined callback function context
-     \param[GetRSPSolution:void]{in} get_rsp_solution user specified function of
-         response equation solver
+     \param[GetLinearRSPSolution:void]{in} get_linear_rsp_solution user specified function of
+         linear response equation solver
      \return[QErrorCode:int] error information
 */
-QErrorCode OpenRSPSetSolver(OpenRSP *open_rsp,
+QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP *open_rsp,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid *user_ctx,
+                                     QVoid *user_ctx,
 #endif
-                            const GetRSPSolution get_rsp_solution)
+                                     const GetLinearRSPSolution get_linear_rsp_solution)
 {
     QErrorCode ierr;  /* error information */
     /* creates the context of response equation solver */
@@ -53,7 +53,7 @@ QErrorCode OpenRSPSetSolver(OpenRSP *open_rsp,
 #if defined(OPENRSP_C_USER_CONTEXT)
                            user_ctx,
 #endif
-                           get_rsp_solution);
+                           get_linear_rsp_solution);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverCreate");
     return QSUCCESS;
 }

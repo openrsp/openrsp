@@ -170,56 +170,56 @@
         !        f_file_tensor(ipert) = ptr_rsp_tensor(ipert)(1:1)
         !    end do
         !    ! gets the properties
-        !    call openrsp_get_property_2014(num_props,                       &
-        !                                   num_pert,                        &
-        !                                   f_pert_dims,                     &
-        !                                   f_pert_first_comp,               &
-        !                                   f_pert_labels,                   &
-        !                                   num_freqs,                       &
-        !                                   f_pert_freqs,                    &
-        !                                   kn_rules,                        &
-        !                                   f_F_unpert,                      &
-        !                                   f_S_unpert,                      &
-        !                                   f_D_unpert,                      &
-        !                                   f_callback_RSPSolverGetSolution, &
-        !                                   f_callback_RSPNucContribGet,     &
-        !                                   f_callback_RSPOverlapGetMat,     &
-        !                                   f_callback_RSPOverlapGetExp,     &
-        !                                   f_callback_RSPOneOperGetMat,     &
-        !                                   f_callback_RSPOneOperGetExp,     &
-        !                                   f_callback_RSPTwoOperGetMat,     &
-        !                                   f_callback_RSPTwoOperGetExp,     &
-        !                                   f_callback_RSPXCFunGetMat,       &
-        !                                   f_callback_RSPXCFunGetExp,       &
-        !                                   STDOUT,                          &
-        !                                   f_rsp_tensor,                    &
+        !    call openrsp_get_property_2014(num_props,                                &
+        !                                   num_pert,                                 &
+        !                                   f_pert_dims,                              &
+        !                                   f_pert_first_comp,                        &
+        !                                   f_pert_labels,                            &
+        !                                   num_freqs,                                &
+        !                                   f_pert_freqs,                             &
+        !                                   kn_rules,                                 &
+        !                                   f_F_unpert,                               &
+        !                                   f_S_unpert,                               &
+        !                                   f_D_unpert,                               &
+        !                                   f_callback_RSPSolverGetLinearRSPSolution, &
+        !                                   f_callback_RSPNucContribGet,              &
+        !                                   f_callback_RSPOverlapGetMat,              &
+        !                                   f_callback_RSPOverlapGetExp,              &
+        !                                   f_callback_RSPOneOperGetMat,              &
+        !                                   f_callback_RSPOneOperGetExp,              &
+        !                                   f_callback_RSPTwoOperGetMat,              &
+        !                                   f_callback_RSPTwoOperGetExp,              &
+        !                                   f_callback_RSPXCFunGetMat,                &
+        !                                   f_callback_RSPXCFunGetExp,                &
+        !                                   STDOUT,                                   &
+        !                                   f_rsp_tensor,                             &
         !                                   f_file_tensor)
         !    ! cleans up
         !    deallocate(f_file_tensor)
         !    nullify(ptr_file_tensor)
         !else
-            call openrsp_get_property_2014(num_props,                       &
-                                           num_pert,                        &
-                                           f_pert_dims,                     &
-                                           f_pert_first_comp,               &
-                                           f_pert_labels,                   &
-                                           num_freqs,                       &
-                                           f_pert_freqs,                    &
-                                           kn_rules,                        &
-                                           f_F_unpert,                      &
-                                           f_S_unpert,                      &
-                                           f_D_unpert,                      &
-                                           f_callback_RSPSolverGetSolution, &
-                                           f_callback_RSPNucContribGet,     &
-                                           f_callback_RSPOverlapGetMat,     &
-                                           f_callback_RSPOverlapGetExp,     &
-                                           f_callback_RSPOneOperGetMat,     &
-                                           f_callback_RSPOneOperGetExp,     &
-                                           f_callback_RSPTwoOperGetMat,     &
-                                           f_callback_RSPTwoOperGetExp,     &
-                                           f_callback_RSPXCFunGetMat,       &
-                                           f_callback_RSPXCFunGetExp,       &
-                                           STDOUT,                          &
+            call openrsp_get_property_2014(num_props,                                &
+                                           num_pert,                                 &
+                                           f_pert_dims,                              &
+                                           f_pert_first_comp,                        &
+                                           f_pert_labels,                            &
+                                           num_freqs,                                &
+                                           f_pert_freqs,                             &
+                                           kn_rules,                                 &
+                                           f_F_unpert,                               &
+                                           f_S_unpert,                               &
+                                           f_D_unpert,                               &
+                                           f_callback_RSPSolverGetLinearRSPSolution, &
+                                           f_callback_RSPNucContribGet,              &
+                                           f_callback_RSPOverlapGetMat,              &
+                                           f_callback_RSPOverlapGetExp,              &
+                                           f_callback_RSPOneOperGetMat,              &
+                                           f_callback_RSPOneOperGetExp,              &
+                                           f_callback_RSPTwoOperGetMat,              &
+                                           f_callback_RSPTwoOperGetExp,              &
+                                           f_callback_RSPXCFunGetMat,                &
+                                           f_callback_RSPXCFunGetExp,                &
+                                           STDOUT,                                   &
                                            f_rsp_tensor)
         !end if
         ! assigns the results

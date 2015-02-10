@@ -199,9 +199,9 @@ module rsp_general
        open(unit=261, file='rsp_tensor_human', &
             status='replace', action='write') 
             
-       call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
-       (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-       blk_info, prop, 260, 261)
+       !call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
+       !(/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
+       !blk_info, rsp_tensor, 260, 261)
 
     close(260)
     close(261)
