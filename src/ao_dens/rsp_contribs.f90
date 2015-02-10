@@ -50,71 +50,7 @@ module rsp_contribs
 !  public rsp_xcint_adapt
 !  public rsp_pe
 
-!  !> Type describing a single field in a response function
-!  !> or response equation. A response equation (or density)
-!  !> corresponds to an array of prop_field. Similarly
-!  !> a response function corresponds to an array of prop_field
-!  !> whose freqs sum to zero.
-!  type rsp_field
-!     sequence
-!     !> 4-char pert label
-!     character(4) :: label
-!     !> frequency
-!     complex(8)   :: freq
-!     !> first component
-!     integer      :: comp
-!     !> number of components
-!     integer      :: ncomp
-!  end type
-!
-!  !> private struct to collect properties of perturbing "fields"
-!  type field_stats
-!     !> four-letter abbreviation
-!     character(4)  :: label
-!     !> long name
-!     character(64) :: name
-!     !> number of components (when known, -1 otherwise)
-!     integer       :: ncomp
-!     !> anti-symmetric (1,3,5th ord.) perturbed integrals
-!     logical       :: anti
-!     !> basis dependent (sa. GEO and MAG)
-!     logical       :: bas
-!     !> one-electron operator linear in field strength (EL)
-!     logical       :: lin
-!     !> one-electron operator quadratic in field strength (MAGO)
-!     logical       :: quad
-!  end type
-!
-!
-!  ! to compactify the table below
-!  logical, parameter :: T = .true.
-!  logical, parameter :: F = .false.
-!
-!
-!  !> ajt nov09: AUX0..AUX9 are 10 configurable basis-independent 1-electron
-!  !>            perturbations, configured by setting the corresponding
-!  !>            HERMIT integral label in prop_auxlab(0:9).
-!  !> ajt jan10: EXCI is a ZERO (no) perturbation, and is introduced to
-!  !>            allow the same code to contract response functions and
-!  !>            "generalized transition moments".
-!  !> ajt may10: FREQ is also a ZERO (no) perturbation, and is introduced to
-!  !>            allow the same code to contract response functions and
-!  !>            frequency-differentiated response functions.
-!  type(field_stats) :: all_known_fields(12) = &                  !nc an ba ln qu
-!     (/field_stats('EXCI', 'Generalized "excitation" field'      , 1, F, F, T, T), &
-!       field_stats('FREQ', 'Generalized "freqency" field'        , 1, F, F, T, T), &
-!       field_stats('EL  ', 'Electric field'                      , 3, F, F, T, F), &
-!       field_stats('VEL ', 'Velocity'                            , 3, T, F, T, F), &
-!       field_stats('MAG0', 'Magnetic field w/o. London orbitals' , 3, T, F, F, T), &
-!       field_stats('MAG ', 'Magnetic field with London orbitals' , 3, T, T, F, F), &
-!       field_stats('ELGR', 'Electric field gradient'             , 6, F, F, T, F), &
-!       field_stats('VIBM', 'Displacement along vibrational modes',-1, F, T, F, F), &
-!       field_stats('GEO ', 'Nuclear coordinates'                 ,-1, F, T, F, F), & !-1=mol-dep
-!       field_stats('NUCM', 'Nuclear magnetic moment'             ,-1, F, T, F, T), & !-1=mol-dep
-!       field_stats('AOCC', 'AO contraction coefficients'         ,-1, F, T, F, F), & !-1=mol-dep
-!       field_stats('AOEX', 'AO exponents'                        ,-1, F, T, F, F)/)  !-1=mol-dep
-!
-!  character(1), parameter :: xyz(3) = (/'X','Y','Z'/)
+
 
   private
 
@@ -372,8 +308,6 @@ else
 
     else
    
-! write(*,*) 'bra d 1', bra%n_perturbations, bra%plab, bra%freq
-! write(*,*) 'ket d 1', ket%n_perturbations, ket%plab, ket%freq
 
       call p_tuple_external(bra, np_bra, pert_ext_bra, pert_ext_ord_bra)
       call p_tuple_external(ket, np_ket, pert_ext_ket, pert_ext_ord_ket)
@@ -382,8 +316,8 @@ else
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
 
        ! Make frequency independent blocks for bra/ket
-call p_tuple_p1_cloneto_p2(bra, bra_static)
-call p_tuple_p1_cloneto_p2(ket, ket_static)
+       call p_tuple_p1_cloneto_p2(bra, bra_static)
+       call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        bra_static%freq = 0.0
        ket_static%freq = 0.0
@@ -428,20 +362,10 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
        allocate(tmp_ave(tmp_ave_size))
        tmp_ave = 0.0
 
-       ! MaR: Reintroduce one callback functionality is implemented
-       
-         call get_ovl_exp(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
-                          pert_ext_ord_ket, 0, noc, noc, 1, (/D/), tmp_ave_size, tmp_ave)
+       call get_ovl_exp(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
+                        pert_ext_ord_ket, 0, noc, noc, 1, (/D/), tmp_ave_size, tmp_ave)
          
        
-!        call get_t_exp(p1_spec, p2_spec, D, tmp_ave)
-
-!        call interface_1el_ovlave_half_diff(bra%n_perturbations, bra_static%plab, &
-!             (/(j/j, j = 1, bra_static%n_perturbations)/), bra_static%pdim, &
-!             ket_static%n_perturbations, ket_static%plab, &
-!             (/(j/j, j = 1, ket_static%n_perturbations)/), ket_static%pdim, nblks_tuple, &
-!             blks_tuple_info, blk_sizes, D, tmp_ave_size, tmp_ave)
-
        k = 1
        do j = 1, bra_static%n_perturbations
           pids_current_contribution(k) = bra_static%pid(j)
@@ -466,15 +390,11 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
        allocate(merged_indices(merged_triang_size, total_num_perturbations))
        allocate(translated_index(total_num_perturbations))
 
-! write(*,*) 'a'
        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
             merged_triang_size, merged_indices)
-! write(*,*) 'b'
-
-! write(*,*) 'tmp result', tmp_ave
 
        do i = 1, size(merged_indices, 1)
-! write(*,*) 'c', i
+
           ave_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
                    (/sum(nfields)/), &
                    (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
@@ -486,8 +406,8 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
     
           end do
 
-! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
-! because of no frequencies.
+          ! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
+          ! because of no frequencies.
     
           if (bra_static%n_perturbations == 0) then
     
@@ -515,15 +435,11 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
     
           end if
 
-! write(*,*) 'i', i, 'ave offset', ave_offset, 'tmp result offset', tmp_result_offset
-
           ave(ave_offset) = ave(ave_offset) + &
           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_ave(tmp_result_offset)
 
        end do
 
-!        write(*,*) 'tmp ave', 0.5 * (sum(bra%freq) - sum(ket%freq)) * real(tmp_ave)
-       
        deallocate(pert_ext_bra)
        deallocate(pert_ext_ket)
        deallocate(pert_ext_ord_bra)
@@ -542,75 +458,9 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
     end if
 
-end if
+  end if
 
   end subroutine
-
-
-
-
-
-
-
-
-!  !> Average 1-electron integrals perturbed by fields f
-!  !> with the (perturbed) density matrix D
-!
-!! radovan: there is code repetition in ave and int setup
-!
-!  subroutine rsp_oneave(nf, f, c, nc, D, nblks, blk_info, blk_sizes, propsize, ave)
-!!     use dalton_ifc, only: SHELLS_NUCLEI_displace
-!    ! Gen1Int interface in Dalton
-!!     use gen1int_api
-!    !> structure containing integral program settings
-!!     type(rsp_cfg), intent(in)  :: mol
-!    !> number of fields
-!    integer,       intent(in)  :: nf
-!    integer :: nblks
-!    integer, dimension(nblks) :: blk_sizes
-!    integer, dimension(nblks, 3) :: blk_info
-!    !> field labels in std order
-!    character(4),  intent(in)  :: f(nf)
-!    !> first and number of- components in each field
-!    integer,       intent(in)  :: c(nf), nc(nf), propsize
-!    !> density matrix to average over
-!    type(matrix),  intent(in)  :: D
-!    !> output average
-!    complex(8),    intent(out) :: ave(propsize)
-!    call interface_1el_oneave_tr(nf, f, c, nc, D, nblks, blk_info, & 
-!                                 blk_sizes, propsize, ave)
-!
-!  end subroutine
-!
-!  function rank_one_pointer(siz, arr) result(ptr)
-!     integer,         intent(in) :: siz
-!     real(8), target, intent(in) :: arr(siz)
-!     real(8), pointer            :: ptr(:)
-!     ptr => arr
-!  end function
-!
-!
-!  !> Compute differentiated overlap matrices,
-!  subroutine rsp_ovlint(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-!                                      blk_sizes, propsize, ovl)
-!    !> number of fields
-!    integer,       intent(in)    :: nf, propsize
-!    integer :: nblks
-!    integer, dimension(nblks) :: blk_sizes
-!    integer, dimension(nblks, 3) :: blk_info
-!    !> field labels in std order
-!    character(4),  intent(in)    :: f(nf)
-!    !> first and number of- components in each field
-!    integer,       intent(in)    :: c(nf), nc(nf)
-!    !> resulting overlap integral matrices (incoming content deleted)
-!    type(matrix),  intent(inout) :: ovl(propsize)
-!    !------------------------------------------------
-!    integer      i, nr_ao
-!
-!    call interface_1el_ovlint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-!                                 blk_sizes, propsize, ovl = ovl)
-!
-!  end subroutine
 
 
 !   ! MaR: This routine not tested - awaiting development in integral code
@@ -648,33 +498,21 @@ else
 
     if (num_fields > 0) then
 
-! write(*,*) 'current fields', fields%n_perturbations, fields%plab, fields%freq
-! write(*,*) 'current bra', bra%n_perturbations, bra%plab, bra%freq
-! write(*,*) 'current ket', ket%n_perturbations, ket%plab, ket%freq
-
-tester = p_tuple_getone(fields, 1)
-! write(*,*) 'tester a', tester%n_perturbations, tester%plab, tester%freq
+!        tester = p_tuple_getone(fields, 1)
 
        call rsp_ovlint_t_matrix_2014(num_fields - 1, p_tuple_remove_first(fields), &
             merge_p_tuple(bra, p_tuple_getone(fields, 1)), ket, get_ovl_mat, propsize, fock)
 
-tester = p_tuple_remove_first(fields)
-tester = p_tuple_getone(fields, 1)
-! write(*,*) 'ket b 1', ket%n_perturbations, ket%plab, ket%freq
-! write(*,*) 'tester b 1', tester%n_perturbations, tester%plab, tester%freq
-tester = merge_p_tuple(ket, p_tuple_getone(fields, 1))
-! write(*,*) 'tester b 2', tester%n_perturbations, tester%plab, tester%freq
+!        tester = p_tuple_remove_first(fields)
+!        tester = p_tuple_getone(fields, 1)
+!        tester = merge_p_tuple(ket, p_tuple_getone(fields, 1))
 
        call rsp_ovlint_t_matrix_2014(num_fields - 1, p_tuple_remove_first(fields), &
             bra, merge_p_tuple(ket, p_tuple_getone(fields, 1)), get_ovl_mat, propsize, fock)
 
-tester = p_tuple_getone(fields, 1)
-! write(*,*) 'tester c', tester%n_perturbations, tester%plab, tester%freq
+! tester = p_tuple_getone(fields, 1)
 
     else
-
-! write(*,*) 'bra d 1', bra%n_perturbations, bra%plab, bra%freq
-! write(*,*) 'ket d 1', ket%n_perturbations, ket%plab, ket%freq
 
       call p_tuple_external(bra, np_bra, pert_ext_bra, pert_ext_ord_bra)
       call p_tuple_external(ket, np_ket, pert_ext_ket, pert_ext_ord_ket)
@@ -683,8 +521,8 @@ tester = p_tuple_getone(fields, 1)
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
 
        ! Make frequency independent blocks for bra/ket
-call p_tuple_p1_cloneto_p2(bra, bra_static)
-call p_tuple_p1_cloneto_p2(ket, ket_static)
+       call p_tuple_p1_cloneto_p2(bra, bra_static)
+       call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        bra_static%freq = 0.0
        ket_static%freq = 0.0
@@ -734,19 +572,9 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
 
        end do
 
-       ! MaR: Reintroduce one callback functionality is implemented
+       call get_ovl_mat(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
+            pert_ext_ord_ket, 0, noc, noc, tmp_fock_size, tmp_fock)
        
-         call get_ovl_mat(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
-              pert_ext_ord_ket, 0, noc, noc, tmp_fock_size, tmp_fock)
-       
-!        call get_t_mat(p1_spec, p2_spec, D, tmp_fock)
- 
-!        call interface_1el_ovlint_half_diff(nr_ao, bra%n_perturbations, bra_static%plab, &
-!             (/(j/j, j = 1, bra_static%n_perturbations)/), bra_static%pdim, &
-!             ket_static%n_perturbations, ket_static%plab, &
-!             (/(j/j, j = 1, ket_static%n_perturbations)/), ket_static%pdim, nblks_tuple, &
-!             blks_tuple_info, blk_sizes, tmp_fock_size, tmp_fock)
-
        k = 1
        do j = 1, bra_static%n_perturbations
           pids_current_contribution(k) = bra_static%pid(j)
@@ -771,14 +599,11 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
        allocate(merged_indices(merged_triang_size, total_num_perturbations))
        allocate(translated_index(total_num_perturbations))
 
-! write(*,*) 'a'
        call make_triangulated_indices(merged_nblks, merged_blk_info, & 
             merged_triang_size, merged_indices)
-! write(*,*) 'b'
-
 
        do i = 1, size(merged_indices, 1)
-! write(*,*) 'c', i
+
           fock_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
                    (/sum(nfields)/), &
                    (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
@@ -790,8 +615,8 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
     
           end do
 
-! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
-! because of no frequencies.
+          ! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
+          ! because of no frequencies.
     
           if (bra_static%n_perturbations == 0) then
     
@@ -819,22 +644,14 @@ call p_tuple_p1_cloneto_p2(ket, ket_static)
     
           end if
 
-!     write(*,*) 'fock_offset', fock_offset
-! write(*,*) 'int result offset', int_result_offset
-! write(*,*) 'fock elms', fock(fock_offset)%elms
-! write(*,*) 'tmp fock elms', tmp_fock(int_result_offset)%elms
-! write(*,*) 'fock row col', fock(fock_offset)%nrow, fock(fock_offset)%ncol
-! write(*,*) 'tmp fock row col', tmp_fock(int_result_offset)%nrow, tmp_fock(int_result_offset)%ncol
 
-
-! MaR: Frequency factor should be complex in general
+          ! MaR: Frequency factor should be complex in general
           call QcMatrAXPY(dreal(0.5 * (sum(bra%freq) - sum(ket%freq))), tmp_fock(int_result_offset), fock(fock_offset))
 
 !           fock(fock_offset) = fock(fock_offset) + &
 !           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
 
        end do
-! write(*,*) 'ket d 3', ket%n_perturbations, ket%plab, ket%freq
 
        deallocate(pert_ext_bra)
        deallocate(pert_ext_ket)
@@ -867,36 +684,6 @@ end if
   end subroutine
 
 
-
-!  subroutine rsp_oneint(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-!                                      blk_sizes, propsize, oneint)
-!    !> number of fields
-!    integer,       intent(in)    :: nf, propsize
-!    integer :: nblks
-!    integer, dimension(nblks) :: blk_sizes
-!    integer, dimension(nblks, 3) :: blk_info
-!    !> field labels in std order
-!    character(4),  intent(in)    :: f(nf)
-!    !> first and number of- components in each field
-!    integer,       intent(in)    :: c(nf), nc(nf)
-!    !> output perturbed integrals
-!    type(matrix),  intent(inout) :: oneint(propsize)
-!    !--------------------------------------------------
-!    integer order_mom  !order of Cartesian multipole moments
-!    integer num_mom    !number of Cartesian multipole moments
-!    integer order_geo  !order of total geometric derivatives
-!    integer num_atom   !number of atoms
-!    integer num_coord  !number of atomic coordinates
-!    integer num_geom   !number of total geometric derivatives
-!    integer num_ints   !number of all integral matrices
-!    integer imat       !incremental recorder over matrices
-!    integer :: i, nr_ao
-!    type(matrix) :: A
-!
-!    call interface_1el_oneint_tr(nr_ao, nf, f, c, nc, nblks, blk_info, & 
-!                                      blk_sizes, propsize, oneint)
-!
-!  end subroutine
 !
 !
 !  subroutine rsp_xcint_adapt(nr_ao, nf, f, c, nc, D, propsize, xcint)
