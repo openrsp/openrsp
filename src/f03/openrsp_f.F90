@@ -25,9 +25,11 @@
 module openrsp_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,  &
-                          QREAL, &
-                          QcMat
+    use qcmatrix_f, only: QINT,     &
+                          QREAL,    &
+                          QFAILURE, &
+                          QcMat,    &
+                          QcMat_C_LOC
     use rsp_solver_f, only: SolverFun_f,       &
                             RSPSolverCreate_f, &
                             RSPSolverDestroy_f
@@ -971,17 +973,26 @@ module openrsp_f
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
         integer(kind=QINT), intent(in) :: size_rsp_funs
         real(kind=QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
-        ierr = OpenRSPGetRSPFun(open_rsp%c_rsp,     &
-                                c_loc(ref_ham),     &
-                                c_loc(ref_state),   &
-                                c_loc(ref_overlap), &
-                                num_props,          &
-                                num_pert,           &
-                                pert_labels,        &
-                                num_freqs,          &
-                                pert_freqs,         &
-                                kn_rules,           &
-                                size_rsp_funs,      &
+        type(C_PTR) c_ref_ham(1)
+        type(C_PTR) c_ref_state(1)
+        type(C_PTR) c_ref_overlap(1)
+        ierr = QcMat_C_LOC((/ref_ham/), c_ref_ham)
+        if (ierr==QFAILURE) return
+        ierr = QcMat_C_LOC((/ref_state/), c_ref_state)
+        if (ierr==QFAILURE) return
+        ierr = QcMat_C_LOC((/ref_overlap/), c_ref_overlap)
+        if (ierr==QFAILURE) return
+        ierr = OpenRSPGetRSPFun(open_rsp%c_rsp,    &
+                                c_ref_ham(1),      &
+                                c_ref_state(1),    &
+                                c_ref_overlap(1),  &
+                                num_props,         &
+                                num_pert,          &
+                                pert_labels,       &
+                                num_freqs,         &
+                                pert_freqs,        &
+                                kn_rules,          &
+                                size_rsp_funs,     &
                                 rsp_funs)
     end function OpenRSPGetRSPFun_f
 

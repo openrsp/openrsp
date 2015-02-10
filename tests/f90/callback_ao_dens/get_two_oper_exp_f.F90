@@ -61,7 +61,7 @@
 #endif
         integer(kind=4) ierr
 #if defined(OPENRSP_F_USER_CONTEXT)
-        if (all(user_ctx==twoel_contex)) then
+        if (any(user_ctx/=twoel_context)) then
             write(6,100) "not implemented"
             call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
         else

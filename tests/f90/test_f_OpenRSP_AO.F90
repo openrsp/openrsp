@@ -14,13 +14,13 @@
 !!  You should have received a copy of the GNU Lesser General Public License
 !!  along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 !!
-!!  This file tests the density matrix-based response theory.
+!!  This file tests the atomic orbital density matrix-based response theory.
 !!
 !!  2014-08-03, Bin Gao
 !!  * first version
 
 ! parameters for the test suite
-#include "tests/openrsp_f_test.h"
+#include "tests/openrsp_test_param.h"
 
 #define OPENRSP_F_TEST_SRC "tests/f90/test_f_OpenRSP_AO.F90"
 
@@ -92,9 +92,9 @@
         external get_one_oper_exp_f
         ! two-electron Hamiltonian
         integer(kind=QINT), parameter :: twoel_num_pert = 2_QINT
-        integer(kind=QINT) :: twoel_pert_labels(oneham_num_pert) = (/ &
+        integer(kind=QINT) :: twoel_pert_labels(twoel_num_pert) = (/ &
             PERT_GEOMETRIC,PERT_MAGNETIC/)
-        integer(kind=QINT) :: twoel_pert_orders(oneham_num_pert) = (/ &
+        integer(kind=QINT) :: twoel_pert_orders(twoel_num_pert) = (/ &
             MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC/)
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1) :: twoel_context(6) = (/"N","O","N","L","A","O"/)
@@ -115,7 +115,7 @@
         integer(kind=QINT), parameter :: ALPHA_PERT_LABELS(sum(ALPHA_NUM_PERT)) &
             = (/PERT_DIPOLE,PERT_DIPOLE/)
         integer(kind=QINT), parameter :: ALPHA_NUM_FREQS(ALPHA_NUM_PROPS) = (/1_QINT/)
-        real(kind=QREAL), parameter :: ALPHA_PERT_FREQ(2*dot_product(ALPHA_NUM_FREQS,ALPHA_NUM_PERT)) &
+        real(kind=QREAL), parameter :: ALPHA_PERT_FREQS(2*dot_product(ALPHA_NUM_FREQS,ALPHA_NUM_PERT)) &
             = (/-0.072_QREAL,0.0_QREAL,0.072_QREAL,0.0_QREAL/)
         integer(kind=QINT), parameter :: ALPHA_KN_RULES(ALPHA_NUM_PROPS) = (/0_QINT/)
         ! response functions
@@ -289,7 +289,7 @@
                                   ALPHA_NUM_PERT,    &
                                   ALPHA_PERT_LABELS, &
                                   ALPHA_NUM_FREQS,   &
-                                  ALPHA_PERT_FREQ,   &
+                                  ALPHA_PERT_FREQS,  &
                                   ALPHA_KN_RULES,    &
                                   size_rsp_funs,     &
                                   rsp_funs)
