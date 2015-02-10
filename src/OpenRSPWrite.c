@@ -32,7 +32,9 @@
 QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
 {
     FILE *fp_rsp;      /* file pointer */
+#if defined(OPENRSP_PERTURBATION_FREE)
     QInt ipert,isize;  /* incremental recorders */
+#endif
     QErrorCode ierr;   /* error information */
     /* opens the file */
     fp_rsp = fopen(file_name, "a");

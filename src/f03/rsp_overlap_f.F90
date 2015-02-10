@@ -271,7 +271,6 @@ module rsp_overlap_f
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
         type(QcMat), allocatable :: f_val_int(:)    !integral matrices
         integer(kind=4) ierr                        !error information
-        integer(kind=QINT) imat                     !incremental recorder over matrices
         ! converts C pointer to Fortran QcMat type
         allocate(f_val_int(num_int), stat=ierr)
         if (ierr/=0) then
@@ -354,7 +353,6 @@ module rsp_overlap_f
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
         type(QcMat), allocatable :: f_ao_dens(:)    !AO based density matrices
         integer(kind=4) ierr                        !error information
-        integer(kind=QINT) imat                     !incremental recorder over matrices
         ! converts C pointer to Fortran QcMat type
         allocate(f_ao_dens(num_dens), stat=ierr)
         if (ierr/=0) then

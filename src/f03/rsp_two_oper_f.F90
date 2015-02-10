@@ -229,7 +229,6 @@ module rsp_two_oper_f
         type(QcMat), allocatable :: f_var_ao_dens(:)  !variable AO based density matrices
         type(QcMat), allocatable :: f_val_int(:)      !integral matrices
         integer(kind=4) ierr                          !error information
-        integer(kind=QINT) imat                       !incremental recorder over matrices
         ! converts C pointer to Fortran QcMat type
         allocate(f_var_ao_dens(num_var_dens), stat=ierr)
         if (ierr/=0) then
@@ -308,7 +307,6 @@ module rsp_two_oper_f
         type(QcMat), allocatable :: f_var_ao_dens(:)    !variable AO based density matrices
         type(QcMat), allocatable :: f_contr_ao_dens(:)  !contracted AO based density matrices
         integer(kind=4) ierr                            !error information
-        integer(kind=QINT) imat                         !incremental recorder over matrices
         ! converts C pointer to Fortran QcMat type
         allocate(f_var_ao_dens(num_var_dens), stat=ierr)
         if (ierr/=0) then

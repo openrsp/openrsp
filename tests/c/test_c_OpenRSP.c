@@ -45,6 +45,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
 {
 #endif
     OpenRSP open_rsp;                                 /* context of response theory calculations */
+#if defined(OPENRSP_PERTURBATION_FREE)
     const QInt ALL_PERT_LABELS[NUM_ALL_PERT] = {      /* labels of all perturbations */
         PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC};
     const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT] = {  /* maximum allowed orders of all perturbations */
@@ -55,6 +56,7 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
         3,6,10,15,21,28,36};                          /* magnetic derivatives */
 #if defined(OPENRSP_C_USER_CONTEXT)
     QChar *pert_context = "NRNZGEO";                  /* user defined context for perturbations */
+#endif
 #endif
     QErrorCode ierr;                                  /* error information */
 
