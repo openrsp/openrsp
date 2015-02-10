@@ -22,10 +22,12 @@
 ! basic data types
 #include "api/qcmatrix_c_type.h"
 
+#define OPENRSP_API_SRC "src/f03/rsp_one_oper_f.F90"
+
 module rsp_one_oper_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,QREAL,QcMat
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
 
     implicit none
 
@@ -202,34 +204,17 @@ module rsp_one_oper_f
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
         type(OneOperFun_f), pointer :: one_oper_fun  !context of callback subroutines
-        type(QcMat), allocatable :: f_val_int(:)      !integral matrices
-        character(len=1), allocatable :: enc(:)      !encoded data as an array of characters
-        integer(kind=QINT) len_enc                   !length of encoded data
+        type(QcMat), allocatable :: f_val_int(:)     !integral matrices
         integer(kind=4) ierr                         !error information
         integer(kind=QINT) imat                      !incremental recorder over matrices
-        ! converts C pointer to Fortran QcMat type, inspired by
-        ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
-        ! and
-        ! http://jblevins.org/log/transfer
+        ! converts C pointer to Fortran QcMat type
         allocate(f_val_int(num_int), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "RSPOneOperGetMat_f>> num_int", num_int
             stop "RSPOneOperGetMat_f>> failed to allocate memory for f_val_int"
         end if
-        do imat = 1, num_int
-            ! encodes the C pointer in a character array
-            len_enc = size(transfer(val_int(imat), enc))
-            allocate(enc(len_enc), stat=ierr)
-            if (ierr/=0) then
-                write(STDOUT,"(A,I8)") "RSPOneOperGetMat_f>> length", len_enc
-                stop "RSPOneOperGetMat_f>> failed to allocate memory for enc"
-            end if
-            enc = transfer(val_int(imat), enc)
-            ! decodes as QcMat type
-            f_val_int(imat) = transfer(enc, f_val_int(imat))
-            ! cleans up
-            deallocate(enc)
-        end do
+        ierr = QcMat_C_F_POINTER(A=f_val_int, c_A=val_int)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
@@ -277,34 +262,17 @@ module rsp_one_oper_f
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
         type(OneOperFun_f), pointer :: one_oper_fun  !context of callback subroutines
-        type(QcMat), allocatable :: f_ao_dens(:)      !AO based density matrices
-        character(len=1), allocatable :: enc(:)      !encoded data as an array of characters
-        integer(kind=QINT) len_enc                   !length of encoded data
+        type(QcMat), allocatable :: f_ao_dens(:)     !AO based density matrices
         integer(kind=4) ierr                         !error information
         integer(kind=QINT) imat                      !incremental recorder over matrices
-        ! converts C pointer to Fortran QcMat type, inspired by
-        ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
-        ! and
-        ! http://jblevins.org/log/transfer
+        ! converts C pointer to Fortran QcMat type
         allocate(f_ao_dens(num_dens), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "RSPOneOperGetExp_f>> num_dens", num_dens
             stop "RSPOneOperGetExp_f>> failed to allocate memory for f_ao_dens"
         end if
-        do imat = 1, num_dens
-            ! encodes the C pointer in a character array
-            len_enc = size(transfer(ao_dens(imat), enc))
-            allocate(enc(len_enc), stat=ierr)
-            if (ierr/=0) then
-                write(STDOUT,"(A,I8)") "RSPOneOperGetExp_f>> length", len_enc
-                stop "RSPOneOperGetExp_f>> failed to allocate memory for enc"
-            end if
-            enc = transfer(ao_dens(imat), enc)
-            ! decodes as QcMat type
-            f_ao_dens(imat) = transfer(enc, f_ao_dens(imat))
-            ! cleans up
-            deallocate(enc)
-        end do
+        ierr = QcMat_C_F_POINTER(A=f_ao_dens, c_A=ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
@@ -340,3 +308,5 @@ module rsp_one_oper_f
     end subroutine RSPOneOperDestroy_f
 
 end module rsp_one_oper_f
+
+#undef OPENRSP_API_SRC

@@ -22,10 +22,12 @@
 ! basic data types
 #include "api/qcmatrix_c_type.h"
 
+#define OPENRSP_API_SRC "src/f03/rsp_solver_f.F90"
+
 module rsp_solver_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,QREAL,QcMat
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
 
     implicit none
 
@@ -150,14 +152,9 @@ module rsp_solver_f
         integer(kind=QINT) size_solution            !size of solution of response equation
         type(QcMat), allocatable :: f_RHS_mat(:)    !RHS matrices
         type(QcMat), allocatable :: f_rsp_param(:)  !response parameters
-        character(len=1), allocatable :: enc(:)     !encoded data as an array of characters
-        integer(kind=QINT) len_enc                  !length of encoded data
         integer(kind=4) ierr                        !error information
         integer(kind=QINT) imat                     !incremental recorder over matrices
-        ! converts C pointer to Fortran QcMat type, inspired by
-        ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
-        ! and
-        ! http://jblevins.org/log/transfer
+        ! converts C pointer to Fortran QcMat type
         size_solution = size_pert*num_freq_sums
         allocate(f_RHS_mat(size_solution), stat=ierr)
         if (ierr/=0) then
@@ -165,40 +162,16 @@ module rsp_solver_f
                                    size_solution
             stop "RSPSolverGetLinearRSPSolution_f>> failed to allocate memory for f_RHS_mat"
         end if
-        do imat = 1, size_solution
-            ! encodes the C pointer in a character array
-            len_enc = size(transfer(RHS_mat(imat), enc))
-            allocate(enc(len_enc), stat=ierr)
-            if (ierr/=0) then
-                write(STDOUT,"(A,I8)") "RSPSolverGetLinearRSPSolution_f>> length", len_enc
-                stop "RSPSolverGetLinearRSPSolution_f>> failed to allocate memory for enc"
-            end if
-            enc = transfer(RHS_mat(imat), enc)
-            ! decodes as QcMat type
-            f_RHS_mat(imat) = transfer(enc, f_RHS_mat(imat))
-            ! cleans up
-            deallocate(enc)
-        end do
+        ierr = QcMat_C_F_POINTER(A=f_RHS_mat, c_A=RHS_mat)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         allocate(f_rsp_param(size_solution), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "RSPSolverGetLinearRSPSolution_f>> size_solution", &
                                    size_solution
             stop "RSPSolverGetLinearRSPSolution_f>> failed to allocate memory for f_rsp_param"
         end if
-        do imat = 1, size_solution
-            ! encodes the C pointer in a character array
-            len_enc = size(transfer(rsp_param(imat), enc))
-            allocate(enc(len_enc), stat=ierr)
-            if (ierr/=0) then
-                write(STDOUT,"(A,I8)") "RSPSolverGetLinearRSPSolution_f>> length", len_enc
-                stop "RSPSolverGetLinearRSPSolution_f>> failed to allocate memory for enc"
-            end if
-            enc = transfer(rsp_param(imat), enc)
-            ! decodes as QcMat type
-            f_rsp_param(imat) = transfer(enc, f_rsp_param(imat))
-            ! cleans up
-            deallocate(enc)
-        end do
+        ierr = QcMat_C_F_POINTER(A=f_rsp_param, c_A=rsp_param)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, solver_fun)
         ! invokes Fortran callback subroutine to solve the response equation
@@ -232,3 +205,5 @@ module rsp_solver_f
     end subroutine RSPSolverDestroy_f
 
 end module rsp_solver_f
+
+#undef OPENRSP_API_SRC
