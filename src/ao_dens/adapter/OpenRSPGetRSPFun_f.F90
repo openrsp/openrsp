@@ -45,7 +45,7 @@
                                   !file_rsp_tensor) &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
-        use qcmatrix_f, only: QINT,QREAL,QcMat,QSUCCESS
+        use qcmatrix_f, only: QINT,QREAL,QcMat,QSUCCESS,QcMat_C_F_POINTER
         use openrsp_callback_f
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
@@ -88,9 +88,9 @@
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
         character(4), allocatable :: f_pert_labels(:)
         complex(kind=QREAL), allocatable :: f_pert_freqs(:)
-        type(QcMat), pointer :: f_F_unpert
-        type(QcMat), pointer :: f_S_unpert
-        type(QcMat), pointer :: f_D_unpert
+        type(QcMat) f_F_unpert(1)
+        type(QcMat) f_S_unpert(1)
+        type(QcMat) f_D_unpert(1)
         complex(kind=QREAL), allocatable :: f_rsp_tensor(:)
         !character(kind=C_CHAR), pointer :: ptr_file_tensor(:)
         !character, allocatable :: f_file_tensor(:)
@@ -142,9 +142,18 @@
             f_pert_freqs(ipert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
         end do
         ! gets the matrices
-        call c_f_pointer(F_unpert, f_F_unpert)
-        call c_f_pointer(S_unpert, f_S_unpert)
-        call c_f_pointer(D_unpert, f_D_unpert)
+        ierr = QcMat_C_F_POINTER(f_F_unpert, (/F_unpert/))
+        if (ierr/=QSUCCESS) then
+            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(F)"
+        end if
+        ierr = QcMat_C_F_POINTER(f_S_unpert, (/S_unpert/))
+        if (ierr/=QSUCCESS) then
+            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(S)"
+        end if
+        ierr = QcMat_C_F_POINTER(f_D_unpert, (/D_unpert/))
+        if (ierr/=QSUCCESS) then
+            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)"
+        end if
         ! sets the context of callback functions
         call RSP_CTX_Create(rsp_solver,  &
                             nuc_contrib, &
@@ -178,9 +187,9 @@
         !                                   num_freqs,                                &
         !                                   f_pert_freqs,                             &
         !                                   kn_rules,                                 &
-        !                                   f_F_unpert,                               &
-        !                                   f_S_unpert,                               &
-        !                                   f_D_unpert,                               &
+        !                                   f_F_unpert(1),                            &
+        !                                   f_S_unpert(1),                            &
+        !                                   f_D_unpert(1),                            &
         !                                   f_callback_RSPSolverGetLinearRSPSolution, &
         !                                   f_callback_RSPNucContribGet,              &
         !                                   f_callback_RSPOverlapGetMat,              &
@@ -206,9 +215,9 @@
                                            num_freqs,                                &
                                            f_pert_freqs,                             &
                                            kn_rules,                                 &
-                                           f_F_unpert,                               &
-                                           f_S_unpert,                               &
-                                           f_D_unpert,                               &
+                                           f_F_unpert(1),                            &
+                                           f_S_unpert(1),                            &
+                                           f_D_unpert(1),                            &
                                            f_callback_RSPSolverGetLinearRSPSolution, &
                                            f_callback_RSPNucContribGet,              &
                                            f_callback_RSPOverlapGetMat,              &
@@ -235,9 +244,6 @@
         deallocate(f_pert_first_comp)
         deallocate(f_pert_labels)
         deallocate(f_pert_freqs)
-        nullify(f_F_unpert)
-        nullify(f_S_unpert)
-        nullify(f_D_unpert)
         call RSP_CTX_Destroy()
         deallocate(f_rsp_tensor)
         return

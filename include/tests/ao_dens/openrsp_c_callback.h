@@ -14,14 +14,15 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This is the header file of callback functions for the C tests.
+   This is the header file of callback functions for the atomic orbital
+   density matrix-based response theory.
 
    2014-07-31, Bin Gao:
    * first version
 */
 
-#if !defined(OPENRSP_C_TEST_CALLBACK_H)
-#define OPENRSP_C_TEST_CALLBACK_H
+#if !defined(OPENRSP_C_AO_DENS_CALLBACK_H)
+#define OPENRSP_C_AO_DENS_CALLBACK_H
 
 /* QcMatrix library */
 #include "qcmatrix.h"
@@ -35,29 +36,6 @@ extern QVoid get_linear_rsp_solution(const QInt,
                                      QVoid*,
 #endif
                                      QcMat*[]);
-
-#if defined(OPENRSP_PERTURBATION_FREE)
-/* callback function for getting components of a perturbation */
-extern QVoid get_pert_comp(const QInt,
-                           const QInt,
-                           const QInt,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                           QVoid*,
-#endif
-                           QInt*,
-                           QInt*,
-                           QInt*);
-
-/* callback function for getting rank of a perturbation */
-extern QVoid get_pert_rank(const QInt,
-                           const QInt,
-                           const QInt*,
-                           const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                           QVoid*,
-#endif
-                           QInt*);
-#endif
 
 /* callback function for getting integral matrices of overlap integrals */
 extern QVoid get_overlap_mat(const QInt,
@@ -113,3 +91,27 @@ extern QVoid get_one_oper_exp(const QInt,
                               QReal*);
 
 #endif
+/* callback function for getting integral matrices of two-electron operators */
+extern QVoid get_two_oper_mat(const QInt,
+                              const QInt*,
+                              const QInt*,
+                              const QInt,
+                              QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              QVoid*,
+#endif
+                              const QInt,
+                              QcMat*[]);
+/* callback function for getting expectation values of two-electron operators */
+extern QVoid get_two_oper_exp(const QInt,
+                              const QInt*,
+                              const QInt*,
+                              const QInt,
+                              QcMat*[],
+                              const QInt,
+                              QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              QVoid*,
+#endif
+                              const QInt,
+                              QReal*);

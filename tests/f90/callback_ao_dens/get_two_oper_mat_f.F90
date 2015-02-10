@@ -72,7 +72,7 @@
         integer(kind=4) ierr
         integer(kind=QINT), save :: id_gmat = 0
 #if defined(OPENRSP_F_USER_CONTEXT)
-        if (all(user_ctx==twoel_context)) then
+        if (any(user_ctx/=twoel_context)) then
             write(6,100) "not implemented"
             call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
         else

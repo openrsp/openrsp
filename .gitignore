@@ -1,10 +1,6 @@
+.*
+*.a
 *.mod
-matrix_defop_ng.x
+*.o
+*.swp
 build*/
-doc/_build/
-external/lib/
-external/matrix-defop-build/
-external/src/
-external/tmp/
-*~
-*.pyc

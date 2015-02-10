@@ -20,7 +20,7 @@
 !!  * first version
 
 ! parameters for the test suite
-#include "tests/openrsp_f_test.h"
+#include "tests/openrsp_test_param.h"
 
 #define OPENRSP_F_TEST_SRC "tests/f90/test_f_OpenRSP.F90"
 
@@ -98,19 +98,19 @@
 
         ! sets the information of molecule
         ierr = OpenRSPSetAtoms_f(open_rsp,   &
-                                 num_atoms,  &
-                                 atom_coord, &
-                                 atom_charge)
+                                 NUM_ATOMS,  &
+                                 ATOM_COORD, &
+                                 ATOM_CHARGE)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPSetAtoms_f() passed"
 
         ! sets the dipole origin
-        ierr = OpenRSPSetDipoleOrigin_f(open_rsp, dipole_origin)
+        ierr = OpenRSPSetDipoleOrigin_f(open_rsp, DIPOLE_ORIGIN)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPSetDipoleOrigin_f() passed"
 
         ! sets the gauge origin
-        ierr = OpenRSPSetGaugeOrigin_f(open_rsp, gauge_origin)
+        ierr = OpenRSPSetGaugeOrigin_f(open_rsp, GAUGE_ORIGIN)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         write(io_log,100) "OpenRSPSetGaugeOrigin_f() passed"
 

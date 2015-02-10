@@ -69,8 +69,37 @@
         integer(kind=4) ierr
 #if defined(OPENRSP_F_USER_CONTEXT)
         if (all(user_ctx==oneham_context)) then
-            write(6,100) "not implemented"
-            call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            ! electric fields (zero integrals)
+            if (num_pert==1 .and. pert_labels(1)==PERT_DIPOLE) then
+                do imat = 1, num_int
+                    ! checks if the matrix is assembled or not
+                    ierr = QcMatIsAssembled_f(A=val_int(imat), assembled=assembled)
+                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    if (.not.assembled) then
+                        ierr = QcMatBlockCreate_f(A=val_int(imat), dim_block=1_QINT)
+                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        ierr = QcMatSetSymType_f(A=val_int(imat), sym_type=QSYMMAT)
+                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        ierr = QcMatSetDataType_f(A=val_int(imat),                 &
+                                                  num_blocks=1_QINT,               &
+                                                  idx_block_row=(/IDX_BLOCK_ROW/), &
+                                                  idx_block_col=(/IDX_BLOCK_COL/), &
+                                                  data_type=(/QREALMAT/))
+                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        ierr = QcMatSetDimMat_f(A=val_int(imat), &
+                                                num_row=NUM_AO,  &
+                                                num_col=NUM_AO)
+                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                        ierr = QcMatAssemble_f(A=val_int(imat))
+                        call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                    end if
+                    ierr = QcMatZeroEntries_f(A=val_int(imat))
+                    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+                end do
+            else
+                write(6,100) "not implemented"
+                call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
+            end if
         else if (all(user_ctx==ext_field_context)) then
             ! electric fields
             if (num_pert==1 .and. pert_labels(1)==PERT_DIPOLE) then
