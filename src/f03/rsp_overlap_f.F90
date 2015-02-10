@@ -27,7 +27,7 @@
 module rsp_overlap_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER,QcMat_C_NULL_PTR
 
     implicit none
 
@@ -300,6 +300,8 @@ module rsp_overlap_f
                                          f_val_int)
         ! cleans up
         nullify(overlap_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_val_int)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_val_int)
     end subroutine RSPOverlapGetMat_f
 
@@ -383,6 +385,8 @@ module rsp_overlap_f
                                          val_exp)
         ! cleans up
         nullify(overlap_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_ao_dens)
         return
     end subroutine RSPOverlapGetExp_f

@@ -271,6 +271,7 @@ module openrsp_callback_f
         type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
         type(C_PTR), allocatable :: c_RHS_mat(:)
         type(C_PTR), allocatable :: c_rsp_param(:)
+        integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%rsp_solver)) then
 #if defined(OPENRSP_DEBUG)
@@ -299,6 +300,10 @@ module openrsp_callback_f
                                                  c_RHS_mat,            &
                                                  c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do imat = 1, size_pert*num_freq_sums
+                c_RHS_mat(imat) = C_NULL_PTR
+                c_rsp_param(imat) = C_NULL_PTR
+            end do
             deallocate(c_RHS_mat)
             deallocate(c_rsp_param)
         else
@@ -353,6 +358,7 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
+        integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
 #if defined(OPENRSP_DEBUG)
@@ -378,6 +384,9 @@ module openrsp_callback_f
                                     num_int,           &
                                     c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do imat = 1, num_int
+                c_val_int(imat) = C_NULL_PTR
+            end do
             deallocate(c_val_int)
         end if
 100     format("f_callback_RSPOverlapGetMat>> ",A,4I12)
@@ -448,6 +457,9 @@ module openrsp_callback_f
             do ival = 1, num_exp
                 val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
             end do
+            do ival = 1, num_dens
+                c_ao_dens(ival) = C_NULL_PTR
+            end do
             deallocate(c_ao_dens)
             deallocate(c_val_exp)
         end if
@@ -466,6 +478,7 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
+        integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
 #if defined(OPENRSP_DEBUG)
@@ -485,6 +498,9 @@ module openrsp_callback_f
                                     num_int,            &
                                     c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do imat = 1, num_int
+                c_val_int(imat) = C_NULL_PTR
+            end do
             deallocate(c_val_int)
         end if
 100     format("f_callback_RSPOneOperGetMat>> ",A,2I12)
@@ -537,6 +553,9 @@ module openrsp_callback_f
             do ival = 1, num_exp
                 val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
             end do
+            do ival = 1, num_dens
+                c_ao_dens(ival) = C_NULL_PTR
+            end do
             deallocate(c_ao_dens)
             deallocate(c_val_exp)
         end if
@@ -560,6 +579,7 @@ module openrsp_callback_f
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_var_ao_dens(:)
         type(C_PTR), allocatable :: c_val_int(:)
+        integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
 #if defined(OPENRSP_DEBUG)
@@ -589,6 +609,12 @@ module openrsp_callback_f
                                     num_int,            &
                                     c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do imat = 1, num_var_dens
+                c_var_ao_dens(imat) = C_NULL_PTR
+            end do
+            do imat = 1, num_int
+                c_val_int(imat) = C_NULL_PTR
+            end do
             deallocate(c_var_ao_dens)
             deallocate(c_val_int)
         end if
@@ -657,6 +683,12 @@ module openrsp_callback_f
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
                 val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+            end do
+            do ival = 1, num_var_dens
+                c_var_ao_dens(ival) = C_NULL_PTR
+            end do
+            do ival = 1, num_contr_dens
+                c_contr_ao_dens(ival) = C_NULL_PTR
             end do
             deallocate(c_var_ao_dens)
             deallocate(c_contr_ao_dens)

@@ -27,7 +27,7 @@
 module rsp_solver_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER,QcMat_C_NULL_PTR
 
     implicit none
 
@@ -186,6 +186,10 @@ module rsp_solver_f
                                                 f_rsp_param)
         ! cleans up
         nullify(solver_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_rsp_param)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
+        ierr = QcMat_C_NULL_PTR(A=f_RHS_mat)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_rsp_param)
         deallocate(f_RHS_mat)
         return

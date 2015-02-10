@@ -2132,6 +2132,7 @@ module rsp_general
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
+       tmp = 0.0
        call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, 1, (/W/), size(tmp), tmp)
                             
 !        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &

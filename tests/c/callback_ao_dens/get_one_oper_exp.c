@@ -57,7 +57,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
     if (strcmp(one_oper_context, oneham_context)==0) {
         /* electric fields (zero integrals) */
         if (num_pert==1 && pert_labels[0]==PERT_DIPOLE) {
-            for (idens=0; idens<num_exp; idens++) {
+            for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
         }
@@ -160,7 +160,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
             }
             /* zero integrals */
             else {
-                for (idens=0; idens<num_exp; idens++) {
+                for (idens=0; idens<2*num_exp; idens++) {
                     val_exp[idens] = 0;
                 }
             }
@@ -269,7 +269,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
         }
         /* zero integrals */
         else {
-            for (idens=0; idens<num_exp; idens++) {
+            for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
         }

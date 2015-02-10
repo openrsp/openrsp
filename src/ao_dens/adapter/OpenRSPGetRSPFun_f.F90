@@ -45,7 +45,12 @@
                                   !file_rsp_tensor) &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
-        use qcmatrix_f, only: QINT,QREAL,QcMat,QSUCCESS,QcMat_C_F_POINTER
+        use qcmatrix_f, only: QINT,              &
+                              QREAL,             &
+                              QcMat,             &
+                              QSUCCESS,          &
+                              QcMat_C_F_POINTER, &
+                              QcMat_C_NULL_PTR
         use openrsp_callback_f
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
@@ -240,6 +245,18 @@
             rsp_tensor(jpert) = aimag(f_rsp_tensor(ipert))
         end do
         ! cleans up
+        ierr = QcMat_C_NULL_PTR(A=f_F_unpert)
+        if (ierr/=QSUCCESS) then
+            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(F)"
+        end if
+        ierr = QcMat_C_NULL_PTR(A=f_S_unpert)
+        if (ierr/=QSUCCESS) then
+            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(S)"
+        end if
+        ierr = QcMat_C_NULL_PTR(A=f_D_unpert)
+        if (ierr/=QSUCCESS) then
+            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(D)"
+        end if
         deallocate(f_pert_dims)
         deallocate(f_pert_first_comp)
         deallocate(f_pert_labels)

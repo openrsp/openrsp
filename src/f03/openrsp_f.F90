@@ -994,6 +994,9 @@ module openrsp_f
                                 kn_rules,          &
                                 size_rsp_funs,     &
                                 rsp_funs)
+        c_ref_ham(1) = C_NULL_PTR
+        c_ref_state(1) = C_NULL_PTR
+        c_ref_overlap(1) = C_NULL_PTR
     end function OpenRSPGetRSPFun_f
 
     function OpenRSPDestroy_f(open_rsp) result(ierr)
