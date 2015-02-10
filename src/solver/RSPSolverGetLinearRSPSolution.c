@@ -14,7 +14,7 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPSolverGetSolution().
+   This file implements the function RSPSolverGetLinearRSPSolution().
 
    2014-08-06, Bin Gao:
    * first version
@@ -22,13 +22,10 @@
 
 #include "eom/openrsp_solver.h"
 
-/*% \brief solves the response equation
+/*% \brief solves the linear response equation
     \author Bin Gao
     \date 2014-08-06
     \param[RSPSolver:struct]{in} rsp_solver the context of response equation solver
-    \param[QcMat:struct]{in} ref_ham Hamiltonian of referenced state
-    \param[QcMat:struct]{in} ref_state electronic state of referenced state
-    \param[QcMat:struct]{in} ref_overlap overlap integral matrix of referenced state
     \param[QInt:int]{in} num_freq_sums number of frequency sums on the left hand side
     \param[QReal:real]{in} freq_sums the frequency sums on the left hand side
     \param[QInt:int]{in} size_pert size of perturbaed matrices
@@ -36,26 +33,20 @@
     \param[QcMat:struct]{out} rsp_param solved response parameters, size is \var{size_pert}*\var{num_freq_sums}
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPSolverGetSolution(const RSPSolver *rsp_solver,
-                                const QcMat *ref_ham,
-                                const QcMat *ref_state,
-                                const QcMat *ref_overlap,
-                                const QInt num_freq_sums,
-                                const QReal *freq_sums,
-                                const QInt size_pert,
-                                QcMat *RHS_mat[],
-                                QcMat *rsp_param[])
+QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver *rsp_solver,
+                                         const QInt num_freq_sums,
+                                         const QReal *freq_sums,
+                                         const QInt size_pert,
+                                         QcMat *RHS_mat[],
+                                         QcMat *rsp_param[])
 {
-    rsp_solver->get_rsp_solution(ref_ham,
-                                 ref_state,
-                                 ref_overlap,
-                                 num_freq_sums,
-                                 freq_sums,
-                                 size_pert,
-                                 RHS_mat,
+    rsp_solver->get_linear_rsp_solution(num_freq_sums,
+                                        freq_sums,
+                                        size_pert,
+                                        RHS_mat,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                 rsp_solver->user_ctx,
+                                        rsp_solver->user_ctx,
 #endif
-                                 rsp_param);
+                                        rsp_param);
     return QSUCCESS;
 }

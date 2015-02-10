@@ -44,18 +44,36 @@ Functions of OpenRSP API (C version)
    :type elec_EOM_type: ElecEOMType (enum)
    :rtype: QErrorCode
 
-.. function:: OpenRSPSetSolver(open_rsp, \
-                               user_ctx, \
-                               get_rsp_solution)
+.. function:: OpenRSPSetLinearRSPSolver(open_rsp, \
+                                        user_ctx, \
+                                        get_linear_rsp_solution)
 
-   Sets the context of response equation solver.
+   Sets the context of linear response equation solver.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_rsp_solution: user specified function of response equation solver
-   :type get_rsp_solution: GetRSPSolution (function pointer QVoid (\*)(...))
+   :param get_linear_rsp_solution: user specified function of linear
+       response equation solver
+   :type get_linear_rsp_solution: GetLinearRSPSolution (function
+       pointer QVoid (\*)(...))
+   :rtype: QErrorCode
+
+.. function:: OpenRSPSetRSPEigenSolver(open_rsp, \
+                                       user_ctx, \
+                                       get_rsp_eigen_solution)
+
+   Sets the context of response eigenvalue solver.
+
+   :param open_rsp: context of response theory calculations
+   :type open_rsp: OpenRSP\*
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param get_rsp_eigen_solution: user specified function of response
+       eigenvalue equation solver
+   :type get_rsp_eigen_solution: GetRSPEigenSolution (function
+       pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
 .. function:: OpenRSPSetPerturbations(open_rsp,        \

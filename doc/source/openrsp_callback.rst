@@ -231,30 +231,16 @@ functions are given as follows.
    :type val_exp: QReal\*
    :rtype: QVoid
 
-#remove ref_ham, ref_state, ref_overlap
-#seperate for "response eigenvalue equation" and "linear response equation"
-#OpenRSPSetLinearRSPSolver
-#OpenRSPSetRSPEigenSolver
+.. function:: get_linear_rsp_solution(num_freq_sums, \
+                                      freq_sums,     \
+                                      size_pert,     \
+                                      RHS_mat,       \
+                                      user_ctx,      \
+                                      rsp_param)
 
-.. function:: get_rsp_solution(ref_ham,       \
-                               ref_state,     \
-                               ref_overlap,   \
-                               num_freq_sums, \
-                               freq_sums,     \
-                               size_pert,     \
-                               RHS_mat,       \
-                               user_ctx,      \
-                               rsp_param)
+   Callback function for the linear response equation solver, the last argument
+   for function ``OpenRSPSetLinearRSPSolver``.
 
-   Callback function for solving the response equation, the last argument for
-   function ``OpenRSPSetSolver``.
-
-   :param ref_ham: Hamiltonian of referenced state
-   :type ref_ham: QcMat\*
-   :param ref_state: electronic state of referenced state
-   :type ref_state: QcMat\*
-   :param ref_overlap: overlap integral matrix of referenced state
-   :type ref_overlap: QcMat\*
    :param num_freq_sums: number of frequency sums on the left hand side
    :type num_freq_sums: QInt
    :param freq_sums: the frequency sums on the left hand side
@@ -270,6 +256,11 @@ functions are given as follows.
        ``num_freq_sums``
    :type rsp_param: QcMat\*[]
    :rtype: QVoid
+
+.. function:: get_rsp_eigen_solution()
+
+   Callback function for the response eigenvalue equation solver, the last argument
+   for function ``OpenRSPSetRSPEigenSolver``.
 
 OpenRSP Callback Subroutines (Fortran version)
 ----------------------------------------------

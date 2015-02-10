@@ -81,7 +81,7 @@ module openrsp_f
     ! functions provided by the Fortran APIs
     public :: OpenRSPCreate_f
     public :: OpenRSPSetElecEOM_f
-    public :: OpenRSPSetSolver_f
+    public :: OpenRSPSetLinearRSPSolver_f
 #if defined(OPENRSP_PERTURBATION_FREE)
     public :: OpenRSPSetPerturbations_f
 #endif
@@ -111,15 +111,15 @@ module openrsp_f
             type(C_PTR), intent(inout) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: elec_EOM_type
         end function f_api_OpenRSPSetElecEOM
-        integer(C_INT) function OpenRSPSetSolver(open_rsp,         &
-                                                 user_ctx,         &
-                                                 get_rsp_solution) &
-            bind(C, name="OpenRSPSetSolver")
+        integer(C_INT) function OpenRSPSetLinearRSPSolver(open_rsp,         &
+                                                          user_ctx,         &
+                                                          get_linear_rsp_solution) &
+            bind(C, name="OpenRSPSetLinearRSPSolver")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
             type(C_PTR), value, intent(in) :: user_ctx
-            type(C_FUNPTR), value, intent(in) :: get_rsp_solution
-        end function OpenRSPSetSolver
+            type(C_FUNPTR), value, intent(in) :: get_linear_rsp_solution
+        end function OpenRSPSetLinearRSPSolver
 #if defined(OPENRSP_PERTURBATION_FREE)
         integer(C_INT) function OpenRSPSetPerturbations(open_rsp,        &
                                                         num_pert,        &
@@ -284,33 +284,27 @@ module openrsp_f
         ierr = f_api_OpenRSPSetElecEOM(open_rsp%c_rsp, elec_EOM_type)
     end function OpenRSPSetElecEOM_f
 
-    function OpenRSPSetSolver_f(open_rsp,        &
+    function OpenRSPSetLinearRSPSolver_f(open_rsp,        &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                user_ctx,        &
+                                         user_ctx,        &
 #endif
-                                get_rsp_solution) result(ierr)
+                                         get_linear_rsp_solution) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_rsp_solution(ref_ham,       &
-                                        ref_state,     &
-                                        ref_overlap,   &
-                                        num_freq_sums, &
-                                        freq_sums,     &
-                                        size_pert,     &
-                                        RHS_mat,       &
+            subroutine get_linear_rsp_solution(num_freq_sums, &
+                                               freq_sums,     &
+                                               size_pert,     &
+                                               RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,       &
-                                        user_ctx,      &
+                                               len_ctx,       &
+                                               user_ctx,      &
 #endif
-                                        rsp_param)
+                                               rsp_param)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                type(QcMat), intent(in) :: ref_ham
-                type(QcMat), intent(in) :: ref_state
-                type(QcMat), intent(in) :: ref_overlap
                 integer(kind=QINT), intent(in) :: num_freq_sums
                 real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
                 integer(kind=QINT), intent(in) :: size_pert
@@ -320,28 +314,22 @@ module openrsp_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
-            end subroutine get_rsp_solution
-            subroutine RSPSolverGetSolution_f(ref_ham,       &
-                                              ref_state,     &
-                                              ref_overlap,   &
-                                              num_freq_sums, &
-                                              freq_sums,     &
-                                              size_pert,     &
-                                              RHS_mat,       &
-                                              user_ctx,      &
-                                              rsp_param)     &
-                bind(C, name="RSPSolverGetSolution_f")
+            end subroutine get_linear_rsp_solution
+            subroutine RSPSolverGetLinearRSPSolution_f(num_freq_sums, &
+                                                       freq_sums,     &
+                                                       size_pert,     &
+                                                       RHS_mat,       &
+                                                       user_ctx,      &
+                                                       rsp_param)     &
+                bind(C, name="RSPSolverGetLinearRSPSolution_f")
                 use, intrinsic :: iso_c_binding
-                type(C_PTR), intent(in) :: ref_ham
-                type(C_PTR), intent(in) :: ref_state
-                type(C_PTR), intent(in) :: ref_overlap
                 integer(kind=C_QINT), value, intent(in) :: num_freq_sums
                 real(kind=C_QREAL), intent(in) :: freq_sums(num_freq_sums)
                 integer(kind=C_QINT), value, intent(in) :: size_pert
                 type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
                 type(C_PTR), value, intent(in) :: user_ctx
                 type(C_PTR), intent(inout) :: rsp_param(size_pert*num_freq_sums)
-            end subroutine RSPSolverGetSolution_f
+            end subroutine RSPSolverGetLinearRSPSolution_f
         end interface
         if (associated(open_rsp%solver_fun)) then
             call RSPSolverDestroy_f(open_rsp%solver_fun)
@@ -353,11 +341,11 @@ module openrsp_f
 #if defined(OPENRSP_F_USER_CONTEXT)
                                user_ctx,            &
 #endif
-                               get_rsp_solution)
-        ierr = OpenRSPSetSolver(open_rsp%c_rsp,             &
-                                c_loc(open_rsp%solver_fun), &
-                                c_funloc(RSPSolverGetSolution_f))
-    end function OpenRSPSetSolver_f
+                               get_linear_rsp_solution)
+        ierr = OpenRSPSetLinearRSPSolver(open_rsp%c_rsp,             &
+                                         c_loc(open_rsp%solver_fun), &
+                                         c_funloc(RSPSolverGetLinearRSPSolution_f))
+    end function OpenRSPSetLinearRSPSolver_f
 
 #if defined(OPENRSP_PERTURBATION_FREE)
     function OpenRSPSetPerturbations_f(open_rsp,        &

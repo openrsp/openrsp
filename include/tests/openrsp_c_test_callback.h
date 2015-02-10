@@ -26,18 +26,15 @@
 /* QcMatrix library */
 #include "qcmatrix.h"
 
-/* callback function to get the solutions of response equation */
-extern QVoid get_rsp_solution(const QcMat*,
-                              const QcMat*,
-                              const QcMat*,
-                              const QInt,
-                              const QReal*,
-                              const QInt,
-                              QcMat*[],
+/* callback function to get the solutions of linear response equation */
+extern QVoid get_linear_rsp_solution(const QInt,
+                                     const QReal*,
+                                     const QInt,
+                                     QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                              QVoid*,
+                                     QVoid*,
 #endif
-                              QcMat*[]);
+                                     QcMat*[]);
 
 #if defined(OPENRSP_PERTURBATION_FREE)
 /* callback function for getting components of a perturbation */

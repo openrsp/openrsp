@@ -26,44 +26,38 @@
 /* QcMatrix library */
 #include "qcmatrix.h"
 
-/* callback function to get the solutions of response equation */
-typedef QVoid (*GetRSPSolution)(const QcMat*,
-                                const QcMat*,
-                                const QcMat*,
-                                const QInt,
-                                const QReal*,
-                                const QInt,
-                                QcMat*[],
+/* callback function of linear response equation solver */
+typedef QVoid (*GetLinearRSPSolution)(const QInt,
+                                      const QReal*,
+                                      const QInt,
+                                      QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid*,
+                                      QVoid*,
 #endif
-                                QcMat*[]);
+                                      QcMat*[]);
 
-/* context of response equation solver */
+/* context of response equation solvers */
 typedef struct {
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                 /* user-defined callback function context */
+    QVoid *user_ctx;                              /* user-defined callback function context */
 #endif
-    GetRSPSolution get_rsp_solution; /* user specified function of response equation solver */
+    GetLinearRSPSolution get_linear_rsp_solution; /* user specified function of linear response equation solver */
 } RSPSolver;
 
-/* functions related to the linked list of one-electron operators */
+/* functions related to the response equation solvers */
 extern QErrorCode RSPSolverCreate(RSPSolver*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                   QVoid*,
 #endif
-                                  const GetRSPSolution);
+                                  const GetLinearRSPSolution);
 extern QErrorCode RSPSolverAssemble(RSPSolver*);
 extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
-extern QErrorCode RSPSolverGetSolution(const RSPSolver*,
-                                       const QcMat*,
-                                       const QcMat*,
-                                       const QcMat*,
-                                       const QInt,
-                                       const QReal*,
-                                       const QInt,
-                                       QcMat*[],
-                                       QcMat*[]);
+extern QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver*,
+                                                const QInt,
+                                                const QReal*,
+                                                const QInt,
+                                                QcMat*[],
+                                                QcMat*[]);
 extern QErrorCode RSPSolverDestroy(RSPSolver*);
 
 #endif

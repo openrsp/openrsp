@@ -79,7 +79,7 @@ typedef struct {
     /* EOM and solver */
     //ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
     ElecEOMType elec_EOM_type;
-    RSPSolver *rsp_solver;       /* response equation solver */
+    RSPSolver *rsp_solver;       /* response equation solvers */
     /* Hamiltonian */
     RSPOverlap *overlap;         /* overlap integrals */
     RSPOneOper *one_oper;        /* linked list of one-electron operators */
@@ -91,11 +91,11 @@ typedef struct {
 /* APIs of OpenRSP */
 extern QErrorCode OpenRSPCreate(OpenRSP*);
 extern QErrorCode OpenRSPSetElecEOM(OpenRSP*,const ElecEOMType);
-extern QErrorCode OpenRSPSetSolver(OpenRSP*,
+extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
+                                            QVoid*,
 #endif
-                                   const GetRSPSolution);
+                                            const GetLinearRSPSolution);
 #if defined(OPENRSP_PERTURBATION_FREE)
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
                                           const QInt,

@@ -55,7 +55,7 @@ module openrsp_callback_f
 
     public :: RSP_CTX_Create
     public :: RSP_CTX_Destroy
-    public :: f_callback_RSPSolverGetSolution
+    public :: f_callback_RSPSolverGetLinearRSPSolution
     public :: f_callback_RSPNucContribGet
     public :: f_callback_RSPOverlapGetMat
     public :: f_callback_RSPOverlapGetExp
@@ -67,28 +67,22 @@ module openrsp_callback_f
     public :: f_callback_RSPXCFunGetExp
 
     interface
-        integer(C_INT) function RSPSolverGetSolution(rsp_solver,    &
-                                                     ref_ham,       &
-                                                     ref_state,     &
-                                                     ref_overlap,   &
-                                                     num_freq_sums, &
-                                                     freq_sums,     &
-                                                     size_pert,     &
-                                                     RHS_mat,       &
-                                                     rsp_param)     &
-            bind(C, name="RSPSolverGetSolution")
+        integer(C_INT) function RSPSolverGetLinearRSPSolution(rsp_solver,    &
+                                                              num_freq_sums, &
+                                                              freq_sums,     &
+                                                              size_pert,     &
+                                                              RHS_mat,       &
+                                                              rsp_param)     &
+            bind(C, name="RSPSolverGetLinearRSPSolution")
             use, intrinsic :: iso_c_binding
             implicit none
             type(C_PTR), value, intent(in) :: rsp_solver
-            type(C_PTR), value, intent(in) :: ref_ham
-            type(C_PTR), value, intent(in) :: ref_state
-            type(C_PTR), value, intent(in) :: ref_overlap
             integer(kind=C_QINT), value, intent(in) :: num_freq_sums
             real(kind=C_QREAL), intent(in) :: freq_sums(num_freq_sums)
             integer(kind=C_QINT), value, intent(in) :: size_pert
             type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
             type(C_PTR), intent(in) :: rsp_param(size_pert*num_freq_sums)
-        end function RSPSolverGetSolution
+        end function RSPSolverGetLinearRSPSolution
         integer(C_INT) function RSPOverlapGetMat(overlap,         &
                                                  bra_num_pert,    &
                                                  bra_pert_labels, &
@@ -264,18 +258,12 @@ module openrsp_callback_f
         ctx_saved%xc_fun = C_NULL_PTR
     end subroutine RSP_CTX_Destroy
 
-    ! callback subroutine to get the solution of linear response eigenvalue equation
-    subroutine f_callback_RSPSolverGetSolution(ref_ham,       &
-                                               ref_state,     &
-                                               ref_overlap,   &
-                                               num_freq_sums, &
-                                               freq_sums,     &
-                                               size_pert,     &
-                                               RHS_mat,       &
-                                               rsp_param)
-        type(QcMat), target, intent(in) :: ref_ham
-        type(QcMat), target, intent(in) :: ref_state
-        type(QcMat), target, intent(in) :: ref_overlap
+    ! callback subroutine to get the solution of linear response equation
+    subroutine f_callback_RSPSolverGetLinearRSPSolution(num_freq_sums, &
+                                                        freq_sums,     &
+                                                        size_pert,     &
+                                                        RHS_mat,       &
+                                                        rsp_param)
         integer(kind=QINT), intent(in) :: num_freq_sums
         real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
         integer(kind=QINT), intent(in) :: size_pert
@@ -304,15 +292,12 @@ module openrsp_callback_f
             end if
             ierr = QcMat_C_LOC(A=rsp_param, c_A=c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
-            ierr = RSPSolverGetSolution(ctx_saved%rsp_solver, &
-                                        c_loc(ref_ham),       &
-                                        c_loc(ref_state),     &
-                                        c_loc(ref_overlap),   &
-                                        num_freq_sums,        &
-                                        freq_sums,            &
-                                        size_pert,            &
-                                        c_RHS_mat,            &
-                                        c_rsp_param)
+            ierr = RSPSolverGetLinearRSPSolution(ctx_saved%rsp_solver, &
+                                                 num_freq_sums,        &
+                                                 freq_sums,            &
+                                                 size_pert,            &
+                                                 c_RHS_mat,            &
+                                                 c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             deallocate(c_RHS_mat)
             deallocate(c_rsp_param)
@@ -320,8 +305,8 @@ module openrsp_callback_f
             write(STDOUT,100) "null callback function for linear response equation solver"
             call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
         end if
-100     format("f_callback_RSPSolverGetSolution>> ",A,2I12)
-    end subroutine f_callback_RSPSolverGetSolution
+100     format("f_callback_RSPSolverGetLinearRSPSolution>> ",A,2I12)
+    end subroutine f_callback_RSPSolverGetLinearRSPSolution
 
     ! callback subroutine to get nuclear contributions
     subroutine f_callback_RSPNucContribGet(num_pert,     &

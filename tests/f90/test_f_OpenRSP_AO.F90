@@ -38,15 +38,15 @@
                               QcMatAssemble_f,    &
                               QcMatSetValues_f,   &
                               QcMatDestroy_f
-        use openrsp_f, only: ELEC_AO_D_MATRIX,    &
-                             OpenRSP,             &
-                             OpenRSPSetElecEOM_f, &
-                             OpenRSPSetSolver_f,  &
-                             OpenRSPSetPDBS_f,    &
-                             OpenRSPAddOneOper_f, &
-                             OpenRSPAddTwoOper_f, &
-                             OpenRSPAssemble_f,   &
-                             OpenRSPWrite_f,      &
+        use openrsp_f, only: ELEC_AO_D_MATRIX,             &
+                             OpenRSP,                      &
+                             OpenRSPSetElecEOM_f,          &
+                             OpenRSPSetLinearRSPSolver_f,  &
+                             OpenRSPSetPDBS_f,             &
+                             OpenRSPAddOneOper_f,          &
+                             OpenRSPAddTwoOper_f,          &
+                             OpenRSPAssemble_f,            &
+                             OpenRSPWrite_f,               &
                              OpenRSPGetRSPFun_f
         implicit none
         type(OpenRSP), intent(inout) :: open_rsp
@@ -58,7 +58,7 @@
         character(len=1) :: solver_context(6) = (/"S","O","L","V","E","R"/)
 #endif
         ! callback subroutine of linear response equation solver
-        external get_rsp_solution_f
+        external get_linear_rsp_solution_f
         ! overlap integrals with London atomic orbitals
         integer(kind=QINT), parameter :: overlap_num_pert = 2_QINT
         integer(kind=QINT) :: overlap_pert_labels(overlap_num_pert) = (/ &
@@ -130,13 +130,13 @@
         write(io_log,100) "OpenRSPSetElecEOM_f() passed"
 
         ! sets the context of linear response equation solver
-        ierr = OpenRSPSetSolver_f(open_rsp,       &
+        ierr = OpenRSPSetLinearRSPSolver_f(open_rsp,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                  solver_context, &
+                                           solver_context, &
 #endif
-                                  get_rsp_solution_f)
+                                           get_linear_rsp_solution_f)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetSolver_f() passed"
+        write(io_log,100) "OpenRSPSetLinearRSPSolver_f() passed"
 
         ! sets the context of perturbation dependent basis sets
         ierr = OpenRSPSetPDBS_f(open_rsp,            &

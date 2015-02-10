@@ -14,7 +14,7 @@
 !!  You should have received a copy of the GNU Lesser General Public License
 !!  along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 !!
-!!  This file implements the callback subroutine get_rsp_solution_f.
+!!  This file implements the callback subroutine get_linear_rsp_solution_f.
 !!
 !!  2014-08-03, Bin Gao
 !!  * first version
@@ -22,20 +22,17 @@
 ! configuration file of QcMatrix library
 #include "qcmatrix_config.h"
 
-#define OPENRSP_F_TEST_SRC "tests/f90/callback/get_rsp_solution_f.F90"
+#define OPENRSP_F_TEST_SRC "tests/f90/callback/get_linear_rsp_solution_f.F90"
 
-    subroutine get_rsp_solution_f(ref_ham,       &
-                                  ref_state,     &
-                                  ref_overlap,   &
-                                  num_freq_sums, &
-                                  freq_sums,     &
-                                  size_pert,     &
-                                  RHS_mat,       &
+    subroutine get_linear_rsp_solution_f(num_freq_sums, &
+                                         freq_sums,     &
+                                         size_pert,     &
+                                         RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                  len_ctx,       &
-                                  user_ctx,      &
+                                         len_ctx,       &
+                                         user_ctx,      &
 #endif
-                                  rsp_param)
+                                         rsp_param)
         use qcmatrix_f, only: QINT,               &
                               QREAL,              &
                               QREALMAT,           &
@@ -47,9 +44,6 @@
                               QcMatAssemble_f,    &
                               QcMatSetValues_f
         implicit none
-        type(QcMat), intent(in) :: ref_ham
-        type(QcMat), intent(in) :: ref_state
-        type(QcMat), intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_freq_sums
         real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
         integer(kind=QINT), intent(in) :: size_pert
@@ -98,7 +92,7 @@
                                 values_real=alpha_rsp_param((id_rsp_param-1)*SIZE_AO_MAT+1:id_rsp_param*SIZE_AO_MAT))
         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         return
-100     format("get_rsp_solution_f>> ",A)
-    end subroutine get_rsp_solution_f
+100     format("get_linear_rsp_solution_f>> ",A)
+    end subroutine get_linear_rsp_solution_f
 
 #undef OPENRSP_F_TEST_SRC

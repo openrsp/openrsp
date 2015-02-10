@@ -23,17 +23,14 @@
 /* callback functions */
 #include "tests/openrsp_c_test_callback.h"
 
-QVoid get_rsp_solution(const QcMat *ref_ham,
-                       const QcMat *ref_state,
-                       const QcMat *ref_overlap,
-                       const QInt num_freq_sums,
-                       const QReal *freq_sums,
-                       const QInt size_pert,
-                       QcMat *RHS_mat[],
+QVoid get_linear_rsp_solution(const QInt num_freq_sums,
+                              const QReal *freq_sums,
+                              const QInt size_pert,
+                              QcMat *RHS_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                       QVoid *user_ctx,
+                              QVoid *user_ctx,
 #endif
-                       QcMat *rsp_param[])
+                              QcMat *rsp_param[])
 {
 }
 

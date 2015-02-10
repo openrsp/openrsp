@@ -27,19 +27,19 @@
     \date 2014-08-06
     \param[RSPSolver:struct]{inout} rsp_solver the context of response equation solver
     \param[QVoid:void]{in} user_ctx user-defined callback function context
-    \param[GetRSPSolution:void]{in} get_rsp_solution user specified function of
-        response equation solver
+    \param[GetLinearRSPSolution:void]{in} get_linear_rsp_solution user specified function of
+        linear response equation solver
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPSolverCreate(RSPSolver *rsp_solver,
 #if defined(OPENRSP_C_USER_CONTEXT)
                            QVoid *user_ctx,
 #endif
-                           const GetRSPSolution get_rsp_solution)
+                           const GetLinearRSPSolution get_linear_rsp_solution)
 {
 #if defined(OPENRSP_C_USER_CONTEXT)
     rsp_solver->user_ctx = user_ctx;
 #endif
-    rsp_solver->get_rsp_solution = get_rsp_solution;
+    rsp_solver->get_linear_rsp_solution = get_linear_rsp_solution;
     return QSUCCESS;
 }
