@@ -52,6 +52,7 @@
 #include "tests/openrsp_f_molecule.h90"
         ! context of response theory calculations
         type(OpenRSP) open_rsp
+#if defined(OPENRSP_PERTURBATION_FREE)
         ! labels of all perturbations
         integer(kind=QINT), parameter :: ALL_PERT_LABELS(NUM_ALL_PERT) = (/ &
             PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC/)
@@ -67,7 +68,6 @@
         ! user defined context for perturbations
         character(len=1) :: pert_context(7) = (/"N","R","N","Z","G","E","O"/)
 #endif
-#if defined(OPENRSP_PERTURBATION_FREE)
         ! callback subroutines getting the components and rank of a perturbation
         external get_pert_comp_f
         external get_pert_rank_f

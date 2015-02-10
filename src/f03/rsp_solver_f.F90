@@ -153,7 +153,6 @@ module rsp_solver_f
         type(QcMat), allocatable :: f_RHS_mat(:)    !RHS matrices
         type(QcMat), allocatable :: f_rsp_param(:)  !response parameters
         integer(kind=4) ierr                        !error information
-        integer(kind=QINT) imat                     !incremental recorder over matrices
         ! converts C pointer to Fortran QcMat type
         size_solution = size_pert*num_freq_sums
         allocate(f_RHS_mat(size_solution), stat=ierr)

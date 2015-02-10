@@ -42,9 +42,10 @@ QErrorCode RSPNucContribWrite(const RSPNucContrib *nuc_contrib, FILE *fp_nuc)
                 "RSPNucContribWrite>> %"QINT_FMT"    %f    [%f, %f, %f]\n",
                 iatom,
                 nuc_contrib->atom_charge[iatom],
-                nuc_contrib->atom_coord[ixyz++],   /* x */
-                nuc_contrib->atom_coord[ixyz++],   /* y */
-                nuc_contrib->atom_coord[ixyz++]);  /* z */
+                nuc_contrib->atom_coord[ixyz],     /* x */
+                nuc_contrib->atom_coord[ixyz+1],   /* y */
+                nuc_contrib->atom_coord[ixyz+2]);  /* z */
+       ixyz += 3;
     }
     fprintf(fp_nuc,
             "RSPNucContribWrite>> dipole origin [%f, %f, %f]\n",
