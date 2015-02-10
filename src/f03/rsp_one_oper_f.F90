@@ -27,7 +27,7 @@
 module rsp_one_oper_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER,QcMat_C_NULL_PTR
 
     implicit none
 
@@ -229,6 +229,8 @@ module rsp_one_oper_f
                                            f_val_int)
         ! cleans up
         nullify(one_oper_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_val_int)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_val_int)
     end subroutine RSPOneOperGetMat_f
 
@@ -289,6 +291,8 @@ module rsp_one_oper_f
                                            val_exp)
         ! cleans up
         nullify(one_oper_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_ao_dens)
         return
     end subroutine RSPOneOperGetExp_f

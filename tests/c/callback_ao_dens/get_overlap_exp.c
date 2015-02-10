@@ -154,7 +154,7 @@ QVoid get_overlap_exp(const QInt bra_num_pert,
         }
         /* zero integrals */
         else if (pert_labels[0]==PERT_DIPOLE) {
-            for (idens=0; idens<num_exp; idens++) {
+            for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
         }
@@ -177,7 +177,7 @@ QVoid get_overlap_exp(const QInt bra_num_pert,
         }
         /* zero integrals */
         else if (bra_pert_labels[0]==PERT_DIPOLE) {
-            for (idens=0; idens<num_exp; idens++) {
+            for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
         }
@@ -200,7 +200,7 @@ QVoid get_overlap_exp(const QInt bra_num_pert,
         }
         /* zero integrals */
         else if (ket_pert_labels[0]==PERT_DIPOLE) {
-            for (idens=0; idens<num_exp; idens++) {
+            for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
         }
@@ -218,7 +218,7 @@ QVoid get_overlap_exp(const QInt bra_num_pert,
     else if (num_pert==0 && bra_num_pert==1 && ket_num_pert==1) {
         /* zero integrals */
         if (bra_pert_labels[0]==PERT_DIPOLE || ket_pert_labels[0]==PERT_DIPOLE) {
-            for (idens=0; idens<num_exp; idens++) {
+            for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
         }

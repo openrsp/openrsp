@@ -27,7 +27,7 @@
 module rsp_two_oper_f
 
     use, intrinsic :: iso_c_binding
-    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER
+    use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER,QcMat_C_NULL_PTR
 
     implicit none
 
@@ -261,6 +261,10 @@ module rsp_two_oper_f
                                            f_val_int)
         ! cleans up
         nullify(two_oper_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_val_int)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
+        ierr = QcMat_C_NULL_PTR(A=f_var_ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_val_int)
         deallocate(f_var_ao_dens)
     end subroutine RSPTwoOperGetMat_f
@@ -338,6 +342,10 @@ module rsp_two_oper_f
                                            val_exp)
         ! cleans up
         nullify(two_oper_fun)
+        ierr = QcMat_C_NULL_PTR(A=f_contr_ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
+        ierr = QcMat_C_NULL_PTR(A=f_var_ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_contr_ao_dens)
         deallocate(f_var_ao_dens)
         return

@@ -54,7 +54,7 @@ QVoid get_two_oper_exp(const QInt num_pert,
     else {
         /* electric fields */
         if (num_pert==1 && pert_labels[0]==PERT_DIPOLE) {
-            for (ival=0; ival<num_exp; ival++) {
+            for (ival=0; ival<2*num_exp; ival++) {
                 val_exp[ival] = 0;
             }
         }
@@ -67,7 +67,7 @@ QVoid get_two_oper_exp(const QInt num_pert,
 #else
     /* electric fields */
     if (num_pert==1 && pert_labels[0]==PERT_DIPOLE) {
-        for (ival=0; ival<num_exp; ival++) {
+        for (ival=0; ival<2*num_exp; ival++) {
             val_exp[ival] = 0;
         }
     }
