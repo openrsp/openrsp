@@ -269,15 +269,10 @@ module rsp_overlap_f
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
-        type(QcMat), allocatable :: f_val_int(:)     !integral matrices
-        character(len=1), allocatable :: enc(:)     !encoded data as an array of characters
-        integer(kind=QINT) len_enc                             !length of encoded data
-        integer(kind=4) ierr                                !error information
-        integer(kind=QINT) imat                                !incremental recorder over matrices
-        ! converts C pointer to Fortran QcMat type, inspired by
-        ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
-        ! and
-        ! http://jblevins.org/log/transfer
+        type(QcMat), allocatable :: f_val_int(:)    !integral matrices
+        integer(kind=4) ierr                        !error information
+        integer(kind=QINT) imat                     !incremental recorder over matrices
+        ! converts C pointer to Fortran QcMat type
         allocate(f_val_int(num_int), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "RSPOverlapGetMat_f>> num_int", num_int
@@ -285,20 +280,6 @@ module rsp_overlap_f
         end if
         ierr = QcMat_C_F_POINTER(A=f_val_int, c_A=val_int)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
-        !do imat = 1, num_int
-        !    ! encodes the C pointer in a character array
-        !    len_enc = size(transfer(val_int(imat), enc))
-        !    allocate(enc(len_enc), stat=ierr)
-        !    if (ierr/=0) then
-        !        write(STDOUT,"(A,I8)") "RSPOverlapGetMat_f>> length", len_enc
-        !        stop "RSPOverlapGetMat_f>> failed to allocate memory for enc"
-        !    end if
-        !    enc = transfer(val_int(imat), enc)
-        !    ! decodes as QcMat type
-        !    f_val_int(imat) = transfer(enc, f_val_int(imat))
-        !    ! cleans up
-        !    deallocate(enc)
-        !end do
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, overlap_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
@@ -369,34 +350,17 @@ module rsp_overlap_f
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(C_QREAL), intent(inout) :: val_exp(num_exp)
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
-        type(QcMat), allocatable :: f_ao_dens(:)     !AO based density matrices
-        character(len=1), allocatable :: enc(:)     !encoded data as an array of characters
-        integer(kind=QINT) len_enc                             !length of encoded data
-        integer(kind=4) ierr                                !error information
-        integer(kind=QINT) imat                                !incremental recorder over matrices
-        ! converts C pointer to Fortran QcMat type, inspired by
-        ! http://stackoverflow.com/questions/6998995/fortran-array-of-pointer-arrays
-        ! and
-        ! http://jblevins.org/log/transfer
+        type(QcMat), allocatable :: f_ao_dens(:)    !AO based density matrices
+        integer(kind=4) ierr                        !error information
+        integer(kind=QINT) imat                     !incremental recorder over matrices
+        ! converts C pointer to Fortran QcMat type
         allocate(f_ao_dens(num_dens), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "RSPOverlapGetExp_f>> num_dens", num_dens
             stop "RSPOverlapGetExp_f>> failed to allocate memory for f_ao_dens"
         end if
-        do imat = 1, num_dens
-            ! encodes the C pointer in a character array
-            len_enc = size(transfer(ao_dens(imat), enc))
-            allocate(enc(len_enc), stat=ierr)
-            if (ierr/=0) then
-                write(STDOUT,"(A,I8)") "RSPOverlapGetExp_f>> length", len_enc
-                stop "RSPOverlapGetExp_f>> failed to allocate memory for enc"
-            end if
-            enc = transfer(ao_dens(imat), enc)
-            ! decodes as QcMat type
-            f_ao_dens(imat) = transfer(enc, f_ao_dens(imat))
-            ! cleans up
-            deallocate(enc)
-        end do
+        ierr = QcMat_C_F_POINTER(A=f_ao_dens, c_A=ao_dens)
+        call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, overlap_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
