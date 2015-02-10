@@ -9,14 +9,6 @@
 !> response function tensors.
 module rsp_general
 
-!  use matrix_defop, matrix => openrsp_matrix
-!  use matrix_lowlevel, only: mat_init
-!  use rsp_contribs, only: rsp_field,           &
-!                          rsp_oneave,          &
-!                          rsp_ovlave,          &
-!                          rsp_ovlave_t_matrix, &
-!                          rsp_ovlave_t_matrix_2014, &
-!                          rsp_nucpot
   use rsp_contribs, only: rsp_ovlave_t_matrix_2014
   use rsp_field_tuple, only: p_tuple,                &
                              p_tuple_standardorder,  &
@@ -42,11 +34,6 @@ module rsp_general
                                         make_triangulated_tuples_indices
   use rsp_perturbed_matrices, only: derivative_superstructure_getsize, &
                                     derivative_superstructure,         &
-                                    !rsp_get_matrix_zeta,               &
-                                    !rsp_get_matrix_lambda,             &
-                                    !rsp_get_matrix_z,                  &
-                                    !rsp_get_matrix_w,                  &
-                                    !rsp_get_matrix_y,                  &
                                     rsp_get_matrix_zeta_2014,          &
                                     rsp_get_matrix_lambda_2014,        &
                                     rsp_get_matrix_z_2014,             &
@@ -55,14 +42,11 @@ module rsp_general
   use rsp_perturbed_sdf, only: rsp_fds_2014
   use rsp_property_caching
   use rsp_sdf_caching
-!  use interface_xc, only: rsp_xcave_interface
-!  use interface_2el, only: rsp_twoave
   
   use qcmatrix_f
 
   implicit none
 
-!   public rsp_prop
   public get_prop_2014
   public rsp_energy_2014
   public get_energy_2014
@@ -77,15 +61,8 @@ module rsp_general
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
-  
-  ! NEW 2014
-  
   public openrsp_get_property_2014
   
-  ! END NEW 2014
-
-!  type(matrix) :: zeromat
-
   private
 
   real(8) :: time_start
@@ -93,11 +70,7 @@ module rsp_general
 
   contains
   
-  
-  
-  ! NEW 2014  
-
-   subroutine openrsp_get_property_2014(nprops, np, pert_dims, pert_first_comp, pert_labels, num_freq_cfgs, pert_freqs, &
+  subroutine openrsp_get_property_2014(nprops, np, pert_dims, pert_first_comp, pert_labels, num_freq_cfgs, pert_freqs, &
                                    kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
@@ -142,9 +115,6 @@ module rsp_general
     kn_rule(1) = kn_rules(1)
     kn_rule(2) = num_perts - 1 - kn_rules(1)
 
-
-
-
     perturbations%n_perturbations = num_perts
     allocate(perturbations%pdim(num_perts))
 !     allocate(perturbations%pfcomp(num_perts))
@@ -152,7 +122,6 @@ module rsp_general
     allocate(perturbations%pid(num_perts))
     allocate(perturbations%freq(num_perts))
     perturbations%pdim = pert_dims
-!    %perturbations%perts%pfcomp = pert_first_comp
 
     do i = 1, num_perts
          perturbations%plab(i) = pert_labels(i)
@@ -188,12 +157,9 @@ module rsp_general
  
     end if
 
-!     call get_unpert_scf(S_unpert, D_unpert, F_unpert)
-
     call sdf_setup_datatype_2014(S, S_unpert)
     call sdf_setup_datatype_2014(D, D_unpert)
     call sdf_setup_datatype_2014(F, F_unpert)
-
 
     num_blks = get_num_blks(perturbations)
     allocate(blk_info(num_blks, 3))
@@ -223,7 +189,7 @@ module rsp_general
     write(id_outp,*) ' '
 
     if (present(file_id)) then
-!        open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
+!       open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
 !             status='replace', action='write') 
 !        open(unit=261, file='rsp_tensor_human_' // trim(adjustl(file_id)), &
 !             status='replace', action='write') 
@@ -232,14 +198,16 @@ module rsp_general
             status='replace', action='write') 
        open(unit=261, file='rsp_tensor_human', &
             status='replace', action='write') 
-    end if
-
-!     call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
-!     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-!     blk_info, prop, 260, 261)
+            
+       call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
+       (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
+       blk_info, prop, 260, 261)
 
     close(260)
     close(261)
+    end if
+
+
 
     if (present(file_id)) then
 !        write(*,*) 'Property was printed to rsp_tensor_' // trim(adjustl(file_id))
@@ -257,14 +225,6 @@ module rsp_general
 !     (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
 !     blk_info, prop, id_outp, id_outp)
 
-!    open(unit=257, file='totterms', status='old', action='write', position='append') 
-!    write(257,*) 'END'
-!    close(257)
-!
-!    open(unit=257, file='cachehit', status='old', action='write', position='append') 
-!    write(257,*) 'END'
-!    close(257)
-
     deallocate(blk_info)
 
   end if
@@ -272,9 +232,6 @@ module rsp_general
   end if
 
   end subroutine
-  
-  
-
   
   
 
@@ -301,7 +258,6 @@ module rsp_general
     emptyp_tuples = (/emptypert, emptypert/)
 
     !prop = 0.0
-
 
     ! Get all necessary F, D, S derivatives as dictated by
     ! number of perturbations and kn
@@ -2176,7 +2132,7 @@ module rsp_general
                             p12(2)%n_perturbations, which_index_is_pid, &
                             p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
 
-       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, size(tmp), tmp)
+       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, 1, (/W/), size(tmp), tmp)
                             
 !        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
 !                        (/ (j/j, j = 1, p12(1)%n_perturbations) /), &
@@ -2415,7 +2371,7 @@ module rsp_general
                                           which_index_is_pid2
     integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
-    real(8) :: tmp_tr
+    complex(8) :: tmp_tr
     complex(8), dimension(*) :: prop
     complex(8), allocatable, dimension(:) :: prop_forcache
 
@@ -2539,7 +2495,7 @@ module rsp_general
                    blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
                    
-          call QcMatTraceAB(Zeta, Z, dcmplx(tmp_tr))
+          call QcMatTraceAB(Zeta, Z, tmp_tr)
           prop_forcache(offset) = prop_forcache(offset) - tmp_tr
 
        end do
@@ -2757,7 +2713,7 @@ module rsp_general
     integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, which_index_is_pid2
     integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
     integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
-    real(8) :: tmp_tr
+    complex(8) :: tmp_tr
     complex(8), dimension(*) :: prop
     complex(8), allocatable, dimension(:) :: prop_forcache
 
@@ -2884,7 +2840,7 @@ module rsp_general
                    blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
           
-          call QcMatTraceAB(L, Y, dcmplx(tmp_tr))
+          call QcMatTraceAB(L, Y, tmp_tr)
           prop_forcache(offset) = prop_forcache(offset) - tmp_tr
 
        end do
