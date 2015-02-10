@@ -45,6 +45,8 @@ Files and Directories of OpenRSP
 
 #. ``src``: Source codes.
 
+   #. ``ao_dens``: atomic orbital density-matrix based response theory.
+
    #. ``f03``: Fortran 2003 APIs.
 
    #. ``one_oper``: Source codes of one-electron operators.
