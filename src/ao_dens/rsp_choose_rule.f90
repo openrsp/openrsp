@@ -19,7 +19,7 @@ module rsp_choose_rule
   private
 
   contains
-
+  
   function get_bestkn(pert)
 
     implicit none

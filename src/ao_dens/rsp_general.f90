@@ -82,7 +82,7 @@ module rsp_general
     integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
     character(4), dimension(sum(np)), intent(in) :: pert_labels
-    integer :: i, j, num_blks
+    integer :: i, j, num_blks, prop_size
     integer(kind=QINT), intent(in), dimension(nprops) :: kn_rules
     integer, dimension(2) :: kn_rule
     character, optional, dimension(20) :: file_id
@@ -187,6 +187,8 @@ module rsp_general
 
     write(id_outp,*) 'Property was calculated'
     write(id_outp,*) ' '
+    
+    prop_size = get_triangulated_size(num_blks, blk_info)
 
     if (present(file_id)) then
 !       open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
@@ -199,9 +201,9 @@ module rsp_general
        open(unit=261, file='rsp_tensor_human', &
             status='replace', action='write') 
             
-       !call print_rsp_tensor(1, perturbations%n_perturbations, perturbations%pdim, &
-       !(/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
-       !blk_info, rsp_tensor, 260, 261)
+       call print_rsp_tensor_tr(1, perturbations%n_perturbations, perturbations%pdim, &
+       (/ (1, j = 1, (perturbations%n_perturbations - 1) ) /), num_blks, blk_sizes, &
+       blk_info, prop_size, rsp_tensor, 260, 261)
 
     close(260)
     close(261)
