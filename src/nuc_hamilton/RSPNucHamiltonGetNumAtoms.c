@@ -14,26 +14,24 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPNucContribSetDipoleOrigin().
+   This file implements the function RSPNucHamiltonGetNumAtoms().
 
-   2014-12-15, Bin Gao:
+   2015-02-12, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_contrib.h"
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
-/*% \brief sets the coordinates of dipole origin
+/*% \brief gets the number of atoms
     \author Bin Gao
-    \date 2014-12-15
-    \param[RSPNucContrib:struct]{inout} nuc_contrib the context of nuclear contributions
-    \param[QReal:real]{in} dipole_origin coordinates of dipole origin
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
+    \param[QInt:int]{out} num_atoms number of atoms
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPNucContribSetDipoleOrigin(RSPNucContrib *nuc_contrib,
-                                        const QReal dipole_origin[3])
+QErrorCode RSPNucHamiltonGetNumAtoms(const RSPNucHamilton *nuc_hamilton,
+                                     QInt *num_atoms)
 {
-    nuc_contrib->dipole_origin[0] = dipole_origin[0];
-    nuc_contrib->dipole_origin[1] = dipole_origin[1];
-    nuc_contrib->dipole_origin[2] = dipole_origin[2];
+    *num_atoms = nuc_hamilton->num_atoms;
     return QSUCCESS;
 }

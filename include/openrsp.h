@@ -35,8 +35,8 @@
 #include "hamiltonian/rsp_two_oper.h"
 /* exchange-correlation functionals */
 #include "hamiltonian/rsp_xc_fun.h"
-/* (derivatives of) nuclear repulsion and nuclei-field interaction */
-#include "hamiltonian/rsp_nuc_contrib.h"
+/* nuclear contributions */
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
 #if defined(OPENRSP_PERTURBATION_FREE)
 /* callback function to get the components of a perturbation */
@@ -65,27 +65,27 @@ typedef struct {
     QBool assembled;             /* indicates if the context of response theory calculations assembled */
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* perturbations */
-    QInt num_pert;               /* number of all perturbations involved in calculations */
-    QInt *pert_labels;           /* labels of all perturbations */
-    QInt *pert_max_orders;       /* maximum allowed orders of all perturbations */
-    QInt *size_ptr;              /* pointer to the size of each perturbation */
-    QInt *pert_sizes;            /* sizes of all perturbations up to their maximum orders */
+    QInt num_pert;                 /* number of all perturbations involved in calculations */
+    QInt *pert_labels;             /* labels of all perturbations */
+    QInt *pert_max_orders;         /* maximum allowed orders of all perturbations */
+    QInt *size_ptr;                /* pointer to the size of each perturbation */
+    QInt *pert_sizes;              /* sizes of all perturbations up to their maximum orders */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;             /* user-defined callback function context */
+    QVoid *user_ctx;               /* user-defined callback function context */
 #endif
-    GetPertComp get_pert_comp;   /* user specified function for getting components of a perturbation */
-    GetPertRank get_pert_rank;   /* user specified function for getting rank of a perturbation */
+    GetPertComp get_pert_comp;     /* user specified function for getting components of a perturbation */
+    GetPertRank get_pert_rank;     /* user specified function for getting rank of a perturbation */
 #endif
     /* EOM and solver */
-    //ElecEOM *elec_eom;           /* implementation-specific data of the EOM of electrons */
+    //ElecEOM *elec_eom;             /* implementation-specific data of the EOM of electrons */
     ElecEOMType elec_EOM_type;
-    RSPSolver *rsp_solver;       /* response equation solvers */
+    RSPSolver *rsp_solver;         /* response equation solvers */
     /* Hamiltonian */
-    RSPOverlap *overlap;         /* overlap integrals */
-    RSPOneOper *one_oper;        /* linked list of one-electron operators */
-    RSPTwoOper *two_oper;        /* linked list of two-electron operators */
-    RSPXCFun *xc_fun;            /* linked list of exchange-correlation functionals */
-    RSPNucContrib *nuc_contrib;  /* (derivatives of) nuclear repulsion and nuclei-field interaction */
+    RSPOverlap *overlap;           /* overlap integrals */
+    RSPOneOper *one_oper;          /* linked list of one-electron operators */
+    RSPTwoOper *two_oper;          /* linked list of two-electron operators */
+    RSPXCFun *xc_fun;              /* linked list of exchange-correlation functionals */
+    RSPNucHamilton *nuc_hamilton;  /* nuclear Hamiltonian */
 } OpenRSP;
 
 /* APIs of OpenRSP */
@@ -136,12 +136,14 @@ extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
                                     const GetTwoOperMat,
                                     const GetTwoOperExp);
 //extern QErrorCode OpenRSPAddXCFun(OpenRSP*,);
-extern QErrorCode OpenRSPSetAtoms(OpenRSP*,
-                                  const QInt,
-                                  const QReal*,
-                                  const QReal*);
-extern QErrorCode OpenRSPSetDipoleOrigin(OpenRSP*,const QReal[3]);
-extern QErrorCode OpenRSPSetGaugeOrigin(OpenRSP*,const QReal[3]);
+extern QErrorCode OpenRSPSetNucGeoPerturbations(OpenRSP*,
+                                                const QInt,
+                                                const QReal*,
+                                                const QReal*);
+extern QErrorCode OpenRSPSetNucScalarPotential(OpenRSP*,
+                                               const QReal[3]);
+extern QErrorCode OpenRSPSetNucVectorPotential(OpenRSP*,
+                                               const QReal[3]);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);
 extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
 extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,

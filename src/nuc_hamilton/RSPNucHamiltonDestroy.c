@@ -14,29 +14,29 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function OpenRSPSetGaugeOrigin().
+   This file implements the function RSPNucHamiltonDestroy().
 
-   2014-12-15, Bin Gao:
+   2015-02-12, Bin Gao:
    * first version
 */
 
-#include "openrsp.h"
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
-/*% \brief sets the coordinates of gauge origin
+/*% \brief destroys the context of nuclear Hamiltonian, should be called at the end
     \author Bin Gao
-    \date 2014-12-15
-    \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
-    \param[QReal:real]{in} gauge_origin coordinates of gauge origin
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
     \return[QErrorCode:int] error information
 */
-QErrorCode OpenRSPSetGaugeOrigin(OpenRSP *open_rsp,
-                                 const QReal gauge_origin[3])
+QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton *nuc_hamilton)
 {
-    QErrorCode ierr;  /* error information */
-    if (open_rsp->nuc_contrib==NULL) {
-        QErrorExit(FILE_AND_LINE, "OpenRSPSetAtoms() should be called at first");
-    }
-    ierr = RSPNucContribSetGaugeOrigin(open_rsp->nuc_contrib, gauge_origin);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucContribSetGaugeOrigin");
+    free(nuc_hamilton->atom_coord);
+    nuc_hamilton->atom_coord = NULL;
+    free(nuc_hamilton->atom_charge);
+    nuc_hamilton->atom_charge = NULL;
+    free(nuc_hamilton->dipole_origin);
+    nuc_hamilton->dipole_origin = NULL;
+    free(nuc_hamilton->gauge_origin);
+    nuc_hamilton->gauge_origin = NULL;
     return QSUCCESS;
 }

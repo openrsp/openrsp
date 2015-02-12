@@ -81,23 +81,25 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
     fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetPerturbations() passed\n");
 #endif
 
-    /* sets the information of molecule */
-    ierr = OpenRSPSetAtoms(&open_rsp,
-                           NUM_ATOMS,
-                           ATOM_COORD,
-                           ATOM_CHARGE);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetAtoms");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetAtoms() passed\n");
+    /* sets the geometric perturbations for nuclear Hamiltonian */
+    ierr = OpenRSPSetNucGeoPerturbations(&open_rsp,
+                                         NUM_ATOMS,
+                                         ATOM_COORD,
+                                         ATOM_CHARGE);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucGeoPerturbations");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucGeoPerturbations() passed\n");
 
-    /* sets the dipole origin */
-    ierr = OpenRSPSetDipoleOrigin(&open_rsp, DIPOLE_ORIGIN);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetDipoleOrigin");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetDipoleOrigin() passed\n");
+    /* sets the terms in nuclear Hamiltonian due to the scalar potential */
+    ierr = OpenRSPSetNucScalarPotential(&open_rsp,
+                                        DIPOLE_ORIGIN);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucScalarPotential");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucScalarPotential() passed\n");
 
-    /* sets the gauge origin */
-    ierr = OpenRSPSetGaugeOrigin(&open_rsp, GAUGE_ORIGIN);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetGaugeOrigin");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetGaugeOrigin() passed\n");
+    /* sets the terms in nuclear Hamiltonian due to the vector potential */
+    ierr = OpenRSPSetNucVectorPotential(&open_rsp,
+                                        GAUGE_ORIGIN);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucVectorPotential");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucVectorPotential() passed\n");
 
     /* tests the density matrix-based response theory */
     ierr = test_c_OpenRSP_AO(&open_rsp, fp_log);

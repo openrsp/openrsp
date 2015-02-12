@@ -14,24 +14,26 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPNucContribGetNumAtoms().
+   This file implements the function RSPNucHamiltonCreate().
 
-   2014-12-15, Bin Gao:
+   2015-02-12, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_contrib.h"
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
-/*% \brief gets the number of atoms
+/*% \brief creates the context of nuclear Hamiltonian, should be called at first
     \author Bin Gao
-    \date 2014-12-15
-    \param[RSPNucContrib:struct]{in} nuc_contrib the context of nuclear contributions
-    \param[QInt:int]{out} num_atoms number of atoms
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPNucContribGetNumAtoms(const RSPNucContrib *nuc_contrib,
-                                    QInt *num_atoms)
+QErrorCode RSPNucHamiltonCreate(RSPNucHamilton *nuc_hamilton)
 {
-    *num_atoms = nuc_contrib->num_atoms;
+    nuc_hamilton->num_atoms = 0;
+    nuc_hamilton->atom_coord = NULL;
+    nuc_hamilton->atom_charge = NULL;
+    nuc_hamilton->dipole_origin = NULL;
+    nuc_hamilton->gauge_origin = NULL;
     return QSUCCESS;
 }

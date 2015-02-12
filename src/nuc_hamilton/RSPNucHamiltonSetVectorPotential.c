@@ -14,26 +14,32 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPNucContribSetGaugeOrigin().
+   This file implements the function RSPNucHamiltonSetVectorPotential().
 
-   2014-12-15, Bin Gao:
+   2015-02-12, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_contrib.h"
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
-/*% \brief sets the coordinates of gauge origin
+/*% \brief sets the terms in nuclear Hamiltonian due to the vector potential
     \author Bin Gao
-    \date 2014-12-15
-    \param[RSPNucContrib:struct]{inout} nuc_contrib the context of nuclear contributions
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
     \param[QReal:real]{in} gauge_origin coordinates of gauge origin
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPNucContribSetGaugeOrigin(RSPNucContrib *nuc_contrib,
-                                       const QReal gauge_origin[3])
+QErrorCode RSPNucHamiltonSetVectorPotential(RSPNucHamilton *nuc_hamilton,
+                                            const QReal gauge_origin[3])
 {
-    nuc_contrib->gauge_origin[0] = gauge_origin[0];
-    nuc_contrib->gauge_origin[1] = gauge_origin[1];
-    nuc_contrib->gauge_origin[2] = gauge_origin[2];
+    if (nuc_hamilton->gauge_origin==NULL) {
+        nuc_hamilton->gauge_origin = (QReal *)malloc(3*sizeof(QReal));
+        if (nuc_hamilton->gauge_origin==NULL) {
+            QErrorExit(FILE_AND_LINE, "failed to allocate memory for gauge_origin");
+        }
+    }
+    nuc_hamilton->gauge_origin[0] = gauge_origin[0];
+    nuc_hamilton->gauge_origin[1] = gauge_origin[1];
+    nuc_hamilton->gauge_origin[2] = gauge_origin[2];
     return QSUCCESS;
 }
