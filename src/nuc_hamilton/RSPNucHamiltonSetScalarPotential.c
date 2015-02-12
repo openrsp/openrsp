@@ -14,29 +14,32 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function OpenRSPSetDipoleOrigin().
+   This file implements the function RSPNucHamiltonSetScalarPotential().
 
-   2014-12-15, Bin Gao:
+   2015-02-12, Bin Gao:
    * first version
 */
 
-#include "openrsp.h"
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
-/*% \brief sets the coordinates of dipole origin
+/*% \brief sets the terms in nuclear Hamiltonian due to the scalar potential
     \author Bin Gao
-    \date 2014-12-15
-    \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
     \param[QReal:real]{in} dipole_origin coordinates of dipole origin
     \return[QErrorCode:int] error information
 */
-QErrorCode OpenRSPSetDipoleOrigin(OpenRSP *open_rsp,
-                                  const QReal dipole_origin[3])
+QErrorCode RSPNucHamiltonSetScalarPotential(RSPNucHamilton *nuc_hamilton,
+                                            const QReal dipole_origin[3])
 {
-    QErrorCode ierr;  /* error information */
-    if (open_rsp->nuc_contrib==NULL) {
-        QErrorExit(FILE_AND_LINE, "OpenRSPSetAtoms() should be called at first");
+    if (nuc_hamilton->dipole_origin==NULL) {
+        nuc_hamilton->dipole_origin = (QReal *)malloc(3*sizeof(QReal));
+        if (nuc_hamilton->dipole_origin==NULL) {
+            QErrorExit(FILE_AND_LINE, "failed to allocate memory for dipole_origin");
+        }
     }
-    ierr = RSPNucContribSetDipoleOrigin(open_rsp->nuc_contrib, dipole_origin);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucContribSetDipoleOrigin");
+    nuc_hamilton->dipole_origin[0] = dipole_origin[0];
+    nuc_hamilton->dipole_origin[1] = dipole_origin[1];
+    nuc_hamilton->dipole_origin[2] = dipole_origin[2];
     return QSUCCESS;
 }

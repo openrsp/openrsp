@@ -247,13 +247,13 @@ functions are given as follows.
    :type freq_sums: QReal\*
    :param size_pert: size of perturbaed matrices
    :type size_pert: QInt
-   :param RHS_mat: RHS matrices, size is ``size_pert``:math:`\times`
-       ``num_freq_sums``
+   :param RHS_mat: RHS matrices, size is ``num_freq_sums``:math:`\times`
+       ``size_pert``
    :type RHS_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param rsp_param: solved response parameters, size is ``size_pert``:math:`\times`
-       ``num_freq_sums``
+   :param rsp_param: solved response parameters, size is ``num_freq_sums``:math:`\times`
+       ``size_pert``
    :type rsp_param: QcMat\*[]
    :rtype: QVoid
 

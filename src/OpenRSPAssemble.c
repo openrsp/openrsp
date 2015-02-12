@@ -70,6 +70,7 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
         ierr = RSPTwoOperAssemble(open_rsp->two_oper);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperAssemble");
     }
+    /* FIXME: assembles the nuclear Hamiltonian */
     open_rsp->assembled = QTRUE;
     return QSUCCESS;
 }

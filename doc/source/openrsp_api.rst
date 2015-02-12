@@ -184,12 +184,12 @@ Functions of OpenRSP API (C version)
    :type get_two_oper_exp: GetTwoOperExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. function:: OpenRSPSetAtoms(open_rsp,   \
-                              num_atoms,  \
-                              atom_coord, \
-                              atom_charge)
+.. function:: OpenRSPSetNucGeoPerturbations(open_rsp,   \
+                                            num_atoms,  \
+                                            atom_coord, \
+                                            atom_charge)
 
-   Sets the context of atoms for the nuclear contributions.
+   Sets the context of geometric perturbations for nuclear Hamiltonian.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
@@ -201,10 +201,10 @@ Functions of OpenRSP API (C version)
    :type atom_charge: QReal\*
    :rtype: QErrorCode
 
-.. function:: OpenRSPSetDipoleOrigin(open_rsp, \
-                                     dipole_origin)
+.. function:: OpenRSPSetNucScalarPotential(open_rsp, \
+                                           dipole_origin)
 
-   Sets the coordinates of dipole origin.
+   Sets the terms in nuclear Hamiltonian due to the scalar potential.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
@@ -212,10 +212,10 @@ Functions of OpenRSP API (C version)
    :type dipole_origin: QReal[3]
    :rtype: QErrorCode
 
-.. function:: OpenRSPSetGaugeOrigin(open_rsp, \
-                                    gauge_origin)
+.. function:: OpenRSPSetNucVectorPotential(open_rsp, \
+                                           gauge_origin)
 
-   Sets the coordinates of gauge origin.
+   Sets the terms in nuclear Hamiltonian due to the vector potential.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*

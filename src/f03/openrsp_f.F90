@@ -91,9 +91,9 @@ module openrsp_f
     public :: OpenRSPAddOneOper_f
     public :: OpenRSPAddTwoOper_f
     !public :: OpenRSPAddXCFun_f
-    public :: OpenRSPSetAtoms_f
-    public :: OpenRSPSetDipoleOrigin_f
-    public :: OpenRSPSetGaugeOrigin_f
+    public :: OpenRSPSetNucGeoPerturbations_f
+    public :: OpenRSPSetNucScalarPotential_f
+    public :: OpenRSPSetNucVectorPotential_f
     public :: OpenRSPAssemble_f
     public :: OpenRSPWrite_f
     public :: OpenRSPGetRSPFun_f
@@ -194,31 +194,31 @@ module openrsp_f
             type(C_FUNPTR), value, intent(in) :: get_two_oper_mat
             type(C_FUNPTR), value, intent(in) :: get_two_oper_exp
         end function OpenRSPAddTwoOper
-        integer(C_INT) function OpenRSPSetAtoms(open_rsp,    &
-                                                num_atoms,   &
-                                                atom_coord,  &
-                                                atom_charge) &
-            bind(C, name="OpenRSPSetAtoms")
+        integer(C_INT) function OpenRSPSetNucGeoPerturbations(open_rsp,    &
+                                                              num_atoms,   &
+                                                              atom_coord,  &
+                                                              atom_charge) &
+            bind(C, name="OpenRSPSetNucGeoPerturbations")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: num_atoms
             real(kind=C_QREAL), intent(in) :: atom_coord(3*num_atoms)
             real(kind=C_QREAL), intent(in) :: atom_charge(num_atoms)
-        end function OpenRSPSetAtoms
-        integer(C_INT) function OpenRSPSetDipoleOrigin(open_rsp,      &
-                                                       dipole_origin) &
-            bind(C, name="OpenRSPSetDipoleOrigin")
+        end function OpenRSPSetNucGeoPerturbations
+        integer(C_INT) function OpenRSPSetNucScalarPotential(open_rsp,      &
+                                                             dipole_origin) &
+            bind(C, name="OpenRSPSetNucScalarPotential")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
             real(kind=C_QREAL), intent(in) :: dipole_origin(3)
-        end function OpenRSPSetDipoleOrigin
-        integer(C_INT) function OpenRSPSetGaugeOrigin(open_rsp,     &
-                                                      gauge_origin) &
-            bind(C, name="OpenRSPSetGaugeOrigin")
+        end function OpenRSPSetNucScalarPotential
+        integer(C_INT) function OpenRSPSetNucVectorPotential(open_rsp,     &
+                                                             gauge_origin) &
+            bind(C, name="OpenRSPSetNucVectorPotential")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
             real(kind=C_QREAL), intent(in) :: gauge_origin(3)
-        end function OpenRSPSetGaugeOrigin
+        end function OpenRSPSetNucVectorPotential
         integer(C_INT) function OpenRSPAssemble(open_rsp) &
             bind(C, name="OpenRSPAssemble")
             use, intrinsic :: iso_c_binding
@@ -906,34 +906,38 @@ module openrsp_f
                                  c_funloc(RSPTwoOperGetExp_f))
     end function OpenRSPAddTwoOper_f
 
-    function OpenRSPSetAtoms_f(open_rsp,   &
-                               num_atoms,  &
-                               atom_coord, &
-                               atom_charge) result(ierr)
+    function OpenRSPSetNucGeoPerturbations_f(open_rsp,   &
+                                             num_atoms,  &
+                                             atom_coord, &
+                                             atom_charge) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_atoms
         real(kind=QREAL), intent(in) :: atom_coord(3,num_atoms)
         real(kind=QREAL), intent(in) :: atom_charge(num_atoms)
-        ierr = OpenRSPSetAtoms(open_rsp%c_rsp, &
-                               num_atoms,      &
-                               atom_coord,     &
-                               atom_charge)
-    end function OpenRSPSetAtoms_f
+        ierr = OpenRSPSetNucGeoPerturbations(open_rsp%c_rsp, &
+                                             num_atoms,      &
+                                             atom_coord,     &
+                                             atom_charge)
+    end function OpenRSPSetNucGeoPerturbations_f
 
-    function OpenRSPSetDipoleOrigin_f(open_rsp, dipole_origin) result(ierr)
+    function OpenRSPSetNucScalarPotential_f(open_rsp, &
+                                            dipole_origin) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         real(kind=QREAL), intent(in) :: dipole_origin(3)
-        ierr = OpenRSPSetDipoleOrigin(open_rsp%c_rsp, dipole_origin)
-    end function OpenRSPSetDipoleOrigin_f
+        ierr = OpenRSPSetNucScalarPotential(open_rsp%c_rsp, &
+                                            dipole_origin)
+    end function OpenRSPSetNucScalarPotential_f
 
-    function OpenRSPSetGaugeOrigin_f(open_rsp, gauge_origin) result(ierr)
+    function OpenRSPSetNucVectorPotential_f(open_rsp, &
+                                            gauge_origin) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         real(kind=QREAL), intent(in) :: gauge_origin(3)
-        ierr = OpenRSPSetGaugeOrigin(open_rsp%c_rsp, gauge_origin)
-    end function OpenRSPSetGaugeOrigin_f
+        ierr = OpenRSPSetNucVectorPotential(open_rsp%c_rsp, &
+                                            gauge_origin)
+    end function OpenRSPSetNucVectorPotential_f
 
     function OpenRSPAssemble_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr

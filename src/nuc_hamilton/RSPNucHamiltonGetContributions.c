@@ -14,18 +14,18 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPNucContribGet().
+   This file implements the function RSPNucHamiltonGetContributions().
 
-   2014-12-15, Bin Gao:
+   2015-02-12, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_contrib.h"
+#include "hamiltonian/rsp_nuc_hamiltonian.h"
 
 /*% \brief gets the nuclear contributions
     \author Bin Gao
-    \date 2014-12-15
-    \param[RSPNucContrib:struct]{in} nuc_contrib the context of nuclear contributions
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
     \param[QInt:int]{in} num_pert number of perturbations
      \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_orders orders of the perturbations
@@ -33,12 +33,12 @@
     \param[QReal:real]{inout} val_contrib the nuclear contributions
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPNucContribGet(const RSPNucContrib *nuc_contrib,
-                            const QInt num_pert,
-                            const QInt *pert_labels,
-                            const QInt *pert_orders,
-                            const QInt size_contrib,
-                            QReal *val_contrib)
+QErrorCode RSPNucHamiltonGetContributions(const RSPNucHamilton *nuc_hamilton,
+                                          const QInt num_pert,
+                                          const QInt *pert_labels,
+                                          const QInt *pert_orders,
+                                          const QInt size_contrib,
+                                          QReal *val_contrib)
 {
     return QSUCCESS;
 }
