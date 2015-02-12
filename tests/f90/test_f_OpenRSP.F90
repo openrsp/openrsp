@@ -30,14 +30,14 @@
     subroutine test_f_OpenRSP(io_log)
 #endif
         use qcmatrix_f, only: QINT,QREAL
-        use openrsp_f, only: OpenRSP,                   &
-                             OpenRSPCreate_f,           &
+        use openrsp_f, only: OpenRSP,                         &
+                             OpenRSPCreate_f,                 &
 #if defined(OPENRSP_PERTURBATION_FREE)
-                             OpenRSPSetPerturbations_f, &
+                             OpenRSPSetPerturbations_f,       &
 #endif
-                             OpenRSPSetAtoms_f,         &
-                             OpenRSPSetDipoleOrigin_f,  &
-                             OpenRSPSetGaugeOrigin_f,   &
+                             OpenRSPSetNucGeoPerturbations_f, &
+                             OpenRSPSetNucScalarPotential_f,  &
+                             OpenRSPSetNucVectorPotential_f,  &
                              OpenRSPDestroy_f
         implicit none
         ! IO of standard output
@@ -96,23 +96,25 @@
         write(io_log,100) "OpenRSPSetPerturbations_f() passed"
 #endif
 
-        ! sets the information of molecule
-        ierr = OpenRSPSetAtoms_f(open_rsp,   &
-                                 NUM_ATOMS,  &
-                                 ATOM_COORD, &
-                                 ATOM_CHARGE)
+        ! sets the geometric perturbations for nuclear Hamiltonian
+        ierr = OpenRSPSetNucGeoPerturbations_f(open_rsp,   &
+                                               NUM_ATOMS,  &
+                                               ATOM_COORD, &
+                                               ATOM_CHARGE)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetAtoms_f() passed"
+        write(io_log,100) "OpenRSPSetNucGeoPerturbations_f() passed"
 
-        ! sets the dipole origin
-        ierr = OpenRSPSetDipoleOrigin_f(open_rsp, DIPOLE_ORIGIN)
+        ! sets the terms in nuclear Hamiltonian due to the scalar potential
+        ierr = OpenRSPSetNucScalarPotential_f(open_rsp, &
+                                              DIPOLE_ORIGIN)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetDipoleOrigin_f() passed"
+        write(io_log,100) "OpenRSPSetNucScalarPotential_f() passed"
 
-        ! sets the gauge origin
-        ierr = OpenRSPSetGaugeOrigin_f(open_rsp, GAUGE_ORIGIN)
+        ! sets the terms in nuclear Hamiltonian due to the vector potential
+        ierr = OpenRSPSetNucVectorPotential_f(open_rsp, &
+                                              GAUGE_ORIGIN)
         call QErrorCheckCode(io_log, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-        write(io_log,100) "OpenRSPSetGaugeOrigin_f() passed"
+        write(io_log,100) "OpenRSPSetNucVectorPotential_f() passed"
 
         ! tests the density matrix-based response theory
         call test_f_OpenRSP_AO(open_rsp, io_log)

@@ -44,7 +44,7 @@ module openrsp_callback_f
     type, private :: RSP_CTX
         private
         type(C_PTR) :: rsp_solver = C_NULL_PTR
-        type(C_PTR) :: nuc_contrib = C_NULL_PTR
+        type(C_PTR) :: nuc_hamilton = C_NULL_PTR
         type(C_PTR) :: overlap = C_NULL_PTR
         type(C_PTR) :: one_oper = C_NULL_PTR
         type(C_PTR) :: two_oper = C_NULL_PTR
@@ -56,7 +56,7 @@ module openrsp_callback_f
     public :: RSP_CTX_Create
     public :: RSP_CTX_Destroy
     public :: f_callback_RSPSolverGetLinearRSPSolution
-    public :: f_callback_RSPNucContribGet
+    public :: f_callback_RSPNucHamiltonGetContributions
     public :: f_callback_RSPOverlapGetMat
     public :: f_callback_RSPOverlapGetExp
     public :: f_callback_RSPOneOperGetMat
@@ -228,20 +228,20 @@ module openrsp_callback_f
     contains
 
     ! creates the context for calling C functions
-    subroutine RSP_CTX_Create(rsp_solver,      &
-                              nuc_contrib,     &
-                              overlap,         &
-                              one_oper,        &
-                              two_oper,        &
+    subroutine RSP_CTX_Create(rsp_solver,   &
+                              nuc_hamilton, &
+                              overlap,      &
+                              one_oper,     &
+                              two_oper,     &
                               xc_fun)
         type(C_PTR), value, intent(in) :: rsp_solver
-        type(C_PTR), value, intent(in) :: nuc_contrib
+        type(C_PTR), value, intent(in) :: nuc_hamilton
         type(C_PTR), value, intent(in) :: overlap
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
         ctx_saved%rsp_solver = rsp_solver
-        ctx_saved%nuc_contrib = nuc_contrib
+        ctx_saved%nuc_hamilton = nuc_hamilton
         ctx_saved%overlap = overlap
         ctx_saved%one_oper = one_oper
         ctx_saved%two_oper = two_oper
@@ -251,7 +251,7 @@ module openrsp_callback_f
     ! cleans up the context for calling C functions
     subroutine RSP_CTX_Destroy()
         ctx_saved%rsp_solver = C_NULL_PTR
-        ctx_saved%nuc_contrib = C_NULL_PTR
+        ctx_saved%nuc_hamilton = C_NULL_PTR
         ctx_saved%overlap = C_NULL_PTR
         ctx_saved%one_oper = C_NULL_PTR
         ctx_saved%two_oper = C_NULL_PTR
@@ -314,25 +314,25 @@ module openrsp_callback_f
     end subroutine f_callback_RSPSolverGetLinearRSPSolution
 
     ! callback subroutine to get nuclear contributions
-    subroutine f_callback_RSPNucContribGet(num_pert,     &
-                                           pert_labels,  &
-                                           pert_orders,  &
-                                           size_contrib, &
-                                           val_contrib)
+    subroutine f_callback_RSPNucHamiltonGetContributions(num_pert,     &
+                                                         pert_labels,  &
+                                                         pert_orders,  &
+                                                         size_contrib, &
+                                                         val_contrib)
         integer(kind=QINT), intent(in) :: num_pert
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_orders(num_pert)
         integer(kind=QINT), intent(in) :: size_contrib
         real(kind=QREAL), intent(inout) :: val_contrib(size_contrib)
-        if (c_associated(ctx_saved%nuc_contrib)) then
+        if (c_associated(ctx_saved%nuc_hamilton)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", num_pert, size_contrib
 #endif
             !write(STDOUT,100) "not implemented"
             !call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
         end if
-100     format("f_callback_RSPNucContribGet>> ",A,2I12)
-    end subroutine f_callback_RSPNucContribGet
+100     format("f_callback_RSPNucHamiltonGetContributions>> ",A,2I12)
+    end subroutine f_callback_RSPNucHamiltonGetContributions
 
     ! callback subroutine to get (perturbed) overlap integral matrices
     subroutine f_callback_RSPOverlapGetMat(bra_num_pert,    &

@@ -33,7 +33,7 @@
                                   S_unpert,        &
                                   D_unpert,        &
                                   rsp_solver,      &
-                                  nuc_contrib,     &
+                                  nuc_hamilton,    &
                                   overlap,         &
                                   one_oper,        &
                                   two_oper,        &
@@ -65,20 +65,20 @@
         type(C_PTR), value, intent(in) :: S_unpert
         type(C_PTR), value, intent(in) :: D_unpert
         type(C_PTR), value, intent(in) :: rsp_solver
-        type(C_PTR), value, intent(in) :: nuc_contrib
+        type(C_PTR), value, intent(in) :: nuc_hamilton
         type(C_PTR), value, intent(in) :: overlap
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
         interface
-            integer(C_INT) function RSPNucContribGetNumAtoms(nuc_contrib, &
-                                                             num_atoms)   &
-                bind(C, name="RSPNucContribGetNumAtoms")
+            integer(C_INT) function RSPNucHamiltonGetNumAtoms(nuc_hamilton, &
+                                                              num_atoms)    &
+                bind(C, name="RSPNucHamiltonGetNumAtoms")
                 use, intrinsic :: iso_c_binding
                 implicit none
-                type(C_PTR), value, intent(in) :: nuc_contrib
+                type(C_PTR), value, intent(in) :: nuc_hamilton
                 integer(kind=C_QINT), intent(out) :: num_atoms
-            end function RSPNucContribGetNumAtoms
+            end function RSPNucHamiltonGetNumAtoms
         end interface
         !integer, intent(in) :: id_outp
         integer(kind=C_QINT), value, intent(in) :: property_size
@@ -102,9 +102,9 @@
         integer(kind=QINT) ipert, jpert
         integer(kind=4) ierr
         ! gets the number of coordinates
-        ierr = RSPNucContribGetNumAtoms(nuc_contrib, num_coord)
+        ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call RSPNucContribGetNumAtoms"
+            stop "OpenRSPGetRSPFun_f>> failed to call RSPNucHamiltonGetNumAtoms"
         end if
         num_coord = 3*num_coord
         ! gets the number of all perturbations
@@ -160,11 +160,11 @@
             stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)"
         end if
         ! sets the context of callback functions
-        call RSP_CTX_Create(rsp_solver,  &
-                            nuc_contrib, &
-                            overlap,     &
-                            one_oper,    &
-                            two_oper,    &
+        call RSP_CTX_Create(rsp_solver,   &
+                            nuc_hamilton, &
+                            overlap,      &
+                            one_oper,     &
+                            two_oper,     &
                             xc_fun)
         ! allocates memory for the results
         allocate(f_rsp_tensor(property_size), stat=ierr)
@@ -184,56 +184,56 @@
         !        f_file_tensor(ipert) = ptr_rsp_tensor(ipert)(1:1)
         !    end do
         !    ! gets the properties
-        !    call openrsp_get_property_2014(num_props,                                &
-        !                                   num_pert,                                 &
-        !                                   f_pert_dims,                              &
-        !                                   f_pert_first_comp,                        &
-        !                                   f_pert_labels,                            &
-        !                                   num_freqs,                                &
-        !                                   f_pert_freqs,                             &
-        !                                   kn_rules,                                 &
-        !                                   f_F_unpert(1),                            &
-        !                                   f_S_unpert(1),                            &
-        !                                   f_D_unpert(1),                            &
-        !                                   f_callback_RSPSolverGetLinearRSPSolution, &
-        !                                   f_callback_RSPNucContribGet,              &
-        !                                   f_callback_RSPOverlapGetMat,              &
-        !                                   f_callback_RSPOverlapGetExp,              &
-        !                                   f_callback_RSPOneOperGetMat,              &
-        !                                   f_callback_RSPOneOperGetExp,              &
-        !                                   f_callback_RSPTwoOperGetMat,              &
-        !                                   f_callback_RSPTwoOperGetExp,              &
-        !                                   f_callback_RSPXCFunGetMat,                &
-        !                                   f_callback_RSPXCFunGetExp,                &
-        !                                   STDOUT,                                   &
-        !                                   f_rsp_tensor,                             &
+        !    call openrsp_get_property_2014(num_props,                                 &
+        !                                   num_pert,                                  &
+        !                                   f_pert_dims,                               &
+        !                                   f_pert_first_comp,                         &
+        !                                   f_pert_labels,                             &
+        !                                   num_freqs,                                 &
+        !                                   f_pert_freqs,                              &
+        !                                   kn_rules,                                  &
+        !                                   f_F_unpert(1),                             &
+        !                                   f_S_unpert(1),                             &
+        !                                   f_D_unpert(1),                             &
+        !                                   f_callback_RSPSolverGetLinearRSPSolution,  &
+        !                                   f_callback_RSPNucHamiltonGetContributions, &
+        !                                   f_callback_RSPOverlapGetMat,               &
+        !                                   f_callback_RSPOverlapGetExp,               &
+        !                                   f_callback_RSPOneOperGetMat,               &
+        !                                   f_callback_RSPOneOperGetExp,               &
+        !                                   f_callback_RSPTwoOperGetMat,               &
+        !                                   f_callback_RSPTwoOperGetExp,               &
+        !                                   f_callback_RSPXCFunGetMat,                 &
+        !                                   f_callback_RSPXCFunGetExp,                 &
+        !                                   STDOUT,                                    &
+        !                                   f_rsp_tensor,                              &
         !                                   f_file_tensor)
         !    ! cleans up
         !    deallocate(f_file_tensor)
         !    nullify(ptr_file_tensor)
         !else
-            call openrsp_get_property_2014(num_props,                                &
-                                           num_pert,                                 &
-                                           f_pert_dims,                              &
-                                           f_pert_first_comp,                        &
-                                           f_pert_labels,                            &
-                                           num_freqs,                                &
-                                           f_pert_freqs,                             &
-                                           kn_rules,                                 &
-                                           f_F_unpert(1),                            &
-                                           f_S_unpert(1),                            &
-                                           f_D_unpert(1),                            &
-                                           f_callback_RSPSolverGetLinearRSPSolution, &
-                                           f_callback_RSPNucContribGet,              &
-                                           f_callback_RSPOverlapGetMat,              &
-                                           f_callback_RSPOverlapGetExp,              &
-                                           f_callback_RSPOneOperGetMat,              &
-                                           f_callback_RSPOneOperGetExp,              &
-                                           f_callback_RSPTwoOperGetMat,              &
-                                           f_callback_RSPTwoOperGetExp,              &
-                                           f_callback_RSPXCFunGetMat,                &
-                                           f_callback_RSPXCFunGetExp,                &
-                                           STDOUT,                                   &
+            call openrsp_get_property_2014(num_props,                                 &
+                                           num_pert,                                  &
+                                           f_pert_dims,                               &
+                                           f_pert_first_comp,                         &
+                                           f_pert_labels,                             &
+                                           num_freqs,                                 &
+                                           f_pert_freqs,                              &
+                                           kn_rules,                                  &
+                                           f_F_unpert(1),                             &
+                                           f_S_unpert(1),                             &
+                                           f_D_unpert(1),                             &
+                                           f_callback_RSPSolverGetLinearRSPSolution,  &
+                                           f_callback_RSPNucHamiltonGetContributions, &
+                                           f_callback_RSPOverlapGetMat,               &
+                                           f_callback_RSPOverlapGetExp,               &
+                                           f_callback_RSPOneOperGetMat,               &
+                                           f_callback_RSPOneOperGetExp,               &
+                                           f_callback_RSPTwoOperGetMat,               &
+                                           f_callback_RSPTwoOperGetExp,               &
+                                           f_callback_RSPXCFunGetMat,                 &
+                                           f_callback_RSPXCFunGetExp,                 &
+                                           STDOUT,                                    &
                                            f_rsp_tensor)
         !end if
         ! assigns the results
