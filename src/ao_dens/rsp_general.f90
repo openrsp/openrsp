@@ -110,11 +110,22 @@ module rsp_general
 
     else
 
+    call sdf_setup_datatype_2014(S, S_unpert)
+    call sdf_setup_datatype_2014(D, D_unpert)
+    call sdf_setup_datatype_2014(F, F_unpert)
+    
+    
+    ! Loop over properties should start here
+    
     num_perts = np(1)
 
     kn_rule(1) = kn_rules(1)
     kn_rule(2) = num_perts - 1 - kn_rules(1)
 
+    
+    kn(1) = kn_rule(1)
+    kn(2) = kn_rule(2)
+    
     perturbations%n_perturbations = num_perts
     allocate(perturbations%pdim(num_perts))
 !     allocate(perturbations%pfcomp(num_perts))
@@ -128,11 +139,25 @@ module rsp_general
     end do
     
     perturbations%pid = (/(i, i = 1, num_perts)/)
+    
+    
+
+    
+    ! Loop over frequencies should start here
+    
+    
     perturbations%freq = pert_freqs(1:num_perts)
+    
+    num_blks = get_num_blks(perturbations)
+    allocate(blk_info(num_blks, 3))
+    allocate(blk_sizes(num_blks))
+    blk_info = get_blk_info(num_blks, perturbations)
+    blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
+                                     blk_info(1:num_blks, 3))
 
-    kn(1) = kn_rule(1)
-    kn(2) = kn_rule(2)
-
+    prop_size = get_triangulated_size(num_blks, blk_info)
+                                     
+                                     
     write(id_outp,*) ' '
     write(id_outp,*) 'OpenRSP lib called'
     write(id_outp,*) ' '
@@ -157,18 +182,7 @@ module rsp_general
  
     end if
 
-    call sdf_setup_datatype_2014(S, S_unpert)
-    call sdf_setup_datatype_2014(D, D_unpert)
-    call sdf_setup_datatype_2014(F, F_unpert)
-
-    num_blks = get_num_blks(perturbations)
-    allocate(blk_info(num_blks, 3))
-    allocate(blk_sizes(num_blks))
-    blk_info = get_blk_info(num_blks, perturbations)
-    blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
-                                     blk_info(1:num_blks, 3))
-
-
+    
     write(id_outp,*) 'Starting clock: About to call get_prop routine'
     write(id_outp,*) ' '
 
@@ -188,7 +202,7 @@ module rsp_general
     write(id_outp,*) 'Property was calculated'
     write(id_outp,*) ' '
     
-    prop_size = get_triangulated_size(num_blks, blk_info)
+
 
     if (present(file_id)) then
 !       open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
