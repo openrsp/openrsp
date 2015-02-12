@@ -85,12 +85,12 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
     /* destroys the linked list of exchange-correlation functionals */
     if (open_rsp->xc_fun!=NULL) {
     }
-    /* destroys the context of (derivatives of) nuclear repulsion and nuclei-field interaction */
-    if (open_rsp->nuc_contrib!=NULL) {
-        ierr = RSPNucContribDestroy(open_rsp->nuc_contrib);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucContribDestroy");
-        free(open_rsp->nuc_contrib);
-        open_rsp->nuc_contrib = NULL;
+    /* destroys the context of nuclear Hamiltonian */
+    if (open_rsp->nuc_hamilton!=NULL) {
+        ierr = RSPNucHamiltonDestroy(open_rsp->nuc_hamilton);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonDestroy");
+        free(open_rsp->nuc_hamilton);
+        open_rsp->nuc_hamilton = NULL;
     }
     return QSUCCESS;
 }
