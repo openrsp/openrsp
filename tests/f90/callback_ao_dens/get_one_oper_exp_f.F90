@@ -111,7 +111,7 @@
                                                 num_row_set=NUM_AO,          &
                                                 idx_first_col=IDX_FIRST_COL, &
                                                 num_col_set=NUM_AO,          &
-                                                values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT)
+                                                values_real=values_diplen((imat-1)*SIZE_AO_MAT+1:imat*SIZE_AO_MAT))
                         call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
                         do idens = 1, num_dens
                             ierr = QcMatGetMatProdTrace_f(A=val_int(1),          &
