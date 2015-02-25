@@ -308,7 +308,7 @@ module openrsp_f
                                                rsp_param)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_freq_sums
-                real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
+                real(kind=QREAL), intent(in) :: freq_sums(2*num_freq_sums)
                 integer(kind=QINT), intent(in) :: size_pert
                 type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -326,7 +326,7 @@ module openrsp_f
                 bind(C, name="RSPSolverGetLinearRSPSolution_f")
                 use, intrinsic :: iso_c_binding
                 integer(kind=C_QINT), value, intent(in) :: num_freq_sums
-                real(kind=C_QREAL), intent(in) :: freq_sums(num_freq_sums)
+                real(kind=C_QREAL), intent(in) :: freq_sums(2*num_freq_sums)
                 integer(kind=C_QINT), value, intent(in) :: size_pert
                 type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
                 type(C_PTR), value, intent(in) :: user_ctx
