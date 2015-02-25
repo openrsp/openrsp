@@ -45,7 +45,7 @@
                               QcMatSetValues_f
         implicit none
         integer(kind=QINT), intent(in) :: num_freq_sums
-        real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
+        real(kind=QREAL), intent(in) :: freq_sums(2*num_freq_sums)
         integer(kind=QINT), intent(in) :: size_pert
         type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
