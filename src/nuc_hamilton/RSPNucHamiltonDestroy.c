@@ -30,13 +30,21 @@
 */
 QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton *nuc_hamilton)
 {
-    free(nuc_hamilton->atom_coord);
-    nuc_hamilton->atom_coord = NULL;
-    free(nuc_hamilton->atom_charge);
-    nuc_hamilton->atom_charge = NULL;
-    free(nuc_hamilton->dipole_origin);
-    nuc_hamilton->dipole_origin = NULL;
-    free(nuc_hamilton->gauge_origin);
-    nuc_hamilton->gauge_origin = NULL;
+    if (nuc_hamilton->atom_coord!=NULL) {
+        free(nuc_hamilton->atom_coord);
+        nuc_hamilton->atom_coord = NULL;
+    }
+    if (nuc_hamilton->atom_charge!=NULL) {
+        free(nuc_hamilton->atom_charge);
+        nuc_hamilton->atom_charge = NULL;
+    }
+    if (nuc_hamilton->dipole_origin!=NULL) {
+        free(nuc_hamilton->dipole_origin);
+        nuc_hamilton->dipole_origin = NULL;
+    }
+    if (nuc_hamilton->gauge_origin!=NULL) {
+        free(nuc_hamilton->gauge_origin);
+        nuc_hamilton->gauge_origin = NULL;
+    }
     return QSUCCESS;
 }

@@ -47,15 +47,19 @@ QErrorCode RSPNucHamiltonWrite(const RSPNucHamilton *nuc_hamilton, FILE *fp_nuc)
                 nuc_hamilton->atom_coord[ixyz+2]);  /* z */
        ixyz += 3;
     }
-    fprintf(fp_nuc,
-            "RSPNucHamiltonWrite>> dipole origin [%f, %f, %f]\n",
-            nuc_hamilton->dipole_origin[0],
-            nuc_hamilton->dipole_origin[1],
-            nuc_hamilton->dipole_origin[2]);
-    fprintf(fp_nuc,
-            "RSPNucHamiltonWrite>> gauge origin [%f, %f, %f]\n",
-            nuc_hamilton->gauge_origin[0],
-            nuc_hamilton->gauge_origin[1],
-            nuc_hamilton->gauge_origin[2]);
+    if (nuc_hamilton->dipole_origin!=NULL) {
+        fprintf(fp_nuc,
+                "RSPNucHamiltonWrite>> dipole origin [%f, %f, %f]\n",
+                nuc_hamilton->dipole_origin[0],
+                nuc_hamilton->dipole_origin[1],
+                nuc_hamilton->dipole_origin[2]);
+    }
+    if (nuc_hamilton->gauge_origin!=NULL) {
+        fprintf(fp_nuc,
+                "RSPNucHamiltonWrite>> gauge origin [%f, %f, %f]\n",
+                nuc_hamilton->gauge_origin[0],
+                nuc_hamilton->gauge_origin[1],
+                nuc_hamilton->gauge_origin[2]);
+    }
     return QSUCCESS;
 }
