@@ -143,7 +143,7 @@
             write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs"
         end if
-        do ipert = 1, size(pert_freqs)
+        do ipert = 1, size(pert_freqs)/2
             f_pert_freqs(ipert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
         end do
         ! gets the matrices

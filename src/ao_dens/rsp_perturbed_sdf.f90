@@ -1259,7 +1259,7 @@ end if
 
        if (num_p_tuples <= 1) then
 
-          call get_1el_mat(npert_ext, pert_ext, pert_ord_ext, size(tmp), tmp)
+          call get_1el_mat(npert_ext, pert_ext, pert_ord_ext, size(Fp), Fp)
        
 !           call rsp_oneint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1281,7 +1281,7 @@ end if
 
           call cpu_time(time_start)
           
-          call get_2el_mat(npert_ext, pert_ext, pert_ord_ext, 1, (/D_unp/), size(tmp), tmp)
+          call get_2el_mat(npert_ext, pert_ext, pert_ord_ext, 1, (/D_unp/), size(Fp), Fp)
           
                       
 !           call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
