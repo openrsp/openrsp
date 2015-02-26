@@ -91,6 +91,7 @@ module rsp_indices_and_addressing
     ierr = QcMatCreate_f(A)
     if (present(B)) then
         ierr = QcMatDuplicate_f(B, COPY_PATTERN_ONLY, A)
+        ierr = QcMatZeroEntries_f(A)
     end if
     
   end subroutine

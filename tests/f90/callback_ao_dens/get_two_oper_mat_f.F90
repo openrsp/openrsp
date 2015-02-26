@@ -168,10 +168,10 @@
             call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
         ! electric fields (zero integrals)
         else if (num_pert==1 .and. pert_labels(1)==PERT_DIPOLE) then
-            do imat = 1, num_int
-                ierr = QcMatZeroEntries_f(A=val_int(imat))
-                call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
-            end do
+            !do imat = 1, num_int
+            !    ierr = QcMatZeroEntries_f(A=val_int(imat))
+            !    call QErrorCheckCode(6, ierr, __LINE__, OPENRSP_F_TEST_SRC)
+            !end do
         else
             write(6,100) "not implemented"
             call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)

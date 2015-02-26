@@ -76,7 +76,7 @@
 #else
         ! electric fields
         if (num_pert==1 .and. pert_labels(1)==PERT_DIPOLE) then
-            val_exp = 0
+            !val_exp = 0
         else
             write(6,100) "not implemented"
             call QErrorExit(6, __LINE__, OPENRSP_F_TEST_SRC)
