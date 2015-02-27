@@ -48,6 +48,7 @@ module rsp_indices_and_addressing
 !  public mat_init_like_and_zero
   
   public QcMatInit
+  public QcMatZero
   public QcMatcABC
   public QcMatkABC
   public QcMatAEqB
@@ -94,6 +95,18 @@ module rsp_indices_and_addressing
         ierr = QcMatZeroEntries_f(A)
     end if
     
+  end subroutine
+
+  ! Zero matrix, A should be initialized by QcMatInit()
+  subroutine QcMatZero(A)
+
+    implicit none
+
+    type(QcMat), intent(inout) :: A
+    integer(kind=4) :: ierr
+
+    ierr = QcMatZeroEntries_f(A)
+
   end subroutine
   
   ! Compute R = kA * B * C (k complex)
