@@ -172,6 +172,7 @@
             write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> property_size", property_size
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_tensor"
         end if
+        f_rsp_tensor = 0.0
         !! gets the file name of results
         !if (c_associated(file_rsp_tensor)) then
         !    call c_f_pointer(file_rsp_tensor, ptr_file_tensor, [len_file_tensor])
