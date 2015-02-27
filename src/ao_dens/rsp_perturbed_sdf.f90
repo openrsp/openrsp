@@ -121,6 +121,7 @@ module rsp_perturbed_sdf
     subroutine get_fds_2014(pert, F, D, S, get_rsp_sol, get_ovl_mat, &
                        get_1el_mat, get_2el_mat, get_xc_mat, id_outp)
 
+use qcmatrix_f
 !    use interface_rsp_solver, only: rsp_solver_exec
     implicit none
 
@@ -234,10 +235,11 @@ module rsp_perturbed_sdf
                          perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
 ! write(*,*) 'Fp b', Fp(1)%elms
-
+ierr = QcMatWrite_f(Fp(1), "Fp1", ASCII_VIEW)
     deallocate(fock_lowerorder_cache)
 
     call sdf_add_2014(F, pert, perturbed_matrix_size, Fp)
+ierr = QcMatWrite_f(Fp(1), "Fp2", ASCII_VIEW)
 
     ! b) For Dp: Create differentiation superstructure: First dryrun for size, and
     ! then the actual superstructure call
@@ -289,9 +291,12 @@ module rsp_perturbed_sdf
        ! 3. Complete the particular contribution to Fp
 ! write(*,*) 'Fp b2', Fp(1)%elms
        call cpu_time(time_start)
+ierr = QcMatWrite_f(Fp(1), "Fp3", ASCII_VIEW)
        call get_2el_mat(0, noc, noc, 1, (/Dp(i)/), 1, Fp(i:i))
 !        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
 !                           1, Fp(i:i))
+ierr = QcMatWrite_f(Fp(1), "Fp4", ASCII_VIEW)
+
        call cpu_time(time_end)
 !        print *, 'seconds spent in 2-el particular contribution', time_end - time_start
 ! write(*,*) 'Fp b3', Fp(1)%elms
@@ -1024,15 +1029,15 @@ end if
     !           dens_tuple in the if statement where they are used, also their
     !           deallocation should be moved
     do j = 1, size(lower_order_contribution)
-       call QcMatInit(lower_order_contribution(j))
+       call QcMatInit(lower_order_contribution(j), Fp(1))
     end do
 
     do j = 1, size(tmp)
-       call QcMatInit(tmp(j))
+       call QcMatInit(tmp(j), Fp(1))
     end do
 
     do i = 2, num_p_tuples
-       call QcMatInit(dens_tuple(j))
+       call QcMatInit(dens_tuple(j), Fp(1))
     end do
 
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
@@ -1064,6 +1069,15 @@ end if
        end if
 
        do i = 1, size(outer_indices, 1)
+
+          do j = 1, size(lower_order_contribution)
+             call QcMatZero(lower_order_contribution(j))
+          end do
+     
+          do j = 1, size(tmp)
+             call QcMatZero(tmp(j))
+          end do
+
 
           do j = 2, num_p_tuples
 
