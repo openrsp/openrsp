@@ -121,7 +121,6 @@ module rsp_perturbed_sdf
     subroutine get_fds_2014(pert, F, D, S, get_rsp_sol, get_ovl_mat, &
                        get_1el_mat, get_2el_mat, get_xc_mat, id_outp)
 
-use qcmatrix_f
 !    use interface_rsp_solver, only: rsp_solver_exec
     implicit none
 
@@ -235,11 +234,9 @@ use qcmatrix_f
                          perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
 ! write(*,*) 'Fp b', Fp(1)%elms
-ierr = QcMatWrite_f(Fp(1), "Fp1", ASCII_VIEW)
     deallocate(fock_lowerorder_cache)
 
     call sdf_add_2014(F, pert, perturbed_matrix_size, Fp)
-ierr = QcMatWrite_f(Fp(1), "Fp2", ASCII_VIEW)
 
     ! b) For Dp: Create differentiation superstructure: First dryrun for size, and
     ! then the actual superstructure call
@@ -291,11 +288,9 @@ ierr = QcMatWrite_f(Fp(1), "Fp2", ASCII_VIEW)
        ! 3. Complete the particular contribution to Fp
 ! write(*,*) 'Fp b2', Fp(1)%elms
        call cpu_time(time_start)
-ierr = QcMatWrite_f(Fp(1), "Fp3", ASCII_VIEW)
        call get_2el_mat(0, noc, noc, 1, (/Dp(i)/), 1, Fp(i:i))
 !        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
 !                           1, Fp(i:i))
-ierr = QcMatWrite_f(Fp(1), "Fp4", ASCII_VIEW)
 
        call cpu_time(time_end)
 !        print *, 'seconds spent in 2-el particular contribution', time_end - time_start
