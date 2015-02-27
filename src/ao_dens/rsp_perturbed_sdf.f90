@@ -183,7 +183,7 @@ module rsp_perturbed_sdf
 
        ! ASSUME CLOSED SHELL
 !        call mat_init(Sp(i), zeromat%nrow, zeromat%ncol, is_zero=.true.)
-    call QcMatInit(Sp(i))
+    call QcMatInit(Sp(i), A)
 
     end do
 ! write(*,*) 'Sp a', Sp(1)%elms
