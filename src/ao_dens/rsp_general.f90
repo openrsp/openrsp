@@ -191,7 +191,7 @@ module rsp_general
     call get_prop_2014(perturbations, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, rsp_tensor)
+                  id_outp, prop_size, rsp_tensor)
 
     call cpu_time(timing_end)
 
@@ -254,13 +254,13 @@ module rsp_general
   subroutine get_prop_2014(pert, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, prop)
+                  id_outp, prop_size, prop)
 
     implicit none
 
     type(p_tuple) :: pert, emptypert
     type(p_tuple), dimension(2) :: emptyp_tuples
-    integer :: num_blks, id_outp
+    integer :: num_blks, id_outp, prop_size
     integer, dimension(2) :: kn
     integer, dimension(num_blks) :: blk_sizes
     integer, dimension(num_blks,3) :: blk_info
@@ -299,13 +299,15 @@ module rsp_general
 
     call cpu_time(time_start)
     call rsp_energy_2014(pert, pert%n_perturbations, kn, 1, (/emptypert/), 0, D, get_nucpot, &
-                    get_1el_exp, get_ovl_exp, get_2el_exp, contrib_cache, prop)
+                    get_1el_exp, get_ovl_exp, get_2el_exp, contrib_cache, prop_size, prop)
     call cpu_time(time_end)
 
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
     write(id_outp,*) 'Finished calculating HF energy-type contribs'
     write(id_outp,*) ' '
     deallocate(contrib_cache)
+    
+    write(*,*) 'Property is now', prop(1:prop_size)
 
 
     write(*,*) ' '
@@ -320,6 +322,8 @@ module rsp_general
     write(*,*) 'Finished calculating exchange/correlation contribs'
     write(*,*) ' '
 
+    
+    write(*,*) 'Property is now', prop(1:prop_size)
 
     call property_cache_allocate(contrib_cache)
     write(*,*) ' '
@@ -327,13 +331,15 @@ module rsp_general
     write(*,*) ' '
     call cpu_time(time_start)
     call rsp_pulay_n_2014(pert, kn, (/emptypert, emptypert/), S, D, F, &
-                     get_ovl_exp, contrib_cache, prop)
+                     get_ovl_exp, contrib_cache, prop_size, prop)
     call cpu_time(time_end)
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
     write(*,*) ' '
     write(*,*) 'Finished calculating Pulay n type contribs'
     write(*,*) ' '
     deallocate(contrib_cache)
+    
+        write(*,*) 'Property is now', prop(1:prop_size)
 
     ! There are Lagrangian type contribs only when not using n + 1 rule
     if (kn(2) < pert%n_perturbations) then
@@ -345,7 +351,7 @@ module rsp_general
        call cpu_time(time_start)
        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
                           (/p_tuple_getone(pert,1), emptypert/), &
-                          S, D, F, get_ovl_exp, contrib_cache, prop)
+                          S, D, F, get_ovl_exp, contrib_cache, prop_size, prop)
        call cpu_time(time_end)
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
        write(*,*) ' '
@@ -354,6 +360,7 @@ module rsp_general
    
        deallocate(contrib_cache)
    
+       write(*,*) 'Property is now', prop(1:prop_size)
    
        call property_cache_allocate(contrib_cache)
        write(*,*) ' '
@@ -363,7 +370,7 @@ module rsp_general
        ! MaR: Unchanged by introduction of callback functionality
        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
                          (/p_tuple_getone(pert,1), emptypert/), &
-                         S, D, F, contrib_cache, prop)
+                         S, D, F, contrib_cache, prop_size, prop)
        call cpu_time(time_end)
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
        write(*,*) ' '
@@ -372,7 +379,8 @@ module rsp_general
    
        deallocate(contrib_cache)
    
-   
+       write(*,*) 'Property is now', prop(1:prop_size)
+       
        call property_cache_allocate(contrib_cache)
        write(*,*) ' '
        write(*,*) 'Calculating SCF Lagrangian type contribs'
@@ -381,7 +389,7 @@ module rsp_general
        ! MaR: Unchanged by introduction of callback functionality
        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
                          (/p_tuple_getone(pert,1), emptypert/), &
-                         S, D, F, contrib_cache, prop)
+                         S, D, F, contrib_cache, prop_size, prop)
        call cpu_time(time_end)
    
    
@@ -392,6 +400,8 @@ module rsp_general
 
        deallocate(contrib_cache)
 
+    write(*,*) 'Property is now', prop(1:prop_size)       
+       
     end if
 
   end subroutine
@@ -410,7 +420,7 @@ module rsp_general
 
   recursive subroutine rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
                                 p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                                get_t_exp, get_2el_exp, cache, prop)
+                                get_t_exp, get_2el_exp, cache, p_size, prop)
 
     implicit none
 
@@ -427,14 +437,17 @@ module rsp_general
     integer :: num_blks_full, p_size
     integer, allocatable, dimension(:,:) :: blk_info_full
 
-    allocate(blk_info_full(num_blks_full, 3))
+
+    
+    
+!     allocate(blk_info_full(num_blks_full, 3))
         
-    num_blks_full = get_num_blks(pert)
+!     num_blks_full = get_num_blks(pert)
     
-    blk_info_full = get_blk_info(num_blks_full, pert)
-    p_size = get_triangulated_size(num_blks_full, blk_info_full)
+!     blk_info_full = get_blk_info(num_blks_full, pert)
+!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
     
-    deallocate(blk_info_full)
+!     deallocate(blk_info_full)
         
     if (pert%n_perturbations >= 1) then
 
@@ -449,7 +462,7 @@ module rsp_general
        call rsp_energy_2014(p_rf1, total_num_perturbations, &
        kn, num_p_tuples, p_new1, &
        density_order, D, get_nucpot, get_1el_exp, &
-       get_t_exp, get_2el_exp, cache, prop)
+       get_t_exp, get_2el_exp, cache, p_size, prop)
 
     else
 
@@ -459,7 +472,7 @@ module rsp_general
 
        call rsp_energy_2014(p_rf1, total_num_perturbations,  &
        kn, num_p_tuples, p_new1, density_order, D, get_nucpot, get_1el_exp, &
-       get_t_exp, get_2el_exp, cache, prop)
+       get_t_exp, get_2el_exp, cache, p_size, prop)
 
     end if
     
@@ -485,7 +498,7 @@ module rsp_general
           
           call rsp_energy_2014(p_rf2, total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, get_nucpot, get_1el_exp, &
-          get_t_exp, get_2el_exp, cache, prop)
+          get_t_exp, get_2el_exp, cache, p_size, prop)
 
        end do
 
@@ -503,7 +516,7 @@ module rsp_general
           call rsp_energy_2014(p_rf3, total_num_perturbations, &
           kn, num_p_tuples + 1, p_new3, &
           density_order + 1, D, get_nucpot, get_1el_exp, &
-          get_t_exp, get_2el_exp, cache, prop)
+          get_t_exp, get_2el_exp, cache, p_size, prop)
 
        end if
 
@@ -592,14 +605,16 @@ module rsp_general
 
        end do
 
-
+        write(*,*) 'Property before get energy is', prop(1:p_size)   
              call get_energy_2014(num_p_tuples, total_num_perturbations, & 
                   p_stord, density_order, D, get_nucpot, get_1el_exp, &
                   get_t_exp, get_2el_exp, cache, prop)
 
                   write(*,*) 'Calculated energy contribution'
                   write(*,*) ' '
-
+        write(*,*) 'Property after get energy is', prop(1:p_size)   
+                  
+                  
           end if
 
        else
@@ -965,8 +980,8 @@ module rsp_general
    
           end if
           
-!           write(*,*) ' '
-!           write(*,*) 'oneave contrib',  real(contrib(1:3))
+          write(*,*) ' '
+          write(*,*) 'oneave contrib',  contrib
    
           tmp = tmp + contrib
           contrib = 0.0
@@ -982,8 +997,8 @@ module rsp_general
    
           end if
    
-!    write(*,*) ' '
-!           write(*,*) 'ovlave t contrib', real(contrib(1:3))
+   write(*,*) ' '
+          write(*,*) 'ovlave t contrib', contrib
    
    
           tmp = tmp - contrib
@@ -1011,8 +1026,8 @@ module rsp_general
     
           end if
 
-!           write(*,*) ' '
-!           write(*,*) 'twoave contrib', real(contrib(1:3))
+          write(*,*) ' '
+          write(*,*) 'twoave contrib', contrib
    
               
           tmp = tmp + contrib
@@ -1175,8 +1190,8 @@ module rsp_general
 !                        D_unp, nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
 !                        blk_sizes(1, 1:nblks_tuple(1)), contrib)
 
-!                                  write(*,*) ' '
-!           write(*,*) 'oneave contrib', real(contrib(1:3))
+                                 write(*,*) ' '
+          write(*,*) 'oneave contrib', contrib
                        
        tmp = tmp + contrib
        contrib = 0.0
@@ -1188,8 +1203,8 @@ module rsp_general
                                 t_matrix_bra, t_matrix_ket, &
                                 D_unp, get_ovl_exp, inner_indices_size, contrib)
 
-!                                           write(*,*) ' '
-!           write(*,*) 'ovlave t mat contrib', real(contrib(1:3))
+                                          write(*,*) ' '
+          write(*,*) 'ovlave t mat contrib', contrib
                                 
        tmp = tmp - contrib
        contrib = 0.0
@@ -1201,8 +1216,8 @@ module rsp_general
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
 !                        D_unp, D_unp, contrib)
 
-!                                  write(*,*) ' '
-!           write(*,*) 'twoave contrib', real(contrib(1:3))
+                                 write(*,*) ' '
+          write(*,*) 'twoave contrib', contrib
                        
        tmp = tmp + 0.5*(contrib)
 
@@ -1588,7 +1603,7 @@ module rsp_general
   
   
 
-  recursive subroutine rsp_pulay_n_2014(pert, kn, p12, S, D, F, get_ovl_exp, cache, prop)
+  recursive subroutine rsp_pulay_n_2014(pert, kn, p12, S, D, F, get_ovl_exp, cache, p_size, prop)
 
     implicit none
 
@@ -1603,24 +1618,24 @@ module rsp_general
     integer :: num_blks_full, p_size
     integer, allocatable, dimension(:,:) :: blk_info_full
 
-    allocate(blk_info_full(num_blks_full, 3))
-        
-    num_blks_full = get_num_blks(pert)
-    
-    blk_info_full = get_blk_info(num_blks_full, pert)
-    p_size = get_triangulated_size(num_blks_full, blk_info_full)
-    
-    deallocate(blk_info_full)
+!     allocate(blk_info_full(num_blks_full, 3))
+!         
+!     num_blks_full = get_num_blks(pert)
+!     
+!     blk_info_full = get_blk_info(num_blks_full, pert)
+!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
+!     
+!     deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
        call rsp_pulay_n_2014(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, &
-       get_ovl_exp, cache, prop)
+       get_ovl_exp, cache, p_size, prop)
 
        call rsp_pulay_n_2014(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, &
-       get_ovl_exp, cache, prop)
+       get_ovl_exp, cache, p_size, prop)
 
     else
 
@@ -1941,7 +1956,7 @@ module rsp_general
 
   
   recursive subroutine rsp_pulay_lag_2014(pert, kn, p12, S, D, F, &
-                       get_ovl_exp, cache, prop)
+                       get_ovl_exp, cache, p_size, prop)
 
     implicit none
 
@@ -1956,23 +1971,23 @@ module rsp_general
     integer :: num_blks_full, p_size
     integer, allocatable, dimension(:,:) :: blk_info_full
 
-    allocate(blk_info_full(num_blks_full, 3))
-        
-    num_blks_full = get_num_blks(pert)
-    
-    blk_info_full = get_blk_info(num_blks_full, pert)
-    p_size = get_triangulated_size(num_blks_full, blk_info_full)
-    
-    deallocate(blk_info_full)
+!     allocate(blk_info_full(num_blks_full, 3))
+!         
+!     num_blks_full = get_num_blks(pert)
+!     
+!     blk_info_full = get_blk_info(num_blks_full, pert)
+!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
+!     
+!     deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
-       S, D, F, get_ovl_exp, cache, prop)
+       S, D, F, get_ovl_exp, cache, p_size, prop)
        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
-       S, D, F, get_ovl_exp, cache, prop)
+       S, D, F, get_ovl_exp, cache, p_size, prop)
 
     else
 
@@ -2279,7 +2294,7 @@ module rsp_general
   
   
   recursive subroutine rsp_idem_lag_2014(pert, kn, p12, S, D, F, &
-                                     cache, prop)
+                                     cache, p_size, prop)
 
     implicit none
 
@@ -2293,23 +2308,23 @@ module rsp_general
     integer :: num_blks_full, p_size
     integer, allocatable, dimension(:,:) :: blk_info_full
 
-    allocate(blk_info_full(num_blks_full, 3))
-        
-    num_blks_full = get_num_blks(pert)
-    
-    blk_info_full = get_blk_info(num_blks_full, pert)
-    p_size = get_triangulated_size(num_blks_full, blk_info_full)
-    
-    deallocate(blk_info_full)
+!     allocate(blk_info_full(num_blks_full, 3))
+!         
+!     num_blks_full = get_num_blks(pert)
+!     
+!     blk_info_full = get_blk_info(num_blks_full, pert)
+!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
+!     
+!     deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, &
-       cache, prop)
+       cache, p_size, prop)
        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, &
-       cache, prop)
+       cache, p_size, prop)
 
     else
 
@@ -2622,7 +2637,7 @@ module rsp_general
 
 
   recursive subroutine rsp_scfe_lag_2014(pert, kn, p12, S, D, F, &
-                                     cache, prop)
+                                     cache, p_size, prop)
 
     implicit none
 
@@ -2636,23 +2651,23 @@ module rsp_general
     integer :: num_blks_full, p_size
     integer, allocatable, dimension(:,:) :: blk_info_full
 
-    allocate(blk_info_full(num_blks_full, 3))
-        
-    num_blks_full = get_num_blks(pert)
-    
-    blk_info_full = get_blk_info(num_blks_full, pert)
-    p_size = get_triangulated_size(num_blks_full, blk_info_full)
-    
-    deallocate(blk_info_full)
+!     allocate(blk_info_full(num_blks_full, 3))
+!         
+!     num_blks_full = get_num_blks(pert)
+!     
+!     blk_info_full = get_blk_info(num_blks_full, pert)
+!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
+!     
+!     deallocate(blk_info_full)
     
     if (pert%n_perturbations > 0) then
 
        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
             (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
-            S, D, F, cache, prop)
+            S, D, F, cache, p_size, prop)
        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
             (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
-            S, D, F, cache, prop)
+            S, D, F, cache, p_size, prop)
 
     else
 
