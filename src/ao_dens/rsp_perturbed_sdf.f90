@@ -402,6 +402,13 @@ end if
 end if
 
 
+! ierr = QcMatWrite_f(Dp(i), 'Dp_drop', ASCII_VIEW)
+! ierr = QcMatWrite_f(Fp(i), 'Fp_drop', ASCII_VIEW)
+! ierr = QcMatWrite_f(Sp(i), 'Sp_drop', ASCII_VIEW)
+! if (i == 12) then
+! stop
+! 
+! end if
 !        write(*,*) ' '
 !        write(*,*) 'Finally, Dp is:'
 !        write(*,*) Dp(i)%elms
