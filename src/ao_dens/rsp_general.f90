@@ -1182,6 +1182,12 @@ module rsp_general
        tmp = tmp + contrib
        contrib = 0.0
 
+       write(*,*) 'Getting a 1el contribution with npert pert ord ='
+       write(*,*) npert_ext
+       write(*,*) pert_ext
+       write(*,*) pert_ext_ord
+       
+       
        call get_1el_exp(npert_ext, pert_ext, pert_ext_ord, 1, D_unp, &
                               size(contrib), contrib)
        
@@ -1923,7 +1929,7 @@ module rsp_general
     end do
     
 
-!     write(*,*) 'pulay kn contribution'
+    write(*,*) 'after pulay kn contribution', prop(1:78)
 !     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
 !     (/ (1, j = 1, (merged_p_tuple%n_perturbations - 1) ) /), merged_nblks, blk_sizes_merged, &
 !     merged_blk_info, prop_forcache)
