@@ -1821,6 +1821,7 @@ module rsp_general
     
        tmp = 0.0
 
+       call QcMatZero(W)
 
        call rsp_get_matrix_w_2014(d_supsize, deriv_structb, p12(1)%n_perturbations + &
                              p12(2)%n_perturbations, which_index_is_pid, &
@@ -2164,6 +2165,8 @@ module rsp_general
     call QcMatInit(W)
 
     do i = 1, size(outer_indices, 1)
+
+       call QcMatZero(W)
 
        call rsp_get_matrix_w_2014(d_supsize, deriv_structb, p12(1)%n_perturbations + &
                             p12(2)%n_perturbations, which_index_is_pid, &
@@ -2517,12 +2520,16 @@ module rsp_general
     
     do i = 1, size(outer_indices_a, 1)
 
+       call QcMatZero(Zeta)
+
        call rsp_get_matrix_zeta_2014(p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
             deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
             which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), &
             F, D, S, Zeta)
 
        do j = 1, size(outer_indices_b, 1)
+
+          call QcMatZero(Z)
 
           call rsp_get_matrix_z_2014(d_supsize(2), deriv_structb, kn, &
                p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
@@ -2862,11 +2869,15 @@ module rsp_general
 
     do i = 1, size(outer_indices_a, 1)
 
+       call QcMatZero(L)
+
        call rsp_get_matrix_lambda_2014(p_tuple_getone(p12(1), 1), d_supsize(1), &
             deriv_structa, p12(1)%n_perturbations + p12(2)%n_perturbations, &
             which_index_is_pid1, p12(1)%n_perturbations, outer_indices_a(i,:), D, S, L)
 
        do j = 1, size(outer_indices_b, 1)
+
+          call QcMatZero(Y)
 
           call rsp_get_matrix_y_2014(d_supsize(2), deriv_structb, &
                p12(1)%n_perturbations + p12(2)%n_perturbations, which_index_is_pid2, &
