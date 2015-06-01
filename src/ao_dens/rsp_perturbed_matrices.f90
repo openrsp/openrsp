@@ -573,7 +573,7 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 !           Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
 !                            frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
 
-          call QcMatcABC(((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
+          call QcMatcABC(((1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
                            frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)   
 
@@ -585,7 +585,7 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
           
-          call QcMatcABC(((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
+          call QcMatcABC(((1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)   
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
@@ -632,7 +632,7 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 !           Zeta = Zeta - ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
 !                         frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
                         
-          call QcMatcABC(((-1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
+          call QcMatcABC(((-1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
                         frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)  
 
@@ -644,7 +644,7 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta - ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
           
-          call QcMatcABC(((-1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
+          call QcMatcABC(((-1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)  
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
@@ -655,7 +655,7 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
 !           Zeta = Zeta - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
-          call QcMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
+          call QcMatcABC(-1.0d0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta) 
 
        end if
