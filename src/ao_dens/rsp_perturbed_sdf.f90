@@ -121,6 +121,7 @@ module rsp_perturbed_sdf
     subroutine get_fds_2014(pert, F, D, S, get_rsp_sol, get_ovl_mat, &
                        get_1el_mat, get_2el_mat, get_xc_mat, id_outp)
 
+use qcmatrix_f
 !    use interface_rsp_solver, only: rsp_solver_exec
     implicit none
 
@@ -258,6 +259,7 @@ module rsp_perturbed_sdf
     call make_triangulated_indices(nblks, blk_info, perturbed_matrix_size, indices)
 
     do i = 1, size(indices, 1)
+ierr = QcMatWrite_f(Fp(i), "Fp_a", ASCII_VIEW)
 
        ind = indices(i, :)
 
@@ -267,6 +269,7 @@ module rsp_perturbed_sdf
                (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
                (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
                ind, F, D, S, Dp(i))
+ierr = QcMatWrite_f(Dp(i), "Dp_a", ASCII_VIEW)
 
 ! write(*,*) 'Dp 1', Dp(1)%elms
 
@@ -277,7 +280,7 @@ module rsp_perturbed_sdf
        call QcMatRAXPY(1.0d0, T, U)
        call QcMatRAXPY(1.0d0, U, Dp(i))
 
-
+ierr = QcMatWrite_f(Dp(i), "Dp_b", ASCII_VIEW)
        
        
 ! write(*,*) 'Dp 2', Dp(1)%elms
@@ -291,6 +294,7 @@ module rsp_perturbed_sdf
        call get_2el_mat(0, noc, noc, 1, (/Dp(i)/), 1, Fp(i:i))
 !        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
 !                           1, Fp(i:i))
+ierr = QcMatWrite_f(Fp(i), "Fp_b", ASCII_VIEW)
 
        call cpu_time(time_end)
 !        print *, 'seconds spent in 2-el particular contribution', time_end - time_start
@@ -325,6 +329,9 @@ module rsp_perturbed_sdf
                 pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
                 pert%n_perturbations, ind, F, D, S, RHS(1))
 
+ierr = QcMatWrite_f(Dp(i), "Dp", ASCII_VIEW)
+ierr = QcMatWrite_f(RHS(1), "RHS", ASCII_VIEW)
+ierr = QcMatWrite_f(Fp(i), "Fp", ASCII_VIEW)
 
        ! Note (MaR): Passing only real part of freq. Is this OK?
        ! MaR: May need to vectorize RHS and X
@@ -343,11 +350,16 @@ module rsp_perturbed_sdf
        call QcMatkABC(1.0d0, A, B, X(1), U)
        call QcMatRAXPY(1.0d0, T, U)
        call QcMatAEqB(Dh(i), U)
+ierr = QcMatWrite_f(A, "A", ASCII_VIEW)
+ierr = QcMatWrite_f(B, "B", ASCII_VIEW)
+ierr = QcMatWrite_f(X(1), "X", ASCII_VIEW)
 
        ! 6. Make homogeneous contribution to Fock matrix
 
        call cpu_time(time_start)
        call get_2el_mat(0, noc, noc, 1, (/Dh(i)/), 1, Fp(i:i))
+ierr = QcMatWrite_f(Dh(i), "Dh_c", ASCII_VIEW)
+ierr = QcMatWrite_f(Fp(i), "Fp_c", ASCII_VIEW)
 
        call cpu_time(time_end)
 !        print *, 'seconds spent in 2-el homogeneous contribution', time_end - time_start
