@@ -18,15 +18,16 @@ Examples of C callback functions can be found in the directory
 ``tests/c/callback``. The detailed information of these callback
 functions are given as follows.
 
+We name a *perturbation tuple* as a list of perturbations specified
+by their labels (``pert_labels``), where the same perturbations will
+be always consecutive.
+
 .. function:: get_overlap_mat(bra_num_pert,    \
                               bra_pert_labels, \
-                              bra_pert_orders, \
                               ket_num_pert,    \
                               ket_pert_labels, \
-                              ket_pert_orders, \
                               num_pert,        \
                               pert_labels,     \
-                              pert_orders,     \
                               user_ctx,        \
                               num_int,         \
                               val_int)
@@ -36,22 +37,18 @@ functions are given as follows.
 
    :param bra_num_pert: number of perturbations on the bra
    :type bra_num_pert: QInt
-   :param bra_pert_labels: labels of the perturbations on the bra
+   :param bra_pert_labels: label for each perturbation on the bra,
+       size is ``bra_num_pert``
    :type bra_pert_labels: QInt\*
-   :param bra_pert_orders: orders of the perturbations on the bra
-   :type bra_pert_orders: QInt\*
    :param ket_num_pert: number of perturbations on the ket
    :type ket_num_pert: QInt
-   :param ket_pert_labels: labels of the perturbations on the ket
+   :param ket_pert_labels: label for each perturbation on the ket,
+       size is ``ket_num_pert``
    :type ket_pert_labels: QInt\*
-   :param ket_pert_orders: orders of the perturbations on the ket
-   :type ket_pert_orders: QInt\*
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_int: number of the integral matrices
@@ -62,13 +59,10 @@ functions are given as follows.
 
 .. function:: get_overlap_exp(bra_num_pert,    \
                               bra_pert_labels, \
-                              bra_pert_orders, \
                               ket_num_pert,    \
                               ket_pert_labels, \
-                              ket_pert_orders, \
                               num_pert,        \
                               pert_labels,     \
-                              pert_orders,     \
                               num_dens,        \
                               ao_dens,         \
                               user_ctx,        \
@@ -80,22 +74,18 @@ functions are given as follows.
 
    :param bra_num_pert: number of perturbations on the bra
    :type bra_num_pert: QInt
-   :param bra_pert_labels: labels of the perturbations on the bra
+   :param bra_pert_labels: label for each perturbation on the bra,
+       size is ``bra_num_pert``
    :type bra_pert_labels: QInt\*
-   :param bra_pert_orders: orders of the perturbations on the bra
-   :type bra_pert_orders: QInt\*
    :param ket_num_pert: number of perturbations on the ket
    :type ket_num_pert: QInt
-   :param ket_pert_labels: labels of the perturbations on the ket
+   :param ket_pert_labels: label for each perturbation on the ket,
+       size is ``ket_num_pert``
    :type ket_pert_labels: QInt\*
-   :param ket_pert_orders: orders of the perturbations on the ket
-   :type ket_pert_orders: QInt\*
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
    :param num_dens: number of atomic orbital (AO) based density matrices
    :type num_dens: QInt
    :param ao_dens: the AO based density matrices
@@ -110,7 +100,6 @@ functions are given as follows.
 
 .. function:: get_one_oper_mat(num_pert,    \
                                pert_labels, \
-                               pert_orders, \
                                user_ctx,    \
                                num_int,     \
                                val_int)
@@ -120,10 +109,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_int: number of the integral matrices
@@ -134,7 +121,6 @@ functions are given as follows.
 
 .. function:: get_one_oper_exp(num_pert,    \
                                pert_labels, \
-                               pert_orders, \
                                num_dens,    \
                                ao_dens,     \
                                user_ctx,    \
@@ -146,10 +132,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
    :param num_dens: number of atomic orbital (AO) based density matrices
    :type num_dens: QInt
    :param ao_dens: the AO based density matrices
@@ -164,7 +148,6 @@ functions are given as follows.
 
 .. function:: get_two_oper_mat(num_pert,     \
                                pert_labels,  \
-                               pert_orders,  \
                                num_var_dens, \
                                var_ao_dens,  \
                                user_ctx,     \
@@ -176,10 +159,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
    :param num_var_dens: number of variable AO based density matrices
    :type num_var_dens: QInt
    :param var_ao_dens: the variable AO based density matrices (:math:`\boldsymbol{D}`)
@@ -195,7 +176,6 @@ functions are given as follows.
 
 .. function:: get_two_oper_exp(num_pert,       \
                                pert_labels,    \
-                               pert_orders,    \
                                num_var_dens,   \
                                var_ao_dens,    \
                                num_contr_dens, \
@@ -209,10 +189,8 @@ functions are given as follows.
 
    :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: orders of the perturbations
-   :type pert_orders: QInt\*
    :param num_var_dens: number of variable AO based density matrices
    :type num_var_dens: QInt
    :param var_ao_dens: the variable AO based density matrices (:math:`\boldsymbol{D}`)
@@ -233,8 +211,6 @@ functions are given as follows.
 
 .. function:: get_xc_fun_mat(num_pert,             \
                              pert_labels,          \
-                             pert_orders,          \
-                             pert_dims,            \
                              num_freq_configs,     \
                              num_dmat_per_tuple,   \
                              dmat_perts_one_tuple, \
@@ -247,16 +223,10 @@ functions are given as follows.
    Callback function for getting integral matrices of exchange-correlation (XC)
    functional, the second last argument for function ``OpenRSPAddXCFun``.
 
-   :param num_pert: number of categories of perturbations
+   :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: perturbation labels for each perturbation category,
-       size is ``num_pert``
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: order of perturbation for each perturbation category,
-       size is ``num_pert``
-   :type pert_orders: QInt\*
-   :param pert_dims: dimensionality of each perturbation category, size is ``num_pert``
-   :type pert_dims: QInt\*
    :param num_freq_configs: for the perturbation tuple specified above, the number of
        different frequency configurations to be considered
    :type num_freq_configs: QInt
@@ -270,14 +240,16 @@ functions are given as follows.
    :type dmat_perts_one_tuple: QInt\*
    :param num_dens: number of collected density matrices, equals to
        ``num_freq_configs`` :math:`\times\prod`
-       ``number of density matrices for each perturbation pattern``
+       ``number of density matrices for each perturbation pattern for one frequency configuration``
    :type num_dens: QInt
-   :param ao_dens: the collected density matrices
+   :param ao_dens: the collected density matrices, ordered as
+       ``array for freq. config. #1``, ``array for freq. config. #2``, ...
    :type ao_dens: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_int: number of the integral matrices, equal to the product of
-       ``num_freq_configs`` and the size of specified perturbations
+       ``num_freq_configs`` and the size of perturbation tuple specified by
+       ``pert_labels``
    :type num_int: QInt
    :param val_int: the integral matrices to be returned, ordered as
        ``array for freq. config. #1``, ``array for freq. config. #2``, ...
@@ -286,8 +258,6 @@ functions are given as follows.
 
 .. function:: get_xc_fun_exp(num_pert,             \
                              pert_labels,          \
-                             pert_orders,          \
-                             pert_dims,            \
                              num_freq_configs,     \
                              num_dmat_per_tuple,   \
                              dmat_perts_one_tuple, \
@@ -300,16 +270,10 @@ functions are given as follows.
    Callback function for getting expectation values of a two-electron operator,
    the last argument for function ``OpenRSPAddXCFun``.
 
-   :param num_pert: number of categories of perturbations
+   :param num_pert: number of perturbations
    :type num_pert: QInt
-   :param pert_labels: perturbation labels for each perturbation category,
-       size is ``num_pert``
+   :param pert_labels: label for each perturbation, size is ``num_pert``
    :type pert_labels: QInt\*
-   :param pert_orders: order of perturbation for each perturbation category,
-       size is ``num_pert``
-   :type pert_orders: QInt\*
-   :param pert_dims: dimensionality of each perturbation category, size is ``num_pert``
-   :type pert_dims: QInt\*
    :param num_freq_configs: for the perturbation tuple specified above, the number of
        different frequency configurations to be considered
    :type num_freq_configs: QInt
@@ -323,14 +287,16 @@ functions are given as follows.
    :type dmat_perts_one_tuple: QInt\*
    :param num_dens: number of collected density matrices, equals to
        ``num_freq_configs`` :math:`\times\prod`
-       ``number of density matrices for each perturbation pattern``
+       ``number of density matrices for each perturbation pattern for one frequency configuration``
    :type num_dens: QInt
-   :param ao_dens: the collected density matrices
+   :param ao_dens: the collected density matrices, ordered as
+       ``array for freq. config. #1``, ``array for freq. config. #2``, ...
    :type ao_dens: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_exp: number of the expectation values, equal to the product of
-       ``num_freq_configs`` and the size of specified perturbations
+       ``num_freq_configs`` and the size of perturbation tuple specified by
+       ``pert_labels``
    :type num_exp: QInt
    :param val_exp: the expectation values to be returned, ordered as
        ``array for freq. config. #1``, ``array for freq. config. #2``, ...
