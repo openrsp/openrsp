@@ -19,7 +19,7 @@ API for users. These functions should be invoked as::
 
 where ``ierr`` contains the error information. Users should check if
 it equals to ``QSUCCESS`` (constant defined in
-`QcMatrix library <http://repo.ctcc.no/projects/qmatrix>`_). If not, there
+`QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_). If not, there
 was error happened in the invoked function, and the calculations should
 stop.
 
@@ -80,7 +80,7 @@ Functions of OpenRSP API (C version)
                                       num_pert,        \
                                       pert_labels,     \
                                       pert_max_orders, \
-                                      pert_sizes,      \
+                                      pert_dims,      \
                                       user_ctx,        \
                                       get_pert_comp,   \
                                       get_pert_rank)
@@ -89,20 +89,23 @@ Functions of OpenRSP API (C version)
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
-   :param num_pert: number of all perturbations involved in calculations
+   :param num_pert: number of all different perturbations involved in calculations
    :type num_pert: QInt
-   :param pert_labels: labels of all perturbations involved in calculations
+   :param pert_labels: labels of all different perturbations involved in
+       calculations, **OpenRSP will use the order of perturbations given here**
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of all perturbations
+   :param pert_max_orders: maximum allowed orders of all different perturbations
    :type pert_max_orders: QInt\*
-   :param pert_sizes: sizes of all perturbations up to their maximum orders,
-       whose dimension is the sum of ``pert_max_orders``
-   :type pert_sizes: QInt\*
+   :param pert_dims: dimensions of all different perturbations up to their
+       maximum orders, size is the sum of ``pert_max_orders``
+   :type pert_dims: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_pert_comp: user specified function for getting components of a perturbation
+   :param get_pert_comp: user specified function for getting components of a
+       perturbation pattern (by its labels)
    :type get_pert_comp: GetPertComp (function pointer QVoid (\*)(...))
-   :param get_pert_rank: user specified function for getting rank of a perturbation
+   :param get_pert_rank: user specified function for getting rank of a
+      perturbation pattern (by its labels)
    :type get_pert_rank: GetPertRank (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
@@ -184,44 +187,94 @@ Functions of OpenRSP API (C version)
    :type get_two_oper_exp: GetTwoOperExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. function:: OpenRSPSetNucGeoPerturbations(open_rsp,   \
-                                            num_atoms,  \
-                                            atom_coord, \
-                                            atom_charge)
+.. function:: OpenRSPAddXCFun(open_rsp,        \
+                              num_pert,        \
+                              pert_labels,     \
+                              pert_max_orders, \
+                              user_ctx,        \
+                              get_xc_fun_mat,  \
+                              get_xc_fun_exp)
 
-   Sets the context of geometric perturbations for nuclear Hamiltonian.
-
-   :param open_rsp: context of response theory calculations
-   :type open_rsp: OpenRSP\*
-   :param num_atoms: number of atoms
-   :type num_atoms: QInt
-   :param atom_coord: coordinates of atoms
-   :type atom_coord: QReal\*
-   :param atom_charge: charges of atoms
-   :type atom_charge: QReal\*
-   :rtype: QErrorCode
-
-.. function:: OpenRSPSetNucScalarPotential(open_rsp, \
-                                           dipole_origin)
-
-   Sets the terms in nuclear Hamiltonian due to the scalar potential.
+   Adds an exchange-correlation (XC) functional to the Hamiltonian.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
-   :param dipole_origin: coordinates of dipole origin
-   :type dipole_origin: QReal[3]
+   :param num_pert: number of perturbations that the XC functional depends on
+   :type num_pert: QInt
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
+   :param pert_max_orders: maximum allowed orders of the perturbations
+   :type pert_max_orders: QInt\*
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param get_xc_fun_mat: user specified function for getting integral matrices
+   :type get_xc_fun_mat: GetXCFunMat (function pointer QVoid (\*)(...))
+   :param get_xc_fun_exp: user specified function for getting expectation values
+   :type get_xc_fun_exp: GetXCFunExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. function:: OpenRSPSetNucVectorPotential(open_rsp, \
-                                           gauge_origin)
+.. function:: OpenRSPAddNucContributions(open_rsp,        \
+                                         num_pert,        \
+                                         pert_labels,     \
+                                         pert_max_orders, \
+                                         user_ctx,        \
+                                         get_nuc_contrib)
 
-   Sets the terms in nuclear Hamiltonian due to the vector potential.
+   Adds the nuclear contributions to the Hamiltonian.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
-   :param gauge_origin: coordinates of gauge origin
-   :type gauge_origin: QReal[3]
+   :param num_pert: number of perturbations that the nuclear contributions depend on
+   :type num_pert: QInt
+   :param pert_labels: labels of the perturbations
+   :type pert_labels: QInt\*
+   :param pert_max_orders: maximum allowed orders of the perturbations
+   :type pert_max_orders: QInt\*
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :param get_nuc_contrib: user specified function for getting the nuclear
+       contributions
+   :type get_nuc_contrib: GetNucContrib (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
+
+.. .. function:: OpenRSPSetNucGeoPerturbations(open_rsp,   \
+                                               num_atoms,  \
+                                               atom_coord, \
+                                               atom_charge)
+   
+      Sets the context of geometric perturbations for nuclear Hamiltonian.
+   
+      :param open_rsp: context of response theory calculations
+      :type open_rsp: OpenRSP\*
+      :param num_atoms: number of atoms
+      :type num_atoms: QInt
+      :param atom_coord: coordinates of atoms
+      :type atom_coord: QReal\*
+      :param atom_charge: charges of atoms
+      :type atom_charge: QReal\*
+      :rtype: QErrorCode
+
+.. .. function:: OpenRSPSetNucScalarPotential(open_rsp, \
+                                              dipole_origin)
+   
+     Sets the terms in nuclear Hamiltonian due to the scalar potential.
+  
+     :param open_rsp: context of response theory calculations
+     :type open_rsp: OpenRSP\*
+     :param dipole_origin: coordinates of dipole origin
+     :type dipole_origin: QReal[3]
+     :rtype: QErrorCode
+
+.. .. function:: OpenRSPSetNucVectorPotential(open_rsp, \
+                                              gauge_origin)
+   
+      Sets the terms in nuclear Hamiltonian due to the vector potential.
+   
+      :param open_rsp: context of response theory calculations
+      :type open_rsp: OpenRSP\*
+      :param gauge_origin: coordinates of gauge origin
+      :type gauge_origin: QReal[3]
+      :rtype: QErrorCode
 
 .. function:: OpenRSPAssemble(open_rsp)
 
@@ -243,17 +296,17 @@ Functions of OpenRSP API (C version)
    :type file_name: QChar\*
    :rtype: QErrorCode
 
-.. function:: OpenRSPGetRSPFun(open_rsp,       \
-                               ref_ham,        \
-                               ref_state,      \
-                               ref_overlap,    \
-                               num_props,      \
-                               num_pert,       \
-                               pert_labels,    \
-                               num_freqs,      \
-                               pert_freqs,     \
-                               kn_rules,       \
-                               size_rsp_funs,  \
+.. function:: OpenRSPGetRSPFun(open_rsp,         \
+                               ref_ham,          \
+                               ref_state,        \
+                               ref_overlap,      \
+                               num_props,        \
+                               num_pert,         \
+                               pert_labels,      \
+                               num_freq_configs, \
+                               pert_freqs,       \
+                               kn_rules,         \
+                               size_rsp_funs,    \
                                rsp_funs)
 
    Gets the response functions for given perturbations.
@@ -275,19 +328,24 @@ Functions of OpenRSP API (C version)
    :param pert_labels: labels of perturbations for each property,
        size is ``sum(num_pert)``
    :type pert_labels: QInt\*
-   :param num_freqs: number of different frequency configurations for
-       each property, size is ``num_props``
-   :type num_freqs: QInt\*
+   :param num_freq_configs: number of different frequency configurations
+       for each property, size is ``num_props``
+   :type num_freq_configs: QInt\*
    :param pert_freqs: complex frequencies of each perturbation over all frequency
-       configurations, size is ``2``:math:`\times` ``dot_product(num_freqs,num_pert)``
+       configurations, size is ``2`` :math:`\times`
+       ``dot_product(num_freq_configs,num_pert)``, ordered as (``num_freq_configs``,
+       ``num_pert``) and the real and imaginary parts of each frequency are
+       consecutive in memory
    :type pert_freqs: QReal\*
    :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of
        properties (``num_props``)
    :type kn_rules: QInt\*
-   :param size_rsp_funs: size of the response functions
+   :param size_rsp_funs: size of the response functions, equals to
    :type size_rsp_funs: QInt
-   :param rsp_funs: the response functions, size is ``2``:math:`\times` ``size_rsp_funs``
+   :param rsp_funs: the response functions, size is ``2`` :math:`\times`
+       ``size_rsp_funs``, where the real and imaginary parts of response
+       functions are consecutive in memory
    :type rsp_funs: QReal\*
    :rtype: QErrorCode
 
@@ -309,7 +367,7 @@ that an extra ``_f`` should be appended to each function. Other differences are
 the (ii) argument types and (iii) callback functions (subroutines for Fortran).
 The latter will be described in Chapter :ref:`chapter-callback-functions`. The
 former relates to the convention of types in Fortran, please refer to the manual
-of `QcMatrix library <http://repo.ctcc.no/projects/qmatrix>`_ and the following
+of `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_ and the following
 table for the convention:
 
 .. list-table::
