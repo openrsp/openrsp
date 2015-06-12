@@ -11,6 +11,7 @@ Welcome to OpenRSP's documentation!
 
    openrsp_introduction.rst
    openrsp_installation.rst
+   openrsp_definition.rst
    openrsp_api.rst
    openrsp_callback.rst
    openrsp_developers.rst

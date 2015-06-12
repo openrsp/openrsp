@@ -13,7 +13,7 @@ installed on your computer:
 #. C, C++ (if C++ APIs built) and/or Fortran 2003 (if Fortran APIs built) compilers,
 
 #. HDF 5 (:math:`\ge1.8`) if it is enabled in
-   `QcMatrix library <http://repo.ctcc.no/projects/qmatrix>`_,
+   `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_,
 
 #. BLAS and LAPACK libraries.
 
@@ -22,7 +22,7 @@ CMake
 
 For the time being, only CMake could be used to compile OpenRSP. In general,
 OpenRSP should be compiled together with the host programs. See for example
-the Dalton program (``qmatrix`` branch).
+the Dalton program (``qcmatrix`` branch).
 
 You could also compile OpenRSP alone to be familiar with how it works. But
 no real calculations will be performed, all the callback functions in the
@@ -41,8 +41,8 @@ executables for the test suite will be built and can run after compilation. So
 that you are able to check if OpenRSP has been successfully compiled. A detailed
 list of the parameters controlling the compilation is given in the following table:
 
-.. list-table::
-   :widths: 35 45 20
+.. tabularcolumns:: |L|p{0.5\textwidth}|L|
+.. list-table:: OpenRSP CMake parameters
    :header-rows: 1
 
    * - CMake parameters
