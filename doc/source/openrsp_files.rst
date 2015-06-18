@@ -49,6 +49,8 @@ Files and Directories of OpenRSP
 
    #. ``f03``: Fortran 2003 APIs.
 
+   #. ``nuc_contrib``: Source codes of nuclear contributions to the Hamiltonian.
+
    #. ``one_oper``: Source codes of one-electron operators.
 
    #. ``overlap``: Source codes of overlap integrals.

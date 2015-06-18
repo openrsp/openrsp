@@ -48,9 +48,6 @@ list of the parameters controlling the compilation is given in the following tab
    * - CMake parameters
      - Description
      - Default
-   * - ``OPENRSP_PERTURBATION_FREE``
-     - Enable perturbation free.
-     - ``ON``
    * - ``OPENRSP_USER_CONTEXT``
      - Enable user context in callback functions.
      - ``OFF``
@@ -75,3 +72,7 @@ list of the parameters controlling the compilation is given in the following tab
    * - ``QCMATRIX_MODULE_DIR``
      - Sets the module directory of QcMatrix library (if Fortran 2003 API built).
      - ``None``
+
+..   * - ``OPENRSP_PERTURBATION_FREE``
+       - Enable perturbation free.
+       - ``ON``

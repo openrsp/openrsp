@@ -36,7 +36,7 @@
 /* exchange-correlation functionals */
 #include "hamiltonian/rsp_xc_fun.h"
 /* nuclear contributions */
-#include "hamiltonian/rsp_nuc_hamiltonian.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
 #if defined(OPENRSP_PERTURBATION_FREE)
 /* callback function to get the components of a perturbation */

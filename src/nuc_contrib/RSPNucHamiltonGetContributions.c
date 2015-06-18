@@ -20,7 +20,7 @@
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_hamiltonian.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
 /*% \brief gets the nuclear contributions
     \author Bin Gao

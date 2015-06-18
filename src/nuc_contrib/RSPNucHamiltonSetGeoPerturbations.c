@@ -20,7 +20,7 @@
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_hamiltonian.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
 /*% \brief sets the context of geometric perturbations for nuclear Hamiltonian
     \author Bin Gao

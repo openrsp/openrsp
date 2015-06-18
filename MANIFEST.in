@@ -1,0 +1,13 @@
+include cmake/*
+include doc/source/*.rst
+include doc/source/*.py
+include doc/openrsp.bib
+include include/* include/*/*
+include src/* src/*/*
+include tests/c/* tests/c/*/*
+include tests/f90/* tests/f90/*/*
+include tests/python/* tests/python/*/*
+include AUTHORS COPYING COPYING.LESSER ChangeLog
+include INSTALL MANIFEST.in NEWS README RULES TODO
+include CMakeLists.txt CTestConfig.cmake
+include setup.cfg

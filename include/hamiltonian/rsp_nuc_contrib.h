@@ -21,8 +21,8 @@
    * first version
 */
 
-#if !defined(RSP_NUC_HAMILTONIAN_H)
-#define RSP_NUC_HAMILTONIAN_H
+#if !defined(RSP_NUC_CONTRIB_H)
+#define RSP_NUC_CONTRIB_H
 
 /* QcMatrix library */
 #include "qcmatrix.h"

@@ -14,24 +14,37 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPNucHamiltonGetNumAtoms().
+   This file implements the function RSPNucHamiltonDestroy().
 
    2015-02-12, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_hamiltonian.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
-/*% \brief gets the number of atoms
+/*% \brief destroys the context of nuclear Hamiltonian, should be called at the end
     \author Bin Gao
     \date 2015-02-12
-    \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
-    \param[QInt:int]{out} num_atoms number of atoms
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPNucHamiltonGetNumAtoms(const RSPNucHamilton *nuc_hamilton,
-                                     QInt *num_atoms)
+QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton *nuc_hamilton)
 {
-    *num_atoms = nuc_hamilton->num_atoms;
+    if (nuc_hamilton->atom_coord!=NULL) {
+        free(nuc_hamilton->atom_coord);
+        nuc_hamilton->atom_coord = NULL;
+    }
+    if (nuc_hamilton->atom_charge!=NULL) {
+        free(nuc_hamilton->atom_charge);
+        nuc_hamilton->atom_charge = NULL;
+    }
+    if (nuc_hamilton->dipole_origin!=NULL) {
+        free(nuc_hamilton->dipole_origin);
+        nuc_hamilton->dipole_origin = NULL;
+    }
+    if (nuc_hamilton->gauge_origin!=NULL) {
+        free(nuc_hamilton->gauge_origin);
+        nuc_hamilton->gauge_origin = NULL;
+    }
     return QSUCCESS;
 }
