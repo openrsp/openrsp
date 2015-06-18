@@ -20,7 +20,7 @@
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_hamiltonian.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
 /*% \brief creates the context of nuclear Hamiltonian, should be called at first
     \author Bin Gao

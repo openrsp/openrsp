@@ -25,14 +25,14 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperGetMat.c
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperGetExp.c
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperDestroy.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonCreate.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonSetGeoPerturbations.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonSetScalarPotential.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonSetVectorPotential.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonWrite.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonGetContributions.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonDestroy.c
-    ${LIB_OPENRSP_PATH}/src/nuc_hamilton/RSPNucHamiltonGetNumAtoms.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonCreate.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonSetGeoPerturbations.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonSetScalarPotential.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonSetVectorPotential.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonWrite.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonGetContributions.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonDestroy.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonGetNumAtoms.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPCreate.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetElecEOM.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetLinearRSPSolver.c

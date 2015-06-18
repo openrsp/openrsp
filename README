@@ -1,151 +1,53 @@
-!!  openrsp: interface for solving response equations using atomic basis
-!!  Copyright 2009 Bin Gao
-!!
-!!  openrsp is free software: you can redistribute it and/or modify
-!!  it under the terms of the GNU Lesser General Public License as
-!!  published by the Free Software Foundation, either version 3 of
-!!  the License, or (at your option) any later version.
-!!
-!!  openrsp is distributed in the hope that it will be useful,
-!!  but WITHOUT ANY WARRANTY; without even the implied warranty of
-!!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-!!  GNU Lesser General Public License for more details.
-!!  
-!!  You should have received a copy of the GNU Lesser General Public
-!!  License along with openrsp. If not, see <http://www.gnu.org/licenses/>.
-!!
-!!  openrsp is an interface for solving response equations using
-!!  Andreas J. Thorvaldsen's codes, and the solver in DALTON
-!!
-!!  NOTICE: DALTON is distributed under its own License Agreement
-!!          You need to first obtain such agreement and DALTON
-!!          from http://www.kjemi.uio.no/software/dalton/dalton.html
-!!
-!!  NOTICE: Andreas J. Thorvaldsen's codes are also distributed under
-!!          GNU Lesser General Public License, you may also first
-!!          obtain his code
+*  OpenRSP: open-ended response theory
+*  Copyright 2015 Radovan Bast,
+*                 Daniel H. Friese,
+*                 Bin Gao,
+*                 Dan J. Jonsson,
+*                 Magnus Ringholm,
+*                 Kenneth Ruud,
+*                 Andreas Thorvaldsen
+* 
+*  OpenRSP is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Lesser General Public License as
+*  published by the Free Software Foundation, either version 3 of
+*  the License, or (at your option) any later version.
+* 
+*  OepnRSP is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Lesser General Public License for more details.
+*  
+*  You should have received a copy of the GNU Lesser General Public
+*  License along with openrsp. If not, see <http://www.gnu.org/licenses/>.
 
 1. A brief description of the project.
 
-   This project is to implement Andreas J. Thorvaldsen's codes into DALTON
-   main branch using its MO solver.
+   OpenRSP is a computer program that uses recursive routines to identify
+   and assemble contributions to molecular properties ("response properties")
+   as they are formulated in the theory "response theory" which is used in
+   theoretical chemistry.
+
+   Please refer to doc/manual.pdf for more details.
+
+   Please refer to RULES if you would like to contribute.
+
+   If you have used OpenRSP and found it is useful, please consider to cite the
+   references in openrsp.bib.
 
 2. A pointer to the project website (if it has one)
 
+   http://repo.ctcc.no/projects/openrsp
+
 3. Notes on the developer's build environment and potential portability problems.
 
-   In order to implement Andreas J. Thorvaldsen's codes, we have modified the
-   following files in DALTON main branch:
+   We could probably describe the implementation of OpenRSP library into DALTON
+   and LSDALTON, and refer to the tutorial that we will prepare.
 
-   (1) General files
+4. Important files and subdirectories
 
-       * configure
-         adds options for F90 file
-         adds -DBUILD_OPENRSP flag
+   Please see Chapter ``Files and Directories'' in doc/manual.pdf.
 
-       * Makefile
-         adds "-Lopenrsp -lopenrsp" to "DALTON_LIBS",
-         adds "OPENRSP_OBJ" to "MODULES",
-         adds "openrsp" to "SUBDIRS",
-         adds "OPENRSP_OBJ :
-                 	cd openrsp && $(MAKE) all"
-
-       * "abacus" directory
-         + abarspn.F
-           modifies subroutine RSPLLE to handle general GD vectors
-         + dalgnr.F
-           adds interface in subroutine EXEDRV
-         + her1drv.F
-           adds subroutines WRITE_DSOFSO and READ_DSOFSO, from linsca/abacus/her1drv.F
-
-       * "include" directory
-         + abainf.h
-         + cbilnr.h
-         + cbione.h
-         + cbivib.h
-         + dipole.h
-         + dummy.h
-         + energy.h
-         + inflin.h
-         + inforb.h
-         + iratdef.h
-         + inftab.h
-         + infvar.h
-         + moldip.h
-         + mxcent.h
-         + nuclei.h
-         + priunit.h
-         + quadru.h
-         + wrkrsp.h
-           by considering F90 format
-
-       * "tools" directory
-         + check_depend
-           adds suffix F90
-
-   (2) DFT calculations
-
-       * We do not support DFT calculations for the time being :-(
-       * "dft" directory
-         + dft_aux.F
-           add function DO_DFT() from linsca/dft/dft_aux.F
-
-   (3) Geometirc derivatives
-
-       * modifies abacus/her2ave.F based on that from linsca (see comments for details)
-       * copies subroutine GRCONT from linsca/abacus/aba2tex.F
-       * modifies all the subroutines having "CALL PARDRV" (aba2tex.F, abarhs.F, eri2par.F)
-
-       * besides, we have also modified some subroutines (such as TWOINT, TWOODS, ...) in:
-         + abacus/her2drv.F
-         + abacus/herdirect.F
-         + abacus/herdrv.F (also adds XYZ-ALL for CM-2 and QDBINT)
-         + abacus/herpar.F (important modifications in subroutine HER_RVRES)
-         with one more argument GENCNT (or GENCTR)
-
-         These modifications may affect
-         + some files in rsp directory (we need to modify them later!!)
-
-       * modifies abacus/abafsd.F, abacus/her1pro.F, and cc/ccfndop.F for dipole gradient integrals
-
-       * modifies abacus/her1pro.F, and cc/ccfndop.F for quadrupole gradients
-
-   (4) Magnetic derivatives
-
-       * abacus/her1pro.F, abacus/herdrv.F, abacus/her1int.F, and include/cbiher.h
-         adds integrals S2MBRA, S2MKET, and S2MMIX, please see the comments
-
-4. Important files and subdirectories in "openrsp"
-
-   (1) Andreas J. Thorvaldsen's codes
-
-        * matrix_genop.F90  : 
-        * matrix_defop.F90  : 
-        * prop_contribs.F90 : 
-        * rsp_equations.F90 : 
-        * prop_test.F90     : 
-        * vib_prop.F90      : 
-        * birefring.F90     : 
-
-   (2) Files of the interfaces of DALTON and Andreas J. Thorvaldsen's codes
-
-       * xprecision.F90     : defines the precision of real numbers
-       * xtrack.F90         : error tracks
-       * xcharacter.F90     : processes characters
-       * xdump.F90          : deep level code to dump arrays
-       * xrandom.F90        : generates random numbers
-       * xmatrix.F90        : defines matrix and related operations
-       * dalton_ifc.F90     : interface of DALTON, contains, such like,
-                              (i) setting work memory
-                              (ii) getting one-electron integrals,
-                              (iii) getting coefficients of molelcular orbitals
-                              (iv) getting two electron contributions and Fock matrix,
-                              (v) calling MO response solver in DALTON, ...
-       * openrsp.F90        : main module of openrsp, provides external user interfaces,
-                              also contains the interface of calling Andreas J. Thorvaldsen's codes
-       * openrsp_daldrv.F90 : driver used for DALTON
-
-5. Please see INSTALL for installation instructions
+5. Please see chapter ``Installation'' in doc/manual.pdf for installation instructions
 
 6. Please see AUTHORS for the maintainers list
 

@@ -2,11 +2,11 @@
 # if you wish to receive git commit notification emails
 # it can take up to 1 day for the change to take effect
 # (crontab updates the list on the server)
-bin.gao@uit.no
-kenneth.ruud@uit.no
 radovan.bast@gmail.com
-ajthorva@yahoo.no
+bin.gao@uit.no
 dan.jonsson@uit.no
-magnus.ringholm@uit.no
 michal.repisky@uit.no
+magnus.ringholm@uit.no
+kenneth.ruud@uit.no
 arnfinn.steindal@uit.no
+ajthorva@yahoo.no

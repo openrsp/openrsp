@@ -14,32 +14,32 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPNucHamiltonSetScalarPotential().
+   This file implements the function RSPNucHamiltonSetVectorPotential().
 
    2015-02-12, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_nuc_hamiltonian.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
-/*% \brief sets the terms in nuclear Hamiltonian due to the scalar potential
+/*% \brief sets the terms in nuclear Hamiltonian due to the vector potential
     \author Bin Gao
     \date 2015-02-12
     \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
-    \param[QReal:real]{in} dipole_origin coordinates of dipole origin
+    \param[QReal:real]{in} gauge_origin coordinates of gauge origin
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPNucHamiltonSetScalarPotential(RSPNucHamilton *nuc_hamilton,
-                                            const QReal dipole_origin[3])
+QErrorCode RSPNucHamiltonSetVectorPotential(RSPNucHamilton *nuc_hamilton,
+                                            const QReal gauge_origin[3])
 {
-    if (nuc_hamilton->dipole_origin==NULL) {
-        nuc_hamilton->dipole_origin = (QReal *)malloc(3*sizeof(QReal));
-        if (nuc_hamilton->dipole_origin==NULL) {
-            QErrorExit(FILE_AND_LINE, "failed to allocate memory for dipole_origin");
+    if (nuc_hamilton->gauge_origin==NULL) {
+        nuc_hamilton->gauge_origin = (QReal *)malloc(3*sizeof(QReal));
+        if (nuc_hamilton->gauge_origin==NULL) {
+            QErrorExit(FILE_AND_LINE, "failed to allocate memory for gauge_origin");
         }
     }
-    nuc_hamilton->dipole_origin[0] = dipole_origin[0];
-    nuc_hamilton->dipole_origin[1] = dipole_origin[1];
-    nuc_hamilton->dipole_origin[2] = dipole_origin[2];
+    nuc_hamilton->gauge_origin[0] = gauge_origin[0];
+    nuc_hamilton->gauge_origin[1] = gauge_origin[1];
+    nuc_hamilton->gauge_origin[2] = gauge_origin[2];
     return QSUCCESS;
 }
