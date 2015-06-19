@@ -379,7 +379,6 @@ Functions of OpenRSP API (C version)
                                 pert_labels,      \
 
                                 order_residue,    \
-excitation pert_labels
 
                                 num_freq_configs, \
                                 pert_freqs,       \
@@ -409,6 +408,8 @@ excitation pert_labels
 
 which perturbations to which excited state, +/-
 close to interested excitation energy
+
+excitation pert_labels
 
 .. function:: OpenRSPDestroy(open_rsp)
 
