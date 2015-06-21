@@ -22,75 +22,77 @@ functions are given as follows.
 
 .. get_pert_rank()
 
-.. function:: get_overlap_mat(bra_num_pert,    \
-                              bra_pert_labels, \
-                              ket_num_pert,    \
-                              ket_pert_labels, \
-                              num_pert,        \
-                              pert_labels,     \
-                              user_ctx,        \
-                              num_int,         \
+.. function:: get_overlap_mat(bra_len_tuple,  \
+                              bra_pert_tuple, \
+                              ket_len_tuple,  \
+                              ket_pert_tuple, \
+                              len_tuple,      \
+                              pert_tuple,     \
+                              user_ctx,       \
+                              num_int,        \
                               val_int)
 
    Callback function for getting integral matrices of overlap integrals,
    the second last argument for the function :py:meth:`OpenRSPSetPDBS`.
 
-   :param bra_num_pert: number of perturbations on the bra
-   :type bra_num_pert: QInt
-   :param bra_pert_labels: label for each perturbation on the bra,
-       size is ``bra_num_pert``
-   :type bra_pert_labels: QInt\*
-   :param ket_num_pert: number of perturbations on the ket
-   :type ket_num_pert: QInt
-   :param ket_pert_labels: label for each perturbation on the ket,
-       size is ``ket_num_pert``
-   :type ket_pert_labels: QInt\*
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param bra_len_tuple: length of the perturbation tuple on the bra
+   :type bra_len_tuple: QInt
+   :param bra_pert_tuple: perturbation tuple on the bra,
+       size is ``bra_len_tuple``
+   :type bra_pert_tuple: QInt\*
+   :param ket_len_tuple: length of the perturbation tuple on the ket
+   :type ket_len_tuple: QInt
+   :param ket_pert_tuple: perturbation tuple on the ket,
+       size is ``ket_len_tuple``
+   :type ket_pert_tuple: QInt\*
+   :param len_tuple: length of perturbation tuple on the overlap integrals
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the overlap integrals, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_int: number of the integral matrices, as the product of
-       the dimension of each perturbation pattern on the bra (``bra_pert_labels``),
-       ket (``ket_pert_labels``) and both of them (``pert_labels``)
+       the sizes of perturbations on the bra, the ket and both of them,
+       which are specified by the perturbation tuples on the bra
+       (``bra_pert_tuple``), the ket (``ket_pert_tuple``) and overlap
+       integrals (``pert_tuple``)
    :type num_int: QInt
-   :param val_int: the integral matrices, ordered as
-       (``perturbation pattern on the bra``, ``perturbation pattern on the ket``,
-       ``perturbation pattern``), where the perturbations on the bra vary fastest
-       in memory
+   :param val_int: the integral matrices, arranged as
+       ``(bra_pert_tuple, ket_pert_tuple, pert_tuple)``.
    :type val_int: QcMat\*[]
    :rtype: QVoid
 
-.. function:: get_overlap_exp(bra_num_pert,    \
-                              bra_pert_labels, \
-                              ket_num_pert,    \
-                              ket_pert_labels, \
-                              num_pert,        \
-                              pert_labels,     \
-                              num_dmat,        \
-                              dens_mat,        \
-                              user_ctx,        \
-                              num_exp,         \
+.. function:: get_overlap_exp(bra_len_tuple,  \
+                              bra_pert_tuple, \
+                              ket_len_tuple,  \
+                              ket_pert_tuple, \
+                              len_tuple,      \
+                              pert_tuple,     \
+                              num_dmat,       \
+                              dens_mat,       \
+                              user_ctx,       \
+                              num_exp,        \
                               val_exp)
 
    Callback function for getting expectation values of overlap integrals,
    the last argument for the function :py:meth:`OpenRSPSetPDBS`.
 
-   :param bra_num_pert: number of perturbations on the bra
-   :type bra_num_pert: QInt
-   :param bra_pert_labels: label for each perturbation on the bra,
-       size is ``bra_num_pert``
-   :type bra_pert_labels: QInt\*
-   :param ket_num_pert: number of perturbations on the ket
-   :type ket_num_pert: QInt
-   :param ket_pert_labels: label for each perturbation on the ket,
-       size is ``ket_num_pert``
-   :type ket_pert_labels: QInt\*
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param bra_len_tuple: length of the perturbation tuple on the bra
+   :type bra_len_tuple: QInt
+   :param bra_pert_tuple: perturbation tuple on the bra,
+       size is ``bra_len_tuple``
+   :type bra_pert_tuple: QInt\*
+   :param ket_len_tuple: length of the perturbation tuple on the ket
+   :type ket_len_tuple: QInt
+   :param ket_pert_tuple: perturbation tuple on the ket,
+       size is ``ket_len_tuple``
+   :type ket_pert_tuple: QInt\*
+   :param len_tuple: length of perturbation tuple on the overlap integrals
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the overlap integrals, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param num_dmat: number of atomic orbital (AO) based density matrices
    :type num_dmat: QInt
    :param dens_mat: the AO based density matrices
@@ -98,70 +100,72 @@ functions are given as follows.
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_exp: number of expectation values, as the product of number
-       of density matrices (``num_dmat``) and the dimension of each perturbation
-       pattern on the bra (``bra_pert_labels``), ket (``ket_pert_labels``)
-       and both of them (``pert_labels``)
+       of density matrices (``num_dmat``) and the sizes of perturbations
+       on the bra, the ket and overlap integrals
    :type num_exp: QInt
-   :param val_exp: the expectation values, ordered as
-       (``perturbation pattern on the bra``, ``perturbation pattern on the ket``,
-       ``perturbation pattern``, ``num_dmat``)
+   :param val_exp: the expectation values, arranged as
+       ``(num_dmat, bra_pert_tuple, ket_pert_tuple, pert_tuple)``.
    :type val_exp: QReal\*
    :rtype: QVoid
 
-.. function:: get_one_oper_mat(num_pert,    \
-                               pert_labels, \
-                               user_ctx,    \
-                               num_int,     \
+*FIXME: what is the benefit for requiring num_dmat runs fastest in memory?*
+
+.. function:: get_one_oper_mat(len_tuple,  \
+                               pert_tuple, \
+                               user_ctx,   \
+                               num_int,    \
                                val_int)
 
    Callback function for getting integral matrices of a one-electron operator,
    the second last argument for the function :py:meth:`OpenRSPAddOneOper`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param len_tuple: length of perturbation tuple on the one-electron operator
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the one-electron operator, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_int: number of the integral matrices, as the dimension of
-       the perturbation pattern (``pert_labels``)
+   :param num_int: number of the integral matrices, as the size of perturbations
+       (specified by the perturbation tuple ``pert_tuple``)
    :type num_int: QInt
    :param val_int: the integral matrices
    :type val_int: QcMat\*[]
    :rtype: QVoid
 
-.. function:: get_one_oper_exp(num_pert,    \
-                               pert_labels, \
-                               num_dmat,    \
-                               dens_mat,    \
-                               user_ctx,    \
-                               num_exp,     \
+.. function:: get_one_oper_exp(len_tuple,  \
+                               pert_tuple, \
+                               num_dmat,   \
+                               dens_mat,   \
+                               user_ctx,   \
+                               num_exp,    \
                                val_exp)
 
    Callback function for getting expectation values of a one-electron operator,
    the last argument for the function :py:meth:`OpenRSPAddOneOper`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param len_tuple: length of perturbation tuple on the one-electron operator
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the one-electron operator, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param num_dmat: number of AO based density matrices
    :type num_dmat: QInt
    :param dens_mat: the AO based density matrices
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_exp: number of expectation values, as the product of the
-       dimension of the perturbation pattern (``pert_labels``) and the
-       number of density matrices (``num_dmat``)
+   :param num_exp: number of expectation values, as the product of number
+       of density matrices (``num_dmat``) and the size of perturbations
+       on the one-electron operator (specified by the perturbation tuple
+       ``pert_tuple``)
    :type num_exp: QInt
-   :param val_exp: the expectation values, ordered as (``perturbation pattern``,
-       ``num_dmat``)
+   :param val_exp: the expectation values, arranged as ``(num_dmat, pert_tuple)``
    :type val_exp: QReal\*
    :rtype: QVoid
 
-.. function:: get_two_oper_mat(num_pert,     \
-                               pert_labels,  \
+.. function:: get_two_oper_mat(len_tuple,    \
+                               pert_tuple,   \
                                num_var_dmat, \
                                var_dens_mat, \
                                user_ctx,     \
@@ -171,10 +175,11 @@ functions are given as follows.
    Callback function for getting integral matrices of a two-electron operator,
    the second last argument for the function :py:meth:`OpenRSPAddTwoOper`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param len_tuple: length of perturbation tuple on the two-electron operator
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the two-electron operator, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param num_var_dmat: number of variable AO based density matrices
    :type num_var_dmat: QInt
    :param var_dens_mat: the variable AO based density matrices (:math:`\boldsymbol{D}`)
@@ -182,17 +187,19 @@ functions are given as follows.
    :type var_dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_int: number of the integral matrices, as the product of
-       the dimension of perturbation pattern (``pert_labels``) and the
-       number of variable AO based density matrices (``num_var_dmat``)
+   :param num_int: number of the integral matrices, as the product of number
+       of variable AO based density matrices (``num_var_dmat``) and the size
+       of perturbations on the two-electron operator (specified by the perturbation
+       tuple ``pert_tuple``)
    :type num_int: QInt
-   :param val_int: the integral matrices, ordered as (``perturbation pattern``,
-       ``num_var_dmat``)
+   :param val_int: the integral matrices, arranged as ``(num_var_dmat, pert_tuple)``
    :type val_int: QcMat\*[]
    :rtype: QVoid
 
-.. function:: get_two_oper_exp(num_pert,       \
-                               pert_labels,    \
+*FIXME: check the addressing of val_int*
+
+.. function:: get_two_oper_exp(len_tuple,      \
+                               pert_tuple,     \
                                num_var_dmat,   \
                                var_dens_mat,   \
                                num_contr_dmat, \
@@ -204,10 +211,11 @@ functions are given as follows.
    Callback function for getting expectation values of a two-electron operator,
    the last argument for the function :py:meth:`OpenRSPAddTwoOper`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param len_tuple: length of perturbation tuple on the two-electron operator
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the two-electron operator, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param num_var_dmat: number of variable AO based density matrices
    :type num_var_dmat: QInt
    :param var_dens_mat: the variable AO based density matrices (:math:`\boldsymbol{D}`)
@@ -220,21 +228,24 @@ functions are given as follows.
    :type contr_dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_exp: number of expectation values, as the product of
-       the dimension of perturbation pattern (``pert_labels``), the
-       number of variable AO based density matrices (``num_var_dmat``)
-       and the number of contracted AO based density matrices (``num_contr_dmat``)
+   :param num_exp: number of expectation values, as the product of numbers
+       of contracted AO based density matrices (``num_contr_dmat``) and
+       variable AO based density matrices (``num_var_dmat``) and the size
+       of perturbations on the two-electron operator (specified by the
+       perturbation tuple ``pert_tuple``)
    :type num_exp: QInt
-   :param val_exp: the expectation values, ordered as (``perturbation pattern``,
-       ``num_var_dmat``, ``num_contr_dmat``)
+   :param val_exp: the expectation values, arranged as
+       ``(num_contr_dmat, num_var_dmat, pert_tuple)``
    :type val_exp: QReal\*
    :rtype: QVoid
 
-.. function:: get_xc_fun_mat(num_pert,         \
-                             pert_labels,      \
+*FIXME: get_two_oper_mat and get_two_oper_exp should be discussed and fixed*
+
+.. function:: get_xc_fun_mat(len_tuple,        \
+                             pert_tuple,       \
                              num_freq_configs, \
                              len_dmat_tuple,   \
-                             dens_mat_tuple,   \
+                             idx_dmat_tuple,   \
                              num_dmat,         \
                              dens_mat,         \
                              user_ctx,         \
@@ -244,62 +255,62 @@ functions are given as follows.
    Callback function for getting integral matrices of XC functional,
    the second last argument for the function :py:meth:`OpenRSPAddXCFun`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
-   :param num_freq_configs: for the perturbation pattern specified by ``num_pert``
-       and ``pert_labels``, the number of different frequency configurations to
-       be considered
+   :param len_tuple: length of perturbation tuple on the XC functional
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the XC functional, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
+   :param num_freq_configs: the number of different frequency configurations
+       to be considered for the perturbation tuple specified by ``pert_tuple``
    :type num_freq_configs: QInt
-   :param len_dmat_tuple: for the perturbation pattern specified by ``num_pert``
-       and ``pert_labels``, the length (number of different perturbation patterns)
-       of the AO based density matrices passed; for instance, the complete density
-       matrix tuple (canonically ordered) for a property :math:`\mathcal{E}^{abc}`
-       is (:math:`\boldsymbol{D}`, :math:`\boldsymbol{D}^{a}`, :math:`\boldsymbol{D}^{b}`,
-       :math:`\boldsymbol{D}^{c}`, :math:`\boldsymbol{D}^{ab}`, :math:`\boldsymbol{D}^{ac}`,
-       :math:`\boldsymbol{D}^{bc}`), and with the (0,2) rule, the relevant density
-       matrices are (:math:`\boldsymbol{D}`, :math:`\boldsymbol{D}^{b}`,
-       :math:`\boldsymbol{D}^{c}`, :math:`\boldsymbol{D}^{bc}`) and which gives the
-       ``len_dmat_tuple`` as 4
-   :type len_dmat_tuple: QInt
-   :param dens_mat_tuple: the perturbation tuple of the AO based density matrices
-       passed, as a canonically ordered list of all relevant perturbation patterns
-       of the density matrices, size is ``len_dmat_tuple``; sticking with the example
-       above, the density matrices passed are (:math:`\boldsymbol{D}`,
+   :param len_dmat_tuple: the number of different perturbation tuples of the
+       AO based density matrices passed; for instance, the complete density
+       matrix perturbation tuples (canonically ordered) for a property
+       :math:`\mathcal{E}^{abc}` (i.e. the perturbation tuple ``pert_tuple``
+       is ``abc``) are (:math:`\boldsymbol{D}`, :math:`\boldsymbol{D}^{a}`,
        :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`,
-       :math:`\boldsymbol{D}^{bc}`) and the associated perturbation tuple
-       ``dens_mat_tuple`` is (1, 3, 4, 7) because these numbers correspond to the
-       positions of the ":math:`(k,n)`-surviving" perturbation patterns in the
-       canonically ordered list.
-   :type dens_mat_tuple: QInt\*
-   :param num_dmat: number of collected AO based density matrices for the given
-       perturbation tuple ``dens_mat_tuple`` and all frequency configurations,
-       that is ``num_freq_configs``
-       :math:`\times\prod_{\text{perturbation pattern}}N_{\text{perturbation pattern}}`,
-       where :math:`N_{\text{perturbation pattern}}` is the number of density
-       matrices per perturbation pattern for a frequency configuration
+       :math:`\boldsymbol{D}^{ab}`, :math:`\boldsymbol{D}^{ac}`,
+       :math:`\boldsymbol{D}^{bc}`), and with the :math:`(0,2)` rule, the
+       relevant density matrix perturbation tuples become (:math:`\boldsymbol{D}`,
+       :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`,
+       :math:`\boldsymbol{D}^{bc}`) that gives the ``len_dmat_tuple`` as 4
+   :type len_dmat_tuple: QInt
+   :param idx_dmat_tuple: indices of the density matrix perturbation tuples passed
+       (canonically ordered), size is ``len_dmat_tuple``; sticking with the above
+       example, the density matrix perturbation tuples passed are (:math:`\boldsymbol{D}`,
+       :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`, :math:`\boldsymbol{D}^{bc}`)
+       and their associated indices ``idx_dmat_tuple`` is (1, 3, 4, 7) because these
+       numbers correspond to the positions of the ":math:`(k,n)`-surviving" perturbation
+       tuples in the canonically ordered complete density matrix perturbation tuples
+   :type idx_dmat_tuple: QInt\*
+   :param num_dmat: number of collected AO based density matrices for the passed
+       density matrix perturbation tuples (specified by ``idx_dmat_tuple``) and
+       all frequency configurations, that is ``num_freq_configs``
+       :math:`\times\sum_{\text{i}=1}^{\text{len\_dmat\_tuple}}N_{\text{i}}`,
+       where :math:`N_{\text{i}}` is the number of density matrices for the
+       density matrix perturbation tuple ``idx_dmat_tuple[i]`` for a frequency
+       configuration
    :type num_dmat: QInt
    :param dens_mat: the collected AO based density matrices, size is ``num_dmat``,
-       and ordered as (``density matrices for freq. config. #1``,
-       ``density matrices for freq. config. #2``, ``...``)
+       and arranged as ``(idx_dmat_tuple, num_freq_configs``)
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_int: number of the integral matrices, equals to the product of
-       ``num_freq_configs`` and the dimension of perturbation pattern specified
-       by ``num_pert`` and ``pert_labels``
+       the size of perturbations on the XC functional (specified by the
+       perturbation tuple ``pert_tuple``) and the number of different frequency
+       configurations ``num_freq_configs``
    :type num_int: QInt
    :param val_int: the integral matrices to be returned, size is ``num_int``,
-       and ordered as (``perturbation pattern``, ``num_freq_configs``)
+       and arranged as (``pert_tuple``, ``num_freq_configs``)
    :type val_int: QcMat\*[]
    :rtype: QVoid
 
-.. function:: get_xc_fun_exp(num_pert,         \
-                             pert_labels,      \
+.. function:: get_xc_fun_exp(len_tuple,        \
+                             pert_tuple,       \
                              num_freq_configs, \
                              len_dmat_tuple,   \
-                             dens_mat_tuple,   \
+                             idx_dmat_tuple,   \
                              num_dmat,         \
                              dens_mat,         \
                              user_ctx,         \
@@ -309,63 +320,65 @@ functions are given as follows.
    Callback function for getting expectation values of XC functional,
    the last argument for the function :py:meth:`OpenRSPAddXCFun`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
-   :param num_freq_configs: for the perturbation pattern specified by ``num_pert``
-       and ``pert_labels``, the number of different frequency configurations to
-       be considered
+   :param len_tuple: length of perturbation tuple on the XC functional
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the XC functional, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
+   :param num_freq_configs: the number of different frequency configurations
+       to be considered for the perturbation tuple specified by ``pert_tuple``
    :type num_freq_configs: QInt
-   :param len_dmat_tuple: for the perturbation pattern specified by ``num_pert``
-       and ``pert_labels``, the length (number of different perturbation patterns)
-       of the AO based density matrices passed
+   :param len_dmat_tuple: the number of different perturbation tuples of the
+       AO based density matrices passed
    :type len_dmat_tuple: QInt
-   :param dens_mat_tuple: the perturbation tuple of the AO based density matrices
-       passed, as a canonically ordered list of all relevant perturbation patterns
-       of the density matrices, size is ``len_dmat_tuple``
-   :type dens_mat_tuple: QInt\*
-   :param num_dmat: number of collected AO based density matrices for the given
-       perturbation tuple ``dens_mat_tuple`` and all frequency configurations,
-       that is ``num_freq_configs``
-       :math:`\times\prod_{\text{perturbation pattern}}N_{\text{perturbation pattern}}`,
-       where :math:`N_{\text{perturbation pattern}}` is the number of density
-       matrices per perturbation pattern for a frequency configuration
+   :param idx_dmat_tuple: indices of the density matrix perturbation tuples passed
+       (canonically ordered), size is ``len_dmat_tuple``
+   :type idx_dmat_tuple: QInt\*
+   :param num_dmat: number of collected AO based density matrices for the passed
+       density matrix perturbation tuples (specified by ``idx_dmat_tuple``) and
+       all frequency configurations, that is ``num_freq_configs``
+       :math:`\times\sum_{\text{i}=1}^{\text{len\_dmat\_tuple}}N_{\text{i}}`,
+       where :math:`N_{\text{i}}` is the number of density matrices for the
+       density matrix perturbation tuple ``idx_dmat_tuple[i]`` for a frequency
+       configuration
    :type num_dmat: QInt
    :param dens_mat: the collected AO based density matrices, size is ``num_dmat``,
-       and ordered as (``density matrices for freq. config. #1``,
-       ``density matrices for freq. config. #2``, ``...``)
+       and arranged as ``(idx_dmat_tuple, num_freq_configs``)
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param num_exp: number of the expectation values, equals to the product of
-       ``num_freq_configs`` and the dimension of perturbation pattern specified
-       by ``num_pert`` and ``pert_labels``
+       the size of perturbations on the XC functional (specified by the
+       perturbation tuple ``pert_tuple``) and the number of different frequency
+       configurations ``num_freq_configs``
    :type num_exp: QInt
    :param val_exp: the expectation values to be returned, size is ``num_exp``,
-       and ordered as (``perturbation pattern``, ``num_freq_configs``)
+       and arranged as (``pert_tuple``, ``num_freq_configs``)
    :type val_exp: QReal\*
    :rtype: QVoid
 
-.. function:: get_nuc_contrib(num_pert,    \
-                              pert_labels, \
-                              user_ctx,    \
-                              dim_pert,    \
+*FIXME: get_xc_fun_mat and get_xc_fun_exp should be discussed and fixed*
+
+.. function:: get_nuc_contrib(len_tuple,  \
+                              pert_tuple, \
+                              user_ctx,   \
+                              size_pert,  \
                               val_nuc)
 
    Callback function for getting the nuclear contributions, the last argument
    for the function :py:meth:`OpenRSPAddNucContributions`.
 
-   :param num_pert: number of perturbations
-   :type num_pert: QInt
-   :param pert_labels: label for each perturbation, size is ``num_pert``
-   :type pert_labels: QInt\*
+   :param len_tuple: length of perturbation tuple on the nuclear Hamiltonian
+   :type len_tuple: QInt
+   :param pert_tuple: perturbation tuple on the nuclear Hamiltonian, size is
+       ``len_tuple``
+   :type pert_tuple: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param dim_pert: dimension of the perturbation pattern specified by
-       ``pert_labels``
-   :type dim_pert: QInt
-   :param val_nuc: the nuclear contributions, size is ``dim_pert``
+   :param size_pert: size of the perturbations on the nuclear Hamiltonian,
+       as specified by ``pert_tuple``
+   :type size_pert: QInt
+   :param val_nuc: the nuclear contributions, size is ``size_pert``
    :type val_nuc: QReal\*
    :rtype: QVoid
 
@@ -417,6 +430,10 @@ functions are given as follows.
         size is ``num_excit``
     :type eigen_vec: QcMat\*[]
     :rtype: QVoid
+
+*FIXME: if the host program can call OpenRSP by sending the excited states,
+we do not need the callback function get_rsp_eigen_solution() for residue
+calculations?*
 
 OpenRSP Callback Subroutines (Fortran version)
 ----------------------------------------------

@@ -1,7 +1,7 @@
 .. _chapter-installation:
 
-Installation of OpenRSP Library
-===============================
+Installation
+============
 
 Before installing OpenRSP, you need to make sure the following programs are
 installed on your computer:

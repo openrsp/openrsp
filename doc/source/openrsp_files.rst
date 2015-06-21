@@ -35,7 +35,7 @@ Files and Directories of OpenRSP
 
 #. ``openrsp.bib``: OpenRSP citation.
 
-#. ``README``: A very important file ;-).
+#. ``README.rst``: A very important file ;-).
 
 #. ``RULES``: Rules for contribution.
 
