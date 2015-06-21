@@ -82,7 +82,7 @@ Functions of OpenRSP API (C version)
                                       num_pert,        \
                                       pert_labels,     \
                                       pert_max_orders, \
-                                      pert_dims,      \
+                                      pert_dims,       \
                                       user_ctx,        \
                                       get_pert_comp,   \
                                       get_pert_rank)
@@ -91,10 +91,10 @@ Functions of OpenRSP API (C version)
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
-   :param num_pert: number of all different perturbations involved in calculations
+   :param num_pert: number of all *different* perturbations involved in calculations
    :type num_pert: QInt
-   :param pert_labels: labels of all different perturbations involved in
-       calculations, **OpenRSP will use the order of perturbations given here**
+   :param pert_labels: labels of all *different* perturbations involved in
+       calculations, *OpenRSP will use the order of perturbations given here*
    :type pert_labels: QInt\*
    :param pert_max_orders: maximum allowed orders of all different perturbations
    :type pert_max_orders: QInt\*
@@ -104,12 +104,14 @@ Functions of OpenRSP API (C version)
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param get_pert_comp: user specified function for getting components of a
-       perturbation pattern (by its labels)
+       perturbation tuple (by its labels)
    :type get_pert_comp: GetPertComp (function pointer QVoid (\*)(...))
    :param get_pert_rank: user specified function for getting rank of a
-      perturbation pattern (by its labels)
+      perturbation tuple (by its labels)
    :type get_pert_rank: GetPertRank (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
+
+*FIXME: get_pert_comp and get_pert_rank to be discussed and implemented*
 
 .. function:: OpenRSPSetPDBS(open_rsp,        \
                              num_pert,        \
@@ -312,8 +314,8 @@ Functions of OpenRSP API (C version)
                                ref_state,        \
                                ref_overlap,      \
                                num_props,        \
-                               num_pert,         \
-                               pert_labels,      \
+                               len_tuple,        \
+                               pert_tuple,       \
                                num_freq_configs, \
                                pert_freqs,       \
                                kn_rules,         \
@@ -332,38 +334,41 @@ Functions of OpenRSP API (C version)
    :type ref_overlap: QcMat\*
    :param num_props: number of properties to calculate
    :type num_props: QInt
-   :param num_pert: number of perturbations for each property (or in other
-       words the order of time-averaged quasienergy differentiation),
+   :param len_tuple: length of perturbation tuple for each property,
        size is the number of properties (``num_props``)
-   :type num_pert: QInt\*
-   :param pert_labels: labels of perturbations for each property,
-       size is ``sum(num_pert)``
-   :type pert_labels: QInt\*
+   :type len_tuple: QInt\*
+   :param pert_tuple: ordered list of perturbation labels (perturbation
+       tuple) for each property, size is ``sum(len_tuple)``
+   :type pert_tuple: QInt\*
    :param num_freq_configs: number of different frequency configurations
        for each property, size is ``num_props``
    :type num_freq_configs: QInt\*
    :param pert_freqs: complex frequencies of each perturbation over all
        frequency configurations, size is ``2`` :math:`\times`
-       ``dot_product(num_freq_configs,num_pert)``, ordered as (``2``,
-       ``num_freq_configs``, ``num_pert``) and the real and imaginary parts
-       of each frequency are consecutive in memory
+       ``dot_product(len_tuple,num_freq_configs)``, arranged as
+       ``(2, len_tuple[i], num_freq_configs[i])`` (``i`` runs from ``1``
+       to ``num_props``) and the real and imaginary parts of each frequency
+       are consecutive in memory
    :type pert_freqs: QReal\*
    :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of
        properties (``num_props``)
    :type kn_rules: QInt\*
    :param size_rsp_funs: size of the response functions, equals to the sum of
-       the size of each property to calculate---that is the product of the
-       dimension of perturbation pattern specified by ``num_pert`` and ``pert_labels``
-       and the number of frequency configurations ``num_freq_configs`` for each
-       property
+       the size of each property to calculate---which is the product of the
+       size of added perturbations (specified by the perturbation tuple
+       ``pert_tuple``) and the number of frequency configurations
+       ``num_freq_configs`` for each property
    :type size_rsp_funs: QInt
    :param rsp_funs: the response functions, size is ``2`` :math:`\times`
-       ``size_rsp_funs`` and ordered as (``2``, ``perturbation pattern``,
-       ``num_freq_configs``, ``num_props``), where the real and imaginary
-       parts of the response functions are consecutive in memory
+       ``size_rsp_funs`` and arranged as
+       ``(2, pert_tuple, num_freq_configs, num_props)``,
+       where the real and imaginary parts of the response functions
+       are consecutive in memory
    :type rsp_funs: QReal\*
    :rtype: QErrorCode
+
+*FIXME: are the addressings of pert_freqs and rsp_funs OK? In particular the tuple and freq.*
 
 .. function:: OpenRSPGetResidue(open_rsp,         \
                                 ref_ham,          \
@@ -372,19 +377,13 @@ Functions of OpenRSP API (C version)
                                 num_excit,        \
                                 excit_energy,     \
                                 eigen_vector,     \
-
                                 num_props,        \
-
                                 num_pert,         \
                                 pert_labels,      \
-
                                 order_residue,    \
-
                                 num_freq_configs, \
                                 pert_freqs,       \
-
                                 kn_rules,         \
-
                                 size_residues,    \
                                 residues)
 
@@ -406,10 +405,8 @@ Functions of OpenRSP API (C version)
        eigenvalue problem, size is ``num_excit``
    :type eigen_vector: QcMat\*[]
 
-which perturbations to which excited state, +/-
-close to interested excitation energy
-
-excitation pert_labels
+*FIXME: which perturbations to which excited state, +/-
+close to interested excitation energy, excitation pert_labels*
 
 .. function:: OpenRSPDestroy(open_rsp)
 
