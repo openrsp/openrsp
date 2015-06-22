@@ -11,6 +11,13 @@ functionals, or to solve the response equation. The callback functions
 are slightly different for C and Fortran users, which will be described
 separately in this chapter.
 
+It could be noted that the arguments in the following callback functions
+are over complete. For instance, from the knowledge of ``len_tuple`` and
+``pert_tuple``, the dimension of integral matrices ``num_int`` in the
+callback function :py:meth:`get_one_oper_mat` can be computed. The need
+of this argument ``num_int`` is kind of technical issue, and we will give
+detailed explanation in Chapter :ref:`chapter-openrsp-Fortran-APIs`.
+
 OpenRSP Callback Functions (C version)
 --------------------------------------
 
@@ -356,8 +363,6 @@ functions are given as follows.
        and arranged as (``pert_tuple``, ``num_freq_configs``)
    :type val_exp: QReal\*
    :rtype: QVoid
-
-*FIXME: get_xc_fun_mat and get_xc_fun_exp should be discussed and fixed*
 
 .. function:: get_nuc_contrib(len_tuple,  \
                               pert_tuple, \
