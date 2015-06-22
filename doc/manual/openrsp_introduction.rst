@@ -53,9 +53,9 @@ library and the documentation:
 Perturbation label
   An integer describing what kind of perturbation added to the molecule; all
   *different* perturbations involved in the response theory calculations should
-  be given by calling the function :py:meth:`OpenRSPSetPerturbations`; OpenRSP
+  be given by calling the function :c:func:`OpenRSPSetPerturbations`; OpenRSP
   will stop if there is any unspecified perturbation label given afterwards when
-  calling the function :py:meth:`OpenRSPGetRSPFun` or :py:meth:`OpenRSPGetResidue`.
+  calling the function :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`.
 
 Perturbation tuple
   An ordered list of perturbation labels that are added to the molecule.
@@ -73,7 +73,7 @@ Perturbation tuple
 Perturbation addressing
   #. The perturbation labels in a tuple are always ordered as that of
      the argument ``pert_labels`` given in the function
-     :py:meth:`OpenRSPSetPerturbations`. For example, OpenRSP will return
+     :c:func:`OpenRSPSetPerturbations`. For example, OpenRSP will return
      response functions :math:`\mathcal{E}^{abbc}` if ``pert_labels = (a,b,c)``,
      and :math:`\mathcal{E}^{acbb}` if ``pert_labels = (a,c,b)``, and
      :math:`\mathcal{E}^{bbac}` if ``pert_labels = (b,a,c)``, and so on.

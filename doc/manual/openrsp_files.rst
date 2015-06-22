@@ -25,8 +25,6 @@ Files and Directories of OpenRSP
 
 #. ``INSTALL``: Installation instruction.
 
-#. ``maintenance``: Maintenance files.
-
 #. ``MANIFEST.in``: Python manifest template for source distribution.
 
 #. ``NEWS``: List of user-visible changes.

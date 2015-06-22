@@ -18,7 +18,7 @@ Exchange-Correlation Functionals
 Response Equation Solver
 ------------------------
 
-.. _chapter-openrsp-Fortran-APIs:
+.. _section-openrsp-Fortran-APIs:
 
 Implementation of Fortran APIs
 ------------------------------
@@ -27,7 +27,7 @@ OpenRSP APIs that host programs will use to talk to OpenRSP are written in C
 language, with Fortran support by using Fortran 2003 language. Take
 one-electron integrals as an example, I need to, in the OpenRSP API (Fortran
 version) OpenRSPAddOneOper_f(), declare the callback subroutine
-:py:meth:`get_one_oper_mat` in the interface::
+:c:func:`get_one_oper_mat` in the interface::
 
     function OpenRSPAddOneOper_f(...)
         interface
@@ -44,7 +44,7 @@ version) OpenRSPAddOneOper_f(), declare the callback subroutine
         end interface
     end function OpenRSPAddOneOper_f
 
-But the C part of OpenRSP can not call this subroutine :py:meth:`get_one_oper_mat`
+But the C part of OpenRSP can not call this subroutine :c:func:`get_one_oper_mat`
 directly, because the type(QcMat) can not be sent from a C code to a Fortran
 code directly. Instead, another subroutine is implemented in OpenRSP that will
 be called by the C part of OpenRSP::
