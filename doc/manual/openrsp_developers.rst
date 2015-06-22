@@ -18,6 +18,8 @@ Exchange-Correlation Functionals
 Response Equation Solver
 ------------------------
 
+.. _chapter-openrsp-Fortran-APIs:
+
 Implementation of Fortran APIs
 ------------------------------
 
