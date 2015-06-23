@@ -74,7 +74,7 @@ release = '1.0.0'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build']
+exclude_patterns = ['_build', 'background.rst']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -134,7 +134,7 @@ html_theme = 'default'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -207,7 +207,7 @@ latex_documents = [
    'OpenRSPTutorial.tex',
    u'OpenRSP Tutorial',
    r'Radovan Bast \and Daniel H. Friese \and Bin Gao \and Dan J. Jonsson \and Magnus Ringholm \and Kenneth Ruud \and Andreas Thorvaldsen',
-   'tutorial'),
+   'howto'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -285,8 +285,10 @@ extensions += [
 ]
 
 slide_title = 'OpenRSP Tutorial'
-slide_theme = 'slides'
+slide_theme = 'single-level'
+slide_theme_options = {'custom_css': 'custom.css'}
 slide_levels = 3
+slide_footer = '<a href="index.html">Home</a>'
 
 # Place custom static assets in the _static directory and uncomment
 # the following lines to include them
@@ -298,7 +300,18 @@ slide_levels = 3
 
 # ----------------------------------------------
 
-
+## ------------------ rst2pdf -------------------
+#
+#extensions += ['rst2pdf.pdfbuilder']
+#
+#pdf_documents = [
+#  ('index',
+#   u'tutorial',
+#   u'OpenRSP Tutorial',
+#   r'Radovan Bast \and Daniel H. Friese \and Bin Gao \and Dan J. Jonsson \and Magnus Ringholm \and Kenneth Ruud \and Andreas Thorvaldsen'),
+#]
+#
+## ----------------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
 #intersphinx_mapping = {'http://docs.python.org/': None}
