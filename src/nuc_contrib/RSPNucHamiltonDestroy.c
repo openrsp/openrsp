@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -30,21 +36,14 @@
 */
 QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton *nuc_hamilton)
 {
-    if (nuc_hamilton->atom_coord!=NULL) {
-        free(nuc_hamilton->atom_coord);
-        nuc_hamilton->atom_coord = NULL;
-    }
-    if (nuc_hamilton->atom_charge!=NULL) {
-        free(nuc_hamilton->atom_charge);
-        nuc_hamilton->atom_charge = NULL;
-    }
-    if (nuc_hamilton->dipole_origin!=NULL) {
-        free(nuc_hamilton->dipole_origin);
-        nuc_hamilton->dipole_origin = NULL;
-    }
-    if (nuc_hamilton->gauge_origin!=NULL) {
-        free(nuc_hamilton->gauge_origin);
-        nuc_hamilton->gauge_origin = NULL;
-    }
+    nuc_hamilton->num_pert = 0;
+    free(nuc_hamilton->pert_labels);
+    nuc_hamilton->pert_labels = NULL;
+    free(nuc_hamilton->pert_max_orders);
+    nuc_hamilton->pert_max_orders = NULL;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    nuc_hamilton->user_ctx = NULL;
+#endif
+    nuc_hamilton->get_nuc_contrib = NULL;
     return QSUCCESS;
 }

@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -26,19 +32,24 @@
     \author Bin Gao
     \date 2015-02-12
     \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
-    \param[QInt:int]{in} num_pert number of perturbations
-     \param[QInt:int]{in} pert_labels labels of the perturbations
-    \param[QInt:int]{in} pert_orders orders of the perturbations
-    \param[QInt:int]{in} size_contrib size of nuclear contributions
-    \param[QReal:real]{inout} val_contrib the nuclear contributions
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the nuclear Hamiltonian
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the nuclear Hamiltonian
+    \param[QInt:int]{in} size_pert size of the perturbations on the nuclear Hamiltonian
+    \param[QReal:real]{inout} val_nuc the nuclear contributions
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPNucHamiltonGetContributions(const RSPNucHamilton *nuc_hamilton,
-                                          const QInt num_pert,
-                                          const QInt *pert_labels,
-                                          const QInt *pert_orders,
-                                          const QInt size_contrib,
-                                          QReal *val_contrib)
+                                          const QInt len_tuple,
+                                          const QInt *pert_tuple,
+                                          const QInt size_pert,
+                                          QReal *val_nuc)
 {
+    nuc_hamilton->get_nuc_contrib(len_tuple,
+                                  pert_tuple,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                  nuc_hamilton->user_ctx,
+#endif
+                                  size_pert,
+                                  val_nuc);
     return QSUCCESS;
 }

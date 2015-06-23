@@ -1,5 +1,11 @@
 !!  OpenRSP: open-ended library for response theory
-!!  Copyright 2014
+!!  Copyright 2015 Radovan Bast,
+!!                 Daniel H. Friese,
+!!                 Bin Gao,
+!!                 Dan J. Jonsson,
+!!                 Magnus Ringholm,
+!!                 Kenneth Ruud,
+!!                 Andreas Thorvaldsen
 !!
 !!  OpenRSP is free software: you can redistribute it and/or modify
 !!  it under the terms of the GNU Lesser General Public License as published by
@@ -35,19 +41,17 @@ module rsp_one_oper_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine OneOperGetMat_f(num_pert,    &
-                                   pert_labels, &
-                                   pert_orders, &
+        subroutine OneOperGetMat_f(len_tuple,  &
+                                   pert_tuple, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,     &
-                                   user_ctx,    &
+                                   len_ctx,    &
+                                   user_ctx,   &
 #endif
-                                   num_int,     &
+                                   num_int,    &
                                    val_int)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-            integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+            integer(kind=QINT), intent(in) :: len_tuple
+            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -55,23 +59,21 @@ module rsp_one_oper_f
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
         end subroutine OneOperGetMat_f
-        subroutine OneOperGetExp_f(num_pert,    &
-                                   pert_labels, &
-                                   pert_orders, &
-                                   num_dens,    &
-                                   ao_dens,     &
+        subroutine OneOperGetExp_f(len_tuple,  &
+                                   pert_tuple, &
+                                   num_dmat,   &
+                                   dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,     &
-                                   user_ctx,    &
+                                   len_ctx,    &
+                                   user_ctx,   &
 #endif
-                                   num_exp,     &
+                                   num_exp,    &
                                    val_exp)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-            integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-            integer(kind=QINT), intent(in) :: num_dens
-            type(QcMat), intent(in) :: ao_dens(num_dens)
+            integer(kind=QINT), intent(in) :: len_tuple
+            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=QINT), intent(in) :: num_dmat
+            type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -121,19 +123,17 @@ module rsp_one_oper_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_one_oper_mat(num_pert,    &
-                                        pert_labels, &
-                                        pert_orders, &
+            subroutine get_one_oper_mat(len_tuple,  &
+                                        pert_tuple, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,     &
-                                        user_ctx,    &
+                                        len_ctx,    &
+                                        user_ctx,   &
 #endif
-                                        num_int,     &
+                                        num_int,    &
                                         val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -141,23 +141,21 @@ module rsp_one_oper_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_one_oper_mat
-            subroutine get_one_oper_exp(num_pert,    &
-                                        pert_labels, &
-                                        pert_orders, &
-                                        num_dens,    &
-                                        ao_dens,     &
+            subroutine get_one_oper_exp(len_tuple,  &
+                                        pert_tuple, &
+                                        num_dmat,   &
+                                        dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,     &
-                                        user_ctx,    &
+                                        len_ctx,    &
+                                        user_ctx,   &
 #endif
-                                        num_exp,     &
+                                        num_exp,    &
                                         val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_dens
-                type(QcMat), intent(in) :: ao_dens(num_dens)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -184,22 +182,19 @@ module rsp_one_oper_f
     !      a one-electron operator
     !  \author Bin Gao
     !  \date 2014-08-02
-    !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} pert_labels labels of the perturbations
-    !  \param[integer]{in} pert_orders orders of the perturbations
+    !  \param[integer]{in} len_tuple length of perturbation tuple on the one-electron operator
+    !  \param[integer]{in} pert_tuple perturbation tuple on the one-electron operator
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPOneOperGetMat_f(num_pert,    &
-                                  pert_labels, &
-                                  pert_orders, &
-                                  user_ctx,    &
-                                  num_int,     &
-                                  val_int)     &
+    subroutine RSPOneOperGetMat_f(len_tuple,  &
+                                  pert_tuple, &
+                                  user_ctx,   &
+                                  num_int,    &
+                                  val_int)    &
         bind(C, name="RSPOneOperGetMat_f")
-        integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-        integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+        integer(kind=C_QINT), value, intent(in) :: len_tuple
+        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
@@ -217,9 +212,8 @@ module rsp_one_oper_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
-        call one_oper_fun%get_one_oper_mat(num_pert,              &
-                                           pert_labels,           &
-                                           pert_orders,           &
+        call one_oper_fun%get_one_oper_mat(len_tuple,             &
+                                           pert_tuple,            &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                            one_oper_fun%len_ctx,  &
                                            one_oper_fun%user_ctx, &
@@ -237,50 +231,46 @@ module rsp_one_oper_f
     !      a one-electron operator
     !  \author Bin Gao
     !  \date 2014-08-02
-    !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} pert_labels labels of the perturbations
-    !  \param[integer]{in} pert_orders orders of the perturbations
-    !  \param[integer]{in} num_dens number of atomic orbital (AO) based density matrices
-    !  \param[C_PTR:type]{inout} ao_dens the AO based density matrices
+    !  \param[integer]{in} len_tuple length of perturbation tuple on the one-electron operator
+    !  \param[integer]{in} pert_tuple perturbation tuple on the one-electron operator
+    !  \param[integer]{in} num_dmat number of atomic orbital (AO) based density matrices
+    !  \param[C_PTR:type]{inout} dens_mat the AO based density matrices
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
-    subroutine RSPOneOperGetExp_f(num_pert,    &
-                                  pert_labels, &
-                                  pert_orders, &
-                                  num_dens,    &
-                                  ao_dens,     &
-                                  user_ctx,    &
-                                  num_exp,     &
-                                  val_exp)     &
+    subroutine RSPOneOperGetExp_f(len_tuple,  &
+                                  pert_tuple, &
+                                  num_dmat,   &
+                                  dens_mat,   &
+                                  user_ctx,   &
+                                  num_exp,    &
+                                  val_exp)    &
         bind(C, name="RSPOneOperGetExp_f")
-        integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-        integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-        integer(kind=C_QINT), value, intent(in) :: num_dens
-        type(C_PTR), intent(in) :: ao_dens(num_dens)
+        integer(kind=C_QINT), value, intent(in) :: len_tuple
+        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: num_dmat
+        type(C_PTR), intent(in) :: dens_mat(num_dmat)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
         type(OneOperFun_f), pointer :: one_oper_fun  !context of callback subroutines
-        type(QcMat), allocatable :: f_ao_dens(:)     !AO based density matrices
+        type(QcMat), allocatable :: f_dens_mat(:)     !AO based density matrices
         integer(kind=4) ierr                         !error information
         ! converts C pointer to Fortran QcMat type
-        allocate(f_ao_dens(num_dens), stat=ierr)
+        allocate(f_dens_mat(num_dmat), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPOneOperGetExp_f>> num_dens", num_dens
-            stop "RSPOneOperGetExp_f>> failed to allocate memory for f_ao_dens"
+            write(STDOUT,"(A,I8)") "RSPOneOperGetExp_f>> num_dmat", num_dmat
+            stop "RSPOneOperGetExp_f>> failed to allocate memory for f_dens_mat"
         end if
-        ierr = QcMat_C_F_POINTER(A=f_ao_dens, c_A=ao_dens)
+        ierr = QcMat_C_F_POINTER(A=f_dens_mat, c_A=dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
-        call one_oper_fun%get_one_oper_exp(num_pert,              &
-                                           pert_labels,           &
-                                           pert_orders,           &
-                                           num_dens,              &
-                                           f_ao_dens,             &
+        call one_oper_fun%get_one_oper_exp(len_tuple,             &
+                                           pert_tuple,            &
+                                           num_dmat,              &
+                                           f_dens_mat,            &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                            one_oper_fun%len_ctx,  &
                                            one_oper_fun%user_ctx, &
@@ -289,9 +279,9 @@ module rsp_one_oper_f
                                            val_exp)
         ! cleans up
         nullify(one_oper_fun)
-        ierr = QcMat_C_NULL_PTR(A=f_ao_dens)
+        ierr = QcMat_C_NULL_PTR(A=f_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
-        deallocate(f_ao_dens)
+        deallocate(f_dens_mat)
         return
     end subroutine RSPOneOperGetExp_f
 

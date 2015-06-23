@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -84,6 +90,8 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
     }
     /* destroys the linked list of exchange-correlation functionals */
     if (open_rsp->xc_fun!=NULL) {
+        ierr = RSPXCFunDestroy(&open_rsp->xc_fun);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunDestroy");
     }
     /* destroys the context of nuclear Hamiltonian */
     if (open_rsp->nuc_hamilton!=NULL) {

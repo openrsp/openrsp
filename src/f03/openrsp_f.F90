@@ -1,5 +1,11 @@
 !!  OpenRSP: open-ended library for response theory
-!!  Copyright 2014
+!!  Copyright 2015 Radovan Bast,
+!!                 Daniel H. Friese,
+!!                 Bin Gao,
+!!                 Dan J. Jonsson,
+!!                 Magnus Ringholm,
+!!                 Kenneth Ruud,
+!!                 Andreas Thorvaldsen
 !!
 !!  OpenRSP is free software: you can redistribute it and/or modify
 !!  it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +53,12 @@ module openrsp_f
     use rsp_two_oper_f, only: TwoOperFun_f,       &
                               RSPTwoOperCreate_f, &
                               RSPTwoOperDestroy_f
+    use rsp_xc_fun_f, only: XCFunFun_f,       &
+                            RSPXCFunCreate_f, &
+                            RSPXCFunDestroy_f
+    use rsp_nuc_contrib_f, only: NucHamiltonFun_f,       &
+                                 RSPNucHamiltonCreate_f, &
+                                 RSPNucHamiltonDestroy_f
 
     implicit none
 
@@ -67,6 +79,12 @@ module openrsp_f
         type(TwoOperList_f), pointer :: next_two_oper => null()
     end type TwoOperList_f
 
+    ! linked list of context of callback subroutines of XC functionals
+    type, private :: XCFunList_f
+        type(XCFunFun_f), pointer :: xc_fun_fun => null()
+        type(XCFunList_f), pointer :: next_xc_fun => null()
+    end type XCFunList_f
+
     ! OpenRSP type (inspired by http://wiki.rac.manchester.ac.uk/community/GPU/GpuFaq/FortranGPU)
     type, public :: OpenRSP
         private
@@ -78,6 +96,8 @@ module openrsp_f
         type(OverlapFun_f), pointer :: overlap_fun => null()
         type(OneOperList_f), pointer :: list_one_oper => null()
         type(TwoOperList_f), pointer :: list_two_oper => null()
+        type(XCFunList_f), pointer :: list_xc_fun => null()
+        type(NucHamiltonFun_f), pointer :: nuc_contrib_fun => null()
     end type OpenRSP
 
     ! functions provided by the Fortran APIs
@@ -90,10 +110,8 @@ module openrsp_f
     public :: OpenRSPSetPDBS_f
     public :: OpenRSPAddOneOper_f
     public :: OpenRSPAddTwoOper_f
-    !public :: OpenRSPAddXCFun_f
-    public :: OpenRSPSetNucGeoPerturbations_f
-    public :: OpenRSPSetNucScalarPotential_f
-    public :: OpenRSPSetNucVectorPotential_f
+    public :: OpenRSPAddXCFun_f
+    public :: OpenRSPSetNucContributions_f
     public :: OpenRSPAssemble_f
     public :: OpenRSPWrite_f
     public :: OpenRSPGetRSPFun_f
@@ -194,31 +212,40 @@ module openrsp_f
             type(C_FUNPTR), value, intent(in) :: get_two_oper_mat
             type(C_FUNPTR), value, intent(in) :: get_two_oper_exp
         end function OpenRSPAddTwoOper
-        integer(C_INT) function OpenRSPSetNucGeoPerturbations(open_rsp,    &
-                                                              num_atoms,   &
-                                                              atom_coord,  &
-                                                              atom_charge) &
-            bind(C, name="OpenRSPSetNucGeoPerturbations")
+        integer(C_INT) function OpenRSPAddXCFun(open_rsp,        &
+                                                num_pert,        &
+                                                pert_labels,     &
+                                                pert_max_orders, &
+                                                user_ctx,        &
+                                                get_xc_fun_mat,  & 
+                                                get_xc_fun_exp)  & 
+            bind(C, name="OpenRSPAddXCFun")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
+            integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
+            type(C_PTR), value, intent(in) :: user_ctx
+            type(C_FUNPTR), value, intent(in) :: get_xc_fun_mat
+            type(C_FUNPTR), value, intent(in) :: get_xc_fun_exp
+        end function OpenRSPAddXCFun
+        integer(C_INT) function OpenRSPSetNucContributions(open_rsp,        &
+                                                           num_pert,        &
+                                                           pert_labels,     &
+                                                           pert_max_orders, &
+                                                           user_ctx,        &
+                                                           get_nuc_contrib, &
+                                                           num_atoms)       &
+            bind(C, name="OpenRSPSetNucContributions")
+            use, intrinsic :: iso_c_binding
+            type(C_PTR), value, intent(in) :: open_rsp
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
+            integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
+            type(C_PTR), value, intent(in) :: user_ctx
+            type(C_FUNPTR), value, intent(in) :: get_nuc_contrib
             integer(kind=C_QINT), value, intent(in) :: num_atoms
-            real(kind=C_QREAL), intent(in) :: atom_coord(3*num_atoms)
-            real(kind=C_QREAL), intent(in) :: atom_charge(num_atoms)
-        end function OpenRSPSetNucGeoPerturbations
-        integer(C_INT) function OpenRSPSetNucScalarPotential(open_rsp,      &
-                                                             dipole_origin) &
-            bind(C, name="OpenRSPSetNucScalarPotential")
-            use, intrinsic :: iso_c_binding
-            type(C_PTR), value, intent(in) :: open_rsp
-            real(kind=C_QREAL), intent(in) :: dipole_origin(3)
-        end function OpenRSPSetNucScalarPotential
-        integer(C_INT) function OpenRSPSetNucVectorPotential(open_rsp,     &
-                                                             gauge_origin) &
-            bind(C, name="OpenRSPSetNucVectorPotential")
-            use, intrinsic :: iso_c_binding
-            type(C_PTR), value, intent(in) :: open_rsp
-            real(kind=C_QREAL), intent(in) :: gauge_origin(3)
-        end function OpenRSPSetNucVectorPotential
+        end function OpenRSPSetNucContributions
         integer(C_INT) function OpenRSPAssemble(open_rsp) &
             bind(C, name="OpenRSPAssemble")
             use, intrinsic :: iso_c_binding
@@ -230,18 +257,18 @@ module openrsp_f
             type(C_PTR), value, intent(in) :: open_rsp
             character(C_CHAR), intent(in) :: file_name(*)
         end function OpenRSPWrite
-        integer(C_INT) function OpenRSPGetRSPFun(open_rsp,      &
-                                                 ref_ham,       &
-                                                 ref_state,     &
-                                                 ref_overlap,   &
-                                                 num_props,     &
-                                                 num_pert,      &
-                                                 pert_labels,   &
-                                                 num_freqs,     &
-                                                 pert_freqs,    &
-                                                 kn_rules,      &
-                                                 size_rsp_funs, &
-                                                 rsp_funs)      &
+        integer(C_INT) function OpenRSPGetRSPFun(open_rsp,         &
+                                                 ref_ham,          &
+                                                 ref_state,        &
+                                                 ref_overlap,      &
+                                                 num_props,        &
+                                                 len_tuple,        &
+                                                 pert_tuple,       &
+                                                 num_freq_configs, &
+                                                 pert_freqs,       &
+                                                 kn_rules,         &
+                                                 size_rsp_funs,    &
+                                                 rsp_funs)         &
             bind(C, name="OpenRSPGetRSPFun")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
@@ -249,10 +276,10 @@ module openrsp_f
             type(C_PTR), value, intent(in) :: ref_state
             type(C_PTR), value, intent(in) :: ref_overlap
             integer(kind=C_QINT), value, intent(in) :: num_props
-            integer(kind=C_QINT), intent(in) :: num_pert(num_props)
-            integer(kind=C_QINT), intent(in) :: pert_labels(sum(num_pert))
-            integer(kind=C_QINT), intent(in) :: num_freqs(num_props)
-            real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(num_freqs,num_pert))
+            integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
+            integer(kind=C_QINT), intent(in) :: pert_tuple(sum(len_tuple))
+            integer(kind=C_QINT), intent(in) :: num_freq_configs(num_props)
+            real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(len_tuple,num_freq_configs))
             integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
             integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
             real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
@@ -277,6 +304,8 @@ module openrsp_f
         nullify(open_rsp%overlap_fun)
         nullify(open_rsp%list_one_oper)
         nullify(open_rsp%list_two_oper)
+        nullify(open_rsp%list_xc_fun)
+        nullify(open_rsp%nuc_contrib_fun)
     end function OpenRSPCreate_f
 
     function OpenRSPSetElecEOM_f(open_rsp, elec_EOM_type) result(ierr)
@@ -297,9 +326,9 @@ module openrsp_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_linear_rsp_solution(num_freq_sums, &
+            subroutine get_linear_rsp_solution(size_pert,     &
+                                               num_freq_sums, &
                                                freq_sums,     &
-                                               size_pert,     &
                                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                                len_ctx,       &
@@ -307,9 +336,9 @@ module openrsp_f
 #endif
                                                rsp_param)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
+                integer(kind=QINT), intent(in) :: size_pert
                 integer(kind=QINT), intent(in) :: num_freq_sums
                 real(kind=QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-                integer(kind=QINT), intent(in) :: size_pert
                 type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
@@ -317,17 +346,17 @@ module openrsp_f
 #endif
                 type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
             end subroutine get_linear_rsp_solution
-            subroutine RSPSolverGetLinearRSPSolution_f(num_freq_sums, &
+            subroutine RSPSolverGetLinearRSPSolution_f(size_pert,     &
+                                                       num_freq_sums, &
                                                        freq_sums,     &
-                                                       size_pert,     &
                                                        RHS_mat,       &
                                                        user_ctx,      &
                                                        rsp_param)     &
                 bind(C, name="RSPSolverGetLinearRSPSolution_f")
                 use, intrinsic :: iso_c_binding
+                integer(kind=C_QINT), value, intent(in) :: size_pert
                 integer(kind=C_QINT), value, intent(in) :: num_freq_sums
                 real(kind=C_QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-                integer(kind=C_QINT), value, intent(in) :: size_pert
                 type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
                 type(C_PTR), value, intent(in) :: user_ctx
                 type(C_PTR), intent(inout) :: rsp_param(size_pert*num_freq_sums)
@@ -486,31 +515,25 @@ module openrsp_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_overlap_mat(bra_num_pert,    &
-                                       bra_pert_labels, &
-                                       bra_pert_orders, &
-                                       ket_num_pert,    &
-                                       ket_pert_labels, &
-                                       ket_pert_orders, &
-                                       num_pert,        &
-                                       pert_labels,     &
-                                       pert_orders,     &
+            subroutine get_overlap_mat(bra_len_tuple,  &
+                                       bra_pert_tuple, &
+                                       ket_len_tuple,  &
+                                       ket_pert_tuple, &
+                                       len_tuple,      &
+                                       pert_tuple,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,         &
-                                       user_ctx,        &
+                                       len_ctx,        &
+                                       user_ctx,       &
 #endif
-                                       num_int,         &
+                                       num_int,        &
                                        val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: bra_num_pert
-                integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
-                integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
-                integer(kind=QINT), intent(in) :: ket_num_pert
-                integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
-                integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+                integer(kind=QINT), intent(in) :: bra_len_tuple
+                integer(kind=QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+                integer(kind=QINT), intent(in) :: ket_len_tuple
+                integer(kind=QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -518,35 +541,29 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_overlap_mat
-            subroutine get_overlap_exp(bra_num_pert,    &
-                                       bra_pert_labels, &
-                                       bra_pert_orders, &
-                                       ket_num_pert,    &
-                                       ket_pert_labels, &
-                                       ket_pert_orders, &
-                                       num_pert,        &
-                                       pert_labels,     &
-                                       pert_orders,     &
-                                       num_dens,        &
-                                       ao_dens,         &
+            subroutine get_overlap_exp(bra_len_tuple,  &
+                                       bra_pert_tuple, &
+                                       ket_len_tuple,  &
+                                       ket_pert_tuple, &
+                                       len_tuple,      &
+                                       pert_tuple,     &
+                                       num_dmat,       &
+                                       dens_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,         &
-                                       user_ctx,        &
+                                       len_ctx,        &
+                                       user_ctx,       &
 #endif
-                                       num_exp,         &
+                                       num_exp,        &
                                        val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: bra_num_pert
-                integer(kind=QINT), intent(in) :: bra_pert_labels(bra_num_pert)
-                integer(kind=QINT), intent(in) :: bra_pert_orders(bra_num_pert)
-                integer(kind=QINT), intent(in) :: ket_num_pert
-                integer(kind=QINT), intent(in) :: ket_pert_labels(ket_num_pert)
-                integer(kind=QINT), intent(in) :: ket_pert_orders(ket_num_pert)
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_dens
-                type(QcMat), intent(in) :: ao_dens(num_dens)
+                integer(kind=QINT), intent(in) :: bra_len_tuple
+                integer(kind=QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+                integer(kind=QINT), intent(in) :: ket_len_tuple
+                integer(kind=QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -554,60 +571,48 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(num_exp)
             end subroutine get_overlap_exp
-            subroutine RSPOverlapGetMat_f(bra_num_pert,    &
-                                          bra_pert_labels, &
-                                          bra_pert_orders, &
-                                          ket_num_pert,    &
-                                          ket_pert_labels, &
-                                          ket_pert_orders, &
-                                          num_pert,        &
-                                          pert_labels,     &
-                                          pert_orders,     &
-                                          user_ctx,        &
-                                          num_int,         &
-                                          val_int)         &
+            subroutine RSPOverlapGetMat_f(bra_len_tuple,  &
+                                          bra_pert_tuple, &
+                                          ket_len_tuple,  &
+                                          ket_pert_tuple, &
+                                          len_tuple,      &
+                                          pert_tuple,     &
+                                          user_ctx,       &
+                                          num_int,        &
+                                          val_int)        &
                 bind(C, name="RSPOverlapGetMat_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: bra_num_pert
-                integer(kind=C_QINT), intent(in) :: bra_pert_labels(bra_num_pert)
-                integer(kind=C_QINT), intent(in) :: bra_pert_orders(bra_num_pert)
-                integer(kind=C_QINT), value, intent(in) :: ket_num_pert
-                integer(kind=C_QINT), intent(in) :: ket_pert_labels(ket_num_pert)
-                integer(kind=C_QINT), intent(in) :: ket_pert_orders(ket_num_pert)
-                integer(kind=C_QINT), value, intent(in) :: num_pert
-                integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+                integer(kind=C_QINT), value, intent(in) :: bra_len_tuple
+                integer(kind=C_QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: ket_len_tuple
+                integer(kind=C_QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_int
                 type(C_PTR), intent(inout) :: val_int(num_int)
             end subroutine RSPOverlapGetMat_f
-            subroutine RSPOverlapGetExp_f(bra_num_pert,    &
-                                          bra_pert_labels, &
-                                          bra_pert_orders, &
-                                          ket_num_pert,    &
-                                          ket_pert_labels, &
-                                          ket_pert_orders, &
-                                          num_pert,        &
-                                          pert_labels,     &
-                                          pert_orders,     &
-                                          num_dens,        &
-                                          ao_dens,         &
-                                          user_ctx,        &
-                                          num_exp,         &
-                                          val_exp)         &
+            subroutine RSPOverlapGetExp_f(bra_len_tuple,  &
+                                          bra_pert_tuple, &
+                                          ket_len_tuple,  &
+                                          ket_pert_tuple, &
+                                          len_tuple,      &
+                                          pert_tuple,     &
+                                          num_dmat,       &
+                                          dens_mat,       &
+                                          user_ctx,       &
+                                          num_exp,        &
+                                          val_exp)        &
                 bind(C, name="RSPOverlapGetExp_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: bra_num_pert
-                integer(kind=C_QINT), intent(in) :: bra_pert_labels(bra_num_pert)
-                integer(kind=C_QINT), intent(in) :: bra_pert_orders(bra_num_pert)
-                integer(kind=C_QINT), value, intent(in) :: ket_num_pert
-                integer(kind=C_QINT), intent(in) :: ket_pert_labels(ket_num_pert)
-                integer(kind=C_QINT), intent(in) :: ket_pert_orders(ket_num_pert)
-                integer(kind=C_QINT), value, intent(in) :: num_pert
-                integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=C_QINT), value, intent(in) :: num_dens
-                type(C_PTR), intent(in) :: ao_dens(num_dens)
+                integer(kind=C_QINT), value, intent(in) :: bra_len_tuple
+                integer(kind=C_QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: ket_len_tuple
+                integer(kind=C_QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_dmat
+                type(C_PTR), intent(in) :: dens_mat(num_dmat)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
                 real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
@@ -652,19 +657,17 @@ module openrsp_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_one_oper_mat(num_pert,    &
-                                        pert_labels, &
-                                        pert_orders, &
+            subroutine get_one_oper_mat(len_tuple,  &
+                                        pert_tuple, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,     &
-                                        user_ctx,    &
+                                        len_ctx,    &
+                                        user_ctx,   &
 #endif
-                                        num_int,     &
+                                        num_int,    &
                                         val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -672,23 +675,21 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_one_oper_mat
-            subroutine get_one_oper_exp(num_pert,    &
-                                        pert_labels, &
-                                        pert_orders, &
-                                        num_dens,    &
-                                        ao_dens,     &
+            subroutine get_one_oper_exp(len_tuple,  &
+                                        pert_tuple, &
+                                        num_dmat,   &
+                                        dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,     &
-                                        user_ctx,    &
+                                        len_ctx,    &
+                                        user_ctx,   &
 #endif
-                                        num_exp,     &
+                                        num_exp,    &
                                         val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_dens
-                type(QcMat), intent(in) :: ao_dens(num_dens)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -696,36 +697,32 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(num_exp)
             end subroutine get_one_oper_exp
-            subroutine RSPOneOperGetMat_f(num_pert,    &
-                                          pert_labels, &
-                                          pert_orders, &
-                                          user_ctx,    &
-                                          num_int,     &
-                                          val_int)     &
+            subroutine RSPOneOperGetMat_f(len_tuple,  &
+                                          pert_tuple, &
+                                          user_ctx,   &
+                                          num_int,    &
+                                          val_int)    &
                 bind(C, name="RSPOneOperGetMat_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: num_pert
-                integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_int
                 type(C_PTR), intent(inout) :: val_int(num_int)
             end subroutine RSPOneOperGetMat_f
-            subroutine RSPOneOperGetExp_f(num_pert,    &
-                                          pert_labels, &
-                                          pert_orders, &
-                                          num_dens,    &
-                                          ao_dens,     &
-                                          user_ctx,    &
-                                          num_exp,     &
-                                          val_exp)     &
+            subroutine RSPOneOperGetExp_f(len_tuple,  &
+                                          pert_tuple, &
+                                          num_dmat,   &
+                                          dens_mat,   &
+                                          user_ctx,   &
+                                          num_exp,    &
+                                          val_exp)    &
                 bind(C, name="RSPOneOperGetExp_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: num_pert
-                integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=C_QINT), value, intent(in) :: num_dens
-                type(C_PTR), intent(in) :: ao_dens(num_dens)
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_dmat
+                type(C_PTR), intent(in) :: dens_mat(num_dmat)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
                 real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
@@ -780,23 +777,21 @@ module openrsp_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_two_oper_mat(num_pert,     &
-                                        pert_labels,  &
-                                        pert_orders,  &
-                                        num_var_dens, &
-                                        var_ao_dens,  &
+            subroutine get_two_oper_mat(len_tuple,  &
+                                        pert_tuple, &
+                                        num_dmat,   &
+                                        dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,      &
-                                        user_ctx,     &
+                                        len_ctx,    &
+                                        user_ctx,   &
 #endif
-                                        num_int,      &
+                                        num_int,    &
                                         val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_var_dens
-                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -804,13 +799,13 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_two_oper_mat
-            subroutine get_two_oper_exp(num_pert,       &
-                                        pert_labels,    &
-                                        pert_orders,    &
-                                        num_var_dens,   &
-                                        var_ao_dens,    &
-                                        num_contr_dens, &
-                                        contr_ao_dens,  &
+            subroutine get_two_oper_exp(len_tuple,      &
+                                        pert_tuple,     &
+                                        len_dmat_tuple, &
+                                        num_LHS_dmat,   &
+                                        LHS_dens_mat,   &
+                                        num_RHS_dmat,   &
+                                        RHS_dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                         len_ctx,        &
                                         user_ctx,       &
@@ -818,13 +813,13 @@ module openrsp_f
                                         num_exp,        &
                                         val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_var_dens
-                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
-                integer(kind=QINT), intent(in) :: num_contr_dens
-                type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: len_dmat_tuple
+                integer(kind=QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+                type(QcMat), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
+                integer(kind=QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+                type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -832,44 +827,42 @@ module openrsp_f
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(num_exp)
             end subroutine get_two_oper_exp
-            subroutine RSPTwoOperGetMat_f(num_pert,     &
-                                          pert_labels,  &
-                                          pert_orders,  &
-                                          num_var_dens, &
-                                          var_ao_dens,  &
-                                          user_ctx,     &
-                                          num_int,      &
-                                          val_int)      &
+            subroutine RSPTwoOperGetMat_f(len_tuple,  &
+                                          pert_tuple, &
+                                          num_dmat,   &
+                                          dens_mat,   &
+                                          user_ctx,   &
+                                          num_int,    &
+                                          val_int)    &
                 bind(C, name="RSPTwoOperGetMat_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: num_pert
-                integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=C_QINT), value, intent(in) :: num_var_dens
-                type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_dmat
+                type(C_PTR), intent(in) :: dens_mat(num_dmat)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_int
                 type(C_PTR), intent(inout) :: val_int(num_int)
             end subroutine RSPTwoOperGetMat_f
-            subroutine RSPTwoOperGetExp_f(num_pert,       &
-                                          pert_labels,    &
-                                          pert_orders,    &
-                                          num_var_dens,   &
-                                          var_ao_dens,    &
-                                          num_contr_dens, &
-                                          contr_ao_dens,  &
+            subroutine RSPTwoOperGetExp_f(len_tuple,      &
+                                          pert_tuple,     &
+                                          len_dmat_tuple, &
+                                          num_LHS_dmat,   &
+                                          LHS_dens_mat,   &
+                                          num_RHS_dmat,   &
+                                          RHS_dens_mat,   &
                                           user_ctx,       &
                                           num_exp,        &
                                           val_exp)        &
                 bind(C, name="RSPTwoOperGetExp_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: num_pert
-                integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=C_QINT), value, intent(in) :: num_var_dens
-                type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
-                integer(kind=C_QINT), value, intent(in) :: num_contr_dens
-                type(C_PTR), intent(in) :: contr_ao_dens(num_contr_dens)
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
+                integer(kind=C_QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+                type(C_PTR), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
+                integer(kind=C_QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+                type(C_PTR), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
                 real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
@@ -906,38 +899,228 @@ module openrsp_f
                                  c_funloc(RSPTwoOperGetExp_f))
     end function OpenRSPAddTwoOper_f
 
-    function OpenRSPSetNucGeoPerturbations_f(open_rsp,   &
-                                             num_atoms,  &
-                                             atom_coord, &
-                                             atom_charge) result(ierr)
+    function OpenRSPAddXCFun_f(open_rsp,        &
+                               num_pert,        &
+                               pert_labels,     &
+                               pert_max_orders, &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                               user_ctx,        &
+#endif
+                               get_xc_fun_mat,  &
+                               get_xc_fun_exp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: pert_labels(num_pert)
+        integer(kind=QINT), intent(in) :: pert_max_orders(num_pert)
+#if defined(OPENRSP_F_USER_CONTEXT)
+        character(len=1), intent(in) :: user_ctx(:)
+#endif
+        interface
+            subroutine get_xc_fun_mat(len_tuple,        &
+                                      pert_tuple,       &
+                                      num_freq_configs, &
+                                      len_dmat_tuple,   &
+                                      idx_dmat_tuple,   &
+                                      num_dmat,         &
+                                      dens_mat,         &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                                      len_ctx,          &
+                                      user_ctx,         &
+#endif
+                                      num_int,          &
+                                      val_int)
+                use qcmatrix_f, only: QINT,QREAL,QcMat
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_freq_configs
+                integer(kind=QINT), intent(in) :: len_dmat_tuple
+                integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                integer(kind=QINT), intent(in) :: len_ctx
+                character(len=1), intent(in) :: user_ctx(len_ctx)
+#endif
+                integer(kind=QINT), intent(in) :: num_int
+                type(QcMat), intent(inout) :: val_int(num_int)
+            end subroutine get_xc_fun_mat
+            subroutine get_xc_fun_exp(len_tuple,        &
+                                      pert_tuple,       &
+                                      num_freq_configs, &
+                                      len_dmat_tuple,   &
+                                      idx_dmat_tuple,   &
+                                      num_dmat,         &
+                                      dens_mat,         &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                                      len_ctx,          &
+                                      user_ctx,         &
+#endif
+                                      num_exp,          &
+                                      val_exp)
+                use qcmatrix_f, only: QINT,QREAL,QcMat
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_freq_configs
+                integer(kind=QINT), intent(in) :: len_dmat_tuple
+                integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                integer(kind=QINT), intent(in) :: len_ctx
+                character(len=1), intent(in) :: user_ctx(len_ctx)
+#endif
+                integer(kind=QINT), intent(in) :: num_exp
+                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+            end subroutine get_xc_fun_exp
+            subroutine RSPXCFunGetMat_f(len_tuple,        &
+                                        pert_tuple,       &
+                                        num_freq_configs, &
+                                        len_dmat_tuple,   &
+                                        idx_dmat_tuple,   &
+                                        num_dmat,         &
+                                        dens_mat,         &
+                                        user_ctx,         &
+                                        num_int,          &
+                                        val_int)          &
+                bind(C, name="RSPXCFunGetMat_f")
+                use, intrinsic :: iso_c_binding
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+                integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
+                integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_dmat
+                type(C_PTR), intent(in) :: dens_mat(num_dmat)
+                type(C_PTR), value, intent(in) :: user_ctx
+                integer(kind=C_QINT), value, intent(in) :: num_int
+                type(C_PTR), intent(inout) :: val_int(num_int)
+            end subroutine RSPXCFunGetMat_f
+            subroutine RSPXCFunGetExp_f(len_tuple,        &
+                                        pert_tuple,       &
+                                        num_freq_configs, &
+                                        len_dmat_tuple,   &
+                                        idx_dmat_tuple,   &
+                                        num_dmat,         &
+                                        dens_mat,         &
+                                        user_ctx,         &
+                                        num_exp,          &
+                                        val_exp)          &
+                bind(C, name="RSPXCFunGetExp_f")
+                use, intrinsic :: iso_c_binding
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+                integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
+                integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+                integer(kind=C_QINT), value, intent(in) :: num_dmat
+                type(C_PTR), intent(in) :: dens_mat(num_dmat)
+                type(C_PTR), value, intent(in) :: user_ctx
+                integer(kind=C_QINT), value, intent(in) :: num_exp
+                real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
+            end subroutine RSPXCFunGetExp_f
+        end interface
+        type(XCFunList_f), pointer :: cur_xc_fun  !current XC functional
+        ! inserts the context of callback functions to the tail of the linked list
+        if (associated(open_rsp%list_xc_fun)) then
+            cur_xc_fun => open_rsp%list_xc_fun
+            do while (associated(cur_xc_fun%next_xc_fun))
+                cur_xc_fun => cur_xc_fun%next_xc_fun
+            end do
+            allocate(cur_xc_fun%next_xc_fun)
+            cur_xc_fun => cur_xc_fun%next_xc_fun
+        else
+            allocate(open_rsp%list_xc_fun)
+            cur_xc_fun => open_rsp%list_xc_fun
+        end if
+        allocate(cur_xc_fun%xc_fun_fun)
+        nullify(cur_xc_fun%next_xc_fun)
+        ! adds context of callback functions of the new XC functional
+        call RSPXCFunCreate_f(cur_xc_fun%xc_fun_fun, &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                              user_ctx,              &
+#endif
+                              get_xc_fun_mat,        &
+                              get_xc_fun_exp)
+        ierr = OpenRSPAddXCFun(open_rsp%c_rsp,               &
+                               num_pert,                     &
+                               pert_labels,                  &
+                               pert_max_orders,              &
+                               c_loc(cur_xc_fun%xc_fun_fun), &
+                               c_funloc(RSPXCFunGetMat_f),   &
+                               c_funloc(RSPXCFunGetExp_f))
+    end function OpenRSPAddXCFun_f
+
+    function OpenRSPSetNucContributions_f(open_rsp,        &
+                                          num_pert,        &
+                                          pert_labels,     &
+                                          pert_max_orders, &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                                          user_ctx,        &
+#endif
+                                          get_nuc_contrib, &
+                                          num_atoms) result(ierr)
+        integer(kind=4) :: ierr
+        type(OpenRSP), intent(inout) :: open_rsp
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: pert_labels(num_pert)
+        integer(kind=QINT), intent(in) :: pert_max_orders(num_pert)
+#if defined(OPENRSP_F_USER_CONTEXT)
+        character(len=1), intent(in) :: user_ctx(:)
+#endif
         integer(kind=QINT), intent(in) :: num_atoms
-        real(kind=QREAL), intent(in) :: atom_coord(3,num_atoms)
-        real(kind=QREAL), intent(in) :: atom_charge(num_atoms)
-        ierr = OpenRSPSetNucGeoPerturbations(open_rsp%c_rsp, &
-                                             num_atoms,      &
-                                             atom_coord,     &
-                                             atom_charge)
-    end function OpenRSPSetNucGeoPerturbations_f
-
-    function OpenRSPSetNucScalarPotential_f(open_rsp, &
-                                            dipole_origin) result(ierr)
-        integer(kind=4) :: ierr
-        type(OpenRSP), intent(inout) :: open_rsp
-        real(kind=QREAL), intent(in) :: dipole_origin(3)
-        ierr = OpenRSPSetNucScalarPotential(open_rsp%c_rsp, &
-                                            dipole_origin)
-    end function OpenRSPSetNucScalarPotential_f
-
-    function OpenRSPSetNucVectorPotential_f(open_rsp, &
-                                            gauge_origin) result(ierr)
-        integer(kind=4) :: ierr
-        type(OpenRSP), intent(inout) :: open_rsp
-        real(kind=QREAL), intent(in) :: gauge_origin(3)
-        ierr = OpenRSPSetNucVectorPotential(open_rsp%c_rsp, &
-                                            gauge_origin)
-    end function OpenRSPSetNucVectorPotential_f
+        interface
+            subroutine get_nuc_contrib(len_tuple,  &
+                                       pert_tuple, &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                                       len_ctx,    &
+                                       user_ctx,   &
+#endif
+                                       size_pert,  &
+                                       val_nuc)
+                use qcmatrix_f, only: QINT,QREAL
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                integer(kind=QINT), intent(in) :: len_ctx
+                character(len=1), intent(in) :: user_ctx(len_ctx)
+#endif
+                integer(kind=QINT), intent(in) :: size_pert
+                real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
+            end subroutine get_nuc_contrib
+            subroutine RSPNucHamiltonGetContributions_f(len_tuple,  &
+                                                        pert_tuple, &
+                                                        user_ctx,   &
+                                                        size_pert,  &
+                                                        val_nuc)    &
+                bind(C, name="RSPNucHamiltonGetContributions_f")
+                use, intrinsic :: iso_c_binding
+                integer(kind=C_QINT), value, intent(in) :: len_tuple
+                integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+                type(C_PTR), value, intent(in) :: user_ctx
+                integer(kind=C_QINT), value, intent(in) :: size_pert
+                real(kind=C_QREAL), intent(inout) :: val_nuc(size_pert)
+            end subroutine RSPNucHamiltonGetContributions_f
+        end interface
+        if (associated(open_rsp%nuc_contrib_fun)) then
+            call RSPNucHamiltonDestroy_f(open_rsp%nuc_contrib_fun)
+        else
+            allocate(open_rsp%nuc_contrib_fun)
+        end if
+        ! adds context of callback function of the nuclear Hamiltonian
+        call RSPNucHamiltonCreate_f(open_rsp%nuc_contrib_fun, &
+#if defined(OPENRSP_F_USER_CONTEXT)
+                                    user_ctx,                 &
+#endif
+                                    get_nuc_contrib)
+        ierr = OpenRSPSetNucContributions(open_rsp%c_rsp,                             &
+                                          num_pert,                                   &
+                                          pert_labels,                                &
+                                          pert_max_orders,                            &
+                                          c_loc(open_rsp%nuc_contrib_fun),            &
+                                          c_funloc(RSPNucHamiltonGetContributions_f), &
+                                          num_atoms)
+    end function OpenRSPSetNucContributions_f
 
     function OpenRSPAssemble_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr
@@ -952,17 +1135,17 @@ module openrsp_f
         ierr = OpenRSPWrite(open_rsp%c_rsp, file_name//C_NULL_CHAR)
     end function OpenRSPWrite_f
 
-    function OpenRSPGetRSPFun_f(open_rsp,      &
-                                ref_ham,       &
-                                ref_state,     &
-                                ref_overlap,   &
-                                num_props,     &
-                                num_pert,      &
-                                pert_labels,   &
-                                num_freqs,     &
-                                pert_freqs,    &
-                                kn_rules,      &
-                                size_rsp_funs, &
+    function OpenRSPGetRSPFun_f(open_rsp,         &
+                                ref_ham,          &
+                                ref_state,        &
+                                ref_overlap,      &
+                                num_props,        &
+                                len_tuple,        &
+                                pert_tuple,       &
+                                num_freq_configs, &
+                                pert_freqs,       &
+                                kn_rules,         &
+                                size_rsp_funs,    &
                                 rsp_funs) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(in) :: open_rsp
@@ -970,10 +1153,10 @@ module openrsp_f
         type(QcMat), target, intent(in) :: ref_state
         type(QcMat), target, intent(in) :: ref_overlap
         integer(kind=QINT), intent(in) :: num_props
-        integer(kind=QINT), intent(in) :: num_pert(num_props)
-        integer(kind=QINT), intent(in) :: pert_labels(sum(num_pert))
-        integer(kind=QINT), intent(in) :: num_freqs(num_props)
-        real(kind=QREAL), intent(in) :: pert_freqs(2*dot_product(num_freqs,num_pert))
+        integer(kind=QINT), intent(in) :: len_tuple(num_props)
+        integer(kind=QINT), intent(in) :: pert_tuple(sum(len_tuple))
+        integer(kind=QINT), intent(in) :: num_freq_configs(num_props)
+        real(kind=QREAL), intent(in) :: pert_freqs(2*dot_product(len_tuple,num_freq_configs))
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
         integer(kind=QINT), intent(in) :: size_rsp_funs
         real(kind=QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
@@ -991,9 +1174,9 @@ module openrsp_f
                                 c_ref_state(1),    &
                                 c_ref_overlap(1),  &
                                 num_props,         &
-                                num_pert,          &
-                                pert_labels,       &
-                                num_freqs,         &
+                                len_tuple,         &
+                                pert_tuple,        &
+                                num_freq_configs,  &
                                 pert_freqs,        &
                                 kn_rules,          &
                                 size_rsp_funs,     &
@@ -1010,6 +1193,8 @@ module openrsp_f
         type(OneOperList_f), pointer :: next_one_oper  !next one-electron operator
         type(TwoOperList_f), pointer :: cur_two_oper   !current two-electron operator
         type(TwoOperList_f), pointer :: next_two_oper  !next two-electron operator
+        type(XCFunList_f), pointer :: cur_xc_fun       !current XC functional
+        type(XCFunList_f), pointer :: next_xc_fun      !next XC functional
         ierr = f_api_OpenRSPDestroy(open_rsp%c_rsp)
         ! cleans up callback subroutine of response equation solver
         if (associated(open_rsp%solver_fun)) then
@@ -1057,6 +1242,25 @@ module openrsp_f
             nullify(cur_two_oper)
             cur_two_oper => next_two_oper
         end do
+        ! cleans up the linked list of context of callback subroutines of XC functionals
+        cur_xc_fun => open_rsp%list_xc_fun
+        do while (associated(cur_xc_fun))
+            next_xc_fun => cur_xc_fun%next_xc_fun
+            if (associated(cur_xc_fun%xc_fun_fun)) then
+                call RSPXCFunDestroy_f(cur_xc_fun%xc_fun_fun)
+                deallocate(cur_xc_fun%xc_fun_fun)
+                nullify(cur_xc_fun%xc_fun_fun)
+            end if
+            deallocate(cur_xc_fun)
+            nullify(cur_xc_fun)
+            cur_xc_fun => next_xc_fun
+        end do
+        ! cleans up callback subroutine of nuclear Hamiltonian
+        if (associated(open_rsp%nuc_contrib_fun)) then
+            call RSPNucHamiltonDestroy_f(open_rsp%nuc_contrib_fun)
+            deallocate(open_rsp%nuc_contrib_fun)
+            nullify(open_rsp%nuc_contrib_fun)
+        end if
     end function OpenRSPDestroy_f
 
 end module openrsp_f

@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -29,12 +35,9 @@
 /* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetOverlapMat)(const QInt,
                                const QInt*,
-                               const QInt*,
                                const QInt,
                                const QInt*,
-                               const QInt*,
                                const QInt,
-                               const QInt*,
                                const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                QVoid*,
@@ -43,12 +46,9 @@ typedef QVoid (*GetOverlapMat)(const QInt,
                                QcMat*[]);
 typedef QVoid (*GetOverlapExp)(const QInt,
                                const QInt*,
-                               const QInt*,
                                const QInt,
                                const QInt*,
-                               const QInt*,
                                const QInt,
-                               const QInt*,
                                const QInt*,
                                const QInt,
                                QcMat*[],
@@ -85,24 +85,18 @@ extern QErrorCode RSPOverlapWrite(const RSPOverlap*,FILE*);
 extern QErrorCode RSPOverlapGetMat(const RSPOverlap*,
                                    const QInt,
                                    const QInt*,
-                                   const QInt*,
                                    const QInt,
                                    const QInt*,
-                                   const QInt*,
                                    const QInt,
-                                   const QInt*,
                                    const QInt*,
                                    const QInt,
                                    QcMat*[]);
 extern QErrorCode RSPOverlapGetExp(const RSPOverlap*,
                                    const QInt,
                                    const QInt*,
-                                   const QInt*,
                                    const QInt,
                                    const QInt*,
-                                   const QInt*,
                                    const QInt,
-                                   const QInt*,
                                    const QInt*,
                                    const QInt,
                                    QcMat*[],

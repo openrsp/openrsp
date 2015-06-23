@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +35,6 @@
 /* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetTwoOperMat)(const QInt,
                                const QInt*,
-                               const QInt*,
                                const QInt,
                                QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -39,10 +44,10 @@ typedef QVoid (*GetTwoOperMat)(const QInt,
                                QcMat*[]);
 typedef QVoid (*GetTwoOperExp)(const QInt,
                                const QInt*,
+                               const QInt,
                                const QInt*,
-                               const QInt,
                                QcMat*[],
-                               const QInt,
+                               const QInt*,
                                QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                QVoid*,
@@ -88,7 +93,6 @@ extern QErrorCode RSPTwoOperWrite(RSPTwoOper*,FILE*);
 extern QErrorCode RSPTwoOperGetMat(RSPTwoOper*,
                                    const QInt,
                                    const QInt*,
-                                   const QInt*,
                                    const QInt,
                                    QcMat*[],
                                    const QInt,
@@ -96,10 +100,10 @@ extern QErrorCode RSPTwoOperGetMat(RSPTwoOper*,
 extern QErrorCode RSPTwoOperGetExp(RSPTwoOper*,
                                    const QInt,
                                    const QInt*,
+                                   const QInt,
                                    const QInt*,
-                                   const QInt,
                                    QcMat*[],
-                                   const QInt,
+                                   const QInt*,
                                    QcMat*[],
                                    const QInt,
                                    QReal*);

@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -135,15 +141,25 @@ extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
 #endif
                                     const GetTwoOperMat,
                                     const GetTwoOperExp);
-//extern QErrorCode OpenRSPAddXCFun(OpenRSP*,);
-extern QErrorCode OpenRSPSetNucGeoPerturbations(OpenRSP*,
-                                                const QInt,
-                                                const QReal*,
-                                                const QReal*);
-extern QErrorCode OpenRSPSetNucScalarPotential(OpenRSP*,
-                                               const QReal[3]);
-extern QErrorCode OpenRSPSetNucVectorPotential(OpenRSP*,
-                                               const QReal[3]);
+extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
+                                  const QInt,
+                                  const QInt*,
+                                  const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                  QVoid*,
+#endif
+                                  const GetXCFunMat,
+                                  const GetXCFunExp);
+extern QErrorCode OpenRSPSetNucContributions(OpenRSP*,
+                                             const QInt,
+                                             const QInt*,
+                                             const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                             QVoid*,
+#endif 
+                                             const GetNucContrib,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+                                             const QInt);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);
 extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
 extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,

@@ -1,5 +1,11 @@
 !!  OpenRSP: open-ended library for response theory
-!!  Copyright 2014
+!!  Copyright 2015 Radovan Bast,
+!!                 Daniel H. Friese,
+!!                 Bin Gao,
+!!                 Dan J. Jonsson,
+!!                 Magnus Ringholm,
+!!                 Kenneth Ruud,
+!!                 Andreas Thorvaldsen
 !!
 !!  OpenRSP is free software: you can redistribute it and/or modify
 !!  it under the terms of the GNU Lesser General Public License as published by
@@ -35,23 +41,21 @@ module rsp_two_oper_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine TwoOperGetMat_f(num_pert,     &
-                                   pert_labels,  &
-                                   pert_orders,  &
-                                   num_var_dens, &
-                                   var_ao_dens,  &
+        subroutine TwoOperGetMat_f(len_tuple,  &
+                                   pert_tuple, &
+                                   num_dmat,   &
+                                   dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,      &
-                                   user_ctx,     &
+                                   len_ctx,    &
+                                   user_ctx,   &
 #endif
-                                   num_int,      &
+                                   num_int,    &
                                    val_int)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-            integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-            integer(kind=QINT), intent(in) :: num_var_dens
-            type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
+            integer(kind=QINT), intent(in) :: len_tuple
+            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=QINT), intent(in) :: num_dmat
+            type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -59,13 +63,13 @@ module rsp_two_oper_f
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
         end subroutine TwoOperGetMat_f
-        subroutine TwoOperGetExp_f(num_pert,       &
-                                   pert_labels,    &
-                                   pert_orders,    &
-                                   num_var_dens,   &
-                                   var_ao_dens,    &
-                                   num_contr_dens, &
-                                   contr_ao_dens,  &
+        subroutine TwoOperGetExp_f(len_tuple,      &
+                                   pert_tuple,     &
+                                   len_dmat_tuple, &
+                                   num_LHS_dmat,   &
+                                   LHS_dens_mat,   &
+                                   num_RHS_dmat,   &
+                                   RHS_dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                    len_ctx,        &
                                    user_ctx,       &
@@ -73,13 +77,13 @@ module rsp_two_oper_f
                                    num_exp,        &
                                    val_exp)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: num_pert
-            integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-            integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-            integer(kind=QINT), intent(in) :: num_var_dens
-            type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
-            integer(kind=QINT), intent(in) :: num_contr_dens
-            type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
+            integer(kind=QINT), intent(in) :: len_tuple
+            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=QINT), intent(in) :: len_dmat_tuple
+            integer(kind=QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+            type(QcMat), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
+            integer(kind=QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+            type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -129,23 +133,21 @@ module rsp_two_oper_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_two_oper_mat(num_pert,     &
-                                        pert_labels,  &
-                                        pert_orders,  &
-                                        num_var_dens, &
-                                        var_ao_dens,  &
+            subroutine get_two_oper_mat(len_tuple,  &
+                                        pert_tuple, &
+                                        num_dmat,   &
+                                        dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,      &
-                                        user_ctx,     &
+                                        len_ctx,    &
+                                        user_ctx,   &
 #endif
-                                        num_int,      &
+                                        num_int,    &
                                         val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_var_dens
-                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: num_dmat
+                type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -153,13 +155,13 @@ module rsp_two_oper_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_two_oper_mat
-            subroutine get_two_oper_exp(num_pert,       &
-                                        pert_labels,    &
-                                        pert_orders,    &
-                                        num_var_dens,   &
-                                        var_ao_dens,    &
-                                        num_contr_dens, &
-                                        contr_ao_dens,  &
+            subroutine get_two_oper_exp(len_tuple,      &
+                                        pert_tuple,     &
+                                        len_dmat_tuple, &
+                                        num_LHS_dmat,   &
+                                        LHS_dens_mat,   &
+                                        num_RHS_dmat,   &
+                                        RHS_dens_mat,   &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                         len_ctx,        &
                                         user_ctx,       &
@@ -167,13 +169,13 @@ module rsp_two_oper_f
                                         num_exp,        &
                                         val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_pert
-                integer(kind=QINT), intent(in) :: pert_labels(num_pert)
-                integer(kind=QINT), intent(in) :: pert_orders(num_pert)
-                integer(kind=QINT), intent(in) :: num_var_dens
-                type(QcMat), intent(in) :: var_ao_dens(num_var_dens)
-                integer(kind=QINT), intent(in) :: num_contr_dens
-                type(QcMat), intent(in) :: contr_ao_dens(num_contr_dens)
+                integer(kind=QINT), intent(in) :: len_tuple
+                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: len_dmat_tuple
+                integer(kind=QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+                type(QcMat), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
+                integer(kind=QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+                type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -200,42 +202,39 @@ module rsp_two_oper_f
     !      a two-electron operator
     !  \author Bin Gao
     !  \date 2014-08-06
-    !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} pert_labels labels of the perturbations
-    !  \param[integer]{in} pert_orders orders of the perturbations
-    !  \param[integer]{in} num_var_dens number of variable AO based density matrices
-    !  \param[C_PTR:type]{in} var_ao_dens the variable AO based density matrices
+    !  \param[integer]{in} len_tuple length of perturbation tuple on the two-electron operator
+    !  \param[integer]{in} pert_tuple perturbation tuple on the two-electron operator
+    !  \param[integer]{in} num_dmat number of AO based density matrices
+    !  \param[C_PTR:type]{in} dens_mat the AO based density matrices
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPTwoOperGetMat_f(num_pert,     &
-                                  pert_labels,  &
-                                  pert_orders,  &
-                                  num_var_dens, &
-                                  var_ao_dens,  &
-                                  user_ctx,     &
-                                  num_int,      &
-                                  val_int)      &
+    subroutine RSPTwoOperGetMat_f(len_tuple,  &
+                                  pert_tuple, &
+                                  num_dmat,   &
+                                  dens_mat,   &
+                                  user_ctx,   &
+                                  num_int,    &
+                                  val_int)    &
         bind(C, name="RSPTwoOperGetMat_f")
-        integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-        integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-        integer(kind=C_QINT), value, intent(in) :: num_var_dens
-        type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
+        integer(kind=C_QINT), value, intent(in) :: len_tuple
+        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: num_dmat
+        type(C_PTR), intent(in) :: dens_mat(num_dmat)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
-        type(TwoOperFun_f), pointer :: two_oper_fun   !context of callback subroutines
-        type(QcMat), allocatable :: f_var_ao_dens(:)  !variable AO based density matrices
-        type(QcMat), allocatable :: f_val_int(:)      !integral matrices
-        integer(kind=4) ierr                          !error information
+        type(TwoOperFun_f), pointer :: two_oper_fun  !context of callback subroutines
+        type(QcMat), allocatable :: f_dens_mat(:)    !AO based density matrices
+        type(QcMat), allocatable :: f_val_int(:)     !integral matrices
+        integer(kind=4) ierr                         !error information
         ! converts C pointer to Fortran QcMat type
-        allocate(f_var_ao_dens(num_var_dens), stat=ierr)
+        allocate(f_dens_mat(num_dmat), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPTwoOperGetMat_f>> num_var_dens", num_var_dens
-            stop "RSPTwoOperGetMat_f>> failed to allocate memory for f_var_ao_dens"
+            write(STDOUT,"(A,I8)") "RSPTwoOperGetMat_f>> num_dmat", num_dmat
+            stop "RSPTwoOperGetMat_f>> failed to allocate memory for f_dens_mat"
         end if
-        ierr = QcMat_C_F_POINTER(A=f_var_ao_dens, c_A=var_ao_dens)
+        ierr = QcMat_C_F_POINTER(A=f_dens_mat, c_A=dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         allocate(f_val_int(num_int), stat=ierr)
         if (ierr/=0) then
@@ -247,11 +246,10 @@ module rsp_two_oper_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, two_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
-        call two_oper_fun%get_two_oper_mat(num_pert,              &
-                                           pert_labels,           &
-                                           pert_orders,           &
-                                           num_var_dens,          &
-                                           f_var_ao_dens,         &
+        call two_oper_fun%get_two_oper_mat(len_tuple,             &
+                                           pert_tuple,            &
+                                           num_dmat,              &
+                                           f_dens_mat,            &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                            two_oper_fun%len_ctx,  &
                                            two_oper_fun%user_ctx, &
@@ -262,76 +260,82 @@ module rsp_two_oper_f
         nullify(two_oper_fun)
         ierr = QcMat_C_NULL_PTR(A=f_val_int)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
-        ierr = QcMat_C_NULL_PTR(A=f_var_ao_dens)
+        ierr = QcMat_C_NULL_PTR(A=f_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_val_int)
-        deallocate(f_var_ao_dens)
+        deallocate(f_dens_mat)
     end subroutine RSPTwoOperGetMat_f
 
     !% \brief calls Fortran callback subroutine to get expectation values of
     !      a two-electron operator
     !  \author Bin Gao
     !  \date 2014-08-06
-    !  \param[integer]{in} num_pert number of perturbations
-    !  \param[integer]{in} pert_labels labels of the perturbations
-    !  \param[integer]{in} pert_orders orders of the perturbations
-    !  \param[integer]{in} num_var_dens number of variable AO based density matrices
-    !  \param[C_PTR:type]{in} var_ao_dens the variable AO based density matrices
-    !  \param[integer]{in} num_contr_dens number of contracted AO based density matrices
-    !  \param[C_PTR:type]{in} contr_ao_dens the contracted AO based density matrices
+    !  \param[integer]{in} len_tuple length of perturbation tuple on the two-electron operator
+    !  \param[integer]{in} pert_tuple perturbation tuple on the two-electron operator
+    !  \param[integer]{in} len_dmat_tuple length of different perturbation tuples
+    !      of the left-hand-side (LHS) and right-hand-side (RHS) AO based density
+    !      matrices passed
+    !  \param[integer]{in} num_LHS_dmat number of LHS AO based density matrices
+    !      passed for each LHS density matrix perturbation tuple
+    !  \param[C_PTR:type]{in} LHS_dens_mat the LHS AO based density matrices
+    !  \param[integer]{in} num_RHS_dmat number of RHS AO based density matrices
+    !      passed for each RHS density matrix perturbation tuple
+    !  \param[C_PTR:type]{in} RHS_dens_mat the RHS AO based density matrices
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
-    subroutine RSPTwoOperGetExp_f(num_pert,       &
-                                  pert_labels,    &
-                                  pert_orders,    &
-                                  num_var_dens,   &
-                                  var_ao_dens,    &
-                                  num_contr_dens, &
-                                  contr_ao_dens,  &
+    subroutine RSPTwoOperGetExp_f(len_tuple,      &
+                                  pert_tuple,     &
+                                  len_dmat_tuple, &
+                                  num_LHS_dmat,   &
+                                  LHS_dens_mat,   &
+                                  num_RHS_dmat,   &
+                                  RHS_dens_mat,   &
                                   user_ctx,       &
                                   num_exp,        &
                                   val_exp)        &
         bind(C, name="RSPTwoOperGetExp_f")
-        integer(kind=C_QINT), value, intent(in) :: num_pert
-        integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
-        integer(kind=C_QINT), intent(in) :: pert_orders(num_pert)
-        integer(kind=C_QINT), value, intent(in) :: num_var_dens
-        type(C_PTR), intent(in) :: var_ao_dens(num_var_dens)
-        integer(kind=C_QINT), value, intent(in) :: num_contr_dens
-        type(C_PTR), intent(in) :: contr_ao_dens(num_contr_dens)
+        integer(kind=C_QINT), value, intent(in) :: len_tuple
+        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
+        integer(kind=C_QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+        type(C_PTR), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
+        integer(kind=C_QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+        type(C_PTR), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
-        type(TwoOperFun_f), pointer :: two_oper_fun     !context of callback subroutines
-        type(QcMat), allocatable :: f_var_ao_dens(:)    !variable AO based density matrices
-        type(QcMat), allocatable :: f_contr_ao_dens(:)  !contracted AO based density matrices
-        integer(kind=4) ierr                            !error information
+        type(TwoOperFun_f), pointer :: two_oper_fun    !context of callback subroutines
+        type(QcMat), allocatable :: f_LHS_dens_mat(:)  !LHS AO based density matrices
+        type(QcMat), allocatable :: f_RHS_dens_mat(:)  !RHS AO based density matrices
+        integer(kind=4) ierr                           !error information
         ! converts C pointer to Fortran QcMat type
-        allocate(f_var_ao_dens(num_var_dens), stat=ierr)
+        allocate(f_LHS_dens_mat(sum(num_LHS_dmat)), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPTwoOperGetExp_f>> num_var_dens", num_var_dens
-            stop "RSPTwoOperGetExp_f>> failed to allocate memory for f_var_ao_dens"
+            write(STDOUT,"(A,I8)") "RSPTwoOperGetExp_f>> sum(num_LHS_dmat)", &
+                                   sum(num_LHS_dmat)
+            stop "RSPTwoOperGetExp_f>> failed to allocate memory for f_LHS_dens_mat"
         end if
-        ierr = QcMat_C_F_POINTER(A=f_var_ao_dens, c_A=var_ao_dens)
+        ierr = QcMat_C_F_POINTER(A=f_LHS_dens_mat, c_A=LHS_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
-        allocate(f_contr_ao_dens(num_contr_dens), stat=ierr)
+        allocate(f_RHS_dens_mat(sum(num_RHS_dmat)), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPTwoOperGetExp_f>> num_contr_dens", num_contr_dens
-            stop "RSPTwoOperGetExp_f>> failed to allocate memory for f_contr_ao_dens"
+            write(STDOUT,"(A,I8)") "RSPTwoOperGetExp_f>> sum(num_RHS_dmat)", &
+                                   sum(num_RHS_dmat)
+            stop "RSPTwoOperGetExp_f>> failed to allocate memory for f_RHS_dens_mat"
         end if
-        ierr = QcMat_C_F_POINTER(A=f_contr_ao_dens, c_A=contr_ao_dens)
+        ierr = QcMat_C_F_POINTER(A=f_RHS_dens_mat, c_A=RHS_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, two_oper_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
-        call two_oper_fun%get_two_oper_exp(num_pert,              &
-                                           pert_labels,           &
-                                           pert_orders,           &
-                                           num_var_dens,          &
-                                           f_var_ao_dens,         &
-                                           num_contr_dens,        &
-                                           f_contr_ao_dens,       &
+        call two_oper_fun%get_two_oper_exp(len_tuple,             &
+                                           pert_tuple,            &
+                                           len_dmat_tuple,        &
+                                           num_LHS_dmat,          &
+                                           f_LHS_dens_mat,        &
+                                           num_RHS_dmat,          &
+                                           f_RHS_dens_mat,        &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                            two_oper_fun%len_ctx,  &
                                            two_oper_fun%user_ctx, &
@@ -340,12 +344,12 @@ module rsp_two_oper_f
                                            val_exp)
         ! cleans up
         nullify(two_oper_fun)
-        ierr = QcMat_C_NULL_PTR(A=f_contr_ao_dens)
+        ierr = QcMat_C_NULL_PTR(A=f_RHS_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
-        ierr = QcMat_C_NULL_PTR(A=f_var_ao_dens)
+        ierr = QcMat_C_NULL_PTR(A=f_LHS_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
-        deallocate(f_contr_ao_dens)
-        deallocate(f_var_ao_dens)
+        deallocate(f_RHS_dens_mat)
+        deallocate(f_LHS_dens_mat)
         return
     end subroutine RSPTwoOperGetExp_f
 

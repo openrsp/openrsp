@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -26,27 +32,29 @@
     \author Bin Gao
     \date 2014-08-06
     \param[RSPTwoOper:struct]{in} two_oper the linked list of two-electron operators
-    \param[QInt:int]{in} num_pert number of perturbations
-    \param[QInt:int]{in} pert_labels labels of the perturbations
-    \param[QInt:int]{in} pert_orders orders of the perturbations
-    \param[QInt:int]{in} num_var_dens number of variable AO based density matrices
-    \param[QcMat:struct]{in} var_ao_dens the variable AO based density matrices (\math{D})
-        for calculating \math{G(D)}
-    \param[QInt:int]{in} num_contr_dens number of contracted AO based density matrices
-    \param[QcMat:struct]{in} contr_ao_dens the contracted AO based density matrices (\math{D})
-        for calculating \math{\mathrm{tr}[GD]}
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the two-electron operator
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the two-electron operator
+    \param[QInt:int]{in} len_dmat_tuple length of different perturbation tuples
+        of the left-hand-side (LHS) and right-hand-side (RHS) AO based density
+        matrices passed
+    \param[QInt:int]{in} num_LHS_dmat number of LHS AO based density matrices
+        passed for each LHS density matrix perturbation tuple
+    \param[QcMat:struct]{in} LHS_dens_mat the LHS AO based density matrices
+    \param[QInt:int]{in} num_RHS_dmat number of RHS AO based density matrices
+        passed for each RHS density matrix perturbation tuple
+    \param[QcMat:struct]{in} RHS_dens_mat the RHS AO based density matrices
     \param[QInt:int]{in} num_exp number of expectation values
     \param[QReal:real]{out} val_exp the expectation values
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPTwoOperGetExp(RSPTwoOper *two_oper,
-                            const QInt num_pert,
-                            const QInt *pert_labels,
-                            const QInt *pert_orders,
-                            const QInt num_var_dens,
-                            QcMat *var_ao_dens[],
-                            const QInt num_contr_dens,
-                            QcMat *contr_ao_dens[],
+                            const QInt len_tuple,
+                            const QInt *pert_tuple,
+                            const QInt len_dmat_tuple,
+                            const QInt *num_LHS_dmat,
+                            QcMat *LHS_dens_mat[],
+                            const QInt *num_RHS_dmat,
+                            QcMat *RHS_dens_mat[],
                             const QInt num_exp,
                             QReal *val_exp)
 {
@@ -54,13 +62,13 @@ QErrorCode RSPTwoOperGetExp(RSPTwoOper *two_oper,
     /* walks to the last operator */
     cur_oper = two_oper;
     do {
-        cur_oper->get_two_oper_exp(num_pert,
-                                   pert_labels,
-                                   pert_orders,
-                                   num_var_dens,
-                                   var_ao_dens,
-                                   num_contr_dens,
-                                   contr_ao_dens,
+        cur_oper->get_two_oper_exp(len_tuple,
+                                   pert_tuple,
+                                   len_dmat_tuple,
+                                   num_LHS_dmat,
+                                   LHS_dens_mat,
+                                   num_RHS_dmat,
+                                   RHS_dens_mat,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                    cur_oper->user_ctx,
 #endif

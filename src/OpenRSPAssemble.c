@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -70,7 +76,16 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
         ierr = RSPTwoOperAssemble(open_rsp->two_oper);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperAssemble");
     }
-    /* FIXME: assembles the nuclear Hamiltonian */
+    /* assembles the linked list of XC functionals */
+    if (open_rsp->xc_fun!=NULL) {
+        ierr = RSPXCFunAssemble(open_rsp->xc_fun);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunAssemble");
+    }
+    /* assembles the nuclear Hamiltonian */
+    if (open_rsp->nuc_hamilton!=NULL) {
+        ierr = RSPNucHamiltonAssemble(open_rsp->nuc_hamilton);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonAssemble");
+    }
     open_rsp->assembled = QTRUE;
     return QSUCCESS;
 }

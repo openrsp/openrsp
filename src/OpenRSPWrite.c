@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -80,6 +86,11 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
         fprintf(fp_rsp, "OpenRSPWrite>> linked list of two-electron operators\n");
         ierr = RSPTwoOperWrite(open_rsp->two_oper, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperWrite");
+    }
+    if (open_rsp->xc_fun!=NULL) {
+        fprintf(fp_rsp, "OpenRSPWrite>> linked list of XC functionals\n");
+        ierr = RSPXCFunWrite(open_rsp->xc_fun, fp_rsp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunWrite");
     }
     if (open_rsp->nuc_hamilton!=NULL) {
         fprintf(fp_rsp, "OpenRSPWrite>> nuclear Hamiltonian\n");

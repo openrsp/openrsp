@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -28,8 +34,8 @@
 
 /* callback function of linear response equation solver */
 typedef QVoid (*GetLinearRSPSolution)(const QInt,
-                                      const QReal*,
                                       const QInt,
+                                      const QReal*,
                                       QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                       QVoid*,
@@ -54,8 +60,8 @@ extern QErrorCode RSPSolverAssemble(RSPSolver*);
 extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
 extern QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver*,
                                                 const QInt,
-                                                const QReal*,
                                                 const QInt,
+                                                const QReal*,
                                                 QcMat*[],
                                                 QcMat*[]);
 extern QErrorCode RSPSolverDestroy(RSPSolver*);

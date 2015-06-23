@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -27,8 +33,8 @@
      \date 2014-08-06
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QVoid:void]{in} user_ctx user-defined callback function context
-     \param[GetLinearRSPSolution:void]{in} get_linear_rsp_solution user specified function of
-         linear response equation solver
+     \param[GetLinearRSPSolution:void]{in} get_linear_rsp_solution user specified
+         function of linear response equation solver
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP *open_rsp,

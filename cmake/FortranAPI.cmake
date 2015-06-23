@@ -6,6 +6,8 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/f03/rsp_overlap_f.F90
     ${LIB_OPENRSP_PATH}/src/f03/rsp_one_oper_f.F90
     ${LIB_OPENRSP_PATH}/src/f03/rsp_two_oper_f.F90
+    ${LIB_OPENRSP_PATH}/src/f03/rsp_xc_fun_f.F90
+    ${LIB_OPENRSP_PATH}/src/f03/rsp_nuc_contrib_f.F90
     ${LIB_OPENRSP_PATH}/src/f03/openrsp_f.F90)
 IF(OPENRSP_PERTURBATION_FREE)
     SET(OPENRSP_SRCS

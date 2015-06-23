@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# OpenRSP documentation build configuration file, created by
-# sphinx-quickstart on Thu Jul 31 14:42:55 2014.
+# OpenRSP Tutorial documentation build configuration file, created by
+# sphinx-quickstart on Tue Jun 23 00:51:18 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
@@ -29,11 +29,12 @@ import os
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
+    'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
     'sphinx.ext.pngmath',
     'sphinx.ext.ifconfig',
-    'sphinx.ext.viewcode'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -49,7 +50,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'OpenRSP Manual'
+project = u'OpenRSP Tutorial'
 copyright = u'2015, Radovan Bast, Daniel H. Friese, Bin Gao, Dan J. Jonsson, Magnus Ringholm, Kenneth Ruud, Andreas Thorvaldsen'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -182,7 +183,7 @@ html_theme = 'default'
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'OpenRSPManual'
+htmlhelp_basename = 'OpenRSPTutorial'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -203,10 +204,10 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index',
-   'OpenRSPManual.tex',
-   u'OpenRSP Manual',
+   'OpenRSPTutorial.tex',
+   u'OpenRSP Tutorial',
    r'Radovan Bast \and Daniel H. Friese \and Bin Gao \and Dan J. Jonsson \and Magnus Ringholm \and Kenneth Ruud \and Andreas Thorvaldsen',
-   'manual'),
+   'tutorial'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -235,7 +236,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'openrspmanual', u'OpenRSP Manual',
+    ('index', 'openrsp_tutorial', u'OpenRSP Tutorial',
      [r'Radovan Bast',
       r'Daniel H. Friese',
       r'Bin Gao',
@@ -256,10 +257,10 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index',
-   'OpenRSPManual',
-   u'OpenRSP Manual',
+   'OpenRSP_Tutorial',
+   u'OpenRSP Tutorial',
    r'Radovan Bast@*Daniel H. Friese@*Bin Gao@*Dan J. Jonsson@*Magnus Ringholm@*Kenneth Ruud@*Andreas Thorvaldsen',
-   'OpenRSP Manual',
+   'OpenRSP Tutorial',
    'Open-ended response theory.',
    'Miscellaneous'),
 ]
@@ -275,6 +276,28 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+
+# -- Hieroglyph Slide Configuration ------------
+
+extensions += [
+    'hieroglyph',
+]
+
+slide_title = 'OpenRSP Tutorial'
+slide_theme = 'slides'
+slide_levels = 3
+
+# Place custom static assets in the _static directory and uncomment
+# the following lines to include them
+
+# slide_theme_options = {
+#     'custom_css': 'custom.css',
+#     'custom_js': 'custom.js',
+# }
+
+# ----------------------------------------------
+
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
