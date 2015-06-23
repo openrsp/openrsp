@@ -76,9 +76,9 @@ QErrorCode test_c_OpenRSP_AO(OpenRSP *open_rsp, FILE *fp_log)
     QcMat S_unpert;
     /* polarizability */
     QInt ALPHA_NUM_PROPS = 1;
-    QInt ALPHA_NUM_PERT[1] = {2};
-    QInt ALPHA_PERT_LABELS[2] = {PERT_DIPOLE,PERT_DIPOLE};
-    QInt ALPHA_NUM_FREQS[1] = {1};
+    QInt ALPHA_LEN_TUPLE[1] = {2};
+    QInt ALPHA_PERT_TUPLE[2] = {PERT_DIPOLE,PERT_DIPOLE};
+    QInt ALPHA_NUM_FREQ_CONFIGS[1] = {1};
     QReal ALPHA_PERT_FREQS[4] = {-0.072,0.0,0.072,0.0};
     QInt ALPHA_KN_RULES[1] = {0};
     /* response functions */
@@ -241,9 +241,9 @@ QErrorCode test_c_OpenRSP_AO(OpenRSP *open_rsp, FILE *fp_log)
                             &D_unpert,
                             &S_unpert,
                             ALPHA_NUM_PROPS,
-                            ALPHA_NUM_PERT,
-                            ALPHA_PERT_LABELS,
-                            ALPHA_NUM_FREQS,
+                            ALPHA_LEN_TUPLE,
+                            ALPHA_PERT_TUPLE,
+                            ALPHA_NUM_FREQ_CONFIGS,
                             ALPHA_PERT_FREQS,
                             ALPHA_KN_RULES,
                             size_rsp_funs,
