@@ -81,25 +81,18 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
     fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetPerturbations() passed\n");
 #endif
 
-    /* sets the geometric perturbations for nuclear Hamiltonian */
-    ierr = OpenRSPSetNucGeoPerturbations(&open_rsp,
-                                         NUM_ATOMS,
-                                         ATOM_COORD,
-                                         ATOM_CHARGE);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucGeoPerturbations");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucGeoPerturbations() passed\n");
-
-    /* sets the terms in nuclear Hamiltonian due to the scalar potential */
-    ierr = OpenRSPSetNucScalarPotential(&open_rsp,
-                                        DIPOLE_ORIGIN);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucScalarPotential");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucScalarPotential() passed\n");
-
-    /* sets the terms in nuclear Hamiltonian due to the vector potential */
-    ierr = OpenRSPSetNucVectorPotential(&open_rsp,
-                                        GAUGE_ORIGIN);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucVectorPotential");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucVectorPotential() passed\n");
+    /* sets the nuclear contributions */
+    ierr = OpenRSPSetNucContributions(&open_rsp,
+                                      NUM_ALL_PERT,
+                                      ALL_PERT_LABELS,
+                                      ALL_PERT_MAX_ORDERS,
+#if defined(OPENRSP_C_USER_CONTEXT)   
+                                      (QVoid *)pert_context,
+#endif
+                                      &get_nuc_contrib,
+                                      NUM_ATOMS);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucContributions");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucContributions() passed\n");
 
     /* tests the density matrix-based response theory */
     ierr = test_c_OpenRSP_AO(&open_rsp, fp_log);

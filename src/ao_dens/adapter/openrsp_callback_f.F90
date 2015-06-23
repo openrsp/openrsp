@@ -89,6 +89,20 @@ module openrsp_callback_f
             type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
             type(C_PTR), intent(in) :: rsp_param(size_pert*num_freq_sums)
         end function RSPSolverGetLinearRSPSolution
+        integer(C_INT) function RSPNucHamiltonGetContributions(nuc_hamilton, &
+                                                               len_tuple,    &
+                                                               pert_tuple,   &
+                                                               size_pert,    &
+                                                               val_nuc)      &
+            bind(C, name="RSPNucHamiltonGetContributions")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: nuc_hamilton
+            integer(kind=C_QINT), value, intent(in) :: len_tuple
+            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: size_pert
+            real(kind=C_QREAL), intent(inout) :: val_nuc(2*size_pert)
+        end function RSPNucHamiltonGetContributions
         integer(C_INT) function RSPOverlapGetMat(overlap,        &
                                                  bra_len_tuple,  &
                                                  bra_pert_tuple, &
@@ -211,6 +225,54 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: num_exp
             real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
         end function RSPTwoOperGetExp
+        integer(C_INT) function RSPXCFunGetMat(xc_fun,           &
+                                               len_tuple,        &
+                                               pert_tuple,       &
+                                               num_freq_configs, &
+                                               len_dmat_tuple,   &
+                                               idx_dmat_tuple,   &
+                                               num_dmat,         &
+                                               dens_mat,         &
+                                               num_int,          &
+                                               val_int)          &
+            bind(C, name="RSPXCFunGetMat")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: xc_fun
+            integer(kind=C_QINT), value, intent(in) :: len_tuple
+            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+            integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
+            integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+            integer(kind=C_QINT), value, intent(in) :: num_dmat
+            type(C_PTR), intent(in) :: dens_mat(num_dmat)
+            integer(kind=C_QINT), value, intent(in) :: num_int
+            type(C_PTR), intent(in) :: val_int(num_int)
+        end function RSPXCFunGetMat
+        integer(C_INT) function RSPXCFunGetExp(xc_fun,           &
+                                               len_tuple,        &
+                                               pert_tuple,       &
+                                               num_freq_configs, &
+                                               len_dmat_tuple,   &
+                                               idx_dmat_tuple,   &
+                                               num_dmat,         &
+                                               dens_mat,         &
+                                               num_exp,          &
+                                               val_exp)          &
+            bind(C, name="RSPXCFunGetExp")
+            use, intrinsic :: iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(in) :: xc_fun
+            integer(kind=C_QINT), value, intent(in) :: len_tuple
+            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+            integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
+            integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+            integer(kind=C_QINT), value, intent(in) :: num_dmat
+            type(C_PTR), intent(in) :: dens_mat(num_dmat)
+            integer(kind=C_QINT), value, intent(in) :: num_exp
+            real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
+        end function RSPXCFunGetExp
     end interface
 
     contains
@@ -309,13 +371,30 @@ module openrsp_callback_f
         integer(kind=QINT), intent(in) :: len_tuple
         integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: size_pert
-        real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
+        complex(kind=QREAL), intent(inout) :: val_nuc(size_pert)
+        real(kind=QREAL), allocatable :: c_val_nuc(:)
+        integer(kind=QINT) ival
+        integer(kind=4) ierr
         if (c_associated(ctx_saved%nuc_hamilton)) then
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", len_tuple, size_pert
 #endif
-            !write(STDOUT,100) "not implemented"
-            !call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_nuc(2*size_pert), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_nuc", &
+                                  size_pert
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = RSPNucHamiltonGetContributions(ctx_saved%nuc_hamilton, &
+                                                  len_tuple,              &
+                                                  pert_tuple,             &
+                                                  size_pert,              &
+                                                  c_val_nuc)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do ival = 1, size_pert
+                val_nuc(ival) = cmplx(c_val_nuc(2*ival-1), c_val_nuc(2*ival), kind=QREAL)
+            end do
+            deallocate(c_val_nuc)
         end if
 100     format("f_callback_RSPNucHamiltonGetContributions>> ",A,2I12)
     end subroutine f_callback_RSPNucHamiltonGetContributions
@@ -657,11 +736,131 @@ module openrsp_callback_f
     end subroutine f_callback_RSPTwoOperGetExp
 
     ! callback subroutine to get (perturbed) exchange-correlation functional matrices
-    subroutine f_callback_RSPXCFunGetMat()
+    subroutine f_callback_RSPXCFunGetMat(len_tuple,        &
+                                         pert_tuple,       &
+                                         num_freq_configs, &
+                                         len_dmat_tuple,   &
+                                         idx_dmat_tuple,   &
+                                         num_dmat,         &
+                                         dens_mat,         &
+                                         num_int,          &
+                                         val_int)
+        integer(kind=QINT), intent(in) :: len_tuple
+        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: num_freq_configs
+        integer(kind=QINT), intent(in) :: len_dmat_tuple
+        integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+        integer(kind=QINT), intent(in) :: num_dmat
+        type(QcMat), intent(in) :: dens_mat(num_dmat)
+        integer(kind=QINT), intent(in) :: num_int
+        type(QcMat), intent(inout) :: val_int(num_int)
+        type(C_PTR), allocatable :: c_dens_mat(:)
+        type(C_PTR), allocatable :: c_val_int(:)
+        integer(kind=QINT) imat
+        integer(kind=4) ierr
+        if (c_associated(ctx_saved%xc_fun)) then
+#if defined(OPENRSP_DEBUG)
+            write(STDOUT,100) "size", len_tuple, num_dmat, num_int
+#endif
+            allocate(c_dens_mat(num_dmat), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_dens_mat", &
+                                  num_dmat
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=dens_mat, c_A=c_dens_mat)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_int(num_int), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_int", num_int
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=val_int, c_A=c_val_int)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            ierr = RSPXCFunGetMat(ctx_saved%xc_fun, &
+                                  len_tuple,        &
+                                  pert_tuple,       &
+                                  num_freq_configs, &
+                                  len_dmat_tuple,   &
+                                  idx_dmat_tuple,   &
+                                  num_dmat,         &
+                                  c_dens_mat,       &
+                                  num_int,          &
+                                  c_val_int)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do imat = 1, num_dmat
+                c_dens_mat(imat) = C_NULL_PTR
+            end do
+            do imat = 1, num_int
+                c_val_int(imat) = C_NULL_PTR
+            end do
+            deallocate(c_dens_mat)
+            deallocate(c_val_int)
+        end if
+100     format("f_callback_RSPXCFunGetMat>> ",A,3I12)
     end subroutine f_callback_RSPXCFunGetMat
 
     ! callback subroutine to get expectation values of (perturbed) exchange-correlation functional
-    subroutine f_callback_RSPXCFunGetExp()
+    subroutine f_callback_RSPXCFunGetExp(len_tuple,        &
+                                         pert_tuple,       &
+                                         num_freq_configs, &
+                                         len_dmat_tuple,   &
+                                         idx_dmat_tuple,   &
+                                         num_dmat,         &
+                                         dens_mat,         &
+                                         num_exp,          &
+                                         val_exp)
+        integer(kind=QINT), intent(in) :: len_tuple
+        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: num_freq_configs
+        integer(kind=QINT), intent(in) :: len_dmat_tuple
+        integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+        integer(kind=QINT), intent(in) :: num_dmat
+        type(QcMat), intent(in) :: dens_mat(num_dmat)
+        integer(kind=QINT), intent(in) :: num_exp
+        complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
+        type(C_PTR), allocatable :: c_dens_mat(:)
+        real(kind=QREAL), allocatable :: c_val_exp(:)
+        integer(kind=QINT) ival
+        integer(kind=4) ierr
+        if (c_associated(ctx_saved%xc_fun)) then
+#if defined(OPENRSP_DEBUG)
+            write(STDOUT,100) "size", len_tuple, num_dmat, num_exp
+#endif
+            allocate(c_dens_mat(num_dmat), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_dens_mat", &
+                                  num_dmat
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = QcMat_C_LOC(A=dens_mat, c_A=c_dens_mat)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            allocate(c_val_exp(2*num_exp), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            ierr = RSPXCFunGetExp(ctx_saved%xc_fun, &
+                                  len_tuple,        &
+                                  pert_tuple,       &
+                                  num_freq_configs, &
+                                  len_dmat_tuple,   &
+                                  idx_dmat_tuple,   &
+                                  num_dmat,         &
+                                  c_dens_mat,       &
+                                  num_exp,          &
+                                  c_val_exp)
+            call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            do ival = 1, num_exp
+                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+            end do
+            do ival = 1, num_dmat
+                c_dens_mat(ival) = C_NULL_PTR
+            end do
+            deallocate(c_dens_mat)
+            deallocate(c_val_exp)
+        end if
+100     format("f_callback_RSPXCFunGetExp>> ",A,3I12)
     end subroutine f_callback_RSPXCFunGetExp
 
 end module openrsp_callback_f

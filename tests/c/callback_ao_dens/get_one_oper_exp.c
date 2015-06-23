@@ -23,14 +23,13 @@
 /* QcMatrix library */
 #include "qcmatrix.h"
 
-#include "tests/ao_dens/openrsp_c_callback.h"
+#include "tests/dens_mat/openrsp_c_callback.h"
 #include "tests/openrsp_c_perturbations.h"
 
-QVoid get_one_oper_exp(const QInt num_pert,
-                       const QInt *pert_labels,
-                       const QInt *pert_orders,
-                       const QInt num_dens,
-                       QcMat *ao_dens[],
+QVoid get_one_oper_exp(const QInt len_tuple,
+                       const QInt *pert_tuple,
+                       const QInt num_dmat,
+                       QcMat *dens_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                        QVoid *user_ctx,
 #endif
@@ -42,8 +41,8 @@ QVoid get_one_oper_exp(const QInt num_pert,
     QChar *ext_field_context = "EXT_FIELD";
     QChar *one_oper_context;
 #endif
-#include "tests/ao_dens/openrsp_c_ao_dims.h"
-#include "tests/ao_dens/openrsp_c_ao_diplen.h"
+#include "tests/dens_mat/openrsp_c_ao_dims.h"
+#include "tests/dens_mat/openrsp_c_ao_diplen.h"
     QInt idx_block_row[1] = {IDX_BLOCK_ROW};
     QInt idx_block_col[1] = {IDX_BLOCK_COL};
     QcDataType data_type[1] = {QREALMAT};
@@ -56,7 +55,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
     one_oper_context = (QChar *)user_ctx;
     if (strcmp(one_oper_context, oneham_context)==0) {
         /* electric fields (zero integrals) */
-        if (num_pert==1 && pert_labels[0]==PERT_DIPOLE) {
+        if (len_tuple==1 && pert_tuple[0]==PERT_DIPOLE) {
             for (idens=0; idens<2*num_exp; idens++) {
                 val_exp[idens] = 0;
             }
@@ -69,7 +68,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
     }
     else if (strcmp(one_oper_context, ext_field_context)==0) {
         /* electric fields */
-        if (num_pert==1 && pert_labels[0]==PERT_DIPOLE) {
+        if (len_tuple==1 && pert_tuple[0]==PERT_DIPOLE) {
             /* dipole length integrals */
             if (pert_orders[0]==1) {
                 offset_exp = 0;
@@ -135,9 +134,9 @@ QVoid get_one_oper_exp(const QInt num_pert,
                                "calling QcMatSetValues");
                         exit(ierr);
                     }
-                    for (idens=0; idens<num_dens; idens++) {
+                    for (idens=0; idens<num_dmat; idens++) {
                         ierr = QcMatGetMatProdTrace(&val_int[0],
-                                                    ao_dens[idens],
+                                                    dens_mat[idens],
                                                     MAT_NO_OPERATION,
                                                     1,
                                                     &val_exp[offset_exp+2*idens]);
@@ -155,7 +154,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
                                "calling QcMatDestroy");
                         exit(ierr);
                     }
-                    offset_exp += 2*num_dens;
+                    offset_exp += 2*num_dmat;
                 }
             }
             /* zero integrals */
@@ -178,7 +177,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
     }
 #else
     /* electric fields */
-    if (num_pert==1 && pert_labels[0]==PERT_DIPOLE) {
+    if (len_tuple==1 && pert_tuple[0]==PERT_DIPOLE) {
         /* dipole length integrals */
         if (pert_orders[0]==1) {
             offset_exp = 0;
@@ -244,9 +243,9 @@ QVoid get_one_oper_exp(const QInt num_pert,
                            "calling QcMatSetValues");
                     exit(ierr);
                 }
-                for (idens=0; idens<num_dens; idens++) {
+                for (idens=0; idens<num_dmat; idens++) {
                     ierr = QcMatGetMatProdTrace(&val_int[0],
-                                                ao_dens[idens],
+                                                dens_mat[idens],
                                                 MAT_NO_OPERATION,
                                                 1,
                                                 &val_exp[offset_exp+2*idens]);
@@ -264,7 +263,7 @@ QVoid get_one_oper_exp(const QInt num_pert,
                            "calling QcMatDestroy");
                     exit(ierr);
                 }
-                offset_exp += 2*num_dens;
+                offset_exp += 2*num_dmat;
             }
         }
         /* zero integrals */

@@ -25,9 +25,9 @@
 
 #include "tests/ao_dens/openrsp_c_callback.h"
 
-QVoid get_linear_rsp_solution(const QInt num_freq_sums,
+QVoid get_linear_rsp_solution(const QInt size_pert,
+                              const QInt num_freq_sums,
                               const QReal *freq_sums,
-                              const QInt size_pert,
                               QcMat *RHS_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid *user_ctx,

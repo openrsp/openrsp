@@ -336,7 +336,7 @@ ierr = QcMatWrite_f(Fp(i), "Fp", ASCII_VIEW)
        ! Note (MaR): Passing only real part of freq. Is this OK?
        ! MaR: May need to vectorize RHS and X
        
-       call get_rsp_sol(1, (/sum(real(pert%freq(:)))/), 1, RHS, X)
+       call get_rsp_sol(1, 1, (/sum(real(pert%freq(:)))/), RHS, X)
        
 !        call get_rsp_sol(RHS(1), 1, (/sum(real(pert%freq(:)))/), X)
 !        call rsp_solver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
@@ -671,7 +671,7 @@ end if
 
     
     ! Note (MaR): Passing only real part of freq. Is this OK?
-    call get_rsp_sol(1, (/sum(real(pert%freq(:)))/), size(indices, 1), RHS, X)
+    call get_rsp_sol(size(indices, 1), 1, (/sum(real(pert%freq(:)))/), RHS, X)
 
     
     do i = 1, size(indices, 1)   
