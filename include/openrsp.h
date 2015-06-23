@@ -29,6 +29,10 @@
 #if !defined(OPENRSP_H)
 #define OPENRSP_H
 
+#if defined(OPENRSP_PERTURBATION_FREE)
+/* perturbations involved in calculations */
+#include "eom/openrsp_perturbation.h"
+#endif
 /* type of equation of motion (EOM) of electrons */
 #include "eom/openrsp_elec_eom.h"
 /* response equation solver */
@@ -44,46 +48,15 @@
 /* nuclear contributions */
 #include "hamiltonian/rsp_nuc_contrib.h"
 
-#if defined(OPENRSP_PERTURBATION_FREE)
-/* callback function to get the components of a perturbation */
-typedef QVoid (*GetPertComp)(const QInt,
-                             const QInt,
-                             const QInt,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
-#endif
-                             QInt*,
-                             QInt*,
-                             QInt*);
-/* callback function to get the rank of a perturbation */
-typedef QVoid (*GetPertRank)(const QInt,
-                             const QInt,
-                             const QInt*,
-                             const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
-#endif
-                             QInt*);
-#endif
-
 /* context of response theory calculations */
 typedef struct {
     QBool assembled;             /* indicates if the context of response theory calculations assembled */
 #if defined(OPENRSP_PERTURBATION_FREE)
     /* perturbations */
-    QInt num_pert;                 /* number of all perturbations involved in calculations */
-    QInt *pert_labels;             /* labels of all perturbations */
-    QInt *pert_max_orders;         /* maximum allowed orders of all perturbations */
-    QInt *size_ptr;                /* pointer to the size of each perturbation */
-    QInt *pert_sizes;              /* sizes of all perturbations up to their maximum orders */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;               /* user-defined callback function context */
-#endif
-    GetPertComp get_pert_comp;     /* user specified function for getting components of a perturbation */
-    GetPertRank get_pert_rank;     /* user specified function for getting rank of a perturbation */
+
 #endif
     /* EOM and solver */
-    //ElecEOM *elec_eom;             /* implementation-specific data of the EOM of electrons */
+    /*ElecEOM *elec_eom;*/             /* implementation-specific data of the EOM of electrons */
     ElecEOMType elec_EOM_type;
     RSPSolver *rsp_solver;         /* response equation solvers */
     /* Hamiltonian */

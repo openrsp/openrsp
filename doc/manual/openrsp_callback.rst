@@ -225,7 +225,7 @@ functions are given as follows.
        ``num_LHS_dmat[i]`` :math:`\times` ``num_RHS_dmat[i]``
    :type num_exp: QInt
    :var val_exp: the expectation values, arranged as
-       ``(num_RHS_dmat, num_LHS_dmat, len_dmat_tuple, pert_tuple)``
+       ``(num_RHS_dmat, num_LHS_dmat, pert_tuple, len_dmat_tuple)``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
