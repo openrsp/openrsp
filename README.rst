@@ -25,12 +25,12 @@ and assemble contributions to molecular properties ("response properties")
 as they are formulated in the theory "response theory" which is used in
 theoretical chemistry.
 
-Please refer to doc/manual.pdf for more details.
+Please refer to ``doc/manual`` and ``doc/tutorial`` for more details.
 
-Please refer to RULES if you would like to contribute.
+Please refer to ``RULES`` if you would like to contribute.
 
 If you have used OpenRSP and found it is useful, please consider to cite the
-references in openrsp.bib.
+references in ``openrsp.bib``.
 
 A pointer to the project website (if it has one)
 ------------------------------------------------
@@ -46,13 +46,13 @@ and LSDALTON, and refer to the tutorial that we will prepare?
 Important files and subdirectories
 ----------------------------------
 
-Please see Chapter "Files and Directories" in doc/manual.pdf.
+Please see Chapter "Files and Directories" in ``doc/manual``.
 
-Please see chapter "Installation" in doc/manual.pdf for installation instructions
+Please see chapter "Installation" in ``doc/manual`` for installation instructions
 ---------------------------------------------------------------------------------
 
-Please see AUTHORS for the maintainers list
--------------------------------------------
+Please see ``AUTHORS`` for the maintainers list
+-----------------------------------------------
 
-Please see NEWS for recent project news
----------------------------------------
+Please see ``NEWS`` for recent project news
+-------------------------------------------

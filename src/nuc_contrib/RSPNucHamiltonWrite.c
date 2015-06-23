@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -31,35 +37,25 @@
 */
 QErrorCode RSPNucHamiltonWrite(const RSPNucHamilton *nuc_hamilton, FILE *fp_nuc)
 {
-    QInt iatom,ixyz;
+    QInt ipert;  /* incremental recorder over perturbations */
+    fprintf(fp_nuc,
+            "RSPNucHamiltonWrite>> number of perturbations that nuclear Hamiltonian depend on %"QINT_FMT"\n",
+            nuc_hamilton->num_pert);
+    fprintf(fp_nuc, "RSPNucHamiltonWrite>> label           maximum-order\n");
+    for (ipert=0; ipert<nuc_hamilton->num_pert; ipert++) {
+        fprintf(fp_nuc,
+                "RSPNucHamiltonWrite>>       %"QINT_FMT"                  %"QINT_FMT"\n",
+                nuc_hamilton->pert_labels[ipert],
+                nuc_hamilton->pert_max_orders[ipert]);
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    if (nuc_hamilton->user_ctx!=NULL) {
+        fprintf(fp_nuc, "RSPNucHamiltonWrite>> user-defined function context given\n");
+    }
+#endif
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
     fprintf(fp_nuc,
             "RSPNucHamiltonWrite>> number of atoms %"QINT_FMT"\n",
             nuc_hamilton->num_atoms);
-    fprintf(fp_nuc,
-            "RSPNucHamiltonWrite>> atom    charge    coordinates\n");
-    for (iatom=0,ixyz=0; iatom<nuc_hamilton->num_atoms; iatom++) {
-        fprintf(fp_nuc,
-                "RSPNucHamiltonWrite>> %"QINT_FMT"    %f    [%f, %f, %f]\n",
-                iatom,
-                nuc_hamilton->atom_charge[iatom],
-                nuc_hamilton->atom_coord[ixyz],     /* x */
-                nuc_hamilton->atom_coord[ixyz+1],   /* y */
-                nuc_hamilton->atom_coord[ixyz+2]);  /* z */
-       ixyz += 3;
-    }
-    if (nuc_hamilton->dipole_origin!=NULL) {
-        fprintf(fp_nuc,
-                "RSPNucHamiltonWrite>> dipole origin [%f, %f, %f]\n",
-                nuc_hamilton->dipole_origin[0],
-                nuc_hamilton->dipole_origin[1],
-                nuc_hamilton->dipole_origin[2]);
-    }
-    if (nuc_hamilton->gauge_origin!=NULL) {
-        fprintf(fp_nuc,
-                "RSPNucHamiltonWrite>> gauge origin [%f, %f, %f]\n",
-                nuc_hamilton->gauge_origin[0],
-                nuc_hamilton->gauge_origin[1],
-                nuc_hamilton->gauge_origin[2]);
-    }
     return QSUCCESS;
 }

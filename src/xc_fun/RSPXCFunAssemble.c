@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -14,31 +20,31 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPTwoOperAssemble().
+   This file implements the function RSPXCFunAssemble().
 
-   2014-08-06, Bin Gao:
+   2015-06-23, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_two_oper.h"
+#include "hamiltonian/rsp_xc_fun.h"
 
-/*% \brief assembles the linked list of two-electron operators
+/*% \brief assembles the linked list of XC functionals
     \author Bin Gao
-    \date 2014-08-06
-    \param[RSPTwoOper:struct]{inout} two_oper the linked list of two-electron operators
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{inout} xc_fun the linked list of XC functionals
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPTwoOperAssemble(RSPTwoOper *two_oper)
+QErrorCode RSPXCFunAssemble(RSPXCFun *xc_fun)
 {
-    QInt ioper;            /* incremental recorder over opertors */
-    RSPTwoOper *cur_oper;  /* current operator */
-    /* walks to the last operator */
-    ioper = 0;
-    cur_oper = two_oper;
+    QInt ixc;          /* incremental recorder over XC functionals */
+    RSPXCFun *cur_xc;  /* current XC functional */
+    /* walks to the last XC functional */
+    ixc = 0;
+    cur_xc = xc_fun;
     do {
         /*FIXME: to implement */
-        ioper++;
-        cur_oper = cur_oper->next_oper;
-    } while (cur_oper!=NULL);
+        ixc++;
+        cur_xc = cur_xc->next_xc;
+    } while (cur_xc!=NULL);
     return QSUCCESS;
 }

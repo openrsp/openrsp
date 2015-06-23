@@ -25,6 +25,7 @@ Examples of C callback functions can be found in the directory
 ``tests/c/callback``. The detailed information of these callback
 functions are given as follows.
 
+.. FIXME: get_pert_comp and get_pert_rank to be discussed and fixed
 .. get_pert_comp()
 
 .. get_pert_rank()
@@ -329,7 +330,7 @@ functions are given as follows.
 .. c:function:: QVoid get_nuc_contrib(len_tuple, pert_tuple, user_ctx, size_pert, val_nuc)
 
    Callback function for getting the nuclear contributions, the last argument
-   for the function :c:func:`OpenRSPAddNucContributions`.
+   for the function :c:func:`OpenRSPSetNucContributions`.
 
    :param len_tuple: length of perturbation tuple on the nuclear Hamiltonian
    :type len_tuple: QInt

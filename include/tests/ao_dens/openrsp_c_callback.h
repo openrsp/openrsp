@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -40,12 +46,9 @@ extern QVoid get_linear_rsp_solution(const QInt,
 /* callback function for getting integral matrices of overlap integrals */
 extern QVoid get_overlap_mat(const QInt,
                              const QInt*,
-                             const QInt*,
                              const QInt,
                              const QInt*,
-                             const QInt*,
                              const QInt,
-                             const QInt*,
                              const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                              QVoid*,
@@ -55,12 +58,9 @@ extern QVoid get_overlap_mat(const QInt,
 /* callback function for getting expectation values of overlap integrals */
 extern QVoid get_overlap_exp(const QInt,
                              const QInt*,
-                             const QInt*,
                              const QInt,
                              const QInt*,
-                             const QInt*,
                              const QInt,
-                             const QInt*,
                              const QInt*,
                              const QInt,
                              QcMat*[],
@@ -72,7 +72,6 @@ extern QVoid get_overlap_exp(const QInt,
 /* callback function for getting integral matrices of one-electron operators */
 extern QVoid get_one_oper_mat(const QInt,
                               const QInt*,
-                              const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid*,
 #endif
@@ -80,7 +79,6 @@ extern QVoid get_one_oper_mat(const QInt,
                               QcMat*[]);
 /* callback function for getting expectation values of one-electron operators */
 extern QVoid get_one_oper_exp(const QInt,
-                              const QInt*,
                               const QInt*,
                               const QInt,
                               QcMat*[],
@@ -94,7 +92,6 @@ extern QVoid get_one_oper_exp(const QInt,
 /* callback function for getting integral matrices of two-electron operators */
 extern QVoid get_two_oper_mat(const QInt,
                               const QInt*,
-                              const QInt*,
                               const QInt,
                               QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -105,10 +102,10 @@ extern QVoid get_two_oper_mat(const QInt,
 /* callback function for getting expectation values of two-electron operators */
 extern QVoid get_two_oper_exp(const QInt,
                               const QInt*,
+                              const QInt,
                               const QInt*,
-                              const QInt,
                               QcMat*[],
-                              const QInt,
+                              const QInt*,
                               QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid*,

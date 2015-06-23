@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -23,9 +29,9 @@
 #include "openrsp.h"
 
 QVoid OpenRSPGetRSPFun_f(const QInt num_props,
-                         const QInt *num_pert,
-                         const QInt *pert_labels,
-                         const QInt *num_freqs,
+                         const QInt *len_tuple,
+                         const QInt *pert_tuple,
+                         const QInt *num_freq_configs,
                          const QReal *pert_freqs,
                          const QInt *kn_rules,
                          const QcMat *ref_ham,
@@ -48,10 +54,13 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_props,
      \param[QcMat:struct]{in} ref_state electronic state of referenced state
      \param[QcMat:struct]{in} ref_overlap overlap integral matrix of referenced state
      \param[QInt:int]{in} num_props number of properties to calculate
-     \param[QInt:int]{in} num_pert number of different perturbations for each property
-     \param[QInt:int]{in} pert_labels labels of different perturbations for each property
-     \param[QInt:int]{in} num_freqs number of different frequencies for each perturbation
+     \param[QInt:int]{in} len_tuple length of perturbation tuple for each property
+     \param[QInt:int]{in} pert_tuple ordered list of perturbation labels
+         for each property
+     \param[QInt:int]{in} num_freq_configs number of different frequency
+         configurations for each property
      \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation
+         over all frequency configurations
      \param[QInt:int]{in} kn_rules number k for the kn rule for each property
      \param[QInt:int]{in} size_rsp_funs size of the response functions
      \param[QReal:real]{out} rsp_funs the response functions
@@ -62,9 +71,9 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                             const QcMat *ref_state,
                             const QcMat *ref_overlap,
                             const QInt num_props,
-                            const QInt *num_pert,
-                            const QInt *pert_labels,
-                            const QInt *num_freqs,
+                            const QInt *len_tuple,
+                            const QInt *pert_tuple,
+                            const QInt *num_freq_configs,
                             const QReal *pert_freqs,
                             const QInt *kn_rules,
                             const QInt size_rsp_funs,
@@ -78,9 +87,9 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     /* density matrix-based response theory */
     case ELEC_AO_D_MATRIX:
         OpenRSPGetRSPFun_f(num_props,
-                           num_pert,
-                           pert_labels,
-                           num_freqs,
+                           len_tuple,
+                           pert_tuple,
+                           num_freq_configs,
                            pert_freqs,
                            kn_rules,
                            ref_ham,

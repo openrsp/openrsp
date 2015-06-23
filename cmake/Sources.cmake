@@ -25,10 +25,15 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperGetMat.c
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperGetExp.c
     ${LIB_OPENRSP_PATH}/src/two_oper/RSPTwoOperDestroy.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunCreate.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunAdd.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunAssemble.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunWrite.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunGetMat.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunGetExp.c
+    ${LIB_OPENRSP_PATH}/src/xc_fun/RSPXCFunDestroy.c
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonCreate.c
-    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonSetGeoPerturbations.c
-    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonSetScalarPotential.c
-    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonSetVectorPotential.c
+    ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonAssemble.c
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonWrite.c
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonGetContributions.c
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonDestroy.c
@@ -39,9 +44,8 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetPDBS.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddOneOper.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddTwoOper.c
-    ${LIB_OPENRSP_PATH}/src/OpenRSPSetNucGeoPerturbations.c
-    ${LIB_OPENRSP_PATH}/src/OpenRSPSetNucScalarPotential.c
-    ${LIB_OPENRSP_PATH}/src/OpenRSPSetNucVectorPotential.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPAddXCFun.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetNucContributions.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAssemble.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPWrite.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPGetRSPFun.c
@@ -51,3 +55,19 @@ IF(OPENRSP_PERTURBATION_FREE)
         ${OPENRSP_SRCS}
         ${LIB_OPENRSP_PATH}/src/OpenRSPSetPerturbations.c)
 ENDIF()
+# Fortran recursive codes and adapters between OpenRSP APIs
+SET(OPENRSP_SRCS
+    ${OPENRSP_SRCS}
+    src/ao_dens/rsp_choose_rule.f90
+    src/ao_dens/rsp_contribs.f90
+    src/ao_dens/rsp_field_tuple.f90
+    src/ao_dens/rsp_general.f90
+    src/ao_dens/rsp_indices_and_addressing.f90
+    src/ao_dens/rsp_lof_caching_tmp.f90
+    src/ao_dens/rsp_perturbed_matrices.f90
+    src/ao_dens/rsp_perturbed_sdf.f90
+    src/ao_dens/rsp_property_caching.f90
+    src/ao_dens/rsp_sdf_caching.f90
+    src/ao_dens/rsp_pert_table.F90
+    src/ao_dens/adapter/openrsp_callback_f.F90
+    src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90)

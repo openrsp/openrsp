@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -14,55 +20,54 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPTwoOperAdd().
+   This file implements the function RSPXCFunAdd().
 
-   2014-08-06, Bin Gao:
+   2015-06-23, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_two_oper.h"
+#include "hamiltonian/rsp_xc_fun.h"
 
-/*% \brief adds a two-electron operator to the linked list
+/*% \brief adds an XC functional to the linked list
     \author Bin Gao
-    \date 2014-08-06
-    \param[RSPTwoOper:struct]{inout} two_oper the linked list of two-electron operators
-    \param[QInt:int]{in} num_pert number of perturbations that the two-electron
-        operator depends on
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{inout} xc_fun the linked list of XC functionals
+    \param[QInt:int]{in} num_pert number of perturbations that the XC functional depends on
     \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
     \param[QVoid:void]{in} user_ctx user-defined callback function context
-    \param[GetTwoOperMat:void]{in} get_two_oper_mat user specified function for
+    \param[GetXCFunMat:void]{in} get_xc_fun_mat user specified function for
         getting integral matrices
-    \param[GetTwoOperExp:void]{in} get_two_oper_exp user specified function for
+    \param[GetXCFunExp:void]{in} get_xc_fun_exp user specified function for
         getting expectation values
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPTwoOperAdd(RSPTwoOper *two_oper,
-                         const QInt num_pert,
-                         const QInt *pert_labels,
-                         const QInt *pert_max_orders,
-                         QVoid *user_ctx,
-                         const GetTwoOperMat get_two_oper_mat,
-                         const GetTwoOperExp get_two_oper_exp)
+QErrorCode RSPXCFunAdd(RSPXCFun *xc_fun,
+                       const QInt num_pert,
+                       const QInt *pert_labels,
+                       const QInt *pert_max_orders,
+                       QVoid *user_ctx,
+                       const GetXCFunMat get_xc_fun_mat,
+                       const GetXCFunExp get_xc_fun_exp)
 {
-    RSPTwoOper *new_oper;  /* new operator */
-    RSPTwoOper *cur_oper;  /* current operator */
-    QErrorCode ierr;       /* error information */
-    /* creates the new operator */
-    ierr = RSPTwoOperCreate(&new_oper,
-                            num_pert,
-                            pert_labels,
-                            pert_max_orders,
-                            user_ctx,
-                            get_two_oper_mat,
-                            get_two_oper_exp);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperCreate");
-    /* walks to the last operator */
-    cur_oper = two_oper;
-    while (cur_oper->next_oper!=NULL) {
-        cur_oper = cur_oper->next_oper;
+    RSPXCFun *new_xc;  /* new XC functional */
+    RSPXCFun *cur_xc;  /* current XC functional */
+    QErrorCode ierr;   /* error information */
+    /* creates the new XC functional */
+    ierr = RSPXCFunCreate(&new_xc,
+                          num_pert,
+                          pert_labels,
+                          pert_max_orders,
+                          user_ctx,
+                          get_xc_fun_mat,
+                          get_xc_fun_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunCreate");
+    /* walks to the last XC functional */
+    cur_xc = xc_fun;
+    while (cur_xc->next_xc!=NULL) {
+        cur_xc = cur_xc->next_xc;
     }
-    /* inserts the new operator to the tail of the linked list */
-    cur_oper->next_oper = new_oper;
+    /* inserts the new XC functional to the tail of the linked list */
+    cur_xc->next_xc = new_xc;
     return QSUCCESS;
 }

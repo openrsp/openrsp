@@ -1,5 +1,11 @@
 !!  OpenRSP: open-ended library for response theory
-!!  Copyright 2014
+!!  Copyright 2015 Radovan Bast,
+!!                 Daniel H. Friese,
+!!                 Bin Gao,
+!!                 Dan J. Jonsson,
+!!                 Magnus Ringholm,
+!!                 Kenneth Ruud,
+!!                 Andreas Thorvaldsen
 !!
 !!  OpenRSP is free software: you can redistribute it and/or modify
 !!  it under the terms of the GNU Lesser General Public License as published by
@@ -23,26 +29,26 @@
 ! data types between C/Fortran
 #include "api/qcmatrix_c_type.h"
 
-    subroutine OpenRSPGetRSPFun_f(num_props,       &
-                                  num_pert,        &
-                                  pert_labels,     &
-                                  num_freqs,       &
-                                  pert_freqs,      &
-                                  kn_rules,        &
-                                  F_unpert,        &
-                                  S_unpert,        &
-                                  D_unpert,        &
-                                  rsp_solver,      &
-                                  nuc_hamilton,    &
-                                  overlap,         &
-                                  one_oper,        &
-                                  two_oper,        &
-                                  xc_fun,          &
-                                  !id_outp,         &
-                                  property_size,   &
-                                  rsp_tensor)      &
-                                  !len_file_tensor, &
-                                  !file_rsp_tensor) &
+    subroutine OpenRSPGetRSPFun_f(num_props,        &
+                                  len_tuple,        &
+                                  pert_tuple,       &
+                                  num_freq_configs, &
+                                  pert_freqs,       &
+                                  kn_rules,         &
+                                  F_unpert,         &
+                                  S_unpert,         &
+                                  D_unpert,         &
+                                  rsp_solver,       &
+                                  nuc_hamilton,     &
+                                  overlap,          &
+                                  one_oper,         &
+                                  two_oper,         &
+                                  xc_fun,           &
+                                  !id_outp,          &
+                                  property_size,    &
+                                  rsp_tensor)       &
+                                  !len_file_tensor,  &
+                                  !file_rsp_tensor)  &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
         use qcmatrix_f, only: QINT,              &
@@ -56,10 +62,10 @@
         use rsp_general, only: openrsp_get_property_2014
         implicit none
         integer(kind=C_QINT), value, intent(in) :: num_props
-        integer(kind=C_QINT), intent(in) :: num_pert(num_props)
-        integer(kind=C_QINT), intent(in) :: pert_labels(sum(num_pert))
-        integer(kind=C_QINT), intent(in) :: num_freqs(num_props)
-        real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(num_freqs,num_pert))
+        integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
+        integer(kind=C_QINT), intent(in) :: pert_tuple(sum(len_tuple))
+        integer(kind=C_QINT), intent(in) :: num_freq_configs(num_props)
+        real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(len_tuple,num_freq_configs))
         integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
         type(C_PTR), value, intent(in) :: F_unpert
         type(C_PTR), value, intent(in) :: S_unpert
@@ -91,7 +97,7 @@
         integer(kind=QINT) num_all_pert
         integer(kind=QINT), allocatable :: f_pert_dims(:)
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
-        character(4), allocatable :: f_pert_labels(:)
+        character(4), allocatable :: f_pert_tuple(:)
         complex(kind=QREAL), allocatable :: f_pert_freqs(:)
         type(QcMat) f_F_unpert(1)
         type(QcMat) f_S_unpert(1)
@@ -108,7 +114,7 @@
         end if
         num_coord = 3*num_coord
         ! gets the number of all perturbations
-        num_all_pert = sum(num_pert)
+        num_all_pert = sum(len_tuple)
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
@@ -120,13 +126,13 @@
             write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp"
         end if
-        allocate(f_pert_labels(num_all_pert), stat=ierr)
+        allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_labels"
+            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple"
         end if
         do ipert = 1, num_all_pert
-            select case (pert_labels(ipert))
+            select case (pert_tuple(ipert))
             case (RSP_GEO_PERT)
                 f_pert_dims(ipert) = num_coord
             case (RSP_ELGR_PERT)
@@ -135,7 +141,7 @@
                 f_pert_dims(ipert) = 3
             end select
             f_pert_first_comp(ipert) = 1  !always starting from 1 for the time being
-            f_pert_labels(ipert) = CHAR_PERT_TABLE(pert_labels(ipert))
+            f_pert_tuple(ipert) = CHAR_PERT_TABLE(pert_tuple(ipert))
         end do
         ! gets the frequencies of perturbations
         allocate(f_pert_freqs(size(pert_freqs)), stat=ierr)
@@ -186,11 +192,11 @@
         !    end do
         !    ! gets the properties
         !    call openrsp_get_property_2014(num_props,                                 &
-        !                                   num_pert,                                  &
+        !                                   len_tuple,                                 &
         !                                   f_pert_dims,                               &
         !                                   f_pert_first_comp,                         &
-        !                                   f_pert_labels,                             &
-        !                                   num_freqs,                                 &
+        !                                   f_pert_tuple,                              &
+        !                                   num_freq_configs,                          &
         !                                   f_pert_freqs,                              &
         !                                   kn_rules,                                  &
         !                                   f_F_unpert(1),                             &
@@ -214,11 +220,11 @@
         !    nullify(ptr_file_tensor)
         !else
             call openrsp_get_property_2014(num_props,                                 &
-                                           num_pert,                                  &
+                                           len_tuple,                                 &
                                            f_pert_dims,                               &
                                            f_pert_first_comp,                         &
-                                           f_pert_labels,                             &
-                                           num_freqs,                                 &
+                                           f_pert_tuple,                              &
+                                           num_freq_configs,                          &
                                            f_pert_freqs,                              &
                                            kn_rules,                                  &
                                            f_F_unpert(1),                             &
@@ -260,7 +266,7 @@
         end if
         deallocate(f_pert_dims)
         deallocate(f_pert_first_comp)
-        deallocate(f_pert_labels)
+        deallocate(f_pert_tuple)
         deallocate(f_pert_freqs)
         call RSP_CTX_Destroy()
         deallocate(f_rsp_tensor)

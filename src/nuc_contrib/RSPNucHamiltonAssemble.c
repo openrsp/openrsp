@@ -20,31 +20,22 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function RSPTwoOperAssemble().
+   This file implements the function RSPNucHamiltonAssemble().
 
-   2014-08-06, Bin Gao:
+   2014-08-05, Bin Gao:
    * first version
 */
 
-#include "hamiltonian/rsp_two_oper.h"
+#include "hamiltonian/rsp_nuc_contrib.h"
 
-/*% \brief assembles the linked list of two-electron operators
+/*% \brief assembles the nuclear Hamiltonian
     \author Bin Gao
-    \date 2014-08-06
-    \param[RSPTwoOper:struct]{inout} two_oper the linked list of two-electron operators
+    \date 2014-08-05
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the nuclear Hamiltonian
     \return[QErrorCode:int] error information
 */
-QErrorCode RSPTwoOperAssemble(RSPTwoOper *two_oper)
+QErrorCode RSPNucHamiltonAssemble(RSPNucHamilton *nuc_hamilton)
 {
-    QInt ioper;            /* incremental recorder over opertors */
-    RSPTwoOper *cur_oper;  /* current operator */
-    /* walks to the last operator */
-    ioper = 0;
-    cur_oper = two_oper;
-    do {
-        /*FIXME: to implement */
-        ioper++;
-        cur_oper = cur_oper->next_oper;
-    } while (cur_oper!=NULL);
+/*FIXME: to implement */
     return QSUCCESS;
 }

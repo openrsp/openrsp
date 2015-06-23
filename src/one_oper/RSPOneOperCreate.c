@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +35,7 @@
     \param[RSPOneOper:struct]{inout} one_oper the linked list of one-electron operators
     \param[QInt:int]{in} num_pert number of perturbations that the one-electron
         operator depends on
-     \param[QInt:int]{in} pert_labels labels of the perturbations
+    \param[QInt:int]{in} pert_labels labels of the perturbations
     \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
     \param[QVoid:void]{in} user_ctx user-defined callback function context
     \param[GetOneOperMat:void]{in} get_one_oper_mat user specified function for

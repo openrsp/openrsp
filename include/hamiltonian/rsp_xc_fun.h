@@ -1,5 +1,11 @@
 /* OpenRSP: open-ended library for response theory
-   Copyright 2014
+   Copyright 2015 Radovan Bast,
+                  Daniel H. Friese,
+                  Bin Gao,
+                  Dan J. Jonsson,
+                  Magnus Ringholm,
+                  Kenneth Ruud,
+                  Andreas Thorvaldsen
 
    OpenRSP is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -14,7 +20,7 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This is the header file of exchange-correlation functionals.
+   This is the header file of exchange-correlation (XC) functionals.
 
    2014-08-06, Bin Gao:
    * first version
@@ -29,6 +35,8 @@
 /* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetXCFunMat)(const QInt,
                              const QInt*,
+                             const QInt,
+                             const QInt,
                              const QInt*,
                              const QInt,
                              QcMat*[],
@@ -39,9 +47,9 @@ typedef QVoid (*GetXCFunMat)(const QInt,
                              QcMat*[]);
 typedef QVoid (*GetXCFunExp)(const QInt,
                              const QInt*,
-                             const QInt*,
                              const QInt,
-                             QcMat*[],
+                             const QInt,
+                             const QInt*,
                              const QInt,
                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -61,48 +69,50 @@ struct RSPXCFun {
 #endif
     GetXCFunMat get_xc_fun_mat;  /* user specified function for getting integral matrices */
     GetXCFunExp get_xc_fun_exp;  /* user specified function for getting expectation values */
-    RSPXCFun *next_oper;         /* pointer to the next exchange-corrrelation functional */
+    RSPXCFun *next_xc;           /* pointer to the next exchange-corrrelation functional */
 };
 
 /* functions related to the linked list of exchange-corrrelation functionals */
-//extern QErrorCode RSPXCFunCreate(RSPXCFun**,
-//                                 const QInt,
-//                                 const QInt*,
-//                                 const QInt*,
-//#if defined(OPENRSP_C_USER_CONTEXT)
-//                                 QVoid*,
-//#endif
-//                                 const GetXCFunMat,
-//                                 const GetXCFunExp);
-//extern QErrorCode RSPXCFunAdd(RSPXCFun*,
-//                              const QInt,
-//                              const QInt*,
-//                              const QInt*,
-//#if defined(OPENRSP_C_USER_CONTEXT)
-//                              QVoid*,
-//#endif
-//                              const GetXCFunMat,
-//                              const GetXCFunExp);
-//extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
-//extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
-//extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
-//                                 const QInt,
-//                                 const QInt*,
-//                                 const QInt*,
-//                                 const QInt,
-//                                 QcMat*[],
-//                                 const QInt,
-//                                 QcMat*[]);
-//extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
-//                                 const QInt,
-//                                 const QInt*,
-//                                 const QInt*,
-//                                 const QInt,
-//                                 QcMat*[],
-//                                 const QInt,
-//                                 QcMat*[],
-//                                 const QInt,
-//                                 QReal*);
-//extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
+extern QErrorCode RSPXCFunCreate(RSPXCFun**,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                 QVoid*,
+#endif
+                                 const GetXCFunMat,
+                                 const GetXCFunExp);
+extern QErrorCode RSPXCFunAdd(RSPXCFun*,
+                              const QInt,
+                              const QInt*,
+                              const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              QVoid*,
+#endif
+                              const GetXCFunMat,
+                              const GetXCFunExp);
+extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
+extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
+extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 QcMat*[],
+                                 const QInt,
+                                 QcMat*[]);
+extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 QcMat*[],
+                                 const QInt,
+                                 QReal*);
+extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
 
 #endif

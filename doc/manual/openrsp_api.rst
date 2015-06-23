@@ -59,6 +59,8 @@ Functions of OpenRSP API (C version)
        pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
+.. Host programs will call OpenRSP by sending the excited states, so that we
+   do not need the function OpenRSPSetRSPEigenSolver
 .. .. c:function:: QErrorCode OpenRSPSetRSPEigenSolver(open_rsp, user_ctx, get_rsp_eigen_solution)
  
     Sets the context of response eigenvalue solver.
@@ -191,9 +193,9 @@ Functions of OpenRSP API (C version)
    :type get_xc_fun_exp: GetXCFunExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPAddNucContributions(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib)
+.. c:function:: QErrorCode OpenRSPSetNucContributions(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib)
 
-   Adds the nuclear contributions to the Hamiltonian.
+   Sets the nuclear contributions to the Hamiltonian.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
