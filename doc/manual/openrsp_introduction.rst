@@ -95,3 +95,6 @@ Perturbation addressing
   #. If there two different frequencies for perturbation ``b``, OpenRSP
      will return ``r(a,b1,b2,c)`` that ``b1`` and ``b2`` stand for the
      components of the first order of perturbation :math:`b`.
+
+Canonically ordered
+  The ... *FIXME: to finish, and describe perturbation a*

@@ -85,7 +85,8 @@ Functions of OpenRSP API (C version)
    :param num_pert: number of all *different* perturbations involved in calculations
    :type num_pert: QInt
    :param pert_labels: labels of all *different* perturbations involved in
-       calculations, *OpenRSP will use the order of perturbations given here*
+       calculations,
+       *FIXME: OpenRSP will use the order of perturbations given here, or OpenRSPGetRSPFun and OpenRSPGetResidue?*
    :type pert_labels: QInt\*
    :param pert_max_orders: maximum allowed orders of all different perturbations
    :type pert_max_orders: QInt\*
@@ -297,6 +298,7 @@ Functions of OpenRSP API (C version)
        ``(2, len_tuple[i], num_freq_configs[i])`` (``i`` runs from ``1``
        to ``num_props``) and the real and imaginary parts of each frequency
        are consecutive in memory
+       *FIXME: the first frequency not needed?*
    :type pert_freqs: QReal\*
    :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of
