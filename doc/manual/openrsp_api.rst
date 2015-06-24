@@ -76,7 +76,7 @@ Functions of OpenRSP API (C version)
         pointer QVoid (\*)(...))
     :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_comp, get_pert_rank)
+.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_concatenation)
 
    Sets all perturbation labels involved in response theory calculations.
 
@@ -94,12 +94,10 @@ Functions of OpenRSP API (C version)
    :type pert_num_comps: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_pert_comp: user specified function for getting components of a
-       perturbation tuple
-   :type get_pert_comp: GetPertComp (function pointer QVoid (\*)(...))
-   :param get_pert_rank: user specified function for getting rank of a
-      perturbation tuple
-   :type get_pert_rank: GetPertRank (function pointer QVoid (\*)(...))
+   :param get_pert_concatenation: user specified function for getting the
+       rank of concatenation of several perturbation tuples with the same
+       perturbation label
+   :type get_pert_concatenation: GetPertCat (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
 *FIXME: get_pert_comp and get_pert_rank to be discussed and implemented*
@@ -322,7 +320,7 @@ Functions of OpenRSP API (C version)
    :vartype rsp_funs: QReal\*
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, num_excit, excit_energy, eigen_vector, num_props, num_pert, pert_labels, order_residue, num_freq_configs, pert_freqs, kn_rules, size_residues, residues)
+.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, num_excit, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, order_residue, num_freq_configs, pert_freqs, kn_rules, size_residues, residues)
 
    Gets the residues for given perturbations.
 
@@ -339,7 +337,7 @@ Functions of OpenRSP API (C version)
    :param excit_energy: excitation energies, size is ``num_excit``
    :type excit_energy: QReal\*
    :param eigen_vector: eigenvectors obtained from the generalized
-       eigenvalue problem, size is ``num_excit`` :math:`\times` ``order_residue``
+       eigenvalue problem, size is ``num_excit``
    :type eigen_vector: QcMat\*[]
    :param num_props: number of properties to calculate
    :type num_props: QInt
@@ -350,8 +348,8 @@ Functions of OpenRSP API (C version)
        tuple) for each property, size is ``sum(len_tuple)``, the first
        label of each property is the perturbation :math:`a`
    :type pert_tuple: QInt\*
-   :param pert_excit: size is :math:`\times` ``order_residue``
-   :type pert_excit: QInt
+   :param order_residue: order of residues
+   :type order_residue: QInt
    :param num_freq_configs: number of different frequency configurations
        for each property, size is ``num_props``
    :type num_freq_configs: QInt\*
@@ -366,9 +364,24 @@ Functions of OpenRSP API (C version)
        (OpenRSP will determine the number :math:`n`), size is the number of
        properties (``num_props``)
    :type kn_rules: QInt\*
+   :param size_residues: size of the residues, equals to the sum of the
+       size of each property to calculate---which is the product of the
+       size of added perturbations (specified by the perturbation tuple
+       ``pert_tuple``) and the number of frequency configurations
+       ``num_freq_configs`` for each property
+   :type size_residues: QInt
+   :var residues: the residues, size is ``2`` :math:`\times`
+       ``size_residues`` and arranged as
+       ``[num_props][num_freq_configs][pert_tuple][2]``, where the real
+       and imaginary parts of the residues are consecutive in memory
+   :vartype residues: QReal\*
+   :rtype: QErrorCode
 
-*FIXME: which perturbations to which excited state, +/-
-close to interested excitation energy, excitation pert_labels*
+*FIXME:*
+
+#. Which perturbations to which excited states, +/-excitation energy?
+#. Will calculating several different properties save time?
+#. Are the size_residues and residues OK?
 
 .. c:function:: QErrorCode OpenRSPDestroy(open_rsp)
 
