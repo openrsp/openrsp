@@ -32,10 +32,10 @@
      \author Bin Gao
      \date 2014-08-05
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
-     \param[QInt:int]{in} num_pert number of perturbations that the two-electron
-         operator depends on
-     \param[QInt:int]{in} pert_labels labels of the perturbations
-     \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
+     \param[QInt:int]{in} num_pert number of different perturbation labels that can
+         act as perturbations on the two-electron operator
+     \param[QInt:int]{in} pert_labels all the different perturbation labels
+     \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
      \param[QVoid:void]{in} user_ctx user-defined callback function context
      \param[GetTwoOperMat:void]{in} get_two_oper_mat user specified function for
          getting integral matrices

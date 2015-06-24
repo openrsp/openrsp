@@ -55,11 +55,11 @@ typedef QVoid (*GetPertRank)(const QInt,
 /* context of all perturbations involved in calculations */
 typedef struct {
     /* perturbations */
-    QInt num_pert;                 /* number of all perturbations involved in calculations */
-    QInt *pert_labels;             /* labels of all perturbations */
-    QInt *pert_max_orders;         /* maximum allowed orders of all perturbations */
-    QInt *size_ptr;                /* pointer to the size of each perturbation */
-    QInt *pert_sizes;              /* sizes of all perturbations up to their maximum orders */
+    QInt num_pert;                 /* number of all different perturbation labels involved */
+    QInt *pert_labels;             /* all different perturbation labels involved */
+    QInt *pert_max_orders;         /* maximum allowed order of each perturbation (label) */
+    QInt *ncomp_ptr;               /* pointer to the numbers of components of each perturbation */
+    QInt *pert_num_comps;          /* number of components of each perturbation (label) up to its maximum order */
 #if defined(OPENRSP_C_USER_CONTEXT)
     QVoid *user_ctx;               /* user-defined callback function context */
 #endif

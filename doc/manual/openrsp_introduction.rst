@@ -50,15 +50,38 @@ OpenRSP Notations and Conventions
 The following notations and conventions will be used through the OpenRSP
 library and the documentation: 
 
+Perturbation
+  is described by a label, a complex frequency and its order. Any two
+  perturbations are different if they have different labels, and/or
+  frequencies, and/or orders.
+
 Perturbation label
-  An integer describing what kind of perturbation added to the molecule; all
-  *different* perturbations involved in the response theory calculations should
-  be given by calling the function :c:func:`OpenRSPSetPerturbations`; OpenRSP
-  will stop if there is any unspecified perturbation label given afterwards when
-  calling the function :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`.
+  An integer distinguishing one perturbation from others; all *different*
+  perturbation labels involved in the calculations should be given by
+  calling the API :c:func:`OpenRSPSetPerturbations`; OpenRSP will stop if
+  there is any unspecified perturbation label given afterwards when calling
+  the APIs :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`.
+
+Perturbation order
+  Each perturbation can acting on molecules once or many times, that is
+  the order of the perturbation.
+
+Perturbation components
+  Each perturbation may have different numbers of components for their
+  different orders. For instance, there will usually be :math:`x,y,z`
+  components for the electric dipole perturbation. The numbers of
+  different components of perturbations and how these components are
+  arranged are totally decided by the host program. OpenRSP will get
+  such information from callback functions, that is OpenRSP itself
+  is a perturbation free library.
+  *FIXME: not implemented yet*
 
 Perturbation tuple
-  An ordered list of perturbation labels that are added to the molecule.
+  An ordered list of perturbation labels, and in which we further require
+  that *identical perturbation labels should be consecutive*. That means
+  the tuple :math:`(a,b,b,c)` is allowed, but :math:`(a,b,c,b)` is illegal
+  because the identical labels :math:`b` are not consecutive.
+
   As a tuple:
 
   #. Multiple instances of the same labels are allowed so that
@@ -67,34 +90,64 @@ Perturbation tuple
      (because their corresponding response functions or residues are in
      different shapes).
 
-  We will in the following use an abbreviated form of perturbation tuple as,
+  We will sometimes use an abbreviated form of perturbation tuple as,
   for instance :math:`abc\equiv(a,b,c)`.
 
-Perturbation addressing
-  #. The perturbation labels in a tuple are always ordered as that of
-     the argument ``pert_labels`` given in the function
-     :c:func:`OpenRSPSetPerturbations`. For example, OpenRSP will return
-     response functions :math:`\mathcal{E}^{abbc}` if ``pert_labels = (a,b,c)``,
-     and :math:`\mathcal{E}^{acbb}` if ``pert_labels = (a,c,b)``, and
-     :math:`\mathcal{E}^{bbac}` if ``pert_labels = (b,a,c)``, and so on.
-  #. For each perturbation, there may be different number of components.
-     For instance, there will usually be :math:`x,y,z` components for
-     the electric perturbation in dipole approximation. The number of
-     different components for each perturbation and how these components
-     are ordered are decided also by the host program. *FIXME: not implemented yet*
-  #. Therefore, the shape of the response functions or residues is totally
-     decided by the host program. Take :math:`\mathcal{E}^{abbc}` as an
-     example, its shape is :math:`(N_{a},N_{bb},N_{c})`, where :math:`N_{a}`
-     and :math:`N_{c}` are respectively the numbers of components of
-     the first order of perturbations :math:`a` and :math:`c`, and
-     :math:`N_{bb}` is the number of components of the second order of
-     perturbation :math:`b`. We will use the notation ``r(a,bb,c)`` for
-     the results (response functions or residues), where the leftmost
-     index (``a``) runs fastest in memory and the rightmost index (``c``)
-     runs slowest.
-  #. If there two different frequencies for perturbation ``b``, OpenRSP
-     will return ``r(a,b1,b2,c)`` that ``b1`` and ``b2`` stand for the
-     components of the first order of perturbation :math:`b`.
+  Obviously, a perturbation tuple :math:`+` its corresponding complex
+  frequencies for each perturbation label can be viewed as a set of
+  perturbations, in which the number of times a label (with the same
+  frequency) appears is the order of the corresponding perturbation.
 
-Canonically ordered
-  The ... *FIXME: to finish, and describe perturbation a*
+Canonical order
+  #. In OpenRSP, all perturbation tuples are canonically orderd according
+     to the argument ``pert_tuple`` in the API :c:func:`OpenRSPGetRSPFun`
+     or :c:func:`OpenRSPGetResidue`. For instance, when a perturbation
+     tuple :math:`(a,b,c)` given as ``pert_tuple`` in the API
+     :c:func:`OpenRSPGetRSPFun`, OpenRSP will use such order (:math:`a>b>c`)
+     to arrange all perturbation tuples inside and sent to the callback functions.
+  #. Moreover, a collection of several perturbation tuples will also follow
+     the canonical order. For instance, a collection of all possible perturbation
+     tuples of labels :math:`a,b,c` are :math:`(0,a,b,c,ab,ac,bc,abc)`, where
+     :math:`0` means unperturbed quantities that is always the first one
+     in the collection.
+
+Perturbation :math:`a`
+  The first perturbation label in the tuple sent to OpenRSP APIs
+  :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`, are
+  the perturbation :math:`a` [#]_.
+
+.. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,
+   Poul Jørgensen and Sonia Coriani, J. Chem. Phys., 129, 214108 (2008).
+
+Perturbation addressing
+  #. The addressing of perturbation labels in a tuple is decided by
+     (i) the argument ``pert_tuple`` sent to the API :c:func:`OpenRSPGetRSPFun`
+     or :c:func:`OpenRSPGetResidue`, and (ii) the canonical order that
+     OpenRSP uses.
+  #. The addressing of components per perturbation (several consecutive
+     identical labels with the same complex frequency) are decided by
+     the host program. *FIXME: not implemented yet*
+  #. The addressing of a collection of perturbation tuples follows the
+     canonical order as aforementioned.
+
+  Therefore, the shape of response functions or residues is mostly
+  decided by the host program. Take :math:`\mathcal{E}^{abbc}` as an 
+  example, its shape is :math:`(N_{a},N_{bb},N_{c})`, where :math:`N_{a}`
+  and :math:`N_{c}` are respectively the numbers of components of 
+  the first order of the perturbations :math:`a` and :math:`c`, and
+  :math:`N_{bb}` is the number of components of the second order of 
+  the perturbation :math:`b`, and
+
+  #. In OpenRSP, we will use notation ``[a][bb][c]`` for :math:`\mathcal{E}^{abbc}`,
+     where the leftmost index (``a``) runs slowest in memory and the
+     rightmost index (``c``) runs fastest. However, one should be
+     aware that the results are still in a one-dimensional array.
+  #. If there two different frequencies for the perturbation :math:`b`,
+     OpenRSP will return ``[a][b1][b2][c]``, where ``b1`` and ``b2``
+     stand for the components of the first order of the perturbation
+     :math:`b`.
+  #. The notation for a collection of perturbation tuples (still in a
+     one-dimensional array) is ``{1,[a],[b],[c],[a][b],[a][c],[b][c],[a][b][c]}``
+     for :math:`(0,a,b,c,ab,ac,bc,abc)`, where as aforementioned the
+     first one is the unperturbed quantities.
+

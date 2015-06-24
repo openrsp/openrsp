@@ -32,9 +32,10 @@
     \author Bin Gao
     \date 2014-08-05
     \param[RSPOverlap:struct]{inout} overlap the overlap integrals
-    \param[QInt:int]{in} num_pert number of perturbations that the overlap integrals depend on
-    \param[QInt:int]{in} pert_labels labels of the perturbations
-    \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
+    \param[QInt:int]{in} num_pert number of different perturbation labels that can
+        act as perturbations on the basis sets
+    \param[QInt:int]{in} pert_labels all the different perturbation labels
+    \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
     \param[QVoid:void]{in} user_ctx user-defined callback function context
     \param[GetOverlapMat:void]{in} get_overlap_mat user specified function for
         getting integral matrices

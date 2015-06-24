@@ -45,8 +45,8 @@ QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
     open_rsp->num_pert = 0;
     open_rsp->pert_labels = NULL;
     open_rsp->pert_max_orders = NULL;
-    open_rsp->size_ptr = NULL;
-    open_rsp->pert_sizes = NULL;
+    open_rsp->ncomp_ptr = NULL;
+    open_rsp->pert_num_comps = NULL;
     open_rsp->get_pert_comp = NULL;
     open_rsp->get_pert_rank = NULL;
 #endif

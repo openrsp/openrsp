@@ -17,8 +17,9 @@ the compiling of OpenRSP:
   additional but necessary information to their callback functions,
   they can pass it through the user defined context.
 
-  In the ``test/c`` we only show a simple use of the user defined
-  context to account the times of callback function being invoked.
+  In the ``tests/c`` and ``tests/f90``, we only show a simple use
+  of the user defined context to account the times of callback
+  functions being invoked.
 
 .. nextslide::
    :increment:

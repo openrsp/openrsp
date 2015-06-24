@@ -58,8 +58,8 @@ functions are given as follows.
        (``bra_pert_tuple``), the ket (``ket_pert_tuple``) and overlap
        integrals (``pert_tuple``)
    :type num_int: QInt
-   :var val_int: the integral matrices, arranged as
-       ``(bra_pert_tuple, ket_pert_tuple, pert_tuple)``.
+   :var val_int: the integral matrices to be returned, size is ``num_int``,
+       and arranged as ``[pert_tuple][ket_pert_tuple][bra_pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
@@ -93,8 +93,8 @@ functions are given as follows.
        of density matrices (``num_dmat``) and the sizes of perturbations
        on the bra, the ket and overlap integrals
    :type num_exp: QInt
-   :var val_exp: the expectation values, arranged as
-       ``(num_dmat, bra_pert_tuple, ket_pert_tuple, pert_tuple)``.
+   :var val_exp: the expectation values to be returned, size is ``num_exp``,
+       and arranged as ``[pert_tuple][ket_pert_tuple][bra_pert_tuple][num_dmat]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -113,7 +113,7 @@ functions are given as follows.
    :param num_int: number of the integral matrices, as the size of perturbations
        (specified by the perturbation tuple ``pert_tuple``)
    :type num_int: QInt
-   :var val_int: the integral matrices
+   :var val_int: the integral matrices to be returned, size is ``num_int``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
@@ -138,7 +138,8 @@ functions are given as follows.
        on the one-electron operator (specified by the perturbation tuple
        ``pert_tuple``)
    :type num_exp: QInt
-   :var val_exp: the expectation values, arranged as ``(num_dmat, pert_tuple)``
+   :var val_exp: the expectation values to be returned, size is ``num_exp``,
+       and arranged as ``[pert_tuple][num_dmat]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -163,7 +164,8 @@ functions are given as follows.
        of AO based density matrices (``num_dmat``) and the size of perturbations
        on the two-electron operator (specified by the perturbation tuple ``pert_tuple``)
    :type num_int: QInt
-   :var val_int: the integral matrices, arranged as ``(num_dmat, pert_tuple)``
+   :var val_int: the integral matrices to be returned, size is ``num_int``,
+       and arranged as ``[pert_tuple][num_dmat]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
@@ -194,7 +196,7 @@ functions are given as follows.
    :param num_LHS_dmat: number of LHS AO based density matrices passed for
        each LHS density matrix perturbation tuple, size is ``len_dmat_tuple``;
        sticking with the above example, ``num_LHS_dmat`` will be
-       ``(1, N_a, N_b, N_ab)`` where ``N_a``, ``N_b`` and ``N_ab`` are
+       ``{1, N_a, N_b, N_ab}`` where ``N_a``, ``N_b`` and ``N_ab`` are
        respectively the numbers of density matrices for the density matrix
        perturbation tuples ``a``, ``b`` and ``ab``
    :type num_LHS_dmat: QInt\*
@@ -206,7 +208,7 @@ functions are given as follows.
    :param num_RHS_dmat: number of RHS AO based density matrices passed for
        each RHS density matrix perturbation tuple, size is ``len_dmat_tuple``;
        sticking with the above example, ``num_RHS_dmat`` will be
-       ``(N_b, N_c, N_bc, N_d)`` where ``N_b``, ``N_c`` ``N_bc`` and ``N_d``
+       ``{N_b, N_c, N_bc, N_d}`` where ``N_b``, ``N_c`` ``N_bc`` and ``N_d``
        are respectively the numbers of density matrices for the density matrix
        perturbation tuples ``b``, ``c``, ``bc`` and ``d``
    :type num_RHS_dmat: QInt\*
@@ -224,8 +226,8 @@ functions are given as follows.
        can be computed as :math:`\sum_{\texttt{i}=0}^{\texttt{len\_dmat\_tuple}-1}`
        ``num_LHS_dmat[i]`` :math:`\times` ``num_RHS_dmat[i]``
    :type num_exp: QInt
-   :var val_exp: the expectation values, arranged as
-       ``(num_RHS_dmat, num_LHS_dmat, pert_tuple, len_dmat_tuple)``
+   :var val_exp: the expectation values to be returned, size is ``num_exp``,
+       and arranged as ``[len_dmat_tuple][pert_tuple][num_LHS_dmat][num_RHS_dmat]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -258,7 +260,7 @@ functions are given as follows.
        (canonically ordered), size is ``len_dmat_tuple``; sticking with the above
        example, the density matrix perturbation tuples passed are (:math:`\boldsymbol{D}`,
        :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`, :math:`\boldsymbol{D}^{bc}`)
-       and their associated indices ``idx_dmat_tuple`` is (1, 3, 4, 7) because these
+       and their associated indices ``idx_dmat_tuple`` is ``{1, 3, 4, 7}`` because these
        numbers correspond to the positions of the ":math:`(k,n)`-surviving" perturbation
        tuples in the canonically ordered complete density matrix perturbation tuples
    :type idx_dmat_tuple: QInt\*
@@ -271,7 +273,7 @@ functions are given as follows.
        configuration
    :type num_dmat: QInt
    :param dens_mat: the collected AO based density matrices, size is ``num_dmat``,
-       and arranged as ``(idx_dmat_tuple, num_freq_configs``)
+       and arranged as ``[num_freq_configs][idx_dmat_tuple]``
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -281,7 +283,7 @@ functions are given as follows.
        configurations ``num_freq_configs``
    :type num_int: QInt
    :var val_int: the integral matrices to be returned, size is ``num_int``,
-       and arranged as (``pert_tuple``, ``num_freq_configs``)
+       and arranged as ``[num_freq_configs][pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
@@ -313,7 +315,7 @@ functions are given as follows.
        configuration
    :type num_dmat: QInt
    :param dens_mat: the collected AO based density matrices, size is ``num_dmat``,
-       and arranged as ``(idx_dmat_tuple, num_freq_configs``)
+       and arranged as ``[num_freq_configs][idx_dmat_tuple]``
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -323,7 +325,7 @@ functions are given as follows.
        configurations ``num_freq_configs``
    :type num_exp: QInt
    :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as (``pert_tuple``, ``num_freq_configs``)
+       and arranged as ``[num_freq_configs][pert_tuple]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -342,7 +344,7 @@ functions are given as follows.
    :param size_pert: size of the perturbations on the nuclear Hamiltonian,
        as specified by ``pert_tuple``
    :type size_pert: QInt
-   :var val_nuc: the nuclear contributions, size is ``size_pert``
+   :var val_nuc: the nuclear contributions to be returned, size is ``size_pert``
    :vartype val_nuc: QReal\*
    :rtype: QVoid
 
@@ -362,14 +364,16 @@ functions are given as follows.
        each frequency sum are consecutive in memory
    :type freq_sums: QReal\*
    :param RHS_mat: RHS matrices, size is ``size_pert`` :math:`\times`
-       ``num_freq_sums``, and arranged as (``size_pert``, ``num_freq_sums``)
+       ``num_freq_sums``, and arranged as ``[num_freq_sums][size_pert]``
    :type RHS_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :var rsp_param: solved response parameters, size is ``size_pert`` :math:`\times`
-       ``num_freq_sums``, and arranged as (``size_pert``, ``num_freq_sums``)
+       ``num_freq_sums``, and arranged as ``[num_freq_sums][size_pert]``
    :vartype rsp_param: QcMat\*[]
    :rtype: QVoid
+
+*FIXME: check the order of RHS_mat and rsp_param, probably we should let num_freq_sums go faster*
 
 .. Host programs will call OpenRSP by sending the excited states, so that we
    do not need the callback function get_rsp_eigen_solution

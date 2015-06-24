@@ -3,6 +3,7 @@
 Short-term
 ----------
 
+#. Removes the frequency of perturbation a in OpenRSPGetRSPFun()
 #. Adds nuclear contributions in tests
 #. Adds DFT contributions in tests
 #. Adds the API for residue calculations
