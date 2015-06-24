@@ -30,13 +30,13 @@ Ingredients needed by OpenRSP
 
 Briefly, to use OpenRSP, one has to provide:
 
+#. perturbations,
 #. functions for evaluating overlap integrals,
 #. different one-electron operators,
 #. different two-electron operators,
 #. different exchange-correlation functionals,
 #. nuclear Hamiltonian,
-#. linear response equation solver,
-#. perturbations.
+#. linear response equation solver.
 
 The reference state (usually the ground state), and excited states
 (if calculating residues) are sent to OpenRSP APIs as input arguments.
@@ -60,22 +60,48 @@ Callback function scheme
 ========================
 .. include:: background.rst
 
-For the first 6 ingredients, one has to provide OpenRSP appropriate callback
+For the 7 ingredients, one has to provide OpenRSP appropriate callback
 functions that will be invoked by OpenRSP during calculations, whenever the
 following quantities needed
 
+#. rank of a perturbation component,
 #. (perturbed) overlap integrals,
 #. (perturbed) one-electron operators,
 #. (perturbed) two-electron operators,
 #. (perturbed) exchange-correlation functionals,
 #. (perturbed) nuclear Hamiltonian,
-#. response parameters,
+#. response parameters solved from the linear response equation.
 
-in which the response parameters will be solved from the callback function of
-the linear response equation solver.
+.. nextslide::
+   :increment:
+.. include:: background.rst
 
-The use of callback functions make one freely choose the appropriate functions
-during runtime.
+The use of callback functions make one freely choose the appropriate
+functions during runtime to calculate molecular properties.
+
+Moreover, the use of callback function to determine the rank of a
+perturbation component [#]_ makes OpenRSP a **perturbation free** library.
+
+.. [#] Definition of perturbation component and rank in Section
+       "**1.2 OpenRSP Notations and Conventions**" of OpenRSP Manual.
+
+Perturbation free
+=================
+.. include:: background.rst
+
+That is:
+
+#. OpenRSP does not need to know the meaning of each perturbation.
+   All perturbations are treated equally as symbols/variables in
+   OpenRSP for differentiation.
+#. Only the order of perturbation labels matters, that OpenRSP will
+   follow to generate necessary perturbation tuples [#]_ during
+   calculations.
+#. These labels are sent to OpenRSP by the APIs :c:func:`OpenRSPGetRSPFun`
+   or :c:func:`OpenRSPGetResidue` during runtime.
+
+.. [#] Definition of perturbation label and tuple in Section
+       "**1.2 OpenRSP Notations and Conventions**" of OpenRSP Manual.
 
 OpenRSP Notations and Conventions
 =================================
@@ -83,10 +109,10 @@ OpenRSP Notations and Conventions
 
 After the necessary ingredients properly provided, one can invoke OpenRSP
 APIs :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue` to calculate
-the response functions or residues.
+response functions or residues.
 
-In the following, we will first describe how to install OpenRSP and then how to
-prepare the above ingredients respectively, and perform the calculations.
+In the following, we will first describe how to install OpenRSP and then how
+to prepare the above ingredients respectively, and perform the calculations.
 
 Before proceeding, to make yourself familiar with OpenRSP, please refer to
 Section "**1.2 OpenRSP Notations and Conventions**" in the OpenRSP Manual

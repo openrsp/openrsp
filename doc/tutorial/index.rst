@@ -27,6 +27,7 @@ Contents
    openrsp_introduction.rst
    openrsp_installation.rst
    openrsp_context.rst
+   openrsp_perturbation.rst
    openrsp_overlap.rst
    openrsp_one_oper.rst
    openrsp_two_oper.rst
@@ -40,7 +41,6 @@ Contents
    :maxdepth: 1
 
    openrsp_solver.rst
-   openrsp_perturbation.rst
    openrsp_rsp_fun.rst
    openrsp_residue.rst
    openrsp_examples.rst

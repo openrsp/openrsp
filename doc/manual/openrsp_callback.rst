@@ -26,9 +26,20 @@ Examples of C callback functions can be found in the directory
 functions are given as follows.
 
 .. FIXME: get_pert_comp and get_pert_rank to be discussed and fixed
-.. get_pert_comp()
+   OpenRSP only needs to know the rank of [b...b] + [b...b], OpenRSP
+   knows the rank of [b...b] and [b...b], and [b...bb...b], but needs
+   to know this mapping; get_pert_concatenation(pert_label, num_tuples, *len_tuples[num_tuples], num_cat_opts, *rank_tuples[num_cat_opts][num_tuples], *rank_tup_cat[num_cat_opts])
+   Concatenation of several tuples
 
-.. get_pert_rank()
+.. c:function:: QVoid get_pert_concatenation(pert_label, num_tuples, len_tuples, num_cat_opts, rank_tuples, rank_tup_cat)
+
+   Callback function for getting the rank of concatenation of several
+   perturbation tuples with the same perturbation label, the last
+   argument for the function :c:func:`OpenRSPSetPerturbations`.
+
+   :rtype: QVoid
+
+*FIXME: to discuss and implement*
 
 .. c:function:: QVoid get_overlap_mat(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, user_ctx, num_int, val_int)
 

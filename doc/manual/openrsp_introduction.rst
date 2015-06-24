@@ -66,14 +66,18 @@ Perturbation order
   Each perturbation can acting on molecules once or many times, that is
   the order of the perturbation.
 
-Perturbation components
+Perturbation components and their ranks
   Each perturbation may have different numbers of components for their
-  different orders. For instance, there will usually be :math:`x,y,z`
-  components for the electric dipole perturbation. The numbers of
-  different components of perturbations and how these components are
-  arranged are totally decided by the host program. OpenRSP will get
-  such information from callback functions, that is OpenRSP itself
-  is a perturbation free library.
+  different orders, the position of each component is called its rank.
+
+  For instance, there will usually be :math:`x,y,z` components for the
+  electric dipole perturbation, and their ranks are ``{0,1,2}`` in
+  zero-based numbering, or ``{1,2,3}`` in one-based numbering.
+
+  The numbers of different components of perturbations and their ranks
+  are totally decided by the host program. OpenRSP will get such information
+  from callback functions, that is OpenRSP itself is a perturbation free
+  library.
   *FIXME: not implemented yet*
 
 Perturbation tuple
