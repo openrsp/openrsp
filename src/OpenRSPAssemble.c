@@ -54,8 +54,8 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
     if (open_rsp->num_pert<1 ||
         open_rsp->pert_labels==NULL ||
         open_rsp->pert_max_orders==NULL ||
-        open_rsp->size_ptr==NULL ||
-        open_rsp->pert_sizes==NULL ||
+        open_rsp->ncomp_ptr==NULL ||
+        open_rsp->pert_num_comps==NULL ||
         open_rsp->get_pert_comp==NULL ||
         open_rsp->get_pert_rank==NULL) {
         QErrorExit(FILE_AND_LINE, "perturbations should be set via OpenRSPSetPerturbations()");

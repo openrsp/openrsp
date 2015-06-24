@@ -76,30 +76,29 @@ Functions of OpenRSP API (C version)
         pointer QVoid (\*)(...))
     :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_dims, user_ctx, get_pert_comp, get_pert_rank)
+.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_comp, get_pert_rank)
 
-   Sets all perturbations involved in response theory calculations.
+   Sets all perturbation labels involved in response theory calculations.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of all *different* perturbations involved in calculations
+   :param num_pert: number of all *different* perturbation labels involved
+       in calculations
    :type num_pert: QInt
-   :param pert_labels: labels of all *different* perturbations involved in
-       calculations,
-       *FIXME: OpenRSP will use the order of perturbations given here, or OpenRSPGetRSPFun and OpenRSPGetResidue?*
+   :param pert_labels: all *different* perturbation labels involved
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of all different perturbations
+   :param pert_max_orders: maximum allowed order of each perturbation (label)
    :type pert_max_orders: QInt\*
-   :param pert_dims: dimensions of all different perturbations up to their
-       maximum orders, size is the sum of ``pert_max_orders``
-   :type pert_dims: QInt\*
+   :param pert_num_comps: number of components of each perturbation (label) up to
+       its maximum order, size is the sum of ``pert_max_orders``
+   :type pert_num_comps: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param get_pert_comp: user specified function for getting components of a
-       perturbation tuple (by its labels)
+       perturbation tuple
    :type get_pert_comp: GetPertComp (function pointer QVoid (\*)(...))
    :param get_pert_rank: user specified function for getting rank of a
-      perturbation tuple (by its labels)
+      perturbation tuple
    :type get_pert_rank: GetPertRank (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
@@ -111,11 +110,12 @@ Functions of OpenRSP API (C version)
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of perturbations that the basis sets depend on
+   :param num_pert: number of *different* perturbation labels that can
+       act as perturbations on the basis sets
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: all the *different* perturbation labels
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of the perturbations
+   :param pert_max_orders: maximum allowed order of each perturbation (label)
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -134,11 +134,12 @@ Functions of OpenRSP API (C version)
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of perturbations that the one-electron operator depends on
+   :param num_pert: number of *different* perturbation labels that can
+       act as perturbations on the one-electron operator
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: all the *different* perturbation labels
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of the perturbations
+   :param pert_max_orders: maximum allowed order of each perturbation (label)
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -156,11 +157,12 @@ Functions of OpenRSP API (C version)
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of perturbations that the two-electron operator depends on
+   :param num_pert: number of *different* perturbation labels that can
+       act as perturbations on the two-electron operator
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: all the *different* perturbation labels
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of the perturbations
+   :param pert_max_orders: maximum allowed order of each perturbation (label)
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -178,11 +180,12 @@ Functions of OpenRSP API (C version)
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of perturbations that the XC functional depends on
+   :param num_pert: number of *different* perturbation labels that can
+       act as perturbations on the XC functional
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: all the *different* perturbation labels
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of the perturbations
+   :param pert_max_orders: maximum allowed order of each perturbation (label)
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -200,11 +203,12 @@ Functions of OpenRSP API (C version)
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of perturbations that the nuclear contributions depend on
+   :param num_pert: number of *different* perturbation labels that can
+       act as perturbations on the nuclear Hamiltonian
    :type num_pert: QInt
-   :param pert_labels: labels of the perturbations
+   :param pert_labels: all the *different* perturbation labels
    :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed orders of the perturbations
+   :param pert_max_orders: maximum allowed order of each perturbation (label)
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -287,18 +291,18 @@ Functions of OpenRSP API (C version)
        size is the number of properties (``num_props``)
    :type len_tuple: QInt\*
    :param pert_tuple: ordered list of perturbation labels (perturbation
-       tuple) for each property, size is ``sum(len_tuple)``
+       tuple) for each property, size is ``sum(len_tuple)``, the first
+       label of each property is the perturbation :math:`a`
    :type pert_tuple: QInt\*
    :param num_freq_configs: number of different frequency configurations
        for each property, size is ``num_props``
    :type num_freq_configs: QInt\*
-   :param pert_freqs: complex frequencies of each perturbation over all
-       frequency configurations, size is ``2`` :math:`\times`
-       ``dot_product(len_tuple,num_freq_configs)``, arranged as
-       ``(2, len_tuple[i], num_freq_configs[i])`` (``i`` runs from ``1``
-       to ``num_props``) and the real and imaginary parts of each frequency
-       are consecutive in memory
-       *FIXME: the first frequency not needed?*
+   :param pert_freqs: complex frequencies of each perturbation label (except
+       for the perturbation :math:`a`) over all frequency configurations,
+       size is ``2*(dot_product(len_tuple,num_freq_configs)-sum(num_freq_configs))``,
+       and arranged as ``[num_freq_configs[i]][len_tuple[i]-1][2]`` (``i``
+       runs from ``1`` to ``num_props``) and the real and imaginary parts
+       of each frequency are consecutive in memory
    :type pert_freqs: QReal\*
    :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of
@@ -312,7 +316,7 @@ Functions of OpenRSP API (C version)
    :type size_rsp_funs: QInt
    :var rsp_funs: the response functions, size is ``2`` :math:`\times`
        ``size_rsp_funs`` and arranged as
-       ``(2, pert_tuple, num_freq_configs, num_props)``,
+       ``[num_props][num_freq_configs][pert_tuple][2]``,
        where the real and imaginary parts of the response functions
        are consecutive in memory
    :vartype rsp_funs: QReal\*
@@ -335,8 +339,33 @@ Functions of OpenRSP API (C version)
    :param excit_energy: excitation energies, size is ``num_excit``
    :type excit_energy: QReal\*
    :param eigen_vector: eigenvectors obtained from the generalized
-       eigenvalue problem, size is ``num_excit``
+       eigenvalue problem, size is ``num_excit`` :math:`\times` ``order_residue``
    :type eigen_vector: QcMat\*[]
+   :param num_props: number of properties to calculate
+   :type num_props: QInt
+   :param len_tuple: length of perturbation tuple for each property,
+       size is the number of properties (``num_props``)
+   :type len_tuple: QInt\*
+   :param pert_tuple: ordered list of perturbation labels (perturbation
+       tuple) for each property, size is ``sum(len_tuple)``, the first
+       label of each property is the perturbation :math:`a`
+   :type pert_tuple: QInt\*
+   :param pert_excit: size is :math:`\times` ``order_residue``
+   :type pert_excit: QInt
+   :param num_freq_configs: number of different frequency configurations
+       for each property, size is ``num_props``
+   :type num_freq_configs: QInt\*
+   :param pert_freqs: complex frequencies of each perturbation label (except
+       for the perturbation :math:`a`) over all frequency configurations,
+       size is ``2*(dot_product(len_tuple,num_freq_configs)-sum(num_freq_configs))``,
+       and arranged as ``[num_freq_configs[i]][len_tuple[i]-1][2]`` (``i``
+       runs from ``1`` to ``num_props``) and the real and imaginary parts
+       of each frequency are consecutive in memory
+   :type pert_freqs: QReal\*
+   :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
+       (OpenRSP will determine the number :math:`n`), size is the number of
+       properties (``num_props``)
+   :type kn_rules: QInt\*
 
 *FIXME: which perturbations to which excited state, +/-
 close to interested excitation energy, excitation pert_labels*

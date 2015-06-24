@@ -81,7 +81,7 @@ module openrsp_f
 
     ! linked list of context of callback subroutines of XC functionals
     type, private :: XCFunList_f
-        type(XCFunFun_f), pointer :: xc_fun_fun => null()
+        type(XCFunFun_f), pointer :: xcfun_fun => null()
         type(XCFunList_f), pointer :: next_xc_fun => null()
     end type XCFunList_f
 
@@ -145,7 +145,7 @@ module openrsp_f
                                                         num_pert,        &
                                                         pert_labels,     &
                                                         pert_max_orders, &
-                                                        pert_sizes,      &
+                                                        pert_num_comps,  &
                                                         user_ctx,        &
                                                         get_pert_comp,   &
                                                         get_pert_rank)   &
@@ -155,7 +155,7 @@ module openrsp_f
             integer(kind=C_QINT), value, intent(in) :: num_pert
             integer(kind=C_QINT), intent(in) :: pert_labels(num_pert)
             integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert)
-            integer(kind=C_QINT), intent(in) :: pert_sizes(sum(pert_max_orders))
+            integer(kind=C_QINT), intent(in) :: pert_num_comps(sum(pert_max_orders))
             type(C_PTR), value, intent(in) :: user_ctx
             type(C_FUNPTR), value, intent(in) :: get_pert_comp
             type(C_FUNPTR), value, intent(in) :: get_pert_rank
@@ -383,7 +383,7 @@ module openrsp_f
                                        num_pert,        &
                                        pert_labels,     &
                                        pert_max_orders, &
-                                       pert_sizes,      &
+                                       pert_num_comps,  &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                        user_ctx,        &
 #endif
@@ -394,7 +394,7 @@ module openrsp_f
         integer(kind=QINT), intent(in) :: num_pert
         integer(kind=QINT), intent(in) :: pert_labels(num_pert)
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert)
-        integer(kind=QINT), intent(in) :: pert_sizes(:)
+        integer(kind=QINT), intent(in) :: pert_num_comps(:)
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1), intent(in) :: user_ctx(:)
 #endif
@@ -490,7 +490,7 @@ module openrsp_f
                                        num_pert,                   &
                                        pert_labels,                &
                                        pert_max_orders,            &
-                                       pert_sizes,                 &
+                                       pert_num_comps,             &
                                        c_loc(open_rsp%pert_fun),   &
                                        c_funloc(RSPPertGetComp_f), &
                                        c_funloc(RSPPertGetRank_f))
@@ -1033,21 +1033,21 @@ module openrsp_f
             allocate(open_rsp%list_xc_fun)
             cur_xc_fun => open_rsp%list_xc_fun
         end if
-        allocate(cur_xc_fun%xc_fun_fun)
+        allocate(cur_xc_fun%xcfun_fun)
         nullify(cur_xc_fun%next_xc_fun)
         ! adds context of callback functions of the new XC functional
-        call RSPXCFunCreate_f(cur_xc_fun%xc_fun_fun, &
+        call RSPXCFunCreate_f(cur_xc_fun%xcfun_fun, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                              user_ctx,              &
+                              user_ctx,             &
 #endif
-                              get_xc_fun_mat,        &
+                              get_xc_fun_mat,       &
                               get_xc_fun_exp)
-        ierr = OpenRSPAddXCFun(open_rsp%c_rsp,               &
-                               num_pert,                     &
-                               pert_labels,                  &
-                               pert_max_orders,              &
-                               c_loc(cur_xc_fun%xc_fun_fun), &
-                               c_funloc(RSPXCFunGetMat_f),   &
+        ierr = OpenRSPAddXCFun(open_rsp%c_rsp,              &
+                               num_pert,                    &
+                               pert_labels,                 &
+                               pert_max_orders,             &
+                               c_loc(cur_xc_fun%xcfun_fun), &
+                               c_funloc(RSPXCFunGetMat_f),  &
                                c_funloc(RSPXCFunGetExp_f))
     end function OpenRSPAddXCFun_f
 
@@ -1246,10 +1246,10 @@ module openrsp_f
         cur_xc_fun => open_rsp%list_xc_fun
         do while (associated(cur_xc_fun))
             next_xc_fun => cur_xc_fun%next_xc_fun
-            if (associated(cur_xc_fun%xc_fun_fun)) then
-                call RSPXCFunDestroy_f(cur_xc_fun%xc_fun_fun)
-                deallocate(cur_xc_fun%xc_fun_fun)
-                nullify(cur_xc_fun%xc_fun_fun)
+            if (associated(cur_xc_fun%xcfun_fun)) then
+                call RSPXCFunDestroy_f(cur_xc_fun%xcfun_fun)
+                deallocate(cur_xc_fun%xcfun_fun)
+                nullify(cur_xc_fun%xcfun_fun)
             end if
             deallocate(cur_xc_fun)
             nullify(cur_xc_fun)

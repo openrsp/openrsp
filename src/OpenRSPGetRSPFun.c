@@ -59,8 +59,8 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_props,
          for each property
      \param[QInt:int]{in} num_freq_configs number of different frequency
          configurations for each property
-     \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation
-         over all frequency configurations
+     \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation label
+         (except for the perturbation a) over all frequency configurations
      \param[QInt:int]{in} kn_rules number k for the kn rule for each property
      \param[QInt:int]{in} size_rsp_funs size of the response functions
      \param[QReal:real]{out} rsp_funs the response functions

@@ -32,9 +32,10 @@
     \author Bin Gao
     \date 2015-02-12
     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
-    \param[QInt:int]{in} num_pert number of perturbations that the nuclear Hamiltonian depend on
-    \param[QInt:int]{in} pert_labels labels of the perturbations
-    \param[QInt:int]{in} pert_max_orders maximum allowed orders of the perturbations
+     \param[QInt:int]{in} num_pert number of different perturbation labels that can
+         act as perturbations on the nuclear Hamiltonian
+     \param[QInt:int]{in} pert_labels all the different perturbation labels
+     \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
     \param[QVoid:void]{in} user_ctx user-defined callback function context
     \param[GetNucContrib:void]{in} get_nuc_contrib user specified function for
         getting nuclear contributions

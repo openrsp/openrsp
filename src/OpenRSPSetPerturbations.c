@@ -32,23 +32,24 @@
      \author Bin Gao
      \date 2014-08-04
      \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
-     \param[QInt:int]{in} num_pert number of all perturbations involved in calculations
-     \param[QInt:int]{in} pert_labels labels of the perturbations
-     \param[QInt:int]{in} pert_max_orders maximum allowed orders of all perturbations
-     \param[QInt:int]{in} pert_sizes sizes of all perturbations up to their maximum orders,
-         whose dimension is \sum{\var{pert_max_orders}}
+     \param[QInt:int]{in} num_pert number of all different perturbation labels involved
+         in calculations
+     \param[QInt:int]{in} pert_labels all different perturbation labels involved
+     \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+     \param[QInt:int]{in} pert_num_comps number of components of each perturbation (label)
+         up to its maximum order, size is \sum{\var{pert_max_orders}}
      \param[QVoid:void]{in} user_ctx user-defined callback function context
      \param[GetPertComp:void]{in} get_pert_comp user specified function for
-         getting components of a perturbation
+         getting components of a perturbation tuple
      \param[GetPertRank:void]{in} get_pert_rank user specified function for
          getting rank of a perturbation
-     \return[QErrorCode:int] error information
+     \return[QErrorCode:int] error information tuple
 */
 QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
                                    const QInt num_pert,
                                    const QInt *pert_labels,
                                    const QInt *pert_max_orders,
-                                   const QInt *pert_sizes,
+                                   const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                    QVoid *user_ctx,
 #endif
@@ -74,13 +75,13 @@ QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
                num_pert);
         QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_max_orders");
     }
-    open_rsp->size_ptr = (QInt *)malloc((num_pert+1)*sizeof(QInt));
-    if (open_rsp->size_ptr==NULL) {
+    open_rsp->ncomp_ptr = (QInt *)malloc((num_pert+1)*sizeof(QInt));
+    if (open_rsp->ncomp_ptr==NULL) {
         printf("OpenRSPSetPerturbations>> number of perturbations %"QINT_FMT"\n",
                num_pert);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for size_ptr");
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for ncomp_ptr");
     }
-    open_rsp->size_ptr[0] = 0;
+    open_rsp->ncomp_ptr[0] = 0;
     for (ipert=0; ipert<num_pert; ipert++) {
         /* each element of \var{pert_labels} should be unique */
         for (jpert=0; jpert<ipert; jpert++) {
@@ -103,29 +104,29 @@ QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
             QErrorExit(FILE_AND_LINE, "only positive order allowed");
         }
         open_rsp->pert_max_orders[ipert] = pert_max_orders[ipert];
-        /* \var{open_rsp->size_ptr[ipert]} indicates the start of sizes of
+        /* \var{open_rsp->ncomp_ptr[ipert]} indicates the start of sizes of
            \var{open_rsp->pert_labels[ipert]} */
-        open_rsp->size_ptr[ipert+1] = open_rsp->size_ptr[ipert]+pert_max_orders[ipert];
+        open_rsp->ncomp_ptr[ipert+1] = open_rsp->ncomp_ptr[ipert]+pert_max_orders[ipert];
     }
-    /* the last element of \var{open_rsp->size_ptr[num_pert]} is the size of
-       \var{open_rsp->pert_sizes} */
-    open_rsp->pert_sizes = (QInt *)malloc(open_rsp->size_ptr[num_pert]*sizeof(QInt));
-    if (open_rsp->pert_sizes==NULL) {
-        printf("OpenRSPSetPerturbations>> size of pert_sizes %"QINT_FMT"\n",
-               open_rsp->size_ptr[num_pert]);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_sizes");
+    /* the last element of \var{open_rsp->ncomp_ptr[num_pert]} is the size of
+       \var{open_rsp->pert_num_comps} */
+    open_rsp->pert_num_comps = (QInt *)malloc(open_rsp->ncomp_ptr[num_pert]*sizeof(QInt));
+    if (open_rsp->pert_num_comps==NULL) {
+        printf("OpenRSPSetPerturbations>> size of pert_num_comps %"QINT_FMT"\n",
+               open_rsp->ncomp_ptr[num_pert]);
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_num_comps");
     }
     for (ipert=0,jpert=0; ipert<num_pert; ipert++) {
         for (iorder=1; iorder<=open_rsp->pert_max_orders[ipert]; iorder++,jpert++) {
-            if (pert_sizes[jpert]<1) {
+            if (pert_num_comps[jpert]<1) {
                 printf("OpenRSPSetPerturbations>> size of %"QINT_FMT"-th perturbation (%"QINT_FMT", order %"QINT_FMT") is %"QINT_FMT"\n",
                        ipert,
                        pert_labels[ipert],
                        pert_max_orders[ipert],
-                       pert_sizes[jpert]);
+                       pert_num_comps[jpert]);
                 QErrorExit(FILE_AND_LINE, "incorrect size");
             }
-            open_rsp->pert_sizes[jpert] = pert_sizes[jpert];
+            open_rsp->pert_num_comps[jpert] = pert_num_comps[jpert];
         }
     }
 #if defined(OPENRSP_C_USER_CONTEXT)

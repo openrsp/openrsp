@@ -19,6 +19,7 @@ while Fortran users should use the OpenRSP module::
 All the OpenRSP APIs (application programming interface) can be invoked as::
 
   OpenRSP open_rsp;
+  QErrorCode ierr;
   ierr = OpenRSP...(&openrsp, ...);
 
 .. nextslide::
@@ -28,6 +29,7 @@ All the OpenRSP APIs (application programming interface) can be invoked as::
 or for Fortran users as::
 
   type(OpenRSP) open_rsp
+  integer(kind=4) ierr
   ierr = OpenRSP..._f(open_rsp, ...)
 
 where ``open_rsp`` contains the context of calculations by the OpenRSP.

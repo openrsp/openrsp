@@ -60,13 +60,13 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
         free(open_rsp->pert_max_orders);
         open_rsp->pert_max_orders = NULL;
     }
-    if (open_rsp->size_ptr!=NULL) {
-        free(open_rsp->size_ptr);
-        open_rsp->size_ptr = NULL;
+    if (open_rsp->ncomp_ptr!=NULL) {
+        free(open_rsp->ncomp_ptr);
+        open_rsp->ncomp_ptr = NULL;
     }
-    if (open_rsp->pert_sizes!=NULL) {
-        free(open_rsp->pert_sizes);
-        open_rsp->pert_sizes = NULL;
+    if (open_rsp->pert_num_comps!=NULL) {
+        free(open_rsp->pert_num_comps);
+        open_rsp->pert_num_comps = NULL;
     }
     open_rsp->get_pert_comp = NULL;
     open_rsp->get_pert_rank = NULL;

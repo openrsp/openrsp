@@ -123,19 +123,19 @@ module rsp_xc_fun_f
     !% \brief creates the context of callback subroutines of XC functional
     !  \author Bin Gao
     !  \date 2015-06-23
-    !  \param[XCFunFun_f:type]{inout} xc_fun_fun the context of callback subroutines
+    !  \param[XCFunFun_f:type]{inout} xcfun_fun the context of callback subroutines
     !  \param[character]{in} user_ctx user-defined callback function context
     !  \param[subroutine]{in} get_xc_fun_mat user specified function for
     !      getting integral matrices
     !  \param[subroutine]{in} get_xc_fun_exp user specified function for
     !%     getting expectation values
-    subroutine RSPXCFunCreate_f(xc_fun_fun,     &
+    subroutine RSPXCFunCreate_f(xcfun_fun,      &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                 user_ctx,       &
 #endif
                                 get_xc_fun_mat, &
                                 get_xc_fun_exp)
-        type(XCFunFun_f), intent(inout) :: xc_fun_fun
+        type(XCFunFun_f), intent(inout) :: xcfun_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1), intent(in) :: user_ctx(:)
 #endif
@@ -151,7 +151,7 @@ module rsp_xc_fun_f
                                       len_ctx,          &
                                       user_ctx,         &
 #endif
-                                      num_int,      &
+                                      num_int,          &
                                       val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: len_tuple
@@ -199,16 +199,16 @@ module rsp_xc_fun_f
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
         integer(kind=4) ierr  !error information
-        xc_fun_fun%len_ctx = size(user_ctx)
-        allocate(xc_fun_fun%user_ctx(xc_fun_fun%len_ctx), stat=ierr)
+        xcfun_fun%len_ctx = size(user_ctx)
+        allocate(xcfun_fun%user_ctx(xcfun_fun%len_ctx), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPXCFunCreate_f>> length", xc_fun_fun%len_ctx
+            write(STDOUT,"(A,I8)") "RSPXCFunCreate_f>> length", xcfun_fun%len_ctx
             stop "RSPXCFunCreate_f>> failed to allocate memory for user_ctx"
         end if
-        xc_fun_fun%user_ctx = user_ctx
+        xcfun_fun%user_ctx = user_ctx
 #endif
-        xc_fun_fun%get_xc_fun_mat => get_xc_fun_mat
-        xc_fun_fun%get_xc_fun_exp => get_xc_fun_exp
+        xcfun_fun%get_xc_fun_mat => get_xc_fun_mat
+        xcfun_fun%get_xc_fun_exp => get_xc_fun_exp
     end subroutine RSPXCFunCreate_f
 
     !% \brief calls Fortran callback subroutine to get integral matrices of
@@ -250,7 +250,7 @@ module rsp_xc_fun_f
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
-        type(XCFunFun_f), pointer :: xc_fun_fun    !context of callback subroutines
+        type(XCFunFun_f), pointer :: xcfun_fun     !context of callback subroutines
         type(QcMat), allocatable :: f_dens_mat(:)  !AO based density matrices
         type(QcMat), allocatable :: f_val_int(:)   !integral matrices
         integer(kind=4) ierr                       !error information
@@ -270,23 +270,23 @@ module rsp_xc_fun_f
         ierr = QcMat_C_F_POINTER(A=f_val_int, c_A=val_int)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
-        call c_f_pointer(user_ctx, xc_fun_fun)
+        call c_f_pointer(user_ctx, xcfun_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
-        call xc_fun_fun%get_xc_fun_mat(len_tuple,           &
-                                       pert_tuple,          &
-                                       num_freq_configs,    &
-                                       len_dmat_tuple,      &
-                                       idx_dmat_tuple,      &
-                                       num_dmat,            &
-                                       f_dens_mat,          &
+        call xcfun_fun%get_xc_fun_mat(len_tuple,          &
+                                      pert_tuple,         &
+                                      num_freq_configs,   &
+                                      len_dmat_tuple,     &
+                                      idx_dmat_tuple,     &
+                                      num_dmat,           &
+                                      f_dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       xc_fun_fun%len_ctx,  &
-                                       xc_fun_fun%user_ctx, &
+                                      xcfun_fun%len_ctx,  &
+                                      xcfun_fun%user_ctx, &
 #endif
-                                       num_int,             &
-                                       f_val_int)
+                                      num_int,            &
+                                      f_val_int)
         ! cleans up
-        nullify(xc_fun_fun)
+        nullify(xcfun_fun)
         ierr = QcMat_C_NULL_PTR(A=f_val_int)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ierr = QcMat_C_NULL_PTR(A=f_dens_mat)
@@ -334,7 +334,7 @@ module rsp_xc_fun_f
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_exp
         real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
-        type(XCFunFun_f), pointer :: xc_fun_fun    !context of callback subroutines
+        type(XCFunFun_f), pointer :: xcfun_fun     !context of callback subroutines
         type(QcMat), allocatable :: f_dens_mat(:)  !AO based density matrices
         integer(kind=4) ierr                       !error information
         ! converts C pointer to Fortran QcMat type
@@ -346,23 +346,23 @@ module rsp_xc_fun_f
         ierr = QcMat_C_F_POINTER(A=f_dens_mat, c_A=dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         ! gets the Fortran callback subroutine
-        call c_f_pointer(user_ctx, xc_fun_fun)
+        call c_f_pointer(user_ctx, xcfun_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
-        call xc_fun_fun%get_xc_fun_exp(len_tuple,           &
-                                       pert_tuple,          &
-                                       num_freq_configs,    &
-                                       len_dmat_tuple,      &
-                                       idx_dmat_tuple,      &
-                                       num_dmat,            &
-                                       f_dens_mat,          &
+        call xcfun_fun%get_xc_fun_exp(len_tuple,          &
+                                      pert_tuple,         &
+                                      num_freq_configs,   &
+                                      len_dmat_tuple,     &
+                                      idx_dmat_tuple,     &
+                                      num_dmat,           &
+                                      f_dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       xc_fun_fun%len_ctx,  &
-                                       xc_fun_fun%user_ctx, &
+                                      xcfun_fun%len_ctx,  &
+                                      xcfun_fun%user_ctx, &
 #endif
-                                       num_exp,             &
-                                       val_exp)
+                                      num_exp,            &
+                                      val_exp)
         ! cleans up
-        nullify(xc_fun_fun)
+        nullify(xcfun_fun)
         ierr = QcMat_C_NULL_PTR(A=f_dens_mat)
         call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_API_SRC)
         deallocate(f_dens_mat)
@@ -372,15 +372,15 @@ module rsp_xc_fun_f
     !% \brief cleans the context of callback subroutines of XC functional
     !  \author Bin Gao
     !  \date 2015-06-23
-    !% \param[XCFunFun_f:type]{inout} xc_fun_fun the context of callback subroutines
-    subroutine RSPXCFunDestroy_f(xc_fun_fun)
-        type(XCFunFun_f), intent(inout) :: xc_fun_fun
+    !% \param[XCFunFun_f:type]{inout} xcfun_fun the context of callback subroutines
+    subroutine RSPXCFunDestroy_f(xcfun_fun)
+        type(XCFunFun_f), intent(inout) :: xcfun_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        xc_fun_fun%len_ctx = 0
-        deallocate(xc_fun_fun%user_ctx)
+        xcfun_fun%len_ctx = 0
+        deallocate(xcfun_fun%user_ctx)
 #endif
-        nullify(xc_fun_fun%get_xc_fun_mat)
-        nullify(xc_fun_fun%get_xc_fun_exp)
+        nullify(xcfun_fun%get_xc_fun_mat)
+        nullify(xcfun_fun%get_xc_fun_exp)
     end subroutine RSPXCFunDestroy_f
 
 end module rsp_xc_fun_f
