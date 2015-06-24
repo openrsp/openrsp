@@ -12,6 +12,11 @@ to identify and assemble contributions to molecular properties
 ("response functions" or "residues") based on the density
 matrix-based response theory [#]_.
 
+Therefore, OpenRSP extensively bases on the matrix operations,
+which are built on top of the `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_.
+Please refer to the manual and tutorial of this library if you
+are not familiar with it.
+
 .. [#] Magnus Ringholm, Dan Jonsson, and Kenneth Ruud,
    J. Comput. Chem., 35, 622 (2014).
 .. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,

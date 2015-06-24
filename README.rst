@@ -48,8 +48,8 @@ Important files and subdirectories
 
 Please see Chapter "Files and Directories" in ``doc/manual``.
 
-Please see chapter "Installation" in ``doc/manual`` for installation instructions
----------------------------------------------------------------------------------
+Please see ``INSTALL`` for installation instructions
+----------------------------------------------------
 
 Please see ``AUTHORS`` for the maintainers list
 -----------------------------------------------

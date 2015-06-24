@@ -24,14 +24,14 @@ Contents
 .. toctree::
    :maxdepth: 1
 
-   introduction.rst
-   installation.rst
-   context.rst
-   overlap.rst
-   one_oper.rst
-   two_oper.rst
-   xc_fun.rst
-   nuc_contrib.rst
+   openrsp_introduction.rst
+   openrsp_installation.rst
+   openrsp_context.rst
+   openrsp_overlap.rst
+   openrsp_one_oper.rst
+   openrsp_two_oper.rst
+   openrsp_xc_fun.rst
+   openrsp_nuc_contrib.rst
 
 .. nextslide::
 .. include:: background.rst
@@ -39,10 +39,11 @@ Contents
 .. toctree::
    :maxdepth: 1
 
-   solver.rst
-   perturbation.rst
-   rsp_fun.rst
-   residue.rst
+   openrsp_solver.rst
+   openrsp_perturbation.rst
+   openrsp_rsp_fun.rst
+   openrsp_residue.rst
+   openrsp_examples.rst
 
 ===============================
 Thank you for using OpenRSP ;-)
