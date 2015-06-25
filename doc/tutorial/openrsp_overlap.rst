@@ -43,12 +43,21 @@ overlap integrals.
    :increment:
 .. include:: background.rst
 
-The API :c:func:`OpenRSPSetPDBS` and the callback functions
-(``get_overlap_mat`` and ``get_overlap_exp``) are described
-in OpenRSP Manual, respectively in Chapter 3 "**OPENRSP API REFERENCE**"
-and Chapter 4 "**OPENRSP CALLBACK FUNCTIONS**".
+The callback functions should take the following form:
 
-Users could refer to these two chapters and the OpenRSP unit
-testing (files in ``tests``) to prepare their own callabck
-functions and to use this API.
+.. c:function:: QVoid get_overlap_mat(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, user_ctx, num_int, val_int)
+
+.. c:function:: QVoid get_overlap_exp(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, num_dmat, dens_mat, user_ctx, num_exp, val_exp)
+
+.. nextslide::
+   :increment:
+.. include:: background.rst
+
+These callback functions are described in the OpenRSP Manual,
+Chapter 4 "**OPENRSP CALLBACK FUNCTIONS**". Again, the names
+of these functions can be anything else.
+
+Users could refer to this chapter and the OpenRSP unit testing
+(files in ``tests``) to prepare their own callabck functions
+and to use this API.
 

@@ -14,6 +14,13 @@ Theoretical Background
 Framework of OpenRSP
 --------------------
 
+Perturbation Free Scheme
+------------------------
+
+OpenRSP only needs to know the rank of [b...b] + [b...b], OpenRSP
+knows the rank of [b...b] and [b...b], and [b...bb...b], but needs
+to know this mapping relationship.
+
 One- and Two-Electron Operators
 -------------------------------
 
