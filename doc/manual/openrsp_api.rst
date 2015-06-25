@@ -78,7 +78,7 @@ Functions of OpenRSP API (C version)
 
 .. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_concatenation)
 
-   Sets all perturbation labels involved in response theory calculations.
+   Sets all different perturbation labels involved in response theory calculations.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*

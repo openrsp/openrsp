@@ -3,6 +3,8 @@ Installation
 ============
 .. include:: background.rst
 
+.. _OpenRSP-CMake:
+
 CMake parameters
 ================
 .. include:: background.rst

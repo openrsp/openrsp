@@ -25,18 +25,35 @@ Examples of C callback functions can be found in the directory
 ``tests/c/callback``. The detailed information of these callback
 functions are given as follows.
 
-.. FIXME: get_pert_concatenation to be discussed and fixed
-   OpenRSP only needs to know the rank of [b...b] + [b...b], OpenRSP
-   knows the rank of [b...b] and [b...b], and [b...bb...b], but needs
-   to know this mapping; get_pert_concatenation(pert_label, num_tuples, *len_tuples[num_tuples], num_cat_opts, *rank_tuples[num_cat_opts][num_tuples], *rank_tup_cat[num_cat_opts])
-   Concatenation of several tuples
+.. c:function:: QVoid get_pert_concatenation(pert_label, num_cat_comps, rank_cat_comps, num_sub_tuples, len_sub_tuples, user_ctx, rank_sub_comps)
 
-.. c:function:: QVoid get_pert_concatenation(pert_label, num_tuples, len_tuples, num_cat_opts, rank_tuples, rank_tup_cat)
+   Callback function for getting the ranks of components of sub-perturbation
+   tuples (with same perturbation label) for given ranks of components of the
+   corresponding concatenated perturbation tuple, the last argument for the
+   function :c:func:`OpenRSPSetPerturbations`.
 
-   Callback function for getting the rank of concatenation of several
-   perturbation tuples with the same perturbation label, the last
-   argument for the function :c:func:`OpenRSPSetPerturbations`.
-
+   :param pert_label: the perturbation label
+   :type pert_label: QInt
+   :param num_cat_comps: number of components of the concatenated perturbation
+       tuple
+   :type num_cat_comps: QInt
+   :param rank_cat_comps: ranks of components of the concatenated perturbation
+       tuple, size is ``num_cat_comps``
+   :type rank_cat_comps: QInt\*
+   :param num_sub_tuples: number of sub-perturbation tuples to construct the
+       concatenated perturbation tuple
+   :type num_sub_tuples: QInt
+   :param len_sub_tuples: length of each sub-perturbation tuple, size is
+       ``num_sub_tuples``; so that the length of the concatenated perturbation
+       is ``sum(len_sub_tuples)``
+   :type len_sub_tuples: QInt\*
+   :param user_ctx: user-defined callback function context
+   :type user_ctx: QVoid\*
+   :var rank_sub_comps: ranks of components of sub-perturbation tuples for
+       the corresponding component of the concatenated perturbation tuple,
+       size is ``num_sub_tuples*num_cat_comps``, and arranged as
+       ``[num_cat_comps][num_sub_tuples]``
+   :vartype rank_sub_comps: QInt\*
    :rtype: QVoid
 
 *FIXME: get_pert_concatenation to discuss and implement*

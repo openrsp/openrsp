@@ -1,6 +1,6 @@
-========
-Residues
-========
+==========================
+Residues (not implemented)
+==========================
 .. include:: background.rst
 
 OpenRSP API: OpenRSPGetResidue
