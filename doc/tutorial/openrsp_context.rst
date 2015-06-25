@@ -32,7 +32,8 @@ or for Fortran users as::
   integer(kind=4) ierr
   ierr = OpenRSP..._f(open_rsp, ...)
 
-where ``open_rsp`` contains the context of calculations by the OpenRSP.
+where ``open_rsp`` contains the context of calculations by the OpenRSP,
+and is always of the first argument for all the APIs.
 
 The ``ierr`` contains error information that one should check if it
 equals to ``QSUCCESS`` (constant defined in

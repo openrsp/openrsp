@@ -25,7 +25,7 @@ Examples of C callback functions can be found in the directory
 ``tests/c/callback``. The detailed information of these callback
 functions are given as follows.
 
-.. FIXME: get_pert_comp and get_pert_rank to be discussed and fixed
+.. FIXME: get_pert_concatenation to be discussed and fixed
    OpenRSP only needs to know the rank of [b...b] + [b...b], OpenRSP
    knows the rank of [b...b] and [b...b], and [b...bb...b], but needs
    to know this mapping; get_pert_concatenation(pert_label, num_tuples, *len_tuples[num_tuples], num_cat_opts, *rank_tuples[num_cat_opts][num_tuples], *rank_tup_cat[num_cat_opts])
@@ -39,7 +39,7 @@ functions are given as follows.
 
    :rtype: QVoid
 
-*FIXME: to discuss and implement*
+*FIXME: get_pert_concatenation to discuss and implement*
 
 .. c:function:: QVoid get_overlap_mat(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, user_ctx, num_int, val_int)
 
@@ -59,7 +59,7 @@ functions are given as follows.
    :param len_tuple: length of perturbation tuple on the overlap integrals
    :type len_tuple: QInt
    :param pert_tuple: perturbation tuple on the overlap integrals, size is
-       ``len_tuple``
+       ``len_tuple`` [#]_
    :type pert_tuple: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
@@ -70,9 +70,16 @@ functions are given as follows.
        integrals (``pert_tuple``)
    :type num_int: QInt
    :var val_int: the integral matrices to be returned, size is ``num_int``,
-       and arranged as ``[pert_tuple][ket_pert_tuple][bra_pert_tuple]``
+       and arranged as ``[pert_tuple][bra_pert_tuple][ket_pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
+
+.. [#] Only overlap integrals perturbed on the bra and/or the ket, and those
+       perturbed on the whole integrals are needed in the calculations. That
+       means, OpenRSP will only ask for overlap integrals either with perturbation
+       tuples on the bra and/or ket (``len_tuple=0``), or with perturbation
+       tuple on the whole overlap integrals (``bra_len_tuple=0`` and
+       ``ket_len_tuple=0``).
 
 .. c:function:: QVoid get_overlap_exp(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, num_dmat, dens_mat, user_ctx, num_exp, val_exp)
 
@@ -92,7 +99,7 @@ functions are given as follows.
    :param len_tuple: length of perturbation tuple on the overlap integrals
    :type len_tuple: QInt
    :param pert_tuple: perturbation tuple on the overlap integrals, size is
-       ``len_tuple``
+       ``len_tuple`` [#]_
    :type pert_tuple: QInt\*
    :param num_dmat: number of atomic orbital (AO) based density matrices
    :type num_dmat: QInt
@@ -100,14 +107,19 @@ functions are given as follows.
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_exp: number of expectation values, as the product of number
-       of density matrices (``num_dmat``) and the sizes of perturbations
-       on the bra, the ket and overlap integrals
+   :param num_exp: number of expectation values, as the product of the sizes
+       of perturbations on the bra, the ket and overlap integrals and the
+       number of density matrices (``num_dmat``)
    :type num_exp: QInt
    :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[pert_tuple][ket_pert_tuple][bra_pert_tuple][num_dmat]``
+       and arranged as ``[num_dmat][pert_tuple][bra_pert_tuple][ket_pert_tuple]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
+
+.. [#] Similar to the callback function :c:func:`get_overlap_mat`, OpenRSP will
+       only ask for expectation values either with perturbation tuples on the
+       bra and/or ket (``len_tuple=0``), or with perturbation tuple on the whole
+       overlap integrals (``bra_len_tuple=0`` and ``ket_len_tuple=0``).
 
 .. c:function:: QVoid get_one_oper_mat(len_tuple, pert_tuple, user_ctx, num_int, val_int)
 
@@ -144,13 +156,13 @@ functions are given as follows.
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_exp: number of expectation values, as the product of number
-       of density matrices (``num_dmat``) and the size of perturbations
-       on the one-electron operator (specified by the perturbation tuple
-       ``pert_tuple``)
+   :param num_exp: number of expectation values, as the product of the size
+       of perturbations on the one-electron operator (specified by the
+       perturbation tuple ``pert_tuple``) and the number of density matrices
+       (``num_dmat``)
    :type num_exp: QInt
    :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[pert_tuple][num_dmat]``
+       and arranged as ``[num_dmat][pert_tuple]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -171,12 +183,13 @@ functions are given as follows.
    :type dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_int: number of the integral matrices, as the product of number
-       of AO based density matrices (``num_dmat``) and the size of perturbations
-       on the two-electron operator (specified by the perturbation tuple ``pert_tuple``)
+   :param num_int: number of the integral matrices, as the product of the
+       size of perturbations on the two-electron operator (specified by
+       the perturbation tuple ``pert_tuple``) and the number of AO based
+       density matrices (``num_dmat``)
    :type num_int: QInt
    :var val_int: the integral matrices to be returned, size is ``num_int``,
-       and arranged as ``[pert_tuple][num_dmat]``
+       and arranged as ``[num_dmat][pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
@@ -230,15 +243,15 @@ functions are given as follows.
    :type RHS_dens_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param num_exp: number of expectation values, as the product of the number
-       of pairs of LHS and RHS density matrices and the size of perturbations
-       on the two-electron operator (specified by the perturbation tuple
-       ``pert_tuple``), the number of pairs of LHS and RHS density matrices
+   :param num_exp: number of expectation values, as the product of the size
+       of perturbations on the two-electron operator (specified by the perturbation
+       tuple ``pert_tuple``) and the number of pairs of LHS and RHS density
+       matrices, and the number of pairs of LHS and RHS density matrices
        can be computed as :math:`\sum_{\texttt{i}=0}^{\texttt{len\_dmat\_tuple}-1}`
        ``num_LHS_dmat[i]`` :math:`\times` ``num_RHS_dmat[i]``
    :type num_exp: QInt
    :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[len_dmat_tuple][pert_tuple][num_LHS_dmat][num_RHS_dmat]``
+       and arranged as ``[len_dmat_tuple][num_LHS_dmat][num_RHS_dmat][pert_tuple]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -359,14 +372,11 @@ functions are given as follows.
    :vartype val_nuc: QReal\*
    :rtype: QVoid
 
-.. c:function:: QVoid get_linear_rsp_solution(size_pert, num_freq_sums, freq_sums, RHS_mat, user_ctx, rsp_param)
+.. c:function:: QVoid get_linear_rsp_solution(num_freq_sums, freq_sums, size_pert, RHS_mat, user_ctx, rsp_param)
 
    Callback function for the linear response equation solver, the last argument
    for the function :c:func:`OpenRSPSetLinearRSPSolver`.
 
-   :param size_pert: size of perturbations acting on the time-dependent
-       self-consistent-field (TDSCF) equation
-   :type size_pert: QInt
    :param num_freq_sums: number of complex frequency sums on the left hand side
        of the linear response equation
    :type num_freq_sums: QInt
@@ -374,17 +384,18 @@ functions are given as follows.
        ``2`` :math:`\times` ``num_freq_sums``, the real and imaginary parts of
        each frequency sum are consecutive in memory
    :type freq_sums: QReal\*
-   :param RHS_mat: RHS matrices, size is ``size_pert`` :math:`\times`
-       ``num_freq_sums``, and arranged as ``[num_freq_sums][size_pert]``
+   :param size_pert: size of perturbations acting on the time-dependent
+       self-consistent-field (TDSCF) equation
+   :type size_pert: QInt
+   :param RHS_mat: RHS matrices, size is ``num_freq_sums`` :math:`\times`
+       ``size_pert``, and arranged as ``[size_pert][num_freq_sums]``
    :type RHS_mat: QcMat\*[]
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :var rsp_param: solved response parameters, size is ``size_pert`` :math:`\times`
-       ``num_freq_sums``, and arranged as ``[num_freq_sums][size_pert]``
+   :var rsp_param: solved response parameters, size is ``num_freq_sums``
+       :math:`\times` ``size_pert``, and arranged as ``[size_pert][num_freq_sums]``
    :vartype rsp_param: QcMat\*[]
    :rtype: QVoid
-
-*FIXME: check the order of RHS_mat and rsp_param, probably we should let num_freq_sums go faster*
 
 .. Host programs will call OpenRSP by sending the excited states, so that we
    do not need the callback function get_rsp_eigen_solution

@@ -299,12 +299,12 @@ Functions of OpenRSP API (C version)
        for the perturbation :math:`a`) over all frequency configurations,
        size is ``2*(dot_product(len_tuple,num_freq_configs)-sum(num_freq_configs))``,
        and arranged as ``[num_freq_configs[i]][len_tuple[i]-1][2]`` (``i``
-       runs from ``1`` to ``num_props``) and the real and imaginary parts
+       runs from ``0`` to ``num_props-1``) and the real and imaginary parts
        of each frequency are consecutive in memory
    :type pert_freqs: QReal\*
-   :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
-       (OpenRSP will determine the number :math:`n`), size is the number of
-       properties (``num_props``)
+   :param kn_rules: number :math:`k` for the :math:`(k,n)` rule [#]_ for each
+       property (OpenRSP will determine the number :math:`n`), size is the
+       number of properties (``num_props``)
    :type kn_rules: QInt\*
    :param size_rsp_funs: size of the response functions, equals to the sum of
        the size of each property to calculate---which is the product of the
@@ -320,7 +320,11 @@ Functions of OpenRSP API (C version)
    :vartype rsp_funs: QReal\*
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, num_excit, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, order_residue, num_freq_configs, pert_freqs, kn_rules, size_residues, residues)
+.. [#] The description of the :math:`(k,n)` rule can be found, for instance,
+       in Magnus Ringholm, Dan Jonsson and Kenneth Ruud, J. Comput. Chem.,
+       35, 622 (2014).
+
+.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, num_excit, order_residue, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, residue_num_pert, residue_idx_pert, num_freq_configs, pert_freqs, kn_rules, size_residues, residues)
 
    Gets the residues for given perturbations.
 
@@ -332,12 +336,25 @@ Functions of OpenRSP API (C version)
    :type ref_state: QcMat\*
    :param ref_overlap: overlap integral matrix of referenced state
    :type ref_overlap: QcMat\*
-   :param num_excit: number of excitations
+   :param num_excit: number of excitation tuples that will be used for
+       residue calculations
    :type num_excit: QInt
-   :param excit_energy: excitation energies, size is ``num_excit``
+   :param order_residue: order of residues, that is also the length of
+       each excitation tuple
+   :type order_residue: QInt
+   :param excit_energy: excitation energies of all tuples, size is
+       ``num_excit`` :math:`\times` ``order_residue``, and arranged
+       as ``[num_excit][order_residue]``; that is, there will be
+       ``order_residue`` frequencies of perturbation labels (or sums
+       of frequencies of perturbation labels) respectively equal to
+       the ``order_residue`` excitation energies per tuple
+       ``excit_energy[i][:]`` (``i`` runs from ``0`` to ``num_excit-1``)
    :type excit_energy: QReal\*
-   :param eigen_vector: eigenvectors obtained from the generalized
-       eigenvalue problem, size is ``num_excit``
+   :param eigen_vector: eigenvectors (obtained from the generalized
+       eigenvalue problem) of all excitation tuples, size is ``num_excit``
+       :math:`\times` ``order_residue``, and also arranged in memory
+       as ``[num_excit][order_residue]`` so that each eigenvector has
+       its corresponding excitation energy in ``excit_energy``
    :type eigen_vector: QcMat\*[]
    :param num_props: number of properties to calculate
    :type num_props: QInt
@@ -348,8 +365,19 @@ Functions of OpenRSP API (C version)
        tuple) for each property, size is ``sum(len_tuple)``, the first
        label of each property is the perturbation :math:`a`
    :type pert_tuple: QInt\*
-   :param order_residue: order of residues
-   :type order_residue: QInt
+   :param residue_num_pert: for each property and each excitation energy
+       in the tuple, the number of perturbation labels whose sum of
+       frequencies equals to that excitation energy, size is ``order_residue``
+       :math:`\times` ``num_props``, and arragned as ``[num_props][order_residue]``;
+       a negative ``residue_num_pert[i][j]`` (``i`` runs from ``0`` to
+       ``num_props-1``) means that the sum of frequencies of perturbation
+       labels equals to ``-excit_energy[:][j]``
+   :type residue_num_pert: QInt\*
+   :param residue_idx_pert: for each property and each excitation energy
+       in the tuple, the indices of perturbation labels whose sum of
+       frequencies equals to that excitation energy, size is
+       ``sum(residue_num_pert)``, and arranged as ``[residue_num_pert]``
+   :type residue_idx_pert: QInt\*
    :param num_freq_configs: number of different frequency configurations
        for each property, size is ``num_props``
    :type num_freq_configs: QInt\*
@@ -357,10 +385,10 @@ Functions of OpenRSP API (C version)
        for the perturbation :math:`a`) over all frequency configurations,
        size is ``2*(dot_product(len_tuple,num_freq_configs)-sum(num_freq_configs))``,
        and arranged as ``[num_freq_configs[i]][len_tuple[i]-1][2]`` (``i``
-       runs from ``1`` to ``num_props``) and the real and imaginary parts
+       runs from ``0`` to ``num_props-1``) and the real and imaginary parts
        of each frequency are consecutive in memory
    :type pert_freqs: QReal\*
-   :param kn_rules: number :math:`k` for the :math:`kn` rule for each property
+   :param kn_rules: number :math:`k` for the :math:`(k,n)` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of
        properties (``num_props``)
    :type kn_rules: QInt\*
@@ -377,11 +405,7 @@ Functions of OpenRSP API (C version)
    :vartype residues: QReal\*
    :rtype: QErrorCode
 
-*FIXME:*
-
-#. Which perturbations to which excited states, +/-excitation energy?
-#. Will calculating several different properties save time?
-#. Are the size_residues and residues OK?
+*FIXME: OpenRSPGetResidue to be discussed and implemented*
 
 .. c:function:: QErrorCode OpenRSPDestroy(open_rsp)
 

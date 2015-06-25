@@ -17,10 +17,11 @@ which are built on top of the `QcMatrix library <https://gitlab.com/bingao/qcmat
 Please refer to the manual and tutorial of this library if you
 are not familiar with it.
 
-.. [#] Magnus Ringholm, Dan Jonsson, and Kenneth Ruud,
-   J. Comput. Chem., 35, 622 (2014).
+.. [#] Magnus Ringholm, Dan Jonsson and Kenneth Ruud,
+       J. Comput. Chem., 35, 622 (2014).
 .. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,
-   Poul Jørgensen and Sonia Coriani, J. Chem. Phys., 129, 214108 (2008).
+       Poul Jørgensen and Sonia Coriani, J. Chem. Phys., 129,
+       214108 (2008).
 
 .. _slide-ingredients:
 

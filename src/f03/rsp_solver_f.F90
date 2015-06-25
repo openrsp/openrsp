@@ -41,9 +41,9 @@ module rsp_solver_f
 
     ! user specified callback subroutine
     abstract interface
-        subroutine SolverRun_f(size_pert,     &
-                               num_freq_sums, &
+        subroutine SolverRun_f(num_freq_sums, &
                                freq_sums,     &
+                               size_pert,     &
                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                len_ctx,       &
@@ -51,15 +51,15 @@ module rsp_solver_f
 #endif
                                rsp_param)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: size_pert
             integer(kind=QINT), intent(in) :: num_freq_sums
             real(kind=QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-            type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+            integer(kind=QINT), intent(in) :: size_pert
+            type(QcMat), intent(in) :: RHS_mat(num_freq_sums*size_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-            type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+            type(QcMat), intent(inout) :: rsp_param(num_freq_sums*size_pert)
         end subroutine SolverRun_f
     end interface
 
@@ -98,9 +98,9 @@ module rsp_solver_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_linear_rsp_solution(size_pert,     &
-                                               num_freq_sums, &
+            subroutine get_linear_rsp_solution(num_freq_sums, &
                                                freq_sums,     &
+                                               size_pert,     &
                                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                                len_ctx,       &
@@ -108,15 +108,15 @@ module rsp_solver_f
 #endif
                                                rsp_param)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: size_pert
                 integer(kind=QINT), intent(in) :: num_freq_sums
                 real(kind=QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-                type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+                integer(kind=QINT), intent(in) :: size_pert
+                type(QcMat), intent(in) :: RHS_mat(num_freq_sums*size_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-                type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+                type(QcMat), intent(inout) :: rsp_param(num_freq_sums*size_pert)
             end subroutine get_linear_rsp_solution
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -135,35 +135,35 @@ module rsp_solver_f
     !% \brief calls Fortran callback subroutine to get solution of response equation
     !  \author Bin Gao
     !  \date 2014-08-06
-    !  \param[integer]{in} size_pert size of perturbations acting on the
-    !      time-dependent self-consistent-field (TDSCF) equation
     !  \param[integer]{in} num_freq_sums number of complex frequency sums
     !      on the left hand side of the linear response equation
     !  \param[real]{in} freq_sums the complex frequency sums on the left hand side
-    !  \param[C_PTR:type]{in} RHS_mat RHS matrices, size is \var{size_pert}*\var{num_freq_sums}
+    !  \param[integer]{in} size_pert size of perturbations acting on the
+    !      time-dependent self-consistent-field (TDSCF) equation
+    !  \param[C_PTR:type]{in} RHS_mat RHS matrices, size is \var{num_freq_sums}*\var{size_pert}
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[C_PTR:type]{out} rsp_param solved response parameters,
-    !%     size is \var{size_pert}*\var{num_freq_sums}
-    subroutine RSPSolverGetLinearRSPSolution_f(size_pert,     &
-                                               num_freq_sums, &
+    !%     size is \var{num_freq_sums}*\var{size_pert}
+    subroutine RSPSolverGetLinearRSPSolution_f(num_freq_sums, &
                                                freq_sums,     &
+                                               size_pert,     &
                                                RHS_mat,       &
                                                user_ctx,      &
                                                rsp_param)     &
         bind(C, name="RSPSolverGetLinearRSPSolution_f")
-        integer(kind=C_QINT), value, intent(in) :: size_pert
         integer(kind=C_QINT), value, intent(in) :: num_freq_sums
         real(kind=C_QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-        type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
+        integer(kind=C_QINT), value, intent(in) :: size_pert
+        type(C_PTR), intent(in) :: RHS_mat(num_freq_sums*size_pert)
         type(C_PTR), value, intent(in) :: user_ctx
-        type(C_PTR), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+        type(C_PTR), intent(inout) :: rsp_param(num_freq_sums*size_pert)
         type(SolverFun_f), pointer :: solver_fun    !context of callback subroutine
         integer(kind=QINT) size_solution            !size of solution of response equation
         type(QcMat), allocatable :: f_RHS_mat(:)    !RHS matrices
         type(QcMat), allocatable :: f_rsp_param(:)  !response parameters
         integer(kind=4) ierr                        !error information
         ! converts C pointer to Fortran QcMat type
-        size_solution = size_pert*num_freq_sums
+        size_solution = num_freq_sums*size_pert
         allocate(f_RHS_mat(size_solution), stat=ierr)
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "RSPSolverGetLinearRSPSolution_f>> size_solution", &
@@ -183,9 +183,9 @@ module rsp_solver_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, solver_fun)
         ! invokes Fortran callback subroutine to solve the response equation
-        call solver_fun%get_linear_rsp_solution(size_pert,           &
-                                                num_freq_sums,       &
+        call solver_fun%get_linear_rsp_solution(num_freq_sums,       &
                                                 freq_sums,           &
+                                                size_pert,           &
                                                 f_RHS_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                                 solver_fun%len_ctx,  &
