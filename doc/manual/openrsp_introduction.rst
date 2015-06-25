@@ -78,7 +78,7 @@ Perturbation components and their ranks
   are totally decided by the host program. OpenRSP will get such information
   from callback functions, that is OpenRSP itself is a perturbation free
   library.
-  *FIXME: not implemented yet*
+  *FIXME: perturbtion free scheme not implemented yet*
 
 Perturbation tuple
   An ordered list of perturbation labels, and in which we further require
@@ -121,7 +121,8 @@ Perturbation :math:`a`
   the perturbation :math:`a` [#]_.
 
 .. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,
-   Poul Jørgensen and Sonia Coriani, J. Chem. Phys., 129, 214108 (2008).
+       Poul Jørgensen and Sonia Coriani, J. Chem. Phys., 129,
+       214108 (2008).
 
 Perturbation addressing
   #. The addressing of perturbation labels in a tuple is decided by
@@ -130,7 +131,7 @@ Perturbation addressing
      OpenRSP uses.
   #. The addressing of components per perturbation (several consecutive
      identical labels with the same complex frequency) are decided by
-     the host program. *FIXME: not implemented yet*
+     the host program. *FIXME: perturbtion free scheme not implemented yet*
   #. The addressing of a collection of perturbation tuples follows the
      canonical order as aforementioned.
 

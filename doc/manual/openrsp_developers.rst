@@ -3,6 +3,11 @@
 OpenRSP for Developers
 ======================
 
+In this chapter, we will discuss the idea behind the implementation, that
+will be useful for further development and maintenance, and be useful for
+new developers to understand the library and to start their work on top
+of the current development.
+
 Theoretical Background
 ----------------------
 
@@ -17,6 +22,10 @@ Exchange-Correlation Functionals
 
 Response Equation Solver
 ------------------------
+
+It would be more common to calculate several frequencies for the same perturbation,
+than the other way around. So the RHS matrices and response parameters are arranged
+as ``[size_pert][num_freq_sums]`` in the callback function :c:func:`get_linear_rsp_solution`.
 
 .. _section-openrsp-Fortran-APIs:
 
