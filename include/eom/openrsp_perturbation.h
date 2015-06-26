@@ -32,55 +32,56 @@
 /* QcMatrix library */
 #include "qcmatrix.h"
 
-/* callback function to get the components of a perturbation */
-typedef QVoid (*GetPertComp)(const QInt,
-                             const QInt,
-                             const QInt,
+/* callback function to get the ranks of components of sub-perturbation
+   tuples (with same perturbation label) for given ranks of components
+   of the corresponding concatenated perturbation tuple */
+typedef QVoid (*GetPertCat)(const QInt,
+                            const QInt,
+                            const QInt*,
+                            const QInt,
+                            const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
+                            QVoid*,
 #endif
-                             QInt*,
-                             QInt*,
-                             QInt*);
-/* callback function to get the rank of a perturbation */
-typedef QVoid (*GetPertRank)(const QInt,
-                             const QInt,
-                             const QInt*,
-                             const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
-#endif
-                             QInt*);
+                            QInt*);
 
 /* context of all perturbations involved in calculations */
 typedef struct {
     /* perturbations */
-    QInt num_pert;                 /* number of all different perturbation labels involved */
-    QInt *pert_labels;             /* all different perturbation labels involved */
-    QInt *pert_max_orders;         /* maximum allowed order of each perturbation (label) */
-    QInt *ncomp_ptr;               /* pointer to the numbers of components of each perturbation */
-    QInt *pert_num_comps;          /* number of components of each perturbation (label) up to its maximum order */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;               /* user-defined callback function context */
+    QInt num_pert;                      /* number of all different perturbation labels involved */
+    QInt *pert_labels;                  /* all different perturbation labels involved */
+    QInt *pert_max_orders;              /* maximum allowed order of each perturbation (label) */
+    QInt *ncomp_ptr;                    /* pointer to the numbers of components of each perturbation */
+    QInt *pert_num_comps;               /* number of components of each perturbation (label) up to
+                                           its maximum order */
+#if defined(OPENRSP_C_USER_CONTEXT)     
+    QVoid *user_ctx;                    /* user-defined callback function context */
 #endif
-    GetPertComp get_pert_comp;     /* user specified function for getting components of a perturbation */
-    GetPertRank get_pert_rank;     /* user specified function for getting rank of a perturbation */
+    GetPertCat get_pert_concatenation;  /* user specified function for getting the ranks of
+                                           components of sub-perturbation tuples (with same
+                                           perturbation label) for given ranks of components
+                                           of the corresponding concatenated perturbation tuple */
 } RSPPert;
 
 /* functions related to the perturbations */
-extern QErrorCode RSPSolverCreate(RSPSolver*,
+extern QErrorCode RSPPertCreate(RSPPert*,
+                                const QInt,
+                                const QInt*,
+                                const QInt*,
+                                const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                  QVoid*,
+                                QVoid*,
 #endif
-                                  const GetLinearRSPSolution);
-extern QErrorCode RSPSolverAssemble(RSPSolver*);
-extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
-extern QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver*,
-                                                const QInt,
-                                                const QInt,
-                                                const QReal*,
-                                                QcMat*[],
-                                                QcMat*[]);
-extern QErrorCode RSPSolverDestroy(RSPSolver*);
+                                const GetPertCat);
+extern QErrorCode RSPPertAssemble(RSPPert*);
+extern QErrorCode RSPPertWrite(const RSPPert*,FILE*);
+extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
+                                          const QInt,
+                                          const QInt,
+                                          const QInt*,
+                                          const QInt,
+                                          const QInt*,
+                                          QInt*);
+extern QErrorCode RSPPertDestroy(RSPPert*);
 
 #endif

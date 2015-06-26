@@ -50,13 +50,12 @@
 
 /* context of response theory calculations */
 typedef struct {
-    QBool assembled;             /* indicates if the context of response theory calculations assembled */
+    QBool assembled;               /* indicates if the context of response theory calculations assembled */
 #if defined(OPENRSP_PERTURBATION_FREE)
-    /* perturbations */
-
+    RSPPert *rsp_pert;             /* perturbations */
 #endif
     /* EOM and solver */
-    /*ElecEOM *elec_eom;*/             /* implementation-specific data of the EOM of electrons */
+    /*ElecEOM *elec_eom;*/           /* implementation-specific data of the EOM of electrons */
     ElecEOMType elec_EOM_type;
     RSPSolver *rsp_solver;         /* response equation solvers */
     /* Hamiltonian */
@@ -84,8 +83,7 @@ extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                           QVoid*,
 #endif
-                                          const GetPertComp,
-                                          const GetPertRank);
+                                          const GetPertCat);
 #endif
 extern QErrorCode OpenRSPSetPDBS(OpenRSP*,
                                  const QInt,
@@ -147,7 +145,24 @@ extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
                                    const QInt*,
                                    const QInt,
                                    QReal*);
-//extern QErrorCode OpenRSPGetResidue(OpenRSP*,);
+extern QErrorCode OpenRSPGetResidue(OpenRSP*,
+                                    const QcMat*,
+                                    const QcMat*,
+                                    const QcMat*,
+                                    const QInt,
+                                    const QInt,
+                                    const QReal*,
+                                    QcMat*[],
+                                    const QInt,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QReal*,
+                                    const QInt*,
+                                    const QInt,
+                                    QReal*);
 extern QErrorCode OpenRSPDestroy(OpenRSP*);
 
 #endif

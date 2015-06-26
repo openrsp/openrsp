@@ -95,8 +95,9 @@ Functions of OpenRSP API (C version)
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
    :param get_pert_concatenation: user specified function for getting the
-       rank of concatenation of several perturbation tuples with the same
-       perturbation label
+       ranks of components of sub-perturbation tuples (with same perturbation
+       label) for given ranks of components of the corresponding concatenated
+       perturbation tuple
    :type get_pert_concatenation: GetPertCat (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
