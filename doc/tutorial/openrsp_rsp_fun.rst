@@ -1,3 +1,5 @@
+.. _slide-response-function:
+
 ==================
 Response Functions
 ==================

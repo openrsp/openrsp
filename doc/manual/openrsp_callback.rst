@@ -6,10 +6,10 @@ OpenRSP Callback Functions
 To use OpenRSP, users should also prepare different callback functions
 needed by OpenRSP. These callback functions will be invoked by OpenRSP
 during calculations to get integral matrices or expectation values of
-different one- and two-electron operators, and exchange-correlation
-functionals, or to solve the response equation. The callback functions
-are slightly different for C and Fortran users, which will be described
-separately in this chapter.
+different one- and two-electron operators, exchange-correlation functionals
+and nuclear contributions, or to solve the linear response equation.
+The callback functions are slightly different for C and Fortran users,
+which will be described separately in this chapter.
 
 It could be noted that the arguments in the following callback functions
 are over complete. For instance, from the knowledge of ``len_tuple`` and
@@ -17,6 +17,32 @@ are over complete. For instance, from the knowledge of ``len_tuple`` and
 callback function :c:func:`get_one_oper_mat` can be computed. The need
 of this argument ``num_int`` is kind of technical issue, and we will give
 detailed explanation in Section :ref:`section-openrsp-Fortran-APIs`.
+
+**Last but not least, users should be aware that:**
+
+#. OpenRSP always ask for **complex expectation values** for different one-
+   and two-electron operators, exchange-correlation functionals and nuclear
+   contributions, and these values are presented in memory that the real
+   and imaginary parts of each value are consecutive. This affects:
+
+   #. :c:func:`get_overlap_exp`
+   #. :c:func:`get_one_oper_exp`
+   #. :c:func:`get_two_oper_exp`
+   #. :c:func:`get_xc_fun_exp`
+   #. :c:func:`get_nuc_contrib`
+
+#. In order to reduce the use of temporary matrices and values, OpenRSP
+   requires that calculated integral matrices and expectation values
+   should **be added to the returned argument**. OpenRSP will zero the
+   entries of these matrices and expectation values at first. This
+   requirement affects the callback functions of one- and two-electron
+   operators, exchange-correlation functionals and nuclear contributions:
+
+   #. :c:func:`get_overlap_mat` and :c:func:`get_overlap_exp`
+   #. :c:func:`get_one_oper_mat` and :c:func:`get_one_oper_exp`
+   #. :c:func:`get_two_oper_mat` and :c:func:`get_two_oper_exp`
+   #. :c:func:`get_xc_fun_mat` and :c:func:`get_xc_fun_exp`
+   #. :c:func:`get_nuc_contrib`
 
 OpenRSP Callback Functions (C version)
 --------------------------------------
@@ -86,7 +112,7 @@ functions are given as follows.
        (``bra_pert_tuple``), the ket (``ket_pert_tuple``) and overlap
        integrals (``pert_tuple``)
    :type num_int: QInt
-   :var val_int: the integral matrices to be returned, size is ``num_int``,
+   :var val_int: the integral matrices to be added, size is ``num_int``,
        and arranged as ``[pert_tuple][bra_pert_tuple][ket_pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
@@ -128,8 +154,8 @@ functions are given as follows.
        of perturbations on the bra, the ket and overlap integrals and the
        number of density matrices (``num_dmat``)
    :type num_exp: QInt
-   :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[num_dmat][pert_tuple][bra_pert_tuple][ket_pert_tuple]``
+   :var val_exp: the expectation values to be added, size is ``2*num_exp``,
+       and arranged as ``[num_dmat][pert_tuple][bra_pert_tuple][ket_pert_tuple][2]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -153,7 +179,7 @@ functions are given as follows.
    :param num_int: number of the integral matrices, as the size of perturbations
        (specified by the perturbation tuple ``pert_tuple``)
    :type num_int: QInt
-   :var val_int: the integral matrices to be returned, size is ``num_int``
+   :var val_int: the integral matrices to be added, size is ``num_int``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
@@ -178,8 +204,8 @@ functions are given as follows.
        perturbation tuple ``pert_tuple``) and the number of density matrices
        (``num_dmat``)
    :type num_exp: QInt
-   :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[num_dmat][pert_tuple]``
+   :var val_exp: the expectation values to be added, size is ``2*num_exp``,
+       and arranged as ``[num_dmat][pert_tuple][2]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -205,7 +231,7 @@ functions are given as follows.
        the perturbation tuple ``pert_tuple``) and the number of AO based
        density matrices (``num_dmat``)
    :type num_int: QInt
-   :var val_int: the integral matrices to be returned, size is ``num_int``,
+   :var val_int: the integral matrices to be added, size is ``num_int``,
        and arranged as ``[num_dmat][pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
@@ -267,8 +293,8 @@ functions are given as follows.
        can be computed as :math:`\sum_{\texttt{i}=0}^{\texttt{len\_dmat\_tuple}-1}`
        ``num_LHS_dmat[i]`` :math:`\times` ``num_RHS_dmat[i]``
    :type num_exp: QInt
-   :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[len_dmat_tuple][num_LHS_dmat][num_RHS_dmat][pert_tuple]``
+   :var val_exp: the expectation values to be added, size is ``2*num_exp``,
+       and arranged as ``[len_dmat_tuple][num_LHS_dmat][num_RHS_dmat][pert_tuple][2]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -323,7 +349,7 @@ functions are given as follows.
        perturbation tuple ``pert_tuple``) and the number of different frequency
        configurations ``num_freq_configs``
    :type num_int: QInt
-   :var val_int: the integral matrices to be returned, size is ``num_int``,
+   :var val_int: the integral matrices to be added, size is ``num_int``,
        and arranged as ``[num_freq_configs][pert_tuple]``
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
@@ -365,8 +391,8 @@ functions are given as follows.
        perturbation tuple ``pert_tuple``) and the number of different frequency
        configurations ``num_freq_configs``
    :type num_exp: QInt
-   :var val_exp: the expectation values to be returned, size is ``num_exp``,
-       and arranged as ``[num_freq_configs][pert_tuple]``
+   :var val_exp: the expectation values to be added, size is ``2*num_exp``,
+       and arranged as ``[num_freq_configs][pert_tuple][2]``
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
@@ -385,7 +411,7 @@ functions are given as follows.
    :param size_pert: size of the perturbations on the nuclear Hamiltonian,
        as specified by ``pert_tuple``
    :type size_pert: QInt
-   :var val_nuc: the nuclear contributions to be returned, size is ``size_pert``
+   :var val_nuc: the nuclear contributions to be added, arranged as ``[size_pert][2]``
    :vartype val_nuc: QReal\*
    :rtype: QVoid
 

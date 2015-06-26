@@ -100,7 +100,7 @@ Functions of OpenRSP API (C version)
    :type get_pert_concatenation: GetPertCat (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-*FIXME: get_pert_comp and get_pert_rank to be discussed and implemented*
+.. *FIXME: get_pert_comp and get_pert_rank to be discussed and implemented*
 
 .. c:function:: QErrorCode OpenRSPSetPDBS(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_overlap_mat, get_overlap_exp)
 
@@ -195,7 +195,7 @@ Functions of OpenRSP API (C version)
    :type get_xc_fun_exp: GetXCFunExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPSetNucContributions(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib)
+.. c:function:: QErrorCode OpenRSPSetNucContributions(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib, num_atoms)
 
    Sets the nuclear contributions to the Hamiltonian.
 
@@ -214,6 +214,8 @@ Functions of OpenRSP API (C version)
        contributions, see the callback function :c:func:`get_nuc_contrib`
    :type get_nuc_contrib: GetNucContrib (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
+
+*FIXME: num_atoms to be removed after perturbation free scheme implemented*
 
 .. The following APIs do not need because the nuclear contributions will also
    be obtained through callback function from the host programs.
@@ -324,7 +326,7 @@ Functions of OpenRSP API (C version)
        in Magnus Ringholm, Dan Jonsson and Kenneth Ruud, J. Comput. Chem.,
        35, 622 (2014).
 
-.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, num_excit, order_residue, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, residue_num_pert, residue_idx_pert, num_freq_configs, pert_freqs, kn_rules, size_residues, residues)
+.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, order_residue, num_excit, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, residue_num_pert, residue_idx_pert, num_freq_configs, pert_freqs, kn_rules, size_residues, residues)
 
    Gets the residues for given perturbations.
 
@@ -336,14 +338,14 @@ Functions of OpenRSP API (C version)
    :type ref_state: QcMat\*
    :param ref_overlap: overlap integral matrix of referenced state
    :type ref_overlap: QcMat\*
-   :param num_excit: number of excitation tuples that will be used for
-       residue calculations
-   :type num_excit: QInt
    :param order_residue: order of residues, that is also the length of
        each excitation tuple
    :type order_residue: QInt
+   :param num_excit: number of excitation tuples that will be used for
+       residue calculations
+   :type num_excit: QInt
    :param excit_energy: excitation energies of all tuples, size is
-       ``num_excit`` :math:`\times` ``order_residue``, and arranged
+       ``order_residue`` :math:`\times` ``num_excit``, and arranged
        as ``[num_excit][order_residue]``; that is, there will be
        ``order_residue`` frequencies of perturbation labels (or sums
        of frequencies of perturbation labels) respectively equal to
@@ -351,8 +353,8 @@ Functions of OpenRSP API (C version)
        ``excit_energy[i][:]`` (``i`` runs from ``0`` to ``num_excit-1``)
    :type excit_energy: QReal\*
    :param eigen_vector: eigenvectors (obtained from the generalized
-       eigenvalue problem) of all excitation tuples, size is ``num_excit``
-       :math:`\times` ``order_residue``, and also arranged in memory
+       eigenvalue problem) of all excitation tuples, size is ``order_residue``
+       :math:`\times` ``num_excit``, and also arranged in memory
        as ``[num_excit][order_residue]`` so that each eigenvector has
        its corresponding excitation energy in ``excit_energy``
    :type eigen_vector: QcMat\*[]

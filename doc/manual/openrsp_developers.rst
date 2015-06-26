@@ -14,6 +14,14 @@ Theoretical Background
 Framework of OpenRSP
 --------------------
 
+In OpenRSP APIs (C), we choose to represent complex numbers as their real
+and imaginary parts in an array. It might be efficient for host programs'
+integral codes that all real parts of numbers are put together and
+followed by all imaginary parts, but this loss the requirement that OpenRSP
+works with complex numbers, not an array with real and imaginary parts.
+
+*FIXME: in OpenRSP Fortran APIs, we should choose complex numbers, right? Because Fortran support complex numbers.*
+
 Perturbation Free Scheme
 ------------------------
 
