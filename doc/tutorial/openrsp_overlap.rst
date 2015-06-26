@@ -1,3 +1,5 @@
+.. _slide-overlap:
+
 =================
 Overlap Integrals
 =================

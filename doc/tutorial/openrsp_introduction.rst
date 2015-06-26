@@ -104,6 +104,33 @@ That is:
 .. [#] Definition of perturbation label and tuple in Section
        "**1.2 OpenRSP Notations and Conventions**" of OpenRSP Manual.
 
+Requirements on callback functions
+==================================
+.. include:: background.rst
+
+OpenRSP further has the following requirements on the callback functions
+that users should be keep in mind [#]_:
+
+1. OpenRSP always ask for **complex expectation values** for different one-
+   and two-electron operators, exchange-correlation functionals and nuclear
+   contributions, and these values are presented in memory that the real
+   and imaginary parts of each value are consecutive.
+
+.. [#] These requirements can be found at the beginning of Chapter 4
+       "**OPENRSP CALLBACK FUNCTIONS**" of the OpenRSP Manual, with
+       much detail.
+
+.. nextslide::
+   :increment:
+.. include:: background.rst
+
+2. OpenRSP requires that calculated integral matrices and expectation values
+   should **be added to the returned argument**. OpenRSP will zero the entries
+   of these matrices and expectation values at first.
+
+   This requirement affects the callback functions of one- and two-electron
+   operators, exchange-correlation functionals and nuclear contributions
+
 OpenRSP Notations and Conventions
 =================================
 .. include:: background.rst
