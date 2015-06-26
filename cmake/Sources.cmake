@@ -49,10 +49,12 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/OpenRSPAssemble.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPWrite.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPGetRSPFun.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPGetResidue.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPDestroy.c)
 IF(OPENRSP_PERTURBATION_FREE)
     SET(OPENRSP_SRCS
         ${OPENRSP_SRCS}
+        ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertCreate.c
         ${LIB_OPENRSP_PATH}/src/OpenRSPSetPerturbations.c)
 ENDIF()
 # Fortran recursive codes and adapters between OpenRSP APIs
