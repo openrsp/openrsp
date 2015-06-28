@@ -29,13 +29,11 @@
 #if !defined(OPENRSP_H)
 #define OPENRSP_H
 
-#if defined(OPENRSP_PERTURBATION_FREE)
 /* perturbations involved in calculations */
 #include "eom/openrsp_perturbation.h"
-#endif
-/* type of equation of motion (EOM) of electrons */
-#include "eom/openrsp_elec_eom.h"
-/* response equation solver */
+/* electronic wave function */
+#include "eom/openrsp_wav_fun.h"
+/* linear response equation solver */
 #include "eom/openrsp_solver.h"
 /* overlap integrals due to perturbation dependent basis sets */
 #include "hamiltonian/rsp_overlap.h"
@@ -45,20 +43,16 @@
 #include "hamiltonian/rsp_two_oper.h"
 /* exchange-correlation functionals */
 #include "hamiltonian/rsp_xc_fun.h"
-/* nuclear contributions */
+/* nuclear Hamiltonian contributions */
 #include "hamiltonian/rsp_nuc_contrib.h"
 
 /* context of response theory calculations */
 typedef struct {
     QBool assembled;               /* indicates if the context of response theory calculations assembled */
-#if defined(OPENRSP_PERTURBATION_FREE)
+    /*ElecWav *elec_wav;*/           /* implementation-specific data of (electronic) wave function */
+    ElecWavType elec_wav_type;
     RSPPert *rsp_pert;             /* perturbations */
-#endif
-    /* EOM and solver */
-    /*ElecEOM *elec_eom;*/           /* implementation-specific data of the EOM of electrons */
-    ElecEOMType elec_EOM_type;
-    RSPSolver *rsp_solver;         /* response equation solvers */
-    /* Hamiltonian */
+    RSPSolver *rsp_solver;         /* linear response equation solver */
     RSPOverlap *overlap;           /* overlap integrals */
     RSPOneOper *one_oper;          /* linked list of one-electron operators */
     RSPTwoOper *two_oper;          /* linked list of two-electron operators */
@@ -68,13 +62,7 @@ typedef struct {
 
 /* APIs of OpenRSP */
 extern QErrorCode OpenRSPCreate(OpenRSP*);
-extern QErrorCode OpenRSPSetElecEOM(OpenRSP*,const ElecEOMType);
-extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                            QVoid*,
-#endif
-                                            const GetLinearRSPSolution);
-#if defined(OPENRSP_PERTURBATION_FREE)
+extern QErrorCode OpenRSPSetWaveFunction(OpenRSP*,const ElecWavType);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
                                           const QInt,
                                           const QInt*,
@@ -84,7 +72,11 @@ extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
                                           QVoid*,
 #endif
                                           const GetPertCat);
+extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                            QVoid*,
 #endif
+                                            const GetLinearRSPSolution);
 extern QErrorCode OpenRSPSetPDBS(OpenRSP*,
                                  const QInt,
                                  const QInt*,

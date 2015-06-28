@@ -32,24 +32,16 @@
          should be called at first
      \author Bin Gao
      \date 2014-01-28
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
 {
     open_rsp->assembled = QFALSE;
-    //open_rsp->elec_eom = NULL;
-    open_rsp->elec_EOM_type = ELEC_AO_D_MATRIX;
+    //open_rsp->elec_wav = NULL;
+    open_rsp->elec_wav_type = ELEC_AO_D_MATRIX;
+    open_rsp->rsp_pert = NULL;
     open_rsp->rsp_solver = NULL;
-#if defined(OPENRSP_PERTURBATION_FREE)
-    open_rsp->num_pert = 0;
-    open_rsp->pert_labels = NULL;
-    open_rsp->pert_max_orders = NULL;
-    open_rsp->ncomp_ptr = NULL;
-    open_rsp->pert_num_comps = NULL;
-    open_rsp->get_pert_comp = NULL;
-    open_rsp->get_pert_rank = NULL;
-#endif
     open_rsp->overlap = NULL;
     open_rsp->one_oper = NULL;
     open_rsp->two_oper = NULL;

@@ -20,7 +20,7 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This is the header file of response equation solver.
+   This is the header file of linear response equation solver.
 
    2014-08-06, Bin Gao:
    * first version
@@ -42,7 +42,7 @@ typedef QVoid (*GetLinearRSPSolution)(const QInt,
 #endif
                                       QcMat*[]);
 
-/* context of response equation solvers */
+/* context of linear response equation solver */
 typedef struct {
 #if defined(OPENRSP_C_USER_CONTEXT)
     QVoid *user_ctx;                              /* user-defined callback function context */
@@ -50,7 +50,7 @@ typedef struct {
     GetLinearRSPSolution get_linear_rsp_solution; /* user specified function of linear response equation solver */
 } RSPSolver;
 
-/* functions related to the response equation solvers */
+/* functions related to the linear response equation solver */
 extern QErrorCode RSPSolverCreate(RSPSolver*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                   QVoid*,

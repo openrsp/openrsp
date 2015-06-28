@@ -31,7 +31,7 @@
 /*@% \brief sets the context of linear response equation solver
      \author Bin Gao
      \date 2014-08-06
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QVoid:void]{in} user_ctx user-defined callback function context
      \param[GetLinearRSPSolution:void]{in} get_linear_rsp_solution user specified
          function of linear response equation solver

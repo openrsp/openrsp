@@ -52,6 +52,7 @@ QErrorCode RSPOneOperGetExp(RSPOneOper *one_oper,
     /* walks to the last operator */
     cur_oper = one_oper;
     do {
+/*FIXME: checks perturbations if resulting zero integrals*/
         cur_oper->get_one_oper_exp(len_tuple,
                                    pert_tuple,
                                    num_dmat,

@@ -31,17 +31,14 @@
 /*@% \brief writes the context of response theory calculations
      \author Bin Gao
      \date 2014-07-30
-     \param[OneRSP:struct]{in} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{in} open_rsp the context of response theory calculations
      \param[QChar:char]{in} file_name the name of the file
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
 {
-    FILE *fp_rsp;      /* file pointer */
-#if defined(OPENRSP_PERTURBATION_FREE)
-    QInt ipert,isize;  /* incremental recorders */
-#endif
-    QErrorCode ierr;   /* error information */
+    FILE *fp_rsp;     /* file pointer */
+    QErrorCode ierr;  /* error information */
     /* opens the file */
     fp_rsp = fopen(file_name, "a");
     if (fp_rsp==NULL) {
@@ -49,29 +46,16 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
         QErrorExit(FILE_AND_LINE, "failed to open the file in appending mode");
     }
     fprintf(fp_rsp, "\nOpenRSP library compiled at %s, %s\n", __TIME__, __DATE__);
-    /* context of the EOM of electrons */
+    /* context of the (electronic) wave function */
     /*FIXME: ierr = xxWrite(open_rsp->elec_eom); */
+    if (open_rsp->rsp_pert!=NULL) {
+        ierr = RSPPertWrite(open_rsp->rsp_pert, fp_rsp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertWrite");
+    }
     if (open_rsp->rsp_solver!=NULL) {
         ierr = RSPSolverWrite(open_rsp->rsp_solver, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverWrite");
     }
-#if defined(OPENRSP_PERTURBATION_FREE)
-    fprintf(fp_rsp,
-            "OpenRSPWrite>> number of all perturbations involved in calculations %"QINT_FMT"\n",
-            open_rsp->num_pert);
-    fprintf(fp_rsp,
-            "OpenRSPWrite>> label           maximum-order    numbers-of-components\n");
-    for (ipert=0; ipert<open_rsp->num_pert; ipert++) {
-        fprintf(fp_rsp,
-                "OpenRSPWrite>>  %"QINT_FMT"               %"QINT_FMT"               ",
-                open_rsp->pert_labels[ipert],
-                open_rsp->pert_max_orders[ipert]);
-        for (isize=open_rsp->ncomp_ptr[ipert]; isize<open_rsp->ncomp_ptr[ipert+1]; isize++) {
-            fprintf(fp_rsp, " %"QINT_FMT"", open_rsp->pert_num_comps[isize]);
-        }
-        fprintf(fp_rsp, "\n");
-    }
-#endif
     if (open_rsp->overlap!=NULL) {
         fprintf(fp_rsp, "OpenRSPWrite>> overlap integrals\n");
         ierr = RSPOverlapWrite(open_rsp->overlap, fp_rsp);

@@ -31,7 +31,7 @@
 /*% \brief sets the context of nuclear Hamiltonian
     \author Bin Gao
     \date 2015-02-12
-    \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+    \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QInt:int]{in} num_pert number of different perturbation labels that can
          act as perturbations on the nuclear Hamiltonian
      \param[QInt:int]{in} pert_labels all the different perturbation labels

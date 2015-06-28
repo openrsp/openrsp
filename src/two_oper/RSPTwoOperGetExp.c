@@ -62,6 +62,7 @@ QErrorCode RSPTwoOperGetExp(RSPTwoOper *two_oper,
     /* walks to the last operator */
     cur_oper = two_oper;
     do {
+/*FIXME: checks perturbations if resulting zero integrals*/
         cur_oper->get_two_oper_exp(len_tuple,
                                    pert_tuple,
                                    len_dmat_tuple,

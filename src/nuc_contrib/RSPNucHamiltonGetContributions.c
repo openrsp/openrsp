@@ -44,6 +44,7 @@ QErrorCode RSPNucHamiltonGetContributions(const RSPNucHamilton *nuc_hamilton,
                                           const QInt size_pert,
                                           QReal *val_nuc)
 {
+/*FIXME: checks perturbations if resulting zero values*/
     nuc_hamilton->get_nuc_contrib(len_tuple,
                                   pert_tuple,
 #if defined(OPENRSP_C_USER_CONTEXT)

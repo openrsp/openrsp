@@ -48,6 +48,7 @@ QErrorCode RSPOneOperGetMat(RSPOneOper *one_oper,
     /* walks to the last operator */
     cur_oper = one_oper;
     do {
+/*FIXME: checks perturbations if resulting zero integrals*/
         cur_oper->get_one_oper_mat(len_tuple,
                                    pert_tuple,
 #if defined(OPENRSP_C_USER_CONTEXT)

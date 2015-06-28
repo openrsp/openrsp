@@ -34,14 +34,14 @@ Functions of OpenRSP API (C version)
    :vartype open_rsp: OpenRSP\* (struct\*)
    :rtype: QErrorCode (error information)
 
-.. c:function:: QErrorCode OpenRSPSetElecEOM(open_rsp, elec_EOM_type)
+.. c:function:: QErrorCode OpenRSPSetWaveFunction(open_rsp, elec_wav_type)
 
-   Sets the equation of motion (EOM) of electrons.
+   Sets the (electronic) wave function.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param elec_EOM_type: the type of EOM of electrons
-   :type elec_EOM_type: ElecEOMType (enum)
+   :param elec_wav_type: the type of (electronic) wave function
+   :type elec_wav_type: ElecWavType (enum)
    :rtype: QErrorCode
 
 .. c:function:: QErrorCode OpenRSPSetLinearRSPSolver(open_rsp, user_ctx, get_linear_rsp_solution)
@@ -438,7 +438,7 @@ table for the convention:
      - Fortran
    * - ``struct OpenRSP``
      - ``type(OpenRSP)``
-   * - ``enum ElecEOMType``
+   * - ``enum ElecWavType``
      - ``integer``
    * - ``QVoid* user_ctx``
      - ``character(len=1) user_ctx(:)``

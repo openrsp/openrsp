@@ -17,7 +17,7 @@ Limitations of OpenRSP
 
 #. OpenRSPGetResidue(): will implement or change in the future.
 
-#. OpenRSPSetElecEOM(): will implement or change in the future.
+#. OpenRSPSetWaveFunction(): will implement or change in the future.
 
 #. OpenRSPSetPerturbations(): will implement or change in the future.
 
