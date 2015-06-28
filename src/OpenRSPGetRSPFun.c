@@ -46,10 +46,10 @@ QVoid OpenRSPGetRSPFun_f(const QInt num_props,
                          const QInt size_rsp_funs,
                          QReal *rsp_funs);
 
-/*@% \brief gets the response function for given perturbations
+/*@% \brief gets the response functions for given perturbations
      \author Bin Gao
      \date 2014-07-31
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QcMat:struct]{in} ref_ham Hamiltonian of referenced state
      \param[QcMat:struct]{in} ref_state electronic state of referenced state
      \param[QcMat:struct]{in} ref_overlap overlap integral matrix of referenced state
@@ -83,7 +83,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     if (open_rsp->assembled==QFALSE) {
         QErrorExit(FILE_AND_LINE, "OpenRSPAssemble() should be invoked before any calculation");
     }
-    switch (open_rsp->elec_EOM_type) {
+    switch (open_rsp->elec_wav_type) {
     /* density matrix-based response theory */
     case ELEC_AO_D_MATRIX:
         OpenRSPGetRSPFun_f(num_props,
@@ -112,8 +112,9 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     case ELEC_COUPLED_CLUSTER:
         break;
     default:
-        printf("OpenRSPGetRSPFun>> type of EOM of electrons %d\n", open_rsp->elec_EOM_type);
-        QErrorExit(FILE_AND_LINE, "invalid type of EOM of electrons");
+        printf("OpenRSPGetRSPFun>> type of (electronic) wave function %d\n",
+               open_rsp->elec_wav_type);
+        QErrorExit(FILE_AND_LINE, "invalid type of (electronic) wave function");
     }
     return QSUCCESS;
 }

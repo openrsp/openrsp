@@ -56,6 +56,7 @@ QErrorCode RSPOverlapGetExp(const RSPOverlap *overlap,
                             const QInt num_exp,
                             QReal *val_exp)
 {
+/*FIXME: checks perturbations if resulting zero integrals*/
     overlap->get_overlap_exp(bra_len_tuple,
                              bra_pert_tuple,
                              ket_len_tuple,

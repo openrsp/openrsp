@@ -32,7 +32,7 @@
          be called at the end
      \author Bin Gao
      \date 2014-01-28
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
@@ -44,33 +44,20 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
 //        free(open_rsp->elec_eom);
 //        open_rsp->elec_eom = NULL;
 //    }
-    /* destroys the context of response equation sovler */
+    /* destroys the context of all perturbations involved in calculations */
+    if (open_rsp->rsp_pert!=NULL) {
+        ierr = RSPPertDestroy(open_rsp->rsp_pert);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertDestroy");
+        free(open_rsp->rsp_pert);
+        open_rsp->rsp_pert = NULL;
+    }
+    /* destroys the context of linear response equation sovler */
     if (open_rsp->rsp_solver!=NULL) {
         ierr = RSPSolverDestroy(open_rsp->rsp_solver);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverDestroy");
+        free(open_rsp->rsp_solver);
+        open_rsp->rsp_solver = NULL;
     }
-#if defined(OPENRSP_PERTURBATION_FREE)
-    /* destroys the context of perturbations */
-    open_rsp->num_pert = 0;
-    if (open_rsp->pert_labels!=NULL) {
-        free(open_rsp->pert_labels);
-        open_rsp->pert_labels = NULL;
-    }
-    if (open_rsp->pert_max_orders!=NULL) {
-        free(open_rsp->pert_max_orders);
-        open_rsp->pert_max_orders = NULL;
-    }
-    if (open_rsp->ncomp_ptr!=NULL) {
-        free(open_rsp->ncomp_ptr);
-        open_rsp->ncomp_ptr = NULL;
-    }
-    if (open_rsp->pert_num_comps!=NULL) {
-        free(open_rsp->pert_num_comps);
-        open_rsp->pert_num_comps = NULL;
-    }
-    open_rsp->get_pert_comp = NULL;
-    open_rsp->get_pert_rank = NULL;
-#endif
     /* destroys the context of overlap integrals */
     if (open_rsp->overlap!=NULL) {
         ierr = RSPOverlapDestroy(open_rsp->overlap);

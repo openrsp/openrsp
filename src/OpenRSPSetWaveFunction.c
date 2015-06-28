@@ -20,24 +20,24 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function OpenRSPSetElecEOM().
+   This file implements the function OpenRSPSetWaveFunction().
 
-   2014-08-04, Bin Gao:
+   2015-06-29, Bin Gao:
    * first version
 */
 
 #include "openrsp.h"
 
-/*@% \brief sets the equation of motion (EOM) of electrons
+/*@% \brief sets the type of (electronic) wave function
      \author Bin Gao
      \date 2014-08-04
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
-     \param[ElecEOM:enum]{in} elec_EOM_type the type of EOM of electrons
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[ElecWavType:enum]{in} elec_wav_type the type of (electronic) wave function
      \return[QErrorCode:int] error information
 */
-QErrorCode OpenRSPSetElecEOM(OpenRSP *open_rsp, const ElecEOMType elec_EOM_type)
+QErrorCode OpenRSPSetWaveFunction(OpenRSP *open_rsp, const ElecWavType elec_wav_type)
 {
-    switch (elec_EOM_type) {
+    switch (elec_wav_type) {
     /* density matrix-based response theory */
     case ELEC_AO_D_MATRIX:
         break;
@@ -48,9 +48,10 @@ QErrorCode OpenRSPSetElecEOM(OpenRSP *open_rsp, const ElecEOMType elec_EOM_type)
     case ELEC_COUPLED_CLUSTER:
         break;
     default:
-        printf("OpenRSPSetElecEOM>> type of EOM of electrons %d\n", elec_EOM_type);
-        QErrorExit(FILE_AND_LINE, "invalid type of EOM of electrons");
+        printf("OpenRSPSetWaveFunction>> type of (electronic) wave function %d\n",
+               elec_wav_type);
+        QErrorExit(FILE_AND_LINE, "invalid type of (electronic) wave function");
     }
-    open_rsp->elec_EOM_type = elec_EOM_type;
+    open_rsp->elec_wav_type = elec_wav_type;
     return QSUCCESS;
 }

@@ -52,6 +52,7 @@ QErrorCode RSPOverlapGetMat(const RSPOverlap *overlap,
                             const QInt num_int,
                             QcMat *val_int[])
 {
+/*FIXME: checks perturbations if resulting zero integrals*/
     overlap->get_overlap_mat(bra_len_tuple,
                              bra_pert_tuple,
                              ket_len_tuple,

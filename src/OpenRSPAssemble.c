@@ -33,7 +33,7 @@
          otherwise the results might be incorrect
      \author Bin Gao
      \date 2014-07-30
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \return[QErrorCode:int] error information
 */
 QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
@@ -41,26 +41,24 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
     QErrorCode ierr;  /* error information */
     open_rsp->assembled = QFALSE;
 /*FIXME: to implement ierr = xxAssemble(open_rsp->elec_eom); */
+    /* assembles the context of perturbations */
+    if (open_rsp->rsp_pert!=NULL) {
+        ierr = RSPPertAssemble(open_rsp->rsp_pert);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertAssemble");
+    }
+#if defined(OPENRSP_PERTURBATION_FREE)
+    else {
+        QErrorExit(FILE_AND_LINE, "perturbations should be set via OpenRSPSetPerturbations()");
+    }
+#endif
     /* assembles the context of response equation solver */
     if (open_rsp->rsp_solver!=NULL) {
         ierr = RSPSolverAssemble(open_rsp->rsp_solver);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverAssemble");
     }
     else {
-        QErrorExit(FILE_AND_LINE, "response equation solver should be set via OpenRSPSetSolver()");
+        QErrorExit(FILE_AND_LINE, "linear response equation solver should be set via OpenRSPSetSolver()");
     }
-#if defined(OPENRSP_PERTURBATION_FREE)
-    /* assembles the context of perturbations */
-    if (open_rsp->num_pert<1 ||
-        open_rsp->pert_labels==NULL ||
-        open_rsp->pert_max_orders==NULL ||
-        open_rsp->ncomp_ptr==NULL ||
-        open_rsp->pert_num_comps==NULL ||
-        open_rsp->get_pert_comp==NULL ||
-        open_rsp->get_pert_rank==NULL) {
-        QErrorExit(FILE_AND_LINE, "perturbations should be set via OpenRSPSetPerturbations()");
-    }
-#endif
     /* assembles the overlap integrals */
     if (open_rsp->overlap!=NULL) {
         ierr = RSPOverlapAssemble(open_rsp->overlap);

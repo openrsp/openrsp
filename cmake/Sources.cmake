@@ -1,5 +1,10 @@
 # Source codes of OpenRSP library
 SET(OPENRSP_SRCS
+    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertCreate.c
+    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertAssemble.c
+    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertWrite.c
+    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertGetConcatenation.c
+    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertDestroy.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverCreate.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverAssemble.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverWrite.c
@@ -39,7 +44,8 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonDestroy.c
     ${LIB_OPENRSP_PATH}/src/nuc_contrib/RSPNucHamiltonGetNumAtoms.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPCreate.c
-    ${LIB_OPENRSP_PATH}/src/OpenRSPSetElecEOM.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetWaveFunction.c
+    ${LIB_OPENRSP_PATH}/src/OpenRSPSetPerturbations.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetLinearRSPSolver.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPSetPDBS.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPAddOneOper.c
@@ -51,12 +57,6 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/OpenRSPGetRSPFun.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPGetResidue.c
     ${LIB_OPENRSP_PATH}/src/OpenRSPDestroy.c)
-IF(OPENRSP_PERTURBATION_FREE)
-    SET(OPENRSP_SRCS
-        ${OPENRSP_SRCS}
-        ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertCreate.c
-        ${LIB_OPENRSP_PATH}/src/OpenRSPSetPerturbations.c)
-ENDIF()
 # Fortran recursive codes and adapters between OpenRSP APIs
 SET(OPENRSP_SRCS
     ${OPENRSP_SRCS}

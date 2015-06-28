@@ -47,11 +47,10 @@ typedef QVoid (*GetPertCat)(const QInt,
 
 /* context of all perturbations involved in calculations */
 typedef struct {
-    /* perturbations */
     QInt num_pert;                      /* number of all different perturbation labels involved */
     QInt *pert_labels;                  /* all different perturbation labels involved */
     QInt *pert_max_orders;              /* maximum allowed order of each perturbation (label) */
-    QInt *ncomp_ptr;                    /* pointer to the numbers of components of each perturbation */
+    QInt *ptr_ncomp;                    /* pointer to the numbers of components of each perturbation */
     QInt *pert_num_comps;               /* number of components of each perturbation (label) up to
                                            its maximum order */
 #if defined(OPENRSP_C_USER_CONTEXT)     
@@ -78,7 +77,7 @@ extern QErrorCode RSPPertWrite(const RSPPert*,FILE*);
 extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
                                           const QInt,
                                           const QInt,
-                                          const QInt*,
+                                          const QInt,
                                           const QInt,
                                           const QInt*,
                                           QInt*);

@@ -31,7 +31,7 @@
 /*@% \brief adds a one-electron operator to the Hamiltonian
      \author Bin Gao
      \date 2014-07-30
-     \param[OneRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
      \param[QInt:int]{in} num_pert number of different perturbation labels that can
          act as perturbations on the one-electron operator
      \param[QInt:int]{in} pert_labels all the different perturbation labels

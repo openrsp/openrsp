@@ -20,22 +20,22 @@
    You should have received a copy of the GNU Lesser General Public License
    along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This is defines the equation of motion (EOM) of electrons.
+   This is the header file of electronic wave function.
 
-   2014-08-04, Bin Gao:
+   2015-06-28, Bin Gao:
    * first version
 */
 
-#if !defined(OPENRSP_ELEC_EOM_H)
-#define OPENRSP_ELEC_EOM_H
+#if !defined(OPENRSP_WAV_FUN_H)
+#define OPENRSP_WAV_FUN_H
 
 /* QcMatrix library */
 #include "qcmatrix.h"
 
-/* type of EOM of electrons */
+/* type of electronic wave function */
 typedef enum {ELEC_AO_D_MATRIX=0,
               ELEC_MO_C_MATRIX=1,
-              ELEC_COUPLED_CLUSTER=2} ElecEOMType;
+              ELEC_COUPLED_CLUSTER=2} ElecWavType;
 
 /* implementation-specific functions related to the EOM of electrons */
 typedef struct {

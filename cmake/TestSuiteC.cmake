@@ -14,11 +14,7 @@ SET(OPENRSP_C_TEST_SRCS
     ${LIB_OPENRSP_PATH}/tests/c/callback_ao_dens/get_overlap_exp.c
     ${LIB_OPENRSP_PATH}/tests/c/callback_ao_dens/get_overlap_mat.c
     ${LIB_OPENRSP_PATH}/tests/c/callback_ao_dens/get_linear_rsp_solution.c
+    ${LIB_OPENRSP_PATH}/tests/c/callback_pert/get_pert_comp.c
+    ${LIB_OPENRSP_PATH}/tests/c/callback_pert/get_pert_rank.c
     ${LIB_OPENRSP_PATH}/tests/c/test_c_OpenRSP_AO.c
     ${LIB_OPENRSP_PATH}/tests/c/test_c_OpenRSP.c)
-IF(OPENRSP_PERTURBATION_FREE)
-    SET(OPENRSP_C_TEST_SRCS
-        ${OPENRSP_C_TEST_SRCS}
-        ${LIB_OPENRSP_PATH}/tests/c/callback_pert/get_pert_comp.c
-        ${LIB_OPENRSP_PATH}/tests/c/callback_pert/get_pert_rank.c)
-ENDIF()

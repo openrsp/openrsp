@@ -131,7 +131,7 @@ that users should be keep in mind [#]_:
    This requirement affects the callback functions of one- and two-electron
    operators, exchange-correlation functionals and nuclear contributions
 
-OpenRSP Notations and Conventions
+OpenRSP notations and conventions
 =================================
 .. include:: background.rst
 

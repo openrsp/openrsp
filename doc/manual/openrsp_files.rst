@@ -15,7 +15,7 @@ Files and Directories of OpenRSP
 
 #. ``include``: Header files.
 
-    #. ``eom``: Header files of equation of motion and the solver.
+    #. ``eom``: Header files of equation of motion of wave function.
 
     #. ``hamiltonian``: Header files of operators in Hamiltonian.
 
@@ -47,13 +47,13 @@ Files and Directories of OpenRSP
 
    #. ``f03``: Fortran 2003 APIs.
 
-   #. ``nuc_contrib``: Source codes of nuclear contributions to the Hamiltonian.
+   #. ``nuc_contrib``: Source codes of nuclear Hamiltonian contributions.
 
    #. ``one_oper``: Source codes of one-electron operators.
 
    #. ``overlap``: Source codes of overlap integrals.
 
-   #. ``solver``: Source codes of response equation solver.
+   #. ``solver``: Source codes of linear response equation solver.
 
    #. ``two_oper``: Source codes of two-electron operators.
 

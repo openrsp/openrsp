@@ -62,6 +62,7 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
     /* walks to the last XC functional */
     cur_xc = xc_fun;
     do {
+/*FIXME: checks perturbations if resulting zero integrals*/
         cur_xc->get_xc_fun_exp(len_tuple,
                                pert_tuple,
                                num_freq_configs,
