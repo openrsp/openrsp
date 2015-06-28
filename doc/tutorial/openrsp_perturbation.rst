@@ -69,10 +69,10 @@ from the first order up to their maximum order.
 
 The last argument is a callback function
 
-.. c:function:: QVoid get_pert_concatenation(pert_label, num_cat_comps, rank_cat_comps, num_sub_tuples, len_sub_tuples, user_ctx, rank_sub_comps)
+.. c:function:: QVoid get_pert_concatenation(pert_label, first_cat_comp, num_cat_comps, num_sub_tuples, len_sub_tuples, user_ctx, rank_sub_comps)
 
 for getting the ranks of components of sub-perturbation tuples (with
-same perturbation label) for given ranks of components of the corresponding
+same perturbation label) for given components of the corresponding
 concatenated perturbation tuple. Here the name of the function can
 be anything else.
 
@@ -105,13 +105,13 @@ or, if we rank these derivatives (zero-based numbering):
 That means, if OpenRSP sends:
 
 #. ``pert_label=MAG``,
+#. ``first_cat_comp=0``,
 #. ``num_cat_comps=9``,
-#. ``rank_cat_comps[9]={0, 1, 2, 3, 4, 5, 6, 7, 8}``,
 #. ``num_sub_tuples=2``,
 #. ``len_sub_tuples[2]={1,1}``,
 
 the callback function :c:func:`get_pert_concatenation` should return:
-``rank_cat_comps[2*9]={0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 2,0, 2,1, 2,2}``,
+``rank_sub_comps[2*9]={0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 2,0, 2,1, 2,2}``,
 or other correct way to construct the second derivatives.
 
 .. nextslide::
@@ -134,27 +134,27 @@ second and third order geometric derivatives.
 For the non-redundant second order magnetic derivatives, OpenRSP could send:
 
 #. ``pert_label=MAG``,
+#. ``first_cat_comp=0``,
 #. ``num_cat_comps=6``,
-#. ``rank_cat_comps[6]={0, 1, 2, 3, 4, 5}``,
 #. ``num_sub_tuples=2``,
 #. ``len_sub_tuples[2]={1,1}``,
 
 and get:
 
-``rank_cat_comps[2*6]={0,0, 0,1, 0,2, 1,1, 1,2, 2,2}``.
+``rank_sub_comps[2*6]={0,0, 0,1, 0,2, 1,1, 1,2, 2,2}``.
 
 .. nextslide::
    :increment:
 .. include:: background.rst
 
 Therefore, the use of the callback function :c:func:`get_pert_concatenation`
-makes host program fully control the components of different derivatives,
+makes host programs fully control the components of different derivatives,
 and makes OpenRSP perturbation free.
 
 Last, the second last argument ``usr_ctx`` as described in this tutorial
 :ref:`OpenRSP-CMake`, is the user defined context for the callback function
 :c:func:`get_pert_concatenation`.
 
-The argument can be used to pass additional but necessary information to
+This argument can be used to pass additional but necessary information to
 the callback function, and OpenRSP will not touch it.
 

@@ -51,21 +51,21 @@ Examples of C callback functions can be found in the directory
 ``tests/c/callback``. The detailed information of these callback
 functions are given as follows.
 
-.. c:function:: QVoid get_pert_concatenation(pert_label, num_cat_comps, rank_cat_comps, num_sub_tuples, len_sub_tuples, user_ctx, rank_sub_comps)
+.. c:function:: QVoid get_pert_concatenation(pert_label, first_cat_comp, num_cat_comps, num_sub_tuples, len_sub_tuples, user_ctx, rank_sub_comps)
 
    Callback function for getting the ranks of components of sub-perturbation
-   tuples (with same perturbation label) for given ranks of components of the
+   tuples (with same perturbation label) for given components of the
    corresponding concatenated perturbation tuple, the last argument for the
    function :c:func:`OpenRSPSetPerturbations`.
 
    :param pert_label: the perturbation label
    :type pert_label: QInt
+   :param first_cat_comp: rank of the first component of the concatenated
+       perturbation tuple
+   :type first_cat_comp: QInt
    :param num_cat_comps: number of components of the concatenated perturbation
        tuple
    :type num_cat_comps: QInt
-   :param rank_cat_comps: ranks of components of the concatenated perturbation
-       tuple, size is ``num_cat_comps``
-   :type rank_cat_comps: QInt\*
    :param num_sub_tuples: number of sub-perturbation tuples to construct the
        concatenated perturbation tuple
    :type num_sub_tuples: QInt
@@ -77,8 +77,9 @@ functions are given as follows.
    :type user_ctx: QVoid\*
    :var rank_sub_comps: ranks of components of sub-perturbation tuples for
        the corresponding component of the concatenated perturbation tuple,
-       size is ``num_sub_tuples*num_cat_comps``, and arranged as
-       ``[num_cat_comps][num_sub_tuples]``
+       i.e. ``num_cat_comps`` components starting from the one with rank
+       ``first_cat_comp``, size is therefore ``num_sub_tuples*num_cat_comps``,
+       and arranged as ``[num_cat_comps][num_sub_tuples]``
    :vartype rank_sub_comps: QInt\*
    :rtype: QVoid
 

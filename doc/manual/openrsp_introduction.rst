@@ -58,9 +58,10 @@ Perturbation
 Perturbation label
   An integer distinguishing one perturbation from others; all *different*
   perturbation labels involved in the calculations should be given by
-  calling the API :c:func:`OpenRSPSetPerturbations`; OpenRSP will stop if
-  there is any unspecified perturbation label given afterwards when calling
-  the APIs :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`.
+  calling the application programming interface (API)
+  :c:func:`OpenRSPSetPerturbations`; OpenRSP will stop if there is any
+  unspecified perturbation label given afterwards when calling the APIs
+  :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`.
 
 Perturbation order
   Each perturbation can acting on molecules once or many times, that is

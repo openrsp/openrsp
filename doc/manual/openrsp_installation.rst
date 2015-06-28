@@ -12,10 +12,11 @@ installed on your computer:
 
 #. C, C++ (if C++ APIs built) and/or Fortran 2003 (if Fortran APIs built) compilers,
 
-#. HDF 5 (:math:`\ge1.8`) if it is enabled in
-   `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_,
+#. HDF 5 (:math:`\ge1.8`) if it is enabled in QcMatrix library,
 
-#. BLAS and LAPACK libraries.
+#. BLAS and LAPACK libraries, and
+
+#. `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_.
 
 CMake
 -----
