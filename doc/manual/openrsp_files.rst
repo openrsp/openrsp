@@ -11,7 +11,7 @@ Files and Directories of OpenRSP
 
 #. ``COPYING`` and ``COPYING.LESSER``: The license.
 
-#. ``doc``: Documentation of OpenRSP.
+#. ``doc``: OpenRSP Manual and Tutorial.
 
 #. ``include``: Header files.
 

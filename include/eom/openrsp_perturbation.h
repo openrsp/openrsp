@@ -33,8 +33,8 @@
 #include "qcmatrix.h"
 
 /* callback function to get the ranks of components of sub-perturbation
-   tuples (with same perturbation label) for given ranks of components
-   of the corresponding concatenated perturbation tuple */
+   tuples (with same perturbation label) for given components of the
+   corresponding concatenated perturbation tuple */
 typedef QVoid (*GetPertCat)(const QInt,
                             const QInt,
                             const QInt*,
@@ -59,8 +59,8 @@ typedef struct {
 #endif
     GetPertCat get_pert_concatenation;  /* user specified function for getting the ranks of
                                            components of sub-perturbation tuples (with same
-                                           perturbation label) for given ranks of components
-                                           of the corresponding concatenated perturbation tuple */
+                                           perturbation label) for given components of the
+                                           corresponding concatenated perturbation tuple */
 } RSPPert;
 
 /* functions related to the perturbations */
