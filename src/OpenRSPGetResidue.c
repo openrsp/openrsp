@@ -68,8 +68,9 @@
          ``sum(residue_num_pert)``, and arranged as ``[residue_num_pert]``
      \param[QInt:int]{in} num_freq_configs number of different frequency
          configurations for each property
-     \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation label
-         (except for the perturbation a) over all frequency configurations
+     \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation
+         label (except for the perturbation a) over all frequency configurations
+         and excitation tuples
      \param[QInt:int]{in} kn_rules number k for the kn rule for each property
      \param[QInt:int]{in} size_residues size of the residues
      \param[QReal:real]{out} residues the residues

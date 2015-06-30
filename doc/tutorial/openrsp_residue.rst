@@ -110,3 +110,12 @@ or in zero-based numbering:
 #. ``residue_num_pert[order_residue*num_props]={1,1, 1,2}``,
 #. ``residue_idx_pert[sum(residue_num_pert)]={0,2, 0,2,3}``.
 
+.. nextslide::
+   :increment:
+.. include:: background.rst
+
+Last but not least, it is apparent that the (sums of) frequencies
+(``pert_freqs``) of perturbation labels specified by ``residue_idx_pert``
+should equal to the corresponding excitation energies for all frequency
+configurations and excitation tuples.
+

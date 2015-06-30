@@ -60,6 +60,7 @@ QErrorCode RSPPertGetConcatenation(const RSPPert *rsp_pert,
                                    const QInt *len_sub_tuples,
                                    QInt *rank_sub_comps)
 {
+/*FIXME: zero-based or one-based numbering*/
     rsp_pert->get_pert_concatenation(pert_label,
                                      first_cat_comp,
                                      num_cat_comps,
