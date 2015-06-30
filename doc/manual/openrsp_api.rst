@@ -385,11 +385,15 @@ Functions of OpenRSP API (C version)
        for each property, size is ``num_props``
    :type num_freq_configs: QInt\*
    :param pert_freqs: complex frequencies of each perturbation label (except
-       for the perturbation :math:`a`) over all frequency configurations,
-       size is ``2*(dot_product(len_tuple,num_freq_configs)-sum(num_freq_configs))``,
-       and arranged as ``[num_freq_configs[i]][len_tuple[i]-1][2]`` (``i``
-       runs from ``0`` to ``num_props-1``) and the real and imaginary parts
-       of each frequency are consecutive in memory
+       for the perturbation :math:`a`) over all frequency configurations and
+       excitation tuples, size is
+       ``2*`` ``(dot_product(len_tuple,num_freq_configs)-sum(num_freq_configs))`` ``*num_excit``,
+       and arranged as ``[num_excit]`` ``[num_freq_configs[i]]`` ``[len_tuple[i]-1]`` ``[2]``
+       (``i`` runs from ``0`` to ``num_props-1``) and the real and imaginary
+       parts of each frequency are consecutive in memory; notice that the
+       (sums of) frequencies of perturbation labels specified by ``residue_idx_pert``
+       should equal to the corresponding excitation energies for all frequency
+       configurations and excitation tuples
    :type pert_freqs: QReal\*
    :param kn_rules: number :math:`k` for the :math:`(k,n)` rule for each property
        (OpenRSP will determine the number :math:`n`), size is the number of
@@ -398,13 +402,14 @@ Functions of OpenRSP API (C version)
    :param size_residues: size of the residues, equals to the sum of the
        size of each property to calculate---which is the product of the
        size of added perturbations (specified by the perturbation tuple
-       ``pert_tuple``) and the number of frequency configurations
-       ``num_freq_configs`` for each property
+       ``pert_tuple``), the number of excitation tuples (``num_excit``)
+       and the number of frequency configurations ``num_freq_configs``
+       for each property
    :type size_residues: QInt
    :var residues: the residues, size is ``2`` :math:`\times`
        ``size_residues`` and arranged as
-       ``[num_props][num_freq_configs][pert_tuple][2]``, where the real
-       and imaginary parts of the residues are consecutive in memory
+       ``[num_props][num_excit][num_freq_configs][pert_tuple][2]``, where
+       the real and imaginary parts of the residues are consecutive in memory
    :vartype residues: QReal\*
    :rtype: QErrorCode
 

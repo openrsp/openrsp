@@ -70,7 +70,7 @@ CC based response theories.
 
 To make OpenRSP work for any perturbation, we are now trying to implement
 the so called **perturbation free scheme**, see Section
-:ref:`section-perturbation-free`.
+:ref:`openrsp-c-support-perturbations`.
 
 In order to make it easy for implementing OpenRSP into different host
 programs (written in different programming languages), we agree to use
@@ -98,11 +98,27 @@ host programs) that can be written in C and Fortran [#]_.
        can fully use the QcMatrix library that will invoke BLAS and LAPACK
        libraries for matrix operations.
 
-Therefore, a full picture of OpenRSP can be:
+Therefore, a full picture of OpenRSP used in a C host program can be
+(the use of OpenRSP in a Fortran host program can be found in Secion
+:ref:`section-openrsp-Fortran-APIs`):
 
 .. figure:: /_static/OpenRSP_framework.pdf
    :scale: 100 %
    :align: center
+
+As shown in the above picture, the OpenRSP library is divided into three parts:
+
+#. The "OpenRSP C APIs" have been described in Chapter
+   :ref:`chapter-API-reference` which work mostly between the host program driver
+   routine and other parts of the OpenRSP library;
+#. The "OpenRSP response" is the core part in which the performance of response
+   theory will be done;
+#. The "OpenRSP C support" will be described in Sections
+   :ref:`openrsp-c-support-perturbations`, :ref:`openrsp-c-support-Hamiltonian`
+   and :ref:`openrsp-c-support-solver`, which saves the information of
+   perturbations, electronic and nuclear Hamiltonian and linear response equation
+   solver, and will be used by the "OpenRSP response" part during calculating
+   response functions and residues.
 
 Symbolic Computations (not implemented)
 ---------------------------------------
@@ -132,7 +148,7 @@ codes in the OpenRSP repository and release with OpenRSP. Because releasing
 only the ``*.w`` files will impose further requirements for the users, they
 will have to install the ``CWEB`` system.
 
-.. _section-perturbation-free:
+.. _openrsp-c-support-perturbations:
 
 Perturbation Free Scheme (not implemented)
 ------------------------------------------
@@ -190,6 +206,8 @@ the corresponding *concatenated perturbation tuple* (higher order derivatives).
 
 Functions of the perturbation free scheme are implemented in ``src/perturbation``.
 
+.. _openrsp-c-support-Hamiltonian:
+
 Electronic and Nuclear Hamiltonian
 ----------------------------------
 
@@ -213,6 +231,8 @@ lists in OpenRSP, in which each node corresponds to an operator. This makes
 it possible for host programs to add different callback functions for different
 operators, if they do not want to or can not provide OpenRSP a general callback
 function.
+
+.. _openrsp-c-support-solver:
 
 Response Equation Solver
 ------------------------
@@ -238,11 +258,21 @@ Implementation of Fortran APIs
 
 OpenRSP APIs that host programs will use to talk to OpenRSP are written in C
 language, with Fortran support by using Fortran 2003 language. The source codes
-are in ``src/f03``.
+are in ``src/f03``, and the framework of OpenRSP used in a Fortran host program
+is shown in the following figure:
 
-Take one-electron integrals as an example, in the OpenRSP Fortran API
-``OpenRSPAddOneOper_f()``, the callback subroutine :c:func:`get_one_oper_mat`
-is declared in the ``interface``::
+.. figure:: /_static/OpenRSP_Fortran_API.pdf
+   :scale: 100 %
+   :align: center
+
+Two new parts are needed for the use of OpenRSP in a Fortran program:
+
+#. "OpenRSP Fortran APIs", and
+#. "OpenRSP Fortran support".
+
+Take one-electron integrals as an example, the callback subroutine
+:c:func:`get_one_oper_mat` is declared in the ``interface`` of the OpenRSP
+Fortran API ``OpenRSPAddOneOper_f()``::
 
     function OpenRSPAddOneOper_f(...)
         interface
@@ -259,10 +289,11 @@ is declared in the ``interface``::
         end interface
     end function OpenRSPAddOneOper_f
 
-But OpenRSP C codes can not call this subroutine :c:func:`get_one_oper_mat`
+But "OpenRSP C support" codes can not call this subroutine :c:func:`get_one_oper_mat`
 directly, because the ``type(QcMat)`` can not be sent from a C function to
-a Fortran subroutine directly. Instead, another subroutine is implemented
-in OpenRSP that will be called by the OpenRSP C codes::
+a Fortran subroutine directly. Instead, another "OpenRSP Fortran support"
+subroutine is implemented in OpenRSP that will be called by the
+"OpenRSP C support" codes::
 
     subroutine RSPOneOperGetMat_f(len_tuple,  &
                                   pert_tuple, &
@@ -306,16 +337,16 @@ former. Another QcMatrix function ``QcMat_C_NULL_PTR`` is used to clean up the
 context of Fortran ``type(QcMat)`` variables ``f_val_int`` (but not the C
 pointers ``val_int``).
 
-The procedure when doing a callback can be summarized as:
+The procedure when doing a callback of Fortran subroutine can be summarized as:
 
-OpenRSP recursive codes (Fortran) :math:`\Rightarrow` OpenRSP C codes that
-take care of the callback :math:`\Rightarrow` ``RSPOneOperGetMat_f()``
+"OpenRSP response" codes (Fortran) :math:`\Rightarrow` "OpenRSP C support" codes
+:math:`\Rightarrow` "OpenRSP Fortran support" subroutine ``RSPOneOperGetMat_f()``
 :math:`\Rightarrow` :c:func:`get_one_oper_mat`
 
 One can also notice that, the argument ``num_int`` is needed in the
 ``interface`` of ``OpenRSPAddOneOper_f()`` and the subroutine
-``RSPOneOperGetMat_f()``, and OpenRSP C codes also need to pass ``num_int`` to
-``RSPOneOperGetMat_f()`` (from C function to Fortran subroutine). Therefore,
+``RSPOneOperGetMat_f()``, and "OpenRSP C support" codes also need to pass ``num_int``
+to ``RSPOneOperGetMat_f()`` (from C function to Fortran subroutine). Therefore,
 these arguments for the dimension of arrays have to be passed although they are
 over complete.
 
