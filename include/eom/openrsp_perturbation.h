@@ -74,12 +74,12 @@ extern QErrorCode RSPPertCreate(RSPPert*,
                                 const GetPertCat);
 extern QErrorCode RSPPertAssemble(RSPPert*);
 extern QErrorCode RSPPertWrite(const RSPPert*,FILE*);
-extern QErrorCode RSPPertGetNumComps(const RSPPert*,
-                                     const QInt,
-                                     const QInt*,
-                                     const QInt,
-                                     const QReal*,
-                                     QInt*);
+extern QErrorCode RSPPertGetFromTuple(const RSPPert*,
+                                      const QInt,
+                                      const QInt*,
+                                      const QInt,
+                                      const QReal*,
+                                      QInt*);
 extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
                                           const QInt,
                                           const QInt,

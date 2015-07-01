@@ -3,7 +3,7 @@ SET(OPENRSP_SRCS
     ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertCreate.c
     ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertAssemble.c
     ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertWrite.c
-    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertGetNumComps.c
+    ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertGetFromTuple.c
     ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertGetConcatenation.c
     ${LIB_OPENRSP_PATH}/src/perturbation/RSPPertDestroy.c
     ${LIB_OPENRSP_PATH}/src/solver/RSPSolverCreate.c
