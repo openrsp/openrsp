@@ -48,6 +48,7 @@ ADD_CUSTOM_COMMAND(OUTPUT ${OPENRSP_DEVELOPER_MANUAL}
                    COMMAND cp ${CMAKE_SOURCE_DIR}/references.bib ${CMAKE_BINARY_DIR}
                    COMMAND pdflatex ${OPENRSP_DEVELOPER_LATEX_MAIN}
                    COMMAND bibtex OpenRSPDeveloper.aux
+                   COMMAND makeindex OpenRSPDeveloper.idx
                    COMMAND pdflatex ${OPENRSP_DEVELOPER_LATEX_MAIN}
                    COMMAND pdflatex ${OPENRSP_DEVELOPER_LATEX_MAIN})
 # Add the target "doc"
@@ -58,6 +59,9 @@ SET(OPENRSP_WEB_CLEAN
     ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.aux
     ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.bbl
     ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.blg
+    ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.idx
+    ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.ilg
+    ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.ind
     ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.log
     ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.out
     ${CMAKE_BINARY_DIR}/OpenRSPDeveloper.toc
