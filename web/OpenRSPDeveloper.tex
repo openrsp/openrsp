@@ -1,0 +1,160 @@
+%  OpenRSP: open-ended library for response theory
+%  Copyright 2015 Radovan Bast,
+%                 Daniel H. Friese,
+%                 Bin Gao,
+%                 Dan J. Jonsson,
+%                 Magnus Ringholm,
+%                 Kenneth Ruud,
+%                 Andreas Thorvaldsen
+%
+%  OpenRSP is free software: you can redistribute it and/or modify
+%  it under the terms of the GNU Lesser General Public License as
+%  published by the Free Software Foundation, either version 3 of
+%  the License, or (at your option) any later version.
+%
+%  OpenRSP is distributed in the hope that it will be useful,
+%  but WITHOUT ANY WARRANTY; without even the implied warranty of
+%  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+%  GNU Lesser General Public License for more details.
+%
+%  You should have received a copy of the GNU Lesser General Public
+%  License along with OpenRSP. If not, see
+%  <http://www.gnu.org/licenses/>.
+%
+%  Main file of the OpenRSP Developer Manual.
+%
+%  2015-08-20, Bin Gao:
+%  * first version
+
+\documentclass{article}
+
+\usepackage{amsmath}
+% leaves space around whole list
+\usepackage{enumitem}
+\setlist{nolistsep}
+% makes nice pdf on screen
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage[pdftex,
+            draft=false,
+            colorlinks=true,
+            bookmarksnumbered=true,
+            hyperindex,
+            pdfstartview=FitH,
+            plainpages=false,
+            linkcolor=blue,
+            citecolor=blue,
+            urlcolor=blue]{hyperref}
+%CJKbookmarks=true
+
+\usepackage{noweb}
+%\noweboptions{smallcode,longchunks}
+
+% used for notice, remove this at the end
+\usepackage{xcolor}
+\newcommand{\fixme}[1]{\textbf{\textit{\color{red} #1}}}
+
+% page layout
+\setlength{\marginparwidth}{0in}
+\setlength{\evensidemargin}{-0.4in}
+\setlength{\oddsidemargin}{-0.07in}
+\setlength{\textwidth}{6.76in}
+\setlength{\topmargin}{0in}
+\setlength{\textheight}{9in}
+
+% all the figures are in directory figures
+\graphicspath{{figures/}}
+
+\pagestyle{empty}
+
+\begin{document}
+
+% library name
+\def\LibName{\textsc{OpenRSP}\,}
+% library version
+\def\LibVersion{1.0.0\,}
+% library authors
+\def\LibAuthor{Radovan Bast\\
+               Daniel H. Friese\\
+               Bin Gao\\
+               Dan J. Jonsson\\
+               Magnus Ringholm\\
+               Kenneth Ruud\\
+               Andreas Thorvaldsen\,}
+
+\title{\LibName Developer Manual\\
+       Version \LibVersion}
+
+\author{\LibAuthor}
+
+\date{Centre for Theoretical and Computational Chemistry (CTCC)\\
+      Department of Chemistry\\
+      University of Troms{\o}---The Arctic University of Norway\\
+      N--9037, Troms{\o}, Norway}
+
+\maketitle
+\thispagestyle{empty}
+
+\clearpage
+
+% copyright page
+\begingroup
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{\baselineskip}
+\LibName: open-ended library for response theory\\
+\textcopyright{} 2015 \LibAuthor\\
+
+\LibName is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation, either version 3 of
+the License, or (at your option) any later version.
+
+\LibName is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with \LibName. If not, see
+<http://www.gnu.org/licenses/>.
+
+HOWEVER, YOU CANNOT USE IDEAS, DATA, OR WORDING OF THIS DOCUMENT
+WITHOUT AN APPROPRIATE CITATION.
+\endgroup
+
+\clearpage
+
+\tableofcontents
+
+\clearpage
+
+\pagestyle{noweb}
+
+\section{Preface}
+
+The Version numbering scheme\index{Version numbering scheme} used for
+\LibName is \textbf{Major.Minor.Patch}, where
+\begin{description}
+  \item[Major] generally represents new release containing important changes,
+    and it may not be compatible with previous versions.
+  \item[Minor] is changed when a few new features introduced, and it should be
+    compatible with those of the same \textbf{Major} number.
+  \item[Patch] usually includes bug fixes, and should be compatible with those
+    of the same \textbf{Major.Minor} number.
+\end{description}
+
+If there is any question regarding the use of \LibName, please contact
+the authors as given in the file \texttt{AUTHORS.rst}.
+
+If you have used \LibName and found it is useful, please consider to cite
+\LibName as described in the file \texttt{openrsp.bib}.
+
+% weave all *.nw files together so that one can cross-reference chunks
+% in different *.nw files
+\input{OpenRSPDeveloper_chapters}
+
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}
+

@@ -1,0 +1,206 @@
+\section{Perturbation Free Scheme}
+\label{section-openrsp-perturbations}
+
+Before discussing the implementation, we first need to address the notations
+and conventions will be used through the \LibName library and the current
+document:
+
+\begin{description}
+  \item[Perturbation] is described by a label, a complex frequency and its
+    order. Any two perturbations are different if they have different labels,
+    and/or frequencies, and/or orders.
+  \item[Perturbation label] is an integer distinguishing one perturbation
+    from others; all \textit{different} perturbation labels involved in the
+    calculations should be given by calling the application programming interface
+    (API) [[OpenRSPSetPerturbations]]; \LibName will stop if there is any
+    unspecified perturbation label given afterwards when calling the APIs
+    [[OpenRSPGetRSPFun]] or [[OpenRSPGetResidue]].
+  \item[Perturbation order]. Each perturbation can acting on molecules once
+    or many times, that is the order of the perturbation.
+  \item[Perturbation components and their ranks]. Each perturbation may have
+    different numbers of components for their different orders, the position of
+    each component is called its rank.
+
+    For instance, there will usually be $x,y,z$ components for the
+    electric dipole perturbation, and their ranks are \texttt{\{0,1,2\}} in
+    zero-based numbering, or ``{1,2,3}`` in one-based numbering.
+  
+    The numbers of different components of perturbations and their ranks
+    are totally decided by the host program. OpenRSP will get such information
+    from callback functions, that is OpenRSP itself is a perturbation free
+    library.
+    *FIXME: perturbtion free scheme not implemented yet*
+
+Perturbation tuple
+  An ordered list of perturbation labels, and in which we further require
+  that *identical perturbation labels should be consecutive*. That means
+  the tuple $(a,b,b,c)` is allowed, but $(a,b,c,b)` is illegal
+  because the identical labels $b` are not consecutive.
+
+  As a tuple:
+
+  #. Multiple instances of the same labels are allowed so that
+     $(a,b,b,c)\ne(a,b,c)`, and
+  #. The perturbation labels are ordered so that $(a,b,c)\ne(a,c,b)`
+     (because their corresponding response functions or residues are in
+     different shapes).
+
+  We will sometimes use an abbreviated form of perturbation tuple as,
+  for instance $abc\equiv(a,b,c)`.
+
+  Obviously, a perturbation tuple $+` its corresponding complex
+  frequencies for each perturbation label can be viewed as a set of
+  perturbations, in which the number of times a label (with the same
+  frequency) appears is the order of the corresponding perturbation.
+
+Canonical order
+  #. In OpenRSP, all perturbation tuples are canonically orderd according
+     to the argument ``pert_tuple`` in the API :c:func:`OpenRSPGetRSPFun`
+     or :c:func:`OpenRSPGetResidue`. For instance, when a perturbation
+     tuple $(a,b,c)` given as ``pert_tuple`` in the API
+     :c:func:`OpenRSPGetRSPFun`, OpenRSP will use such order ($a>b>c`)
+     to arrange all perturbation tuples inside and sent to the callback functions.
+  #. Moreover, a collection of several perturbation tuples will also follow
+     the canonical order. For instance, a collection of all possible perturbation
+     tuples of labels $a,b,c` are $(0,a,b,c,ab,ac,bc,abc)`, where
+     $0` means unperturbed quantities that is always the first one
+     in the collection.
+
+Perturbation $a`
+  The first perturbation label in the tuple sent to OpenRSP APIs
+  :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`, are
+  the perturbation $a` [#]_.
+
+.. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,
+       Poul Jørgensen and Sonia Coriani, J. Chem. Phys., 129,
+       214108 (2008).
+
+Perturbation addressing
+  #. The addressing of perturbation labels in a tuple is decided by
+     (i) the argument ``pert_tuple`` sent to the API :c:func:`OpenRSPGetRSPFun`
+     or :c:func:`OpenRSPGetResidue`, and (ii) the canonical order that
+     OpenRSP uses.
+  #. The addressing of components per perturbation (several consecutive
+     identical labels with the same complex frequency) are decided by
+     the host program. *FIXME: perturbtion free scheme not implemented yet*
+  #. The addressing of a collection of perturbation tuples follows the
+     canonical order as aforementioned.
+
+  Therefore, the shape of response functions or residues is mostly
+  decided by the host program. Take $\mathcal{E}^{abbc}` as an
+  example, its shape is $(N_{a},N_{bb},N_{c})`, where $N_{a}`
+  and $N_{c}` are respectively the numbers of components of
+  the first order of the perturbations $a` and $c`, and
+  $N_{bb}` is the number of components of the second order of
+  the perturbation $b`, and
+
+  #. In OpenRSP, we will use notation ``[a][bb][c]`` for $\mathcal{E}^{abbc}`,
+     where the leftmost index (``a``) runs slowest in memory and the
+     rightmost index (``c``) runs fastest. However, one should be
+     aware that the results are still in a one-dimensional array.
+  #. If there two different frequencies for the perturbation $b`,
+     OpenRSP will return ``[a][b1][b2][c]``, where ``b1`` and ``b2``
+     stand for the components of the first order of the perturbation
+     $b`.
+  #. The notation for a collection of perturbation tuples (still in a
+     one-dimensional array) is ``{1,[a],[b],[c],[a][b],[a][c],[b][c],[a][b][c]}``
+     for $(0,a,b,c,ab,ac,bc,abc)`, where as aforementioned the
+     first one is the unperturbed quantities.
+
+@ For different perturbations, there could be ``different numbers of components''
+and ``arranged in different ways'' in different host programs. For instance,
+there are 9 components for the second order magnetic derivatives in a redundant
+way $xx,xy,xz,yx,yy,yz,zx,zy,zz$, but 6 components in a non-redundant way
+$xx,xy,xz,yy,yz,zz$. There are at most four centers in different
+integrals, non-zero high order ($\ge 5$) geometric derivatives are only
+those with at most four differentiated centers.
+
+To take all the above information into account in \LibName will make it so
+complicated and not necessary, because response theory actually does not
+depend on the detailed knowledge of different perturbations. In particular,
+when all the (perturbed) integrals and expectation values are computed by
+the host program's callback functions, the detailed information of perturbations,
+i.e. the number of components and how they are arranged in memory can be
+hidden from \LibName.
+
+The former can be easily solved by sending the number of components of
+each perturbation (label) up to its maximum order to the \LibName API
+[[OpenRSPSetPerturbations]].
+
+The latter can be important for \LibName, for instance, when the higher order
+derivatives with respect to ``one perturbation'' need to be constructed from
+several lower order derivatives. For instance, the second order derivatives may
+be constructed from the first order ones in the redundant format:
+\begin{align*}
+  x+x\rightarrow xx, & 0+0\rightarrow 0,\\
+  x+y\rightarrow xy, & 0+1\rightarrow 1,\\
+  x+z\rightarrow xz, & 0+2\rightarrow 2,\\
+  y+x\rightarrow yx, & 1+0\rightarrow 3,\\
+  y+y\rightarrow yy, & 1+1\rightarrow 4,\\
+  y+z\rightarrow yz, & 1+2\rightarrow 5,\\
+  z+x\rightarrow zx, & 2+0\rightarrow 6,\\
+  z+y\rightarrow zy, & 2+1\rightarrow 7,\\
+  z+z\rightarrow zz, & 2+2\rightarrow 8,
+\end{align*}
+where we have ranked different components in zero-based numbering (numbers on
+the right). However, the ranks can be different in different host programs. To
+solve this problem, i.e., the mapping relationship of lower and higher order
+derivatives with respect to ``one perturbation''\footnote{We emphasize the
+derivatives of ``one perturbation'' because components of higher order
+derivatives of different perturbations are simply the direct product of
+components of lower order derivatives.}, we ask for a callback function
+[[get_pert_concatenation]] from host programs, which is the last
+argument of the API [[OpenRSPSetPerturbations]].
+
+This callback function is used by \LibName to get the ranks of components of
+``sub-perturbation tuples with same perturbation label'' (lower order
+derivatives with respect to one perturbation) for given components of the
+corresponding ``concatenated perturbation tuple'' (higher order derivatives).
+
+
+\section{Hello world}
+
+Today I awoke and decided to write
+some code, so I started to write Hello World in \textsf C.
+
+<<hello.c>>=
+/*
+  <<license>>
+*/
+#include <stdio.h>
+
+int main(int argc, char *argv[]) {
+    printf("Hello World!\n");
+    return 0;
+}
+@
+\noindent \ldots then I did the same in PHP.
+
+<<hello.php>>=
+<?php
+  /*
+  <<license>>
+  */
+  echo "Hello world!\n";
+?>
+@
+
+<<hello.py>>=
+# <<license>>
+print("Hello World!")
+@
+
+<<hello.F90>>=
+! <<license>>
+program main
+    print *,"Hello World!"
+end program main
+@
+
+\section{License}
+Later the same day some lawyer reminded me about licenses.
+So, here it is:
+
+<<license>>=
+This work is placed in the public domain.
+@

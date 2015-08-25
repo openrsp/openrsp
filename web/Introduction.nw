@@ -1,0 +1,106 @@
+\section{Introduction}
+\label{section-introduction}
+
+\subsection{Theoretical Background}
+\label{subsection-theory}
+
+For the time being, \LibName has implemented the density matrix-based
+quasienergy formulation of the Kohn--Sham density functional response theory
+using perturbation- and time-dependent basis
+sets~\cite{Thorvaldsen-JCP-129-214108,Bast-PCCP-13-2627}\index{Theoretical background}.
+
+The density matrix-based quasienergy formulation actually works for different
+levels of theory, i.e., one-, two- and four-component levels. A relativistic
+implementation can be found in Ref.~\cite{Bast-CP-356-177}.
+
+\LibName uses the recursive programming techniques~\cite{Ringholm-JCC-35-622}
+to compute different molecular properties order by order. The recursive
+programming techniques can also be used for calculations of residues, the
+implementation of the first order residues can be found in
+Ref.~\cite{Friese-JCTC-11-1129}.
+
+\subsection{Open-Ended Response Theory}
+\label{subsection-open-ended}
+
+The name \LibName stands for \textbf{open-ended response theory}, that is,
+the library is\index{\LibName}:
+\begin{enumerate}
+  \item open-ended for different levels of theory, i.e., one-, two- and
+    four-component levels;
+  \item open-ended for different wave functions, e.g., atomic-orbital~(AO)
+    based density matrix, molecular orbital~(MO) cofficients and
+    coupled cluster~(CC);
+  \item open-ended for different kinds of perturbations; and
+  \item open-ended for different host programs.
+\end{enumerate}
+
+As aformentioned, \LibName has for the time being implemented the AO based
+density matrix response theory (source codes in
+\texttt{src/ao\_dens})\footnote{The codes in \texttt{src/ao\_dens} are written
+in Fortran, but \LibName APIs are implemented using C language. Therefore,
+adapter codes between them are implemented in \texttt{src/ao\_dens/adapter},
+for \LibName APIs calling the codes of AO based density matrix response theory,
+also for the AO based density matrix response theory codes calling the callback
+functions (as function pointers saved by \LibName APIs).}, and it works for
+one-, two- and four-component levels by simply setting the appropriate
+Hamiltonian. We are now planning to implement the MO and CC based response
+theories.
+
+To make \LibName work for any perturbation, we will implement the so called
+\textbf{perturbation free scheme}, see Section~\ref{section-openrsp-perturbations}.
+
+In order to make it easy for implementing \LibName into different host programs
+(written in different programming languages), we agree to use the
+\textbf{callback function scheme}\index{Callback function scheme} in \LibName
+in the 2015 Skibotn meeting. The callback functions are specified by host
+programs by calling the \LibName APIs (both C and Fortran APIs implemented)
+during run time, and will be used by \LibName during calculations, to get
+contributions from electronic and nuclear Hamiltonian, and to get response
+parameters from solving the linear response equation.
+
+Another important issue affects the implementation of \LibName into different
+host programs is the matrix and its different operations that \LibName
+extensively depends on. Different host programs can have different types of
+matrices (dense and sparse, sequential and parallel) and written by different
+programming languages (e.g. C and Fortran).
+
+To best utilize the host program's developed matrix routines (if there is), and
+also to remove this complexity of matrix problem from \LibName, we also agree
+to build \LibName on top of the
+\href{https://gitlab.com/bingao/qcmatrix}{QcMatrix library}\index{QcMatrix library}
+in the 2015 Skibotn meeting. This matrix library works as an adapter between
+\LibName and different matrix routines (implemented in different host programs)
+that can be written in C and Fortran\footnote{If there is no matrix routines
+implemented in a host program, it can fully use the QcMatrix library that will
+invoke BLAS and LAPACK libraries for matrix operations.}.
+
+Therefore, a full picture of \LibName used in a C host program can be (the
+description of \LibName Fortran APIs can be found in
+Section~\ref{section-openrsp-fortran}\index{\LibName Fortran APIs})\index{\LibName
+framework}:
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\textwidth]{OpenRSP_framework.pdf}
+  \caption{\LibName used in a C host program.}
+  \label{fig-openrsp-framework}
+\end{figure}
+
+As shown in Figure~\ref{fig-openrsp-framework}, the \LibName library is divided
+into three parts:
+\begin{enumerate}
+  \item The ``\LibName C APIs'' work mostly between the host program driver
+    routine and other parts of the \LibName library;
+  \item The ``\LibName response'' is the core part in which the performance
+    of response theory will be done;
+  \item The ``\LibName C support'' saves the information of perturbations,
+    electronic and nuclear Hamiltonian and linear response equation solver,
+    and will be used by the ``\LibName response'' part during calculating
+    response functions and residues.
+\end{enumerate}
+
+In the following sections, the ``\LibName C APIs'' and ``\LibName C support''
+will be described and implemented. The ``\LibName response'' was already
+implemented using Fortran for the AO based density matrix response theory
+(source codes in \texttt{src/ao\_dens}) that will not be covered here.
+
