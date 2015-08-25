@@ -100,9 +100,3 @@ extern QErrorCode RSPOverlapDestroy(RSPOverlap*);
 
 Let us now implement all the functions declared.
 
-\section{List of chunks}
-
-ref~\cite{Thorvaldsen-JCP-129-214108,Bast-PCCP-13-2627}
-
-\nowebchunks
-

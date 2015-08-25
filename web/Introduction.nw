@@ -1,13 +1,13 @@
 \section{Introduction}
 \label{section-introduction}
 
-\subsection{Theoretical Background}
+\subsection{Theoretical Background\index{Theoretical background}}
 \label{subsection-theory}
 
 For the time being, \LibName has implemented the density matrix-based
 quasienergy formulation of the Kohn--Sham density functional response theory
 using perturbation- and time-dependent basis
-sets~\cite{Thorvaldsen-JCP-129-214108,Bast-PCCP-13-2627}\index{Theoretical background}.
+sets~\cite{Thorvaldsen-JCP-129-214108,Bast-PCCP-13-2627}.
 
 The density matrix-based quasienergy formulation actually works for different
 levels of theory, i.e., one-, two- and four-component levels. A relativistic
@@ -19,11 +19,39 @@ programming techniques can also be used for calculations of residues, the
 implementation of the first order residues can be found in
 Ref.~\cite{Friese-JCTC-11-1129}.
 
-\subsection{Open-Ended Response Theory}
+\subsection{\LibName License\index{\LibName License}}
+
+We will release \LibName under the GNU Lesser General Public License:
+
+<<license>>=
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
+
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
+
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see
+@
+
+\subsection{Open-Ended Response Theory\index{Open-ended response theory}}
 \label{subsection-open-ended}
 
 The name \LibName stands for \textbf{open-ended response theory}, that is,
-the library is\index{\LibName}:
+the library is:
 \begin{enumerate}
   \item open-ended for different levels of theory, i.e., one-, two- and
     four-component levels;
@@ -53,10 +81,10 @@ In order to make it easy for implementing \LibName into different host programs
 (written in different programming languages), we agree to use the
 \textbf{callback function scheme}\index{Callback function scheme} in \LibName
 in the 2015 Skibotn meeting. The callback functions are specified by host
-programs by calling the \LibName APIs (both C and Fortran APIs implemented)
-during run time, and will be used by \LibName during calculations, to get
-contributions from electronic and nuclear Hamiltonian, and to get response
-parameters from solving the linear response equation.
+programs by calling the \LibName application program interface (APIs, both C
+and Fortran implemented) during run time, and will be used by \LibName during
+calculations, to get contributions from electronic and nuclear Hamiltonian, and
+to get response parameters from solving the linear response equation.
 
 Another important issue affects the implementation of \LibName into different
 host programs is the matrix and its different operations that \LibName
@@ -74,10 +102,11 @@ that can be written in C and Fortran\footnote{If there is no matrix routines
 implemented in a host program, it can fully use the QcMatrix library that will
 invoke BLAS and LAPACK libraries for matrix operations.}.
 
+\subsection{\LibName Framework and APIs\index{\LibName framework and APIs}}
+
 Therefore, a full picture of \LibName used in a C host program can be (the
 description of \LibName Fortran APIs can be found in
-Section~\ref{section-openrsp-fortran}\index{\LibName Fortran APIs})\index{\LibName
-framework}:
+Section~\ref{section-openrsp-fortran}\index{\LibName Fortran APIs}):
 
 \begin{figure}[htbp]
   \centering
@@ -90,7 +119,9 @@ As shown in Figure~\ref{fig-openrsp-framework}, the \LibName library is divided
 into three parts:
 \begin{enumerate}
   \item The ``\LibName C APIs'' work mostly between the host program driver
-    routine and other parts of the \LibName library;
+    routine and other parts of the \LibName library, that all the information
+    saved in the ``\LibName C support'' will be set up by calling the
+    corresponding \LibName C API;
   \item The ``\LibName response'' is the core part in which the performance
     of response theory will be done;
   \item The ``\LibName C support'' saves the information of perturbations,
@@ -99,8 +130,213 @@ into three parts:
     response functions and residues.
 \end{enumerate}
 
-In the following sections, the ``\LibName C APIs'' and ``\LibName C support''
-will be described and implemented. The ``\LibName response'' was already
-implemented using Fortran for the AO based density matrix response theory
-(source codes in \texttt{src/ao\_dens}) that will not be covered here.
+The ``\LibName response'' was already implemented using Fortran for the AO
+based density matrix response theory (source codes in \texttt{src/ao\_dens})
+that will not be covered here.
+
+In the following sections, we will describe how to implement each component of
+the ``\LibName C support'' (red blocks in Figure~\ref{fig-openrsp-framework}
+under the ``\LibName C support'') and the corresponding ``\LibName C API''.
+Each component will have its header file, implemented C \texttt{struct} and
+corresponding functions that can be called inside \LibName.
+
+We also need to implement a header file that contains all \LibName APIs and
+will be used by \LibName users. This header file, as follows, will encapsulate
+all the implemented C \texttt{struct}'s of the ``\LibName C support'' components
+into another C \texttt{struct} for the context of \LibName, that should be
+the main parameter of all the \LibName APIs.
+
+The \LibName API header file\index{\LibName API header file} is given as
+follows. The directives \texttt{\#if !defined(OPENRSP\_H)} and
+\texttt{\#define OPENRSP\_H} (\textbf{include guard}\index{Include guard})
+together prevent the header file from being compiled more than once.
+
+<<openrsp.h>>=
+/*
+  <<license>>
+
+  This is the header file of OpenRSP APIs.
+
+  2014-01-27, Bin Gao:
+  * first version
+*/
+
+#if !defined(OPENRSP_H)
+#define OPENRSP_H
+
+/* host program perturbations */
+#include "RSPPerturbation.h"
+/* type of electronic wave function */
+/*#include "RSPWaveFunction.h"*/
+/* overlap integrals */
+#include "RSPOverlap.h"
+/* one-electron operators */
+#include "RSPOneOper.h"
+/* two-electron operators */
+#include "RSPTwoOper.h"
+/* exchange-correlation (XC) functionals */
+#include "RSPXCFun.h"
+/* nuclear Hamiltonian */
+#include "RSPNucHamilton.h"
+/* linear response equation solver */
+#include "RSPSolver.h"
+
+/* context of OpenRSP */
+typedef struct {
+    QBool assembled;               /* indicates if the context of OpenRSP assembled */
+    RSPPert *rsp_pert;             /* host program perturbations */
+    /*ElecWav *elec_wav;*/           /* implementation-specific data of (electronic) wave function */
+    /*ElecWavType elec_wav_type;*/
+    RSPOverlap *overlap;           /* overlap integrals */
+    RSPOneOper *one_oper;          /* one-electron operators */
+    RSPTwoOper *two_oper;          /* two-electron operators */
+    RSPXCFun *xc_fun;              /* XC functionals */
+    RSPNucHamilton *nuc_hamilton;  /* nuclear Hamiltonian */
+    RSPSolver *rsp_solver;         /* linear response equation solver */
+} OpenRSP;
+
+/* OpenRSP APIs */
+extern QErrorCode OpenRSPCreate(OpenRSP*);
+extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
+                                          const QInt,
+                                          const QInt*,
+                                          const QInt*,
+                                          const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                          QVoid*,
+#endif
+                                          const GetPertCat);
+/*extern QErrorCode OpenRSPSetWaveFunction(OpenRSP*,const ElecWavType);*/
+extern QErrorCode OpenRSPSetOverlap(OpenRSP*,
+                                    const QInt,
+                                    const QInt*,
+                                    const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                    QVoid*,
+#endif
+                                    const GetOverlapMat,
+                                    const GetOverlapExp);
+extern QErrorCode OpenRSPAddOneOper(OpenRSP*,
+                                    const QInt,
+                                    const QInt*,
+                                    const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                    QVoid*,
+#endif
+                                    const GetOneOperMat,
+                                    const GetOneOperExp);
+extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
+                                    const QInt,
+                                    const QInt*,
+                                    const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                    QVoid*,
+#endif
+                                    const GetTwoOperMat,
+                                    const GetTwoOperExp);
+extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
+                                  const QInt,
+                                  const QInt*,
+                                  const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                  QVoid*,
+#endif
+                                  const GetXCFunMat,
+                                  const GetXCFunExp);
+extern QErrorCode OpenRSPSetNucHamilton(OpenRSP*,
+                                        const QInt,
+                                        const QInt*,
+                                        const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                        QVoid*,
+#endif 
+                                        const GetNucContrib,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+                                        const QInt);
+extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                            QVoid*,
+#endif
+                                            const GetLinearRSPSolution);
+extern QErrorCode OpenRSPAssemble(OpenRSP*);
+extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
+extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
+                                   const QcMat*,
+                                   const QcMat*,
+                                   const QcMat*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt*,
+                                   const QInt*,
+                                   const QReal*,
+                                   const QInt*,
+                                   const QInt,
+                                   QReal*);
+extern QErrorCode OpenRSPGetResidue(OpenRSP*,
+                                    const QcMat*,
+                                    const QcMat*,
+                                    const QcMat*,
+                                    const QInt,
+                                    const QInt,
+                                    const QReal*,
+                                    QcMat*[],
+                                    const QInt,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QReal*,
+                                    const QInt*,
+                                    const QInt,
+                                    QReal*);
+extern QErrorCode OpenRSPDestroy(OpenRSP*);
+
+#endif
+@
+
+Here, we have also introduced the type of electronic wave function, but
+which has not been implemented. The directive
+\begin{Verbatim}
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                            QVoid*,
+#endif
+\end{Verbatim}
+in most \LibName APIs enables users to provide their necessary setting
+for the callback functions that \LibName will send it back when invoking
+the callback functions. For instance, users can provide the information
+of basis sets to \LibName and use it inside the callback functions for
+different integral calculations.
+
+In this section, we will implement the APIs [[OpenRSPCreate]],
+[[OpenRSPAssemble]], [[OpenRSPWrite]] and [[OpenRSPDestroy]], while other
+APIs will be implemented in the following sections.
+
+<<OpenRSPCreate.c>>=
+/*
+  <<license>>
+
+  This file implements the function OpenRSPCreate().
+
+  2014-01-28, Bin Gao:
+  * first version
+*/
+
+#include "openrsp.h"
+
+QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
+{
+    open_rsp->assembled = QFALSE;
+    open_rsp->rsp_pert = NULL;
+    /*open_rsp->elec_wav = NULL;*/
+    /*open_rsp->elec_wav_type = ELEC_AO_D_MATRIX;*/
+    open_rsp->overlap = NULL;
+    open_rsp->one_oper = NULL;
+    open_rsp->two_oper = NULL;
+    open_rsp->xc_fun = NULL;
+    open_rsp->nuc_hamilton = NULL;
+    open_rsp->rsp_solver = NULL;
+    return QSUCCESS;
+}
+@
 

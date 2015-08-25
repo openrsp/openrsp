@@ -26,26 +26,32 @@
 %  2015-08-20, Bin Gao:
 %  * first version
 
-\documentclass{article}
+\documentclass[a4paper,11pt,final]{article}
 
 \usepackage{amsmath}
 % leaves space around whole list
 \usepackage{enumitem}
 \setlist{nolistsep}
+% makes sophisticated verbatim text
+\usepackage{fancyvrb}
 % makes nice pdf on screen
 \usepackage[T1]{fontenc}
+\usepackage[a4paper,text={16.5cm,25.2cm},centering]{geometry}
 \usepackage{graphicx}
 \usepackage[pdftex,
             draft=false,
             colorlinks=true,
             bookmarksnumbered=true,
             hyperindex,
-            pdfstartview=FitH,
+            pdfstartview=FitB,
             plainpages=false,
             linkcolor=blue,
             citecolor=blue,
             urlcolor=blue]{hyperref}
 %CJKbookmarks=true
+% indexing
+\usepackage{makeidx}
+\makeindex
 
 \usepackage{noweb}
 %\noweboptions{smallcode,longchunks}
@@ -53,14 +59,6 @@
 % used for notice, remove this at the end
 \usepackage{xcolor}
 \newcommand{\fixme}[1]{\textbf{\textit{\color{red} #1}}}
-
-% page layout
-\setlength{\marginparwidth}{0in}
-\setlength{\evensidemargin}{-0.4in}
-\setlength{\oddsidemargin}{-0.07in}
-\setlength{\textwidth}{6.76in}
-\setlength{\topmargin}{0in}
-\setlength{\textheight}{9in}
 
 % all the figures are in directory figures
 \graphicspath{{figures/}}
@@ -82,18 +80,21 @@
                Kenneth Ruud\\
                Andreas Thorvaldsen\,}
 
-\title{\LibName Developer Manual\\
-       Version \LibVersion}
-
-\author{\LibAuthor}
-
-\date{Centre for Theoretical and Computational Chemistry (CTCC)\\
-      Department of Chemistry\\
-      University of Troms{\o}---The Arctic University of Norway\\
-      N--9037, Troms{\o}, Norway}
-
-\maketitle
-\thispagestyle{empty}
+% title page
+\begin{titlepage}
+  \centering
+  \vspace*{\fill}
+  {\huge\LibName Developer Manual\\
+   Version \LibVersion}\\
+  \vspace*{\fill}
+  {\Large\LibAuthor}\\
+  \vspace*{\fill}
+  {\Large Centre for Theoretical and Computational Chemistry (CTCC)\\
+   Department of Chemistry\\
+   University of Troms{\o}---The Arctic University of Norway\\
+   N--9037, Troms{\o}, Norway}
+  \vspace*{\fill}
+\end{titlepage}
 
 \clearpage
 
@@ -130,10 +131,13 @@ WITHOUT AN APPROPRIATE CITATION.
 
 \pagestyle{noweb}
 
+% preface
 \section{Preface}
 
-The Version numbering scheme\index{Version numbering scheme} used for
-\LibName is \textbf{Major.Minor.Patch}, where
+\subsection{Version Numbering Scheme\index{Version numbering scheme}}
+
+The version numbering scheme used for \LibName is \textbf{Major.Minor.Patch},
+where
 \begin{description}
   \item[Major] generally represents new release containing important changes,
     and it may not be compatible with previous versions.
@@ -143,18 +147,27 @@ The Version numbering scheme\index{Version numbering scheme} used for
     of the same \textbf{Major.Minor} number.
 \end{description}
 
+\subsection{Support and Citation\index{Support and citation}}
+
 If there is any question regarding the use of \LibName, please contact
 the authors as given in the file \texttt{AUTHORS.rst}.
 
 If you have used \LibName and found it is useful, please consider to cite
 \LibName as described in the file \texttt{openrsp.bib}.
 
-% weave all *.nw files together so that one can cross-reference chunks
+% weaves all *.nw files together so that one can cross-reference chunks
 % in different *.nw files
 \input{OpenRSPDeveloper_chapters}
 
+\section{List of Chunks}
+
+\nowebchunks
+
 \bibliographystyle{unsrt}
 \bibliography{references}
+
+% prints index
+\printindex
 
 \end{document}
 
