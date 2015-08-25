@@ -1,0 +1,53 @@
+@* \LibName Fortran APIs.
+\label{chapter-openrsp-fortran-api}
+
+For different perturbations, there could be ``different numbers of components''
+and ``arranged in different ways'' in different host programs. For instance,
+there are 9 components for the second order magnetic derivatives in a redundant
+way $xx,xy,xz,yx,yy,yz,zx,zy,zz$, but 6 components in a non-redundant way
+$xx,xy,xz,yy,yz,zz$. There are at most four centers in different
+integrals, non-zero high order ($\ge 5$) geometric derivatives are only
+those with at most four differentiated centers.
+
+To take all the above information into account in \LibName will make it so
+complicated and not necessary, because response theory actually does not
+depend on the detailed knowledge of different perturbations. In particular,
+when all the (perturbed) integrals and expectation values are computed by
+the host program's callback functions, the detailed information of perturbations,
+i.e. the number of components and how they are arranged in memory can be
+hidden from \LibName.
+
+The former can be easily solved by sending the number of components of
+each perturbation (label) up to its maximum order to the \LibName API
+\texttt{OpenRSPSetPerturbations}.
+
+The latter can be important for \LibName, for instance, when the higher order
+derivatives with respect to ``one perturbation'' need to be constructed from
+several lower order derivatives. For instance, the second order derivatives may
+be constructed from the first order ones in the redundant format:
+\begin{align*}
+  x+x\rightarrow xx, & 0+0\rightarrow 0,\\
+  x+y\rightarrow xy, & 0+1\rightarrow 1,\\
+  x+z\rightarrow xz, & 0+2\rightarrow 2,\\
+  y+x\rightarrow yx, & 1+0\rightarrow 3,\\
+  y+y\rightarrow yy, & 1+1\rightarrow 4,\\
+  y+z\rightarrow yz, & 1+2\rightarrow 5,\\
+  z+x\rightarrow zx, & 2+0\rightarrow 6,\\
+  z+y\rightarrow zy, & 2+1\rightarrow 7,\\
+  z+z\rightarrow zz, & 2+2\rightarrow 8,
+\end{align*}
+where we have ranked different components in zero-based numbering (numbers on
+the right). However, the ranks can be different in different host programs. To
+solve this problem, i.e., the mapping relationship of lower and higher order
+derivatives with respect to ``one perturbation''\footnote{We emphasize the
+derivatives of ``one perturbation'' because components of higher order
+derivatives of different perturbations are simply the direct product of
+components of lower order derivatives.}, we ask for a callback function
+\texttt{get\_pert\_concatenation} from host programs, which is the last
+argument of the API \texttt{OpenRSPSetPerturbations}.
+
+This callback function is used by \LibName to get the ranks of components of
+``sub-perturbation tuples with same perturbation label'' (lower order
+derivatives with respect to one perturbation) for given components of the
+corresponding ``concatenated perturbation tuple'' (higher order derivatives).
+
