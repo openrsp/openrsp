@@ -1,53 +1,46 @@
-@* \LibName Fortran APIs.
-\label{chapter-openrsp-fortran-api}
+\section{Fortran APIs\index{\LibName Fortran APIs}}
+\label{section-openrsp-fortran}
 
-For different perturbations, there could be ``different numbers of components''
-and ``arranged in different ways'' in different host programs. For instance,
-there are 9 components for the second order magnetic derivatives in a redundant
-way $xx,xy,xz,yx,yy,yz,zx,zy,zz$, but 6 components in a non-redundant way
-$xx,xy,xz,yy,yz,zz$. There are at most four centers in different
-integrals, non-zero high order ($\ge 5$) geometric derivatives are only
-those with at most four differentiated centers.
+<<OpenRSPLicenseFortran>>=
+!!  OpenRSP: open-ended library for response theory
+!!  Copyright 2015 Radovan Bast,
+!!                 Daniel H. Friese,
+!!                 Bin Gao,
+!!                 Dan J. Jonsson,
+!!                 Magnus Ringholm,
+!!                 Kenneth Ruud,
+!!                 Andreas Thorvaldsen
+!!
+!!  OpenRSP is free software: you can redistribute it and/or modify
+!!  it under the terms of the GNU Lesser General Public License as
+!!  published by the Free Software Foundation, either version 3 of
+!!  the License, or (at your option) any later version.
+!!
+!!  OpenRSP is distributed in the hope that it will be useful,
+!!  but WITHOUT ANY WARRANTY; without even the implied warranty of
+!!  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!!  GNU Lesser General Public License for more details.
+!!
+!!  You should have received a copy of the GNU Lesser General Public
+!!  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
+@
 
-To take all the above information into account in \LibName will make it so
-complicated and not necessary, because response theory actually does not
-depend on the detailed knowledge of different perturbations. In particular,
-when all the (perturbed) integrals and expectation values are computed by
-the host program's callback functions, the detailed information of perturbations,
-i.e. the number of components and how they are arranged in memory can be
-hidden from \LibName.
+<<src/f03/OpenRSPFortran.F90>>=
+<<OpenRSPLicenseFortran>>
+!!  This file contains the OpenRSP Fortran APIs.
+!!
+!!  2014-07-12, Bin Gao
+!!  * first version
 
-The former can be easily solved by sending the number of components of
-each perturbation (label) up to its maximum order to the \LibName API
-\texttt{OpenRSPSetPerturbations}.
+module openrsp_f
 
-The latter can be important for \LibName, for instance, when the higher order
-derivatives with respect to ``one perturbation'' need to be constructed from
-several lower order derivatives. For instance, the second order derivatives may
-be constructed from the first order ones in the redundant format:
-\begin{align*}
-  x+x\rightarrow xx, & 0+0\rightarrow 0,\\
-  x+y\rightarrow xy, & 0+1\rightarrow 1,\\
-  x+z\rightarrow xz, & 0+2\rightarrow 2,\\
-  y+x\rightarrow yx, & 1+0\rightarrow 3,\\
-  y+y\rightarrow yy, & 1+1\rightarrow 4,\\
-  y+z\rightarrow yz, & 1+2\rightarrow 5,\\
-  z+x\rightarrow zx, & 2+0\rightarrow 6,\\
-  z+y\rightarrow zy, & 2+1\rightarrow 7,\\
-  z+z\rightarrow zz, & 2+2\rightarrow 8,
-\end{align*}
-where we have ranked different components in zero-based numbering (numbers on
-the right). However, the ranks can be different in different host programs. To
-solve this problem, i.e., the mapping relationship of lower and higher order
-derivatives with respect to ``one perturbation''\footnote{We emphasize the
-derivatives of ``one perturbation'' because components of higher order
-derivatives of different perturbations are simply the direct product of
-components of lower order derivatives.}, we ask for a callback function
-\texttt{get\_pert\_concatenation} from host programs, which is the last
-argument of the API \texttt{OpenRSPSetPerturbations}.
+    use, intrinsic :: iso_c_binding
+    use qcmatrix_f, only: QINT,     &
+                          QREAL,    &
+                          QFAILURE, &
+                          QcMat,    &
+                          QcMat_C_LOC
 
-This callback function is used by \LibName to get the ranks of components of
-``sub-perturbation tuples with same perturbation label'' (lower order
-derivatives with respect to one perturbation) for given components of the
-corresponding ``concatenated perturbation tuple'' (higher order derivatives).
+end module openrsp_f
+@
 

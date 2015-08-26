@@ -11,7 +11,7 @@ requirements of two callback functions from the host program to calculate
 respectively the matrices and expectation values of overlap integrals and
 derivatives.
 
-<<RSPOverlap.h>>=
+<<include/RSPOverlap.h>>=
 #if !defined(RSP_OVERLAP_H)
 #define RSP_OVERLAP_H
 
@@ -45,7 +45,7 @@ typedef QVoid (*GetOverlapExp)(const QInt,
 
 The context of overlap integrals includes:
 
-<<RSPOverlap.h>>=
+<<include/RSPOverlap.h>>=
 typedef struct {
     QInt num_pert;                  /* number of different perturbation labels that
                                        can act as perturbations on the basis sets */
@@ -61,7 +61,7 @@ typedef struct {
 
 And the functions related to the overlap integrals:
 
-<<RSPOverlap.h>>=
+<<include/RSPOverlap.h>>=
 extern QErrorCode RSPOverlapCreate(RSPOverlap*,
                                    const QInt,
                                    const QInt*,

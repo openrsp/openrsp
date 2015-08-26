@@ -22,7 +22,8 @@ PROJECT(OpenRSPWEB C)
 SET(OPENRSP_LIB_WEB
     ${CMAKE_SOURCE_DIR}/Introduction.nw
     ${CMAKE_SOURCE_DIR}/OpenRSPPerturbation.nw
-    ${CMAKE_SOURCE_DIR}/OpenRSPOverlap.nw)
+    ${CMAKE_SOURCE_DIR}/OpenRSPOverlap.nw
+    ${CMAKE_SOURCE_DIR}/OpenRSPFortranAPI.nw)
 
 # Try to find notangle and noweave
 FIND_PROGRAM(NOTANGLE notangle)
