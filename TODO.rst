@@ -1,15 +1,18 @@
-!! Give future long- and short-term developments
+TODO List
+=========
+
+.. Give future long- and short-term developments
 
 Short-term
 ----------
 
-#. Removes the frequency of perturbation a in OpenRSPGetRSPFun()
+#. Removes the frequency of perturbation :math:`a` in ``OpenRSPGetRSPFun``
 #. Adds nuclear contributions in tests
 #. Adds DFT contributions in tests
 #. Adds the API for residue calculations
 #. Adds integrals and expectation values in callback functions?
-#. Gradually moves files in src/interfaces and src/input to DALTON
-   and LSDALTON, and removes/merges files in src/legacy and src/TODO
+#. Gradually moves files in ``src/interfaces`` and ``src/input`` to DALTON
+   and LSDALTON, and removes/merges files in ``src/legacy`` and ``src/TODO``
 #. Prepares unit testing
 #. Prepares tutorial and finish documentation
 #. Adds PCM and PE contributions (in host programs)
