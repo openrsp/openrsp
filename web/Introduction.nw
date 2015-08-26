@@ -23,28 +23,28 @@ Ref.~\cite{Friese-JCTC-11-1129}.
 
 We will release \LibName under the GNU Lesser General Public License:
 
-<<license>>=
-  OpenRSP: open-ended library for response theory
-  Copyright 2015 Radovan Bast,
-                 Daniel H. Friese,
-                 Bin Gao,
-                 Dan J. Jonsson,
-                 Magnus Ringholm,
-                 Kenneth Ruud,
-                 Andreas Thorvaldsen
+<<OpenRSPLicense>>=
+OpenRSP: open-ended library for response theory
+Copyright 2015 Radovan Bast,
+               Daniel H. Friese,
+               Bin Gao,
+               Dan J. Jonsson,
+               Magnus Ringholm,
+               Kenneth Ruud,
+               Andreas Thorvaldsen
 
-  OpenRSP is free software: you can redistribute it and/or modify
-  it under the terms of the GNU Lesser General Public License as
-  published by the Free Software Foundation, either version 3 of
-  the License, or (at your option) any later version.
+OpenRSP is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation, either version 3 of
+the License, or (at your option) any later version.
 
-  OpenRSP is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-  GNU Lesser General Public License for more details.
+OpenRSP is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with OpenRSP. If not, see
+You should have received a copy of the GNU Lesser General Public
+License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 @
 
 \subsection{Open-Ended Response Theory\index{Open-ended response theory}}
@@ -95,7 +95,7 @@ programming languages (e.g. C and Fortran).
 To best utilize the host program's developed matrix routines (if there is), and
 also to remove this complexity of matrix problem from \LibName, we also agree
 to build \LibName on top of the
-\href{https://gitlab.com/bingao/qcmatrix}{QcMatrix library}\index{QcMatrix library}
+\href{https://gitlab.com/bingao/qcmatrix}{\textbf{\textsc{QcMatrix} library}}\index{\textsc{QcMatrix} library}
 in the 2015 Skibotn meeting. This matrix library works as an adapter between
 \LibName and different matrix routines (implemented in different host programs)
 that can be written in C and Fortran\footnote{If there is no matrix routines
@@ -108,7 +108,7 @@ Therefore, a full picture of \LibName used in a C host program can be (the
 description of \LibName Fortran APIs can be found in
 Section~\ref{section-openrsp-fortran}\index{\LibName Fortran APIs}):
 
-\begin{figure}[htbp]
+\begin{figure}[hbtp]
   \centering
   \includegraphics[width=\textwidth]{OpenRSP_framework.pdf}
   \caption{\LibName used in a C host program.}
@@ -151,9 +151,9 @@ follows. The directives \texttt{\#if !defined(OPENRSP\_H)} and
 \texttt{\#define OPENRSP\_H} (\textbf{include guard}\index{Include guard})
 together prevent the header file from being compiled more than once.
 
-<<openrsp.h>>=
+<<include/openrsp.h>>=
 /*
-  <<license>>
+  <<OpenRSPLicense>>
 
   This is the header file of OpenRSP APIs.
 
@@ -183,7 +183,7 @@ together prevent the header file from being compiled more than once.
 
 /* OpenRSP context */
 typedef struct {
-    QBool assembled;               /* indicates if the context of OpenRSP assembled */
+    QBool assembled;               /* indicates if the OpenRSP context assembled */
     RSPPert *rsp_pert;             /* host program perturbations */
     /*ElecWav *elec_wav;*/           /* implementation-specific data of (electronic) wave function */
     /*ElecWavType elec_wav_type;*/
@@ -316,9 +316,9 @@ create, assemble, write and destroy the \LibName context.
 The API [[OpenRSPCreate]] is very simple as it only initializes the pointers
 of the context:
 
-<<OpenRSPCreate.c>>=
+<<src/OpenRSPCreate.c>>=
 /*
-  <<license>>
+  <<OpenRSPLicense>>
 
   This file creates the OpenRSP context.
 

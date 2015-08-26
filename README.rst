@@ -11,7 +11,7 @@ the License, or (at your option) any later version.
 
 OepnRSP is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public
@@ -27,7 +27,7 @@ theoretical chemistry.
 
 Please refer to ``doc/manual`` and ``doc/tutorial`` for more details.
 
-Please refer to ``RULES`` if you would like to contribute.
+Please refer to ``RULES.rst`` if you would like to contribute.
 
 If you have used OpenRSP and found it is useful, please consider to cite the
 references in ``openrsp.bib``.
@@ -40,19 +40,22 @@ https://gitlab.com/openrsp
 Notes on the developer's build environment and potential portability problems
 -----------------------------------------------------------------------------
 
-We could probably describe the implementation of OpenRSP library into DALTON
-and LSDALTON, and refer to the tutorial that we will prepare?
+Not known yet.
 
 Important files and subdirectories
 ----------------------------------
 
-Please see Chapter "Files and Directories" in ``doc/manual``.
+Important WEB files are in the directory ``web``, from which the API source
+codes and OpenRSP developer manual (``doc/OpenRSPDeveloper.pdf``, header files
+in the directory ``include``, C source codes and Fortran APIs in the directory
+``src`` and C and Fortran source codes in the directory ``tests``) are
+generated.
 
-Please see ``INSTALL`` for installation instructions
-----------------------------------------------------
+Please see ``INSTALL.rst`` for installation instructions
+--------------------------------------------------------
 
-Please see ``AUTHORS`` for the maintainers list
+Please see ``AUTHORS.rst`` for the maintainers list
+---------------------------------------------------
+
+Please see ``NEWS.rst`` for recent project news
 -----------------------------------------------
-
-Please see ``NEWS`` for recent project news
--------------------------------------------
