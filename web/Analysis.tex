@@ -1,0 +1,303 @@
+\nwfilename{web/Analysis.tex}
+\chapter{Analysis}
+\label{chapter-analysis}
+
+This chapter presents the ``Software Requirements Specification'' (SRS) largely
+based on ISO/IEC/IEEE 29148:2011(E) ``Systems and software engineering -- Life
+cycle processes -- Requirements engineering''.
+
+\section{Introduction}
+
+This section gives a scope description and overview of everything needed to
+design and implement \LibName (library) by taking the requirements listed in
+this section into account.
+
+\subsection{Purpose}
+
+The SRS analyses the problem---molecular integral evaluation---that \LibName
+aims to solve, and lays out the requirements that \LibName should supply or
+should not supply.
+
+The SRS is primarily intended to prepare a reference for developing \LibName
+(Version \LibVersion). It can also be proposed to \LibName users for their
+suggestions and comments.
+
+\subsection{Scope}
+
+%This section should
+%a) Identify the software product(s) to be produced by name (e.g., Host DBMS, Report Generator, etc.);
+%b) Explain what the software product(s) will, and, if necessary, will not do;
+%c) Describe the application of the software being specified, including relevant benefits, objectives, and
+%goals;
+%d) Be consistent with similar statements in higher-level specifications (e.g., the system requirements
+%specification), if they exist.
+
+\subsection{Product Overview}
+
+\subsubsection{Product Perspective}
+
+\subsubsection{Product Functions}
+
+\subsubsection{User Characteristics}
+
+\subsubsection{Limitations}
+
+\subsection{Definitions}
+
+\section{References}
+
+\section{Specific Requirements}
+
+%This section of the SRS should contain all of the software requirements to a
+%level of detail sufficient to enable designers to design a system to satisfy
+%those requirements, and testers to test that the system satisfies those
+%requirements. Throughout this section, every stated requirement should be
+%externally perceivable by users, operators, or other external systems. These
+%requirements should include at a minimum a description of every input
+%(stimulus) into the system, every output (response) from the system, and all
+%functions performed by the system in response to an input or in support of an
+%output. As this is often the largest and most important part of the SRS, the
+%following principles apply:
+%a) Specific requirements should be stated in conformance with all the characteristics described in 4.3.
+%b) Specific requirements should be cross-referenced to earlier documents that relate.
+%c) All requirements should be uniquely identifiable.
+%d) Careful attention should be given to organizing the requirements to maximize readability.
+
+\subsection{External Interfaces}
+
+\subsection{Functions}
+
+\subsection{Usability Requirements}
+
+\subsection{Performance Requirements}
+
+\subsection{Logical Database Requirements}
+
+\subsection{Design Constraints}
+
+\subsection{Software System Attributes}
+
+\subsection{Supporting Information}
+
+\section{Verification}
+
+\section{Appendices}
+
+%When appendixes are included, the SRS should explicitly state whether or not
+%the appendixes are to be considered part of the requirements.
+
+\subsection{Assumptions and Dependencies}
+
+\subsection{Acronyms and Abbreviations}
+
+\subsection{Theoretical Background\index{Theoretical background}}
+\label{subsection-theory}
+
+For the time being, \LibName has implemented the density matrix-based
+quasienergy formulation of the Kohn--Sham density functional response theory
+using perturbation- and time-dependent basis
+sets~\cite{Thorvaldsen-JCP-129-214108,Bast-PCCP-13-2627}.
+
+The density matrix-based quasienergy formulation actually works for different
+levels of theory, i.e., one-, two- and four-component levels. A relativistic
+implementation can be found in Ref.~\cite{Bast-CP-356-177}.
+
+\LibName uses the recursive programming techniques~\cite{Ringholm-JCC-35-622}
+to compute different molecular properties order by order. The recursive
+programming techniques can also be used for calculations of residues, the
+implementation of the first order residues can be found in
+Ref.~\cite{Friese-JCTC-11-1129}.
+
+\subsection{Open-Ended Response Theory\index{Open-ended response theory}}
+\label{subsection-open-ended}
+
+The name \LibName stands for \textbf{open-ended response theory}, that is,
+the library is:
+\begin{enumerate}
+  \item open-ended for different levels of theory, i.e., one-, two- and
+    four-component levels;
+  \item open-ended for different wave functions, e.g., atomic-orbital~(AO)
+    based density matrix, molecular orbital~(MO) cofficients and
+    coupled cluster~(CC);
+  \item open-ended for different kinds of perturbations; and
+  \item open-ended for different host programs.
+\end{enumerate}
+
+As aformentioned, \LibName has for the time being implemented the AO based
+density matrix response theory (source codes in
+\texttt{src/ao\_dens})\footnote{The codes in \texttt{src/ao\_dens} are written
+in Fortran, but \LibName APIs are implemented using C language. Therefore,
+adapter codes between them are implemented in \texttt{src/ao\_dens/adapter},
+for \LibName APIs calling the codes of AO based density matrix response theory,
+also for the AO based density matrix response theory codes calling the callback
+functions (as function pointers saved by \LibName APIs).}, and it works for
+one-, two- and four-component levels by simply setting the appropriate
+Hamiltonian. We are now planning to implement the MO and CC based response
+theories.
+
+To make \LibName work for any perturbation, we will implement the so called
+\textbf{perturbation free scheme}, see Section~\ref{subsection-perturbation-free}.
+
+In order to make it easy for implementing \LibName into different host programs
+(written in different programming languages), we agree to use the
+\textbf{callback function scheme}\index{Callback function scheme} in \LibName
+in the 2015 Skibotn meeting. The callback functions are specified by host
+programs by calling the \LibName application program interface (APIs, both C
+and Fortran implemented) during run time, and will be used by \LibName during
+calculations, to get contributions from electronic and nuclear Hamiltonian, and
+to get response parameters from solving the linear response equation.
+
+Another important issue affects the implementation of \LibName into different
+host programs is the matrix and its different operations that \LibName
+extensively depends on. Different host programs can have different types of
+matrices (dense and sparse, sequential and parallel) and written by different
+programming languages (e.g. C and Fortran).
+
+To best utilize the host program's developed matrix routines (if there is), and
+also to remove this complexity of matrix problem from \LibName, we also agree
+to build \LibName on top of the
+\href{https://gitlab.com/bingao/qcmatrix}{\textbf{\textsc{QcMatrix} library}}\index{\textsc{QcMatrix} library}
+in the 2015 Skibotn meeting. This matrix library works as an adapter between
+\LibName and different matrix routines (implemented in different host programs)
+that can be written in C and Fortran\footnote{If there is no matrix routines
+implemented in a host program, it can fully use the QcMatrix library that will
+invoke BLAS and LAPACK libraries for matrix operations.}.
+
+\subsection{\LibName Framework\index{\LibName framework}}
+
+Therefore, a full picture of \LibName used in a C host program can be (the
+description of \LibName Fortran APIs can be found in
+Section~\ref{section-OpenRSP-Fortran}\index{\LibName Fortran APIs}):
+
+\begin{figure}[hbt]
+  \centering
+  \scalebox{0.7}{\input{figures/OpenRSP_framework.tex}}
+  \caption{\LibName used in a C host program.}
+  \label{fig-openrsp-framework}
+\end{figure}
+
+As shown in Figure~\ref{fig-openrsp-framework}, the \LibName library is divided
+into three parts:
+\begin{enumerate}
+  \item The ``\LibName C APIs'' work mostly between the host program driver
+    routine and other parts of the \LibName library, that all the information
+    saved in the ``\LibName C support'' will be set up by calling the
+    corresponding \LibName C API;
+  \item The ``\LibName response'' is the core part in which the performance
+    of response theory will be done;
+  \item The ``\LibName C support'' saves the information of perturbations,
+    electronic and nuclear Hamiltonian and linear response equation solver,
+    and will be used by the ``\LibName response'' part during calculating
+    response functions and residues.
+\end{enumerate}
+
+The ``\LibName response'' was already implemented using Fortran for the AO
+based density matrix response theory (source codes in \texttt{src/ao\_dens})
+that will not be covered here.
+
+\subsection{Perturbation Free Scheme}
+\label{subsection-perturbation-free}
+
+For perturbations, we will use the following notations and conventions through
+the \LibName library and the current document:
+
+\begin{description}
+  \item[Perturbation] is described by a label, a complex frequency and its
+    order. Any two perturbations are different if they have different labels,
+    and/or frequencies, and/or orders.
+  \item[Perturbation label] is an integer distinguishing one perturbation
+    from others; all \textit{different} perturbation labels involved in the
+    calculations should be given by calling the application programming interface
+    (API) \texttt{OpenRSPSetPerturbations}; \LibName will stop if there is any
+    unspecified perturbation label given afterwards when calling the APIs
+    \texttt{OpenRSPGetRSPFun} or \texttt{OpenRSPGetResidue}.
+  \item[Perturbation order]. Each perturbation can acting on molecules once
+    or many times, that is the order of the perturbation.
+  \item[Perturbation components and their ranks]. Each perturbation may have
+    different numbers of components for their different orders, the position of
+    each component is called its rank.
+
+    For instance, there will usually be $x,y,z$ components for the
+    electric dipole perturbation, and their ranks are \texttt{\{0,1,2\}} in
+    zero-based numbering, or \texttt{\{1,2,3\}} in one-based numbering.
+  
+    The numbers of different components of perturbations and their ranks
+    are totally decided by the host program. \LibName will get such information
+    from callback functions, that is \LibName itself is a perturbation free
+    library.
+  \item[Perturbation tuple]. An ordered list of perturbation labels, and in
+    which we further require that \textit{identical perturbation labels should
+    be consecutive}. That means the tuple $(a,b,b,c)$ is allowed, but $(a,b,c,b)$
+    is illegal because the identical labels $b$ are not consecutive.
+
+    As a tuple:
+    \begin{enumerate}
+      \item Multiple instances of the same labels are allowed so that
+        $(a,b,b,c)\ne(a,b,c)$, and
+      \item The perturbation labels are ordered so that $(a,b,c)\ne(a,c,b)$
+        (because their corresponding response functions or residues are in
+        different shapes).
+    \end{enumerate}
+    We will sometimes use an abbreviated form of perturbation tuple as,
+    for instance $abc\equiv(a,b,c)$.
+
+    Obviously, a perturbation tuple $+$ its corresponding complex
+    frequencies for each perturbation label can be viewed as a set of
+    perturbations, in which the number of times a label (with the same
+    frequency) appears is the order of the corresponding perturbation.
+  \item[Canonical order].
+    \begin{enumerate}
+      \item In \LibName, all perturbation tuples are canonically orderd
+        according to the argument \texttt{pert\_tuple} in the \texttt{OpenRSPGetRSPFun}
+        or \texttt{OpenRSPGetResidue}. For instance, when a perturbation tuple
+        $(a,b,c)$ given as \texttt{pert\_tuple} in the API \texttt{OpenRSPGetRSPFun},
+        \LibName will use such order ($a>b>c$) to arrange all perturbation
+        tuples inside and sent to the callback functions.
+      \item Moreover, a collection of several perturbation tuples will also
+        follow the canonical order. For instance, a collection of all possible
+        perturbation tuples of labels $a,b,c$ are $(0,a,b,c,ab,ac,bc,abc)$,
+        where $0$ means unperturbed quantities that is always the first one
+        in the collection.
+    \end{enumerate}
+  \item[Perturbation $a$]. The first perturbation label in the tuple sent to
+    \LibName APIs \texttt{OpenRSPGetRSPFun} or \texttt{OpenRSPGetResidue}, are the
+    perturbation $a$~\cite{Thorvaldsen-JCP-129-214108}.
+  \item[Perturbation addressing].
+    \begin{enumerate}
+      \item The addressing of perturbation labels in a tuple is decided by
+        \begin{enumerate}
+          \item the argument \texttt{pert\_tuple} sent to the API \texttt{OpenRSPGetRSPFun}
+            or \texttt{OpenRSPGetResidue}, and
+          \item the canonical order that \LibName uses.
+        \end{enumerate}
+      \item The addressing of components per perturbation (several consecutive
+        identical labels with the same complex frequency) are decided by the
+        host program.
+      \item The addressing of a collection of perturbation tuples follows the
+        canonical order as aforementioned.
+    \end{enumerate}
+
+    Therefore, the shape of response functions or residues is mostly decided
+    by the host program. Take $\mathcal{E}^{abbc}$ for example, its shape is
+    $(N_{a},N_{bb},N_{c})$, where $N_{a}$ and $N_{c}$ are respectively the
+    numbers of components of the first order of the perturbations $a$ and $c$,
+    and $N_{bb}$ is the number of components of the second order of the
+    perturbation $b$, and
+    \begin{enumerate}
+      \item In \LibName, we will use notation \texttt{[a][bb][c]} for
+        $\mathcal{E}^{abbc}$, where the leftmost index (\texttt{a}) runs
+        slowest in memory and the rightmost index (\texttt{c}) runs fastest.
+        However, one should be aware that the results are still in a
+        one-dimensional array.
+      \item If there two different frequencies for the perturbation $b$,
+        \LibName will return \texttt{[a][b1][b2][c]}, where \texttt{b1}
+        and \texttt{b2} stand for the components of the first order of
+        the perturbation $b$.
+      \item The notation for a collection of perturbation tuples (still in a
+        one-dimensional array) is
+        \texttt{\{1,[a],[b],[c],[a][b],[a][c],[b][c],[a][b][c]\}}
+        for $(0,a,b,c,ab,ac,bc,abc)$, where as aforementioned the first one is
+        the unperturbed quantities.
+    \end{enumerate}
+\end{description}
+

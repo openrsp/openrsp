@@ -1,0 +1,4 @@
+# Makes directories for building OpenRSP
+foreach(dir_to_make "@OPENRSP_MAKE_DIRS@")
+    file(MAKE_DIRECTORY ${dir_to_make})
+endforeach()

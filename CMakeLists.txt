@@ -1,135 +1,206 @@
 # Required version of CMake
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-# Sets the build mode: if the user specifies -DCMAKE_BUILD_TYPE on the command line,
-# take their definition and dump it in the cache along with proper documentation,
-# otherwise set CMAKE_BUILD_TYPE prior to calling PROJECT(), from
-# http://www.cmake.org/pipermail/cmake/2008-September/023808.html
-IF(DEFINED CMAKE_BUILD_TYPE)
-    SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING
+# Sets the build mode: if the user specifies -DCMAKE_BUILD_TYPE on the command
+# line, take their definition and dump it in the cache along with proper
+# documentation, otherwise set CMAKE_BUILD_TYPE prior to calling project(),
+# from http://www.cmake.org/pipermail/cmake/2008-September/023808.html
+if(DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
-ELSE()
-    SET(CMAKE_BUILD_TYPE None CACHE STRING
+else()
+    set(CMAKE_BUILD_TYPE Release CACHE STRING
         "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
         FORCE)
-ENDIF()
+endif()
 
-# Project name, enable C, CXX and Fortran
-PROJECT(OpenRSP C CXX Fortran)
+# Project name
+project(OpenRSP C CXX Fortran)
 
 # Host program could include this file by setting LIB_OPENRSP_PATH
-IF("${LIB_OPENRSP_PATH}" STREQUAL "")
-  SET(LIB_OPENRSP_PATH ${PROJECT_SOURCE_DIR})
-ENDIF()
+if("${LIB_OPENRSP_PATH}" STREQUAL "")
+    set(LIB_OPENRSP_PATH ${PROJECT_SOURCE_DIR})
+endif()
 
 # Adds cmake directory to CMake module
-SET(CMAKE_MODULE_PATH
+set(CMAKE_MODULE_PATH
     ${CMAKE_MODULE_PATH}
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compilers)
+    ${LIB_OPENRSP_PATH}/cmake)
 
-#
-#OPTION(OPENRSP_AUTO_ERROR_EXIT "Enable automatic exit on error." OFF)
-#IF(OPENRSP_AUTO_ERROR_EXIT)
-#    ADD_DEFINITIONS(-DOPENRSP_AUTO_ERROR_EXIT)
-#ENDIF()
-#
-OPTION(OPENRSP_USER_CONTEXT "Enable user context in callback functions." OFF)
-IF(OPENRSP_USER_CONTEXT)
-    ADD_DEFINITIONS(-DOPENRSP_C_USER_CONTEXT)
-ENDIF()
-
-#
-SET(LIB_OPENRSP_NAME "openrsp" CACHE STRING "Sets the name of the OpenRSP library.")
-
-# Builds the test suite as excutables, otherwise the test suite is included into the OpenRSP library
-OPTION(OPENRSP_TEST_EXECUTABLE "Build the test suite excutables." ON)
-
-# Let the user set different application programming interfaces (API)
-OPTION(OPENRSP_CXX_API "Build C++ API." OFF)
-OPTION(OPENRSP_F03_API "Build Fortran 2003 API." OFF)
-
-# OpenRSP needs the QcMatrix library as well as the matrix I/O functionality
-SET(QCMATRIX_INCLUDE_DIR None CACHE STRING "Sets the include directory of QcMatrix library.")
-INCLUDE_DIRECTORIES(${QCMATRIX_INCLUDE_DIR})
-IF(OPENRSP_F03_API)
-    SET(QCMATRIX_MODULE_DIR None CACHE STRING "Sets the module directory of QcMatrix library.")
-    INCLUDE_DIRECTORIES(${QCMATRIX_MODULE_DIR})
-    # The Fortran API needs the user context in the C part of OpenRSP
-    ADD_DEFINITIONS(-DOPENRSP_C_USER_CONTEXT)
-    IF(OPENRSP_USER_CONTEXT)
-        ADD_DEFINITIONS(-DOPENRSP_F_USER_CONTEXT)
-    ENDIF()
-ENDIF()
-SET(QCMATRIX_LIB None CACHE STRING "Sets the QcMatrix library (xx/libqcmatrix.a).")
-
-# Header files of OpenRSP library
-INCLUDE_DIRECTORIES(${LIB_OPENRSP_PATH}/include)
-
-# Where we put the compiled Fortran modules
-SET(CMAKE_Fortran_MODULE_DIRECTORY
-    ${PROJECT_BINARY_DIR}/modules)
+# Options for making the library
+include(Options)
 
 # ConfigParentSettings.cmake configures directories where to place module files
-# and where to find header files, this is important if there are module and header
-# file dependencies between libraries and where the parent code needs to enforce
-# a directory structure to compile correctly
-INCLUDE(ConfigParentSettings)
+# and where to find header files, this is important if there are module and
+# header file dependencies between libraries and where the parent code needs to
+# enforce a directory structure to compile correctly
+include(ConfigParentSettings)
 
-# Adds the project binary directory to include directories
-#INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
+# Directories containing manuals, header and source code files
+include(Directories)
 
-# Debug mode
-IF (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DOPENRSP_DEBUG")
-ENDIF()
+# Chunks of the library
+include(Chunks)
 
-# Source codes of OpenRSP library
-INCLUDE(Sources)
+# Generates lists of source files from the directories and chunks
+include(Sources)
 
-# Source codes of C test suite
-INCLUDE(TestSuiteC)
+# For developers to build from WEB files
+if(OPENRSP_BUILD_WEB)
+    # WEB files
+    include(WEBFiles)
+    # Adds the taret "openrsp_dirs" for making directories for building
+    configure_file("${LIB_OPENRSP_PATH}/cmake/cmake_make_dirs.cmake.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/cmake_make_dirs.cmake"
+                   @ONLY)
+    add_custom_target(openrsp_dirs
+                      COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_make_dirs.cmake)
+    # Adds the target "latex" to copy LaTeX files to build directory; It has
+    # problem to compile pdf in the build directory and with LaTeX files in
+    # their original source directory, especially under Cygwin
+    configure_file("${LIB_OPENRSP_PATH}/cmake/cmake_copy_latex.cmake.in"
+                   "${CMAKE_CURRENT_BINARY_DIR}/cmake_copy_latex.cmake"
+                   @ONLY)
+    add_custom_target(latex
+                      DEPENDS openrsp_dirs
+                      COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_copy_latex.cmake)
+    # Settings of developer manual
+    include(DeveloperManual)
+    # Generates main chapter of the developer manual using noweave; For some
+    # reason, the generated chapter is not copied by cmake_copy_latex.cmake at
+    # first; So we copy it immediately after generating
+    find_program(NOWEAVE noweave)
+    if(NOT NOWEAVE)
+        message(FATAL_ERROR "Could not find noweave.")
+    endif()
+    add_custom_command(TARGET latex PRE_BUILD
+                       COMMAND ${NOWEAVE} -index -n ${OPENRSP_WEB_FILES} >
+                               ${OPENRSP_DEVELOPER_WEAVED_TEX}
+                       COMMAND ${CMAKE_COMMAND} -E copy
+                               ${OPENRSP_DEVELOPER_WEAVED_TEX} ${OPENRSP_LATEX_BUILD_DIR})
+    # Generates PDF file of the developer manual using LaTeX
+    include(FindLATEX)
+    if(NOT (PDFLATEX_COMPILER AND BIBTEX_COMPILER AND MAKEINDEX_COMPILER))
+        message(FATAL_ERROR "Could not find pdflatex, bibtex and/or makeindex.")
+    endif()
+    # Adds the target "pdf" to make the developer manual, and copies the PDF
+    # file to the directory "doc"
+    add_custom_target(pdf
+                      COMMAND ${PDFLATEX_COMPILER} ${OPENRSP_DEVELOPER_MANUAL}.tex
+                      COMMAND ${BIBTEX_COMPILER} ${OPENRSP_DEVELOPER_MANUAL}.aux
+                      COMMAND ${MAKEINDEX_COMPILER} ${OPENRSP_DEVELOPER_MANUAL}.idx
+                      COMMAND ${PDFLATEX_COMPILER} ${OPENRSP_DEVELOPER_MANUAL}.tex
+                      COMMAND ${PDFLATEX_COMPILER} ${OPENRSP_DEVELOPER_MANUAL}.tex
+                      COMMAND ${CMAKE_COMMAND} -E copy
+                              ${OPENRSP_DEVELOPER_MANUAL}.pdf ${OPENRSP_DOC_DIR}
+                      DEPENDS latex openrsp_dirs
+                      WORKING_DIRECTORY ${OPENRSP_LATEX_BUILD_DIR})
+    # We could use -L'#line %L "%F"%N' for C codes using ${NOTANGLE} for debugging?
+    #
+    # Generates source codes using notangle
+    find_program(NOTANGLE notangle)
+    if(NOT NOTANGLE)
+        message(FATAL_ERROR "Could not find notangle.")
+    endif()
+    foreach(CHUNK ${OPENRSP_HEADER_CHUNKS})
+        set(TANGLED_SRC ${OPENRSP_HEADER_DIR}/${CHUNK})
+        add_custom_command(OUTPUT ${TANGLED_SRC}
+                           DEPENDS openrsp_dirs
+                           COMMAND ${NOTANGLE} -R${CHUNK}
+                                   ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
+    endforeach()
+    set_source_files_properties(${OPENRSP_HEADER_FILES}
+                                PROPERTIES GENERATED TRUE)
+    foreach(CHUNK ${OPENRSP_C_CHUNKS})
+        set(TANGLED_SRC ${OPENRSP_SRC_DIR}/${CHUNK})
+        add_custom_command(OUTPUT ${TANGLED_SRC}
+                           DEPENDS openrsp_dirs
+                           COMMAND ${NOTANGLE} -R${CHUNK}
+                                   ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
+    endforeach()
+    set_source_files_properties(${OPENRSP_C_FILES}
+                                PROPERTIES GENERATED TRUE)
+    foreach(CHUNK ${OPENRSP_FORTRAN_CHUNKS})
+        set(TANGLED_SRC ${OPENRSP_FORTRAN_DIR}/${CHUNK})
+        add_custom_command(OUTPUT ${TANGLED_SRC}
+                           DEPENDS openrsp_dirs
+                           COMMAND ${NOTANGLE} -R${CHUNK}
+                                   ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
+    endforeach()
+    set_source_files_properties(${OPENRSP_FORTRAN_FILES}
+                                PROPERTIES GENERATED TRUE)
+    # Adds intermediate files to be cleaned up
+    set(OPENRSP_WEB_CLEAN
+        ${OPENRSP_DEVELOPER_WEAVED_TEX}
+        ${OPENRSP_MAKE_DIRS})
+    set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${OPENRSP_WEB_CLEAN}")
+    # Makes package using CPack
+    set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+        "Common functions and data (types) for quantum chemistry")
+    set(CPACK_PACKAGE_VENDOR "Bin Gao")
+    set(CPACK_PACKAGE_VERSION "0.1.0")
+    set(CPACK_PACKAGE_DESCRIPTION_FILE "${LIB_OPENRSP_PATH}/README.rst")
+    set(CPACK_RESOURCE_FILE_LICENSE "${LIB_OPENRSP_PATH}/COPYING.LESSER")
+    set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${LIB_OPENRSP_PATH};/.")
+    set(CPACK_SOURCE_IGNORE_FILES
+        "/\\\\.git/;\\\\.gitignore$;\\\\.swp$;${CMAKE_BINARY_DIR}")
+    include(CPack)
+endif()
 
-# Sets different APIs
-IF(OPENRSP_CXX_API)
+# Header files and Fortran module files
+include_directories(${OPENRSP_HEADER_DIR})
+if(OPENRSP_FORTRAN_API)
+    set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
+    include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
+endif()
 
-ENDIF()
-IF(OPENRSP_F03_API)
-    INCLUDE(FortranAPI)
-    # Source codes of Fortran test suite
-    INCLUDE(TestSuiteFortran)
-ENDIF()
+# Builds test suite as executables
+if(OPENRSP_TEST_EXECUTABLE)
+    add_definitions(-DOPENRSP_TEST_EXECUTABLE)
+    if(OPENRSP_FORTRAN_API)
+        add_library(openrsp
+                    ${OPENRSP_HEADER_FILES}
+                    ${OPENRSP_FORTRAN_FILES}
+                    ${OPENRSP_C_FILES}
+                    ${OPENRSP_AO_DENS_SRCS})
+    else()
+        add_library(openrsp
+                    ${OPENRSP_HEADER_FILES}
+                    ${OPENRSP_C_FILES}
+                    ${OPENRSP_AO_DENS_SRCS})
+    endif()
+# Test suite is included into the library as functions
+else()
+    if(OPENRSP_FORTRAN_API)
+        add_library(openrsp
+                    ${OPENRSP_HEADER_FILES}
+                    ${OPENRSP_FORTRAN_FILES}
+                    ${OPENRSP_C_FILES}
+                    ${OPENRSP_AO_DENS_SRCS})
+    else()
+        add_library(openrsp
+                    ${OPENRSP_HEADER_FILES}
+                    ${OPENRSP_C_FILES}
+                    ${OPENRSP_AO_DENS_SRCS})
+    endif()
+endif()
 
-# do we still need it?
-#INCLUDE(ConfigCompilerFlags)
+# Installs the static library, header files and Fortran module files
+install(TARGETS openrsp
+        ARCHIVE DESTINATION lib)
+install(FILES ${OPENRSP_HEADER_FILES}
+        DESTINATION include)
+if(OPENRSP_FORTRAN_API)
+    install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/
+            DESTINATION include)
+endif()
 
-# Builds executables for the test suite
-IF(OPENRSP_TEST_EXECUTABLE)
-    ADD_DEFINITIONS(-DOPENRSP_TEST_EXECUTABLE)
-    # Creates the OpenRSP library
-    ADD_LIBRARY(${LIB_OPENRSP_NAME} ${OPENRSP_SRCS})
-    # Creates C test suite
-    ADD_EXECUTABLE(${LIB_OPENRSP_NAME}_c_test ${OPENRSP_C_TEST_SRCS})
-    # Linked libraries for the C test suite
-    TARGET_LINK_LIBRARIES(${LIB_OPENRSP_NAME}_c_test
-                          ${LIB_OPENRSP_NAME}
-                          ${QCMATRIX_LIB})
-    # Creates Fortran test suite
-    IF(OPENRSP_F03_API)
-        ADD_EXECUTABLE(${LIB_OPENRSP_NAME}_f_test ${OPENRSP_F_TEST_SRCS})
-        # Linked libraries for the Fortran test suite
-        TARGET_LINK_LIBRARIES(${LIB_OPENRSP_NAME}_f_test
-                              ${LIB_OPENRSP_NAME}
-                              ${QCMATRIX_LIB})
-    ENDIF()
-# Creates the OpenRSP library with the test suite
-ELSE()
-    ADD_LIBRARY(${LIB_OPENRSP_NAME}
-                ${OPENRSP_SRCS}
-                ${OPENRSP_C_TEST_SRCS}
-                ${OPENRSP_F_TEST_SRCS})
-ENDIF()
-
-# Installation
-INSTALL(TARGETS ${LIB_OPENRSP_NAME} ARCHIVE DESTINATION lib)
+# Uninstalls target, modified from (accessing date 2015-09-27)
+# http://cmake.org/Wiki/CMake_FAQ#Can_I_do_.22make_uninstall.22_with_CMake.3F
+configure_file("${LIB_OPENRSP_PATH}/cmake/cmake_uninstall.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+               @ONLY)
+add_custom_target(uninstall
+                  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)

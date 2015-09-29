@@ -26,7 +26,7 @@
 %  2015-08-20, Bin Gao:
 %  * first version
 
-\documentclass[a4paper,11pt,final]{article}
+\documentclass[a4paper,11pt,final]{book}
 
 \usepackage{amsmath}
 % leaves space around whole list
@@ -34,8 +34,8 @@
 \setlist{nolistsep}
 % makes sophisticated verbatim text
 \usepackage{fancyvrb}
-% makes nice pdf on screen
-\usepackage[T1]{fontenc}
+% package fontenc makes "--" in the code into a single line
+%\usepackage[T1]{fontenc}
 \usepackage[a4paper,text={16.5cm,25.2cm},centering]{geometry}
 \usepackage{graphicx}
 \usepackage[pdftex,
@@ -55,8 +55,22 @@
 
 \usepackage{noweb}
 %\noweboptions{smallcode,longchunks}
+\def\nwendcode{\endtrivlist \endgroup}
+\let\nwdocspar=\par
 
-% used for notice, remove this at the end
+% tikz for plotting
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+\usetikzlibrary{calc}
+\usetikzlibrary{chains}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{decorations.text}
+\usetikzlibrary{fit}
+\usepgflibrary{shapes.arrows}
+\usepgflibrary{shapes.geometric}
+\usetikzlibrary{shapes.multipart}
+
+% used for notice
 \usepackage{xcolor}
 \newcommand{\fixme}[1]{\textbf{\textit{\color{red} #1}}}
 
@@ -65,22 +79,11 @@
 
 \pagestyle{empty}
 
+\input{Settings}
+
 \begin{document}
 
-% library name
-\def\LibName{\textsc{OpenRSP}\,}
-% library version
-\def\LibVersion{1.0.0\,}
-% library authors
-\def\LibAuthor{Radovan Bast\\
-               Daniel H. Friese\\
-               Bin Gao\\
-               Dan J. Jonsson\\
-               Magnus Ringholm\\
-               Kenneth Ruud\\
-               Andreas Thorvaldsen\,}
-
-% title page
+% Title page
 \begin{titlepage}
   \centering
   \vspace*{\fill}
@@ -98,70 +101,30 @@
 
 \clearpage
 
-% copyright page
-\begingroup
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{\baselineskip}
-\LibName: open-ended library for response theory\\
-\textcopyright{} 2015 \LibAuthor\\
-
-\LibName is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as
-published by the Free Software Foundation, either version 3 of
-the License, or (at your option) any later version.
-
-\LibName is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with \LibName. If not, see
-<http://www.gnu.org/licenses/>.
-
-HOWEVER, YOU CANNOT USE IDEAS, DATA, OR WORDING OF THIS DOCUMENT
-WITHOUT AN APPROPRIATE CITATION.
-\endgroup
-
-\clearpage
+% Copyright page
+\input{Copyright}
 
 \tableofcontents
 
-\clearpage
-
 \pagestyle{noweb}
 
-% preface
-\section{Preface}
+% Preface
+\input{Preface}
 
-\subsection{Version Numbering Scheme\index{Version numbering scheme}}
+% Analysis
+\input{Analysis}
 
-The version numbering scheme used for \LibName is \textbf{Major.Minor.Patch},
-where
-\begin{description}
-  \item[Major] generally represents new release containing important changes,
-    and it may not be compatible with previous versions.
-  \item[Minor] is changed when a few new features introduced, and it should be
-    compatible with those of the same \textbf{Major} number.
-  \item[Patch] usually includes bug fixes, and should be compatible with those
-    of the same \textbf{Major.Minor} number.
-\end{description}
+% Design
+%\input{Design}
 
-\subsection{Support and Citation\index{Support and citation}}
-
-If there is any question regarding the use of \LibName, please contact
-the authors as given in the file \texttt{AUTHORS.rst}.
-
-If you have used \LibName and found it is useful, please consider to cite
-\LibName as described in the file \texttt{openrsp.bib}.
-
+% Implementation
+%
 % weaves all *.nw files together so that one can cross-reference chunks
 % in different *.nw files
-\input{OpenRSPDeveloper_chapters}
+\input{ChapterWeaved}
 
-\section{List of Chunks}
-
-\nowebchunks
+% Maintenance
+\input{Maintenance}
 
 \bibliographystyle{unsrt}
 \bibliography{references}

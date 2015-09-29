@@ -1,0 +1,7 @@
+gcc -c -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build RSPAODMCreate.c
+gcc -c -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build RSPAODMAddOneOper.c
+gcc -c -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build RSPAODMDestroy.c
+gcc -c -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build OpenRSPCreate.c
+gcc -c -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build OpenRSPAddOneOper.c
+gcc -c -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build OpenRSPDestroy.c
+gcc -o test -I. -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/include -I/Users/bga006/Work/XKjem/gitlab/qcmatrix/build test.c RSPAODMCreate.o RSPAODMAddOneOper.o RSPAODMDestroy.o OpenRSPCreate.o OpenRSPAddOneOper.o OpenRSPDestroy.o
