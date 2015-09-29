@@ -1,25 +1,3 @@
-\documentclass{standalone}
-
-\usepackage[latin1]{inputenc}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{amsthm}
-
-\usepackage{tikz}
-\usetikzlibrary{arrows,calc}
-
-%% generates a tightly fitting border around the work
-%\usepackage[active,tightpage]{preview}
-%\PreviewEnvironment{tikzpicture}
-%\setlength\PreviewBorder{0.5mm}
-%%\renewcommand\PreviewBbAdjust{-\PreviewBorder 1mm -1.15mm -0.85mm}
-
-\usepackage{color}
-
-%\pagestyle{empty}
-
-\begin{document}
-
 \begin{tikzpicture}[thick]
   \node[color=black, rectangle, draw, text badly centered, rounded corners, %
         minimum height=20] (OpenRSP-response) {OpenRSP response};
@@ -90,5 +68,3 @@
   \draw [-latex'] (HostDriver)--(QcMatrix);
   \draw [-latex'] (Callback)--(QcMatrix);
 \end{tikzpicture}
-
-\end{document}

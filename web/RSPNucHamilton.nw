@@ -1,0 +1,351 @@
+\section{Nuclear Hamiltonian}
+\label{section-OpenRSP-NucHamilton}
+
+Users can use the following API to set nuclear Hamiltonian (nuclear repulsion
+and nuclei-field interaction):
+<<OpenRSPSetNucHamilton.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSP.h"
+
+/*% \brief sets the context of nuclear Hamiltonian
+    \author Bin Gao
+    \date 2015-02-12
+    \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[QInt:int]{in} num_pert number of different perturbation labels that can
+         act as perturbations on the nuclear Hamiltonian
+     \param[QInt:int]{in} pert_labels all the different perturbation labels
+     \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+    \param[QVoid:void]{in} user_ctx user-defined callback function context
+    \param[GetNucContrib:void]{in} get_nuc_contrib user specified function for
+        getting nuclear contributions
+    \param[QInt:int]{in} num_atoms number of atoms
+    \return[QErrorCode:int] error information
+*/
+QErrorCode OpenRSPSetNucHamilton(OpenRSP *open_rsp,
+                                 const QInt num_pert,
+                                 const QInt *pert_labels,
+                                 const QInt *pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                 QVoid *user_ctx,
+#endif
+
+                                 const GetNucContrib get_nuc_contrib,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+                                 const QInt num_atoms)
+{
+    QErrorCode ierr;  /* error information */
+    /* creates the context of nuclear Hamiltonian */
+    if (open_rsp->nuc_hamilton!=NULL) {
+        ierr = RSPNucHamiltonDestroy(open_rsp->nuc_hamilton);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonDestroy()");
+    }
+    else {
+        open_rsp->nuc_hamilton = (RSPNucHamilton *)malloc(sizeof(RSPNucHamilton));
+        if (open_rsp->nuc_hamilton==NULL) {
+            QErrorExit(FILE_AND_LINE, "allocates memory for nuc_hamiltonian");
+        }
+    }
+    ierr = RSPNucHamiltonCreate(open_rsp->nuc_hamilton,
+                                num_pert,
+                                pert_labels,
+                                pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                user_ctx,
+#endif
+                                get_nuc_contrib,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+                                num_atoms);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonCreate()");
+    return QSUCCESS;
+}
+@
+
+The header file of the nuclear Hamiltonian is:
+<<RSPNucHamilton.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  <header name='RSPNucHamilton.h' author='Bin Gao' date='2014-12-11'>
+    The header file of nuclear Hamiltonian used inside OpenRSP
+  </header>
+*/
+
+#if !defined(RSP_NUCHAMILTON_H)
+#define RSP_NUCHAMILTON_H
+
+/* QcMatrix library */
+#include "qcmatrix.h"
+
+/* callback function to get the nuclear contributions */
+typedef QVoid (*GetNucContrib)(const QInt,
+                               const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                               QVoid*,
+#endif
+                               const QInt,
+                               QReal*);
+
+/* context of nuclear Hamiltonian */
+typedef struct {
+    QInt num_pert;                  /* number of different perturbation labels that
+                                       can act as perturbations on the nuclear Hamiltonian */
+    QInt *pert_labels;              /* all the different perturbation labels */
+    QInt *pert_max_orders;          /*  maximum allowed order of each perturbation (label) */
+#if defined(OPENRSP_C_USER_CONTEXT)
+    QVoid *user_ctx;                /* user-defined callback function context */
+#endif
+    GetNucContrib get_nuc_contrib;  /* user specified function for getting nuclear contributions */
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    QInt num_atoms;
+} RSPNucHamilton;
+
+/* functions related to the nuclear contributions */
+extern QErrorCode RSPNucHamiltonCreate(RSPNucHamilton*,
+                                       const QInt,
+                                       const QInt*,
+                                       const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                       QVoid*,
+#endif
+                                       const GetNucContrib,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+                                       const QInt);
+extern QErrorCode RSPNucHamiltonAssemble(RSPNucHamilton*);
+extern QErrorCode RSPNucHamiltonWrite(const RSPNucHamilton*,FILE*);
+extern QErrorCode RSPNucHamiltonGetContributions(const RSPNucHamilton*,
+                                                 const QInt,
+                                                 const QInt*,
+                                                 const QInt,
+                                                 QReal*);
+extern QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton*);
+/*FIXME: RSPNucHamiltonGetNumAtoms() to be removed after perturbation free scheme implemented*/
+extern QErrorCode RSPNucHamiltonGetNumAtoms(const RSPNucHamilton*,QInt*);
+
+#endif
+@
+
+The functions are implemented as follows:
+<<RSPNucHamiltonCreate.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPNucHamilton.h"
+
+/*% \brief creates the context of nuclear Hamiltonian, should be called at first
+    \author Bin Gao
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
+    \param[QInt:int]{in} num_pert number of different perturbation labels that can
+        act as perturbations on the nuclear Hamiltonian
+    \param[QInt:int]{in} pert_labels all the different perturbation labels
+    \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+    \param[QVoid:void]{in} user_ctx user-defined callback function context
+    \param[GetNucContrib:void]{in} get_nuc_contrib user specified function for
+        getting nuclear contributions
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPNucHamiltonCreate(RSPNucHamilton *nuc_hamilton,
+                                const QInt num_pert,
+                                const QInt *pert_labels,
+                                const QInt *pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                QVoid *user_ctx,
+#endif
+                                const GetNucContrib get_nuc_contrib,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+                                const QInt num_atoms)
+{
+    QInt ipert,jpert;  /* incremental recorder over perturbations */
+    if (num_pert>0) {
+        nuc_hamilton->num_pert = num_pert;
+    }
+    else {
+        printf("RSPNucHamiltonCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
+    }
+    nuc_hamilton->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (nuc_hamilton->pert_labels==NULL) {
+        printf("RSPNucHamiltonCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "allocates memory for pert_labels");
+    }
+    nuc_hamilton->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (nuc_hamilton->pert_max_orders==NULL) {
+        printf("RSPNucHamiltonCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "allocates memory for pert_max_orders");
+    }
+    for (ipert=0; ipert<num_pert; ipert++) {
+        /* each element of \var{pert_labels} should be unique */
+        for (jpert=0; jpert<ipert; jpert++) {
+            if (pert_labels[jpert]==pert_labels[ipert]) {
+                printf("RSPNucHamiltonCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
+                       jpert,
+                       pert_labels[jpert]);
+                printf("RSPNucHamiltonCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
+                       ipert,
+                       pert_labels[ipert]);
+                QErrorExit(FILE_AND_LINE, "same perturbation not allowed");
+            }
+        }
+        nuc_hamilton->pert_labels[ipert] = pert_labels[ipert];
+        if (pert_max_orders[ipert]<1) {
+            printf("RSPNucHamiltonCreate>> order of %"QINT_FMT"-th perturbation (%"QINT_FMT") is %"QINT_FMT"\n",
+                   ipert,
+                   pert_labels[ipert],
+                   pert_max_orders[ipert]);
+            QErrorExit(FILE_AND_LINE, "only positive order allowed");
+        }
+        nuc_hamilton->pert_max_orders[ipert] = pert_max_orders[ipert];
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    nuc_hamilton->user_ctx = user_ctx;
+#endif
+    nuc_hamilton->get_nuc_contrib = get_nuc_contrib;
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    nuc_hamilton->num_atoms = num_atoms;
+    return QSUCCESS;
+}
+
+<<RSPNucHamiltonAssemble.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPNucHamilton.h"
+
+/*% \brief assembles the nuclear Hamiltonian
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the nuclear Hamiltonian
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPNucHamiltonAssemble(RSPNucHamilton *nuc_hamilton)
+{
+/*FIXME: to implement */
+    return QSUCCESS;
+}
+
+<<RSPNucHamiltonWrite.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPNucHamilton.h"
+
+/*% \brief writes the context of nuclear Hamiltonian
+    \author Bin Gao
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
+    \param[FILE]{inout} fp_nuc file pointer
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPNucHamiltonWrite(const RSPNucHamilton *nuc_hamilton, FILE *fp_nuc)
+{
+    QInt ipert;  /* incremental recorder over perturbations */
+    fprintf(fp_nuc,
+            "RSPNucHamiltonWrite>> number of perturbations that nuclear Hamiltonian depend on %"QINT_FMT"\n",
+            nuc_hamilton->num_pert);
+    fprintf(fp_nuc, "RSPNucHamiltonWrite>> label           maximum-order\n");
+    for (ipert=0; ipert<nuc_hamilton->num_pert; ipert++) {
+        fprintf(fp_nuc,
+                "RSPNucHamiltonWrite>>       %"QINT_FMT"                  %"QINT_FMT"\n",
+                nuc_hamilton->pert_labels[ipert],
+                nuc_hamilton->pert_max_orders[ipert]);
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    if (nuc_hamilton->user_ctx!=NULL) {
+        fprintf(fp_nuc, "RSPNucHamiltonWrite>> user-defined function context given\n");
+    }
+#endif
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    fprintf(fp_nuc,
+            "RSPNucHamiltonWrite>> number of atoms %"QINT_FMT"\n",
+            nuc_hamilton->num_atoms);
+    return QSUCCESS;
+}
+
+<<RSPNucHamiltonGetContributions.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPNucHamilton.h"
+
+/*% \brief gets the nuclear contributions
+    \author Bin Gao
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the nuclear Hamiltonian
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the nuclear Hamiltonian
+    \param[QInt:int]{in} size_pert size of the perturbations on the nuclear Hamiltonian
+    \param[QReal:real]{inout} val_nuc the nuclear contributions
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPNucHamiltonGetContributions(const RSPNucHamilton *nuc_hamilton,
+                                          const QInt len_tuple,
+                                          const QInt *pert_tuple,
+                                          const QInt size_pert,
+                                          QReal *val_nuc)
+{
+/*FIXME: checks perturbations if resulting zero values*/
+    nuc_hamilton->get_nuc_contrib(len_tuple,
+                                  pert_tuple,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                  nuc_hamilton->user_ctx,
+#endif
+                                  size_pert,
+                                  val_nuc);
+    return QSUCCESS;
+}
+
+<<RSPNucHamiltonGetNumAtoms.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPNucHamilton.h"
+
+/*% \brief gets the number of atoms
+    \author Bin Gao
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{in} nuc_hamilton the context of nuclear Hamiltonian
+    \param[QInt:int]{out} num_atoms number of atoms
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPNucHamiltonGetNumAtoms(const RSPNucHamilton *nuc_hamilton,
+                                     QInt *num_atoms)
+{
+    *num_atoms = nuc_hamilton->num_atoms;
+    return QSUCCESS;
+}
+
+<<RSPNucHamiltonDestroy.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPNucHamilton.h"
+
+/*% \brief destroys the context of nuclear Hamiltonian, should be called at the end
+    \author Bin Gao
+    \date 2015-02-12
+    \param[RSPNucHamilton:struct]{inout} nuc_hamilton the context of nuclear Hamiltonian
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton *nuc_hamilton)
+{
+    nuc_hamilton->num_pert = 0;
+    free(nuc_hamilton->pert_labels);
+    nuc_hamilton->pert_labels = NULL;
+    free(nuc_hamilton->pert_max_orders);
+    nuc_hamilton->pert_max_orders = NULL;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    nuc_hamilton->user_ctx = NULL;
+#endif
+    nuc_hamilton->get_nuc_contrib = NULL;
+    return QSUCCESS;
+}
+

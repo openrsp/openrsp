@@ -1,0 +1,526 @@
+\section{Perturbations}
+\label{section-OpenRSP-perturbations}
+
+For different perturbations, there could be \textbf{different numbers of
+components} and \textbf{arranged in different ways} in different host programs.
+For instance, there are 9 components for the second order magnetic derivatives
+in a redundant way $xx,xy,xz,yx,yy,yz,zx,zy,zz$, but 6 components in a
+non-redundant way $xx,xy,xz,yy,yz,zz$. There are at most four centers in
+different integrals, non-zero high order ($\ge 5$) geometric derivatives are
+only those with at most four differentiated centers.
+
+To take all the above information into account in \LibName will make it so
+complicated and not necessary, because response theory actually does not
+depend on the detailed knowledge of different perturbations. In particular,
+when all the (perturbed) integrals and expectation values are computed by
+the host program's callback functions, the detailed information of perturbations,
+i.e. the number of components and how they are arranged in memory can be
+hidden from \LibName.
+
+The former can be easily solved by sending the number of components of
+each perturbation (label) up to its maximum order to the \LibName API
+[[OpenRSPSetPerturbations]].
+
+The latter can be important for \LibName, for instance, when the higher order
+derivatives with respect to \textbf{one perturbation} need to be constructed
+from several lower order derivatives. For instance, the second order
+derivatives may be constructed from the first order ones in the redundant
+format:
+\begin{align*}
+  x+x\rightarrow xx, & 0+0\rightarrow 0,\\
+  x+y\rightarrow xy, & 0+1\rightarrow 1,\\
+  x+z\rightarrow xz, & 0+2\rightarrow 2,\\
+  y+x\rightarrow yx, & 1+0\rightarrow 3,\\
+  y+y\rightarrow yy, & 1+1\rightarrow 4,\\
+  y+z\rightarrow yz, & 1+2\rightarrow 5,\\
+  z+x\rightarrow zx, & 2+0\rightarrow 6,\\
+  z+y\rightarrow zy, & 2+1\rightarrow 7,\\
+  z+z\rightarrow zz, & 2+2\rightarrow 8,
+\end{align*}
+where we have ranked different components in zero-based numbering (numbers on
+the right). However, the ranks can be different in different host programs. To
+solve this problem, i.e., the mapping relationship of lower and higher order
+derivatives with respect to \textbf{one perturbation}\footnote{We emphasize the
+derivatives of \textbf{one perturbation} because components of higher order
+derivatives of different perturbations are simply the direct product of
+components of lower order derivatives.}, we ask for a callback function
+[[get_pert_concatenation]] from host programs, which is the last argument of
+the API [[OpenRSPSetPerturbations]]:
+<<OpenRSPSetPerturbations.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSP.h"
+
+/* <function name='OpenRSPSetPerturbations' author='Bin Gao' date='2015-06-29'>
+     Sets all perturbations involved in response theory calculations
+     <param name='open_rsp' direction='inout'>The OpenRSP context</param>
+     <param name='num_pert' direction='in'>
+       Number of all different perturbation labels involved in calculations
+     </param>
+     <param name='pert_labels' direction='in'>
+       All the different perturbation labels involved
+     </param>
+     <param name='pert_max_orders' direction='in'>
+       Maximum allowed order of each perturbation (label)
+     </param>
+     <param name='pert_num_comps' direction='in'>
+       Number of components of each perturbation (label), up to its maximum
+       order, size is the sum of <pert_max_orders>
+     </param>
+     <param name='user_ctx' direction='in'>
+       User-defined callback function context
+     </param>
+     <param name='get_pert_concatenation' direction='in'>
+       User specified function for getting the ranks of components of
+       sub-perturbation tuples (with same perturbation label) for given
+       components of the corresponding concatenated perturbation tuple
+     </param>
+     <return>Error information</return>
+   </function> */
+QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
+                                   const QInt num_pert,
+                                   const QInt *pert_labels,
+                                   const QInt *pert_max_orders,
+                                   const QInt *pert_num_comps,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                   QVoid *user_ctx,
+#endif
+                                   const GetPertCat get_pert_concatenation)
+{
+    QErrorCode ierr;  /* error information */
+    /* creates the context of all perturbations involved in calculations */
+    if (open_rsp->rsp_pert!=NULL) {
+        ierr = RSPPertDestroy(open_rsp->rsp_pert);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertDestroy()");
+    }
+    else {
+        open_rsp->rsp_pert = (RSPPert *)malloc(sizeof(RSPPert));
+        if (open_rsp->rsp_pert==NULL) {
+            QErrorExit(FILE_AND_LINE, "allocates memory for perturbations");
+        }
+    }
+    ierr = RSPPertCreate(open_rsp->rsp_pert,
+                         num_pert,
+                         pert_labels,
+                         pert_max_orders,
+                         pert_num_comps,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                         user_ctx,
+#endif
+                         get_pert_concatenation);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertCreate()");
+    return QSUCCESS;
+}
+@ This callback function is used by \LibName to get the ranks of components of
+\textbf{sub-perturbation tuples with same perturbation label} (lower order
+derivatives with respect to one perturbation) for given components of the
+corresponding \textbf{concatenated perturbation tuple} (higher order
+derivatives).
+
+The header file of perturbations is:
+<<RSPPerturbation.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  <header name='RSPPerturbation.h' author='Bin Gao' date='2015-06-23'>
+    The header file of perturbations used inside OpenRSP
+  </header>
+*/
+
+#if !defined(RSP_PERTURBATION_H)
+#define RSP_PERTURBATION_H
+
+/* QcMatrix library */
+#include "qcmatrix.h"
+
+/* callback function to get the ranks of components of sub-perturbation
+   tuples (with same perturbation label) for given components of the
+   corresponding concatenated perturbation tuple */
+typedef QVoid (*GetPertCat)(const QInt,
+                            const QInt,
+                            const QInt*,
+                            const QInt,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            QVoid*,
+#endif
+                            QInt*);
+
+/* context of all perturbations involved in calculations */
+typedef struct {
+    QInt num_pert;                      /* number of all different perturbation labels involved */
+    QInt *pert_labels;                  /* all different perturbation labels involved */
+    QInt *pert_max_orders;              /* maximum allowed order of each perturbation (label) */
+    QInt *ptr_ncomp;                    /* pointer to the numbers of components of each perturbation */
+    QInt *pert_num_comps;               /* number of components of each perturbation (label) up to
+                                           its maximum order */
+#if defined(OPENRSP_C_USER_CONTEXT)     
+    QVoid *user_ctx;                    /* user-defined callback function context */
+#endif
+    GetPertCat get_pert_concatenation;  /* user specified function for getting the ranks of
+                                           components of sub-perturbation tuples (with same
+                                           perturbation label) for given components of the
+                                           corresponding concatenated perturbation tuple */
+} RSPPert;
+
+/* functions related to the perturbations */
+extern QErrorCode RSPPertCreate(RSPPert*,
+                                const QInt,
+                                const QInt*,
+                                const QInt*,
+                                const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                QVoid*,
+#endif
+                                const GetPertCat);
+extern QErrorCode RSPPertAssemble(RSPPert*);
+extern QErrorCode RSPPertWrite(const RSPPert*,FILE*);
+//extern QErrorCode RSPPertGetFromTuple(const RSPPert*,
+//                                      const QInt,
+//                                      const QInt*,
+//                                      const QInt,
+//                                      const QReal*,
+//                                      QInt*);
+extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
+                                          const QInt,
+                                          const QInt,
+                                          const QInt,
+                                          const QInt,
+                                          const QInt*,
+                                          QInt*);
+extern QErrorCode RSPPertDestroy(RSPPert*);
+
+#endif
+@
+
+The functions are:
+<<RSPPertCreate.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPPerturbation.h"
+
+/*% \brief sets all perturbations involved in response theory calculations
+    \author Bin Gao
+    \date 2015-06-28
+    \param[RSPPert:struct]{inout} rsp_pert context of all perturbations involved in calculations
+    \param[QInt:int]{in} num_pert number of all different perturbation labels involved
+        in calculations
+    \param[QInt:int]{in} pert_labels all different perturbation labels involved
+    \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+    \param[QInt:int]{in} pert_num_comps number of components of each perturbation (label)
+        up to its maximum order, size is \sum{\var{pert_max_orders}}
+    \param[QVoid:void]{in} user_ctx user-defined callback function context
+    \param[GetPertCat:void]{in} get_pert_concatenation user specified function for
+        getting the ranks of components of sub-perturbation tuples (with same
+        perturbation label) for given components of the corresponding concatenated
+        perturbation tuple
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPPertCreate(RSPPert *rsp_pert,
+                         const QInt num_pert,
+                         const QInt *pert_labels,
+                         const QInt *pert_max_orders,
+                         const QInt *pert_num_comps,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                         QVoid *user_ctx,
+#endif
+                         const GetPertCat get_pert_concatenation)
+{
+    QInt ipert,jpert,iorder;  /* incremental recorders */
+    if (num_pert<1) {
+        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\n",
+               num_pert);
+        QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
+    }
+    rsp_pert->num_pert = num_pert;
+    rsp_pert->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (rsp_pert->pert_labels==NULL) {
+        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\n",
+               num_pert);
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_labels");
+    }
+    rsp_pert->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (rsp_pert->pert_max_orders==NULL) {
+        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\n",
+               num_pert);
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_max_orders");
+    }
+    rsp_pert->ptr_ncomp = (QInt *)malloc((num_pert+1)*sizeof(QInt));
+    if (rsp_pert->ptr_ncomp==NULL) {
+        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\n",
+               num_pert);
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for ptr_ncomp");
+    }
+    rsp_pert->ptr_ncomp[0] = 0;
+    for (ipert=0; ipert<num_pert; ipert++) {
+        /* each element of \var{pert_labels} should be unique */
+        for (jpert=0; jpert<ipert; jpert++) {
+            if (pert_labels[jpert]==pert_labels[ipert]) {
+                printf("RSPPertCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
+                       jpert,
+                       pert_labels[jpert]);
+                printf("RSPPertCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
+                       ipert,
+                       pert_labels[ipert]);
+                QErrorExit(FILE_AND_LINE, "repeated labels of perturbations not allowed");
+            }
+        }
+        rsp_pert->pert_labels[ipert] = pert_labels[ipert];
+        if (pert_max_orders[ipert]<1) {
+            printf("RSPPertCreate>> order of %"QINT_FMT"-th perturbation (%"QINT_FMT") is %"QINT_FMT"\n",
+                   ipert,
+                   pert_labels[ipert],
+                   pert_max_orders[ipert]);
+            QErrorExit(FILE_AND_LINE, "only positive order allowed");
+        }
+        rsp_pert->pert_max_orders[ipert] = pert_max_orders[ipert];
+        /* \var{rsp_pert->ptr_ncomp[ipert]} points to the number of components of
+           \var{rsp_pert->pert_labels[ipert]} */
+        rsp_pert->ptr_ncomp[ipert+1] = rsp_pert->ptr_ncomp[ipert]+pert_max_orders[ipert];
+    }
+    /* \var{rsp_pert->ptr_ncomp[num_pert]} equals to the size of \var{rsp_pert->pert_num_comps} */
+    rsp_pert->pert_num_comps = (QInt *)malloc(rsp_pert->ptr_ncomp[num_pert]*sizeof(QInt));
+    if (rsp_pert->pert_num_comps==NULL) {
+        printf("RSPPertCreate>> size of pert_num_comps %"QINT_FMT"\n",
+               rsp_pert->ptr_ncomp[num_pert]);
+        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_num_comps");
+    }
+    for (ipert=0,jpert=0; ipert<num_pert; ipert++) {
+        for (iorder=1; iorder<=rsp_pert->pert_max_orders[ipert]; iorder++,jpert++) {
+            if (pert_num_comps[jpert]<1) {
+                printf("RSPPertCreate>> size of %"QINT_FMT"-th perturbation (%"QINT_FMT", order %"QINT_FMT") is %"QINT_FMT"\n",
+                       ipert,
+                       pert_labels[ipert],
+                       pert_max_orders[ipert],
+                       pert_num_comps[jpert]);
+                QErrorExit(FILE_AND_LINE, "incorrect size");
+            }
+            rsp_pert->pert_num_comps[jpert] = pert_num_comps[jpert];
+        }
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    rsp_pert->user_ctx = user_ctx;
+#endif
+    rsp_pert->get_pert_concatenation = get_pert_concatenation;
+    return QSUCCESS;
+}
+
+<<RSPPertAssemble.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPPerturbation.h"
+
+/*% \brief assembles the context of all perturbations involved in calculations
+    \author Bin Gao
+    \date 2015-06-28
+    \param[RSPPert:struct]{inout} rsp_pert context of all perturbations involved in calculations
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPPertAssemble(RSPPert *rsp_pert)
+{
+    if (rsp_pert->num_pert<1 ||
+        rsp_pert->pert_labels==NULL ||
+        rsp_pert->pert_max_orders==NULL ||
+        rsp_pert->ptr_ncomp==NULL ||
+        rsp_pert->pert_num_comps==NULL ||
+        rsp_pert->get_pert_concatenation==NULL) {
+        QErrorExit(FILE_AND_LINE, "perturbations are not correctly set");
+    }
+    return QSUCCESS;
+}
+
+<<RSPPertWrite.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPPerturbation.h"
+
+/*% \brief writes the context of all perturbations involved in calculations
+    \author Bin Gao
+    \date 2015-06-28
+    \param[RSPPert:struct]{inout} rsp_pert context of all perturbations involved in calculations
+    \param[FILE]{inout} fp_pert file pointer
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
+{
+    QInt ipert,icomp;  /* incremental recorders */
+    fprintf(fp_pert,
+            "RSPPertWrite>> number of all perturbations involved in calculations %"QINT_FMT"\n",
+            rsp_pert->num_pert);
+    fprintf(fp_pert,
+            "RSPPertWrite>> label           maximum-order    numbers-of-components\n");
+    for (ipert=0; ipert<rsp_pert->num_pert; ipert++) {
+        fprintf(fp_pert,
+                "RSPPertWrite>>  %"QINT_FMT"               %"QINT_FMT"               ",
+                rsp_pert->pert_labels[ipert],
+                rsp_pert->pert_max_orders[ipert]);
+        for (icomp=rsp_pert->ptr_ncomp[ipert]; icomp<rsp_pert->ptr_ncomp[ipert+1]; icomp++) {
+            fprintf(fp_pert, " %"QINT_FMT"", rsp_pert->pert_num_comps[icomp]);
+        }
+        fprintf(fp_pert, "\n");
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    if (rsp_pert->user_ctx!=NULL) {
+        fprintf(fp_pert, "RSPPertWrite>> user-defined function context given\n");
+    }
+#endif
+    return QSUCCESS;
+}
+
+<<RSPPertGetFromTuple.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPPerturbation.h"
+
+/*% \brief gets the information of perturbations (orders and number of components)
+        from a given perturbation tuple
+    \author Bin Gao
+    \date 2015-06-29
+    \param[RSPPert:struct]{in} rsp_pert context of all perturbations involved
+        in calculations
+    \param[QInt:int]{in} len_tuple length of the perturbation tuple, in which
+        identical perturbation labels should be consecutive
+    \param[QInt:int]{in} pert_tuple the perturbation tuple
+    \param[QInt:int]{in} num_freq_configs number of different frequency configurations
+    \param[QReal:real]{in} pert_freqs complex frequencies of each perturbation label
+        over all frequency configurations
+    \var[QInt:int]{out} num_pert number of different perturbations from the given
+        perturbation tuple
+    \var[QInt:int]{out} pert_orders orders of each perturbation
+    \var[QInt:int]{out} pert_num_comps numbers of components of each perturbation,
+        from the first order up to the order in \var{pert_orders}
+    \return[QErrorCode:int] error information
+*/
+//QErrorCode RSPPertGetFromTuple(const RSPPert *rsp_pert,
+//                               const QInt len_tuple,
+//                               const QInt *pert_tuple,
+//                               const QInt num_freq_configs,
+//                               const QReal *pert_freqs,
+//                               QInt *num_pert,
+//                               QInt *pert_orders,
+//                               QInt *pert_num_comps)
+//{
+//    QInt ipert,jpert;  /* incremental recorders */
+//    QInt first_id;     /* first identical pertubation label in the tuple */
+//    QInt last_id;      /* last identical pertubation label in the tuple */
+//    QBool non_id;      /* indicates if non-identical label found */
+//    /* we first get the consecutive identical pertubation labels */
+//    first_id = 0;
+//    non_id = QFALSE;
+//    for (ipert=first_id; ipert<len_tuple-1; ipert++) {
+//        if (pert_tupe[ipert]!=pert_tupe[ipert+1]) {
+//            last_id = ipert;
+//            non_id = QTRUE;
+//            break;
+//        }
+//    }
+//    if (non_id=QTRUE) {
+//    }
+//    else {
+//    }
+//    /* loops over all known perturbation labels and checks if they are in the tuple */
+//    for (ipert=0; ipert<rsp_pert->num_pert; ipert++) {
+//        /* loops over perturbation labels in the tuple */
+//        for (ipert=first_id; ipert<len_tuple; ipert++) {
+//            /* checks if the given label is known */
+//            if (pert_tupe[ipert]==rsp_pert->pert_labels[jpert]) {
+//                
+//            }
+//        }
+//    }
+//    return QSUCCESS;
+//}
+
+<<RSPPertGetConcatenation.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPPerturbation.h"
+
+/*% \brief gets the ranks of components of sub-perturbation tuples (with
+        same perturbation label) for given components of the corresponding
+        concatenated perturbation tuple
+    \author Bin Gao
+    \date 2015-06-28
+    \param[RSPPert:struct]{in} rsp_pert context of all perturbations involved
+        in calculations
+    \param[QInt:int]{in} pert_label the perturbation label
+    \param[QInt:int]{in} first_cat_comp rank of the first component of the
+        concatenated perturbation tuple
+    \param[QInt:int]{in} num_cat_comps number of components of the concatenated
+        perturbation tuple
+    \param[QInt:int]{in} num_sub_tuples number of sub-perturbation tuples to
+        construct the concatenated perturbation tuple
+    \param[QInt:int]{in} len_sub_tuples length of each sub-perturbation tuple,
+        size is ``num_sub_tuples``; so that the length of the concatenated
+        perturbation is ``sum(len_sub_tuples)``
+    \var[QInt:int]{out} rank_sub_comps ranks of components of sub-perturbation
+        tuples for the corresponding component of the concatenated perturbation
+        tuple, i.e. ``num_cat_comps`` components starting from the one with rank
+        ``first_cat_comp``, size is therefore ``num_sub_tuples*num_cat_comps``,
+        and arranged as ``[num_cat_comps][num_sub_tuples]``
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPPertGetConcatenation(const RSPPert *rsp_pert,
+                                   const QInt pert_label,
+                                   const QInt first_cat_comp,
+                                   const QInt num_cat_comps,
+                                   const QInt num_sub_tuples,
+                                   const QInt *len_sub_tuples,
+                                   QInt *rank_sub_comps)
+{
+/*FIXME: zero-based or one-based numbering*/
+    rsp_pert->get_pert_concatenation(pert_label,
+                                     first_cat_comp,
+                                     num_cat_comps,
+                                     num_sub_tuples,
+                                     len_sub_tuples,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                     rsp_pert->user_ctx,
+#endif
+                                     rank_sub_comps);
+    return QSUCCESS;
+}
+
+<<RSPPertDestroy.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPPerturbation.h"
+
+/*% \brief destroys the context of all perturbations involved in calculations
+    \author Bin Gao
+    \date 2015-06-28
+    \param[RSPPert:struct]{inout} rsp_pert context of all perturbations involved in calculations
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPPertDestroy(RSPPert *rsp_pert)
+{
+    rsp_pert->num_pert = 0;
+    free(rsp_pert->pert_labels);
+    rsp_pert->pert_labels = NULL;
+    free(rsp_pert->pert_max_orders);
+    rsp_pert->pert_max_orders = NULL;
+    free(rsp_pert->ptr_ncomp);
+    rsp_pert->ptr_ncomp = NULL;
+    free(rsp_pert->pert_num_comps);
+    rsp_pert->pert_num_comps = NULL;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    rsp_pert->user_ctx = NULL;
+#endif
+    rsp_pert->get_pert_concatenation = NULL;
+    return QSUCCESS;
+}
+

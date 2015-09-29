@@ -1,0 +1,426 @@
+\section{Overlap Integrals}
+\label{section-OpenRSP-overlap}
+
+\LibName needs to invoke host program's callback functions to calculate
+the matrices or expectation values of overlap integrals as well as derivatives
+with respect to different perturbations. Users can use the following API
+to tell \LibName the information of overlap integrals:
+<<OpenRSPSetOverlap.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSP.h"
+
+/*@% \brief sets the context of perturbation dependent basis sets
+     \author Bin Gao
+     \date 2014-07-30
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[QInt:int]{in} num_pert number of different perturbation labels that can
+         act as perturbations on the basis sets
+     \param[QInt:int]{in} pert_labels all the different perturbation labels
+     \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+     \param[QVoid:void]{in} user_ctx user-defined callback function context
+     \param[GetOverlapMat:void]{in} get_overlap_mat user specified function for
+         getting overlap integrals
+     \param[GetOverlapExp:void]{in} get_overlap_exp user specified function for
+         getting expectation values of overlap integrals
+     \return[QErrorCode:int] error information
+*/
+QErrorCode OpenRSPSetOverlap(OpenRSP *open_rsp,
+                             const QInt num_pert,
+                             const QInt *pert_labels,
+                             const QInt *pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             QVoid *user_ctx,
+#endif
+                             const GetOverlapMat get_overlap_mat,
+                             const GetOverlapExp get_overlap_exp)
+{
+    QErrorCode ierr;  /* error information */
+    /* creates the context of perturbation dependent basis sets */
+    if (open_rsp->overlap!=NULL) {
+        ierr = RSPOverlapDestroy(open_rsp->overlap);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapDestroy()");
+    }
+    else {
+        open_rsp->overlap = (RSPOverlap *)malloc(sizeof(RSPOverlap));
+        if (open_rsp->overlap==NULL) {
+            QErrorExit(FILE_AND_LINE, "allocates memory for overlap");
+        }
+    }
+    ierr = RSPOverlapCreate(open_rsp->overlap,
+                            num_pert,
+                            pert_labels,
+                            pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            user_ctx,
+#endif
+                            get_overlap_mat,
+                            get_overlap_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapCreate()");
+    return QSUCCESS;
+}
+@
+
+The following header file defines all quantities we need for the calculations
+of overlap integrals. Types [[GetOverlapMat]] and [[GetOverlapExp]] define the
+requirements of two callback functions from the host program to calculate
+respectively the matrices and expectation values of overlap integrals and
+derivatives.
+
+<<RSPOverlap.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  <header name='RSPOneOper.h' author='Bin Gao' date='2014-08-05'>
+    The header file of overlap integrals used inside OpenRSP
+  </header>
+*/
+
+#if !defined(RSP_OVERLAP_H)
+#define RSP_OVERLAP_H
+
+#include "qcmatrix.h"
+
+typedef QVoid (*GetOverlapMat)(const QInt,
+                               const QInt*,
+                               const QInt,
+                               const QInt*,
+                               const QInt,
+                               const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                               QVoid*,
+#endif
+                               const QInt,
+                               QcMat*[]);
+typedef QVoid (*GetOverlapExp)(const QInt,
+                               const QInt*,
+                               const QInt,
+                               const QInt*,
+                               const QInt,
+                               const QInt*,
+                               const QInt,
+                               QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                               QVoid*,
+#endif
+                               const QInt,
+                               QReal*);
+
+<<RSPOverlapContext>>
+
+<<RSPOverlapFunctions>>
+
+#endif
+@ The context of overlap integrals is:
+<<RSPOverlapContext>>=
+typedef struct {
+    QInt num_pert;                  /* number of different perturbation labels that
+                                       can act as perturbations on the basis sets */
+    QInt *pert_labels;              /* all the different perturbation labels */
+    QInt *pert_max_orders;          /* maximum allowed order of each perturbation (label) */
+#if defined(OPENRSP_C_USER_CONTEXT)
+    QVoid *user_ctx;                /* user-defined callback function context */
+#endif
+    GetOverlapMat get_overlap_mat;  /* user specified function for getting integral matrices */
+    GetOverlapExp get_overlap_exp;  /* user specified function for getting expectation values */
+} RSPOverlap;
+@ and the functions related to the overlap integrals:
+<<RSPOverlapFunctions>>=
+extern QErrorCode RSPOverlapCreate(RSPOverlap*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                   QVoid*,
+#endif
+                                   const GetOverlapMat,
+                                   const GetOverlapExp);
+extern QErrorCode RSPOverlapAssemble(RSPOverlap*);
+extern QErrorCode RSPOverlapWrite(const RSPOverlap*,FILE*);
+extern QErrorCode RSPOverlapGetMat(const RSPOverlap*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt,
+                                   QcMat*[]);
+extern QErrorCode RSPOverlapGetExp(const RSPOverlap*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt,
+                                   const QInt*,
+                                   const QInt,
+                                   QcMat*[],
+                                   const QInt,
+                                   QReal*);
+extern QErrorCode RSPOverlapDestroy(RSPOverlap*);
+@
+
+Let us now implement all the functions declared:
+<<RSPOverlapCreate.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPOverlap.h"
+
+/*% \brief creates the overlap integrals, should be called at first
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPOverlap:struct]{inout} overlap the overlap integrals
+    \param[QInt:int]{in} num_pert number of different perturbation labels that can
+        act as perturbations on the basis sets
+    \param[QInt:int]{in} pert_labels all the different perturbation labels
+    \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+    \param[QVoid:void]{in} user_ctx user-defined callback function context
+    \param[GetOverlapMat:void]{in} get_overlap_mat user specified function for
+        getting integral matrices
+    \param[GetOverlapExp:void]{in} get_overlap_exp user specified function for
+        getting expectation values
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPOverlapCreate(RSPOverlap *overlap,
+                            const QInt num_pert,
+                            const QInt *pert_labels,
+                            const QInt *pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            QVoid *user_ctx,
+#endif
+                            const GetOverlapMat get_overlap_mat,
+                            const GetOverlapExp get_overlap_exp)
+{
+    QInt ipert,jpert;      /* incremental recorder over perturbations */
+    if (num_pert>0) {
+        overlap->num_pert = num_pert;
+    }
+    else {
+        printf("RSPOverlapCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
+    }
+    overlap->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (overlap->pert_labels==NULL) {
+        printf("RSPOverlapCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "allocates memory for pert_labels");
+    }
+    overlap->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (overlap->pert_max_orders==NULL) {
+        printf("RSPOverlapCreate>> number of perturbations %"QINT_FMT"\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "allocates memory for pert_max_orders");
+    }
+    for (ipert=0; ipert<num_pert; ipert++) {
+        /* each element of \var{pert_labels} should be unique */
+        for (jpert=0; jpert<ipert; jpert++) {
+            if (pert_labels[jpert]==pert_labels[ipert]) {
+                printf("RSPOverlapCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
+                       jpert,
+                       pert_labels[jpert]);
+                printf("RSPOverlapCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\n",
+                       ipert,
+                       pert_labels[ipert]);
+                QErrorExit(FILE_AND_LINE, "same perturbation not allowed");
+            }
+        }
+        overlap->pert_labels[ipert] = pert_labels[ipert];
+        if (pert_max_orders[ipert]<1) {
+            printf("RSPOverlapCreate>> order of %"QINT_FMT"-th perturbation (%"QINT_FMT") is %"QINT_FMT"\n",
+                   ipert,
+                   pert_labels[ipert],
+                   pert_max_orders[ipert]);
+            QErrorExit(FILE_AND_LINE, "only positive order allowed");
+        }
+        overlap->pert_max_orders[ipert] = pert_max_orders[ipert];
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    overlap->user_ctx = user_ctx;
+#endif
+    overlap->get_overlap_mat = get_overlap_mat;
+    overlap->get_overlap_exp = get_overlap_exp;
+    return QSUCCESS;
+}
+
+<<RSPOverlapAssemble.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPOverlap.h"
+
+/*% \brief assembles the overlap integrals
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPOverlap:struct]{inout} overlap the overlap integrals
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPOverlapAssemble(RSPOverlap *overlap)
+{
+/*FIXME: to implement */
+    return QSUCCESS;
+}
+
+<<RSPOverlapWrite.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPOverlap.h"
+
+/*% \brief writes the overlap integrals
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPOverlap:struct]{in} overlap the overlap integrals
+    \param[FILE]{inout} fp_overlap file pointer
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPOverlapWrite(const RSPOverlap *overlap, FILE *fp_overlap)
+{
+    QInt ipert;  /* incremental recorder over perturbations */
+    fprintf(fp_overlap,
+            "RSPOverlapWrite>> number of perturbations that overlap integrals depend on %"QINT_FMT"\n",
+            overlap->num_pert);
+    fprintf(fp_overlap, "RSPOverlapWrite>> label           maximum-order\n");
+    for (ipert=0; ipert<overlap->num_pert; ipert++) {
+        fprintf(fp_overlap,
+                "RSPOverlapWrite>>       %"QINT_FMT"                  %"QINT_FMT"\n",
+                overlap->pert_labels[ipert],
+                overlap->pert_max_orders[ipert]);
+    }
+#if defined(OPENRSP_C_USER_CONTEXT)
+    if (overlap->user_ctx!=NULL) {
+        fprintf(fp_overlap, "RSPOverlapWrite>> user-defined function context given\n");
+    }
+#endif
+    return QSUCCESS;
+}
+
+<<RSPOverlapGetMat.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPOverlap.h"
+
+/*% \brief gets integral matrices of the overlap integrals
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPOverlap:struct]{in} overlap the overlap integrals
+    \param[QInt:int]{in} bra_len_tuple length of the perturbation tuple on the bra
+    \param[QInt:int]{in} bra_pert_tuple perturbation tuple on the bra
+    \param[QInt:int]{in} ket_len_tuple length of the perturbation tuple on the ket
+    \param[QInt:int]{in} ket_pert_tuple perturbation tuple on the ket
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the overlap integrals
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the overlap integrals
+    \param[QInt:int]{in} num_int number of the integral matrices
+    \param[QcMat:struct]{inout} val_int the integral matrices
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPOverlapGetMat(const RSPOverlap *overlap,
+                            const QInt bra_len_tuple,
+                            const QInt *bra_pert_tuple,
+                            const QInt ket_len_tuple,
+                            const QInt *ket_pert_tuple,
+                            const QInt len_tuple,
+                            const QInt *pert_tuple,
+                            const QInt num_int,
+                            QcMat *val_int[])
+{
+/*FIXME: checks perturbations if resulting zero integrals*/
+    overlap->get_overlap_mat(bra_len_tuple,
+                             bra_pert_tuple,
+                             ket_len_tuple,
+                             ket_pert_tuple,
+                             len_tuple,
+                             pert_tuple,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             overlap->user_ctx,
+#endif
+                             num_int,
+                             val_int);
+    return QSUCCESS;
+}
+
+<<RSPOverlapGetExp.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPOverlap.h"
+
+/*% \brief gets expectation values of the overlap integrals
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPOverlap:struct]{in} overlap the overlap integrals
+    \param[QInt:int]{in} bra_len_tuple length of the perturbation tuple on the bra
+    \param[QInt:int]{in} bra_pert_tuple perturbation tuple on the bra
+    \param[QInt:int]{in} ket_len_tuple length of the perturbation tuple on the ket
+    \param[QInt:int]{in} ket_pert_tuple perturbation tuple on the ket
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the overlap integrals
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the overlap integrals
+    \param[QInt:int]{in} num_dmat number of atomic orbital (AO) based density matrices
+    \param[QcMat:struct]{in} dens_mat the AO based density matrices
+    \param[QInt:int]{in} num_exp number of expectation values
+    \param[QReal:real]{out} val_exp the expectation values
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPOverlapGetExp(const RSPOverlap *overlap,
+                            const QInt bra_len_tuple,
+                            const QInt *bra_pert_tuple,
+                            const QInt ket_len_tuple,
+                            const QInt *ket_pert_tuple,
+                            const QInt len_tuple,
+                            const QInt *pert_tuple,
+                            const QInt num_dmat,
+                            QcMat *dens_mat[],
+                            const QInt num_exp,
+                            QReal *val_exp)
+{
+/*FIXME: checks perturbations if resulting zero integrals*/
+    overlap->get_overlap_exp(bra_len_tuple,
+                             bra_pert_tuple,
+                             ket_len_tuple,
+                             ket_pert_tuple,
+                             len_tuple,
+                             pert_tuple,
+                             num_dmat,
+                             dens_mat,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             overlap->user_ctx,
+#endif
+                             num_exp,
+                             val_exp);
+    return QSUCCESS;
+}
+
+<<RSPOverlapDestroy.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPOverlap.h"
+
+/*% \brief destroys the overlap integrals, should be called at the end
+    \author Bin Gao
+    \date 2014-08-05
+    \param[RSPOverlap:struct]{inout} overlap the overlap integrals
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPOverlapDestroy(RSPOverlap *overlap)
+{
+    overlap->num_pert = 0;
+    free(overlap->pert_labels);
+    overlap->pert_labels = NULL;
+    free(overlap->pert_max_orders);
+    overlap->pert_max_orders = NULL;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    overlap->user_ctx = NULL;
+#endif
+    overlap->get_overlap_mat = NULL;
+    overlap->get_overlap_exp = NULL;
+    return QSUCCESS;
+}
+

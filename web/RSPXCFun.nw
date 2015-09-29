@@ -1,0 +1,532 @@
+\section{XC Functionals}
+\label{section-OpenRSP-XCFun}
+
+Users can use the following API to add different XC functionals:
+<<OpenRSPAddXCFun.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSP.h"
+
+/*@% \brief adds an XC functional  to the Hamiltonian
+     \author Bin Gao
+     \date 2015-06-23
+     \param[OpenRSP:struct]{inout} open_rsp the context of response theory calculations
+     \param[QInt:int]{in} num_pert number of different perturbation labels that can
+         act as perturbations on the XC functional
+     \param[QInt:int]{in} pert_labels all the different perturbation labels
+     \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+     \param[QVoid:void]{in} user_ctx user-defined callback function context
+     \param[GetXCFunMat:void]{in} get_xc_fun_mat user specified function for
+         getting integral matrices
+     \param[GetXCFunExp:void]{in} get_xc_fun_exp user specified function for
+         getting expectation values
+     \return[QErrorCode:int] error information
+*/
+QErrorCode OpenRSPAddXCFun(OpenRSP *open_rsp,
+                           const QInt num_pert,
+                           const QInt *pert_labels,
+                           const QInt *pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                           QVoid *user_ctx,
+#endif
+                           const GetXCFunMat get_xc_fun_mat,
+                           const GetXCFunExp get_xc_fun_exp)
+{
+    QErrorCode ierr;  /* error information */
+    /* creates the linked list of XC functionals */
+    if (open_rsp->xc_fun==NULL) {
+        ierr = RSPXCFunCreate(&open_rsp->xc_fun,
+                              num_pert,
+                              pert_labels,
+                              pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              user_ctx,
+#endif
+                              get_xc_fun_mat,
+                              get_xc_fun_exp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunCreate()");
+    }
+    /* adds the XC functional to the linked list */
+    else {
+        ierr = RSPXCFunAdd(open_rsp->xc_fun,
+                           num_pert,
+                           pert_labels,
+                           pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                           user_ctx,
+#endif
+                           get_xc_fun_mat,
+                           get_xc_fun_exp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunAdd()");
+    }
+    return QSUCCESS;
+}
+@
+
+The header file of different XC functionals is:
+<<RSPXCFun.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  <header name='RSPXCFun.h' author='Bin Gao' date='2014-08-06'>
+    The header file of XC functionals used inside OpenRSP
+  </header>
+*/
+
+#if !defined(RSP_XCFUN_H)
+#define RSP_XCFUN_H
+
+/* QcMatrix library */
+#include "qcmatrix.h"
+
+/* callback functions to get the integral matrices and expectation values */
+typedef QVoid (*GetXCFunMat)(const QInt,
+                             const QInt*,
+                             const QInt,
+                             const QInt,
+                             const QInt*,
+                             const QInt,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             QVoid*,
+#endif
+                             const QInt,
+                             QcMat*[]);
+typedef QVoid (*GetXCFunExp)(const QInt,
+                             const QInt*,
+                             const QInt,
+                             const QInt,
+                             const QInt*,
+                             const QInt,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             QVoid*,
+#endif
+                             const QInt,
+                             QReal*);
+
+/* linked list of exchange-corrrelation (XC) functionals */
+typedef struct RSPXCFun RSPXCFun;
+struct RSPXCFun {
+    QInt num_pert;               /* number of different perturbation labels that
+                                    can act as perturbations on the XC functional */
+    QInt *pert_labels;           /* all the different perturbation labels */
+    QInt *pert_max_orders;       /*  maximum allowed order of each perturbation (label) */
+#if defined(OPENRSP_C_USER_CONTEXT)
+    QVoid *user_ctx;             /* user-defined callback function context */
+#endif
+    GetXCFunMat get_xc_fun_mat;  /* user specified function for getting integral matrices */
+    GetXCFunExp get_xc_fun_exp;  /* user specified function for getting expectation values */
+    RSPXCFun *next_xc;           /* pointer to the next exchange-corrrelation functional */
+};
+
+/* functions related to the linked list of exchange-corrrelation functionals */
+extern QErrorCode RSPXCFunCreate(RSPXCFun**,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                 QVoid*,
+#endif
+                                 const GetXCFunMat,
+                                 const GetXCFunExp);
+extern QErrorCode RSPXCFunAdd(RSPXCFun*,
+                              const QInt,
+                              const QInt*,
+                              const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              QVoid*,
+#endif
+                              const GetXCFunMat,
+                              const GetXCFunExp);
+extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
+extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
+extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 QcMat*[],
+                                 const QInt,
+                                 QcMat*[]);
+extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 const QInt,
+                                 const QInt*,
+                                 const QInt,
+                                 QcMat*[],
+                                 const QInt,
+                                 QReal*);
+extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
+
+#endif
+@
+
+The functions are implemented as follows:
+<<RSPXCFunCreate.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief creates the linked list of XC functionals, should be called at first
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{inout} xc_fun the linked list of XC functionals
+    \param[QInt:int]{in} num_pert number of different perturbation labels that can
+        act as perturbations on the XC functional
+    \param[QInt:int]{in} pert_labels all the different perturbation labels
+    \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+    \param[QVoid:void]{in} user_ctx user-defined callback function context
+    \param[GetXCFunMat:void]{in} get_xc_fun_mat user specified function for
+        getting integral matrices
+    \param[GetXCFunExp:void]{in} get_xc_fun_exp user specified function for
+        getting expectation values
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunCreate(RSPXCFun **xc_fun,
+                          const QInt num_pert,
+                          const QInt *pert_labels,
+                          const QInt *pert_max_orders,
+                          QVoid *user_ctx,
+                          const GetXCFunMat get_xc_fun_mat,
+                          const GetXCFunExp get_xc_fun_exp)
+{
+    RSPXCFun *new_xc;  /* new XC functional */
+    QInt ipert,jpert;  /* incremental recorder over perturbations */
+    new_xc = (RSPXCFun *)malloc(sizeof(RSPXCFun));
+    if (new_xc==NULL) {
+        QErrorExit(FILE_AND_LINE, "allocates memory for new_xc");
+    }
+    if (num_pert>0) {
+        new_xc->num_pert = num_pert;
+    }
+    else {
+        printf("RSPXCFunCreate>> number of perturbations %d\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
+    }
+    new_xc->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (new_xc->pert_labels==NULL) {
+        printf("RSPXCFunCreate>> number of perturbations %d\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "allocates memory for pert_labels");
+    }
+    new_xc->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
+    if (new_xc->pert_max_orders==NULL) {
+        printf("RSPXCFunCreate>> number of perturbations %d\n", num_pert);
+        QErrorExit(FILE_AND_LINE, "allocates memory for pert_max_orders");
+    }
+    for (ipert=0; ipert<num_pert; ipert++) {
+        /* each element of \var{pert_labels} should be unique */
+        for (jpert=0; jpert<ipert; jpert++) {
+            if (pert_labels[jpert]==pert_labels[ipert]) {
+                printf("RSPXCFunCreate>> perturbation %d is %d\n",
+                       jpert,
+                       pert_labels[jpert]);
+                printf("RSPXCFunCreate>> perturbation %d is %d\n",
+                       ipert,
+                       pert_labels[ipert]);
+                QErrorExit(FILE_AND_LINE, "same perturbation not allowed");
+            }
+        }
+        new_xc->pert_labels[ipert] = pert_labels[ipert];
+        if (pert_max_orders[ipert]<1) {
+            printf("RSPXCFunCreate>> order of %d-th perturbation (%d) is %d\n",
+                   ipert,
+                   pert_labels[ipert],
+                   pert_max_orders[ipert]);
+            QErrorExit(FILE_AND_LINE, "only positive order allowed");
+        }
+        new_xc->pert_max_orders[ipert] = pert_max_orders[ipert];
+    }
+    new_xc->user_ctx = user_ctx;
+    new_xc->get_xc_fun_mat = get_xc_fun_mat;
+    new_xc->get_xc_fun_exp = get_xc_fun_exp;
+    new_xc->next_xc = NULL;
+    *xc_fun = new_xc;
+    return QSUCCESS;
+}
+
+<<RSPXCFunAdd.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief adds an XC functional to the linked list
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{inout} xc_fun the linked list of XC functionals
+    \param[QInt:int]{in} num_pert number of different perturbation labels that can
+        act as perturbations on the XC functional
+    \param[QInt:int]{in} pert_labels all the different perturbation labels
+    \param[QInt:int]{in} pert_max_orders maximum allowed order of each perturbation (label)
+    \param[QVoid:void]{in} user_ctx user-defined callback function context
+    \param[GetXCFunMat:void]{in} get_xc_fun_mat user specified function for
+        getting integral matrices
+    \param[GetXCFunExp:void]{in} get_xc_fun_exp user specified function for
+        getting expectation values
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunAdd(RSPXCFun *xc_fun,
+                       const QInt num_pert,
+                       const QInt *pert_labels,
+                       const QInt *pert_max_orders,
+                       QVoid *user_ctx,
+                       const GetXCFunMat get_xc_fun_mat,
+                       const GetXCFunExp get_xc_fun_exp)
+{
+    RSPXCFun *new_xc;  /* new XC functional */
+    RSPXCFun *cur_xc;  /* current XC functional */
+    QErrorCode ierr;   /* error information */
+    /* creates the new XC functional */
+    ierr = RSPXCFunCreate(&new_xc,
+                          num_pert,
+                          pert_labels,
+                          pert_max_orders,
+                          user_ctx,
+                          get_xc_fun_mat,
+                          get_xc_fun_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunCreate()");
+    /* walks to the last XC functional */
+    cur_xc = xc_fun;
+    while (cur_xc->next_xc!=NULL) {
+        cur_xc = cur_xc->next_xc;
+    }
+    /* inserts the new XC functional to the tail of the linked list */
+    cur_xc->next_xc = new_xc;
+    return QSUCCESS;
+}
+
+<<RSPXCFunAssemble.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief assembles the linked list of XC functionals
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{inout} xc_fun the linked list of XC functionals
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunAssemble(RSPXCFun *xc_fun)
+{
+    QInt ixc;          /* incremental recorder over XC functionals */
+    RSPXCFun *cur_xc;  /* current XC functional */
+    /* walks to the last XC functional */
+    ixc = 0;
+    cur_xc = xc_fun;
+    do {
+        /*FIXME: to implement */
+        ixc++;
+        cur_xc = cur_xc->next_xc;
+    } while (cur_xc!=NULL);
+    return QSUCCESS;
+}
+
+<<RSPXCFunWrite.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief writes the linked list of XC functionals
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{in} xc_fun the linked list of XC functionals
+    \param[FILE]{inout} fp_xc file pointer
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunWrite(RSPXCFun *xc_fun, FILE *fp_xc)
+{
+    QInt ixc;          /* incremental recorder over XC functionals */
+    RSPXCFun *cur_xc;  /* current XC functional */
+    QInt ipert;        /* incremental recorder over perturbations */
+    /* walks to the last XC functional */
+    ixc = 0;
+    cur_xc = xc_fun;
+    do {
+        fprintf(fp_xc, "RSPXCFunWrite>> XC functional %d\n", ixc);
+        fprintf(fp_xc,
+                "RSPXCFunWrite>> number of perturbations that the XC functional depends on %d\n",
+                cur_xc->num_pert);
+        fprintf(fp_xc, "RSPXCFunWrite>> label           maximum-order\n");
+        for (ipert=0; ipert<cur_xc->num_pert; ipert++) {
+            fprintf(fp_xc,
+                    "RSPXCFunWrite>>       %d                  %d\n",
+                    cur_xc->pert_labels[ipert],
+                    cur_xc->pert_max_orders[ipert]);
+        }
+        if (cur_xc->user_ctx!=NULL) {
+            fprintf(fp_xc, "RSPXCFunWrite>> user-defined function context given\n");
+        }
+        ixc++;
+        cur_xc = cur_xc->next_xc;
+    } while (cur_xc!=NULL);
+    return QSUCCESS;
+}
+
+<<RSPXCFunGetMat.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief gets integral matrices of the linked list of XC functionals
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{in} xc_fun the linked list of XC functionals
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the XC functional
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the XC functional
+    \param[QInt:int]{in} num_freq_configs the number of different frequency
+        configurations to be considered for the perturbation tuple
+    \param[QInt:int]{in} len_dmat_tuple the number of different perturbation
+        tuples of the AO based density matrices passed
+    \param[QInt:int]{in} idx_dmat_tuple indices of the density matrix
+        perturbation tuples passed (canonically ordered)
+    \param[QInt:int]{in} num_dmat number of collected AO based density matrices for
+        the passed density matrix perturbation tuples and all frequency configurations
+    \param[QcMat:struct]{in} dens_mat the collected AO based density matrices
+    \param[QInt:int]{in} num_int number of the integral matrices
+    \param[QcMat:struct]{inout} val_int the integral matrices
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
+                          const QInt len_tuple,
+                          const QInt *pert_tuple,
+                          const QInt num_freq_configs,
+                          const QInt len_dmat_tuple,
+                          const QInt *idx_dmat_tuple,
+                          const QInt num_dmat,
+                          QcMat *dens_mat[],
+                          const QInt num_int,
+                          QcMat *val_int[])
+{
+    RSPXCFun *cur_xc;  /* current XC functional */
+    /* walks to the last XC functional */
+    cur_xc = xc_fun;
+    do {
+/*FIXME: checks perturbations if resulting zero integrals*/
+        cur_xc->get_xc_fun_mat(len_tuple,
+                               pert_tuple,
+                               num_freq_configs,
+                               len_dmat_tuple,
+                               idx_dmat_tuple,
+                               num_dmat,
+                               dens_mat,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                               cur_xc->user_ctx,
+#endif
+                               num_int,
+                               val_int);
+        cur_xc = cur_xc->next_xc;
+    } while (cur_xc!=NULL);
+    return QSUCCESS;
+}
+
+<<RSPXCFunGetExp.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief gets expectation values of the linked list of XC functionals
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{in} xc_fun the linked list of XC functionals
+    \param[QInt:int]{in} len_tuple length of perturbation tuple on the XC functional
+    \param[QInt:int]{in} pert_tuple perturbation tuple on the XC functional
+    \param[QInt:int]{in} num_freq_configs the number of different frequency
+        configurations to be considered for the perturbation tuple
+    \param[QInt:int]{in} len_dmat_tuple the number of different perturbation
+        tuples of the AO based density matrices passed
+    \param[QInt:int]{in} idx_dmat_tuple indices of the density matrix
+        perturbation tuples passed (canonically ordered)
+    \param[QInt:int]{in} num_dmat number of collected AO based density matrices for
+        the passed density matrix perturbation tuples and all frequency configurations
+    \param[QcMat:struct]{in} dens_mat the collected AO based density matrices
+    \param[QInt:int]{in} num_exp number of expectation values
+    \param[QReal:real]{out} val_exp the expectation values
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
+                          const QInt len_tuple,
+                          const QInt *pert_tuple,
+                          const QInt num_freq_configs,
+                          const QInt len_dmat_tuple,
+                          const QInt *idx_dmat_tuple,
+                          const QInt num_dmat,
+                          QcMat *dens_mat[],
+                          const QInt num_exp,
+                          QReal *val_exp)
+{
+    RSPXCFun *cur_xc;  /* current XC functional */
+    /* walks to the last XC functional */
+    cur_xc = xc_fun;
+    do {
+/*FIXME: checks perturbations if resulting zero integrals*/
+        cur_xc->get_xc_fun_exp(len_tuple,
+                               pert_tuple,
+                               num_freq_configs,
+                               len_dmat_tuple,
+                               idx_dmat_tuple,
+                               num_dmat,
+                               dens_mat,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                               cur_xc->user_ctx,
+#endif
+                               num_exp,
+                               val_exp);
+        cur_xc = cur_xc->next_xc;
+    } while (cur_xc!=NULL);
+    return QSUCCESS;
+}
+
+<<RSPXCFunDestroy.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "RSPXCFun.h"
+
+/*% \brief destroys the linked list of XC functionals, should be called at the end
+    \author Bin Gao
+    \date 2015-06-23
+    \param[RSPXCFun:struct]{inout} xc_fun the linked list of XC functionals
+    \return[QErrorCode:int] error information
+*/
+QErrorCode RSPXCFunDestroy(RSPXCFun **xc_fun)
+{
+    RSPXCFun *cur_xc;   /* current XC functional */
+    RSPXCFun *next_xc;  /* next XC functional */
+    /* walks to the last XC functional */
+    cur_xc = *xc_fun;
+    while (cur_xc!=NULL) {
+        cur_xc->num_pert = 0;
+        free(cur_xc->pert_labels);
+        cur_xc->pert_labels = NULL;
+        free(cur_xc->pert_max_orders);
+        cur_xc->pert_max_orders = NULL;
+        cur_xc->user_ctx = NULL;
+        cur_xc->get_xc_fun_mat = NULL;
+        cur_xc->get_xc_fun_exp = NULL;
+        next_xc = cur_xc->next_xc;
+        free(cur_xc);
+        cur_xc = NULL;
+        cur_xc = next_xc;
+    }
+    return QSUCCESS;
+}
+

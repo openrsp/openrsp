@@ -1,32 +1,29 @@
-/* OpenRSP: open-ended library for response theory
-   Copyright 2015 Radovan Bast,
-                  Daniel H. Friese,
-                  Bin Gao,
-                  Dan J. Jonsson,
-                  Magnus Ringholm,
-                  Kenneth Ruud,
-                  Andreas Thorvaldsen
+/*
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
 
-   OpenRSP is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
 
-   OpenRSP is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-   GNU Lesser General Public License for more details.
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Lesser General Public License
-   along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-   This file implements the function OpenRSPAddTwoOper().
-
-   2014-08-05, Bin Gao:
-   * first version
 */
 
-#include "openrsp.h"
+#include "OpenRSP.h"
 
 /*@% \brief adds a two-electron operator to the Hamiltonian
      \author Bin Gao
@@ -65,7 +62,7 @@ QErrorCode OpenRSPAddTwoOper(OpenRSP *open_rsp,
 #endif
                                 get_two_oper_mat,
                                 get_two_oper_exp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperCreate");
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperCreate()");
     }
     /* adds the two-electron operator to the linked list */
     else {
@@ -78,7 +75,7 @@ QErrorCode OpenRSPAddTwoOper(OpenRSP *open_rsp,
 #endif
                              get_two_oper_mat,
                              get_two_oper_exp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperAdd");
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperAdd()");
     }
     return QSUCCESS;
 }
