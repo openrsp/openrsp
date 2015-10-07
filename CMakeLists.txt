@@ -103,6 +103,7 @@ if(OPENRSP_BUILD_WEB)
     if(NOT NOTANGLE)
         message(FATAL_ERROR "Could not find notangle.")
     endif()
+    # Header files
     foreach(CHUNK ${OPENRSP_HEADER_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_HEADER_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}
@@ -112,8 +113,9 @@ if(OPENRSP_BUILD_WEB)
     endforeach()
     set_source_files_properties(${OPENRSP_HEADER_FILES}
                                 PROPERTIES GENERATED TRUE)
+    # C source codes
     foreach(CHUNK ${OPENRSP_C_CHUNKS})
-        set(TANGLED_SRC ${OPENRSP_SRC_DIR}/${CHUNK})
+        set(TANGLED_SRC ${OPENRSP_C_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}
                            DEPENDS openrsp_dirs
                            COMMAND ${NOTANGLE} -R${CHUNK}
@@ -121,6 +123,7 @@ if(OPENRSP_BUILD_WEB)
     endforeach()
     set_source_files_properties(${OPENRSP_C_FILES}
                                 PROPERTIES GENERATED TRUE)
+    # Fortran source codes
     foreach(CHUNK ${OPENRSP_FORTRAN_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_FORTRAN_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}

@@ -46,8 +46,8 @@
 */
 //QErrorCode RSPPertGetFromTuple(const RSPPert *rsp_pert,
 //                               const QInt len_tuple,
-//                               const QInt *pert_tuple,
-//                               const QInt num_freq_configs,
+//                               const QcPertInt *pert_tuple,
+//                               const QcPertInt num_freq_configs,
 //                               const QReal *pert_freqs,
 //                               QInt *num_pert,
 //                               QInt *pert_orders,
@@ -61,7 +61,7 @@
 //    first_id = 0;
 //    non_id = QFALSE;
 //    for (ipert=first_id; ipert<len_tuple-1; ipert++) {
-//        if (pert_tupe[ipert]!=pert_tupe[ipert+1]) {
+//        if (pert_tuple[ipert]!=pert_tuple[ipert+1]) {
 //            last_id = ipert;
 //            non_id = QTRUE;
 //            break;
@@ -76,7 +76,7 @@
 //        /* loops over perturbation labels in the tuple */
 //        for (ipert=first_id; ipert<len_tuple; ipert++) {
 //            /* checks if the given label is known */
-//            if (pert_tupe[ipert]==rsp_pert->pert_labels[jpert]) {
+//            if (pert_tuple[ipert]==rsp_pert->pert_labels[jpert]) {
 //                
 //            }
 //        }

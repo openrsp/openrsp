@@ -50,7 +50,7 @@
     \return[QErrorCode:int] error information
 */
 QErrorCode RSPPertGetConcatenation(const RSPPert *rsp_pert,
-                                   const QInt pert_label,
+                                   const QcPertInt pert_label,
                                    const QInt first_cat_comp,
                                    const QInt num_cat_comps,
                                    const QInt num_sub_tuples,

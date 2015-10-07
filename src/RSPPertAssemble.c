@@ -33,8 +33,7 @@
 */
 QErrorCode RSPPertAssemble(RSPPert *rsp_pert)
 {
-    if (rsp_pert->num_pert<1 ||
-        rsp_pert->pert_labels==NULL ||
+    if (rsp_pert->pert_labels==NULL ||
         rsp_pert->pert_max_orders==NULL ||
         rsp_pert->ptr_ncomp==NULL ||
         rsp_pert->pert_num_comps==NULL ||

@@ -35,25 +35,27 @@
        All the different perturbation labels involved
      </param>
      <param name='pert_max_orders' direction='in'>
-       Maximum allowed order of each perturbation (label)
+       Allowed maximal order of a perturbation described by exactly one of
+       the above different labels
      </param>
      <param name='pert_num_comps' direction='in'>
-       Number of components of each perturbation (label), up to its maximum
-       order, size is the sum of <pert_max_orders>
+       Number of components of a perturbation described by exactly one of
+       the above different labels, up to the allowed maximal order, size
+       is therefore the sum of <pert_max_orders>
      </param>
      <param name='user_ctx' direction='in'>
        User-defined callback function context
      </param>
      <param name='get_pert_concatenation' direction='in'>
        User specified function for getting the ranks of components of
-       sub-perturbation tuples (with same perturbation label) for given
+       sub-perturbation tuples (with the same perturbation label) for given
        components of the corresponding concatenated perturbation tuple
      </param>
      <return>Error information</return>
    </function> */
 QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
-                                   const QInt num_pert,
-                                   const QInt *pert_labels,
+                                   const QcPertInt num_pert,
+                                   const QcPertInt *pert_labels,
                                    const QInt *pert_max_orders,
                                    const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)

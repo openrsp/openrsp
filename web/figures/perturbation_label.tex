@@ -1,0 +1,21 @@
+\begin{tikzpicture}[thick]
+    \node[rectangle, draw](Frequency) at(0,0) {$0000000000001111$};
+    \node[left of=Frequency, node distance=80] {Frequency};
+    \node[right of=Frequency, node distance=65] {\texttt{<<}16};
+    \node[below of=Frequency, node distance=20] {$+$};
+    \node[below=of Frequency.west, anchor=west, yshift=-12, %
+      rectangle, draw] (HostLabel) {$0000000000000000$ $0000000000000110$};
+    \node[left of=HostLabel, node distance=185] %
+      {Host program's perturbation label};
+    \node[below of=HostLabel, node distance=40, rectangle, draw] %
+      (InternalLabel) {$0000000000001111$ $0000000000000110$};
+    \node[left of=InternalLabel, node distance=168] %
+      {Internal perturbatoin label};
+    \draw[-latex'](HostLabel)--(InternalLabel);
+%
+    \node[below of=InternalLabel, node distance=20] {\texttt{\&}};
+    \node[below of=InternalLabel, node distance=40, rectangle, draw] %
+      (Filter) {$0000000000000000$ $1111111111111111$};
+    \node[left of=Filter, node distance=115] {$2^{16}-1$};
+    \draw[-latex'](Filter.east)--++(1,0)node{~}|-(HostLabel.east);
+\end{tikzpicture}

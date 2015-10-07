@@ -136,7 +136,7 @@ Hamiltonian. We are now planning to implement the MO and CC based response
 theories.
 
 To make \LibName work for any perturbation, we will implement the so called
-\textbf{perturbation free scheme}, see Section~\ref{subsection-perturbation-free}.
+\textbf{perturbation free scheme}, see Section~\ref{subsection-analysis-perturbation}.
 
 In order to make it easy for implementing \LibName into different host programs
 (written in different programming languages), we agree to use the
@@ -195,37 +195,32 @@ The ``\LibName response'' was already implemented using Fortran for the AO
 based density matrix response theory (source codes in \texttt{src/ao\_dens})
 that will not be covered here.
 
-\subsection{Perturbation Free Scheme}
-\label{subsection-perturbation-free}
+\subsection{Perturbations}
+\label{subsection-analysis-perturbation}
 
-For perturbations, we will use the following notations and conventions through
-the \LibName library and the current document:
-
+For perturbations in \LibName, we introduce the following notations and
+convention:
 \begin{description}
-  \item[Perturbation] is described by a label, a complex frequency and its
-    order. Any two perturbations are different if they have different labels,
-    and/or frequencies, and/or orders.
+  \item[Perturbation] is described by a label ($a$), a complex frequency
+    ($\omega$) and its order ($n$), and written as $a_{\omega}^{n}$ Any
+    two perturbations are different if they have different labels, and/or
+    frequencies, and/or orders.
   \item[Perturbation label] is an integer distinguishing one perturbation
     from others; all \textit{different} perturbation labels involved in the
-    calculations should be given by calling the application programming interface
-    (API) \texttt{OpenRSPSetPerturbations}; \LibName will stop if there is any
-    unspecified perturbation label given afterwards when calling the APIs
-    \texttt{OpenRSPGetRSPFun} or \texttt{OpenRSPGetResidue}.
-  \item[Perturbation order]. Each perturbation can acting on molecules once
+    calculations should be given by calling the application programming
+    interface (API) \texttt{OpenRSPSetPerturbations()}; \LibName will stop if
+    there is any unspecified perturbation label given afterwards when calling
+    the APIs \texttt{OpenRSPGetRSPFun()} or \texttt{OpenRSPGetResidue()}.
+  \item[Perturbation order] Each perturbation can acting on molecules once
     or many times, that is the order of the perturbation.
-  \item[Perturbation components and their ranks]. Each perturbation may have
-    different numbers of components for their different orders, the position of
-    each component is called its rank.
+  \item[Perturbation components and their ranks] Each perturbation may have
+    different numbers of components for their different orders, the position
+    of each component is called its rank.
 
-    For instance, there will usually be $x,y,z$ components for the
-    electric dipole perturbation, and their ranks are \texttt{\{0,1,2\}} in
-    zero-based numbering, or \texttt{\{1,2,3\}} in one-based numbering.
-  
-    The numbers of different components of perturbations and their ranks
-    are totally decided by the host program. \LibName will get such information
-    from callback functions, that is \LibName itself is a perturbation free
-    library.
-  \item[Perturbation tuple]. An ordered list of perturbation labels, and in
+    For instance, there will usually be $x,y,z$ components for the electric
+    dipole perturbation, and their ranks are \texttt{\{0,1,2\}} in zero-based
+    numbering, or \texttt{\{1,2,3\}} in one-based numbering.
+  \item[Perturbation tuple] An ordered list of perturbation labels, and in
     which we further require that \textit{identical perturbation labels should
     be consecutive}. That means the tuple $(a,b,b,c)$ is allowed, but $(a,b,c,b)$
     is illegal because the identical labels $b$ are not consecutive.
@@ -245,12 +240,21 @@ the \LibName library and the current document:
     frequencies for each perturbation label can be viewed as a set of
     perturbations, in which the number of times a label (with the same
     frequency) appears is the order of the corresponding perturbation.
-  \item[Canonical order].
+
+    For example, a tuple $(a,b,b,c)$ $+$ its complex frequencies
+    $(\omega_{a},\omega_{b},\omega_{b},\omega_{c})$ define perturbations
+    $a_{\omega_{a}}^{1}$, $b_{\omega_{b}}^{2}$ and $c_{\omega_{c}}^{1}$;
+    another tuple $(a,b,b,c)$ $+$ different complex frequencies for labels
+    $b$---$(\omega_{a},\omega_{b_{1}},\omega_{b_{2}},\omega_{c})$ define
+    different perturbations $a_{\omega_{a}}^{1}$, $b_{\omega_{b_{1}}}^{1}$,
+    $b_{\omega_{b_{2}}}^{1}$ and $c_{\omega_{c}}^{1}$.
+  \item[Canonical order]~
     \begin{enumerate}
       \item In \LibName, all perturbation tuples are canonically orderd
-        according to the argument \texttt{pert\_tuple} in the \texttt{OpenRSPGetRSPFun}
-        or \texttt{OpenRSPGetResidue}. For instance, when a perturbation tuple
-        $(a,b,c)$ given as \texttt{pert\_tuple} in the API \texttt{OpenRSPGetRSPFun},
+        according to the argument \texttt{pert\_tuple} in the
+        \texttt{OpenRSPGetRSPFun()} or \texttt{OpenRSPGetResidue()}. For
+        instance, when a perturbation tuple $(a,b,c)$ given as
+        \texttt{pert\_tuple} in the API \texttt{OpenRSPGetRSPFun()},
         \LibName will use such order ($a>b>c$) to arrange all perturbation
         tuples inside and sent to the callback functions.
       \item Moreover, a collection of several perturbation tuples will also
@@ -259,20 +263,22 @@ the \LibName library and the current document:
         where $0$ means unperturbed quantities that is always the first one
         in the collection.
     \end{enumerate}
-  \item[Perturbation $a$]. The first perturbation label in the tuple sent to
-    \LibName APIs \texttt{OpenRSPGetRSPFun} or \texttt{OpenRSPGetResidue}, are the
-    perturbation $a$~\cite{Thorvaldsen-JCP-129-214108}.
-  \item[Perturbation addressing].
+  \item[Perturbation $a$] The first perturbation label in the tuple sent to
+    \LibName APIs \texttt{OpenRSPGetRSPFun()} or \texttt{OpenRSPGetResidue()},
+    are the perturbation $a$~\cite{Thorvaldsen-JCP-129-214108}.
+  \item[Perturbation addressing]~
     \begin{enumerate}
-      \item The addressing of perturbation labels in a tuple is decided by
+      \item The addressing of perturbation labels in a tuple, as mentioned in
+        the term \textbf{Canonical order}, is decided by
         \begin{enumerate}
-          \item the argument \texttt{pert\_tuple} sent to the API \texttt{OpenRSPGetRSPFun}
-            or \texttt{OpenRSPGetResidue}, and
+          \item the argument \texttt{pert\_tuple} sent to the API
+            \texttt{OpenRSPGetRSPFun()} or \texttt{OpenRSPGetResidue()}, and
           \item the canonical order that \LibName uses.
         \end{enumerate}
       \item The addressing of components per perturbation (several consecutive
         identical labels with the same complex frequency) are decided by the
-        host program.
+        host program, as will be discussed in the following
+        \textbf{perturbation free scheme}.
       \item The addressing of a collection of perturbation tuples follows the
         canonical order as aforementioned.
     \end{enumerate}
@@ -289,15 +295,114 @@ the \LibName library and the current document:
         slowest in memory and the rightmost index (\texttt{c}) runs fastest.
         However, one should be aware that the results are still in a
         one-dimensional array.
-      \item If there two different frequencies for the perturbation $b$,
-        \LibName will return \texttt{[a][b1][b2][c]}, where \texttt{b1}
-        and \texttt{b2} stand for the components of the first order of
-        the perturbation $b$.
+      \item If there two different frequencies for the perturbation label
+        $b$, \LibName will return \texttt{[a][b1][b2][c]}, where \texttt{b1}
+        and \texttt{b2} stand for the components of the first order of the
+        perturbation $b$.
       \item The notation for a collection of perturbation tuples (still in a
         one-dimensional array) is
         \texttt{\{1,[a],[b],[c],[a][b],[a][c],[b][c],[a][b][c]\}}
-        for $(0,a,b,c,ab,ac,bc,abc)$, where as aforementioned the first one is
-        the unperturbed quantities.
+        for $(0,a,b,c,ab,ac,bc,abc)$, where as aforementioned the first one
+        is the unperturbed quantities.
     \end{enumerate}
 \end{description}
+
+\subsubsection{Perturbation Free Scheme}
+
+Now, let us discuss our \textbf{perturbation free scheme}. As aforementioned,
+there could be \textbf{different numbers of components} for different
+perturbations. In different host programs, these components could \textbf{be
+arranged in different ways}.
+
+For instance, there are 9 components for the second order magnetic derivatives
+in a redundant way $xx,xy,xz,yx,yy,yz,zx,zy,zz$, but 6 components in a
+non-redundant way $xx,xy,xz,yy,yz,zz$. There are at most four centers in
+different integrals, non-zero high order ($\ge 5$) geometric derivatives are
+only those with at most four differentiated centers.
+
+To take all the above information into account in \LibName will make it so
+complicated and not necessary, because response theory actually does not care
+about the detailed knowledge of different perturbations. In particular, when
+all the (perturbed) integrals and expectation values are computed by the host
+program's callback functions, the detailed information of perturbations:
+\begin{enumerate}
+  \item the number of components, and
+  \item how they are arranged in memory
+\end{enumerate}
+can be hidden from \LibName.
+
+The former can be easily solved by sending the numbers of components of
+different perturbation labels (up to their maximum orders) to the \LibName API
+\texttt{OpenRSPSetPerturbations()}.
+
+The latter can be important for \LibName to construct higher-order derivatives
+from lower-order ones. We have two cases:
+\begin{enumerate}
+  \item Higher-order derivatives are taken with respect to different
+    perturbations, for instance, $\frac{\partial^{3}}{\partial a\partial b\partial c}$
+    are simply the direct product of components of lower-order derivatives
+    with respect to each perturbation $\frac{\partial}{\partial a}$,
+    $\frac{\partial}{\partial b}$ and $\frac{\partial}{\partial c}$.
+  \item Higher-order derivatives are taken with respect to
+    \textbf{one perturbation}. Take the second order-derivatives (in the
+    redundant format) for example, they can be constructed from the
+    first-order ones as,
+    \begin{align*}
+      x+x\rightarrow xx,\;\; & 0+0\rightarrow 0,\\
+      x+y\rightarrow xy,\;\; & 0+1\rightarrow 1,\\
+      x+z\rightarrow xz,\;\; & 0+2\rightarrow 2,\\
+      y+x\rightarrow yx,\;\; & 1+0\rightarrow 3,\\
+      y+y\rightarrow yy,\;\; & 1+1\rightarrow 4,\\
+      y+z\rightarrow yz,\;\; & 1+2\rightarrow 5,\\
+      z+x\rightarrow zx,\;\; & 2+0\rightarrow 6,\\
+      z+y\rightarrow zy,\;\; & 2+1\rightarrow 7,\\
+      z+z\rightarrow zz,\;\; & 2+2\rightarrow 8,
+    \end{align*}
+    where we have ranked different components in zero-based numbering (numbers
+    on the right).
+
+    Because the ranks can be different in different host programs, also the
+    above mapping relationship between lower- and higher-order derivatives
+    (with respect to \textbf{one perturbation}) can be different in different
+    host programs.
+
+    We therefore ask for a callback function \texttt{get\_pert\_concatenation()}
+    from host programs. This callback function will, from given components of
+    a \textbf{concatenated perturbation tuple} (i.e. higher-order derivatives
+    with respect to one perturbation), get the ranks of components of the
+    \textbf{sub-perturbation tuples with the same perturbation label} (i.e.
+    lower-order derivatives with respect to one perturbation).
+\end{enumerate}
+
+As such, the numbers of different components of perturbations and their ranks
+are totally decided by the host program---that is the
+\textbf{perturbation free scheme}.
+
+\subsubsection{Internal Perturbation Labels}
+
+As mentioned in our notations and convention, perturbations even with the same
+perturbation label, are different if they have different frequencies. Inside
+\LibName, we need to distinguish this kind of different perturbations---same
+perturbation label but different frequencies.
+
+We therefore use internal perturbation labels inside \LibName. To avoid
+introduce new \texttt{struct} for perturbation labels, we use unsigned integers
+for both host program's perturbation labels and \LibName internal perturbation
+labels.
+
+\begin{figure}[hbt]
+  \centering
+  \scalebox{0.9}{\input{figures/perturbation_label.tex}}
+  \caption{Perturbation labels in \LibName.}
+  \label{fig-perturbation-label}
+\end{figure}
+
+As illustrated in Figure~\ref{fig-perturbation-label}, if one uses lower $16$
+bits for a host program's label and higher $16$ bits for a frequency in the
+$32$-bit unsigned integers, and if both the host program's label and the
+frequency are marked from $0$ up to $2^{16}-1=65535$, \LibName can thus treat
+$2^{16}=65536$ different perturbation labels and different frequencies, which
+is enough for the current response theory calculations. If one uses $64$-bit
+unsigned integers, \LibName can then treat more perturbation labels and
+frequencies.
 

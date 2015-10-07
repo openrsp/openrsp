@@ -14,6 +14,7 @@ set(OPENRSP_C_CHUNKS
     OpenRSPWrite.c
     OpenRSPDestroy.c
     OpenRSPSetPerturbations.c
+    RSPPertLabel.c
     RSPPertCreate.c
     RSPPertAssemble.c
     RSPPertWrite.c

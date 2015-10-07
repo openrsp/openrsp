@@ -36,13 +36,13 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
 {
     QInt ipert,icomp;  /* incremental recorders */
     fprintf(fp_pert,
-            "RSPPertWrite>> number of all perturbations involved in calculations %"QINT_FMT"\n",
+            "RSPPertWrite>> number of all perturbation lables %"QCPERTINT_FMT"\n",
             rsp_pert->num_pert);
     fprintf(fp_pert,
             "RSPPertWrite>> label           maximum-order    numbers-of-components\n");
     for (ipert=0; ipert<rsp_pert->num_pert; ipert++) {
         fprintf(fp_pert,
-                "RSPPertWrite>>  %"QINT_FMT"               %"QINT_FMT"               ",
+                "RSPPertWrite>>  %"QCPERTINT_FMT"               %"QINT_FMT"               ",
                 rsp_pert->pert_labels[ipert],
                 rsp_pert->pert_max_orders[ipert]);
         for (icomp=rsp_pert->ptr_ncomp[ipert]; icomp<rsp_pert->ptr_ncomp[ipert+1]; icomp++) {
