@@ -62,8 +62,8 @@ typedef struct {
 
 extern QErrorCode OpenRSPCreate(OpenRSP*);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
-                                          const QInt,
-                                          const QInt*,
+                                          const QcPertInt,
+                                          const QcPertInt*,
                                           const QInt*,
                                           const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)

@@ -11,14 +11,14 @@ foreach(CHUNK ${OPENRSP_HEADER_CHUNKS})
         ${OPENRSP_HEADER_DIR}/${CHUNK})
 endforeach()
 # C source codes
-if(NOT (OPENRSP_SRC_DIR AND OPENRSP_C_CHUNKS))
+if(NOT (OPENRSP_C_DIR AND OPENRSP_C_CHUNKS))
     message(FATAL_ERROR "Directories.cmake and Chunks.cmake not included.")
 endif()
 set(OPENRSP_C_FILES)
 foreach(CHUNK ${OPENRSP_C_CHUNKS})
     set(OPENRSP_C_FILES
         ${OPENRSP_C_FILES}
-        ${OPENRSP_SRC_DIR}/${CHUNK})
+        ${OPENRSP_C_DIR}/${CHUNK})
 endforeach()
 # Fortran source codes
 if(NOT (OPENRSP_FORTRAN_DIR AND OPENRSP_FORTRAN_CHUNKS))

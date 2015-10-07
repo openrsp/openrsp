@@ -34,7 +34,7 @@ their codes:
 /* linear response equation solver */
 #include "RSPSolver.h"
 
-\LA{}OpenRSPContext~{\nwtagstyle{}\subpageref{NWImpz-OpeE.2-1}}\RA{}
+\LA{}OpenRSPStruct~{\nwtagstyle{}\subpageref{NWImpz-OpeD-1}}\RA{}
 
 \LA{}OpenRSPAPIs~{\nwtagstyle{}\subpageref{NWImpz-OpeB-1}}\RA{}
 
@@ -69,16 +69,16 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public
 License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-\nwused{\\{NWImpz-Ope9-1}\\{NWImpz-OpeF-1}\\{NWImpz-OpeH-1}\\{NWImpz-OpeE.3-1}\\{NWImpz-OpeG-1}\\{NWRSP10-OpeP-1}\\{NWRSP10-RSPH-1}\\{NWRSP10-RSPF-1}\\{NWRSP10-RSPH.2-1}\\{NWRSP10-RSPE-1}\\{NWRSP10-RSPL-1}\\{NWRSP10-RSPP-1}\\{NWRSP10-RSPG-1}\\{NWRSPv-OpeJ-1}\\{NWRSPv-RSPC-1}\\{NWRSPv-RSPI-1}\\{NWRSPv-RSPK-1}\\{NWRSPv-RSPH.4-1}\\{NWRSPv-RSPI.2-1}\\{NWRSPv-RSPI.3-1}\\{NWRSPv-RSPJ.2-1}\\{NWRSPv.2-OpeJ.2-1}\\{NWRSPv.2-RSPC.2-1}\\{NWRSPv.2-RSPI.4-1}\\{NWRSPv.2-RSPF.2-1}\\{NWRSPv.2-RSPK.2-1}\\{NWRSPv.2-RSPH.5-1}\\{NWRSPv.2-RSPI.5-1}\\{NWRSPv.2-RSPI.6-1}\\{NWRSPv.2-RSPJ.3-1}\\{NWRSPv.3-OpeJ.3-1}\\{NWRSPv.3-RSPC.3-1}\\{NWRSPv.3-RSPI.7-1}\\{NWRSPv.3-RSPF.3-1}\\{NWRSPv.3-RSPK.3-1}\\{NWRSPv.3-RSPH.6-1}\\{NWRSPv.3-RSPI.8-1}\\{NWRSPv.3-RSPI.9-1}\\{NWRSPv.3-RSPJ.4-1}\\{NWRSPt-OpeH.2-1}\\{NWRSPt-RSPA-1}\\{NWRSPt-RSPG.2-1}\\{NWRSPt-RSPD-1}\\{NWRSPt-RSPI.A-1}\\{NWRSPt-RSPF.4-1}\\{NWRSPt-RSPG.3-1}\\{NWRSPt-RSPG.4-1}\\{NWRSPt-RSPH.7-1}\\{NWRSPz-OpeN-1}\\{NWRSPz-RSPG.5-1}\\{NWRSPz-RSPM-1}\\{NWRSPz-RSPO-1}\\{NWRSPz-RSPL.2-1}\\{NWRSPz-RSPW-1}\\{NWRSPz-RSPR-1}\\{NWRSPz-RSPN-1}\\{NWRSPu-OpeR-1}\\{NWRSPu-RSPB-1}\\{NWRSPu-RSPH.8-1}\\{NWRSPu-RSPJ.5-1}\\{NWRSPu-RSPG.6-1}\\{NWRSPu-RSPV-1}\\{NWRSPu-RSPI.B-1}\\{NWRes12-OpeI-1}\\{NWRest-OpeJ.4-1}\\{NWForw-OpeN.2-1}}\nwendcode{}\nwbegindocs{4}In the following sections, we will describe how to implement each component
+\nwused{\\{NWImpz-Ope9-1}\\{NWImpz-OpeF-1}\\{NWImpz-OpeH-1}\\{NWImpz-OpeE.2-1}\\{NWImpz-OpeG-1}\\{NWRSP10-RSPH-1}\\{NWRSP10-RSPE-1}\\{NWRSP10-OpeP-1}\\{NWRSP10-RSPF.2-1}\\{NWRSP10-RSPH.3-1}\\{NWRSP10-RSPE.2-1}\\{NWRSP10-RSPL-1}\\{NWRSP10-RSPP-1}\\{NWRSP10-RSPG-1}\\{NWRSPv-OpeJ-1}\\{NWRSPv-RSPC-1}\\{NWRSPv-RSPI-1}\\{NWRSPv-RSPK-1}\\{NWRSPv-RSPH.5-1}\\{NWRSPv-RSPI.2-1}\\{NWRSPv-RSPI.3-1}\\{NWRSPv-RSPJ.2-1}\\{NWRSPv.2-OpeJ.2-1}\\{NWRSPv.2-RSPC.2-1}\\{NWRSPv.2-RSPI.4-1}\\{NWRSPv.2-RSPF.3-1}\\{NWRSPv.2-RSPK.2-1}\\{NWRSPv.2-RSPH.6-1}\\{NWRSPv.2-RSPI.5-1}\\{NWRSPv.2-RSPI.6-1}\\{NWRSPv.2-RSPJ.3-1}\\{NWRSPv.3-OpeJ.3-1}\\{NWRSPv.3-RSPC.3-1}\\{NWRSPv.3-RSPI.7-1}\\{NWRSPv.3-RSPF.4-1}\\{NWRSPv.3-RSPK.3-1}\\{NWRSPv.3-RSPH.7-1}\\{NWRSPv.3-RSPI.8-1}\\{NWRSPv.3-RSPI.9-1}\\{NWRSPv.3-RSPJ.4-1}\\{NWRSPt-OpeH.2-1}\\{NWRSPt-RSPA.2-1}\\{NWRSPt-RSPG.2-1}\\{NWRSPt-RSPD.2-1}\\{NWRSPt-RSPI.A-1}\\{NWRSPt-RSPF.5-1}\\{NWRSPt-RSPG.3-1}\\{NWRSPt-RSPG.4-1}\\{NWRSPt-RSPH.8-1}\\{NWRSPz-OpeN-1}\\{NWRSPz-RSPG.5-1}\\{NWRSPz-RSPM-1}\\{NWRSPz-RSPO-1}\\{NWRSPz-RSPL.2-1}\\{NWRSPz-RSPW-1}\\{NWRSPz-RSPR-1}\\{NWRSPz-RSPN-1}\\{NWRSPu-OpeR-1}\\{NWRSPu-RSPB-1}\\{NWRSPu-RSPH.9-1}\\{NWRSPu-RSPJ.5-1}\\{NWRSPu-RSPG.6-1}\\{NWRSPu-RSPV-1}\\{NWRSPu-RSPI.B-1}\\{NWRes12-OpeI-1}\\{NWRest-OpeJ.4-1}\\{NWForw-OpeN.2-1}}\nwendcode{}\nwbegindocs{4}In the following sections, we will describe how to implement each component
 of the ``\LibName C support'' (red blocks in Figure~\ref{fig-openrsp-framework}
 under the ``\LibName C support'') and the corresponding ``\LibName C API''.
 Each component will have its header file, implemented C {\tt{}struct} and
 corresponding functions that can be called inside \LibName.
 
-The \LibName context {\tt{}OpenRSPContext} will encapsulate all the implemented C
+The \LibName context {\tt{}OpenRSPStruct} will encapsulate all the implemented C
 {\tt{}struct}'s of the ``\LibName C support'' components into another C
 {\tt{}struct}:
-\nwenddocs{}\nwbegincode{5}\sublabel{NWImpz-OpeE.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWImpz-OpeE.2-1}}}\moddef{OpenRSPContext~{\nwtagstyle{}\subpageref{NWImpz-OpeE.2-1}}}\endmoddef
+\nwenddocs{}\nwbegincode{5}\sublabel{NWImpz-OpeD-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWImpz-OpeD-1}}}\moddef{OpenRSPStruct~{\nwtagstyle{}\subpageref{NWImpz-OpeD-1}}}\endmoddef
 typedef struct \{
     QBool assembled;               /* indicates if the OpenRSP context assembled */
     RSPPert *rsp_pert;             /* host program perturbations */
@@ -99,8 +99,8 @@ functionalities of \LibName:
 \nwenddocs{}\nwbegincode{7}\sublabel{NWImpz-OpeB-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWImpz-OpeB-1}}}\moddef{OpenRSPAPIs~{\nwtagstyle{}\subpageref{NWImpz-OpeB-1}}}\endmoddef
 extern QErrorCode OpenRSPCreate(OpenRSP*);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
-                                          const QInt,
-                                          const QInt*,
+                                          const QcPertInt,
+                                          const QcPertInt*,
                                           const QInt*,
                                           const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -313,7 +313,7 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
 \nwnotused{OpenRSPAssemble.c}\nwendcode{}\nwbegindocs{12}Here, we will remove the directive {\tt{}{\char35}if\ defined(OPENRSP{\char95}PERTURBATION{\char95}FREE)}
 after the \textbf{perturbation free scheme} implemented.
 
-\nwenddocs{}\nwbegincode{13}\sublabel{NWImpz-OpeE.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWImpz-OpeE.3-1}}}\moddef{OpenRSPWrite.c~{\nwtagstyle{}\subpageref{NWImpz-OpeE.3-1}}}\endmoddef
+\nwenddocs{}\nwbegincode{13}\sublabel{NWImpz-OpeE.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWImpz-OpeE.2-1}}}\moddef{OpenRSPWrite.c~{\nwtagstyle{}\subpageref{NWImpz-OpeE.2-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -447,52 +447,195 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
 \nwnotused{OpenRSPDestroy.c}\nwendcode{}\nwfilename{/Users/bga006/Work/XKjem/gitlab/openrsp/web/RSPPerturbation.nw}\nwbegindocs{0}\section{Perturbations}
 \label{section-OpenRSP-perturbations}
 
-For different perturbations, there could be \textbf{different numbers of
-components} and \textbf{arranged in different ways} in different host programs.
-For instance, there are 9 components for the second order magnetic derivatives
-in a redundant way $xx,xy,xz,yx,yy,yz,zx,zy,zz$, but 6 components in a
-non-redundant way $xx,xy,xz,yy,yz,zz$. There are at most four centers in
-different integrals, non-zero high order ($\ge 5$) geometric derivatives are
-only those with at most four differentiated centers.
+The header file of perturbations is organized as:
+\nwenddocs{}\nwbegincode{1}\sublabel{NWRSP10-RSPH-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH-1}}}\moddef{RSPPerturbation.h~{\nwtagstyle{}\subpageref{NWRSP10-RSPH-1}}}\endmoddef
+/*
+  \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 
-To take all the above information into account in \LibName will make it so
-complicated and not necessary, because response theory actually does not
-depend on the detailed knowledge of different perturbations. In particular,
-when all the (perturbed) integrals and expectation values are computed by
-the host program's callback functions, the detailed information of perturbations,
-i.e. the number of components and how they are arranged in memory can be
-hidden from \LibName.
+  <header name='RSPPerturbation.h' author='Bin Gao' date='2015-06-23'>
+    The header file of perturbations used inside OpenRSP
+  </header>
+*/
 
-The former can be easily solved by sending the number of components of
-each perturbation (label) up to its maximum order to the \LibName API
-{\tt{}OpenRSPSetPerturbations}.
+#if !defined(RSP_PERTURBATION_H)
+#define RSP_PERTURBATION_H
 
-The latter can be important for \LibName, for instance, when the higher order
-derivatives with respect to \textbf{one perturbation} need to be constructed
-from several lower order derivatives. For instance, the second order
-derivatives may be constructed from the first order ones in the redundant
-format:
-\begin{align*}
-  x+x\rightarrow xx, & 0+0\rightarrow 0,\\
-  x+y\rightarrow xy, & 0+1\rightarrow 1,\\
-  x+z\rightarrow xz, & 0+2\rightarrow 2,\\
-  y+x\rightarrow yx, & 1+0\rightarrow 3,\\
-  y+y\rightarrow yy, & 1+1\rightarrow 4,\\
-  y+z\rightarrow yz, & 1+2\rightarrow 5,\\
-  z+x\rightarrow zx, & 2+0\rightarrow 6,\\
-  z+y\rightarrow zy, & 2+1\rightarrow 7,\\
-  z+z\rightarrow zz, & 2+2\rightarrow 8,
-\end{align*}
-where we have ranked different components in zero-based numbering (numbers on
-the right). However, the ranks can be different in different host programs. To
-solve this problem, i.e., the mapping relationship of lower and higher order
-derivatives with respect to \textbf{one perturbation}\footnote{We emphasize the
-derivatives of \textbf{one perturbation} because components of higher order
-derivatives of different perturbations are simply the direct product of
-components of lower order derivatives.}, we ask for a callback function
-{\tt{}get{\char95}pert{\char95}concatenation} from host programs, which is the last argument of
-the API {\tt{}OpenRSPSetPerturbations}:
-\nwenddocs{}\nwbegincode{1}\sublabel{NWRSP10-OpeP-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-OpeP-1}}}\moddef{OpenRSPSetPerturbations.c~{\nwtagstyle{}\subpageref{NWRSP10-OpeP-1}}}\endmoddef
+/* QcMatrix library */
+#include "qcmatrix.h"
+
+\LA{}RSPPertBasicTypes~{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}\RA{}
+
+\LA{}RSPPertCallback~{\nwtagstyle{}\subpageref{NWRSP10-RSPF-1}}\RA{}
+
+\LA{}RSPPertStruct~{\nwtagstyle{}\subpageref{NWRSP10-RSPD-1}}\RA{}
+
+\LA{}RSPertAPIs~{\nwtagstyle{}\subpageref{NWRSP10-RSPA-1}}\RA{}
+
+#endif
+\nwnotused{RSPPerturbation.h}\nwendcode{}\nwbegindocs{2}\nwdocspar
+
+The chunk {\tt{}RSPPertBasicTypes} defines some basic types used by \LibName for
+perturbations. As described in Figure~\ref{fig-perturbation-label}, we will use
+an unsigned integer to represent perturbation labels for both the host program
+and the internal use of \LibName. The type of this unsigned integer
+{\tt{}QcPertInt}\index{{\tt{}QcPertInt}} is defined as follows:
+\nwenddocs{}\nwbegincode{3}\sublabel{NWRSP10-RSPH.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}}\moddef{RSPPertBasicTypes~{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}}\endmoddef
+/* <macrodef name='OPENRSP_PERT_SHORT_INT'>
+     Represent perturbation labels using unsigned short integers
+   </macrodef> */
+#if defined(OPENRSP_PERT_SHORT_INT)
+/* <datatype name='QcPertInt'>
+     Data type of integers to represent perturbation labels
+   </datatype>
+   <constant name='QCPERTINT_MAX'>
+     Maximal value of an object of the <QcPertInt> type
+   </constant>
+   <constant name='QCPERTINT_FMT'>
+     Format string of <QcPertInt> type
+   </constant> */
+typedef unsigned short QcPertInt;
+#define QCPERTINT_MAX USHRT_MAX
+#define QCPERTINT_FMT "hu"
+/* <macrodef name='OPENRSP_PERT_INT'>
+     Represent perturbation labels using unsigned integers
+   </macrodef> */
+#elif defined(OPENRSP_PERT_INT)
+typedef unsigned int QcPertInt;
+#define QCPERTINT_MAX UINT_MAX
+#define QCPERTINT_FMT "u"
+#else
+typedef unsigned long QcPertInt;
+#define QCPERTINT_MAX ULONG_MAX
+#define QCPERTINT_FMT "lu"
+#endif
+\nwalsodefined{\\{NWRSP10-RSPH.2-2}\\{NWRSP10-RSPH.2-3}}\nwused{\\{NWRSP10-RSPH-1}}\nwendcode{}\nwbegindocs{4}Here we allow users to choose either
+{\tt{}unsigned\ short}\index{{\tt{}OPENRSP{\char95}PERT{\char95}SHORT{\char95}INT}},
+{\tt{}unsigned\ int}\index{{\tt{}OPENRSP{\char95}PERT{\char95}INT}}, or {\tt{}unsigned\ long} for the
+type {\tt{}QcPertInt}. We also define a constant
+{\tt{}QCPERTINT{\char95}MAX}\index{{\tt{}QCPERTINT{\char95}MAX}} for the maximal value of an object
+of the {\tt{}QcPertInt} type, and a format string
+({\tt{}QCPERTINT{\char95}FMT}\index{{\tt{}QCPERTINT{\char95}FMT}}) of the {\tt{}QcPertInt} type.
+
+We futher allow users to set the number of bits in an object of {\tt{}QcPertInt}
+for representing the host program's perturbation labels (see
+Figure~\ref{fig-perturbation-label}). This can be done by changing the constant
+{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}BIT}\index{{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}BIT}} during building:
+\nwenddocs{}\nwbegincode{5}\sublabel{NWRSP10-RSPH.2-2}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-2}}}\moddef{RSPPertBasicTypes~{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}}\plusendmoddef
+/* <macrodef name='OPENRSP_PERT_LABEL_BIT'>
+     Set <OPENRSP_PERT_LABEL_BIT>
+   </macrodef>
+   <constant name='OPENRSP_PERT_LABEL_BIT'>
+     Number of bits in an object of <QcPertInt> type for a perturbation label
+   </constant> */
+#if !defined(OPENRSP_PERT_LABEL_BIT)
+#define OPENRSP_PERT_LABEL_BIT 10
+#endif
+\nwendcode{}\nwbegindocs{6}and from which, and from the knowledge of {\tt{}QCPERTINT{\char95}MAX} we can compute
+{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}MAX}\index{{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}MAX}} and
+{\tt{}OPENRSP{\char95}NUM{\char95}FREQ{\char95}MAX}\index{{\tt{}OPENRSP{\char95}NUM{\char95}FREQ{\char95}MAX}}, which are the maximal
+values of perturbation labels and the number of frequencies allowed:
+\nwenddocs{}\nwbegincode{7}\sublabel{NWRSP10-RSPH.2-3}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-3}}}\moddef{RSPPertBasicTypes~{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}}\plusendmoddef
+/* <constant name='OPENRSP_PERT_LABEL_MAX'>
+     Maximal value for perturbation labels
+   </constant>
+   <constant name='OPENRSP_NUM_FREQ_MAX'>
+     Maximal value for number of frequencies
+   </constant> */
+extern const QcPertInt OPENRSP_PERT_LABEL_MAX;
+extern const QcPertInt OPENRSP_NUM_FREQ_MAX;
+\nwendcode{}\nwbegindocs{8}Here, to avoid multiple inclusions of the header file that will lead to
+multiple definitions, we have the following implementation file for the
+{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}MAX} and {\tt{}OPENRSP{\char95}NUM{\char95}FREQ{\char95}MAX}:
+\nwenddocs{}\nwbegincode{9}\sublabel{NWRSP10-RSPE-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPE-1}}}\moddef{RSPPertLabel.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPE-1}}}\endmoddef
+/*
+  \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
+*/
+
+#include "RSPPerturbation.h"
+
+/* see https://scaryreasoner.wordpress.com/2009/02/28/checking-sizeof-at-compile-time
+   accessing date Oct. 6, 2015 */
+#define QC_BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+void RSPPertCheckLabelBit()
+\{
+    QC_BUILD_BUG_ON(sizeof(QCPERTINT_MAX)*CHAR_BIT<=OPENRSP_PERT_LABEL_BIT);
+\}
+
+const QcPertInt OPENRSP_PERT_LABEL_MAX = (1<<OPENRSP_PERT_LABEL_BIT)-1;
+const QcPertInt OPENRSP_NUM_FREQ_MAX =
+                (QCPERTINT_MAX-OPENRSP_PERT_LABEL_MAX)>>OPENRSP_PERT_LABEL_BIT;
+\nwnotused{RSPPertLabel.c}\nwendcode{}\nwbegindocs{10}The function {\tt{}RSPPertCheckLabelBit()} ensures that
+{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}BIT} is not too large and there are still bits left for
+the number of frequencies. One will have building error when compiling the
+function {\tt{}RSPPertCheckLabelBit()} if {\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}BIT} is too large.
+
+However, the function {\tt{}RSPPertCheckLabelBit()} can not guarantee the above
+setting ({\tt{}QcPertInt} type and {\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}BIT}) is enough for
+holding the host program's perturbation labels and the number of frequencies.
+This will be checked against {\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}MAX} and
+{\tt{}OPENRSP{\char95}NUM{\char95}FREQ{\char95}MAX} by \LibName when (i) setting the host program's
+perturbations, and (ii) calculating response functions or residues.
+
+As discussed in Section~\ref{subsection-analysis-perturbation}, we will need a
+callback function {\tt{}get{\char95}pert{\char95}concatenation()} to get the ranks of components
+of sub-perturbation tuples (with the same perturbation label) for given
+components of the corresponding concatenated perturbation tuple. The type of
+this callback function is defined as follows:
+\nwenddocs{}\nwbegincode{11}\sublabel{NWRSP10-RSPF-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPF-1}}}\moddef{RSPPertCallback~{\nwtagstyle{}\subpageref{NWRSP10-RSPF-1}}}\endmoddef
+typedef QVoid (*GetPertCat)(const QcPertInt,
+                            const QInt,
+                            const QInt,
+                            const QInt,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            QVoid*,
+#endif
+                            QInt*);
+\nwused{\\{NWRSP10-RSPH-1}}\nwendcode{}\nwbegindocs{12}\nwdocspar
+
+Also as mentioned in Section~\ref{subsection-analysis-perturbation}, \LibName
+needs to know the numbers of components of host program's perturbations.
+Because the number of components of a higher-order perturbation is simply the
+product of numbers of components of lower-order perturbations with different
+labels. For instance, the number of components of a perturbation
+$a_{\omega_{a}}^{n_{a}}b_{\omega_{b}}^{n_{b}}$ is simply the product of numbers
+of components of perturbations $a_{\omega_{a}}^{n_{a}}$ and
+$b_{\omega_{b}}^{n_{b}}$.
+
+Therefore, if there are in total $p$ different perturbation labels
+$a_{1},a_{2},\cdots,a_{p}$ involved in calculations, \LibName needs to know
+\begin{enumerate}
+  \item allowed maximal order of a perturbation described by exactly
+    \textbf{one} of these different labels $a_{1},a_{2},\cdots,a_{p}$; let
+    us mark these allowed maximal orders as $n_{1},n_{2},\cdots,n_{p}$, which
+    means we will have $k_{j}\le n_{j}$ ($1\le j\le p$) for any perturbation
+    $a_{1,\omega_{1}}^{k_{1}}a_{2,\omega_{2}}^{k_{2}}\cdots a_{p,\omega_{p}}^{k_{p}}$;
+  \item numbers of components of perturbations $a_{j,\omega_{j}}^{k_{j}}$,
+    where $1\le k_{j}\le n_{j}$ and $1\le j\le p$; let us mark these numbers
+    of components as $[N_{j}^{k_{j}}]$.
+\end{enumerate}
+The above information is saved into the following {\tt{}struct}:
+\nwenddocs{}\nwbegincode{13}\sublabel{NWRSP10-RSPD-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPD-1}}}\moddef{RSPPertStruct~{\nwtagstyle{}\subpageref{NWRSP10-RSPD-1}}}\endmoddef
+typedef struct \{
+    QcPertInt num_pert;                 /* number of different perturbation labels $p$ */
+    QcPertInt *pert_labels;             /* $a_\{1\},a_\{2\},\\cdots,a_\{p\}$ */
+    QInt *pert_max_orders;              /* $n_\{1\},n_\{2\},\\cdots,n_\{p\}$ */
+    QInt *ptr_ncomp;                    /* pointers to $[N_\{j\}^\{k_\{j\}\}]$
+                                           for each $a_\{j\}$ */
+    QInt *pert_num_comps;               /* $[N_\{j\}^\{k_\{j\}\}]$, where
+                                           $1\\le k_\{j\}\\le n_\{j\}$ and $1\\le j\\le p$ */
+#if defined(OPENRSP_C_USER_CONTEXT)     
+    QVoid *user_ctx;                    /* user-defined callback function context */
+#endif
+    GetPertCat get_pert_concatenation;  /* user specified function for getting
+                                           the ranks of components of sub-perturbation
+                                           tuples (with the same perturbation label)
+                                           for given components of the corresponding
+                                           concatenated perturbation tuple */
+\} RSPPert;
+\nwused{\\{NWRSP10-RSPH-1}}\nwendcode{}\nwbegindocs{14}and users can set the above information by the following API:
+\index{{\tt{}OpenRSPSetPerturbations()}}
+\nwenddocs{}\nwbegincode{15}\sublabel{NWRSP10-OpeP-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-OpeP-1}}}\moddef{OpenRSPSetPerturbations.c~{\nwtagstyle{}\subpageref{NWRSP10-OpeP-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -509,25 +652,27 @@ the API {\tt{}OpenRSPSetPerturbations}:
        All the different perturbation labels involved
      </param>
      <param name='pert_max_orders' direction='in'>
-       Maximum allowed order of each perturbation (label)
+       Allowed maximal order of a perturbation described by exactly one of
+       the above different labels
      </param>
      <param name='pert_num_comps' direction='in'>
-       Number of components of each perturbation (label), up to its maximum
-       order, size is the sum of <pert_max_orders>
+       Number of components of a perturbation described by exactly one of
+       the above different labels, up to the allowed maximal order, size
+       is therefore the sum of <pert_max_orders>
      </param>
      <param name='user_ctx' direction='in'>
        User-defined callback function context
      </param>
      <param name='get_pert_concatenation' direction='in'>
        User specified function for getting the ranks of components of
-       sub-perturbation tuples (with same perturbation label) for given
+       sub-perturbation tuples (with the same perturbation label) for given
        components of the corresponding concatenated perturbation tuple
      </param>
      <return>Error information</return>
    </function> */
 QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
-                                   const QInt num_pert,
-                                   const QInt *pert_labels,
+                                   const QcPertInt num_pert,
+                                   const QcPertInt *pert_labels,
                                    const QInt *pert_max_orders,
                                    const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -559,62 +704,15 @@ QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertCreate()");
     return QSUCCESS;
 \}
-\nwnotused{OpenRSPSetPerturbations.c}\nwendcode{}\nwbegindocs{2}This callback function is used by \LibName to get the ranks of components of
-\textbf{sub-perturbation tuples with same perturbation label} (lower order
-derivatives with respect to one perturbation) for given components of the
-corresponding \textbf{concatenated perturbation tuple} (higher order
-derivatives).
+\nwnotused{OpenRSPSetPerturbations.c}\nwendcode{}\nwbegindocs{16}\nwdocspar
 
-The header file of perturbations is:
-\nwenddocs{}\nwbegincode{3}\sublabel{NWRSP10-RSPH-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH-1}}}\moddef{RSPPerturbation.h~{\nwtagstyle{}\subpageref{NWRSP10-RSPH-1}}}\endmoddef
-/*
-  \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
-
-  <header name='RSPPerturbation.h' author='Bin Gao' date='2015-06-23'>
-    The header file of perturbations used inside OpenRSP
-  </header>
-*/
-
-#if !defined(RSP_PERTURBATION_H)
-#define RSP_PERTURBATION_H
-
-/* QcMatrix library */
-#include "qcmatrix.h"
-
-/* callback function to get the ranks of components of sub-perturbation
-   tuples (with same perturbation label) for given components of the
-   corresponding concatenated perturbation tuple */
-typedef QVoid (*GetPertCat)(const QInt,
-                            const QInt,
-                            const QInt*,
-                            const QInt,
-                            const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid*,
-#endif
-                            QInt*);
-
-/* context of all perturbations involved in calculations */
-typedef struct \{
-    QInt num_pert;                      /* number of all different perturbation labels involved */
-    QInt *pert_labels;                  /* all different perturbation labels involved */
-    QInt *pert_max_orders;              /* maximum allowed order of each perturbation (label) */
-    QInt *ptr_ncomp;                    /* pointer to the numbers of components of each perturbation */
-    QInt *pert_num_comps;               /* number of components of each perturbation (label) up to
-                                           its maximum order */
-#if defined(OPENRSP_C_USER_CONTEXT)     
-    QVoid *user_ctx;                    /* user-defined callback function context */
-#endif
-    GetPertCat get_pert_concatenation;  /* user specified function for getting the ranks of
-                                           components of sub-perturbation tuples (with same
-                                           perturbation label) for given components of the
-                                           corresponding concatenated perturbation tuple */
-\} RSPPert;
-
-/* functions related to the perturbations */
+The APIs {\tt{}RSPPertCreate()} and {\tt{}RSPPertDestroy()} will respectively create
+and destroy the content of the {\tt{}struct} {\tt{}RSPPert}. We have the following
+APIs for the {\tt{}struct} {\tt{}RSPPert}:
+\nwenddocs{}\nwbegincode{17}\sublabel{NWRSP10-RSPA-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPA-1}}}\moddef{RSPertAPIs~{\nwtagstyle{}\subpageref{NWRSP10-RSPA-1}}}\endmoddef
 extern QErrorCode RSPPertCreate(RSPPert*,
-                                const QInt,
-                                const QInt*,
+                                const QcPertInt,
+                                const QcPertInt*,
                                 const QInt*,
                                 const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -625,24 +723,20 @@ extern QErrorCode RSPPertAssemble(RSPPert*);
 extern QErrorCode RSPPertWrite(const RSPPert*,FILE*);
 //extern QErrorCode RSPPertGetFromTuple(const RSPPert*,
 //                                      const QInt,
-//                                      const QInt*,
-//                                      const QInt,
+//                                      const QcPertInt*,
+//                                      const QcPertInt,
 //                                      const QReal*,
 //                                      QInt*);
 extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
-                                          const QInt,
+                                          const QcPertInt,
                                           const QInt,
                                           const QInt,
                                           const QInt,
                                           const QInt*,
                                           QInt*);
 extern QErrorCode RSPPertDestroy(RSPPert*);
-
-#endif
-\nwnotused{RSPPerturbation.h}\nwendcode{}\nwbegindocs{4}\nwdocspar
-
-The functions are:
-\nwenddocs{}\nwbegincode{5}\sublabel{NWRSP10-RSPF-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPF-1}}}\moddef{RSPPertCreate.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPF-1}}}\endmoddef
+\nwused{\\{NWRSP10-RSPH-1}}\nwendcode{}\nwbegindocs{18}which are respectively implemented in the following different files:
+\nwenddocs{}\nwbegincode{19}\sublabel{NWRSP10-RSPF.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPF.2-1}}}\moddef{RSPPertCreate.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPF.2-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -667,8 +761,8 @@ The functions are:
     \\return[QErrorCode:int] error information
 */
 QErrorCode RSPPertCreate(RSPPert *rsp_pert,
-                         const QInt num_pert,
-                         const QInt *pert_labels,
+                         const QcPertInt num_pert,
+                         const QcPertInt *pert_labels,
                          const QInt *pert_max_orders,
                          const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)
@@ -676,74 +770,97 @@ QErrorCode RSPPertCreate(RSPPert *rsp_pert,
 #endif
                          const GetPertCat get_pert_concatenation)
 \{
-    QInt ipert,jpert,iorder;  /* incremental recorders */
+    QInt ipert;   /* incremental recorders over perturbations */
+    QInt jpert;
+    QInt iorder;  /* incremental recorder over orders */
     if (num_pert<1) \{
-        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\\n",
+        printf("RSPPertCreate>> number of perturbation labels %"QCPERTINT_FMT"\\n",
                num_pert);
-        QErrorExit(FILE_AND_LINE, "invalid number of perturbations");
+        QErrorExit(FILE_AND_LINE, "invalid number of perturbation labels");
+    \}
+    else if (num_pert>OPENRSP_PERT_LABEL_MAX) \{
+        printf("RSPPertCreate>> number of perturbation labels %"QCPERTINT_FMT"\\n",
+               num_pert);
+        printf("RSPPertCreate>> maximal value for pert. labels %"QCPERTINT_FMT"\\n",
+               OPENRSP_PERT_LABEL_MAX);
+        QErrorExit(FILE_AND_LINE, "too many perturbation labels");
     \}
     rsp_pert->num_pert = num_pert;
-    rsp_pert->pert_labels = (QInt *)malloc(num_pert*sizeof(QInt));
+    rsp_pert->pert_labels = (QcPertInt *)malloc(num_pert*sizeof(QcPertInt));
     if (rsp_pert->pert_labels==NULL) \{
-        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\\n",
+        printf("RSPPertCreate>> number of perturbation labels %"QCPERTINT_FMT"\\n",
                num_pert);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_labels");
+        QErrorExit(FILE_AND_LINE, "allocates memory for perturbation labels");
     \}
     rsp_pert->pert_max_orders = (QInt *)malloc(num_pert*sizeof(QInt));
     if (rsp_pert->pert_max_orders==NULL) \{
-        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\\n",
+        printf("RSPPertCreate>> number of perturbation labels %"QCPERTINT_FMT"\\n",
                num_pert);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_max_orders");
+        QErrorExit(FILE_AND_LINE, "allocates memory for allowed maximal orders");
     \}
     rsp_pert->ptr_ncomp = (QInt *)malloc((num_pert+1)*sizeof(QInt));
     if (rsp_pert->ptr_ncomp==NULL) \{
-        printf("RSPPertCreate>> number of perturbations %"QINT_FMT"\\n",
+        printf("RSPPertCreate>> number of perturbation labels %"QCPERTINT_FMT"\\n",
                num_pert);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for ptr_ncomp");
+        QErrorExit(FILE_AND_LINE, "allocates memory for pointers to components");
     \}
     rsp_pert->ptr_ncomp[0] = 0;
     for (ipert=0; ipert<num_pert; ipert++) \{
-        /* each element of \\var\{pert_labels\} should be unique */
+        if (pert_labels[ipert]>OPENRSP_PERT_LABEL_MAX) \{
+            printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\\n",
+                   ipert,
+                   pert_labels[ipert]);
+            printf("RSPPertCreate>> maximal value for pert. labels %"QCPERTINT_FMT"\\n",
+                   OPENRSP_PERT_LABEL_MAX);
+            QErrorExit(FILE_AND_LINE, "invalid perturbation label");
+        \}
+        /* each element of <pert_labels> should be unique */
         for (jpert=0; jpert<ipert; jpert++) \{
             if (pert_labels[jpert]==pert_labels[ipert]) \{
-                printf("RSPPertCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\\n",
+                printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\\n",
                        jpert,
                        pert_labels[jpert]);
-                printf("RSPPertCreate>> perturbation %"QINT_FMT" is %"QINT_FMT"\\n",
+                printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\\n",
                        ipert,
                        pert_labels[ipert]);
-                QErrorExit(FILE_AND_LINE, "repeated labels of perturbations not allowed");
+                QErrorExit(FILE_AND_LINE, "repeated perturbation labels not allowed");
             \}
         \}
         rsp_pert->pert_labels[ipert] = pert_labels[ipert];
         if (pert_max_orders[ipert]<1) \{
-            printf("RSPPertCreate>> order of %"QINT_FMT"-th perturbation (%"QINT_FMT") is %"QINT_FMT"\\n",
+            printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\\n",
                    ipert,
-                   pert_labels[ipert],
+                   pert_labels[ipert]);
+            printf("RSPPertCreate>> allowed maximal order is %"QINT_FMT"\\n",
                    pert_max_orders[ipert]);
             QErrorExit(FILE_AND_LINE, "only positive order allowed");
         \}
         rsp_pert->pert_max_orders[ipert] = pert_max_orders[ipert];
-        /* \\var\{rsp_pert->ptr_ncomp[ipert]\} points to the number of components of
-           \\var\{rsp_pert->pert_labels[ipert]\} */
-        rsp_pert->ptr_ncomp[ipert+1] = rsp_pert->ptr_ncomp[ipert]+pert_max_orders[ipert];
+        /* <c>rsp_pert->ptr_ncomp[ipert]</c> points to the number of components
+           of <c>rsp_pert->pert_labels[ipert]</c> */
+        rsp_pert->ptr_ncomp[ipert+1] = rsp_pert->ptr_ncomp[ipert]
+                                     + pert_max_orders[ipert];
     \}
-    /* \\var\{rsp_pert->ptr_ncomp[num_pert]\} equals to the size of \\var\{rsp_pert->pert_num_comps\} */
-    rsp_pert->pert_num_comps = (QInt *)malloc(rsp_pert->ptr_ncomp[num_pert]*sizeof(QInt));
+    /* <c>rsp_pert->ptr_ncomp[num_pert]</c> equals to the size of
+       <c>rsp_pert->pert_num_comps</c> */
+    rsp_pert->pert_num_comps = (QInt *)malloc(rsp_pert->ptr_ncomp[num_pert]
+                                              *sizeof(QInt));
     if (rsp_pert->pert_num_comps==NULL) \{
-        printf("RSPPertCreate>> size of pert_num_comps %"QINT_FMT"\\n",
+        printf("RSPPertCreate>> size of numbers of components %"QINT_FMT"\\n",
                rsp_pert->ptr_ncomp[num_pert]);
-        QErrorExit(FILE_AND_LINE, "failed to allocate memory for pert_num_comps");
+        QErrorExit(FILE_AND_LINE, "allocates memory for numbers of components");
     \}
     for (ipert=0,jpert=0; ipert<num_pert; ipert++) \{
         for (iorder=1; iorder<=rsp_pert->pert_max_orders[ipert]; iorder++,jpert++) \{
             if (pert_num_comps[jpert]<1) \{
-                printf("RSPPertCreate>> size of %"QINT_FMT"-th perturbation (%"QINT_FMT", order %"QINT_FMT") is %"QINT_FMT"\\n",
+                printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\\n",
                        ipert,
-                       pert_labels[ipert],
-                       pert_max_orders[ipert],
+                       pert_labels[ipert]);
+                printf("RSPPertCreate>> allowed maximal order is %"QINT_FMT"\\n",
+                       pert_max_orders[ipert]);
+                printf("RSPPertCreate>> number of components is %"QINT_FMT"\\n",
                        pert_num_comps[jpert]);
-                QErrorExit(FILE_AND_LINE, "incorrect size");
+                QErrorExit(FILE_AND_LINE, "incorrect number of components");
             \}
             rsp_pert->pert_num_comps[jpert] = pert_num_comps[jpert];
         \}
@@ -754,8 +871,10 @@ QErrorCode RSPPertCreate(RSPPert *rsp_pert,
     rsp_pert->get_pert_concatenation = get_pert_concatenation;
     return QSUCCESS;
 \}
+\nwnotused{RSPPertCreate.c}\nwendcode{}\nwbegindocs{20}Here we check the number of perturbation labels and each label against
+{\tt{}OPENRSP{\char95}PERT{\char95}LABEL{\char95}MAX}.
 
-\nwnotused{RSPPertCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSP10-RSPH.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}}\moddef{RSPPertAssemble.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPH.2-1}}}\endmoddef
+\nwenddocs{}\nwbegincode{21}\sublabel{NWRSP10-RSPH.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPH.3-1}}}\moddef{RSPPertAssemble.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPH.3-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -770,8 +889,7 @@ QErrorCode RSPPertCreate(RSPPert *rsp_pert,
 */
 QErrorCode RSPPertAssemble(RSPPert *rsp_pert)
 \{
-    if (rsp_pert->num_pert<1 ||
-        rsp_pert->pert_labels==NULL ||
+    if (rsp_pert->pert_labels==NULL ||
         rsp_pert->pert_max_orders==NULL ||
         rsp_pert->ptr_ncomp==NULL ||
         rsp_pert->pert_num_comps==NULL ||
@@ -781,7 +899,7 @@ QErrorCode RSPPertAssemble(RSPPert *rsp_pert)
     return QSUCCESS;
 \}
 
-\nwnotused{RSPPertAssemble.c}\nwendcode{}\nwbegincode{7}\sublabel{NWRSP10-RSPE-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPE-1}}}\moddef{RSPPertWrite.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPE-1}}}\endmoddef
+\nwnotused{RSPPertAssemble.c}\nwendcode{}\nwbegincode{22}\sublabel{NWRSP10-RSPE.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPE.2-1}}}\moddef{RSPPertWrite.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPE.2-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -799,13 +917,13 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
 \{
     QInt ipert,icomp;  /* incremental recorders */
     fprintf(fp_pert,
-            "RSPPertWrite>> number of all perturbations involved in calculations %"QINT_FMT"\\n",
+            "RSPPertWrite>> number of all perturbation lables %"QCPERTINT_FMT"\\n",
             rsp_pert->num_pert);
     fprintf(fp_pert,
             "RSPPertWrite>> label           maximum-order    numbers-of-components\\n");
     for (ipert=0; ipert<rsp_pert->num_pert; ipert++) \{
         fprintf(fp_pert,
-                "RSPPertWrite>>  %"QINT_FMT"               %"QINT_FMT"               ",
+                "RSPPertWrite>>  %"QCPERTINT_FMT"               %"QINT_FMT"               ",
                 rsp_pert->pert_labels[ipert],
                 rsp_pert->pert_max_orders[ipert]);
         for (icomp=rsp_pert->ptr_ncomp[ipert]; icomp<rsp_pert->ptr_ncomp[ipert+1]; icomp++) \{
@@ -821,7 +939,7 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
     return QSUCCESS;
 \}
 
-\nwnotused{RSPPertWrite.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSP10-RSPL-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPL-1}}}\moddef{RSPPertGetFromTuple.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPL-1}}}\endmoddef
+\nwnotused{RSPPertWrite.c}\nwendcode{}\nwbegincode{23}\sublabel{NWRSP10-RSPL-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPL-1}}}\moddef{RSPPertGetFromTuple.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPL-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -849,8 +967,8 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
 */
 //QErrorCode RSPPertGetFromTuple(const RSPPert *rsp_pert,
 //                               const QInt len_tuple,
-//                               const QInt *pert_tuple,
-//                               const QInt num_freq_configs,
+//                               const QcPertInt *pert_tuple,
+//                               const QcPertInt num_freq_configs,
 //                               const QReal *pert_freqs,
 //                               QInt *num_pert,
 //                               QInt *pert_orders,
@@ -864,7 +982,7 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
 //    first_id = 0;
 //    non_id = QFALSE;
 //    for (ipert=first_id; ipert<len_tuple-1; ipert++) \{
-//        if (pert_tupe[ipert]!=pert_tupe[ipert+1]) \{
+//        if (pert_tuple[ipert]!=pert_tuple[ipert+1]) \{
 //            last_id = ipert;
 //            non_id = QTRUE;
 //            break;
@@ -879,7 +997,7 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
 //        /* loops over perturbation labels in the tuple */
 //        for (ipert=first_id; ipert<len_tuple; ipert++) \{
 //            /* checks if the given label is known */
-//            if (pert_tupe[ipert]==rsp_pert->pert_labels[jpert]) \{
+//            if (pert_tuple[ipert]==rsp_pert->pert_labels[jpert]) \{
 //                
 //            \}
 //        \}
@@ -887,7 +1005,7 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
 //    return QSUCCESS;
 //\}
 
-\nwnotused{RSPPertGetFromTuple.c}\nwendcode{}\nwbegincode{9}\sublabel{NWRSP10-RSPP-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPP-1}}}\moddef{RSPPertGetConcatenation.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPP-1}}}\endmoddef
+\nwnotused{RSPPertGetFromTuple.c}\nwendcode{}\nwbegincode{24}\sublabel{NWRSP10-RSPP-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPP-1}}}\moddef{RSPPertGetConcatenation.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPP-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -919,7 +1037,7 @@ QErrorCode RSPPertWrite(const RSPPert *rsp_pert, FILE *fp_pert)
     \\return[QErrorCode:int] error information
 */
 QErrorCode RSPPertGetConcatenation(const RSPPert *rsp_pert,
-                                   const QInt pert_label,
+                                   const QcPertInt pert_label,
                                    const QInt first_cat_comp,
                                    const QInt num_cat_comps,
                                    const QInt num_sub_tuples,
@@ -939,7 +1057,7 @@ QErrorCode RSPPertGetConcatenation(const RSPPert *rsp_pert,
     return QSUCCESS;
 \}
 
-\nwnotused{RSPPertGetConcatenation.c}\nwendcode{}\nwbegincode{10}\sublabel{NWRSP10-RSPG-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPG-1}}}\moddef{RSPPertDestroy.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPG-1}}}\endmoddef
+\nwnotused{RSPPertGetConcatenation.c}\nwendcode{}\nwbegincode{25}\sublabel{NWRSP10-RSPG-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSP10-RSPG-1}}}\moddef{RSPPertDestroy.c~{\nwtagstyle{}\subpageref{NWRSP10-RSPG-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -1080,13 +1198,13 @@ typedef QVoid (*GetOverlapExp)(const QInt,
                                const QInt,
                                QReal*);
 
-\LA{}RSPOverlapContext~{\nwtagstyle{}\subpageref{NWRSPv-RSPH.3-1}}\RA{}
+\LA{}RSPOverlapContext~{\nwtagstyle{}\subpageref{NWRSPv-RSPH.4-1}}\RA{}
 
 \LA{}RSPOverlapFunctions~{\nwtagstyle{}\subpageref{NWRSPv-RSPJ-1}}\RA{}
 
 #endif
 \nwnotused{RSPOverlap.h}\nwendcode{}\nwbegindocs{4}The context of overlap integrals is:
-\nwenddocs{}\nwbegincode{5}\sublabel{NWRSPv-RSPH.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv-RSPH.3-1}}}\moddef{RSPOverlapContext~{\nwtagstyle{}\subpageref{NWRSPv-RSPH.3-1}}}\endmoddef
+\nwenddocs{}\nwbegincode{5}\sublabel{NWRSPv-RSPH.4-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv-RSPH.4-1}}}\moddef{RSPOverlapContext~{\nwtagstyle{}\subpageref{NWRSPv-RSPH.4-1}}}\endmoddef
 typedef struct \{
     QInt num_pert;                  /* number of different perturbation labels that
                                        can act as perturbations on the basis sets */
@@ -1235,7 +1353,7 @@ QErrorCode RSPOverlapAssemble(RSPOverlap *overlap)
     return QSUCCESS;
 \}
 
-\nwnotused{RSPOverlapAssemble.c}\nwendcode{}\nwbegincode{11}\sublabel{NWRSPv-RSPH.4-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv-RSPH.4-1}}}\moddef{RSPOverlapWrite.c~{\nwtagstyle{}\subpageref{NWRSPv-RSPH.4-1}}}\endmoddef
+\nwnotused{RSPOverlapAssemble.c}\nwendcode{}\nwbegincode{11}\sublabel{NWRSPv-RSPH.5-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv-RSPH.5-1}}}\moddef{RSPOverlapWrite.c~{\nwtagstyle{}\subpageref{NWRSPv-RSPH.5-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -1640,7 +1758,7 @@ QErrorCode RSPOneOperCreate(RSPOneOper **one_oper,
     return QSUCCESS;
 \}
 
-\nwnotused{RSPOneOperCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSPv.2-RSPF.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.2-RSPF.2-1}}}\moddef{RSPOneOperAdd.c~{\nwtagstyle{}\subpageref{NWRSPv.2-RSPF.2-1}}}\endmoddef
+\nwnotused{RSPOneOperCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSPv.2-RSPF.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.2-RSPF.3-1}}}\moddef{RSPOneOperAdd.c~{\nwtagstyle{}\subpageref{NWRSPv.2-RSPF.3-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -1724,7 +1842,7 @@ QErrorCode RSPOneOperAssemble(RSPOneOper *one_oper)
     return QSUCCESS;
 \}
 
-\nwnotused{RSPOneOperAssemble.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSPv.2-RSPH.5-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.2-RSPH.5-1}}}\moddef{RSPOneOperWrite.c~{\nwtagstyle{}\subpageref{NWRSPv.2-RSPH.5-1}}}\endmoddef
+\nwnotused{RSPOneOperAssemble.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSPv.2-RSPH.6-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.2-RSPH.6-1}}}\moddef{RSPOneOperWrite.c~{\nwtagstyle{}\subpageref{NWRSPv.2-RSPH.6-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -2147,7 +2265,7 @@ QErrorCode RSPTwoOperCreate(RSPTwoOper **two_oper,
     return QSUCCESS;
 \}
 
-\nwnotused{RSPTwoOperCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSPv.3-RSPF.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.3-RSPF.3-1}}}\moddef{RSPTwoOperAdd.c~{\nwtagstyle{}\subpageref{NWRSPv.3-RSPF.3-1}}}\endmoddef
+\nwnotused{RSPTwoOperCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSPv.3-RSPF.4-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.3-RSPF.4-1}}}\moddef{RSPTwoOperAdd.c~{\nwtagstyle{}\subpageref{NWRSPv.3-RSPF.4-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -2231,7 +2349,7 @@ QErrorCode RSPTwoOperAssemble(RSPTwoOper *two_oper)
     return QSUCCESS;
 \}
 
-\nwnotused{RSPTwoOperAssemble.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSPv.3-RSPH.6-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.3-RSPH.6-1}}}\moddef{RSPTwoOperWrite.c~{\nwtagstyle{}\subpageref{NWRSPv.3-RSPH.6-1}}}\endmoddef
+\nwnotused{RSPTwoOperAssemble.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSPv.3-RSPH.7-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPv.3-RSPH.7-1}}}\moddef{RSPTwoOperWrite.c~{\nwtagstyle{}\subpageref{NWRSPv.3-RSPH.7-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -2487,7 +2605,7 @@ QErrorCode OpenRSPAddXCFun(OpenRSP *open_rsp,
 \nwnotused{OpenRSPAddXCFun.c}\nwendcode{}\nwbegindocs{2}\nwdocspar
 
 The header file of different XC functionals is:
-\nwenddocs{}\nwbegincode{3}\sublabel{NWRSPt-RSPA-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPA-1}}}\moddef{RSPXCFun.h~{\nwtagstyle{}\subpageref{NWRSPt-RSPA-1}}}\endmoddef
+\nwenddocs{}\nwbegincode{3}\sublabel{NWRSPt-RSPA.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPA.2-1}}}\moddef{RSPXCFun.h~{\nwtagstyle{}\subpageref{NWRSPt-RSPA.2-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 
@@ -2674,7 +2792,7 @@ QErrorCode RSPXCFunCreate(RSPXCFun **xc_fun,
     return QSUCCESS;
 \}
 
-\nwnotused{RSPXCFunCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSPt-RSPD-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPD-1}}}\moddef{RSPXCFunAdd.c~{\nwtagstyle{}\subpageref{NWRSPt-RSPD-1}}}\endmoddef
+\nwnotused{RSPXCFunCreate.c}\nwendcode{}\nwbegincode{6}\sublabel{NWRSPt-RSPD.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPD.2-1}}}\moddef{RSPXCFunAdd.c~{\nwtagstyle{}\subpageref{NWRSPt-RSPD.2-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -2754,7 +2872,7 @@ QErrorCode RSPXCFunAssemble(RSPXCFun *xc_fun)
     return QSUCCESS;
 \}
 
-\nwnotused{RSPXCFunAssemble.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSPt-RSPF.4-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPF.4-1}}}\moddef{RSPXCFunWrite.c~{\nwtagstyle{}\subpageref{NWRSPt-RSPF.4-1}}}\endmoddef
+\nwnotused{RSPXCFunAssemble.c}\nwendcode{}\nwbegincode{8}\sublabel{NWRSPt-RSPF.5-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPF.5-1}}}\moddef{RSPXCFunWrite.c~{\nwtagstyle{}\subpageref{NWRSPt-RSPF.5-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -2915,7 +3033,7 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
     return QSUCCESS;
 \}
 
-\nwnotused{RSPXCFunGetExp.c}\nwendcode{}\nwbegincode{11}\sublabel{NWRSPt-RSPH.7-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPH.7-1}}}\moddef{RSPXCFunDestroy.c~{\nwtagstyle{}\subpageref{NWRSPt-RSPH.7-1}}}\endmoddef
+\nwnotused{RSPXCFunGetExp.c}\nwendcode{}\nwbegincode{11}\sublabel{NWRSPt-RSPH.8-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPt-RSPH.8-1}}}\moddef{RSPXCFunDestroy.c~{\nwtagstyle{}\subpageref{NWRSPt-RSPH.8-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -3404,7 +3522,7 @@ extern QErrorCode RSPSolverDestroy(RSPSolver*);
 \nwnotused{RSPSolver.h}\nwendcode{}\nwbegindocs{4}\nwdocspar
 
 The functions are implemented as follows:
-\nwenddocs{}\nwbegincode{5}\sublabel{NWRSPu-RSPH.8-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPu-RSPH.8-1}}}\moddef{RSPSolverCreate.c~{\nwtagstyle{}\subpageref{NWRSPu-RSPH.8-1}}}\endmoddef
+\nwenddocs{}\nwbegincode{5}\sublabel{NWRSPu-RSPH.9-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWRSPu-RSPH.9-1}}}\moddef{RSPSolverCreate.c~{\nwtagstyle{}\subpageref{NWRSPu-RSPH.9-1}}}\endmoddef
 /*
   \LA{}OpenRSPLicense~{\nwtagstyle{}\subpageref{NWImpz-OpeE-1}}\RA{}
 */
@@ -3770,7 +3888,7 @@ Public License\index{\LibName License}:
 !! You should have received a copy of the GNU Lesser General Public
 !! License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-\nwused{\\{NWForw-OpeB.2-1}\\{NWForw-RSPB.2-1}\\{NWForw-RSPE.2-1}\\{NWForw-RSPE.3-1}\\{NWForw-RSPD.2-1}\\{NWForw-RSPC.4-1}\\{NWForw-RSPI.C-1}\\{NWForw-RSPD.3-1}}\nwendcode{}\nwbegindocs{2}Here is the organization of the module file:
+\nwused{\\{NWForw-OpeB.2-1}\\{NWForw-RSPB.2-1}\\{NWForw-RSPE.3-1}\\{NWForw-RSPE.4-1}\\{NWForw-RSPD.3-1}\\{NWForw-RSPC.4-1}\\{NWForw-RSPI.C-1}\\{NWForw-RSPD.4-1}}\nwendcode{}\nwbegindocs{2}Here is the organization of the module file:
 \nwenddocs{}\nwbegincode{3}\sublabel{NWForw-OpeB.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-OpeB.2-1}}}\moddef{OpenRSP.F90~{\nwtagstyle{}\subpageref{NWForw-OpeB.2-1}}}\endmoddef
 !!
 !! <QCLANG='Fortran'>
@@ -5289,7 +5407,7 @@ module RSPPert_f
 
 end module RSPPert_f
 
-\nwnotused{RSPPert.F90}\nwendcode{}\nwbegincode{5}\sublabel{NWForw-RSPE.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPE.2-1}}}\moddef{RSPOverlap.F90~{\nwtagstyle{}\subpageref{NWForw-RSPE.2-1}}}\endmoddef
+\nwnotused{RSPPert.F90}\nwendcode{}\nwbegincode{5}\sublabel{NWForw-RSPE.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPE.3-1}}}\moddef{RSPOverlap.F90~{\nwtagstyle{}\subpageref{NWForw-RSPE.3-1}}}\endmoddef
 \LA{}OpenRSPLicenseFortran~{\nwtagstyle{}\subpageref{NWForw-OpeL-1}}\RA{}
 
 !!  2014-08-05, Bin Gao
@@ -5635,7 +5753,7 @@ end module RSPOverlap_f
 
 #undef OPENRSP_API_SRC
 
-\nwnotused{RSPOverlap.F90}\nwendcode{}\nwbegincode{6}\sublabel{NWForw-RSPE.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPE.3-1}}}\moddef{RSPOneOper.F90~{\nwtagstyle{}\subpageref{NWForw-RSPE.3-1}}}\endmoddef
+\nwnotused{RSPOverlap.F90}\nwendcode{}\nwbegincode{6}\sublabel{NWForw-RSPE.4-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPE.4-1}}}\moddef{RSPOneOper.F90~{\nwtagstyle{}\subpageref{NWForw-RSPE.4-1}}}\endmoddef
 \LA{}OpenRSPLicenseFortran~{\nwtagstyle{}\subpageref{NWForw-OpeL-1}}\RA{}
 
 !!  2014-08-02, Bin Gao
@@ -5919,7 +6037,7 @@ end module RSPOneOper_f
 
 #undef OPENRSP_API_SRC
 
-\nwnotused{RSPOneOper.F90}\nwendcode{}\nwbegincode{7}\sublabel{NWForw-RSPD.2-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPD.2-1}}}\moddef{RSPTwoper.F90~{\nwtagstyle{}\subpageref{NWForw-RSPD.2-1}}}\endmoddef
+\nwnotused{RSPOneOper.F90}\nwendcode{}\nwbegincode{7}\sublabel{NWForw-RSPD.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPD.3-1}}}\moddef{RSPTwoper.F90~{\nwtagstyle{}\subpageref{NWForw-RSPD.3-1}}}\endmoddef
 \LA{}OpenRSPLicenseFortran~{\nwtagstyle{}\subpageref{NWForw-OpeL-1}}\RA{}
 
 !!  2014-08-06, Bin Gao
@@ -6801,7 +6919,7 @@ end module RSPNucHamilton_f
 
 #undef OPENRSP_API_SRC
 
-\nwnotused{RSPNucHamilton.F90}\nwendcode{}\nwbegincode{10}\sublabel{NWForw-RSPD.3-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPD.3-1}}}\moddef{RSPSolver.F90~{\nwtagstyle{}\subpageref{NWForw-RSPD.3-1}}}\endmoddef
+\nwnotused{RSPNucHamilton.F90}\nwendcode{}\nwbegincode{10}\sublabel{NWForw-RSPD.4-1}\nwmargintag{{\nwtagstyle{}\subpageref{NWForw-RSPD.4-1}}}\moddef{RSPSolver.F90~{\nwtagstyle{}\subpageref{NWForw-RSPD.4-1}}}\endmoddef
 \LA{}OpenRSPLicenseFortran~{\nwtagstyle{}\subpageref{NWForw-OpeL-1}}\RA{}
 
 !!  2014-08-06, Bin Gao
@@ -7070,20 +7188,20 @@ QErrorCode f_api_OpenRSPDestroy(QVoid **open_rsp)
 \nwixlogsorted{c}{{OpenRSPAddTwoOper.c}{NWRSPv.3-OpeJ.3-1}{\nwixd{NWRSPv.3-OpeJ.3-1}}}%
 \nwixlogsorted{c}{{OpenRSPAddXCFun.c}{NWRSPt-OpeH.2-1}{\nwixd{NWRSPt-OpeH.2-1}}}%
 \nwixlogsorted{c}{{OpenRSPAssemble.c}{NWImpz-OpeH-1}{\nwixd{NWImpz-OpeH-1}}}%
-\nwixlogsorted{c}{{OpenRSPContext}{NWImpz-OpeE.2-1}{\nwixu{NWImpz-Ope9-1}\nwixd{NWImpz-OpeE.2-1}}}%
 \nwixlogsorted{c}{{OpenRSPCreate.c}{NWImpz-OpeF-1}{\nwixd{NWImpz-OpeF-1}}}%
 \nwixlogsorted{c}{{OpenRSPDestroy.c}{NWImpz-OpeG-1}{\nwixd{NWImpz-OpeG-1}}}%
 \nwixlogsorted{c}{{OpenRSP.F90}{NWForw-OpeB.2-1}{\nwixd{NWForw-OpeB.2-1}}}%
 \nwixlogsorted{c}{{OpenRSPFortranAdapter.c}{NWForw-OpeN.2-1}{\nwixd{NWForw-OpeN.2-1}}}%
 \nwixlogsorted{c}{{OpenRSPGetRSPFun.c}{NWRes12-OpeI-1}{\nwixd{NWRes12-OpeI-1}}}%
 \nwixlogsorted{c}{{OpenRSPGetResidue.c}{NWRest-OpeJ.4-1}{\nwixd{NWRest-OpeJ.4-1}}}%
-\nwixlogsorted{c}{{OpenRSPLicense}{NWImpz-OpeE-1}{\nwixu{NWImpz-Ope9-1}\nwixd{NWImpz-OpeE-1}\nwixu{NWImpz-OpeF-1}\nwixu{NWImpz-OpeH-1}\nwixu{NWImpz-OpeE.3-1}\nwixu{NWImpz-OpeG-1}\nwixu{NWRSP10-OpeP-1}\nwixu{NWRSP10-RSPH-1}\nwixu{NWRSP10-RSPF-1}\nwixu{NWRSP10-RSPH.2-1}\nwixu{NWRSP10-RSPE-1}\nwixu{NWRSP10-RSPL-1}\nwixu{NWRSP10-RSPP-1}\nwixu{NWRSP10-RSPG-1}\nwixu{NWRSPv-OpeJ-1}\nwixu{NWRSPv-RSPC-1}\nwixu{NWRSPv-RSPI-1}\nwixu{NWRSPv-RSPK-1}\nwixu{NWRSPv-RSPH.4-1}\nwixu{NWRSPv-RSPI.2-1}\nwixu{NWRSPv-RSPI.3-1}\nwixu{NWRSPv-RSPJ.2-1}\nwixu{NWRSPv.2-OpeJ.2-1}\nwixu{NWRSPv.2-RSPC.2-1}\nwixu{NWRSPv.2-RSPI.4-1}\nwixu{NWRSPv.2-RSPF.2-1}\nwixu{NWRSPv.2-RSPK.2-1}\nwixu{NWRSPv.2-RSPH.5-1}\nwixu{NWRSPv.2-RSPI.5-1}\nwixu{NWRSPv.2-RSPI.6-1}\nwixu{NWRSPv.2-RSPJ.3-1}\nwixu{NWRSPv.3-OpeJ.3-1}\nwixu{NWRSPv.3-RSPC.3-1}\nwixu{NWRSPv.3-RSPI.7-1}\nwixu{NWRSPv.3-RSPF.3-1}\nwixu{NWRSPv.3-RSPK.3-1}\nwixu{NWRSPv.3-RSPH.6-1}\nwixu{NWRSPv.3-RSPI.8-1}\nwixu{NWRSPv.3-RSPI.9-1}\nwixu{NWRSPv.3-RSPJ.4-1}\nwixu{NWRSPt-OpeH.2-1}\nwixu{NWRSPt-RSPA-1}\nwixu{NWRSPt-RSPG.2-1}\nwixu{NWRSPt-RSPD-1}\nwixu{NWRSPt-RSPI.A-1}\nwixu{NWRSPt-RSPF.4-1}\nwixu{NWRSPt-RSPG.3-1}\nwixu{NWRSPt-RSPG.4-1}\nwixu{NWRSPt-RSPH.7-1}\nwixu{NWRSPz-OpeN-1}\nwixu{NWRSPz-RSPG.5-1}\nwixu{NWRSPz-RSPM-1}\nwixu{NWRSPz-RSPO-1}\nwixu{NWRSPz-RSPL.2-1}\nwixu{NWRSPz-RSPW-1}\nwixu{NWRSPz-RSPR-1}\nwixu{NWRSPz-RSPN-1}\nwixu{NWRSPu-OpeR-1}\nwixu{NWRSPu-RSPB-1}\nwixu{NWRSPu-RSPH.8-1}\nwixu{NWRSPu-RSPJ.5-1}\nwixu{NWRSPu-RSPG.6-1}\nwixu{NWRSPu-RSPV-1}\nwixu{NWRSPu-RSPI.B-1}\nwixu{NWRes12-OpeI-1}\nwixu{NWRest-OpeJ.4-1}\nwixu{NWForw-OpeN.2-1}}}%
-\nwixlogsorted{c}{{OpenRSPLicenseFortran}{NWForw-OpeL-1}{\nwixd{NWForw-OpeL-1}\nwixu{NWForw-OpeB.2-1}\nwixu{NWForw-RSPB.2-1}\nwixu{NWForw-RSPE.2-1}\nwixu{NWForw-RSPE.3-1}\nwixu{NWForw-RSPD.2-1}\nwixu{NWForw-RSPC.4-1}\nwixu{NWForw-RSPI.C-1}\nwixu{NWForw-RSPD.3-1}}}%
+\nwixlogsorted{c}{{OpenRSPLicense}{NWImpz-OpeE-1}{\nwixu{NWImpz-Ope9-1}\nwixd{NWImpz-OpeE-1}\nwixu{NWImpz-OpeF-1}\nwixu{NWImpz-OpeH-1}\nwixu{NWImpz-OpeE.2-1}\nwixu{NWImpz-OpeG-1}\nwixu{NWRSP10-RSPH-1}\nwixu{NWRSP10-RSPE-1}\nwixu{NWRSP10-OpeP-1}\nwixu{NWRSP10-RSPF.2-1}\nwixu{NWRSP10-RSPH.3-1}\nwixu{NWRSP10-RSPE.2-1}\nwixu{NWRSP10-RSPL-1}\nwixu{NWRSP10-RSPP-1}\nwixu{NWRSP10-RSPG-1}\nwixu{NWRSPv-OpeJ-1}\nwixu{NWRSPv-RSPC-1}\nwixu{NWRSPv-RSPI-1}\nwixu{NWRSPv-RSPK-1}\nwixu{NWRSPv-RSPH.5-1}\nwixu{NWRSPv-RSPI.2-1}\nwixu{NWRSPv-RSPI.3-1}\nwixu{NWRSPv-RSPJ.2-1}\nwixu{NWRSPv.2-OpeJ.2-1}\nwixu{NWRSPv.2-RSPC.2-1}\nwixu{NWRSPv.2-RSPI.4-1}\nwixu{NWRSPv.2-RSPF.3-1}\nwixu{NWRSPv.2-RSPK.2-1}\nwixu{NWRSPv.2-RSPH.6-1}\nwixu{NWRSPv.2-RSPI.5-1}\nwixu{NWRSPv.2-RSPI.6-1}\nwixu{NWRSPv.2-RSPJ.3-1}\nwixu{NWRSPv.3-OpeJ.3-1}\nwixu{NWRSPv.3-RSPC.3-1}\nwixu{NWRSPv.3-RSPI.7-1}\nwixu{NWRSPv.3-RSPF.4-1}\nwixu{NWRSPv.3-RSPK.3-1}\nwixu{NWRSPv.3-RSPH.7-1}\nwixu{NWRSPv.3-RSPI.8-1}\nwixu{NWRSPv.3-RSPI.9-1}\nwixu{NWRSPv.3-RSPJ.4-1}\nwixu{NWRSPt-OpeH.2-1}\nwixu{NWRSPt-RSPA.2-1}\nwixu{NWRSPt-RSPG.2-1}\nwixu{NWRSPt-RSPD.2-1}\nwixu{NWRSPt-RSPI.A-1}\nwixu{NWRSPt-RSPF.5-1}\nwixu{NWRSPt-RSPG.3-1}\nwixu{NWRSPt-RSPG.4-1}\nwixu{NWRSPt-RSPH.8-1}\nwixu{NWRSPz-OpeN-1}\nwixu{NWRSPz-RSPG.5-1}\nwixu{NWRSPz-RSPM-1}\nwixu{NWRSPz-RSPO-1}\nwixu{NWRSPz-RSPL.2-1}\nwixu{NWRSPz-RSPW-1}\nwixu{NWRSPz-RSPR-1}\nwixu{NWRSPz-RSPN-1}\nwixu{NWRSPu-OpeR-1}\nwixu{NWRSPu-RSPB-1}\nwixu{NWRSPu-RSPH.9-1}\nwixu{NWRSPu-RSPJ.5-1}\nwixu{NWRSPu-RSPG.6-1}\nwixu{NWRSPu-RSPV-1}\nwixu{NWRSPu-RSPI.B-1}\nwixu{NWRes12-OpeI-1}\nwixu{NWRest-OpeJ.4-1}\nwixu{NWForw-OpeN.2-1}}}%
+\nwixlogsorted{c}{{OpenRSPLicenseFortran}{NWForw-OpeL-1}{\nwixd{NWForw-OpeL-1}\nwixu{NWForw-OpeB.2-1}\nwixu{NWForw-RSPB.2-1}\nwixu{NWForw-RSPE.3-1}\nwixu{NWForw-RSPE.4-1}\nwixu{NWForw-RSPD.3-1}\nwixu{NWForw-RSPC.4-1}\nwixu{NWForw-RSPI.C-1}\nwixu{NWForw-RSPD.4-1}}}%
 \nwixlogsorted{c}{{OpenRSPSetLinearRSPSolver.c}{NWRSPu-OpeR-1}{\nwixd{NWRSPu-OpeR-1}}}%
 \nwixlogsorted{c}{{OpenRSPSetNucHamilton.c}{NWRSPz-OpeN-1}{\nwixd{NWRSPz-OpeN-1}}}%
 \nwixlogsorted{c}{{OpenRSPSetOverlap.c}{NWRSPv-OpeJ-1}{\nwixd{NWRSPv-OpeJ-1}}}%
 \nwixlogsorted{c}{{OpenRSPSetPerturbations.c}{NWRSP10-OpeP-1}{\nwixd{NWRSP10-OpeP-1}}}%
-\nwixlogsorted{c}{{OpenRSPWrite.c}{NWImpz-OpeE.3-1}{\nwixd{NWImpz-OpeE.3-1}}}%
+\nwixlogsorted{c}{{OpenRSPStruct}{NWImpz-OpeD-1}{\nwixu{NWImpz-Ope9-1}\nwixd{NWImpz-OpeD-1}}}%
+\nwixlogsorted{c}{{OpenRSPWrite.c}{NWImpz-OpeE.2-1}{\nwixd{NWImpz-OpeE.2-1}}}%
 \nwixlogsorted{c}{{OpenRSP.h}{NWImpz-Ope9-1}{\nwixd{NWImpz-Ope9-1}}}%
 \nwixlogsorted{c}{{RSPNucHamiltonAssemble.c}{NWRSPz-RSPO-1}{\nwixd{NWRSPz-RSPO-1}}}%
 \nwixlogsorted{c}{{RSPNucHamiltonCreate.c}{NWRSPz-RSPM-1}{\nwixd{NWRSPz-RSPM-1}}}%
@@ -7093,56 +7211,61 @@ QErrorCode f_api_OpenRSPDestroy(QVoid **open_rsp)
 \nwixlogsorted{c}{{RSPNucHamiltonGetNumAtoms.c}{NWRSPz-RSPR-1}{\nwixd{NWRSPz-RSPR-1}}}%
 \nwixlogsorted{c}{{RSPNucHamiltonWrite.c}{NWRSPz-RSPL.2-1}{\nwixd{NWRSPz-RSPL.2-1}}}%
 \nwixlogsorted{c}{{RSPNucHamilton.h}{NWRSPz-RSPG.5-1}{\nwixd{NWRSPz-RSPG.5-1}}}%
-\nwixlogsorted{c}{{RSPOneOperAdd.c}{NWRSPv.2-RSPF.2-1}{\nwixd{NWRSPv.2-RSPF.2-1}}}%
+\nwixlogsorted{c}{{RSPOneOperAdd.c}{NWRSPv.2-RSPF.3-1}{\nwixd{NWRSPv.2-RSPF.3-1}}}%
 \nwixlogsorted{c}{{RSPOneOperAssemble.c}{NWRSPv.2-RSPK.2-1}{\nwixd{NWRSPv.2-RSPK.2-1}}}%
 \nwixlogsorted{c}{{RSPOneOperCreate.c}{NWRSPv.2-RSPI.4-1}{\nwixd{NWRSPv.2-RSPI.4-1}}}%
 \nwixlogsorted{c}{{RSPOneOperDestroy.c}{NWRSPv.2-RSPJ.3-1}{\nwixd{NWRSPv.2-RSPJ.3-1}}}%
-\nwixlogsorted{c}{{RSPOneOper.F90}{NWForw-RSPE.3-1}{\nwixd{NWForw-RSPE.3-1}}}%
+\nwixlogsorted{c}{{RSPOneOper.F90}{NWForw-RSPE.4-1}{\nwixd{NWForw-RSPE.4-1}}}%
 \nwixlogsorted{c}{{RSPOneOperGetExp.c}{NWRSPv.2-RSPI.6-1}{\nwixd{NWRSPv.2-RSPI.6-1}}}%
 \nwixlogsorted{c}{{RSPOneOperGetMat.c}{NWRSPv.2-RSPI.5-1}{\nwixd{NWRSPv.2-RSPI.5-1}}}%
-\nwixlogsorted{c}{{RSPOneOperWrite.c}{NWRSPv.2-RSPH.5-1}{\nwixd{NWRSPv.2-RSPH.5-1}}}%
+\nwixlogsorted{c}{{RSPOneOperWrite.c}{NWRSPv.2-RSPH.6-1}{\nwixd{NWRSPv.2-RSPH.6-1}}}%
 \nwixlogsorted{c}{{RSPOneOper.h}{NWRSPv.2-RSPC.2-1}{\nwixd{NWRSPv.2-RSPC.2-1}}}%
 \nwixlogsorted{c}{{RSPOverlapAssemble.c}{NWRSPv-RSPK-1}{\nwixd{NWRSPv-RSPK-1}}}%
-\nwixlogsorted{c}{{RSPOverlapContext}{NWRSPv-RSPH.3-1}{\nwixu{NWRSPv-RSPC-1}\nwixd{NWRSPv-RSPH.3-1}}}%
+\nwixlogsorted{c}{{RSPOverlapContext}{NWRSPv-RSPH.4-1}{\nwixu{NWRSPv-RSPC-1}\nwixd{NWRSPv-RSPH.4-1}}}%
 \nwixlogsorted{c}{{RSPOverlapCreate.c}{NWRSPv-RSPI-1}{\nwixd{NWRSPv-RSPI-1}}}%
 \nwixlogsorted{c}{{RSPOverlapDestroy.c}{NWRSPv-RSPJ.2-1}{\nwixd{NWRSPv-RSPJ.2-1}}}%
-\nwixlogsorted{c}{{RSPOverlap.F90}{NWForw-RSPE.2-1}{\nwixd{NWForw-RSPE.2-1}}}%
+\nwixlogsorted{c}{{RSPOverlap.F90}{NWForw-RSPE.3-1}{\nwixd{NWForw-RSPE.3-1}}}%
 \nwixlogsorted{c}{{RSPOverlapFunctions}{NWRSPv-RSPJ-1}{\nwixu{NWRSPv-RSPC-1}\nwixd{NWRSPv-RSPJ-1}}}%
 \nwixlogsorted{c}{{RSPOverlapGetExp.c}{NWRSPv-RSPI.3-1}{\nwixd{NWRSPv-RSPI.3-1}}}%
 \nwixlogsorted{c}{{RSPOverlapGetMat.c}{NWRSPv-RSPI.2-1}{\nwixd{NWRSPv-RSPI.2-1}}}%
-\nwixlogsorted{c}{{RSPOverlapWrite.c}{NWRSPv-RSPH.4-1}{\nwixd{NWRSPv-RSPH.4-1}}}%
+\nwixlogsorted{c}{{RSPOverlapWrite.c}{NWRSPv-RSPH.5-1}{\nwixd{NWRSPv-RSPH.5-1}}}%
 \nwixlogsorted{c}{{RSPOverlap.h}{NWRSPv-RSPC-1}{\nwixd{NWRSPv-RSPC-1}}}%
-\nwixlogsorted{c}{{RSPPertAssemble.c}{NWRSP10-RSPH.2-1}{\nwixd{NWRSP10-RSPH.2-1}}}%
-\nwixlogsorted{c}{{RSPPertCreate.c}{NWRSP10-RSPF-1}{\nwixd{NWRSP10-RSPF-1}}}%
+\nwixlogsorted{c}{{RSPPertAssemble.c}{NWRSP10-RSPH.3-1}{\nwixd{NWRSP10-RSPH.3-1}}}%
+\nwixlogsorted{c}{{RSPPertBasicTypes}{NWRSP10-RSPH.2-1}{\nwixu{NWRSP10-RSPH-1}\nwixd{NWRSP10-RSPH.2-1}\nwixd{NWRSP10-RSPH.2-2}\nwixd{NWRSP10-RSPH.2-3}}}%
+\nwixlogsorted{c}{{RSPPertCallback}{NWRSP10-RSPF-1}{\nwixu{NWRSP10-RSPH-1}\nwixd{NWRSP10-RSPF-1}}}%
+\nwixlogsorted{c}{{RSPPertCreate.c}{NWRSP10-RSPF.2-1}{\nwixd{NWRSP10-RSPF.2-1}}}%
 \nwixlogsorted{c}{{RSPPertDestroy.c}{NWRSP10-RSPG-1}{\nwixd{NWRSP10-RSPG-1}}}%
 \nwixlogsorted{c}{{RSPPert.F90}{NWForw-RSPB.2-1}{\nwixd{NWForw-RSPB.2-1}}}%
 \nwixlogsorted{c}{{RSPPertGetConcatenation.c}{NWRSP10-RSPP-1}{\nwixd{NWRSP10-RSPP-1}}}%
 \nwixlogsorted{c}{{RSPPertGetFromTuple.c}{NWRSP10-RSPL-1}{\nwixd{NWRSP10-RSPL-1}}}%
-\nwixlogsorted{c}{{RSPPertWrite.c}{NWRSP10-RSPE-1}{\nwixd{NWRSP10-RSPE-1}}}%
+\nwixlogsorted{c}{{RSPPertLabel.c}{NWRSP10-RSPE-1}{\nwixd{NWRSP10-RSPE-1}}}%
+\nwixlogsorted{c}{{RSPPertStruct}{NWRSP10-RSPD-1}{\nwixu{NWRSP10-RSPH-1}\nwixd{NWRSP10-RSPD-1}}}%
+\nwixlogsorted{c}{{RSPPertWrite.c}{NWRSP10-RSPE.2-1}{\nwixd{NWRSP10-RSPE.2-1}}}%
 \nwixlogsorted{c}{{RSPPerturbation.h}{NWRSP10-RSPH-1}{\nwixd{NWRSP10-RSPH-1}}}%
 \nwixlogsorted{c}{{RSPSolverAssemble.c}{NWRSPu-RSPJ.5-1}{\nwixd{NWRSPu-RSPJ.5-1}}}%
-\nwixlogsorted{c}{{RSPSolverCreate.c}{NWRSPu-RSPH.8-1}{\nwixd{NWRSPu-RSPH.8-1}}}%
+\nwixlogsorted{c}{{RSPSolverCreate.c}{NWRSPu-RSPH.9-1}{\nwixd{NWRSPu-RSPH.9-1}}}%
 \nwixlogsorted{c}{{RSPSolverDestroy.c}{NWRSPu-RSPI.B-1}{\nwixd{NWRSPu-RSPI.B-1}}}%
-\nwixlogsorted{c}{{RSPSolver.F90}{NWForw-RSPD.3-1}{\nwixd{NWForw-RSPD.3-1}}}%
+\nwixlogsorted{c}{{RSPSolver.F90}{NWForw-RSPD.4-1}{\nwixd{NWForw-RSPD.4-1}}}%
 \nwixlogsorted{c}{{RSPSolverGetLinearRSPSolution.c}{NWRSPu-RSPV-1}{\nwixd{NWRSPu-RSPV-1}}}%
 \nwixlogsorted{c}{{RSPSolverWrite.c}{NWRSPu-RSPG.6-1}{\nwixd{NWRSPu-RSPG.6-1}}}%
 \nwixlogsorted{c}{{RSPSolver.h}{NWRSPu-RSPB-1}{\nwixd{NWRSPu-RSPB-1}}}%
-\nwixlogsorted{c}{{RSPTwoOperAdd.c}{NWRSPv.3-RSPF.3-1}{\nwixd{NWRSPv.3-RSPF.3-1}}}%
+\nwixlogsorted{c}{{RSPTwoOperAdd.c}{NWRSPv.3-RSPF.4-1}{\nwixd{NWRSPv.3-RSPF.4-1}}}%
 \nwixlogsorted{c}{{RSPTwoOperAssemble.c}{NWRSPv.3-RSPK.3-1}{\nwixd{NWRSPv.3-RSPK.3-1}}}%
 \nwixlogsorted{c}{{RSPTwoOperCreate.c}{NWRSPv.3-RSPI.7-1}{\nwixd{NWRSPv.3-RSPI.7-1}}}%
 \nwixlogsorted{c}{{RSPTwoOperDestroy.c}{NWRSPv.3-RSPJ.4-1}{\nwixd{NWRSPv.3-RSPJ.4-1}}}%
 \nwixlogsorted{c}{{RSPTwoOperGetExp.c}{NWRSPv.3-RSPI.9-1}{\nwixd{NWRSPv.3-RSPI.9-1}}}%
 \nwixlogsorted{c}{{RSPTwoOperGetMat.c}{NWRSPv.3-RSPI.8-1}{\nwixd{NWRSPv.3-RSPI.8-1}}}%
-\nwixlogsorted{c}{{RSPTwoOperWrite.c}{NWRSPv.3-RSPH.6-1}{\nwixd{NWRSPv.3-RSPH.6-1}}}%
+\nwixlogsorted{c}{{RSPTwoOperWrite.c}{NWRSPv.3-RSPH.7-1}{\nwixd{NWRSPv.3-RSPH.7-1}}}%
 \nwixlogsorted{c}{{RSPTwoOper.h}{NWRSPv.3-RSPC.3-1}{\nwixd{NWRSPv.3-RSPC.3-1}}}%
-\nwixlogsorted{c}{{RSPTwoper.F90}{NWForw-RSPD.2-1}{\nwixd{NWForw-RSPD.2-1}}}%
-\nwixlogsorted{c}{{RSPXCFunAdd.c}{NWRSPt-RSPD-1}{\nwixd{NWRSPt-RSPD-1}}}%
+\nwixlogsorted{c}{{RSPTwoper.F90}{NWForw-RSPD.3-1}{\nwixd{NWForw-RSPD.3-1}}}%
+\nwixlogsorted{c}{{RSPXCFunAdd.c}{NWRSPt-RSPD.2-1}{\nwixd{NWRSPt-RSPD.2-1}}}%
 \nwixlogsorted{c}{{RSPXCFunAssemble.c}{NWRSPt-RSPI.A-1}{\nwixd{NWRSPt-RSPI.A-1}}}%
 \nwixlogsorted{c}{{RSPXCFunCreate.c}{NWRSPt-RSPG.2-1}{\nwixd{NWRSPt-RSPG.2-1}}}%
-\nwixlogsorted{c}{{RSPXCFunDestroy.c}{NWRSPt-RSPH.7-1}{\nwixd{NWRSPt-RSPH.7-1}}}%
+\nwixlogsorted{c}{{RSPXCFunDestroy.c}{NWRSPt-RSPH.8-1}{\nwixd{NWRSPt-RSPH.8-1}}}%
 \nwixlogsorted{c}{{RSPXCFun.F90}{NWForw-RSPC.4-1}{\nwixd{NWForw-RSPC.4-1}}}%
 \nwixlogsorted{c}{{RSPXCFunGetExp.c}{NWRSPt-RSPG.4-1}{\nwixd{NWRSPt-RSPG.4-1}}}%
 \nwixlogsorted{c}{{RSPXCFunGetMat.c}{NWRSPt-RSPG.3-1}{\nwixd{NWRSPt-RSPG.3-1}}}%
-\nwixlogsorted{c}{{RSPXCFunWrite.c}{NWRSPt-RSPF.4-1}{\nwixd{NWRSPt-RSPF.4-1}}}%
-\nwixlogsorted{c}{{RSPXCFun.h}{NWRSPt-RSPA-1}{\nwixd{NWRSPt-RSPA-1}}}%
+\nwixlogsorted{c}{{RSPXCFunWrite.c}{NWRSPt-RSPF.5-1}{\nwixd{NWRSPt-RSPF.5-1}}}%
+\nwixlogsorted{c}{{RSPXCFun.h}{NWRSPt-RSPA.2-1}{\nwixd{NWRSPt-RSPA.2-1}}}%
+\nwixlogsorted{c}{{RSPertAPIs}{NWRSP10-RSPA-1}{\nwixu{NWRSP10-RSPH-1}\nwixd{NWRSP10-RSPA-1}}}%
 

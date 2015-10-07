@@ -34,7 +34,7 @@ their codes:
 /* linear response equation solver */
 #include "RSPSolver.h"
 
-<<OpenRSPContext>>
+<<OpenRSPStruct>>
 
 <<OpenRSPAPIs>>
 
@@ -75,10 +75,10 @@ under the ``\LibName C support'') and the corresponding ``\LibName C API''.
 Each component will have its header file, implemented C [[struct]] and
 corresponding functions that can be called inside \LibName.
 
-The \LibName context [[OpenRSPContext]] will encapsulate all the implemented C
+The \LibName context [[OpenRSPStruct]] will encapsulate all the implemented C
 [[struct]]'s of the ``\LibName C support'' components into another C
 [[struct]]:
-<<OpenRSPContext>>=
+<<OpenRSPStruct>>=
 typedef struct {
     QBool assembled;               /* indicates if the OpenRSP context assembled */
     RSPPert *rsp_pert;             /* host program perturbations */
@@ -99,8 +99,8 @@ functionalities of \LibName:
 <<OpenRSPAPIs>>=
 extern QErrorCode OpenRSPCreate(OpenRSP*);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
-                                          const QInt,
-                                          const QInt*,
+                                          const QcPertInt,
+                                          const QcPertInt*,
                                           const QInt*,
                                           const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)

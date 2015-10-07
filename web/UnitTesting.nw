@@ -1,0 +1,1041 @@
+\section{Unit Testing\index{Unit testing}}
+\label{section-unit-testing}
+
+\subsection{Testing C APIs}
+
+In this section, we will implement unit testing of \LibName. For the time
+being, the unit testing has not covered all the APIs of \LibName:
+<<OpenRSPTest.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This is the header file of OpenRSP unit testing.
+
+  2014-06-30, Bin Gao:
+  * first version
+*/
+
+#if !defined(QCFUNDATA_TEST_H)
+#define QCFUNDATA_TEST_H
+
+#include <string.h>
+#include "OpenRSP.h"
+
+QcErrorCode QcBinomExpTest(FILE *fp_log);
+QcErrorCode QcMultExpTest(FILE *fp_log);
+QcErrorCode QcCombinTest(FILE *fp_log);
+
+#endif
+
+<<OpenRSPTest.c>>=
+/*
+  <<OpenRSPLicense>>
+
+   This file tests the APIs of OpenRSP library.
+
+   2014-06-30, Bin Gao
+   * first version
+*/
+
+#include "OpenRSPTest.h"
+
+/* <macrodef name='QCFUNDATA_TEST_EXECUTABLE'>
+     Build test suite as excutables.
+   </macrodef> */
+#if defined(QCFUNDATA_TEST_EXECUTABLE)
+QcErrorCode main(int argc, QcChar *argv[])
+{
+    FILE *fp_log=QCSTDOUT;  /* file pointer */
+    QcBool test_BinomExp;   /* if testing binomial expansion */
+    QcBool test_MultExp;    /* if testing multinomial expansion */
+    QcBool test_Combin;     /* if testing combinations */
+    QcInt iarg;             /* incremental recorder over input arguments */
+    QcErrorCode ierr;       /* error information */
+    /* finds out what to  test */
+    test_BinomExp = QCFALSE;
+    test_MultExp = QCFALSE;
+    test_Combin = QCFALSE;
+    for (iarg=1; iarg<argc; iarg++) {
+        if (strcmp(argv[iarg], "-BinomExp")==0) {
+            test_BinomExp = QCTRUE;
+        }
+        else if (strcmp(argv[iarg], "-MultExp")==0) {
+            test_MultExp = QCTRUE;
+        }
+        else if (strcmp(argv[iarg], "-Combin")==0) {
+            test_Combin = QCTRUE;
+        }
+        else if (strcmp(argv[iarg], "-All")==0) {
+            test_BinomExp = QCTRUE;
+            test_MultExp = QCTRUE;
+            test_Combin = QCTRUE;
+        }
+    }
+#else
+#include <stdarg.h>
+QcErrorCode OpenRSPTest(FILE *fp_log, ...)
+{
+    va_list argp;          /* saving the information of arguments */
+    QcChar *para;          /* optional arguments as characters */
+    QcBool test_BinomExp;  /* if testing binomial expansion */
+    QcBool test_MultExp;   /* if testing multinomial expansion */
+    QcBool test_Combin;    /* if testing combinations */
+    QcErrorCode ierr;      /* error information */
+    /* finds out what to test */
+    va_start(argp, fp_log);
+    test_BinomExp = QCFALSE;
+    test_MultExp = QCFALSE;
+    test_Combin = QCFALSE;
+    while (1) {
+        para = va_arg(argp, QcChar*);
+        if (strcmp(para, "/0")==0) {
+            break;
+        }
+        else if (strcmp(para, "-BinomExp")==0) {
+            test_BinomExp = QCTRUE;
+        }
+        else if (strcmp(para, "-MultExp")==0) {
+            test_MultExp = QCTRUE;
+        }
+        else if (strcmp(para, "-Combin")==0) {
+            test_Combin = QCTRUE;
+        }
+        else if (strcmp(para, "-All")==0) {
+            test_MultExp = QCTRUE;
+            test_Combin = QCTRUE;
+        }
+    }
+    /* cleans argp */
+    va_end(argp);
+#endif
+
+    if (test_BinomExp==QCTRUE) {
+        ierr = QcBinomExpTest(fp_log);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcBinomExpTest()");
+        fprintf(fp_log, "\nOpenRSPTest>> QcBinomExpTest() passed ...\n\n");
+    }
+
+    if (test_MultExp==QCTRUE) {
+        ierr = QcMultExpTest(fp_log);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpTest()");
+        fprintf(fp_log, "\nOpenRSPTest>> QcMultExpTest() passed ...\n\n");
+    }
+
+    if (test_Combin==QCTRUE) {
+        ierr = QcCombinTest(fp_log);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinTest()");
+        fprintf(fp_log, "\nOpenRSPTest>> QcCombinTest() passed ...\n\n");
+    }
+
+    return QCSUCCESS;
+}
+
+@ We first test the binomial expansion, where the binomial coefficients are
+compared with those in our pre-computed table (see
+Section~\ref{subsubsection-combination-rank}):
+<<QcBinomExpTest.c>>=
+/*
+  <<OpenRSPLicense>>
+
+   This file tests the APIs of binomial expansion.
+
+   2014-07-04, Bin Gao
+  * first version
+*/
+
+#include "OpenRSPTest.h"
+#include "QcBinomTable.h"
+
+QcErrorCode QcBinomExpTest(FILE *fp_log)
+{
+    QcInt size_n;        /* number $n$ */
+    QcInt k_combin;      /* number $k$ */
+    QcULong n_choose_k;  /* $\binom{n}{k}$ */
+    QcErrorCode ierr;    /* error information */
+    k_combin = 0;
+    size_n = 6;
+    ierr = QcBinomCoefficient(size_n, k_combin, &n_choose_k);
+    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcBinomCoefficient()");
+    if (n_choose_k!=1) {
+        fprintf(fp_log,
+                "QcBinomExpTest>> size of a set n %"QCINT_FMT"\n",
+                size_n);
+        fprintf(fp_log,
+                "QcBinomExpTest>> number k %"QCINT_FMT"\n",
+                k_combin);
+        fprintf(fp_log,
+                "QcBinomExpTest>> n choose k %lu\n",
+                n_choose_k);
+        QcErrorExit(QC_FILE_LINE, "invalid n choose k");
+    }
+    for (k_combin=1; k_combin<=QCBINOM_TAB_MAX_K; k_combin++) {
+        for (size_n=0; size_n<QCBINOM_TAB_MAX_N; size_n++) {
+            ierr = QcBinomCoefficient(size_n, k_combin, &n_choose_k);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcBinomCoefficient()");
+            if (n_choose_k!=QCBINOM_TABLE[k_combin-1][size_n]) {
+                fprintf(fp_log,
+                        "QcBinomExpTest>> size of a set n %"QCINT_FMT"\n",
+                        size_n);
+                fprintf(fp_log,
+                        "QcBinomExpTest>> number k %"QCINT_FMT"\n",
+                        k_combin);
+                fprintf(fp_log,
+                        "QcBinomExpTest>> n choose k %lu\n",
+                        n_choose_k);
+                fprintf(fp_log,
+                        "QcBinomExpTest>> result from pre-computed table %"QCINT_FMT"\n",
+                        QCBINOM_TABLE[k_combin-1][size_n]);
+                QcErrorExit(QC_FILE_LINE, "invalid n choose k");
+            }
+        }
+    }
+    fprintf(fp_log, "QcBinomExpTest>> QcBinomCoefficient() passed ...\n");
+    return QCSUCCESS;
+}
+
+@ The multinomial expansion will be tested by comparing each multinomial
+coefficient and powers of terms from \LibName and referenced results of the
+following multinomial expansion:
+\begin{equation}
+  (x_{0}+x_{1}+x_{2})^{6}
+  =\sum_{k_{0}+k_{1}+k_{2}=6}\binom{6}{k_{0},k_{1},k_{2}} %
+    x_{0}^{k_{0}}x_{1}^{k_{1}}x_{2}^{k_{2}},
+\end{equation}
+
+<<QcMultExpTest.c>>=
+/*
+  <<OpenRSPLicense>>
+
+  This file tests the APIs of multinomial expansion.
+
+  2014-09-08, Bin Gao
+  * first version
+*/
+
+#include "OpenRSPTest.h"
+
+QcErrorCode QcMultExpTest(FILE *fp_log)
+{
+    const QcInt SUM_POWER=6;      /* power of the sum */
+    const QcInt NUM_SUM_TERMS=3;  /* number of terms in the sum */
+    QcULong num_exp_terms;        /* number of terms in the expansion */
+    /* multinomial coefficients */
+    const QcULong TERM_MULT_COEF[] = {1,6,15,20,
+                                      15,6,1,6,
+                                      30,60,60,30,
+                                      6,15,60,90,
+                                      60,15,20,60,
+                                      60,20,15,30,
+                                      15,6,6,1};
+    /* powers of terms in the expansion */
+    const QcInt TERM_POWERS[][3] = {{6,0,0},{5,1,0},{4,2,0},{3,3,0},
+                                    {2,4,0},{1,5,0},{0,6,0},{5,0,1},
+                                    {4,1,1},{3,2,1},{2,3,1},{1,4,1},
+                                    {0,5,1},{4,0,2},{3,1,2},{2,2,2},
+                                    {1,3,2},{0,4,2},{3,0,3},{2,1,3},
+                                    {1,2,3},{0,3,3},{2,0,4},{1,1,4},
+                                    {0,2,4},{1,0,5},{0,1,5},{0,0,6}};
+    QcMultExp mult_exp;           /* context of multinomial expansion */
+    QcULong mult_coef;            /* multinomial coefficient */
+    QcInt powers[3];              /* powers of terms in the expansion */
+    QcULong iexp;                 /* incremental recorder of terms in the expansion */
+    QcErrorCode ierr;             /* error information */
+
+    ierr = QcMultExpCreate(&mult_exp, SUM_POWER, NUM_SUM_TERMS);
+    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpCreate()");
+    fprintf(fp_log, "QcMultExpTest>> QcMultExpCreate() passed ...\n");
+
+    ierr = QcMultExpGetSize(&mult_exp, &num_exp_terms);
+    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpGetSize()");
+    if (num_exp_terms!=28) {
+        fprintf(fp_log, "QcMultExpTest>> number of terms in the expansion 28\n");
+        fprintf(fp_log,
+                "QcMultExpTest>> number of terms from QcMultExpGetSize() %lu\n",
+                num_exp_terms);
+        QcErrorExit(QC_FILE_LINE, "QcMultExpGetSize() failed");
+    }
+    fprintf(fp_log, "QcMultExpTest>> QcMultExpGetSize() passed ...\n");
+
+    ierr = QcMultExpWrite(&mult_exp, fp_log);
+    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpWrite()");
+    fprintf(fp_log, "QcMultExpTest>> QcMultExpWrite() passed ...\n");
+
+    for (iexp=0; iexp<num_exp_terms; iexp++) {
+        ierr = QcMultExpGetTerm(&mult_exp, iexp, &mult_coef, powers);
+        if (mult_coef!=TERM_MULT_COEF[iexp]) {
+            fprintf(fp_log,
+                    "QcMultExpTest>> index of the expansion term %lu\n",
+                    iexp);
+            fprintf(fp_log,
+                    "QcMultExpTest>> multinomial coefficient %lu\n",
+                    TERM_MULT_COEF[iexp]);
+            fprintf(fp_log,
+                    "QcMultExpTest>> multinomial coefficient from QcMultExpGetTerm() %lu\n",
+                    mult_coef);
+            QcErrorExit(QC_FILE_LINE, "QcMultExpGetTerm() failed");
+        }
+        if (powers[0]!=TERM_POWERS[iexp][0] ||
+            powers[1]!=TERM_POWERS[iexp][1] ||
+            powers[2]!=TERM_POWERS[iexp][2]) {
+            fprintf(fp_log,
+                    "QcMultExpTest>> index of the expansion term %lu\n",
+                    iexp);
+            fprintf(fp_log,
+                    "powers of terms [%"QCINT_FMT", %"QCINT_FMT", %"QCINT_FMT"]\n",
+                    TERM_POWERS[iexp][0],
+                    TERM_POWERS[iexp][1],
+                    TERM_POWERS[iexp][2]);
+            fprintf(fp_log,
+                    "powers from QcMultExpGetTerm() [%"QCINT_FMT", %"QCINT_FMT", %"QCINT_FMT"]\n",
+                    powers[0],
+                    powers[1],
+                    powers[2]);
+            QcErrorExit(QC_FILE_LINE, "QcMultExpGetTerm() failed");
+        }
+    }
+    fprintf(fp_log, "QcMultExpTest>> QcMultExpGetTerm() passed ...\n");
+
+    /* <QcTest='QcMultExpDestroy'> */
+    ierr = QcMultExpDestroy(&mult_exp);
+    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpDestroy()");
+    fprintf(fp_log, "QcMultExpTest>> QcMultExpDestroy() passed ...\n");
+
+    return QCSUCCESS;
+}
+
+@ For APIs of combinations, we first test [[QcCombinCheckRank()]],
+[[QcCombinNext()]], [[QcCombinGetIdxFromRange()]], [[QcCombinGetIdxFromSet()]]
+and [[QcRankCombination()]] from the first combination to the last one for
+number $n=10$ and $20$; while only [[QcCombinNext()]] and
+[[QcCombinCheckRank()]] are tested for other $n$'s.
+
+Last we test [[QcCombinSetRank()]] and [[QcCombinSetK()]]:
+<<QcCombinTest.c>>=
+/*
+  <<OpenRSPLicense>>
+
+   This file tests the APIs of combinations.
+
+   2014-07-04, Bin Gao
+  * first version
+*/
+
+#include "OpenRSPTest.h"
+
+QcErrorCode QcCombinTest(FILE *fp_log)
+{
+    /* numbers $n$ and $k$ to test APIs of combinations */
+    const QcInt COMBIN_KN[][2] = {{10,1},{100,1},{200,1},{600,1},
+                                  {10,2},{100,2},{200,2},{600,2},
+                                  {10,3},{100,3},{200,3},{600,3},
+                                  {10,4},{100,4},{200,4},
+                                  {10,5},{80,5},
+                                  {10,6},{10,7},{10,8},{10,9},{10,10},
+                                  {20,1},{20,2},{20,3},{20,4},{20,5},
+                                  {20,6},{20,7},{20,8},{20,9},{20,10},
+                                  {20,11},{20,12},{20,13},{20,14},{20,15},
+                                  {20,16},{20,17},{20,18},{20,19},{20,20}};
+    const QcInt SIZE_COMBIN_KN = sizeof(COMBIN_KN)/sizeof(COMBIN_KN[0][0])/2;
+    QcInt size_n;           /* number $n$ */
+    QcULong n_choose_k;     /* $\binom{n}{k}$ */
+    QcCombin qc_combin;     /* context of combinations */
+    QcULong num_steps=1;    /* steps to move to get the next combination */
+    QcULong irank;          /* incremental recorder over combinations */
+    QcInt *idx_combin;      /* generated indices of $k$-combination */
+    QcInt *idx_set;         /* set of indices from which idx_combin will be generated */
+    QcULong rank_to_check;  /* rank got from APIs, to check */
+    QcInt inum;             /* incremental recorder */
+    QcErrorCode ierr;       /* error information */
+
+    /* loops over all testing combinations */
+    for (size_n=0; size_n<SIZE_COMBIN_KN; size_n++) {
+        ierr = QcCombinCreate(&qc_combin,
+                              COMBIN_KN[size_n][0],
+                              COMBIN_KN[size_n][1]);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCreate()");
+        n_choose_k = QcCombinGetNumCombin(&qc_combin);
+        fprintf(fp_log,
+                "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT") = %lu\n",
+                COMBIN_KN[size_n][0],
+                COMBIN_KN[size_n][1],
+                n_choose_k);
+        /* writes results for further checking */
+        ierr = QcCombinWrite(&qc_combin, fp_log);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+        /* it takes to much time on testing other number $n$'s */
+        if (COMBIN_KN[size_n][0]==10 || COMBIN_KN[size_n][0]==20) {
+            idx_combin = (QcInt *)malloc(COMBIN_KN[size_n][1]*sizeof(QcInt));
+            if (idx_combin==NULL) {
+                fprintf(fp_log,
+                        "QcCombinTest>> k-combination %"QCINT_FMT"\n",
+                        COMBIN_KN[size_n][1]);
+                QcErrorExit(QC_FILE_LINE, "allocates memory for idx_combin");
+            }
+            idx_set = (QcInt *)malloc(COMBIN_KN[size_n][0]*sizeof(QcInt));
+            if (idx_set==NULL) {
+                fprintf(fp_log,
+                        "QcCombinTest>> size of a set %"QCINT_FMT"\n",
+                        COMBIN_KN[size_n][0]);
+                QcErrorExit(QC_FILE_LINE, "allocates memory for idx_set");
+            }
+            for (inum=0; inum<COMBIN_KN[size_n][0]; inum++) {
+                idx_set[inum] = inum;
+            }
+            irank = 0;
+            /* checks the rank of the combination */
+            ierr = QcCombinCheckRank(&qc_combin);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+            /* <QcTest='QcCombinGetRank'> */
+            rank_to_check = QcCombinGetRank(&qc_combin);
+            if (rank_to_check!=irank) {
+                fprintf(fp_log,
+                        "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
+                        COMBIN_KN[size_n][0],
+                        COMBIN_KN[size_n][1]);
+                ierr = QcCombinWrite(&qc_combin, fp_log);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+                fprintf(fp_log,
+                        "QcCombinTest>> rank from QcCombinGetRank() %lu\n",
+                        rank_to_check);
+                fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
+                QcErrorExit(QC_FILE_LINE, "QcCombinGetRank() failed");
+            }
+            /* <QcTest='QcCombinGetIdxFromRange'> */
+            ierr = QcCombinGetIdxFromRange(&qc_combin, 1, idx_combin);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromRange()");
+            /* <QcTest='QcRankCombination'>
+                 Test one-based numbering
+               </QcTest>
+             */
+            ierr = QcRankCombination(COMBIN_KN[size_n][1],
+                                     idx_combin,
+                                     QCFALSE,
+                                     &rank_to_check);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
+            if (rank_to_check!=irank) {
+                fprintf(fp_log,
+                        "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
+                        COMBIN_KN[size_n][0],
+                        COMBIN_KN[size_n][1]);
+                ierr = QcCombinWrite(&qc_combin, fp_log);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+                fprintf(fp_log,
+                        "QcCombinTest>> indices from QcCombinGetIdxFromRange()");
+                for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
+                    fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
+                }
+                fprintf(fp_log, "\n");
+                fprintf(fp_log,
+                        "QcCombinTest>> rank from QcRankCombination() %lu\n",
+                        rank_to_check);
+                fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
+                QcErrorExit(QC_FILE_LINE, "above two APIs failed");
+            }
+            /* <QcTest='QcCombinGetIdxFromSet'> */
+            ierr = QcCombinGetIdxFromSet(&qc_combin, idx_set, idx_combin);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromSet()");
+            /* <QcTest='QcRankCombination'>
+                 Test zero-based numbering
+               </QcTest> */
+            ierr = QcRankCombination(COMBIN_KN[size_n][1],
+                                     idx_combin,
+                                     QCTRUE,
+                                     &rank_to_check);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
+            if (rank_to_check!=irank) {
+                fprintf(fp_log,
+                        "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
+                        COMBIN_KN[size_n][0],
+                        COMBIN_KN[size_n][1]);
+                ierr = QcCombinWrite(&qc_combin, fp_log);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+                fprintf(fp_log,
+                        "QcCombinTest>> indices from QcCombinGetIdxFromSet()");
+                for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
+                    fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
+                }
+                fprintf(fp_log, "\n");
+                fprintf(fp_log,
+                        "QcCombinTest>> rank from QcRankCombination() %lu\n",
+                        rank_to_check);
+                fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
+                QcErrorExit(QC_FILE_LINE, "above two APIs failed");
+            }
+            for (irank=1; irank<n_choose_k; irank++) {
+                /* moves to the next combination */
+                ierr = QcCombinNext(&qc_combin, num_steps);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinNext()");
+                /* checks the rank of the combination */
+                ierr = QcCombinCheckRank(&qc_combin);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+                /* <QcTest='QcCombinGetRank'> */
+                rank_to_check = QcCombinGetRank(&qc_combin);
+                if (rank_to_check!=irank) {
+                    fprintf(fp_log,
+                            "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
+                            COMBIN_KN[size_n][0],
+                            COMBIN_KN[size_n][1]);
+                    ierr = QcCombinWrite(&qc_combin, fp_log);
+                    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+                    fprintf(fp_log,
+                            "QcCombinTest>> rank from QcCombinGetRank() %lu\n",
+                            rank_to_check);
+                    fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
+                    QcErrorExit(QC_FILE_LINE, "QcCombinGetRank() failed");
+                }
+                /* <QcTest='QcCombinGetIdxFromRange'> */
+                ierr = QcCombinGetIdxFromRange(&qc_combin, 1, idx_combin);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromRange()");
+                /* <QcTest='QcRankCombination'>
+                     Test one-based numbering
+                   </QcTest> */
+                ierr = QcRankCombination(COMBIN_KN[size_n][1],
+                                         idx_combin,
+                                         QCFALSE,
+                                         &rank_to_check);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
+                if (rank_to_check!=irank) {
+                    fprintf(fp_log,
+                            "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
+                            COMBIN_KN[size_n][0],
+                            COMBIN_KN[size_n][1]);
+                    ierr = QcCombinWrite(&qc_combin, fp_log);
+                    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+                    fprintf(fp_log,
+                            "QcCombinTest>> indices from QcCombinGetIdxFromRange()");
+                    for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
+                        fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
+                    }
+                    fprintf(fp_log, "\n");
+                    fprintf(fp_log,
+                            "QcCombinTest>> rank from QcRankCombination() %lu\n",
+                            rank_to_check);
+                    fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
+                    QcErrorExit(QC_FILE_LINE, "above two APIs failed");
+                }
+                /* <QcTest='QcCombinGetIdxFromSet'> */
+                ierr = QcCombinGetIdxFromSet(&qc_combin, idx_set, idx_combin);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromSet()");
+                /* <QcTest='QcRankCombination'>
+                     Test zero-based numbering
+                   </QcTest> */
+                ierr = QcRankCombination(COMBIN_KN[size_n][1],
+                                         idx_combin,
+                                         QCTRUE,
+                                         &rank_to_check);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
+                if (rank_to_check!=irank) {
+                    fprintf(fp_log,
+                            "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
+                            COMBIN_KN[size_n][0],
+                            COMBIN_KN[size_n][1]);
+                    ierr = QcCombinWrite(&qc_combin, fp_log);
+                    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+                    fprintf(fp_log,
+                            "QcCombinTest>> indices from QcCombinGetIdxFromSet()");
+                    for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
+                        fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
+                    }
+                    fprintf(fp_log, "\n");
+                    fprintf(fp_log,
+                            "QcCombinTest>> rank from QcRankCombination() %lu\n",
+                            rank_to_check);
+                    fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
+                    QcErrorExit(QC_FILE_LINE, "above two APIs failed");
+                }
+            }
+            free(idx_combin);
+            idx_combin = NULL;
+            free(idx_set);
+            idx_set = NULL;
+        }
+        else {
+            /* checks the rank of the combination */
+            ierr = QcCombinCheckRank(&qc_combin);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+            for (irank=1; irank<n_choose_k; irank++) {
+                /* moves to the next combination */
+                ierr = QcCombinNext(&qc_combin, num_steps);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinNext()");
+                /* checks the rank of the combination */
+                ierr = QcCombinCheckRank(&qc_combin);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+            }
+        }
+        /* <QcTest='QcCombinSetRank'>
+             Sets the combination with rank 0
+           </QcTest> */
+        irank = 0;
+        ierr = QcCombinSetRank(&qc_combin, irank);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetRank()");
+        ierr = QcCombinCheckRank(&qc_combin);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+        /* <QcTest='QcCombinSetRank'>
+             Sets the combination with rank $1,\cdots$, $1000$ times
+           </QcTest> */
+        rank_to_check = n_choose_k/1000;
+        if (rank_to_check==0) rank_to_check = 1;
+        for (irank=1; irank<n_choose_k-1;) {
+            ierr = QcCombinSetRank(&qc_combin, irank);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetRank()");
+            ierr = QcCombinCheckRank(&qc_combin);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+            irank += rank_to_check;
+        }
+        /* <QcTest='QcCombinSetRank'>
+             Sets the combination with the last rank
+           </QcTest> */
+        ierr = QcCombinSetRank(&qc_combin, n_choose_k-1);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetRank()");
+        ierr = QcCombinCheckRank(&qc_combin);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+        /* <QcTest='QcCombinSetK'> */
+        if (COMBIN_KN[size_n][1]>1) {
+            ierr = QcCombinSetK(&qc_combin, COMBIN_KN[size_n][1]-1);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetK()");
+            n_choose_k = QcCombinGetNumCombin(&qc_combin);
+            fprintf(fp_log,
+                    "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT"): %lu\n",
+                    COMBIN_KN[size_n][0],
+                    COMBIN_KN[size_n][1]-1,
+                    n_choose_k);
+            /* writes results for further checking */
+            ierr = QcCombinWrite(&qc_combin, fp_log);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
+            /* checks the rank of the combination */
+            ierr = QcCombinCheckRank(&qc_combin);
+            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+            for (irank=1; irank<n_choose_k; irank++) {
+                /* moves to the next combination */
+                ierr = QcCombinNext(&qc_combin, num_steps);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinNext()");
+                /* checks the rank of the combination */
+                ierr = QcCombinCheckRank(&qc_combin);
+                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
+            };
+        }
+        ierr = QcCombinDestroy(&qc_combin);
+        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinDestroy()");
+        fprintf(fp_log, "\n");
+    }
+    fprintf(fp_log, "QcCombinTest>> APIs of combinations passed ...\n");
+
+    return QCSUCCESS;
+}
+@
+
+\subsection{Testing Fortran APIs}
+
+For the time being, we only test binomial expansion and combinations for
+the Fortran APIs:
+<<OpenRSPTest.F90>>=
+!! <QcLang='Fortran'>
+<<OpenRSPLicenseFortran>>
+!!
+!! This file tests the Fortran APIs of OpenRSP library.
+!!
+!! 2014-06-29, Bin Gao
+!! * first version
+
+#if defined(QCFUNDATA_TEST_EXECUTABLE)
+    program OpenRSPTest_f
+        use OpenRSP_f, only: QCSTDOUT
+        implicit none
+        integer(kind=4), parameter :: io_log=QCSTDOUT  !standard output I/O unit number
+#else
+    subroutine OpenRSPTest_f(io_log,        &
+                               test_BinomExp, &
+                               test_Combin)
+        implicit none
+#endif
+#if defined(QCFUNDATA_TEST_EXECUTABLE)
+        integer(kind=4) num_arg                   !number of user given arguments
+        integer(kind=4) iarg                      !incremental recorder over arguments
+        character(9) argv                         !user given arguments
+        logical(kind=4) :: test_BinomExp=.false.  !if testing binomial expansion
+        logical(kind=4) :: test_Combin=.false.    !if testing combinations
+        ! gets the number of user given arguments
+        num_arg = iargc()
+        ! finds out what to test
+        do iarg = 1, num_arg
+            call getarg(iarg, argv)
+            select case(trim(argv))
+            case("-BinomExp")
+                test_BinomExp = .true.
+            case("-Combin")
+                test_Combin = .true.
+            case("-All")
+                test_BinomExp = .true.
+                test_Combin = .true.
+            end select
+        end do
+#else
+        integer(kind=4), intent(in) :: io_log
+        logical(kind=4), intent(in) :: test_BinomExp
+        logical(kind=4), intent(in) :: test_Combin
+#endif
+
+        if (test_BinomExp) then
+            call QcBinomExpTest_f(io_log)
+            write(io_log,100) "QcBinomExpTest_f() passed ..."
+            write(io_log,"()")
+        end if
+
+        if (test_Combin) then
+            call QcCombinTest_f(io_log)
+            write(io_log,100) "QcCombinTest_f() passed ..."
+            write(io_log,"()")
+        end if
+
+100     format("OpenRSPTest_f>> ",A)
+#if defined(QCFUNDATA_TEST_EXECUTABLE)
+    end program OpenRSPTest_f
+#else
+    end subroutine OpenRSPTest_f
+#endif
+@ and here are the individual tests:
+<<QcBinomExpTest.F90>>=
+<<OpenRSPLicenseFortran>>
+!! This file tests the Fortran APIs of binomial expansion.
+!!
+!! 2014-07-05, Bin Gao
+!! * first version
+
+#define QCFUNDATA_F_TEST_SRC "QcBinomExpTest.F90"
+
+    subroutine QcBinomExpTest_f(io_log)
+        use OpenRSP_f, only: QcInt,              &
+                               QcLong,             &
+                               QcErrorCode,        &
+                               QcErrorCheckCode_f, &
+                               QcErrorExit_f,      &
+                               QcBinomCoefficient_f
+        ! pre-computed table of binomial coefficients
+        use QcBinomTable_f, only: QCBINOM_TAB_MAX_K, &
+                                  QCBINOM_TAB_MAX_N, &
+                                  QCBINOM_TABLE
+        implicit none
+        integer(kind=4), intent(in) :: io_log
+        integer(kind=QcInt) size_n       !number $n$
+        integer(kind=QcInt) k_combin     !number $k$
+        integer(kind=QcLong) n_choose_k  !$\binom{n}{k}$
+        integer(kind=QcErrorCode) ierr   !error information
+        k_combin = 0
+        size_n = 6
+        ierr = QcBinomCoefficient_f(size_n, k_combin, n_choose_k)
+        call QcErrorCheckCode_f(io_log, ierr, __LINE__, QCFUNDATA_F_TEST_SRC)
+        if (n_choose_k/=1) then
+            write(io_log,100) "size of a set n", size_n
+            write(io_log,100) "number k", k_combin
+            write(io_log,100) "n choose k", n_choose_k
+            call QcErrorExit_f(io_log, __LINE__, QCFUNDATA_F_TEST_SRC)
+        end if
+        do k_combin = 1, QCBINOM_TAB_MAX_K
+            do size_n = 0, QCBINOM_TAB_MAX_N-1
+                ierr = QcBinomCoefficient_f(size_n, k_combin, n_choose_k)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                if (n_choose_k/=QCBINOM_TABLE(size_n+(k_combin-1)*QCBINOM_TAB_MAX_N+1)) then
+                    write(io_log,100) "size of a set n", size_n
+                    write(io_log,100) "number k", k_combin
+                    write(io_log,100) "n choose k", n_choose_k
+                    write(io_log,100) "result from pre-computed table", &
+                                      QCBINOM_TABLE(size_n+(k_combin-1)*QCBINOM_TAB_MAX_N+1)
+                    call QcErrorExit_f(io_log, __LINE__, QCFUNDATA_F_TEST_SRC)
+                end if
+            end do
+        end do
+        write(io_log,100) "QcBinomCoefficient_f() passed ..."
+        return
+100     format("QcBinomExpTest_f>> ",A,I16)
+    end subroutine QcBinomExpTest_f
+
+#undef QCFUNDATA_F_TEST_SRC
+
+<<QcCombinTest.F90>>=
+<<OpenRSPLicenseFortran>>
+!! This file tests the Fortran APIs of combinations.
+!!
+!! 2014-07-05, Bin Gao
+!! * first version
+
+#define QCFUNDATA_F_TEST_SRC "QcCombinTest.F90"
+
+    subroutine QcCombinTest_f(io_log)
+        use OpenRSP_f, only: QcInt,                  &
+                               QcLong,                 &
+                               QcErrorCode,            &
+                               QcErrorCheckCode_f,     &
+                               QcErrorExit_f,          &
+                               QcCombin,               &
+                               QcCombinCreate_f,       &
+                               QcCombinSetK_f,         &
+                               QcCombinGetNumCombin_f, &
+                               QcCombinNext_f,         &
+                               QcCombinCheckRank_f,    &
+                               QcCombinSetRank_f,      &
+                               QcCombinWrite_f,        &
+                               QcCombinDestroy_f
+        implicit none
+        integer(kind=4), intent(in) :: io_log
+        integer(kind=QcInt) size_n       !number $n$
+        integer(kind=QcLong) n_choose_k  !$\binom{n}{k}$
+        ! numbers $n$ and $k$ to test APIs of combinations
+        integer(kind=QcInt), parameter :: SIZE_COMBIN_KN=42
+        integer(kind=QcInt), parameter :: COMBIN_KN(2*SIZE_COMBIN_KN)= &
+            (/10,1, 100,1, 200,1, 600,1,                               &
+              10,2, 100,2, 200,2, 600,2,                               &
+              10,3, 100,3, 200,3, 600,3,                               &
+              10,4, 100,4, 200,4,                                      &
+              10,5, 80,5,                                              &
+              10,6, 10,7, 10,8, 10,9, 10,10,                           &
+              20,1, 20,2, 20,3, 20,4, 20,5,                            &
+              20,6, 20,7, 20,8, 20,9, 20,10,                           &
+              20,11, 20,12, 20,13, 20,14, 20,15,                       &
+              20,16, 20,17, 20,18, 20,19, 20,20/)
+        type(QcCombin) qc_combin             !context of combinations
+        integer(kind=QcLong) :: num_steps=1  !steps to move to get the next combination
+        integer(kind=QcLong) irank           !incremental recorder over combinations
+        integer(kind=QcLong) step_rank       !step size of rank for testing
+        integer(kind=QcErrorCode) ierr       !error information
+
+        do size_n = 1, SIZE_COMBIN_KN
+            ierr = QcCombinCreate_f(qc_combin,             &
+                                    COMBIN_KN(2*size_n-1), &
+                                    COMBIN_KN(2*size_n))
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            n_choose_k = QcCombinGetNumCombin_f(qc_combin)
+            write(io_log,110) COMBIN_KN(2*size_n-1), &
+                              COMBIN_KN(2*size_n),   &
+                              n_choose_k
+            ! writes results for further checking
+            ierr = QcCombinWrite_f(qc_combin, io_log)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            ! checks the rank of the combination
+            ierr = QcCombinCheckRank_f(qc_combin)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            do irank = 1, n_choose_k-1
+                ! moves to the next combination
+                ierr = QcCombinNext_f(qc_combin, num_steps)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                ! checks the rank of the combination
+                ierr = QcCombinCheckRank_f(qc_combin)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+            end do
+            ! <QcTest='QcCombinSetRank_f'>
+            !   Sets the combination with rank 0
+            ! </QcTest>
+            irank = 0
+            ierr = QcCombinSetRank_f(qc_combin, irank)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            ierr = QcCombinCheckRank_f(qc_combin)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            ! <QcTest='QcCombinSetRank_f'>
+            !   Sets the combination with rank $1,\cdots$, $1000$ times
+            ! </QcTest>
+            step_rank = n_choose_k/1000
+            if (step_rank==0) step_rank=1
+            irank = 1
+            do while (irank<n_choose_k-1)
+                ierr = QcCombinSetRank_f(qc_combin, irank)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                ierr = QcCombinCheckRank_f(qc_combin)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                irank = irank+step_rank
+            end do
+            ! <QcTest='QcCombinSetRank_f'>
+            !   Sets the combination with the last rank
+            ! </QcTest>
+            ierr = QcCombinSetRank_f(qc_combin, n_choose_k-1)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            ierr = QcCombinCheckRank_f(qc_combin)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+            ! <QcTest='QcCombinSetK_f'>
+            if (COMBIN_KN(2*size_n)>1) then
+                ierr = QcCombinSetK_f(qc_combin, COMBIN_KN(2*size_n)-1)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                n_choose_k = QcCombinGetNumCombin_f(qc_combin)
+                write(io_log,110) COMBIN_KN(2*size_n-1), &
+                                  COMBIN_KN(2*size_n)-1, &
+                                  n_choose_k
+                ! writes results for further checking
+                ierr = QcCombinWrite_f(qc_combin, io_log)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                ! checks the rank of the combination
+                ierr = QcCombinCheckRank_f(qc_combin)
+                call QcErrorCheckCode_f(io_log,   &
+                                        ierr,     &
+                                        __LINE__, &
+                                        QCFUNDATA_F_TEST_SRC)
+                do irank = 1, n_choose_k-1
+                    ! moves to the next combination
+                    ierr = QcCombinNext_f(qc_combin, num_steps)
+                     call QcErrorCheckCode_f(io_log,   &
+                                             ierr,     &
+                                             __LINE__, &
+                                             QCFUNDATA_F_TEST_SRC)
+                    ! checks the rank of the combination
+                    ierr = QcCombinCheckRank_f(qc_combin)
+                    call QcErrorCheckCode_f(io_log,   &
+                                            ierr,     &
+                                            __LINE__, &
+                                            QCFUNDATA_F_TEST_SRC)
+                end do
+            end if
+            ierr = QcCombinDestroy_f(qc_combin)
+            call QcErrorCheckCode_f(io_log,   &
+                                    ierr,     &
+                                    __LINE__, &
+                                    QCFUNDATA_F_TEST_SRC)
+        end do
+        write(io_log,100) "APIs of combinations passed ..."
+
+        return
+100     format("QcCombinTest_f>> ",A,I16)
+110     format("QcCombinTest_f>> combination (",I6,",",I6,"): ",I16)
+    end subroutine QcCombinTest_f
+
+#undef QCFUNDATA_F_TEST_SRC
+
+@ Similar to the C part of \LibName, we have the pre-computed table of binomial
+coefficients for Fortran APIs:
+<<QcBinomTable.F90>>=
+<<OpenRSPLicenseFortran>>
+!! <module name='QcBinomTable_f' author='Bin Gao' date='2014-07-05'>
+!!   Pre-computed table of binomial coefficients [k][n] $=\binom{n}{k+1}$,
+!!   where $1\le k\le$ QCBINOM_TAB_MAX_K, and $0\le n<$ QCBINOM_TAB_MAX_N
+!! </module>
+module QcBinomTable_f
+    use QcBasicTypes_f, only: QcInt
+    implicit none
+    integer(kind=QcInt), parameter, public :: QCBINOM_TAB_MAX_N = 120
+    integer(kind=QcInt), parameter, public :: QCBINOM_TAB_MAX_K = 4
+    integer(kind=QcInt), parameter, public ::                                &
+        QCBINOM_TABLE(QCBINOM_TAB_MAX_N*QCBINOM_TAB_MAX_K) = (/              &
+        ! k = 1
+        0,          1,          2,          3,          4,          5,       &
+        6,          7,          8,          9,          10,         11,      &
+        12,         13,         14,         15,         16,         17,      &
+        18,         19,         20,         21,         22,         23,      &
+        24,         25,         26,         27,         28,         29,      &
+        30,         31,         32,         33,         34,         35,      &
+        36,         37,         38,         39,         40,         41,      &
+        42,         43,         44,         45,         46,         47,      &
+        48,         49,         50,         51,         52,         53,      &
+        54,         55,         56,         57,         58,         59,      &
+        60,         61,         62,         63,         64,         65,      &
+        66,         67,         68,         69,         70,         71,      &
+        72,         73,         74,         75,         76,         77,      &
+        78,         79,         80,         81,         82,         83,      &
+        84,         85,         86,         87,         88,         89,      &
+        90,         91,         92,         93,         94,         95,      &
+        96,         97,         98,         99,         100,        101,     &
+        102,        103,        104,        105,        106,        107,     &
+        108,        109,        110,        111,        112,        113,     &
+        114,        115,        116,        117,        118,        119,     &
+        ! k = 2
+        0,          0,          1,          3,          6,          10,      &
+        15,         21,         28,         36,         45,         55,      &
+        66,         78,         91,         105,        120,        136,     &
+        153,        171,        190,        210,        231,        253,     &
+        276,        300,        325,        351,        378,        406,     &
+        435,        465,        496,        528,        561,        595,     &
+        630,        666,        703,        741,        780,        820,     &
+        861,        903,        946,        990,        1035,       1081,    &
+        1128,       1176,       1225,       1275,       1326,       1378,    &
+        1431,       1485,       1540,       1596,       1653,       1711,    &
+        1770,       1830,       1891,       1953,       2016,       2080,    &
+        2145,       2211,       2278,       2346,       2415,       2485,    &
+        2556,       2628,       2701,       2775,       2850,       2926,    &
+        3003,       3081,       3160,       3240,       3321,       3403,    &
+        3486,       3570,       3655,       3741,       3828,       3916,    &
+        4005,       4095,       4186,       4278,       4371,       4465,    &
+        4560,       4656,       4753,       4851,       4950,       5050,    &
+        5151,       5253,       5356,       5460,       5565,       5671,    &
+        5778,       5886,       5995,       6105,       6216,       6328,    &
+        6441,       6555,       6670,       6786,       6903,       7021,    &
+        ! k = 3
+        0,          0,          0,          1,          4,          10,      &
+        20,         35,         56,         84,         120,        165,     &
+        220,        286,        364,        455,        560,        680,     &
+        816,        969,        1140,       1330,       1540,       1771,    &
+        2024,       2300,       2600,       2925,       3276,       3654,    &
+        4060,       4495,       4960,       5456,       5984,       6545,    &
+        7140,       7770,       8436,       9139,       9880,       10660,   &
+        11480,      12341,      13244,      14190,      15180,      16215,   &
+        17296,      18424,      19600,      20825,      22100,      23426,   &
+        24804,      26235,      27720,      29260,      30856,      32509,   &
+        34220,      35990,      37820,      39711,      41664,      43680,   &
+        45760,      47905,      50116,      52394,      54740,      57155,   &
+        59640,      62196,      64824,      67525,      70300,      73150,   &
+        76076,      79079,      82160,      85320,      88560,      91881,   &
+        95284,      98770,      102340,     105995,     109736,     113564,  &
+        117480,     121485,     125580,     129766,     134044,     138415,  &
+        142880,     147440,     152096,     156849,     161700,     166650,  &
+        171700,     176851,     182104,     187460,     192920,     198485,  &
+        204156,     209934,     215820,     221815,     227920,     234136,  &
+        240464,     246905,     253460,     260130,     266916,     273819,  &
+        ! k = 4
+        0,          0,          0,          0,          1,          5,       &
+        15,         35,         70,         126,        210,        330,     &
+        495,        715,        1001,       1365,       1820,       2380,    &
+        3060,       3876,       4845,       5985,       7315,       8855,    &
+        10626,      12650,      14950,      17550,      20475,      23751,   &
+        27405,      31465,      35960,      40920,      46376,      52360,   &
+        58905,      66045,      73815,      82251,      91390,      101270,  &
+        111930,     123410,     135751,     148995,     163185,     178365,  &
+        194580,     211876,     230300,     249900,     270725,     292825,  &
+        316251,     341055,     367290,     395010,     424270,     455126,  &
+        487635,     521855,     557845,     595665,     635376,     677040,  &
+        720720,     766480,     814385,     864501,     916895,     971635,  &
+        1028790,    1088430,    1150626,    1215450,    1282975,    1353275, &
+        1426425,    1502501,    1581580,    1663740,    1749060,    1837620, &
+        1929501,    2024785,    2123555,    2225895,    2331890,    2441626, &
+        2555190,    2672670,    2794155,    2919735,    3049501,    3183545, &
+        3321960,    3464840,    3612280,    3764376,    3921225,    4082925, &
+        4249575,    4421275,    4598126,    4780230,    4967690,    5160610, &
+        5359095,    5563251,    5773185,    5989005,    6210820,    6438740, &
+        6672876,    6913340,    7160245,    7413705,    7673835,    7940751/)
+end module QcBinomTable_f
+
