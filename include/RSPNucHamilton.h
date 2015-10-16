@@ -30,11 +30,11 @@
 #if !defined(RSP_NUCHAMILTON_H)
 #define RSP_NUCHAMILTON_H
 
-/* QcMatrix library */
 #include "qcmatrix.h"
+#include "RSPPerturbation.h"
 
-/* callback function to get the nuclear contributions */
 typedef QVoid (*GetNucContrib)(const QInt,
+                               const QcPertInt*,
                                const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                QVoid*,
@@ -42,24 +42,35 @@ typedef QVoid (*GetNucContrib)(const QInt,
                                const QInt,
                                QReal*);
 
-/* context of nuclear Hamiltonian */
 typedef struct {
-    QInt num_pert;                  /* number of different perturbation labels that
-                                       can act as perturbations on the nuclear Hamiltonian */
-    QInt *pert_labels;              /* all the different perturbation labels */
-    QInt *pert_max_orders;          /*  maximum allowed order of each perturbation (label) */
+    QInt num_pert_lab;              /* number of different perturbation labels
+                                       that can act as perturbations on the
+                                       nuclear Hamiltonian */
+    QInt nuc_num_pert;              /* number of perturbations on the
+                                       nuclear Hamiltonian, only used for
+                                       callback functions */
+    QInt *pert_max_orders;          /* allowed maximal order of a perturbation
+                                       described by exactly one of these
+                                       different labels */
+    QInt *nuc_pert_orders;          /* orders of perturbations on the
+                                       nuclear Hamiltonian, only used for
+                                       callback functions */
+    QcPertInt *pert_labels;         /* all the different perturbation labels */
+    QcPertInt *nuc_pert_labels;     /* labels of perturbations on the
+                                       nuclear Hamiltonian, only used for
+                                       callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback function context */
+    QVoid *user_ctx;                /* user-defined callback-function context */
 #endif
-    GetNucContrib get_nuc_contrib;  /* user specified function for getting nuclear contributions */
+    GetNucContrib get_nuc_contrib;  /* user-specified function for calculating
+                                       contribution from the nuclear Hamiltonian */
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
     QInt num_atoms;
 } RSPNucHamilton;
 
-/* functions related to the nuclear contributions */
 extern QErrorCode RSPNucHamiltonCreate(RSPNucHamilton*,
                                        const QInt,
-                                       const QInt*,
+                                       const QcPertInt*,
                                        const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                        QVoid*,
@@ -67,11 +78,11 @@ extern QErrorCode RSPNucHamiltonCreate(RSPNucHamilton*,
                                        const GetNucContrib,
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
                                        const QInt);
-extern QErrorCode RSPNucHamiltonAssemble(RSPNucHamilton*);
+extern QErrorCode RSPNucHamiltonAssemble(RSPNucHamilton*,const RSPPert*);
 extern QErrorCode RSPNucHamiltonWrite(const RSPNucHamilton*,FILE*);
-extern QErrorCode RSPNucHamiltonGetContributions(const RSPNucHamilton*,
+extern QErrorCode RSPNucHamiltonGetContributions(RSPNucHamilton*,
                                                  const QInt,
-                                                 const QInt*,
+                                                 const QcPertInt*,
                                                  const QInt,
                                                  QReal*);
 extern QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton*);

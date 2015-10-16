@@ -30,10 +30,8 @@
 #if !defined(RSP_SOLVER_H)
 #define RSP_SOLVER_H
 
-/* QcMatrix library */
 #include "qcmatrix.h"
 
-/* callback function of linear response equation solver */
 typedef QVoid (*GetLinearRSPSolution)(const QInt,
                                       const QReal*,
                                       const QInt,
@@ -43,15 +41,15 @@ typedef QVoid (*GetLinearRSPSolution)(const QInt,
 #endif
                                       QcMat*[]);
 
-/* context of linear response equation solver */
 typedef struct {
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                              /* user-defined callback function context */
+    QVoid *user_ctx;                               /* user-defined callback-function
+                                                      context */
 #endif
-    GetLinearRSPSolution get_linear_rsp_solution; /* user specified function of linear response equation solver */
+    GetLinearRSPSolution get_linear_rsp_solution;  /* user-specified function of
+                                                      linear response equation solver */
 } RSPSolver;
 
-/* functions related to the linear response equation solver */
 extern QErrorCode RSPSolverCreate(RSPSolver*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                   QVoid*,

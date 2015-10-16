@@ -1,202 +1,26 @@
-\section{XC Functionals}
-\label{section-OpenRSP-XCFun}
-
-Users can use the following API to add different XC functionals:
-<<OpenRSP.c>>=
-/* <function name='OpenRSPAddXCFun' author='Bin Gao' date='2015-06-23'>
-     Add an XC functional to the Hamiltonian
-     <param name='open_rsp' direction='inout'>
-       The context of response theory calculations
-     </param>
-     <param name='num_pert_lab' direction='in'>
-       Number of all different perturbation labels that can act on the
-       XC functional
-     </param>
-     <param name='pert_labels' direction='in'>
-       All the different perturbation labels involved
-     </param>
-     <param name='pert_max_orders' direction='in'>
-       Allowed maximal order of a perturbation described by exactly one of
-       the above different labels
-     </param>
-     <param name='user_ctx' direction='in'>
-       User-defined callback function context
-     </param>
-     <param name='get_xc_fun_mat' direction='in'>
-       User-specified callback function to calculate integral matrices of
-       XC functional as well as its derivatives with respect to
-       different perturbations
-     </param>
-     <param name='get_xc_fun_exp' direction='in'>
-       User-specified callback function to calculate expectation values of
-       XC functional as well as its derivatives with respect to
-       different perturbations
-     </param>
-     <return>Error information</return>
-   </function> */
-QErrorCode OpenRSPAddXCFun(OpenRSP *open_rsp,
-                           const QInt num_pert_lab,
-                           const QcPertInt *pert_labels,
-                           const QInt *pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                           QVoid *user_ctx,
-#endif
-                           const GetXCFunMat get_xc_fun_mat,
-                           const GetXCFunExp get_xc_fun_exp)
-{
-    QErrorCode ierr;  /* error information */
-    /* creates the linked list of XC functionals */
-    if (open_rsp->xc_fun==NULL) {
-        ierr = RSPXCFunCreate(&open_rsp->xc_fun,
-                              num_pert_lab,
-                              pert_labels,
-                              pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                              user_ctx,
-#endif
-                              get_xc_fun_mat,
-                              get_xc_fun_exp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunCreate()");
-    }
-    /* adds the XC functional to the linked list */
-    else {
-        ierr = RSPXCFunAdd(open_rsp->xc_fun,
-                           num_pert_lab,
-                           pert_labels,
-                           pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                           user_ctx,
-#endif
-                           get_xc_fun_mat,
-                           get_xc_fun_exp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunAdd()");
-    }
-    return QSUCCESS;
-}
-
-@ The following header file defines all quantities we need for XC functionals.
-Types [[GetXCFunMat]] and [[GetXCFunpExp]] define the requirements of two
-callback functions from the host program to calculate respectively the integral
-matrices and expectation values of an XC functional and its derivatives.
-<<RSPXCFun.h>>=
 /*
-  <<OpenRSPLicense>>
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
 
-  <header name='RSPXCFun.h' author='Bin Gao' date='2014-08-06'>
-    The header file of XC functionals used inside OpenRSP
-  </header>
-*/
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
 
-#if !defined(RSP_XCFUN_H)
-#define RSP_XCFUN_H
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
 
-#include "qcmatrix.h"
-#include "RSPPerturbation.h"
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-typedef QVoid (*GetXCFunMat)(const QInt,
-                             const QcPertInt*,
-                             const QInt,
-                             const QInt,
-                             const QInt*,
-                             const QInt,
-                             QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
-#endif
-                             const QInt,
-                             QcMat*[]);
-typedef QVoid (*GetXCFunExp)(const QInt,
-                             const QcPertInt*,
-                             const QInt,
-                             const QInt,
-                             const QInt*,
-                             const QInt,
-                             QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
-#endif
-                             const QInt,
-                             QReal*);
-
-<<RSPXCFunStruct>>
-
-<<RSPXCFunAPIs>>
-
-#endif
-@ Here we use a linked list for the context of XC functionals:
-<<RSPXCFunStruct>>=
-typedef struct RSPXCFun RSPXCFun;
-struct RSPXCFun {
-    QInt num_pert_lab;           /* number of different perturbation labels
-                                    that can act as perturbations on the
-                                    XC functional */
-    QInt xc_len_tuple;           /* length of perturbation tuple on the
-                                    XC functional, only used for
-                                    callback functions */
-    QInt *pert_max_orders;       /* allowed maximal order of a perturbation
-                                    described by exactly one of these
-                                    different labels */
-    QcPertInt *pert_labels;      /* all the different perturbation labels */
-    QcPertInt *xc_pert_tuple;    /* perturbation tuple on the XC functional,
-                                    only used for callback functions */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;             /* user-defined callbac-kfunction context */
-#endif
-    GetXCFunMat get_xc_fun_mat;  /* user-specified function for calculating
-                                    integral matrices */
-    GetXCFunExp get_xc_fun_exp;  /* user-specified function for calculating
-                                    expectation values */
-    RSPXCFun *next_xc;           /* pointer to the next XC functional */
-};
-@ and the functions related to the XC functionals:
-<<RSPXCFunAPIs>>=
-extern QErrorCode RSPXCFunCreate(RSPXCFun**,
-                                 const QInt,
-                                 const QcPertInt*,
-                                 const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                 QVoid*,
-#endif
-                                 const GetXCFunMat,
-                                 const GetXCFunExp);
-extern QErrorCode RSPXCFunAdd(RSPXCFun*,
-                              const QInt,
-                              const QcPertInt*,
-                              const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                              QVoid*,
-#endif
-                              const GetXCFunMat,
-                              const GetXCFunExp);
-extern QErrorCode RSPXCFunAssemble(RSPXCFun*,const RSPPert*);
-extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
-extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
-                                 const QInt,
-                                 const QcPertInt*,
-                                 const QInt,
-                                 const QInt,
-                                 const QInt*,
-                                 const QInt,
-                                 QcMat*[],
-                                 const QInt,
-                                 QcMat*[]);
-extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
-                                 const QInt,
-                                 const QcPertInt*,
-                                 const QInt,
-                                 const QInt,
-                                 const QInt*,
-                                 const QInt,
-                                 QcMat*[],
-                                 const QInt,
-                                 QReal*);
-extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
-@
-
-The functions are implemented as follows:
-<<RSPXCFun.c>>=
-/*
-  <<OpenRSPLicense>>
 */
 
 #include "RSPXCFun.h"
@@ -333,10 +157,6 @@ QErrorCode RSPXCFunCreate(RSPXCFun **xc_fun,
     return QSUCCESS;
 }
 
-@ As shown here, we allow for an XC functional that does not depend on any
-peraturbation---[[num_pert_lab==0]], i.e. any perturbed integral matrix and
-expectation value of this XC functional is zero.
-<<RSPXCFun.c>>=
 /* <function name='RSPXCFunAdd'
              attr='private'
              author='Bin Gao'

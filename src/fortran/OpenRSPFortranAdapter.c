@@ -28,7 +28,7 @@
 
 #include "OpenRSP.h"
 
-QErrorCode f_api_OpenRSPCreate(QVoid **open_rsp)
+QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;
@@ -66,7 +66,7 @@ QErrorCode f_api_OpenRSPCreate(QVoid **open_rsp)
 //    return ierr;
 //}
 
-QErrorCode f_api_OpenRSPDestroy(QVoid **open_rsp)
+QErrorCode OpenRSPDestroyFortranAdapter(QVoid **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;

@@ -77,7 +77,7 @@ corresponding functions that can be called inside \LibName.
 
 The \LibName context [[OpenRSPStruct]] will encapsulate all the implemented C
 [[struct]]'s of the ``\LibName C support'' components into another C
-[[struct]]:
+[[struct]]\index{[[struct OpenRSP]]}:
 <<OpenRSPStruct>>=
 typedef struct {
     QBool assembled;               /* indicates if the OpenRSP context assembled */
@@ -99,7 +99,7 @@ functionalities of \LibName:
 <<OpenRSPAPIs>>=
 extern QErrorCode OpenRSPCreate(OpenRSP*);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
-                                          const QcPertInt,
+                                          const QInt,
                                           const QcPertInt*,
                                           const QInt*,
                                           const QInt*,
@@ -110,7 +110,7 @@ extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
 /*extern QErrorCode OpenRSPSetWaveFunction(OpenRSP*,const ElecWavType);*/
 extern QErrorCode OpenRSPSetOverlap(OpenRSP*,
                                     const QInt,
-                                    const QInt*,
+                                    const QcPertInt*,
                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                     QVoid*,
@@ -119,7 +119,7 @@ extern QErrorCode OpenRSPSetOverlap(OpenRSP*,
                                     const GetOverlapExp);
 extern QErrorCode OpenRSPAddOneOper(OpenRSP*,
                                     const QInt,
-                                    const QInt*,
+                                    const QcPertInt*,
                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                     QVoid*,
@@ -128,7 +128,7 @@ extern QErrorCode OpenRSPAddOneOper(OpenRSP*,
                                     const GetOneOperExp);
 extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
                                     const QInt,
-                                    const QInt*,
+                                    const QcPertInt*,
                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                     QVoid*,
@@ -137,7 +137,7 @@ extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
                                     const GetTwoOperExp);
 extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
                                   const QInt,
-                                  const QInt*,
+                                  const QcPertInt*,
                                   const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                   QVoid*,
@@ -146,7 +146,7 @@ extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
                                   const GetXCFunExp);
 extern QErrorCode OpenRSPSetNucHamilton(OpenRSP*,
                                         const QInt,
-                                        const QInt*,
+                                        const QcPertInt*,
                                         const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                         QVoid*,
@@ -167,7 +167,7 @@ extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
                                    const QcMat*,
                                    const QInt,
                                    const QInt*,
-                                   const QInt*,
+                                   const QcPertInt*,
                                    const QInt*,
                                    const QReal*,
                                    const QInt*,
@@ -183,7 +183,7 @@ extern QErrorCode OpenRSPGetResidue(OpenRSP*,
                                     QcMat*[],
                                     const QInt,
                                     const QInt*,
-                                    const QInt*,
+                                    const QcPertInt*,
                                     const QInt*,
                                     const QInt*,
                                     const QInt*,
@@ -196,7 +196,7 @@ extern QErrorCode OpenRSPDestroy(OpenRSP*);
 @ Here, we have also introduced the type of electronic wave function, but which
 has not been implemented.
 
-Last but not least, the directive
+Last but not least, the directive\index{User-defined context}
 \begin{Verbatim}
 #if defined(OPENRSP_C_USER_CONTEXT)
                                             QVoid*,
@@ -216,8 +216,8 @@ APIs will be implemented in the following sections. These four APIs
 respectively create, assemble, write and destroy the \LibName context.
 
 The API [[OpenRSPCreate()]] is very simple as it only initializes the pointers
-of the context:
-<<OpenRSPCreate.c>>=
+of the context\index{[[OpenRSPCreate()]]}:
+<<OpenRSP.c>>=
 /*
   <<OpenRSPLicense>>
 */
@@ -247,13 +247,10 @@ QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
 @ The other three APIs are also easy to implement, as they only invoke
 functions of the ``\LibName C support'' part to respectively assemble, write
 and destroy the corresponding C [[struct]]'s:
-<<OpenRSPAssemble.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSP.h"
-
+\index{[[OpenRSPAssemble()]]}
+\index{[[OpenRSPWrite()]]}
+\index{[[OpenRSPDestroy()]]}
+<<OpenRSP.c>>=
 /* <function name='OpenRSPAssemble' author='Bin Gao' date='2014-07-30'>
      Assembles the OpenRSP context
      <param name='open_rsp' direction='inout'>The OpenRSP context</param>
@@ -261,42 +258,45 @@ and destroy the corresponding C [[struct]]'s:
    </function> */
 QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
 {
-    QErrorCode ierr;
+    QErrorCode ierr;  /* error information */
     open_rsp->assembled = QFALSE;
     /* assembles host program perturbations */
     if (open_rsp->rsp_pert!=NULL) {
         ierr = RSPPertAssemble(open_rsp->rsp_pert);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertAssemble()");
     }
-#if defined(OPENRSP_PERTURBATION_FREE)
     else {
-        QErrorExit(FILE_AND_LINE, "perturbations should be set by OpenRSPSetPerturbations()");
+        QErrorExit(FILE_AND_LINE, "perturbations not set by OpenRSPSetPerturbations()");
     }
-#endif
 /*FIXME: to implement ierr = xxAssemble(open_rsp->elec_eom); */
     /* assembles overlap integrals */
     if (open_rsp->overlap!=NULL) {
-        ierr = RSPOverlapAssemble(open_rsp->overlap);
+        ierr = RSPOverlapAssemble(open_rsp->overlap,
+                                  open_rsp->rsp_pert);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapAssemble()");
     }
     /* assembles one-electron operators */
     if (open_rsp->one_oper!=NULL) {
-        ierr = RSPOneOperAssemble(open_rsp->one_oper);
+        ierr = RSPOneOperAssemble(open_rsp->one_oper,
+                                  open_rsp->rsp_pert);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOneOperAssemble()");
     }
     /* assembles two-electron operators */
     if (open_rsp->two_oper!=NULL) {
-        ierr = RSPTwoOperAssemble(open_rsp->two_oper);
+        ierr = RSPTwoOperAssemble(open_rsp->two_oper,
+                                  open_rsp->rsp_pert);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPTwoOperAssemble()");
     }
     /* assembles XC functionals */
     if (open_rsp->xc_fun!=NULL) {
-        ierr = RSPXCFunAssemble(open_rsp->xc_fun);
+        ierr = RSPXCFunAssemble(open_rsp->xc_fun,
+                                open_rsp->rsp_pert);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunAssemble()");
     }
     /* assembles nuclear Hamiltonian */
     if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonAssemble(open_rsp->nuc_hamilton);
+        ierr = RSPNucHamiltonAssemble(open_rsp->nuc_hamilton,
+                                      open_rsp->rsp_pert);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonAssemble()");
     }
     /* assembles linear response equation solver */
@@ -305,20 +305,11 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverAssemble()");
     }
     else {
-        QErrorExit(FILE_AND_LINE, "linear response equation solver should be set by OpenRSPSetSolver()");
+        QErrorExit(FILE_AND_LINE, "solver not set by OpenRSPSetSolver()");
     }
     open_rsp->assembled = QTRUE;
     return QSUCCESS;
 }
-@ Here, we will remove the directive [[#if defined(OPENRSP_PERTURBATION_FREE)]]
-after the \textbf{perturbation free scheme} implemented.
-
-<<OpenRSPWrite.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSP.h"
 
 /* <function name='OpenRSPWrite' author='Bin Gao' date='2014-07-30'>
      Writes the OpenRSP context
@@ -376,13 +367,6 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
     fclose(fp_rsp);
     return QSUCCESS;
 }
-
-<<OpenRSPDestroy.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSP.h"
 
 /* <function name='OpenRSPDestroy' author='Bin Gao' date='2014-01-28'>
      Destroys the OpenRSP context

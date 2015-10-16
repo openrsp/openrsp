@@ -1,164 +1,26 @@
-\section{Nuclear Hamiltonian}
-\label{section-OpenRSP-NucHamilton}
-
-Users can use the following API to set nuclear Hamiltonian (nuclear repulsion
-and nuclei-field interaction):
-<<OpenRSP.c>>=
-/* <function name='OpenRSPSetNucHamilton' author='Bin Gao' date='2015-02-12'>
-     Set the context of nuclear Hamiltonian
-     <param name='open_rsp' direction='inout'>
-       The context of response theory calculations
-     </param>
-     <param name='num_pert_lab' direction='in'>
-       Number of all different perturbation labels that can act on the
-       nuclear Hamiltonian
-     </param>
-     <param name='pert_labels' direction='in'>
-       All the different perturbation labels involved
-     </param>
-     <param name='pert_max_orders' direction='in'>
-       Allowed maximal order of a perturbation described by exactly one of
-       the above different labels
-     </param>
-     <param name='user_ctx' direction='in'>
-       User-defined callback function context
-     </param>
-     <param name='get_nuc_contrib' direction='in'>
-       User-specified callback function to calculate nuclear contributions
-     </param>
-     <param name='num_atoms' direction='in'>
-       Number of atoms
-     </param>
-     <return>Error information</return>
-   </function> */
-QErrorCode OpenRSPSetNucHamilton(OpenRSP *open_rsp,
-                                 const QInt num_pert_lab,
-                                 const QcPertInt *pert_labels,
-                                 const QInt *pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                 QVoid *user_ctx,
-#endif
-
-                                 const GetNucContrib get_nuc_contrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                 const QInt num_atoms)
-{
-    QErrorCode ierr;  /* error information */
-    /* creates the context of nuclear Hamiltonian */
-    if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonDestroy(open_rsp->nuc_hamilton);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonDestroy()");
-    }
-    else {
-        open_rsp->nuc_hamilton = (RSPNucHamilton *)malloc(sizeof(RSPNucHamilton));
-        if (open_rsp->nuc_hamilton==NULL) {
-            QErrorExit(FILE_AND_LINE, "allocates memory for nuclear Hamiltonian");
-        }
-    }
-    ierr = RSPNucHamiltonCreate(open_rsp->nuc_hamilton,
-                                num_pert_lab,
-                                pert_labels,
-                                pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                user_ctx,
-#endif
-                                get_nuc_contrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                num_atoms);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonCreate()");
-    return QSUCCESS;
-}
-
-@ The header file of the nuclear Hamiltonian is:
-
-@ The following header file defines all quantities we need for the nuclear
-Hamiltonian. Type [[GetNucContrib]] defines the requirements of the
-host-program's callback function to calculate the contribution of nuclear
-Hamiltonian and its derivatives.
-<<RSPNucHamilton.h>>=
 /*
-  <<OpenRSPLicense>>
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
 
-  <header name='RSPNucHamilton.h' author='Bin Gao' date='2014-12-11'>
-    The header file of nuclear Hamiltonian used inside OpenRSP
-  </header>
-*/
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
 
-#if !defined(RSP_NUCHAMILTON_H)
-#define RSP_NUCHAMILTON_H
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
 
-#include "qcmatrix.h"
-#include "RSPPerturbation.h"
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-typedef QVoid (*GetNucContrib)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
-#endif
-                               const QInt,
-                               QReal*);
-
-<<RSNucHamiltonStruct>>
-
-<<RSPNucHamiltonAPIs>>
-
-#endif
-@ The context of nuclear Hamiltonian is:
-<<RSNucHamiltonStruct>>=
-typedef struct {
-    QInt num_pert_lab;              /* number of different perturbation labels
-                                       that can act as perturbations on the
-                                       nuclear Hamiltonian */
-    QInt nuc_num_pert;              /* number of perturbations on the
-                                       nuclear Hamiltonian, only used for
-                                       callback functions */
-    QInt *pert_max_orders;          /* allowed maximal order of a perturbation
-                                       described by exactly one of these
-                                       different labels */
-    QInt *nuc_pert_orders;          /* orders of perturbations on the
-                                       nuclear Hamiltonian, only used for
-                                       callback functions */
-    QcPertInt *pert_labels;         /* all the different perturbation labels */
-    QcPertInt *nuc_pert_labels;     /* labels of perturbations on the
-                                       nuclear Hamiltonian, only used for
-                                       callback functions */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback-function context */
-#endif
-    GetNucContrib get_nuc_contrib;  /* user-specified function for calculating
-                                       contribution from the nuclear Hamiltonian */
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-    QInt num_atoms;
-} RSPNucHamilton;
-@ and the functions related to the nuclear Hamiltonian:
-<<RSPNucHamiltonAPIs>>=
-extern QErrorCode RSPNucHamiltonCreate(RSPNucHamilton*,
-                                       const QInt,
-                                       const QcPertInt*,
-                                       const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                       QVoid*,
-#endif
-                                       const GetNucContrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                       const QInt);
-extern QErrorCode RSPNucHamiltonAssemble(RSPNucHamilton*,const RSPPert*);
-extern QErrorCode RSPNucHamiltonWrite(const RSPNucHamilton*,FILE*);
-extern QErrorCode RSPNucHamiltonGetContributions(RSPNucHamilton*,
-                                                 const QInt,
-                                                 const QcPertInt*,
-                                                 const QInt,
-                                                 QReal*);
-extern QErrorCode RSPNucHamiltonDestroy(RSPNucHamilton*);
-/*FIXME: RSPNucHamiltonGetNumAtoms() to be removed after perturbation free scheme implemented*/
-extern QErrorCode RSPNucHamiltonGetNumAtoms(const RSPNucHamilton*,QInt*);
-@
-
-The functions are implemented as follows:
-<<RSPNucHamilton.c>>=
-/*
-  <<OpenRSPLicense>>
 */
 
 #include "RSPNucHamilton.h"
@@ -293,11 +155,6 @@ QErrorCode RSPNucHamiltonCreate(RSPNucHamilton *nuc_hamilton,
     return QSUCCESS;
 }
 
-@ As shown here, we allow for an nuclear Hamiltonian that does not depend on
-any peraturbation---[[num_pert_lab==0]], i.e. any perturbed contribution of
-this nuclear Hamiltonian is zero.
-
-<<RSPNucHamilton.c>>=
 /* <function name='RSPNucHamiltonAssemble'
              attr='private'
              author='Bin Gao'

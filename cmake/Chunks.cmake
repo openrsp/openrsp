@@ -9,66 +9,17 @@ set(OPENRSP_HEADER_CHUNKS
     RSPSolver.h
     OpenRSP.h)
 set(OPENRSP_C_CHUNKS
-    OpenRSPCreate.c
-    OpenRSPAssemble.c
-    OpenRSPWrite.c
-    OpenRSPDestroy.c
-    OpenRSPSetPerturbations.c
-    RSPPertLabel.c
-    RSPPertCreate.c
-    RSPPertAssemble.c
-    RSPPertWrite.c
-    RSPPertGetFromTuple.c
-    RSPPertGetConcatenation.c
-    RSPPertDestroy.c
-    OpenRSPSetOverlap.c
-    RSPOverlapCreate.c
-    RSPOverlapAssemble.c
-    RSPOverlapWrite.c
-    RSPOverlapGetMat.c
-    RSPOverlapGetExp.c
-    RSPOverlapDestroy.c
-    OpenRSPAddOneOper.c
-    RSPOneOperCreate.c
-    RSPOneOperAdd.c
-    RSPOneOperAssemble.c
-    RSPOneOperWrite.c
-    RSPOneOperGetMat.c
-    RSPOneOperGetExp.c
-    RSPOneOperDestroy.c
-    OpenRSPAddTwoOper.c
-    RSPTwoOperCreate.c
-    RSPTwoOperAdd.c
-    RSPTwoOperAssemble.c
-    RSPTwoOperWrite.c
-    RSPTwoOperGetMat.c
-    RSPTwoOperGetExp.c
-    RSPTwoOperDestroy.c
-    OpenRSPAddXCFun.c
-    RSPXCFunCreate.c
-    RSPXCFunAdd.c
-    RSPXCFunAssemble.c
-    RSPXCFunWrite.c
-    RSPXCFunGetMat.c
-    RSPXCFunGetExp.c
-    RSPXCFunDestroy.c
-    OpenRSPSetNucHamilton.c
-    RSPNucHamiltonCreate.c
-    RSPNucHamiltonAssemble.c
-    RSPNucHamiltonWrite.c
-    RSPNucHamiltonGetContributions.c
-    RSPNucHamiltonGetNumAtoms.c
-    RSPNucHamiltonDestroy.c
-    OpenRSPSetLinearRSPSolver.c
-    RSPSolverCreate.c
-    RSPSolverAssemble.c
-    RSPSolverWrite.c
-    RSPSolverGetLinearRSPSolution.c
-    RSPSolverDestroy.c
-    OpenRSPGetRSPFun.c
-    OpenRSPGetResidue.c)
+    RSPPerturbation.c
+    RSPOverlap.c
+    RSPOneOper.c
+    RSPTwoOper.c
+    RSPXCFun.c
+    RSPNucHamilton.c
+    RSPSolver.c
+    OpenRSP.c)
 set(OPENRSP_FORTRAN_CHUNKS
-    RSPPert.F90
+    RSPPertBasicTypes.F90
+    RSPPerturbation.F90
     RSPOverlap.F90
     RSPOneOper.F90
     RSPTwoper.F90

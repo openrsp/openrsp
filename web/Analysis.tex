@@ -378,31 +378,333 @@ As such, the numbers of different components of perturbations and their ranks
 are totally decided by the host program---that is the
 \textbf{perturbation free scheme}.
 
-\subsubsection{Internal Perturbation Labels}
+%\subsubsection{Internal Perturbation Labels}
+%
+%As mentioned in our notations and convention, perturbations even with the same
+%perturbation label, are different if they have different frequencies. Inside
+%\LibName, we need to distinguish this kind of different perturbations---same
+%perturbation label but different frequencies.
+%
+%We therefore use internal perturbation labels inside \LibName. To avoid
+%introduce new \texttt{struct} for perturbation labels, we use unsigned integers
+%for both host program's perturbation labels and \LibName internal perturbation
+%labels.
+%
+%\begin{figure}[hbt]
+%  \centering
+%  \scalebox{0.9}{\input{figures/perturbation_label.tex}}
+%  \caption{Perturbation labels in \LibName.}
+%  \label{fig-perturbation-label}
+%\end{figure}
+%
+%As illustrated in Figure~\ref{fig-perturbation-label}, if one uses lower $16$
+%bits for a host program's label and higher $16$ bits for a frequency in the
+%$32$-bit unsigned integers, and if both the host program's label and the
+%frequency are marked from $0$ up to $2^{16}-1=65535$, \LibName can thus treat
+%$2^{16}=65536$ different perturbation labels and different frequencies, which
+%is enough for the current response theory calculations. If one uses $64$-bit
+%unsigned integers, \LibName can then treat more perturbation labels and
+%frequencies.
 
-As mentioned in our notations and convention, perturbations even with the same
-perturbation label, are different if they have different frequencies. Inside
-\LibName, we need to distinguish this kind of different perturbations---same
-perturbation label but different frequencies.
+%CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
-We therefore use internal perturbation labels inside \LibName. To avoid
-introduce new \texttt{struct} for perturbation labels, we use unsigned integers
-for both host program's perturbation labels and \LibName internal perturbation
-labels.
+%\subsection{Internal Perturbation Labels}
+%\label{subsection-OpenRSP-intern-pert}
+%
+%As described in Figure~\ref{fig-perturbation-label}, we will use an unsigned
+%integer to represent perturbation labels for both the host program and the
+%internal use of \LibName. The type of this unsigned integer
+%[[QcPertInt]]\index{[[QcPertInt]]} is defined as follows:
+%<<RSPPertBasicTypes>>=
+%/* <macrodef name='OPENRSP_PERT_SHORT_INT'>
+%     Represent perturbation labels using unsigned short integers
+%   </macrodef> */
+%#if defined(OPENRSP_PERT_SHORT_INT)
+%/* <datatype name='QcPertInt'>
+%     Data type of integers to represent perturbation labels
+%   </datatype>
+%   <constant name='QCPERTINT_MAX'>
+%     Maximal value of an object of the <QcPertInt> type
+%   </constant>
+%   <constant name='QCPERTINT_FMT'>
+%     Format string of <QcPertInt> type
+%   </constant> */
+%typedef unsigned short QcPertInt;
+%#define QCPERTINT_MAX USHRT_MAX
+%#define QCPERTINT_FMT "hu"
+%/* <macrodef name='OPENRSP_PERT_INT'>
+%     Represent perturbation labels using unsigned integers
+%   </macrodef> */
+%#elif defined(OPENRSP_PERT_INT)
+%typedef unsigned int QcPertInt;
+%#define QCPERTINT_MAX UINT_MAX
+%#define QCPERTINT_FMT "u"
+%#else
+%typedef unsigned long QcPertInt;
+%#define QCPERTINT_MAX ULONG_MAX
+%#define QCPERTINT_FMT "lu"
+%#endif
+%@ Here we allow users to choose either
+%[[unsigned short]]\index{[[OPENRSP_PERT_SHORT_INT]]},
+%[[unsigned int]]\index{[[OPENRSP_PERT_INT]]}, or [[unsigned long]] for the
+%type [[QcPertInt]]. We also define a constant
+%[[QCPERTINT_MAX]]\index{[[QCPERTINT_MAX]]} for the maximal value of an object
+%of the [[QcPertInt]] type, and a format string
+%([[QCPERTINT_FMT]]\index{[[QCPERTINT_FMT]]}) of the [[QcPertInt]] type.
+%
+%We futher allow users to set the number of bits in an object of [[QcPertInt]]
+%for representing the host program's perturbation labels (see
+%Figure~\ref{fig-perturbation-label}). This can be done by changing the constant
+%[[OPENRSP_PERT_LABEL_BIT]]\index{[[OPENRSP_PERT_LABEL_BIT]]} during building:
+%<<RSPPertBasicTypes>>=
+%/* <macrodef name='OPENRSP_PERT_LABEL_BIT'>
+%     Set <OPENRSP_PERT_LABEL_BIT>
+%   </macrodef>
+%   <constant name='OPENRSP_PERT_LABEL_BIT'>
+%     Number of bits in an object of <QcPertInt> type for a perturbation label
+%   </constant> */
+%#if !defined(OPENRSP_PERT_LABEL_BIT)
+%#define OPENRSP_PERT_LABEL_BIT 10
+%#endif
+%@ and from which, and from the knowledge of [[QCPERTINT_MAX]] we can compute
+%[[OPENRSP_PERT_LABEL_MAX]]\index{[[OPENRSP_PERT_LABEL_MAX]]} and
+%[[OPENRSP_NUM_FREQ_MAX]]\index{[[OPENRSP_NUM_FREQ_MAX]]}, which are the maximal
+%values of perturbation labels and the number of frequencies allowed:
+%<<RSPPertBasicTypes>>=
+%/* <constant name='OPENRSP_PERT_LABEL_MAX'>
+%     Maximal value for perturbation labels
+%   </constant>
+%   <constant name='OPENRSP_NUM_FREQ_MAX'>
+%     Maximal value for number of frequencies
+%   </constant> */
+%extern const QcPertInt OPENRSP_PERT_LABEL_MAX;
+%extern const QcPertInt OPENRSP_NUM_FREQ_MAX;
+%@ Here, to avoid multiple inclusions of the header file that will lead to
+%multiple definitions, we have the following implementation file for the
+%[[OPENRSP_PERT_LABEL_MAX]] and [[OPENRSP_NUM_FREQ_MAX]]:
+%<<RSPPertLabel.c>>=
+%/*
+%  <<OpenRSPLicense>>
+%*/
+%
+%#include "RSPPerturbation.h"
+%
+%/* see https://scaryreasoner.wordpress.com/2009/02/28/checking-sizeof-at-compile-time
+%   accessing date Oct. 6, 2015 */
+%#define QC_BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
+%void RSPPertCheckLabelBit()
+%{
+%    QC_BUILD_BUG_ON(sizeof(QCPERTINT_MAX)*CHAR_BIT<=OPENRSP_PERT_LABEL_BIT);
+%}
+%
+%const QcPertInt OPENRSP_PERT_LABEL_MAX = (1<<OPENRSP_PERT_LABEL_BIT)-1;
+%const QcPertInt OPENRSP_NUM_FREQ_MAX =
+%                (QCPERTINT_MAX-OPENRSP_PERT_LABEL_MAX)>>OPENRSP_PERT_LABEL_BIT;
+%@ The function [[RSPPertCheckLabelBit()]] ensures that
+%[[OPENRSP_PERT_LABEL_BIT]] is not too large and there are still bits left for
+%the number of frequencies. One will have building error when compiling the
+%function [[RSPPertCheckLabelBit()]] if [[OPENRSP_PERT_LABEL_BIT]] is too large.
+%
+%However, the function [[RSPPertCheckLabelBit()]] can not guarantee the above
+%setting ([[QcPertInt]] type and [[OPENRSP_PERT_LABEL_BIT]]) is enough for
+%holding the host program's perturbation labels and the number of frequencies.
+%This will be checked against [[OPENRSP_PERT_LABEL_MAX]] and
+%[[OPENRSP_NUM_FREQ_MAX]] by \LibName when (i) setting the host program's
+%perturbations, and (ii) calculating response functions or residues.
 
-\begin{figure}[hbt]
-  \centering
-  \scalebox{0.9}{\input{figures/perturbation_label.tex}}
-  \caption{Perturbation labels in \LibName.}
-  \label{fig-perturbation-label}
-\end{figure}
+%\subsection{Conversion of Perturbation Tuples and Labels}
+%\label{subsection-OpenRSP-convert-pert}
+%
+%As described in Figure~\ref{fig-perturbation-label}, we need to convert the
+%host program's perturbation labels and frequencies into \LibName internal
+%perturbation labels when calculating response functions or residues:
+%<<RSPertAPIs>>=
+%extern QErrorCode RSPPertTupleHostToInternal(const RSPPert*,
+%                                             const QInt,
+%                                             const QInt*,
+%                                             const QInt,
+%                                             const QReal*,
+%                                             QInt*,
+%                                             QReal*);
+%@ This function first looks through a given host program's perturbation tuple
+%to find consecutive identical pertubation labels, and then checks how many
+%different frequencies associated with the consecutive identical labels:
+%<<RSPPerturbation.c>>=
+%/* <function name='RSPPertTupleHostToInternal'
+%             attr='private'
+%             author='Bin Gao'
+%             date='2015-10-08'>
+%     Convert a host program's perturbation tuple to an internal pertubation tuple
+%     <param name='rsp_pert' direction='in'>
+%       The context of perturbations
+%     </param>
+%     <param name='len_tuple' direction='in'>
+%       Length of the host program's and the internal perturbation tuples
+%     </param>
+%     <param name='pert_tuple' direction='in'>
+%       The host program's perturbation tuple, in which identical perturbation
+%       labels should be consecutive, and the first one is the perturbation $a$
+%     </param>
+%     <param name='num_freq_configs' direction='in'>
+%       Number of different frequency configurations
+%     </param>
+%     <param name='pert_freqs' direction='in'>
+%       Complex frequencies of each perturbation label (except for the
+%       perturbation $a$) over all frequency configurations, size is therefore
+%       $2\times[(<len_tuple>-1)\times<num_freq_configs>]$, and arranged as
+%       <c>[num_freq_configs][len_tuple-1][2]</c> in memory (that is, the real
+%       and imaginary parts of each frequency are consecutive in memory)
+%     </param>
+%     <param name='intern_pert_tuple' direction='out'>
+%       The internal perturbation tuple, in which identical perturbation
+%       labels are consecutive, and the first one is the perturbation $a$
+%     </param>
+%     <param name='intern_pert_freqs' direction='out'>
+%       Complex frequencies of each perturbation label (including the
+%       perturbation $a$) over all frequency configurations, size is therefore
+%       $2\times<len_tuple>\times<num_freq_configs>$, and arranged as
+%       <c>[num_freq_configs][len_tuple][2]</c> in memory (that is, the real and
+%       imaginary parts of each frequency are consecutive in memory)
+%     </param>
+%     <return>Error information</return>
+%   </function> */
+%QErrorCode RSPPertTupleHostToInternal(const RSPPert *rsp_pert,
+%                                      const QInt len_tuple,
+%                                      const QInt *pert_tuple,
+%                                      const QInt num_freq_configs,
+%                                      const QReal *pert_freqs,
+%                                      QInt *intern_pert_tuple,
+%                                      QReal *intern_pert_freqs)
+%{
+%    QInt ipert,jpert;  /* incremental recorders */
+%    QInt first_id;     /* first identical pertubation label in the tuple */
+%    QInt last_id;      /* last identical pertubation label in the tuple */
+%    QBool non_id;      /* indicates if non-identical label found */
+%
+%    /* we first try to find consecutive identical pertubation labels */
+%    first_id = 0;
+%    non_id = QFALSE;
+%    for (ipert=first_id; ipert<len_tuple-1; ipert++) {
+%        if (pert_tuple[ipert]!=pert_tuple[ipert+1]) {
+%            last_id = ipert;
+%            non_id = QTRUE;
+%            break;
+%        }
+%    }
+%    if (non_id=QTRUE) {
+%    }
+%    else {
+%    }
+%    /* loops over all known perturbation labels and checks if they are in the tuple */
+%    for (ipert=0; ipert<rsp_pert->num_pert; ipert++) {
+%        /* loops over perturbation labels in the tuple */
+%        for (ipert=first_id; ipert<len_tuple; ipert++) {
+%            /* checks if the given label is known */
+%            if (pert_tuple[ipert]==rsp_pert->pert_labels[jpert]) {
+%                
+%            }
+%        }
+%    }
+%    return QSUCCESS;
+%}
+%
+%@ where we have also checked the numbers of different frequencies against
+%[[OPENRSP_NUM_FREQ_MAX]].
+%
+%After converting into internal perturbation labels, \LibName will usually use
+%its internal perturbation tuples (described by the internal perturbation
+%labels) and the corresponding complex frequencies in calculations.
+%
+%However, when making a callback, (i) the complex frequencies will not be
+%passed, and (ii) internal perturbation labels will be converted into host
+%program's ones. The callback functions can therefore not distinguish different
+%perturbations only from the host program's perturbation labels.
+%
+%For instance, a host program's perturbation tuple $(a,b,b,c)$ and the
+%corresponding complex frequencies
+%$(\omega_{a},\omega_{b_{1}},\omega_{b_{2}},\omega_{c})$ actually define four
+%different perturbations $a_{\omega_{a}}^{1}$, $b_{\omega_{b_{1}}}^{1}$,
+%$b_{\omega_{b_{2}}}^{1}$ and $c_{\omega_{c}}^{1}$ instead of three (each
+%perturbation label $b$ defines one perturbation).
+%
+%We therefore need to pass both the host program's perturbation labels
+%$(a,b,b,c)$ and their associated orders $(1,1,1,1)$ to callback functions,
+%together meaning the passed two perturbation labels $b$ stand for two different
+%perturbations, and both of them are the first-order perturbation.
+%
+%The following function will convert an internal perturbation tuple to the host
+%program's pertubation labels and their orders:
+%<<RSPertAPIs>>=
+%extern QErrorCode RSPPertInternTupleToHostLabelOrder(const QInt,
+%                                                     const QInt*,
+%                                                     QInt*,
+%                                                     QInt*,
+%                                                     QInt*);
+%@ and here we assume that \textbf{consecutive identical internal perturbation
+%labels is for one perturbation}:
+%<<RSPPerturbation.c>>=
+%/* <function name='RSPPertInternTupleToHostLabelOrder'
+%             attr='private'
+%             author='Bin Gao'
+%             date='2015-10-08'>
+%     Convert an internal perturbation tuple to the host program's pertubation
+%     labels and their orders
+%     <param name='len_tuple' direction='in'>
+%       Length of the internal perturbation tuple
+%     </param>
+%     <param name='intern_pert_tuple' direction='in'>
+%       The internal perturbation tuple
+%     </param>
+%     <param name='num_pert' direction='out'>
+%       Number of different perturbations from the internal perturbation tuple
+%     </param>
+%     <param name='pert_labels' direction='out'>
+%       Host program's pertubation labels of the resulted perturbations
+%     </param>
+%     <param name='pert_orders' direction='out'>
+%       Orders of the resulted perturbations
+%     </param>
+%     <return>Error information</return>
+%   </function> */
+%QErrorCode RSPPertInternTupleToHostLabelOrder(const QInt len_tuple,
+%                                              const QInt *intern_pert_tuple,
+%                                              QInt *num_pert,
+%                                              QInt *pert_labels,
+%                                              QInt *pert_orders)
+%      
+%{
+%    QInt ilab;   /* incremental recorder over perturbation labels */
+%    QInt ipert;  /* incremental recorder for different perturbations */
+%    for (ilab=0,ipert=0; ilab<len_tuple; ) {
+%        pert_labels[ipert] = intern_pert_tuple[ilab];
+%        pert_orders[ipert] = 1;
+%        /* finds consecutive identical internal perturbation labels */
+%        ilab++;
+%        for (; ilab<len_tuple; ) {
+%            if (pert_labels[ipert]==intern_pert_tuple[ilab]) {
+%                pert_orders[ipert]++;
+%            }
+%            else {
+%                break;
+%            }
+%            ilab++;
+%        }
+%        /* converts to the host program's label */
+%        pert_labels[ipert] &= OPENRSP_PERT_LABEL_MAX;
+%        ipert++;
+%    }
+%    *num_pert = ipert;
+%    return QSUCCESS;
+%}
+%
+%@ where the conversion of the internal label to the host program's label is
+%achieved by the bitwise AND operation ([[&=]]) with [[OPENRSP_PERT_LABEL_MAX]]
+%as illustrated in Figure~\ref{fig-perturbation-label}.
 
-As illustrated in Figure~\ref{fig-perturbation-label}, if one uses lower $16$
-bits for a host program's label and higher $16$ bits for a frequency in the
-$32$-bit unsigned integers, and if both the host program's label and the
-frequency are marked from $0$ up to $2^{16}-1=65535$, \LibName can thus treat
-$2^{16}=65536$ different perturbation labels and different frequencies, which
-is enough for the current response theory calculations. If one uses $64$-bit
-unsigned integers, \LibName can then treat more perturbation labels and
-frequencies.
+% XC functional callbacks
+%
+% [0,a,b,c,d,ab,ac,ad,bc,bd,cd]
+% ->
+% [0,a,b,d,ab,ad,bc,bd]
+% if b==c
 
