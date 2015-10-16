@@ -2,30 +2,24 @@
 \label{section-OpenRSP-RSPFun}
 
 Users can use the following API to get the response functions:
-<<OpenRSPGetRSPFun.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSP.h"
-
-QVoid OpenRSPGetRSPFun_f(const QInt num_props,
-                         const QInt *len_tuple,
-                         const QcPertInt *pert_tuple,
-                         const QInt *num_freq_configs,
-                         const QReal *pert_freqs,
-                         const QInt *kn_rules,
-                         const QcMat *ref_ham,
-                         const QcMat *ref_overlap,
-                         const QcMat *ref_state,
-                         RSPSolver *rsp_solver,
-                         RSPNucHamilton *nuc_hamilton,
-                         RSPOverlap *overlap,
-                         RSPOneOper *one_oper,
-                         RSPTwoOper *two_oper,
-                         RSPXCFun *xc_fun,
-                         const QInt size_rsp_funs,
-                         QReal *rsp_funs);
+<<OpenRSP.c>>=
+void OpenRSPGetRSPFun_f(const QInt num_props,
+                        const QInt *len_tuple,
+                        const QcPertInt *pert_tuple,
+                        const QInt *num_freq_configs,
+                        const QReal *pert_freqs,
+                        const QInt *kn_rules,
+                        const QcMat *ref_ham,
+                        const QcMat *ref_overlap,
+                        const QcMat *ref_state,
+                        RSPSolver *rsp_solver,
+                        RSPNucHamilton *nuc_hamilton,
+                        RSPOverlap *overlap,
+                        RSPOneOper *one_oper,
+                        RSPTwoOper *two_oper,
+                        RSPXCFun *xc_fun,
+                        const QInt size_rsp_funs,
+                        QReal *rsp_funs);
 
 /*@% \brief gets the response functions for given perturbations
      \author Bin Gao

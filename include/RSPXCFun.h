@@ -33,30 +33,30 @@
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetXCFunMat)(const QInt,
-                             const QcPertInt*,
-                             const QInt,
-                             const QInt,
-                             const QInt*,
-                             const QInt,
-                             QcMat*[],
+typedef void (*GetXCFunMat)(const QInt,
+                            const QcPertInt*,
+                            const QInt,
+                            const QInt,
+                            const QInt*,
+                            const QInt,
+                            QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
+                            void*,
 #endif
-                             const QInt,
-                             QcMat*[]);
-typedef QVoid (*GetXCFunExp)(const QInt,
-                             const QcPertInt*,
-                             const QInt,
-                             const QInt,
-                             const QInt*,
-                             const QInt,
-                             QcMat*[],
+                            const QInt,
+                            QcMat*[]);
+typedef void (*GetXCFunExp)(const QInt,
+                            const QcPertInt*,
+                            const QInt,
+                            const QInt,
+                            const QInt*,
+                            const QInt,
+                            QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid*,
+                            void*,
 #endif
-                             const QInt,
-                             QReal*);
+                            const QInt,
+                            QReal*);
 
 typedef struct RSPXCFun RSPXCFun;
 struct RSPXCFun {
@@ -73,7 +73,7 @@ struct RSPXCFun {
     QcPertInt *xc_pert_tuple;    /* perturbation tuple on the XC functional,
                                     only used for callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;             /* user-defined callbac-kfunction context */
+    void *user_ctx;              /* user-defined callbac-kfunction context */
 #endif
     GetXCFunMat get_xc_fun_mat;  /* user-specified function for calculating
                                     integral matrices */
@@ -87,7 +87,7 @@ extern QErrorCode RSPXCFunCreate(RSPXCFun**,
                                  const QcPertInt*,
                                  const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                 QVoid*,
+                                 void*,
 #endif
                                  const GetXCFunMat,
                                  const GetXCFunExp);
@@ -96,7 +96,7 @@ extern QErrorCode RSPXCFunAdd(RSPXCFun*,
                               const QcPertInt*,
                               const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                              QVoid*,
+                              void*,
 #endif
                               const GetXCFunMat,
                               const GetXCFunExp);

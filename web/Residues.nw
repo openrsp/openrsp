@@ -2,13 +2,7 @@
 \label{section-OpenRSP-residues}
 
 Users can use the following API to get the residues:
-<<OpenRSPGetResidue.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSP.h"
-
+<<OpenRSP.c>>=
 /*@% \brief gets the residues for given perturbations
      \author Bin Gao
      \date 2014-07-31

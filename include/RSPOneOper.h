@@ -33,24 +33,24 @@
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetOneOperMat)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
+typedef void (*GetOneOperMat)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QcMat*[]);
-typedef QVoid (*GetOneOperExp)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               QcMat*[],
+                              const QInt,
+                              QcMat*[]);
+typedef void (*GetOneOperExp)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QReal*);
+                              const QInt,
+                              QReal*);
 
 typedef struct RSPOneOper RSPOneOper;
 struct RSPOneOper {
@@ -71,7 +71,7 @@ struct RSPOneOper {
                                         one-electron operator, only used for
                                         callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                 /* user-defined callback-function context */
+    void *user_ctx;                  /* user-defined callback-function context */
 #endif
     GetOneOperMat get_one_oper_mat;  /* user-specified function for calculating
                                         integral matrices */
@@ -85,7 +85,7 @@ extern QErrorCode RSPOneOperCreate(RSPOneOper**,
                                    const QcPertInt*,
                                    const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
+                                   void*,
 #endif
                                    const GetOneOperMat,
                                    const GetOneOperExp);
@@ -94,7 +94,7 @@ extern QErrorCode RSPOneOperAdd(RSPOneOper*,
                                 const QcPertInt*,
                                 const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid*,
+                                void*,
 #endif
                                 const GetOneOperMat,
                                 const GetOneOperExp);

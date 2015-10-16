@@ -12,7 +12,9 @@ module RSPPertBasicTypes_f
     ! <constant name='QCPERTINT_MAX'>
     !   Maximal value of an object of the <QcPertInt> type
     ! </constant>
-    integer(kind=4), parameter, public :: QcPertInt = 8
-    integer, parameter, public :: C_QCPERTINT = C_LONG
+    !integer(kind=4), parameter, public :: QcPertInt = 8
+    !integer, parameter, public :: C_QCPERTINT = C_LONG
+    integer(kind=4), parameter, public :: QcPertInt = 4
+    integer, parameter, public :: C_QCPERTINT = C_INT
 end module RSPPertBasicTypes_f
 

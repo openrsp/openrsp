@@ -74,18 +74,18 @@ module openrsp_callback_f
 
     interface
         integer(C_INT) function RSPSolverGetLinearRSPSolution(rsp_solver,    &
-                                                              size_pert,     &
                                                               num_freq_sums, &
                                                               freq_sums,     &
+                                                              size_pert,     &
                                                               RHS_mat,       &
                                                               rsp_param)     &
             bind(C, name="RSPSolverGetLinearRSPSolution")
             use, intrinsic :: iso_c_binding
             implicit none
             type(C_PTR), value, intent(in) :: rsp_solver
-            integer(kind=C_QINT), value, intent(in) :: size_pert
             integer(kind=C_QINT), value, intent(in) :: num_freq_sums
             real(kind=C_QREAL), intent(in) :: freq_sums(num_freq_sums)
+            integer(kind=C_QINT), value, intent(in) :: size_pert
             type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
             type(C_PTR), intent(in) :: rsp_param(size_pert*num_freq_sums)
         end function RSPSolverGetLinearRSPSolution
@@ -309,14 +309,14 @@ module openrsp_callback_f
     end subroutine RSP_CTX_Destroy
 
     ! callback subroutine to get the solution of linear response equation
-    subroutine f_callback_RSPSolverGetLinearRSPSolution(size_pert,     &
-                                                        num_freq_sums, &
+    subroutine f_callback_RSPSolverGetLinearRSPSolution(num_freq_sums, &
                                                         freq_sums,     &
+                                                        size_pert,     &
                                                         RHS_mat,       &
                                                         rsp_param)
-        integer(kind=QINT), intent(in) :: size_pert
         integer(kind=QINT), intent(in) :: num_freq_sums
         real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
+        integer(kind=QINT), intent(in) :: size_pert
         type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
         type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
         type(C_PTR), allocatable :: c_RHS_mat(:)
@@ -344,9 +344,9 @@ module openrsp_callback_f
             ierr = QcMat_C_LOC(A=rsp_param, c_A=c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             ierr = RSPSolverGetLinearRSPSolution(ctx_saved%rsp_solver, &
-                                                 size_pert,            &
                                                  num_freq_sums,        &
                                                  freq_sums,            &
+                                                 size_pert,            &
                                                  c_RHS_mat,            &
                                                  c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)

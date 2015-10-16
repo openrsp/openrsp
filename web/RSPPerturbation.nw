@@ -67,9 +67,12 @@ programs' perturbation labels:
    <constant name='QCPERTINT_FMT'>
      Format string of <QcPertInt> type
    </constant> */
-typedef unsigned long QcPertInt;
-#define QCPERTINT_MAX ULONG_MAX
-#define QCPERTINT_FMT "lu"
+//typedef unsigned long QcPertInt;
+//#define QCPERTINT_MAX ULONG_MAX
+//#define QCPERTINT_FMT "lu"
+typedef unsigned int QcPertInt;
+#define QCPERTINT_MAX UINT_MAX
+#define QCPERTINT_FMT "u"
 @ Here we also define a constant
 [[QCPERTINT_MAX]]\index{[[QCPERTINT_MAX]]} for the maximal value of an object
 of the [[QcPertInt]] type, and a format string
@@ -138,15 +141,15 @@ of sub-perturbation tuples (with the same perturbation label) for given
 components of the corresponding concatenated perturbation tuple. The type of
 this callback function is defined as follows:
 <<RSPPertCallback>>=
-typedef QVoid (*GetPertCat)(const QInt,
-                            const QcPertInt,
-                            const QInt,
-                            const QInt,
-                            const QInt*,
+typedef void (*GetPertCat)(const QInt,
+                           const QcPertInt,
+                           const QInt,
+                           const QInt,
+                           const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid*,
+                           void*,
 #endif
-                            QInt*);
+                           QInt*);
 @ We will discuss how to use this callback function in
 Section~\ref{subsection-OpenRSP-convert-pert}.
 
@@ -186,7 +189,7 @@ typedef struct {
                                            $1\le k_{j}\le n_{j}$ and $1\le j\le p$ */
     QcPertInt *pert_labels;             /* $a_{1},a_{2},\cdots,a_{p}$ */
 #if defined(OPENRSP_C_USER_CONTEXT)     
-    QVoid *user_ctx;                    /* user-defined callback function context */
+    void *user_ctx;                     /* user-defined callback function context */
 #endif
     GetPertCat get_pert_concatenation;  /* user-specified function for getting
                                            the ranks of components of sub-perturbation
@@ -231,7 +234,7 @@ QErrorCode OpenRSPSetPerturbations(OpenRSP *open_rsp,
                                    const QInt *pert_max_orders,
                                    const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid *user_ctx,
+                                   void *user_ctx,
 #endif
                                    const GetPertCat get_pert_concatenation)
 {
@@ -270,7 +273,7 @@ extern QErrorCode RSPPertCreate(RSPPert*,
                                 const QInt*,
                                 const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid*,
+                                void*,
 #endif
                                 const GetPertCat);
 extern QErrorCode RSPPertAssemble(RSPPert*);
@@ -318,7 +321,7 @@ QErrorCode RSPPertCreate(RSPPert *rsp_pert,
                          const QInt *pert_max_orders,
                          const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                         QVoid *user_ctx,
+                         void *user_ctx,
 #endif
                          const GetPertCat get_pert_concatenation)
 {

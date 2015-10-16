@@ -36,7 +36,7 @@ QErrorCode OpenRSPSetNucHamilton(OpenRSP *open_rsp,
                                  const QcPertInt *pert_labels,
                                  const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                 QVoid *user_ctx,
+                                 void *user_ctx,
 #endif
 
                                  const GetNucContrib get_nuc_contrib,
@@ -90,14 +90,14 @@ Hamiltonian and its derivatives.
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetNucContrib)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
+typedef void (*GetNucContrib)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QReal*);
+                              const QInt,
+                              QReal*);
 
 <<RSNucHamiltonStruct>>
 
@@ -124,7 +124,7 @@ typedef struct {
                                        nuclear Hamiltonian, only used for
                                        callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback-function context */
+    void *user_ctx;                 /* user-defined callback-function context */
 #endif
     GetNucContrib get_nuc_contrib;  /* user-specified function for calculating
                                        contribution from the nuclear Hamiltonian */
@@ -138,7 +138,7 @@ extern QErrorCode RSPNucHamiltonCreate(RSPNucHamilton*,
                                        const QcPertInt*,
                                        const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                       QVoid*,
+                                       void*,
 #endif
                                        const GetNucContrib,
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
@@ -199,7 +199,7 @@ QErrorCode RSPNucHamiltonCreate(RSPNucHamilton *nuc_hamilton,
                                 const QcPertInt *pert_labels,
                                 const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid *user_ctx,
+                                void *user_ctx,
 #endif
                                 const GetNucContrib get_nuc_contrib,
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/

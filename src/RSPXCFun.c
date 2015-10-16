@@ -63,7 +63,7 @@ QErrorCode RSPXCFunCreate(RSPXCFun **xc_fun,
                           const QcPertInt *pert_labels,
                           const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                          QVoid *user_ctx,
+                          void *user_ctx,
 #endif
                           const GetXCFunMat get_xc_fun_mat,
                           const GetXCFunExp get_xc_fun_exp)
@@ -194,7 +194,7 @@ QErrorCode RSPXCFunAdd(RSPXCFun *xc_fun,
                        const QcPertInt *pert_labels,
                        const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                       QVoid *user_ctx,
+                       void *user_ctx,
 #endif
                        const GetXCFunMat get_xc_fun_mat,
                        const GetXCFunExp get_xc_fun_exp)

@@ -33,29 +33,29 @@
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetTwoOperMat)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               QcMat*[],
+typedef void (*GetTwoOperMat)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QcMat*[]);
-typedef QVoid (*GetTwoOperExp)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QInt*,
-                               QcMat*[],
-                               const QInt*,
-                               QcMat*[],
+                              const QInt,
+                              QcMat*[]);
+typedef void (*GetTwoOperExp)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              const QInt*,
+                              QcMat*[],
+                              const QInt*,
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QReal*);
+                              const QInt,
+                              QReal*);
 
 typedef struct RSPTwoOper RSPTwoOper;
 struct RSPTwoOper {
@@ -76,7 +76,7 @@ struct RSPTwoOper {
                                         two-electron operator, only used for
                                         callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                 /* user-defined callback-function context */
+    void *user_ctx;                  /* user-defined callback-function context */
 #endif
     GetTwoOperMat get_two_oper_mat;  /* user-specified function for calculating
                                         integral matrices */
@@ -90,7 +90,7 @@ extern QErrorCode RSPTwoOperCreate(RSPTwoOper**,
                                    const QcPertInt*,
                                    const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
+                                   void*,
 #endif
                                    const GetTwoOperMat,
                                    const GetTwoOperExp);
@@ -99,7 +99,7 @@ extern QErrorCode RSPTwoOperAdd(RSPTwoOper*,
                                 const QcPertInt*,
                                 const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid*,
+                                void*,
 #endif
                                 const GetTwoOperMat,
                                 const GetTwoOperExp);

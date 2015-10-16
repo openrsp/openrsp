@@ -28,7 +28,7 @@
 
 #include "OpenRSP.h"
 
-QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
+QErrorCode OpenRSPCreateFortranAdapter(void **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;
@@ -37,11 +37,11 @@ QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
         QErrorExit(FILE_AND_LINE, "failed to allocate memory for c_open_rsp");
     }
     ierr = OpenRSPCreate(c_open_rsp);
-    *open_rsp = (QVoid *)(c_open_rsp);
+    *open_rsp = (void *)(c_open_rsp);
     return ierr;
 }
 
-//QErrorCode f_api_OpenRSPSetElecEOM(QVoid **open_rsp,
+//QErrorCode f_api_OpenRSPSetElecEOM(void **open_rsp,
 //                                   const QInt elec_EOM_type)
 //{
 //    OpenRSP *c_open_rsp;
@@ -66,7 +66,7 @@ QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
 //    return ierr;
 //}
 
-QErrorCode OpenRSPDestroyFortranAdapter(QVoid **open_rsp)
+QErrorCode OpenRSPDestroyFortranAdapter(void **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;

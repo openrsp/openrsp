@@ -1114,13 +1114,13 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: size_pert
                 real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
             end subroutine get_nuc_contrib
-            subroutine RSPNucHamiltonGetContrib_f(nuc_num_pert,    &
-                                                  nuc_pert_labels, &
-                                                  nuc_pert_orders, &
-                                                  user_ctx,        &
-                                                  size_pert,       &
-                                                  val_nuc)         &
-                bind(C, name="RSPNucHamiltonGetContrib_f")
+            subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
+                                                        nuc_pert_labels, &
+                                                        nuc_pert_orders, &
+                                                        user_ctx,        &
+                                                        size_pert,       &
+                                                        val_nuc)         &
+                bind(C, name="RSPNucHamiltonGetContributions_f")
                 use, intrinsic :: iso_c_binding
                 use RSPPertBasicTypes_f, only: C_QCPERTINT
                 integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
@@ -1129,7 +1129,7 @@ module OpenRSP_f
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: size_pert
                 real(kind=C_QREAL), intent(inout) :: val_nuc(size_pert)
-            end subroutine RSPNucHamiltonGetContrib_f
+            end subroutine RSPNucHamiltonGetContributions_f
         end interface
         if (associated(open_rsp%nuc_hamilton_fun)) then
             call RSPNucHamiltonDestroy_f(open_rsp%nuc_hamilton_fun)
@@ -1142,12 +1142,12 @@ module OpenRSP_f
                                     user_ctx,                  &
 #endif
                                     get_nuc_contrib)
-        ierr = OpenRSPSetNucHamilton(open_rsp%c_rsp,                       &
-                                     num_pert_lab,                         &
-                                     pert_labels,                          &
-                                     pert_max_orders,                      &
-                                     c_loc(open_rsp%nuc_hamilton_fun),     &
-                                     c_funloc(RSPNucHamiltonGetContrib_f), &
+        ierr = OpenRSPSetNucHamilton(open_rsp%c_rsp,                             &
+                                     num_pert_lab,                               &
+                                     pert_labels,                                &
+                                     pert_max_orders,                            &
+                                     c_loc(open_rsp%nuc_hamilton_fun),           &
+                                     c_funloc(RSPNucHamiltonGetContributions_f), &
                                      num_atoms)
     end function OpenRSPSetNucHamilton_f
 

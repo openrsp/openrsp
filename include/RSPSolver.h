@@ -32,18 +32,18 @@
 
 #include "qcmatrix.h"
 
-typedef QVoid (*GetLinearRSPSolution)(const QInt,
-                                      const QReal*,
-                                      const QInt,
-                                      QcMat*[],
+typedef void (*GetLinearRSPSolution)(const QInt,
+                                     const QReal*,
+                                     const QInt,
+                                     QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                      QVoid*,
+                                     void*,
 #endif
-                                      QcMat*[]);
+                                     QcMat*[]);
 
 typedef struct {
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                               /* user-defined callback-function
+    void *user_ctx;                                /* user-defined callback-function
                                                       context */
 #endif
     GetLinearRSPSolution get_linear_rsp_solution;  /* user-specified function of
@@ -52,7 +52,7 @@ typedef struct {
 
 extern QErrorCode RSPSolverCreate(RSPSolver*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                  QVoid*,
+                                  void*,
 #endif
                                   const GetLinearRSPSolution);
 extern QErrorCode RSPSolverAssemble(RSPSolver*);

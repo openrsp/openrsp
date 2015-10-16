@@ -3,27 +3,1970 @@
 
 \subsection{Testing C APIs}
 
-In this section, we will implement unit testing of \LibName. For the time
-being, the unit testing has not covered all the APIs of \LibName:
+We first implement perturbations and its callback function for unit testing:
+<<OpenRSPTestPerturbations.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This is the header file of perturbations.
+
+  2014-07-31, Bin Gao:
+  * first version
+*/
+
+#include "OpenRSP.h"
+
+#define NUM_ALL_PERT 3
+extern const QcPertInt PERT_GEOMETRIC;
+extern const QcPertInt PERT_DIPOLE;
+extern const QcPertInt PERT_MAGNETIC;
+extern const QInt MAX_ORDER_GEOMETRIC;
+extern const QInt MAX_ORDER_DIPOLE;
+extern const QInt MAX_ORDER_MAGNETIC;
+<<OpenRSPTestPerturbations.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSPTestPerturbations.h"
+
+const QcPertInt PERT_GEOMETRIC = 1;
+const QcPertInt PERT_DIPOLE = 2;
+const QcPertInt PERT_MAGNETIC = 5;
+const QInt MAX_ORDER_GEOMETRIC = 7;
+const QInt MAX_ORDER_DIPOLE = 1;
+const QInt MAX_ORDER_MAGNETIC = 7;
+@ Here we have used three different perturbation labels for geometric, dipole
+length and magnetic perturbations.
+
+<<OpenRSPPertCallback.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This is the header file of perturbations' callback function.
+
+  2014-07-31, Bin Gao:
+  * first version
+*/
+
+#if !defined(OPENRSP_PERT_CALLBACK_H)
+#define OPENRSP_PERT_CALLBACK_H
+
+#include "OpenRSP.h"
+
+extern void get_pert_concatenation(const QInt,
+                                   const QcPertInt,
+                                   const QInt,
+                                   const QInt,
+                                   const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                   void*,
+#endif
+                                   QInt*);
+
+#endif
+<<OpenRSPPertCallback.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSPPertCallback.h"
+
+void get_pert_concatenation(const QInt pert_label,
+                            const QcPertInt first_cat_comp,
+                            const QInt num_cat_comps,
+                            const QInt num_sub_tuples,
+                            const QInt *len_sub_tuples,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void *user_ctx,
+#endif
+                            QInt *rank_sub_comps)
+{
+}
+@
+
+We next implement callback functions for AO-based response theory calculations:
+<<OpenRSPAODensCallback.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This header file contains callback functions for AO-based response theory
+  calculations.
+
+  2015-10-16, Bin Gao:
+  * first version
+*/
+
+#if !defined(OPENRSP_AO_DENS_CALLBACK_H)
+#define OPENRSP_AO_DENS_CALLBACK_H
+
+#include "OpenRSP.h"
+
+#if defined(ZERO_BASED_NUMBERING)
+#define IDX_BLOCK_ROW 0
+#define IDX_BLOCK_COL 0
+#define IDX_FIRST_ROW 0
+#define IDX_FIRST_COL 0
+#else
+#define IDX_BLOCK_ROW 1
+#define IDX_BLOCK_COL 1
+#define IDX_FIRST_ROW 1
+#define IDX_FIRST_COL 1
+#endif
+
+extern void get_overlap_mat(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QcMat*[]);
+extern void get_overlap_exp(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QReal*);
+extern void get_one_oper_mat(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QcMat*[]);
+extern void get_one_oper_exp(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+                             const QInt,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QReal*);
+extern void get_two_oper_mat(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+                             const QInt,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QcMat*[]);
+extern void get_two_oper_exp(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+                             const QInt,
+                             const QInt*,
+                             QcMat*[],
+                             const QInt*,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QReal*);
+extern void get_nuc_contrib(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QReal*);
+extern void get_linear_rsp_solution(const QInt,
+                                    const QReal*,
+                                    const QInt,
+                                    QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                    void*,
+#endif
+                                    QcMat*[]);
+
+#endif
+@ Here we mimic callback functions by saving different AO-based matrices
+calculated from Dalton program. These matrices are save in the directory
+[[tests/ao_dens_ground_state_hf]], [[tests/ao_dens_alpha_hf]].
+<<OpenRSPAODensCallback.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSPAODensCallback.h"
+
+void get_overlap_mat(const QInt bra_num_pert,
+                     const QcPertInt *bra_pert_labels,
+                     const QInt *bra_pert_orders,
+                     const QInt ket_num_pert,
+                     const QcPertInt *ket_pert_labels,
+                     const QInt *ket_pert_orders,
+                     const QInt oper_num_pert,
+                     const QcPertInt *oper_pert_labels,
+                     const QInt *oper_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                     void *user_ctx,
+#endif
+                     const QInt num_int,
+                     QcMat *val_int[])
+{
+#include "OpenRSPTestPerturbations.h"
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_ground_state_hf/overlap_integrals.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *overlap_context;
+#endif
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QBool assembled;
+    QInt imat;
+    QErrorCode ierr;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    overlap_context = (char *)user_ctx;
+    if (strcmp(overlap_context, "OVERLAP")!=0) {
+        printf("get_overlap_mat>> incorrect operator at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#endif
+    /* overlap integrals */
+    if (oper_num_pert==0 && bra_num_pert==0 && ket_num_pert==0) {
+        /* checks if the matrix is assembled or not */
+        ierr = QcMatIsAssembled(val_int[0], &assembled);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_mat>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatIsAssembled");
+            exit(ierr);
+        }
+        if (assembled==QFALSE) {
+            ierr = QcMatBlockCreate(val_int[0], 1);
+            if (ierr!=QSUCCESS) {
+                printf("get_overlap_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatBlockCreate");
+                exit(ierr);
+            }
+            ierr = QcMatSetSymType(val_int[0], QSYMMAT);
+            if (ierr!=QSUCCESS) {
+                printf("get_overlap_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetSymType");
+                exit(ierr);
+            }
+            ierr = QcMatSetDataType(val_int[0],
+                                    1,
+                                    idx_block_row,
+                                    idx_block_col,
+                                    data_type);
+            if (ierr!=QSUCCESS) {
+                printf("get_overlap_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetDataType");
+                exit(ierr);
+            }
+            ierr = QcMatSetDimMat(val_int[0], NUM_AO, NUM_AO);
+            if (ierr!=QSUCCESS) {
+                printf("get_overlap_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetDimMat");
+                exit(ierr);
+            }
+            ierr = QcMatAssemble(val_int[0]);
+            if (ierr!=QSUCCESS) {
+                printf("get_overlap_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatAssemble");
+                exit(ierr);
+            }
+        }
+        ierr = QcMatSetValues(val_int[0],
+                              IDX_BLOCK_ROW,
+                              IDX_BLOCK_COL,
+                              IDX_FIRST_ROW,
+                              NUM_AO,
+                              IDX_FIRST_COL,
+                              NUM_AO,
+                              values_overlap,
+                              NULL);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_mat>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetValues");
+            exit(ierr);
+        }
+    }
+    else if (oper_num_pert==1 && bra_num_pert==0 && ket_num_pert==0) {
+        if (oper_pert_labels[0]==PERT_GEOMETRIC) {
+            printf("get_overlap_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        /* zero integrals */
+        else if (oper_pert_labels[0]==PERT_DIPOLE) {
+            for (imat=0; imat<num_int; imat++) {
+                /* checks if the matrix is assembled or not */
+                ierr = QcMatIsAssembled(val_int[imat], &assembled);
+                if (ierr!=QSUCCESS) {
+                    printf("get_overlap_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatIsAssembled");
+                    exit(ierr);
+                }
+                if (assembled==QFALSE) {
+                    ierr = QcMatBlockCreate(val_int[imat], 1);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatBlockCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetSymType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDataType(val_int[imat],
+                                            1,
+                                            idx_block_row,
+                                            idx_block_col,
+                                            data_type);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDataType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDimMat");
+                        exit(ierr);
+                    }
+                    ierr = QcMatAssemble(val_int[imat]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatAssemble");
+                        exit(ierr);
+                    }
+                }
+                ierr = QcMatZeroEntries(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_overlap_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatZeroEntries");
+                    exit(ierr);
+                }
+            }
+        }
+        else if (oper_pert_labels[0]==PERT_MAGNETIC) {
+            printf("get_overlap_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        else {
+            printf("get_overlap_mat>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (oper_num_pert==0 && bra_num_pert==1 && ket_num_pert==0) {
+        if (bra_pert_labels[0]==PERT_GEOMETRIC) {
+            printf("get_overlap_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        /* zero integrals */
+        else if (bra_pert_labels[0]==PERT_DIPOLE) {
+            for (imat=0; imat<num_int; imat++) {
+                /* checks if the matrix is assembled or not */
+                ierr = QcMatIsAssembled(val_int[imat], &assembled);
+                if (ierr!=QSUCCESS) {
+                    printf("get_overlap_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatIsAssembled");
+                    exit(ierr);
+                }
+                if (assembled==QFALSE) {
+                    ierr = QcMatBlockCreate(val_int[imat], 1);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatBlockCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetSymType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDataType(val_int[imat],
+                                            1,
+                                            idx_block_row,
+                                            idx_block_col,
+                                            data_type);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDataType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDimMat");
+                        exit(ierr);
+                    }
+                    ierr = QcMatAssemble(val_int[imat]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatAssemble");
+                        exit(ierr);
+                    }
+                }
+                ierr = QcMatZeroEntries(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_overlap_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatZeroEntries");
+                    exit(ierr);
+                }
+            }
+        }
+        else if (bra_pert_labels[0]==PERT_MAGNETIC) {
+            printf("get_overlap_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        else {
+            printf("get_overlap_mat>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (oper_num_pert==0 && bra_num_pert==0 && ket_num_pert==1) {
+        if (ket_pert_labels[0]==PERT_GEOMETRIC) {
+            printf("get_overlap_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        /* zero integrals */
+        else if (ket_pert_labels[0]==PERT_DIPOLE) {
+            for (imat=0; imat<num_int; imat++) {
+                /* checks if the matrix is assembled or not */
+                ierr = QcMatIsAssembled(val_int[imat], &assembled);
+                if (ierr!=QSUCCESS) {
+                    printf("get_overlap_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatIsAssembled");
+                    exit(ierr);
+                }
+                if (assembled==QFALSE) {
+                    ierr = QcMatBlockCreate(val_int[imat], 1);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatBlockCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetSymType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDataType(val_int[imat],
+                                            1,
+                                            idx_block_row,
+                                            idx_block_col,
+                                            data_type);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDataType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDimMat");
+                        exit(ierr);
+                    }
+                    ierr = QcMatAssemble(val_int[imat]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_overlap_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatAssemble");
+                        exit(ierr);
+                    }
+                }
+                ierr = QcMatZeroEntries(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_overlap_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatZeroEntries");
+                    exit(ierr);
+                }
+            }
+        }
+        else if (ket_pert_labels[0]==PERT_MAGNETIC) {
+            printf("get_overlap_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        else {
+            printf("get_overlap_mat>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else {
+        printf("get_overlap_mat>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+}
+
+void get_overlap_exp(const QInt bra_num_pert,
+                     const QcPertInt *bra_pert_labels,
+                     const QInt *bra_pert_orders,
+                     const QInt ket_num_pert,
+                     const QcPertInt *ket_pert_labels,
+                     const QInt *ket_pert_orders,
+                     const QInt oper_num_pert,
+                     const QcPertInt *oper_pert_labels,
+                     const QInt *oper_pert_orders,
+                     const QInt num_dens,
+                     QcMat *ao_dens[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                     void *user_ctx,
+#endif
+                     const QInt num_exp,
+                     QReal *val_exp)
+{
+#include "OpenRSPTestPerturbations.h"
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_ground_state_hf/overlap_integrals.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *overlap_context;
+#endif
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QcMat val_int[1];
+    QInt idens;
+    QErrorCode ierr;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    overlap_context = (char *)user_ctx;
+    if (strcmp(overlap_context, "OVERLAP")!=0) {
+        printf("get_overlap_mat>> incorrect operator at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#endif
+    /* overlap integrals */
+    if (oper_num_pert==0 && bra_num_pert==0 && ket_num_pert==0) {
+        ierr = QcMatCreate(&val_int[0]);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatCreate");
+            exit(ierr);
+        }
+        ierr = QcMatBlockCreate(&val_int[0], 1);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatBlockCreate");
+            exit(ierr);
+        }
+        ierr = QcMatSetSymType(&val_int[0], QSYMMAT);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetSymType");
+            exit(ierr);
+        }
+        ierr = QcMatSetDataType(&val_int[0],
+                                1,
+                                idx_block_row,
+                                idx_block_col,
+                                data_type);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetDataType");
+            exit(ierr);
+        }
+        ierr = QcMatSetDimMat(&val_int[0], NUM_AO, NUM_AO);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetDimMat");
+            exit(ierr);
+        }
+        ierr = QcMatAssemble(&val_int[0]);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatAssemble");
+            exit(ierr);
+        }
+        ierr = QcMatSetValues(&val_int[0],
+                              IDX_BLOCK_ROW,
+                              IDX_BLOCK_COL,
+                              IDX_FIRST_ROW,
+                              NUM_AO,
+                              IDX_FIRST_COL,
+                              NUM_AO,
+                              values_overlap,
+                              NULL);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetValues");
+            exit(ierr);
+        }
+        for (idens=0; idens<num_dens; idens++) {
+            ierr = QcMatGetMatProdTrace(&val_int[0],
+                                        ao_dens[idens],
+                                        MAT_NO_OPERATION,
+                                        1,
+                                        &val_exp[2*idens]);
+            if (ierr!=QSUCCESS) {
+                printf("get_overlap_exp>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatGetMatProdTrace");
+                exit(ierr);
+            }
+        }
+        ierr = QcMatDestroy(&val_int[0]);
+        if (ierr!=QSUCCESS) {
+            printf("get_overlap_exp>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatDestroy");
+            exit(ierr);
+        }
+    }
+    else if (oper_num_pert==1 && bra_num_pert==0 && ket_num_pert==0) {
+        if (oper_pert_labels[0]==PERT_GEOMETRIC) {
+            printf("get_overlap_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        /* zero integrals */
+        else if (oper_pert_labels[0]==PERT_DIPOLE) {
+            for (idens=0; idens<2*num_exp; idens++) {
+                val_exp[idens] = 0;
+            }
+        }
+        else if (oper_pert_labels[0]==PERT_MAGNETIC) {
+            printf("get_overlap_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        else {
+            printf("get_overlap_exp>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (oper_num_pert==0 && bra_num_pert==1 && ket_num_pert==0) {
+        if (bra_pert_labels[0]==PERT_GEOMETRIC) {
+            printf("get_overlap_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        /* zero integrals */
+        else if (bra_pert_labels[0]==PERT_DIPOLE) {
+            for (idens=0; idens<2*num_exp; idens++) {
+                val_exp[idens] = 0;
+            }
+        }
+        else if (bra_pert_labels[0]==PERT_MAGNETIC) {
+            printf("get_overlap_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        else {
+            printf("get_overlap_exp>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (oper_num_pert==0 && bra_num_pert==0 && ket_num_pert==1) {
+        if (ket_pert_labels[0]==PERT_GEOMETRIC) {
+            printf("get_overlap_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        /* zero integrals */
+        else if (ket_pert_labels[0]==PERT_DIPOLE) {
+            for (idens=0; idens<2*num_exp; idens++) {
+                val_exp[idens] = 0;
+            }
+        }
+        else if (ket_pert_labels[0]==PERT_MAGNETIC) {
+            printf("get_overlap_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        else {
+            printf("get_overlap_exp>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (oper_num_pert==0 && bra_num_pert==1 && ket_num_pert==1) {
+        /* zero integrals */
+        if (bra_pert_labels[0]==PERT_DIPOLE || ket_pert_labels[0]==PERT_DIPOLE) {
+            for (idens=0; idens<2*num_exp; idens++) {
+                val_exp[idens] = 0;
+            }
+        }
+        else {
+            printf("get_overlap_exp>> unknown perturbations at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else {
+         printf("get_overlap_exp>> not implemented at %s\n",
+                FILE_AND_LINE);
+         exit(QFAILURE);
+    }
+}
+
+void get_one_oper_mat(const QInt oper_num_pert,
+                      const QcPertInt *oper_pert_labels,
+                      const QInt *oper_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                      void *user_ctx,
+#endif
+                      const QInt num_int,
+                      QcMat *val_int[])
+{
+#include "OpenRSPTestPerturbations.h"
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_alpha_hf/dipole_length_integrals.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *oneham_context = "ONEHAM";
+    char *ext_field_context = "EXT_FIELD";
+    char *one_oper_context;
+#endif
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QBool assembled;
+    QInt imat;
+    QErrorCode ierr;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    one_oper_context = (char *)user_ctx;
+    if (strcmp(one_oper_context, oneham_context)==0) {
+        /* electric fields (zero integrals) */
+        if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+            for (imat=0; imat<num_int; imat++) {
+                /* checks if the matrix is assembled or not */
+                ierr = QcMatIsAssembled(val_int[imat], &assembled);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatIsAssembled");
+                    exit(ierr);
+                }
+                if (assembled==QFALSE) {
+                    ierr = QcMatBlockCreate(val_int[imat], 1);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatBlockCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetSymType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDataType(val_int[imat],
+                                            1,
+                                            idx_block_row,
+                                            idx_block_col,
+                                            data_type);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDataType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDimMat");
+                        exit(ierr);
+                    }
+                    ierr = QcMatAssemble(val_int[imat]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatAssemble");
+                        exit(ierr);
+                    }
+                }
+                ierr = QcMatZeroEntries(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatZeroEntries");
+                    exit(ierr);
+                }
+            }
+        }
+        else {
+            printf("get_one_oper_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (strcmp(one_oper_context, ext_field_context)==0) {
+        /* electric fields */
+        if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+            /* checks if the matrix is assembled or not */
+            for (imat=0; imat<num_int; imat++) {
+                ierr = QcMatIsAssembled(val_int[imat], &assembled);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatIsAssembled");
+                    exit(ierr);
+                }
+                if (assembled==QFALSE) {
+                    ierr = QcMatBlockCreate(val_int[imat], 1);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatBlockCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetSymType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDataType(val_int[imat],
+                                            1,
+                                            idx_block_row,
+                                            idx_block_col,
+                                            data_type);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDataType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDimMat");
+                        exit(ierr);
+                    }
+                    ierr = QcMatAssemble(val_int[imat]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatAssemble");
+                        exit(ierr);
+                    }
+                }
+            }
+            /* dipole length integrals */
+            if (oper_pert_orders[0]==1) {
+                for (imat=0; imat<3; imat++) {
+                    ierr = QcMatSetValues(val_int[imat],
+                                          IDX_BLOCK_ROW,
+                                          IDX_BLOCK_COL,
+                                          IDX_FIRST_ROW,
+                                          NUM_AO,
+                                          IDX_FIRST_COL,
+                                          NUM_AO,
+                                          &values_diplen[imat*SIZE_AO_MAT],
+                                          NULL);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetValues");
+                        exit(ierr);
+                    }
+                }
+            }
+            /* zero integrals */
+            else {
+                for (imat=0; imat<3; imat++) {
+                    ierr = QcMatZeroEntries(val_int[imat]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_mat>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatZeroEntries");
+                        exit(ierr);
+                    }
+                }
+            }
+        }
+        else {
+            printf("get_one_oper_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else {
+        printf("get_one_oper_mat>> unknown one-electron operator at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#else
+    /* electric fields */
+    if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+        /* checks if the matrix is assembled or not */
+        for (imat=0; imat<num_int; imat++) {
+            ierr = QcMatIsAssembled(val_int[imat], &assembled);
+            if (ierr!=QSUCCESS) {
+                printf("get_one_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatIsAssembled");
+                exit(ierr);
+            }
+            if (assembled==QFALSE) {
+                ierr = QcMatBlockCreate(val_int[imat], 1);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatBlockCreate");
+                    exit(ierr);
+                }
+                ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetSymType");
+                    exit(ierr);
+                }
+                ierr = QcMatSetDataType(val_int[imat],
+                                        num_blocks,
+                                        idx_block_row,
+                                        idx_block_col,
+                                        data_type);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetDataType");
+                    exit(ierr);
+                }
+                ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetDimMat");
+                    exit(ierr);
+                }
+                ierr = QcMatAssemble(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatAssemble");
+                    exit(ierr);
+                }
+            }
+        }
+        /* dipole length integrals */
+        if (oper_pert_orders[0]==1) {
+            for (imat=0; imat<3; imat++) {
+                ierr = QcMatSetValues(val_int[imat],
+                                      IDX_BLOCK_ROW,
+                                      IDX_BLOCK_COL,
+                                      IDX_FIRST_ROW,
+                                      NUM_AO,
+                                      IDX_FIRST_COL,
+                                      NUM_AO,
+                                      values_diplen[imat*SIZE_AO_MAT],
+                                      NULL);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetValues");
+                    exit(ierr);
+                }
+            }
+        }
+        /* zero integrals */
+        else {
+            for (imat=0; imat<3; imat++) {
+                ierr = QcMatZeroEntries(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatZeroEntries");
+                    exit(ierr);
+                }
+            }
+        }
+    }
+    else {
+        printf("get_one_oper_mat>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#endif
+}
+
+void get_one_oper_exp(const QInt oper_num_pert,
+                      const QcPertInt *oper_pert_labels,
+                      const QInt *oper_pert_orders,
+                      const QInt num_dmat,
+                      QcMat *dens_mat[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                      void *user_ctx,
+#endif
+                      const QInt num_exp,
+                      QReal *val_exp)
+{
+#include "OpenRSPTestPerturbations.h"
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_alpha_hf/dipole_length_integrals.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *oneham_context = "ONEHAM";
+    char *ext_field_context = "EXT_FIELD";
+    char *one_oper_context;
+#endif
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QcMat val_int[1];
+    QInt offset_exp;
+    QInt imat;
+    QInt idens;
+    QErrorCode ierr;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    one_oper_context = (char *)user_ctx;
+    if (strcmp(one_oper_context, oneham_context)==0) {
+        /* electric fields (zero integrals) */
+        if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+            for (idens=0; idens<2*num_exp; idens++) {
+                val_exp[idens] = 0;
+            }
+        }
+        else {
+            printf("get_one_oper_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else if (strcmp(one_oper_context, ext_field_context)==0) {
+        /* electric fields */
+        if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+            /* dipole length integrals */
+            if (oper_pert_orders[0]==1) {
+                offset_exp = 0;
+                for (imat=0; imat<3; imat++) {
+                    ierr = QcMatCreate(&val_int[0]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatBlockCreate(&val_int[0], 1);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatBlockCreate");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetSymType(&val_int[0], QSYMMAT);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetSymType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDataType(&val_int[0],
+                                            1,
+                                            idx_block_row,
+                                            idx_block_col,
+                                            data_type);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDataType");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetDimMat(&val_int[0], NUM_AO, NUM_AO);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetDimMat");
+                        exit(ierr);
+                    }
+                    ierr = QcMatAssemble(&val_int[0]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatAssemble");
+                        exit(ierr);
+                    }
+                    ierr = QcMatSetValues(&val_int[0],
+                                          IDX_BLOCK_ROW,
+                                          IDX_BLOCK_COL,
+                                          IDX_FIRST_ROW,
+                                          NUM_AO,
+                                          IDX_FIRST_COL,
+                                          NUM_AO,
+                                          &values_diplen[imat*SIZE_AO_MAT],
+                                          NULL);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatSetValues");
+                        exit(ierr);
+                    }
+                    for (idens=0; idens<num_dmat; idens++) {
+                        ierr = QcMatGetMatProdTrace(&val_int[0],
+                                                    dens_mat[idens],
+                                                    MAT_NO_OPERATION,
+                                                    1,
+                                                    &val_exp[offset_exp+2*idens]);
+                        if (ierr!=QSUCCESS) {
+                            printf("get_one_oper_exp>> error happened at %s: %s\n",
+                                   FILE_AND_LINE,
+                                   "calling QcMatGetMatProdTrace");
+                            exit(ierr);
+                        }
+                    }
+                    ierr = QcMatDestroy(&val_int[0]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatDestroy");
+                        exit(ierr);
+                    }
+                    offset_exp += 2*num_dmat;
+                }
+            }
+            /* zero integrals */
+            else {
+                for (idens=0; idens<2*num_exp; idens++) {
+                    val_exp[idens] = 0;
+                }
+            }
+        }
+        else {
+            printf("get_one_oper_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+    else {
+        printf("get_one_oper_exp>> unknown one-electron operator at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#else
+    /* electric fields */
+    if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+        /* dipole length integrals */
+        if (oper_pert_orders[0]==1) {
+            offset_exp = 0;
+            for (imat=0; imat<3; imat++) {
+                ierr = QcMatCreate(&val_int[0]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatCreate");
+                    exit(ierr);
+                }
+                ierr = QcMatBlockCreate(&val_int[0], 1);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatBlockCreate");
+                    exit(ierr);
+                }
+                ierr = QcMatSetSymType(&val_int[0], QSYMMAT);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetSymType");
+                    exit(ierr);
+                }
+                ierr = QcMatSetDataType(&val_int[0],
+                                        1,
+                                        idx_block_row,
+                                        idx_block_col,
+                                        data_type);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetDataType");
+                    exit(ierr);
+                }
+                ierr = QcMatSetDimMat(&val_int[0], NUM_AO, NUM_AO);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetDimMat");
+                    exit(ierr);
+                }
+                ierr = QcMatAssemble(&val_int[0]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatAssemble");
+                    exit(ierr);
+                }
+                ierr = QcMatSetValues(&val_int[0],
+                                      IDX_BLOCK_ROW,
+                                      IDX_BLOCK_COL,
+                                      IDX_FIRST_ROW,
+                                      NUM_AO,
+                                      IDX_FIRST_COL,
+                                      NUM_AO,
+                                      values_diplen[imat*SIZE_AO_MAT],
+                                      NULL);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetValues");
+                    exit(ierr);
+                }
+                for (idens=0; idens<num_dmat; idens++) {
+                    ierr = QcMatGetMatProdTrace(&val_int[0],
+                                                dens_mat[idens],
+                                                MAT_NO_OPERATION,
+                                                1,
+                                                &val_exp[offset_exp+2*idens]);
+                    if (ierr!=QSUCCESS) {
+                        printf("get_one_oper_exp>> error happened at %s: %s\n",
+                               FILE_AND_LINE,
+                               "calling QcMatGetMatProdTrace");
+                        exit(ierr);
+                    }
+                }
+                ierr = QcMatDestroy(val_int[0]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_one_oper_exp>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatDestroy");
+                    exit(ierr);
+                }
+                offset_exp += 2*num_dmat;
+            }
+        }
+        /* zero integrals */
+        else {
+            for (idens=0; idens<2*num_exp; idens++) {
+                val_exp[idens] = 0;
+            }
+        }
+    else {
+        printf("get_one_oper_exp>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#endif
+}
+
+void get_two_oper_mat(const QInt oper_num_pert,
+                      const QcPertInt *oper_pert_labels,
+                      const QInt *oper_pert_orders,
+                      const QInt num_dmat,
+                      QcMat *dens_mat[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                      void *user_ctx,
+#endif
+                      const QInt num_int,
+                      QcMat *val_int[])
+{
+#include "OpenRSPTestPerturbations.h"
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_alpha_hf/two_electron_integrals.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *two_oper_context;
+#endif
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QBool assembled;
+    QInt imat;
+    QErrorCode ierr;
+    static QInt id_gmat = -1;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    two_oper_context = (char *)user_ctx;
+    if (strcmp(two_oper_context, "NONLAO")!=0) {
+        printf("get_two_oper_mat>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+    else {
+        /* checks if the matrix is assembled or not */
+        for (imat=0; imat<num_int; imat++) {
+            ierr = QcMatIsAssembled(val_int[imat], &assembled);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatIsAssembled");
+                exit(ierr);
+            }
+            if (assembled==QFALSE) {
+                ierr = QcMatBlockCreate(val_int[imat], 1);
+                if (ierr!=QSUCCESS) {
+                    printf("get_two_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatBlockCreate");
+                    exit(ierr);
+                }
+                ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+                if (ierr!=QSUCCESS) {
+                    printf("get_two_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetSymType");
+                    exit(ierr);
+                }
+                ierr = QcMatSetDataType(val_int[imat],
+                                        1,
+                                        idx_block_row,
+                                        idx_block_col,
+                                        data_type);
+                if (ierr!=QSUCCESS) {
+                    printf("get_two_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetDataType");
+                    exit(ierr);
+                }
+                ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+                if (ierr!=QSUCCESS) {
+                    printf("get_two_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatSetDimMat");
+                    exit(ierr);
+                }
+                ierr = QcMatAssemble(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_two_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatAssemble");
+                    exit(ierr);
+                }
+            }
+        }
+        /* unperturbed two-electron integrals */
+        if (oper_num_pert==0) {
+            id_gmat++;
+            if (id_gmat>5) {
+                printf("get_two_oper_mat>> not implemented at %s\n",
+                       FILE_AND_LINE);
+                exit(QFAILURE);
+            }
+            ierr = QcMatSetValues(val_int[0],
+                                  IDX_BLOCK_ROW,
+                                  IDX_BLOCK_COL,
+                                  IDX_FIRST_ROW,
+                                  NUM_AO,
+                                  IDX_FIRST_COL,
+                                  NUM_AO,
+                                  &values_gmat[id_gmat*SIZE_AO_MAT],
+                                  NULL);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetValues");
+                exit(ierr);
+            }
+        }
+        /* electric fields (zero integrals) */
+        else if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+            for (imat=0; imat<num_int; imat++) {
+                ierr = QcMatZeroEntries(val_int[imat]);
+                if (ierr!=QSUCCESS) {
+                    printf("get_two_oper_mat>> error happened at %s: %s\n",
+                           FILE_AND_LINE,
+                           "calling QcMatZeroEntries");
+                    exit(ierr);
+                }
+            }
+        }
+        else {
+            printf("get_two_oper_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+#else
+    /* checks if the matrix is assembled or not */
+    for (imat=0; imat<num_int; imat++) {
+        ierr = QcMatIsAssembled(val_int[imat], &assembled);
+        if (ierr!=QSUCCESS) {
+            printf("get_two_oper_mat>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatIsAssembled");
+            exit(ierr);
+        }
+        if (assembled==QFALSE) {
+            ierr = QcMatBlockCreate(val_int[imat], 1);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatBlockCreate");
+                exit(ierr);
+            }
+            ierr = QcMatSetSymType(val_int[imat], QSYMMAT);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetSymType");
+                exit(ierr);
+            }
+            ierr = QcMatSetDataType(val_int[imat],
+                                    num_blocks,
+                                    idx_block_row,
+                                    idx_block_col,
+                                    data_type);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetDataType");
+                exit(ierr);
+            }
+            ierr = QcMatSetDimMat(val_int[imat], NUM_AO, NUM_AO);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatSetDimMat");
+                exit(ierr);
+            }
+            ierr = QcMatAssemble(val_int[imat]);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatAssemble");
+                exit(ierr);
+            }
+        }
+    }
+    /* unperturbed two-electron integrals */
+    if (oper_num_pert==0) {
+        id_gmat++;
+        if (id_gmat>5) {
+            printf("get_two_oper_mat>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+        ierr = QcMatSetValues(val_int[0],
+                              IDX_BLOCK_ROW,
+                              IDX_BLOCK_COL,
+                              IDX_FIRST_ROW,
+                              NUM_AO,
+                              IDX_FIRST_COL,
+                              NUM_AO,
+                              values_gmat[id_gmat*SIZE_AO_MAT],
+                              NULL);
+        if (ierr!=QSUCCESS) {
+            printf("get_two_oper_mat>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetValues");
+            exit(ierr);
+        }
+    }
+    /* electric fields (zero integrals) */
+    else if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+        for (imat=0; imat<num_int; imat++) {
+            ierr = QcMatZeroEntries(val_int[imat]);
+            if (ierr!=QSUCCESS) {
+                printf("get_two_oper_mat>> error happened at %s: %s\n",
+                       FILE_AND_LINE,
+                       "calling QcMatZeroEntries");
+                exit(ierr);
+            }
+        }
+    }
+    else {
+        printf("get_two_oper_mat>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#endif
+}
+
+void get_two_oper_exp(const QInt oper_num_pert,
+                      const QcPertInt *oper_pert_labels,
+                      const QInt *oper_pert_orders,
+                      const QInt dmat_len_tuple,
+                      const QInt *num_LHS_dmat,
+                      QcMat *LHS_dens_mat[],
+                      const QInt *num_RHS_dmat,
+                      QcMat *RHS_dens_mat[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                      void *user_ctx,
+#endif
+                      const QInt num_exp,
+                      QReal *val_exp)
+{
+#include "OpenRSPTestPerturbations.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *two_oper_context;
+#endif
+    QInt ival;
+    QErrorCode ierr;
+#if defined(OPENRSP_C_USER_CONTEXT)
+    two_oper_context = (char *)user_ctx;
+    if (strcmp(two_oper_context, "NONLAO")!=0) {
+        printf("get_two_oper_exp>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+    else {
+        /* electric fields */
+        if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+            for (ival=0; ival<2*num_exp; ival++) {
+                val_exp[ival] = 0;
+            }
+        }
+        else {
+            printf("get_two_oper_exp>> not implemented at %s\n",
+                   FILE_AND_LINE);
+            exit(QFAILURE);
+        }
+    }
+#else
+    /* electric fields */
+    if (oper_num_pert==1 && oper_pert_labels[0]==PERT_DIPOLE) {
+        for (ival=0; ival<2*num_exp; ival++) {
+            val_exp[ival] = 0;
+        }
+    }
+    else {
+        printf("get_two_oper_exp>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+#endif
+}
+
+void get_nuc_contrib(const QInt nuc_num_pert,
+                     const QcPertInt *nuc_pert_labels,
+                     const QInt *nuc_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT) 
+                     void *user_ctx,
+#endif
+                     const QInt size_pert,
+                     QReal *val_nuc)
+{
+}
+
+void get_linear_rsp_solution(const QInt size_pert,
+                             const QReal *freq_sums,
+                             const QInt num_freq_sums,
+                             QcMat *RHS_mat[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void *user_ctx,
+#endif
+                             QcMat *rsp_param[])
+{
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_alpha_hf/response_parameters.h"
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QBool assembled;
+    QErrorCode ierr;
+    static QInt id_rsp_param = -1;
+    id_rsp_param++;
+    if (id_rsp_param>2) {
+        printf("get_linear_rsp_solution>> not implemented at %s\n",
+               FILE_AND_LINE);
+        exit(QFAILURE);
+    }
+    /* checks if the matrix is assembled or not */
+    ierr = QcMatIsAssembled(rsp_param[0], &assembled);
+    if (ierr!=QSUCCESS) {
+        printf("get_linear_rsp_solution>> error happened at %s: %s\n",
+               FILE_AND_LINE,
+               "calling QcMatIsAssembled");
+        exit(ierr);
+    }
+    if (assembled==QFALSE) {
+        ierr = QcMatBlockCreate(rsp_param[0], 1);
+        if (ierr!=QSUCCESS) {
+            printf("get_linear_rsp_solution>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatBlockCreate");
+            exit(ierr);
+        }
+        ierr = QcMatSetDataType(rsp_param[0],
+                                1,
+                                idx_block_row,
+                                idx_block_col,
+                                data_type);
+        if (ierr!=QSUCCESS) {
+            printf("get_linear_rsp_solution>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetDataType");
+            exit(ierr);
+        }
+        ierr = QcMatSetDimMat(rsp_param[0], NUM_AO, NUM_AO);
+        if (ierr!=QSUCCESS) {
+            printf("get_linear_rsp_solution>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatSetDimMat");
+            exit(ierr);
+        }
+        ierr = QcMatAssemble(rsp_param[0]);
+        if (ierr!=QSUCCESS) {
+            printf("get_linear_rsp_solution>> error happened at %s: %s\n",
+                   FILE_AND_LINE,
+                   "calling QcMatAssemble");
+            exit(ierr);
+        }
+    }
+    ierr = QcMatSetValues(rsp_param[0],
+                          IDX_BLOCK_ROW,
+                          IDX_BLOCK_COL,
+                          IDX_FIRST_ROW,
+                          NUM_AO,
+                          IDX_FIRST_COL,
+                          NUM_AO,
+                          &alpha_rsp_param[id_rsp_param*SIZE_AO_MAT],
+                          NULL);
+    if (ierr!=QSUCCESS) {
+        printf("get_linear_rsp_solution>> error happened at %s: %s\n",
+               FILE_AND_LINE,
+               "calling QcMatSetValues");
+        exit(ierr);
+    }
+}
+
+@ The atomic-orbital density matrix-based response theory is tested by:
+<<OpenRSPAODensTest.h>>=
+/*
+  <<OpenRSPLicense>>
+
+   This is the header file of unit testing of the AO density matrix-based
+   response theory.
+
+   2014-07-31, Bin Gao
+   * first version
+*/
+#if !defined(OPENRSP_AO_DENS_TEST_H)
+#define OPENRSP_AO_DENS_TEST_H
+
+#include "OpenRSPPertCallback.h"
+#include "OpenRSPAODensCallback.h"
+
+extern QErrorCode OpenRSPAODensTest(OpenRSP*,FILE*);
+
+#endif
+<<OpenRSPAODensTest.c>>=
+/*
+  <<OpenRSPLicense>>
+
+   This file tests the AO density matrix-based response theory.
+
+   2014-07-31, Bin Gao
+   * first version
+*/
+
+#include "OpenRSPAODensTest.h"
+
+QErrorCode OpenRSPAODensTest(OpenRSP *open_rsp, FILE *fp_log)
+{
+#include "OpenRSPTestPerturbations.h"
+#if defined(OPENRSP_C_USER_CONTEXT)
+    /* user defined context of linear response equation solver */
+    char *solver_context = "SOLVER";
+#endif
+    /* overlap integrals with London atomic orbitals */
+    QInt overlap_num_pert = 2;
+    QcPertInt overlap_pert_labels[2] = {PERT_GEOMETRIC,PERT_MAGNETIC};
+    QInt overlap_pert_orders[2] = {MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC};
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *overlap_context = "OVERLAP";
+#endif
+    /* one-electron Hamiltonian */
+    QInt oneham_num_pert = 2;
+    QcPertInt oneham_pert_labels[2] = {PERT_GEOMETRIC,PERT_MAGNETIC};
+    QInt oneham_pert_orders[2] = {MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC};
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *oneham_context = "ONEHAM";
+#endif
+    /* external field */
+    QInt ext_field_num_pert = 3;
+    QcPertInt ext_field_pert_labels[3] = {PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC};
+    QInt ext_field_pert_orders[3] = {MAX_ORDER_GEOMETRIC,MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC};
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *ext_field_context = "EXT_FIELD";
+#endif
+    /* two-electron Hamiltonian */
+    QInt twoel_num_pert = 2;
+    QcPertInt twoel_pert_labels[2] = {PERT_GEOMETRIC,PERT_MAGNETIC};
+    QInt twoel_pert_orders[2] = {MAX_ORDER_GEOMETRIC,MAX_ORDER_MAGNETIC};
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *twoel_context = "NONLAO";
+#endif
+    /* referenced state */
+#include "ao_dens_ground_state_hf/num_atomic_orbitals.h"
+#include "ao_dens_ground_state_hf/fock_matrix.h"
+#include "ao_dens_ground_state_hf/density_matrix.h"
+#include "ao_dens_ground_state_hf/overlap_integrals.h"
+    QInt idx_block_row[1] = {IDX_BLOCK_ROW};
+    QInt idx_block_col[1] = {IDX_BLOCK_COL};
+    QcDataType data_type[1] = {QREALMAT};
+    QcMat F_unpert;
+    QcMat D_unpert;
+    QcMat S_unpert;
+    /* polarizability */
+    QInt ALPHA_NUM_PROPS = 1;
+    QInt ALPHA_LEN_TUPLE[1] = {2};
+    QcPertInt ALPHA_PERT_TUPLE[2] = {PERT_DIPOLE,PERT_DIPOLE};
+    QInt ALPHA_NUM_FREQ_CONFIGS[1] = {1};
+    QReal ALPHA_PERT_FREQS[4] = {-0.072,0.0,0.072,0.0};
+    QInt ALPHA_KN_RULES[1] = {0};
+    /* response functions */
+    QInt size_rsp_funs;
+    QReal rsp_funs[18];
+    QInt ipert,jpert,ival;
+    /* error information */
+    QErrorCode ierr;
+
+    ///* sets the equation of motion of electrons */
+    //ierr = OpenRSPSetElecEOM(open_rsp, ELEC_AO_D_MATRIX);
+    //QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetElecEOM");
+    //fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPSetElecEOM() passed\n");
+
+    /* sets the context of linear response equation solver */
+    ierr = OpenRSPSetLinearRSPSolver(open_rsp,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                     (void *)solver_context,
+#endif
+                                     &get_linear_rsp_solution);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetLinearRSPSolver");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPSetLinearRSPSolver() passed\n");
+
+    /* sets the context of perturbation dependent basis sets */
+    ierr = OpenRSPSetOverlap(open_rsp,
+                             overlap_num_pert,
+                             overlap_pert_labels,
+                             overlap_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             (void *)overlap_context,
+#endif
+                             &get_overlap_mat,
+                             &get_overlap_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetOverlap");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPSetOverlap() passed\n");
+
+    /* adds one-electron Hamiltonian */
+    ierr = OpenRSPAddOneOper(open_rsp,
+                             oneham_num_pert,
+                             oneham_pert_labels,
+                             oneham_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             (void *)oneham_context,
+#endif
+                             &get_one_oper_mat,
+                             &get_one_oper_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(h)");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPAddOneOper(h) passed\n");
+
+    /* adds external field */
+    ierr = OpenRSPAddOneOper(open_rsp,
+                             ext_field_num_pert,
+                             ext_field_pert_labels,
+                             ext_field_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             (void *)ext_field_context,
+#endif
+                             &get_one_oper_mat,
+                             &get_one_oper_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(V)");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPAddOneOper(V) passed\n");
+
+    /* adds two-electron Hamiltonian */
+    ierr = OpenRSPAddTwoOper(open_rsp,
+                             twoel_num_pert,
+                             twoel_pert_labels,
+                             twoel_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             (void *)twoel_context,
+#endif
+                             &get_two_oper_mat,
+                             &get_two_oper_exp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddTwoOper()");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPAddTwoOper() passed\n");
+
+    /* assembles the context of response theory calculations */
+    ierr = OpenRSPAssemble(open_rsp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAssemble");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPAssemble() passed\n");
+
+    /* writes the context of response theory calculations */
+    ierr = OpenRSPWrite(open_rsp, "OpenRSPAODensTest.log");
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPWrite");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPWrite() passed\n");
+
+    /* sets the unperturbed Fock matrix */
+    ierr = QcMatCreate(&F_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatCreate(F)");
+    ierr = QcMatBlockCreate(&F_unpert, 1);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatBlockCreate(F)");
+    ierr = QcMatSetSymType(&F_unpert, QSYMMAT);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetSymType(F)");
+    ierr = QcMatSetDataType(&F_unpert, 1, idx_block_row, idx_block_col, data_type);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetDataType(F)");
+    ierr = QcMatSetDimMat(&F_unpert, NUM_AO, NUM_AO);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetDimMat(F)");
+    ierr = QcMatAssemble(&F_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatAssemble(F)");
+    ierr = QcMatSetValues(&F_unpert,
+                          IDX_BLOCK_ROW,
+                          IDX_BLOCK_COL,
+                          IDX_FIRST_ROW,
+                          NUM_AO,
+                          IDX_FIRST_COL,
+                          NUM_AO,
+                          values_fock,
+                          NULL);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetValues(F)");
+    /* sets the unperturbed density matrix */
+    ierr = QcMatCreate(&D_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatCreate(D)");
+    ierr = QcMatBlockCreate(&D_unpert, 1);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatBlockCreate(D)");
+    ierr = QcMatSetSymType(&D_unpert, QSYMMAT);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetSymType(D)");
+    ierr = QcMatSetDataType(&D_unpert, 1, idx_block_row, idx_block_col, data_type);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetDataType(D)");
+    ierr = QcMatSetDimMat(&D_unpert, NUM_AO, NUM_AO);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetDimMat(D)");
+    ierr = QcMatAssemble(&D_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatAssemble(D)");
+    ierr = QcMatSetValues(&D_unpert,
+                          IDX_BLOCK_ROW,
+                          IDX_BLOCK_COL,
+                          IDX_FIRST_ROW,
+                          NUM_AO,
+                          IDX_FIRST_COL,
+                          NUM_AO,
+                          values_density,
+                          NULL);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetValues(D)");
+    /* sets the unperturbed overlap integrals */
+    ierr = QcMatCreate(&S_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatCreate(S)");
+    ierr = QcMatBlockCreate(&S_unpert, 1);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatBlockCreate(S)");
+    ierr = QcMatSetSymType(&S_unpert, QSYMMAT);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetSymType(S)");
+    ierr = QcMatSetDataType(&S_unpert, 1, idx_block_row, idx_block_col, data_type);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetDataType(S)");
+    ierr = QcMatSetDimMat(&S_unpert, NUM_AO, NUM_AO);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetDimMat(S)");
+    ierr = QcMatAssemble(&S_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatAssemble(S)");
+    ierr = QcMatSetValues(&S_unpert,
+                          IDX_BLOCK_ROW,
+                          IDX_BLOCK_COL,
+                          IDX_FIRST_ROW,
+                          NUM_AO,
+                          IDX_FIRST_COL,
+                          NUM_AO,
+                          values_overlap,
+                          NULL);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatSetValues(S)");
+
+    /* gets the polarizability */
+    size_rsp_funs = 9;
+    ierr = OpenRSPGetRSPFun(open_rsp,
+                            &F_unpert,
+                            &D_unpert,
+                            &S_unpert,
+                            ALPHA_NUM_PROPS,
+                            ALPHA_LEN_TUPLE,
+                            ALPHA_PERT_TUPLE,
+                            ALPHA_NUM_FREQ_CONFIGS,
+                            ALPHA_PERT_FREQS,
+                            ALPHA_KN_RULES,
+                            size_rsp_funs,
+                            rsp_funs);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPGetRSPFun");
+    fprintf(fp_log, "OpenRSPAODensTest>> OpenRSPGetRSPFun() passed\n");
+    for (ipert=0,ival=0; ipert<3; ipert++) {
+        for (jpert=0; jpert<3; jpert++) {
+            fprintf(fp_log, " (%f,%f)", rsp_funs[ival], rsp_funs[ival+1]);
+            ival += 2;
+        }
+        fprintf(fp_log, "\n");
+    }
+
+    /* cleans */
+    ierr = QcMatDestroy(&F_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatDestroy(F)");
+    ierr = QcMatDestroy(&D_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatDestroy(D)");
+    ierr = QcMatDestroy(&S_unpert);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatDestroy(S)");
+
+    return QSUCCESS;
+}
+
 <<OpenRSPTest.h>>=
 /*
   <<OpenRSPLicense>>
 
   This is the header file of OpenRSP unit testing.
 
-  2014-06-30, Bin Gao:
+  2014-07-31, Bin Gao:
   * first version
 */
 
-#if !defined(QCFUNDATA_TEST_H)
-#define QCFUNDATA_TEST_H
+#if !defined(OPENRSP_TEST_H)
+#define OPENRSP_TEST_H
 
 #include <string.h>
 #include "OpenRSP.h"
 
-QcErrorCode QcBinomExpTest(FILE *fp_log);
-QcErrorCode QcMultExpTest(FILE *fp_log);
-QcErrorCode QcCombinTest(FILE *fp_log);
+#include "OpenRSPAODensTest.h"
 
 #endif
 
@@ -33,1009 +1976,92 @@ QcErrorCode QcCombinTest(FILE *fp_log);
 
    This file tests the APIs of OpenRSP library.
 
-   2014-06-30, Bin Gao
+   2014-07-31, Bin Gao
    * first version
 */
 
 #include "OpenRSPTest.h"
 
-/* <macrodef name='QCFUNDATA_TEST_EXECUTABLE'>
+/* <macrodef name='OPENRSP_TEST_EXECUTABLE'>
      Build test suite as excutables.
    </macrodef> */
-#if defined(QCFUNDATA_TEST_EXECUTABLE)
-QcErrorCode main(int argc, QcChar *argv[])
+#if defined(OPENRSP_TEST_EXECUTABLE)
+QErrorCode main()
 {
-    FILE *fp_log=QCSTDOUT;  /* file pointer */
-    QcBool test_BinomExp;   /* if testing binomial expansion */
-    QcBool test_MultExp;    /* if testing multinomial expansion */
-    QcBool test_Combin;     /* if testing combinations */
-    QcInt iarg;             /* incremental recorder over input arguments */
-    QcErrorCode ierr;       /* error information */
-    /* finds out what to  test */
-    test_BinomExp = QCFALSE;
-    test_MultExp = QCFALSE;
-    test_Combin = QCFALSE;
-    for (iarg=1; iarg<argc; iarg++) {
-        if (strcmp(argv[iarg], "-BinomExp")==0) {
-            test_BinomExp = QCTRUE;
-        }
-        else if (strcmp(argv[iarg], "-MultExp")==0) {
-            test_MultExp = QCTRUE;
-        }
-        else if (strcmp(argv[iarg], "-Combin")==0) {
-            test_Combin = QCTRUE;
-        }
-        else if (strcmp(argv[iarg], "-All")==0) {
-            test_BinomExp = QCTRUE;
-            test_MultExp = QCTRUE;
-            test_Combin = QCTRUE;
-        }
-    }
+    FILE *fp_log=stdout;  /* file pointer */
 #else
-#include <stdarg.h>
-QcErrorCode OpenRSPTest(FILE *fp_log, ...)
+QErrorCode test_c_OpenRSP(FILE *fp_log)
 {
-    va_list argp;          /* saving the information of arguments */
-    QcChar *para;          /* optional arguments as characters */
-    QcBool test_BinomExp;  /* if testing binomial expansion */
-    QcBool test_MultExp;   /* if testing multinomial expansion */
-    QcBool test_Combin;    /* if testing combinations */
-    QcErrorCode ierr;      /* error information */
-    /* finds out what to test */
-    va_start(argp, fp_log);
-    test_BinomExp = QCFALSE;
-    test_MultExp = QCFALSE;
-    test_Combin = QCFALSE;
-    while (1) {
-        para = va_arg(argp, QcChar*);
-        if (strcmp(para, "/0")==0) {
-            break;
-        }
-        else if (strcmp(para, "-BinomExp")==0) {
-            test_BinomExp = QCTRUE;
-        }
-        else if (strcmp(para, "-MultExp")==0) {
-            test_MultExp = QCTRUE;
-        }
-        else if (strcmp(para, "-Combin")==0) {
-            test_Combin = QCTRUE;
-        }
-        else if (strcmp(para, "-All")==0) {
-            test_MultExp = QCTRUE;
-            test_Combin = QCTRUE;
-        }
-    }
-    /* cleans argp */
-    va_end(argp);
 #endif
+#include "OpenRSPTestPerturbations.h"
+    OpenRSP open_rsp;                                 /* context of response theory calculations */
+    const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT] = {      /* labels of all perturbations */
+        PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC};
+    const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT] = {  /* maximum allowed orders of all perturbations */
+        MAX_ORDER_GEOMETRIC,MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC};
+    const QInt ALL_PERT_SIZES[] = {                   /* sizes of all perturbations up to their maximum orders */
+        12,78,364,1365,4368,12376,31824,              /* geometric derivatives (4 atoms) */
+        3,                                            /* electric dipole */
+        3,6,10,15,21,28,36};                          /* magnetic derivatives */
+#if defined(OPENRSP_C_USER_CONTEXT)
+    char *pert_context = "NRNZGEO";                  /* user defined context for perturbations */
+#endif
+    QErrorCode ierr;                                  /* error information */
+    const QInt NUM_ATOMS = 4;
 
-    if (test_BinomExp==QCTRUE) {
-        ierr = QcBinomExpTest(fp_log);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcBinomExpTest()");
-        fprintf(fp_log, "\nOpenRSPTest>> QcBinomExpTest() passed ...\n\n");
-    }
+    /* creates the context of response theory calculations */
+    ierr = OpenRSPCreate(&open_rsp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPCreate() passed\n");
 
-    if (test_MultExp==QCTRUE) {
-        ierr = QcMultExpTest(fp_log);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpTest()");
-        fprintf(fp_log, "\nOpenRSPTest>> QcMultExpTest() passed ...\n\n");
-    }
+    /* sets information of all perturbations */
+    ierr = OpenRSPSetPerturbations(&open_rsp,
+                                   NUM_ALL_PERT,
+                                   ALL_PERT_LABELS,
+                                   ALL_PERT_MAX_ORDERS,
+                                   ALL_PERT_SIZES,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                   (void *)pert_context,
+#endif
+                                   &get_pert_concatenation);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetPerturbations");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetPerturbations() passed\n");
 
-    if (test_Combin==QCTRUE) {
-        ierr = QcCombinTest(fp_log);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinTest()");
-        fprintf(fp_log, "\nOpenRSPTest>> QcCombinTest() passed ...\n\n");
-    }
+    /* sets the nuclear Hamiltonian */
+    ierr = OpenRSPSetNucHamilton(&open_rsp,
+                                 NUM_ALL_PERT,
+                                 ALL_PERT_LABELS,
+                                 ALL_PERT_MAX_ORDERS,
+#if defined(OPENRSP_C_USER_CONTEXT)   
+                                 (void *)pert_context,
+#endif
+                                 &get_nuc_contrib,
+                                 NUM_ATOMS);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucHamilton");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucHamilton() passed\n");
 
-    return QCSUCCESS;
-}
+    /* tests the density matrix-based response theory */
+    ierr = OpenRSPAODensTest(&open_rsp, fp_log);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAODensTest");
+    fprintf(fp_log, "test_c_OpenRSP>> density matrix-based response theory passed\n");
 
-@ We first test the binomial expansion, where the binomial coefficients are
-compared with those in our pre-computed table (see
-Section~\ref{subsubsection-combination-rank}):
-<<QcBinomExpTest.c>>=
-/*
-  <<OpenRSPLicense>>
+    /* destroys the context of response theory calculations */
+    ierr = OpenRSPDestroy(&open_rsp);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDestroy");
+    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPDestroy() passed\n");
 
-   This file tests the APIs of binomial expansion.
-
-   2014-07-04, Bin Gao
-  * first version
-*/
-
-#include "OpenRSPTest.h"
-#include "QcBinomTable.h"
-
-QcErrorCode QcBinomExpTest(FILE *fp_log)
-{
-    QcInt size_n;        /* number $n$ */
-    QcInt k_combin;      /* number $k$ */
-    QcULong n_choose_k;  /* $\binom{n}{k}$ */
-    QcErrorCode ierr;    /* error information */
-    k_combin = 0;
-    size_n = 6;
-    ierr = QcBinomCoefficient(size_n, k_combin, &n_choose_k);
-    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcBinomCoefficient()");
-    if (n_choose_k!=1) {
-        fprintf(fp_log,
-                "QcBinomExpTest>> size of a set n %"QCINT_FMT"\n",
-                size_n);
-        fprintf(fp_log,
-                "QcBinomExpTest>> number k %"QCINT_FMT"\n",
-                k_combin);
-        fprintf(fp_log,
-                "QcBinomExpTest>> n choose k %lu\n",
-                n_choose_k);
-        QcErrorExit(QC_FILE_LINE, "invalid n choose k");
-    }
-    for (k_combin=1; k_combin<=QCBINOM_TAB_MAX_K; k_combin++) {
-        for (size_n=0; size_n<QCBINOM_TAB_MAX_N; size_n++) {
-            ierr = QcBinomCoefficient(size_n, k_combin, &n_choose_k);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcBinomCoefficient()");
-            if (n_choose_k!=QCBINOM_TABLE[k_combin-1][size_n]) {
-                fprintf(fp_log,
-                        "QcBinomExpTest>> size of a set n %"QCINT_FMT"\n",
-                        size_n);
-                fprintf(fp_log,
-                        "QcBinomExpTest>> number k %"QCINT_FMT"\n",
-                        k_combin);
-                fprintf(fp_log,
-                        "QcBinomExpTest>> n choose k %lu\n",
-                        n_choose_k);
-                fprintf(fp_log,
-                        "QcBinomExpTest>> result from pre-computed table %"QCINT_FMT"\n",
-                        QCBINOM_TABLE[k_combin-1][size_n]);
-                QcErrorExit(QC_FILE_LINE, "invalid n choose k");
-            }
-        }
-    }
-    fprintf(fp_log, "QcBinomExpTest>> QcBinomCoefficient() passed ...\n");
-    return QCSUCCESS;
-}
-
-@ The multinomial expansion will be tested by comparing each multinomial
-coefficient and powers of terms from \LibName and referenced results of the
-following multinomial expansion:
-\begin{equation}
-  (x_{0}+x_{1}+x_{2})^{6}
-  =\sum_{k_{0}+k_{1}+k_{2}=6}\binom{6}{k_{0},k_{1},k_{2}} %
-    x_{0}^{k_{0}}x_{1}^{k_{1}}x_{2}^{k_{2}},
-\end{equation}
-
-<<QcMultExpTest.c>>=
-/*
-  <<OpenRSPLicense>>
-
-  This file tests the APIs of multinomial expansion.
-
-  2014-09-08, Bin Gao
-  * first version
-*/
-
-#include "OpenRSPTest.h"
-
-QcErrorCode QcMultExpTest(FILE *fp_log)
-{
-    const QcInt SUM_POWER=6;      /* power of the sum */
-    const QcInt NUM_SUM_TERMS=3;  /* number of terms in the sum */
-    QcULong num_exp_terms;        /* number of terms in the expansion */
-    /* multinomial coefficients */
-    const QcULong TERM_MULT_COEF[] = {1,6,15,20,
-                                      15,6,1,6,
-                                      30,60,60,30,
-                                      6,15,60,90,
-                                      60,15,20,60,
-                                      60,20,15,30,
-                                      15,6,6,1};
-    /* powers of terms in the expansion */
-    const QcInt TERM_POWERS[][3] = {{6,0,0},{5,1,0},{4,2,0},{3,3,0},
-                                    {2,4,0},{1,5,0},{0,6,0},{5,0,1},
-                                    {4,1,1},{3,2,1},{2,3,1},{1,4,1},
-                                    {0,5,1},{4,0,2},{3,1,2},{2,2,2},
-                                    {1,3,2},{0,4,2},{3,0,3},{2,1,3},
-                                    {1,2,3},{0,3,3},{2,0,4},{1,1,4},
-                                    {0,2,4},{1,0,5},{0,1,5},{0,0,6}};
-    QcMultExp mult_exp;           /* context of multinomial expansion */
-    QcULong mult_coef;            /* multinomial coefficient */
-    QcInt powers[3];              /* powers of terms in the expansion */
-    QcULong iexp;                 /* incremental recorder of terms in the expansion */
-    QcErrorCode ierr;             /* error information */
-
-    ierr = QcMultExpCreate(&mult_exp, SUM_POWER, NUM_SUM_TERMS);
-    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpCreate()");
-    fprintf(fp_log, "QcMultExpTest>> QcMultExpCreate() passed ...\n");
-
-    ierr = QcMultExpGetSize(&mult_exp, &num_exp_terms);
-    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpGetSize()");
-    if (num_exp_terms!=28) {
-        fprintf(fp_log, "QcMultExpTest>> number of terms in the expansion 28\n");
-        fprintf(fp_log,
-                "QcMultExpTest>> number of terms from QcMultExpGetSize() %lu\n",
-                num_exp_terms);
-        QcErrorExit(QC_FILE_LINE, "QcMultExpGetSize() failed");
-    }
-    fprintf(fp_log, "QcMultExpTest>> QcMultExpGetSize() passed ...\n");
-
-    ierr = QcMultExpWrite(&mult_exp, fp_log);
-    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpWrite()");
-    fprintf(fp_log, "QcMultExpTest>> QcMultExpWrite() passed ...\n");
-
-    for (iexp=0; iexp<num_exp_terms; iexp++) {
-        ierr = QcMultExpGetTerm(&mult_exp, iexp, &mult_coef, powers);
-        if (mult_coef!=TERM_MULT_COEF[iexp]) {
-            fprintf(fp_log,
-                    "QcMultExpTest>> index of the expansion term %lu\n",
-                    iexp);
-            fprintf(fp_log,
-                    "QcMultExpTest>> multinomial coefficient %lu\n",
-                    TERM_MULT_COEF[iexp]);
-            fprintf(fp_log,
-                    "QcMultExpTest>> multinomial coefficient from QcMultExpGetTerm() %lu\n",
-                    mult_coef);
-            QcErrorExit(QC_FILE_LINE, "QcMultExpGetTerm() failed");
-        }
-        if (powers[0]!=TERM_POWERS[iexp][0] ||
-            powers[1]!=TERM_POWERS[iexp][1] ||
-            powers[2]!=TERM_POWERS[iexp][2]) {
-            fprintf(fp_log,
-                    "QcMultExpTest>> index of the expansion term %lu\n",
-                    iexp);
-            fprintf(fp_log,
-                    "powers of terms [%"QCINT_FMT", %"QCINT_FMT", %"QCINT_FMT"]\n",
-                    TERM_POWERS[iexp][0],
-                    TERM_POWERS[iexp][1],
-                    TERM_POWERS[iexp][2]);
-            fprintf(fp_log,
-                    "powers from QcMultExpGetTerm() [%"QCINT_FMT", %"QCINT_FMT", %"QCINT_FMT"]\n",
-                    powers[0],
-                    powers[1],
-                    powers[2]);
-            QcErrorExit(QC_FILE_LINE, "QcMultExpGetTerm() failed");
-        }
-    }
-    fprintf(fp_log, "QcMultExpTest>> QcMultExpGetTerm() passed ...\n");
-
-    /* <QcTest='QcMultExpDestroy'> */
-    ierr = QcMultExpDestroy(&mult_exp);
-    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcMultExpDestroy()");
-    fprintf(fp_log, "QcMultExpTest>> QcMultExpDestroy() passed ...\n");
-
-    return QCSUCCESS;
-}
-
-@ For APIs of combinations, we first test [[QcCombinCheckRank()]],
-[[QcCombinNext()]], [[QcCombinGetIdxFromRange()]], [[QcCombinGetIdxFromSet()]]
-and [[QcRankCombination()]] from the first combination to the last one for
-number $n=10$ and $20$; while only [[QcCombinNext()]] and
-[[QcCombinCheckRank()]] are tested for other $n$'s.
-
-Last we test [[QcCombinSetRank()]] and [[QcCombinSetK()]]:
-<<QcCombinTest.c>>=
-/*
-  <<OpenRSPLicense>>
-
-   This file tests the APIs of combinations.
-
-   2014-07-04, Bin Gao
-  * first version
-*/
-
-#include "OpenRSPTest.h"
-
-QcErrorCode QcCombinTest(FILE *fp_log)
-{
-    /* numbers $n$ and $k$ to test APIs of combinations */
-    const QcInt COMBIN_KN[][2] = {{10,1},{100,1},{200,1},{600,1},
-                                  {10,2},{100,2},{200,2},{600,2},
-                                  {10,3},{100,3},{200,3},{600,3},
-                                  {10,4},{100,4},{200,4},
-                                  {10,5},{80,5},
-                                  {10,6},{10,7},{10,8},{10,9},{10,10},
-                                  {20,1},{20,2},{20,3},{20,4},{20,5},
-                                  {20,6},{20,7},{20,8},{20,9},{20,10},
-                                  {20,11},{20,12},{20,13},{20,14},{20,15},
-                                  {20,16},{20,17},{20,18},{20,19},{20,20}};
-    const QcInt SIZE_COMBIN_KN = sizeof(COMBIN_KN)/sizeof(COMBIN_KN[0][0])/2;
-    QcInt size_n;           /* number $n$ */
-    QcULong n_choose_k;     /* $\binom{n}{k}$ */
-    QcCombin qc_combin;     /* context of combinations */
-    QcULong num_steps=1;    /* steps to move to get the next combination */
-    QcULong irank;          /* incremental recorder over combinations */
-    QcInt *idx_combin;      /* generated indices of $k$-combination */
-    QcInt *idx_set;         /* set of indices from which idx_combin will be generated */
-    QcULong rank_to_check;  /* rank got from APIs, to check */
-    QcInt inum;             /* incremental recorder */
-    QcErrorCode ierr;       /* error information */
-
-    /* loops over all testing combinations */
-    for (size_n=0; size_n<SIZE_COMBIN_KN; size_n++) {
-        ierr = QcCombinCreate(&qc_combin,
-                              COMBIN_KN[size_n][0],
-                              COMBIN_KN[size_n][1]);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCreate()");
-        n_choose_k = QcCombinGetNumCombin(&qc_combin);
-        fprintf(fp_log,
-                "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT") = %lu\n",
-                COMBIN_KN[size_n][0],
-                COMBIN_KN[size_n][1],
-                n_choose_k);
-        /* writes results for further checking */
-        ierr = QcCombinWrite(&qc_combin, fp_log);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-        /* it takes to much time on testing other number $n$'s */
-        if (COMBIN_KN[size_n][0]==10 || COMBIN_KN[size_n][0]==20) {
-            idx_combin = (QcInt *)malloc(COMBIN_KN[size_n][1]*sizeof(QcInt));
-            if (idx_combin==NULL) {
-                fprintf(fp_log,
-                        "QcCombinTest>> k-combination %"QCINT_FMT"\n",
-                        COMBIN_KN[size_n][1]);
-                QcErrorExit(QC_FILE_LINE, "allocates memory for idx_combin");
-            }
-            idx_set = (QcInt *)malloc(COMBIN_KN[size_n][0]*sizeof(QcInt));
-            if (idx_set==NULL) {
-                fprintf(fp_log,
-                        "QcCombinTest>> size of a set %"QCINT_FMT"\n",
-                        COMBIN_KN[size_n][0]);
-                QcErrorExit(QC_FILE_LINE, "allocates memory for idx_set");
-            }
-            for (inum=0; inum<COMBIN_KN[size_n][0]; inum++) {
-                idx_set[inum] = inum;
-            }
-            irank = 0;
-            /* checks the rank of the combination */
-            ierr = QcCombinCheckRank(&qc_combin);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-            /* <QcTest='QcCombinGetRank'> */
-            rank_to_check = QcCombinGetRank(&qc_combin);
-            if (rank_to_check!=irank) {
-                fprintf(fp_log,
-                        "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
-                        COMBIN_KN[size_n][0],
-                        COMBIN_KN[size_n][1]);
-                ierr = QcCombinWrite(&qc_combin, fp_log);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-                fprintf(fp_log,
-                        "QcCombinTest>> rank from QcCombinGetRank() %lu\n",
-                        rank_to_check);
-                fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
-                QcErrorExit(QC_FILE_LINE, "QcCombinGetRank() failed");
-            }
-            /* <QcTest='QcCombinGetIdxFromRange'> */
-            ierr = QcCombinGetIdxFromRange(&qc_combin, 1, idx_combin);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromRange()");
-            /* <QcTest='QcRankCombination'>
-                 Test one-based numbering
-               </QcTest>
-             */
-            ierr = QcRankCombination(COMBIN_KN[size_n][1],
-                                     idx_combin,
-                                     QCFALSE,
-                                     &rank_to_check);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
-            if (rank_to_check!=irank) {
-                fprintf(fp_log,
-                        "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
-                        COMBIN_KN[size_n][0],
-                        COMBIN_KN[size_n][1]);
-                ierr = QcCombinWrite(&qc_combin, fp_log);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-                fprintf(fp_log,
-                        "QcCombinTest>> indices from QcCombinGetIdxFromRange()");
-                for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
-                    fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
-                }
-                fprintf(fp_log, "\n");
-                fprintf(fp_log,
-                        "QcCombinTest>> rank from QcRankCombination() %lu\n",
-                        rank_to_check);
-                fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
-                QcErrorExit(QC_FILE_LINE, "above two APIs failed");
-            }
-            /* <QcTest='QcCombinGetIdxFromSet'> */
-            ierr = QcCombinGetIdxFromSet(&qc_combin, idx_set, idx_combin);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromSet()");
-            /* <QcTest='QcRankCombination'>
-                 Test zero-based numbering
-               </QcTest> */
-            ierr = QcRankCombination(COMBIN_KN[size_n][1],
-                                     idx_combin,
-                                     QCTRUE,
-                                     &rank_to_check);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
-            if (rank_to_check!=irank) {
-                fprintf(fp_log,
-                        "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
-                        COMBIN_KN[size_n][0],
-                        COMBIN_KN[size_n][1]);
-                ierr = QcCombinWrite(&qc_combin, fp_log);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-                fprintf(fp_log,
-                        "QcCombinTest>> indices from QcCombinGetIdxFromSet()");
-                for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
-                    fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
-                }
-                fprintf(fp_log, "\n");
-                fprintf(fp_log,
-                        "QcCombinTest>> rank from QcRankCombination() %lu\n",
-                        rank_to_check);
-                fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
-                QcErrorExit(QC_FILE_LINE, "above two APIs failed");
-            }
-            for (irank=1; irank<n_choose_k; irank++) {
-                /* moves to the next combination */
-                ierr = QcCombinNext(&qc_combin, num_steps);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinNext()");
-                /* checks the rank of the combination */
-                ierr = QcCombinCheckRank(&qc_combin);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-                /* <QcTest='QcCombinGetRank'> */
-                rank_to_check = QcCombinGetRank(&qc_combin);
-                if (rank_to_check!=irank) {
-                    fprintf(fp_log,
-                            "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
-                            COMBIN_KN[size_n][0],
-                            COMBIN_KN[size_n][1]);
-                    ierr = QcCombinWrite(&qc_combin, fp_log);
-                    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-                    fprintf(fp_log,
-                            "QcCombinTest>> rank from QcCombinGetRank() %lu\n",
-                            rank_to_check);
-                    fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
-                    QcErrorExit(QC_FILE_LINE, "QcCombinGetRank() failed");
-                }
-                /* <QcTest='QcCombinGetIdxFromRange'> */
-                ierr = QcCombinGetIdxFromRange(&qc_combin, 1, idx_combin);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromRange()");
-                /* <QcTest='QcRankCombination'>
-                     Test one-based numbering
-                   </QcTest> */
-                ierr = QcRankCombination(COMBIN_KN[size_n][1],
-                                         idx_combin,
-                                         QCFALSE,
-                                         &rank_to_check);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
-                if (rank_to_check!=irank) {
-                    fprintf(fp_log,
-                            "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
-                            COMBIN_KN[size_n][0],
-                            COMBIN_KN[size_n][1]);
-                    ierr = QcCombinWrite(&qc_combin, fp_log);
-                    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-                    fprintf(fp_log,
-                            "QcCombinTest>> indices from QcCombinGetIdxFromRange()");
-                    for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
-                        fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
-                    }
-                    fprintf(fp_log, "\n");
-                    fprintf(fp_log,
-                            "QcCombinTest>> rank from QcRankCombination() %lu\n",
-                            rank_to_check);
-                    fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
-                    QcErrorExit(QC_FILE_LINE, "above two APIs failed");
-                }
-                /* <QcTest='QcCombinGetIdxFromSet'> */
-                ierr = QcCombinGetIdxFromSet(&qc_combin, idx_set, idx_combin);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinGetIdxFromSet()");
-                /* <QcTest='QcRankCombination'>
-                     Test zero-based numbering
-                   </QcTest> */
-                ierr = QcRankCombination(COMBIN_KN[size_n][1],
-                                         idx_combin,
-                                         QCTRUE,
-                                         &rank_to_check);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcRankCombination()");
-                if (rank_to_check!=irank) {
-                    fprintf(fp_log,
-                            "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT")\n",
-                            COMBIN_KN[size_n][0],
-                            COMBIN_KN[size_n][1]);
-                    ierr = QcCombinWrite(&qc_combin, fp_log);
-                    QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-                    fprintf(fp_log,
-                            "QcCombinTest>> indices from QcCombinGetIdxFromSet()");
-                    for (inum=0; inum<COMBIN_KN[size_n][1]; inum++) {
-                        fprintf(fp_log, " %"QCINT_FMT"", idx_combin[inum]);
-                    }
-                    fprintf(fp_log, "\n");
-                    fprintf(fp_log,
-                            "QcCombinTest>> rank from QcRankCombination() %lu\n",
-                            rank_to_check);
-                    fprintf(fp_log, "QcCombinTest>> real rank %lu\n", irank);
-                    QcErrorExit(QC_FILE_LINE, "above two APIs failed");
-                }
-            }
-            free(idx_combin);
-            idx_combin = NULL;
-            free(idx_set);
-            idx_set = NULL;
-        }
-        else {
-            /* checks the rank of the combination */
-            ierr = QcCombinCheckRank(&qc_combin);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-            for (irank=1; irank<n_choose_k; irank++) {
-                /* moves to the next combination */
-                ierr = QcCombinNext(&qc_combin, num_steps);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinNext()");
-                /* checks the rank of the combination */
-                ierr = QcCombinCheckRank(&qc_combin);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-            }
-        }
-        /* <QcTest='QcCombinSetRank'>
-             Sets the combination with rank 0
-           </QcTest> */
-        irank = 0;
-        ierr = QcCombinSetRank(&qc_combin, irank);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetRank()");
-        ierr = QcCombinCheckRank(&qc_combin);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-        /* <QcTest='QcCombinSetRank'>
-             Sets the combination with rank $1,\cdots$, $1000$ times
-           </QcTest> */
-        rank_to_check = n_choose_k/1000;
-        if (rank_to_check==0) rank_to_check = 1;
-        for (irank=1; irank<n_choose_k-1;) {
-            ierr = QcCombinSetRank(&qc_combin, irank);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetRank()");
-            ierr = QcCombinCheckRank(&qc_combin);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-            irank += rank_to_check;
-        }
-        /* <QcTest='QcCombinSetRank'>
-             Sets the combination with the last rank
-           </QcTest> */
-        ierr = QcCombinSetRank(&qc_combin, n_choose_k-1);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetRank()");
-        ierr = QcCombinCheckRank(&qc_combin);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-        /* <QcTest='QcCombinSetK'> */
-        if (COMBIN_KN[size_n][1]>1) {
-            ierr = QcCombinSetK(&qc_combin, COMBIN_KN[size_n][1]-1);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinSetK()");
-            n_choose_k = QcCombinGetNumCombin(&qc_combin);
-            fprintf(fp_log,
-                    "QcCombinTest>> combination (%"QCINT_FMT",%"QCINT_FMT"): %lu\n",
-                    COMBIN_KN[size_n][0],
-                    COMBIN_KN[size_n][1]-1,
-                    n_choose_k);
-            /* writes results for further checking */
-            ierr = QcCombinWrite(&qc_combin, fp_log);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinWrite()");
-            /* checks the rank of the combination */
-            ierr = QcCombinCheckRank(&qc_combin);
-            QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-            for (irank=1; irank<n_choose_k; irank++) {
-                /* moves to the next combination */
-                ierr = QcCombinNext(&qc_combin, num_steps);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinNext()");
-                /* checks the rank of the combination */
-                ierr = QcCombinCheckRank(&qc_combin);
-                QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinCheckRank()");
-            };
-        }
-        ierr = QcCombinDestroy(&qc_combin);
-        QcErrorCheckCode(ierr, QC_FILE_LINE, "calling QcCombinDestroy()");
-        fprintf(fp_log, "\n");
-    }
-    fprintf(fp_log, "QcCombinTest>> APIs of combinations passed ...\n");
-
-    return QCSUCCESS;
+    return QSUCCESS;
 }
 @
 
 \subsection{Testing Fortran APIs}
 
-For the time being, we only test binomial expansion and combinations for
-the Fortran APIs:
 <<OpenRSPTest.F90>>=
 !! <QcLang='Fortran'>
 <<OpenRSPLicenseFortran>>
 !!
 !! This file tests the Fortran APIs of OpenRSP library.
 !!
-!! 2014-06-29, Bin Gao
+!! 2014-08-03, Bin Gao
 !! * first version
-
-#if defined(QCFUNDATA_TEST_EXECUTABLE)
-    program OpenRSPTest_f
-        use OpenRSP_f, only: QCSTDOUT
-        implicit none
-        integer(kind=4), parameter :: io_log=QCSTDOUT  !standard output I/O unit number
-#else
-    subroutine OpenRSPTest_f(io_log,        &
-                               test_BinomExp, &
-                               test_Combin)
-        implicit none
-#endif
-#if defined(QCFUNDATA_TEST_EXECUTABLE)
-        integer(kind=4) num_arg                   !number of user given arguments
-        integer(kind=4) iarg                      !incremental recorder over arguments
-        character(9) argv                         !user given arguments
-        logical(kind=4) :: test_BinomExp=.false.  !if testing binomial expansion
-        logical(kind=4) :: test_Combin=.false.    !if testing combinations
-        ! gets the number of user given arguments
-        num_arg = iargc()
-        ! finds out what to test
-        do iarg = 1, num_arg
-            call getarg(iarg, argv)
-            select case(trim(argv))
-            case("-BinomExp")
-                test_BinomExp = .true.
-            case("-Combin")
-                test_Combin = .true.
-            case("-All")
-                test_BinomExp = .true.
-                test_Combin = .true.
-            end select
-        end do
-#else
-        integer(kind=4), intent(in) :: io_log
-        logical(kind=4), intent(in) :: test_BinomExp
-        logical(kind=4), intent(in) :: test_Combin
-#endif
-
-        if (test_BinomExp) then
-            call QcBinomExpTest_f(io_log)
-            write(io_log,100) "QcBinomExpTest_f() passed ..."
-            write(io_log,"()")
-        end if
-
-        if (test_Combin) then
-            call QcCombinTest_f(io_log)
-            write(io_log,100) "QcCombinTest_f() passed ..."
-            write(io_log,"()")
-        end if
-
-100     format("OpenRSPTest_f>> ",A)
-#if defined(QCFUNDATA_TEST_EXECUTABLE)
-    end program OpenRSPTest_f
-#else
-    end subroutine OpenRSPTest_f
-#endif
-@ and here are the individual tests:
-<<QcBinomExpTest.F90>>=
-<<OpenRSPLicenseFortran>>
-!! This file tests the Fortran APIs of binomial expansion.
-!!
-!! 2014-07-05, Bin Gao
-!! * first version
-
-#define QCFUNDATA_F_TEST_SRC "QcBinomExpTest.F90"
-
-    subroutine QcBinomExpTest_f(io_log)
-        use OpenRSP_f, only: QcInt,              &
-                               QcLong,             &
-                               QcErrorCode,        &
-                               QcErrorCheckCode_f, &
-                               QcErrorExit_f,      &
-                               QcBinomCoefficient_f
-        ! pre-computed table of binomial coefficients
-        use QcBinomTable_f, only: QCBINOM_TAB_MAX_K, &
-                                  QCBINOM_TAB_MAX_N, &
-                                  QCBINOM_TABLE
-        implicit none
-        integer(kind=4), intent(in) :: io_log
-        integer(kind=QcInt) size_n       !number $n$
-        integer(kind=QcInt) k_combin     !number $k$
-        integer(kind=QcLong) n_choose_k  !$\binom{n}{k}$
-        integer(kind=QcErrorCode) ierr   !error information
-        k_combin = 0
-        size_n = 6
-        ierr = QcBinomCoefficient_f(size_n, k_combin, n_choose_k)
-        call QcErrorCheckCode_f(io_log, ierr, __LINE__, QCFUNDATA_F_TEST_SRC)
-        if (n_choose_k/=1) then
-            write(io_log,100) "size of a set n", size_n
-            write(io_log,100) "number k", k_combin
-            write(io_log,100) "n choose k", n_choose_k
-            call QcErrorExit_f(io_log, __LINE__, QCFUNDATA_F_TEST_SRC)
-        end if
-        do k_combin = 1, QCBINOM_TAB_MAX_K
-            do size_n = 0, QCBINOM_TAB_MAX_N-1
-                ierr = QcBinomCoefficient_f(size_n, k_combin, n_choose_k)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                if (n_choose_k/=QCBINOM_TABLE(size_n+(k_combin-1)*QCBINOM_TAB_MAX_N+1)) then
-                    write(io_log,100) "size of a set n", size_n
-                    write(io_log,100) "number k", k_combin
-                    write(io_log,100) "n choose k", n_choose_k
-                    write(io_log,100) "result from pre-computed table", &
-                                      QCBINOM_TABLE(size_n+(k_combin-1)*QCBINOM_TAB_MAX_N+1)
-                    call QcErrorExit_f(io_log, __LINE__, QCFUNDATA_F_TEST_SRC)
-                end if
-            end do
-        end do
-        write(io_log,100) "QcBinomCoefficient_f() passed ..."
-        return
-100     format("QcBinomExpTest_f>> ",A,I16)
-    end subroutine QcBinomExpTest_f
-
-#undef QCFUNDATA_F_TEST_SRC
-
-<<QcCombinTest.F90>>=
-<<OpenRSPLicenseFortran>>
-!! This file tests the Fortran APIs of combinations.
-!!
-!! 2014-07-05, Bin Gao
-!! * first version
-
-#define QCFUNDATA_F_TEST_SRC "QcCombinTest.F90"
-
-    subroutine QcCombinTest_f(io_log)
-        use OpenRSP_f, only: QcInt,                  &
-                               QcLong,                 &
-                               QcErrorCode,            &
-                               QcErrorCheckCode_f,     &
-                               QcErrorExit_f,          &
-                               QcCombin,               &
-                               QcCombinCreate_f,       &
-                               QcCombinSetK_f,         &
-                               QcCombinGetNumCombin_f, &
-                               QcCombinNext_f,         &
-                               QcCombinCheckRank_f,    &
-                               QcCombinSetRank_f,      &
-                               QcCombinWrite_f,        &
-                               QcCombinDestroy_f
-        implicit none
-        integer(kind=4), intent(in) :: io_log
-        integer(kind=QcInt) size_n       !number $n$
-        integer(kind=QcLong) n_choose_k  !$\binom{n}{k}$
-        ! numbers $n$ and $k$ to test APIs of combinations
-        integer(kind=QcInt), parameter :: SIZE_COMBIN_KN=42
-        integer(kind=QcInt), parameter :: COMBIN_KN(2*SIZE_COMBIN_KN)= &
-            (/10,1, 100,1, 200,1, 600,1,                               &
-              10,2, 100,2, 200,2, 600,2,                               &
-              10,3, 100,3, 200,3, 600,3,                               &
-              10,4, 100,4, 200,4,                                      &
-              10,5, 80,5,                                              &
-              10,6, 10,7, 10,8, 10,9, 10,10,                           &
-              20,1, 20,2, 20,3, 20,4, 20,5,                            &
-              20,6, 20,7, 20,8, 20,9, 20,10,                           &
-              20,11, 20,12, 20,13, 20,14, 20,15,                       &
-              20,16, 20,17, 20,18, 20,19, 20,20/)
-        type(QcCombin) qc_combin             !context of combinations
-        integer(kind=QcLong) :: num_steps=1  !steps to move to get the next combination
-        integer(kind=QcLong) irank           !incremental recorder over combinations
-        integer(kind=QcLong) step_rank       !step size of rank for testing
-        integer(kind=QcErrorCode) ierr       !error information
-
-        do size_n = 1, SIZE_COMBIN_KN
-            ierr = QcCombinCreate_f(qc_combin,             &
-                                    COMBIN_KN(2*size_n-1), &
-                                    COMBIN_KN(2*size_n))
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            n_choose_k = QcCombinGetNumCombin_f(qc_combin)
-            write(io_log,110) COMBIN_KN(2*size_n-1), &
-                              COMBIN_KN(2*size_n),   &
-                              n_choose_k
-            ! writes results for further checking
-            ierr = QcCombinWrite_f(qc_combin, io_log)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            ! checks the rank of the combination
-            ierr = QcCombinCheckRank_f(qc_combin)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            do irank = 1, n_choose_k-1
-                ! moves to the next combination
-                ierr = QcCombinNext_f(qc_combin, num_steps)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                ! checks the rank of the combination
-                ierr = QcCombinCheckRank_f(qc_combin)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-            end do
-            ! <QcTest='QcCombinSetRank_f'>
-            !   Sets the combination with rank 0
-            ! </QcTest>
-            irank = 0
-            ierr = QcCombinSetRank_f(qc_combin, irank)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            ierr = QcCombinCheckRank_f(qc_combin)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            ! <QcTest='QcCombinSetRank_f'>
-            !   Sets the combination with rank $1,\cdots$, $1000$ times
-            ! </QcTest>
-            step_rank = n_choose_k/1000
-            if (step_rank==0) step_rank=1
-            irank = 1
-            do while (irank<n_choose_k-1)
-                ierr = QcCombinSetRank_f(qc_combin, irank)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                ierr = QcCombinCheckRank_f(qc_combin)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                irank = irank+step_rank
-            end do
-            ! <QcTest='QcCombinSetRank_f'>
-            !   Sets the combination with the last rank
-            ! </QcTest>
-            ierr = QcCombinSetRank_f(qc_combin, n_choose_k-1)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            ierr = QcCombinCheckRank_f(qc_combin)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-            ! <QcTest='QcCombinSetK_f'>
-            if (COMBIN_KN(2*size_n)>1) then
-                ierr = QcCombinSetK_f(qc_combin, COMBIN_KN(2*size_n)-1)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                n_choose_k = QcCombinGetNumCombin_f(qc_combin)
-                write(io_log,110) COMBIN_KN(2*size_n-1), &
-                                  COMBIN_KN(2*size_n)-1, &
-                                  n_choose_k
-                ! writes results for further checking
-                ierr = QcCombinWrite_f(qc_combin, io_log)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                ! checks the rank of the combination
-                ierr = QcCombinCheckRank_f(qc_combin)
-                call QcErrorCheckCode_f(io_log,   &
-                                        ierr,     &
-                                        __LINE__, &
-                                        QCFUNDATA_F_TEST_SRC)
-                do irank = 1, n_choose_k-1
-                    ! moves to the next combination
-                    ierr = QcCombinNext_f(qc_combin, num_steps)
-                     call QcErrorCheckCode_f(io_log,   &
-                                             ierr,     &
-                                             __LINE__, &
-                                             QCFUNDATA_F_TEST_SRC)
-                    ! checks the rank of the combination
-                    ierr = QcCombinCheckRank_f(qc_combin)
-                    call QcErrorCheckCode_f(io_log,   &
-                                            ierr,     &
-                                            __LINE__, &
-                                            QCFUNDATA_F_TEST_SRC)
-                end do
-            end if
-            ierr = QcCombinDestroy_f(qc_combin)
-            call QcErrorCheckCode_f(io_log,   &
-                                    ierr,     &
-                                    __LINE__, &
-                                    QCFUNDATA_F_TEST_SRC)
-        end do
-        write(io_log,100) "APIs of combinations passed ..."
-
-        return
-100     format("QcCombinTest_f>> ",A,I16)
-110     format("QcCombinTest_f>> combination (",I6,",",I6,"): ",I16)
-    end subroutine QcCombinTest_f
-
-#undef QCFUNDATA_F_TEST_SRC
-
-@ Similar to the C part of \LibName, we have the pre-computed table of binomial
-coefficients for Fortran APIs:
-<<QcBinomTable.F90>>=
-<<OpenRSPLicenseFortran>>
-!! <module name='QcBinomTable_f' author='Bin Gao' date='2014-07-05'>
-!!   Pre-computed table of binomial coefficients [k][n] $=\binom{n}{k+1}$,
-!!   where $1\le k\le$ QCBINOM_TAB_MAX_K, and $0\le n<$ QCBINOM_TAB_MAX_N
-!! </module>
-module QcBinomTable_f
-    use QcBasicTypes_f, only: QcInt
-    implicit none
-    integer(kind=QcInt), parameter, public :: QCBINOM_TAB_MAX_N = 120
-    integer(kind=QcInt), parameter, public :: QCBINOM_TAB_MAX_K = 4
-    integer(kind=QcInt), parameter, public ::                                &
-        QCBINOM_TABLE(QCBINOM_TAB_MAX_N*QCBINOM_TAB_MAX_K) = (/              &
-        ! k = 1
-        0,          1,          2,          3,          4,          5,       &
-        6,          7,          8,          9,          10,         11,      &
-        12,         13,         14,         15,         16,         17,      &
-        18,         19,         20,         21,         22,         23,      &
-        24,         25,         26,         27,         28,         29,      &
-        30,         31,         32,         33,         34,         35,      &
-        36,         37,         38,         39,         40,         41,      &
-        42,         43,         44,         45,         46,         47,      &
-        48,         49,         50,         51,         52,         53,      &
-        54,         55,         56,         57,         58,         59,      &
-        60,         61,         62,         63,         64,         65,      &
-        66,         67,         68,         69,         70,         71,      &
-        72,         73,         74,         75,         76,         77,      &
-        78,         79,         80,         81,         82,         83,      &
-        84,         85,         86,         87,         88,         89,      &
-        90,         91,         92,         93,         94,         95,      &
-        96,         97,         98,         99,         100,        101,     &
-        102,        103,        104,        105,        106,        107,     &
-        108,        109,        110,        111,        112,        113,     &
-        114,        115,        116,        117,        118,        119,     &
-        ! k = 2
-        0,          0,          1,          3,          6,          10,      &
-        15,         21,         28,         36,         45,         55,      &
-        66,         78,         91,         105,        120,        136,     &
-        153,        171,        190,        210,        231,        253,     &
-        276,        300,        325,        351,        378,        406,     &
-        435,        465,        496,        528,        561,        595,     &
-        630,        666,        703,        741,        780,        820,     &
-        861,        903,        946,        990,        1035,       1081,    &
-        1128,       1176,       1225,       1275,       1326,       1378,    &
-        1431,       1485,       1540,       1596,       1653,       1711,    &
-        1770,       1830,       1891,       1953,       2016,       2080,    &
-        2145,       2211,       2278,       2346,       2415,       2485,    &
-        2556,       2628,       2701,       2775,       2850,       2926,    &
-        3003,       3081,       3160,       3240,       3321,       3403,    &
-        3486,       3570,       3655,       3741,       3828,       3916,    &
-        4005,       4095,       4186,       4278,       4371,       4465,    &
-        4560,       4656,       4753,       4851,       4950,       5050,    &
-        5151,       5253,       5356,       5460,       5565,       5671,    &
-        5778,       5886,       5995,       6105,       6216,       6328,    &
-        6441,       6555,       6670,       6786,       6903,       7021,    &
-        ! k = 3
-        0,          0,          0,          1,          4,          10,      &
-        20,         35,         56,         84,         120,        165,     &
-        220,        286,        364,        455,        560,        680,     &
-        816,        969,        1140,       1330,       1540,       1771,    &
-        2024,       2300,       2600,       2925,       3276,       3654,    &
-        4060,       4495,       4960,       5456,       5984,       6545,    &
-        7140,       7770,       8436,       9139,       9880,       10660,   &
-        11480,      12341,      13244,      14190,      15180,      16215,   &
-        17296,      18424,      19600,      20825,      22100,      23426,   &
-        24804,      26235,      27720,      29260,      30856,      32509,   &
-        34220,      35990,      37820,      39711,      41664,      43680,   &
-        45760,      47905,      50116,      52394,      54740,      57155,   &
-        59640,      62196,      64824,      67525,      70300,      73150,   &
-        76076,      79079,      82160,      85320,      88560,      91881,   &
-        95284,      98770,      102340,     105995,     109736,     113564,  &
-        117480,     121485,     125580,     129766,     134044,     138415,  &
-        142880,     147440,     152096,     156849,     161700,     166650,  &
-        171700,     176851,     182104,     187460,     192920,     198485,  &
-        204156,     209934,     215820,     221815,     227920,     234136,  &
-        240464,     246905,     253460,     260130,     266916,     273819,  &
-        ! k = 4
-        0,          0,          0,          0,          1,          5,       &
-        15,         35,         70,         126,        210,        330,     &
-        495,        715,        1001,       1365,       1820,       2380,    &
-        3060,       3876,       4845,       5985,       7315,       8855,    &
-        10626,      12650,      14950,      17550,      20475,      23751,   &
-        27405,      31465,      35960,      40920,      46376,      52360,   &
-        58905,      66045,      73815,      82251,      91390,      101270,  &
-        111930,     123410,     135751,     148995,     163185,     178365,  &
-        194580,     211876,     230300,     249900,     270725,     292825,  &
-        316251,     341055,     367290,     395010,     424270,     455126,  &
-        487635,     521855,     557845,     595665,     635376,     677040,  &
-        720720,     766480,     814385,     864501,     916895,     971635,  &
-        1028790,    1088430,    1150626,    1215450,    1282975,    1353275, &
-        1426425,    1502501,    1581580,    1663740,    1749060,    1837620, &
-        1929501,    2024785,    2123555,    2225895,    2331890,    2441626, &
-        2555190,    2672670,    2794155,    2919735,    3049501,    3183545, &
-        3321960,    3464840,    3612280,    3764376,    3921225,    4082925, &
-        4249575,    4421275,    4598126,    4780230,    4967690,    5160610, &
-        5359095,    5563251,    5773185,    5989005,    6210820,    6438740, &
-        6672876,    6913340,    7160245,    7413705,    7673835,    7940751/)
-end module QcBinomTable_f
 

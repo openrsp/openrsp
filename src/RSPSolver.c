@@ -43,7 +43,7 @@
    </function> */
 QErrorCode RSPSolverCreate(RSPSolver *rsp_solver,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                           QVoid *user_ctx,
+                           void *user_ctx,
 #endif
                            const GetLinearRSPSolution get_linear_rsp_solution)
 {

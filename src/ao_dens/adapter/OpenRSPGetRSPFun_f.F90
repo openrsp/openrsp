@@ -58,12 +58,14 @@
                               QcMat_C_F_POINTER, &
                               QcMat_C_NULL_PTR
         use openrsp_callback_f
+        use RSPPertBasicTypes_f, only: QcPertInt, &
+                                       C_QCPERTINT
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property_2014
         implicit none
         integer(kind=C_QINT), value, intent(in) :: num_props
         integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
-        integer(kind=C_QINT), intent(in) :: pert_tuple(sum(len_tuple))
+        integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(sum(len_tuple))
         integer(kind=C_QINT), intent(in) :: num_freq_configs(num_props)
         real(kind=C_QREAL), intent(in) :: pert_freqs(2*dot_product(len_tuple,num_freq_configs))
         integer(kind=C_QINT), intent(in) :: kn_rules(num_props)

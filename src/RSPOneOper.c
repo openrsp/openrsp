@@ -63,7 +63,7 @@ QErrorCode RSPOneOperCreate(RSPOneOper **one_oper,
                             const QcPertInt *pert_labels,
                             const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid *user_ctx,
+                            void *user_ctx,
 #endif
                             const GetOneOperMat get_one_oper_mat,
                             const GetOneOperExp get_one_oper_exp)
@@ -199,7 +199,7 @@ QErrorCode RSPOneOperAdd(RSPOneOper *one_oper,
                          const QcPertInt *pert_labels,
                          const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                         QVoid *user_ctx,
+                         void *user_ctx,
 #endif
                          const GetOneOperMat get_one_oper_mat,
                          const GetOneOperExp get_one_oper_exp)

@@ -20,6 +20,25 @@ foreach(CHUNK ${OPENRSP_C_CHUNKS})
         ${OPENRSP_C_FILES}
         ${OPENRSP_C_DIR}/${CHUNK})
 endforeach()
+# C test source codes
+if(NOT (OPENRSP_C_TEST_DIR AND OPENRSP_C_TEST_CHUNKS))
+    message(FATAL_ERROR "Directories.cmake and Chunks.cmake not included.")
+endif()
+set(OPENRSP_C_TEST_FILES)
+foreach(CHUNK ${OPENRSP_C_TEST_CHUNKS})
+    set(OPENRSP_C_TEST_FILES
+        ${OPENRSP_C_TEST_FILES}
+        ${OPENRSP_C_TEST_DIR}/${CHUNK})
+endforeach()
+set(OPENRSP_C_TEST_FILES
+    ${OPENRSP_C_TEST_FILES}
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_ground_state_hf/density_matrix.c
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_ground_state_hf/fock_matrix.c
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_ground_state_hf/num_atomic_orbitals.c
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_ground_state_hf/overlap_integrals.c
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_alpha_hf/dipole_length_integrals.c
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_alpha_hf/response_parameters.c
+    ${LIB_OPENRSP_PATH}/tests/ao_dens_alpha_hf/two_electron_integrals.c)
 # Fortran source codes
 if(NOT (OPENRSP_FORTRAN_DIR AND OPENRSP_FORTRAN_CHUNKS))
     message(FATAL_ERROR "Directories.cmake and Chunks.cmake not included.")

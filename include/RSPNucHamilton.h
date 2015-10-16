@@ -33,14 +33,14 @@
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetNucContrib)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
+typedef void (*GetNucContrib)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QReal*);
+                              const QInt,
+                              QReal*);
 
 typedef struct {
     QInt num_pert_lab;              /* number of different perturbation labels
@@ -60,7 +60,7 @@ typedef struct {
                                        nuclear Hamiltonian, only used for
                                        callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback-function context */
+    void *user_ctx;                 /* user-defined callback-function context */
 #endif
     GetNucContrib get_nuc_contrib;  /* user-specified function for calculating
                                        contribution from the nuclear Hamiltonian */
@@ -73,7 +73,7 @@ extern QErrorCode RSPNucHamiltonCreate(RSPNucHamilton*,
                                        const QcPertInt*,
                                        const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                       QVoid*,
+                                       void*,
 #endif
                                        const GetNucContrib,
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/

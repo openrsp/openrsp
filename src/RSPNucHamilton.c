@@ -61,7 +61,7 @@ QErrorCode RSPNucHamiltonCreate(RSPNucHamilton *nuc_hamilton,
                                 const QcPertInt *pert_labels,
                                 const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid *user_ctx,
+                                void *user_ctx,
 #endif
                                 const GetNucContrib get_nuc_contrib,
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/

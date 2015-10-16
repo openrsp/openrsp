@@ -33,36 +33,36 @@
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetOverlapMat)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
+typedef void (*GetOverlapMat)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              const QcPertInt*,
+                              const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QcMat*[]);
-typedef QVoid (*GetOverlapExp)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               QcMat*[],
+                              const QInt,
+                              QcMat*[]);
+typedef void (*GetOverlapExp)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QReal*);
+                              const QInt,
+                              QReal*);
 
 typedef struct {
     QInt num_pert_lab;              /* number of different perturbation labels
@@ -91,7 +91,7 @@ typedef struct {
     QcPertInt *oper_pert_labels;    /* labels of perturbations on the overlap operator,
                                        only used for callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback-function context */
+    void *user_ctx;                 /* user-defined callback-function context */
 #endif
     GetOverlapMat get_overlap_mat;  /* user-specified function for calculating
                                        integral matrices */
@@ -104,7 +104,7 @@ extern QErrorCode RSPOverlapCreate(RSPOverlap*,
                                    const QcPertInt*,
                                    const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
+                                   void*,
 #endif
                                    const GetOverlapMat,
                                    const GetOverlapExp);

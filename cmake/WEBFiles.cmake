@@ -10,4 +10,5 @@ set(OPENRSP_WEB_FILES
     ${LIB_OPENRSP_PATH}/web/RSPSolver.nw
     ${LIB_OPENRSP_PATH}/web/ResponseFunctions.nw
     ${LIB_OPENRSP_PATH}/web/Residues.nw
-    ${LIB_OPENRSP_PATH}/web/FortranAPIs.nw)
+    ${LIB_OPENRSP_PATH}/web/FortranAPIs.nw
+    ${LIB_OPENRSP_PATH}/web/UnitTesting.nw)
