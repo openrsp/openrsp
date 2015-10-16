@@ -77,7 +77,7 @@ QErrorCode RSPPertCreate(RSPPert *rsp_pert,
                          const QInt *pert_max_orders,
                          const QInt *pert_num_comps,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                         QVoid *user_ctx,
+                         void *user_ctx,
 #endif
                          const GetPertCat get_pert_concatenation)
 {

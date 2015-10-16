@@ -63,7 +63,7 @@ QErrorCode RSPTwoOperCreate(RSPTwoOper **two_oper,
                             const QcPertInt *pert_labels,
                             const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid *user_ctx,
+                            void *user_ctx,
 #endif
                             const GetTwoOperMat get_two_oper_mat,
                             const GetTwoOperExp get_two_oper_exp)
@@ -199,7 +199,7 @@ QErrorCode RSPTwoOperAdd(RSPTwoOper *two_oper,
                          const QcPertInt *pert_labels,
                          const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                         QVoid *user_ctx,
+                         void *user_ctx,
 #endif
                          const GetTwoOperMat get_two_oper_mat,
                          const GetTwoOperExp get_two_oper_exp)

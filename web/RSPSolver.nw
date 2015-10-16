@@ -18,7 +18,7 @@ Users can use the following API to set the linear response equation solver:
    </function> */
 QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP *open_rsp,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                     QVoid *user_ctx,
+                                     void *user_ctx,
 #endif
                                      const GetLinearRSPSolution get_linear_rsp_solution)
 {
@@ -60,14 +60,14 @@ requirements of the callback function of the linear response equation solver.
 
 #include "qcmatrix.h"
 
-typedef QVoid (*GetLinearRSPSolution)(const QInt,
-                                      const QReal*,
-                                      const QInt,
-                                      QcMat*[],
+typedef void (*GetLinearRSPSolution)(const QInt,
+                                     const QReal*,
+                                     const QInt,
+                                     QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                      QVoid*,
+                                     void*,
 #endif
-                                      QcMat*[]);
+                                     QcMat*[]);
 
 <<RSPSolverStruct>>
 
@@ -78,7 +78,7 @@ typedef QVoid (*GetLinearRSPSolution)(const QInt,
 <<RSPSolverStruct>>=
 typedef struct {
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                               /* user-defined callback-function
+    void *user_ctx;                                /* user-defined callback-function
                                                       context */
 #endif
     GetLinearRSPSolution get_linear_rsp_solution;  /* user-specified function of
@@ -88,7 +88,7 @@ typedef struct {
 <<RSPSolverAPIs>>=
 extern QErrorCode RSPSolverCreate(RSPSolver*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                  QVoid*,
+                                  void*,
 #endif
                                   const GetLinearRSPSolution);
 extern QErrorCode RSPSolverAssemble(RSPSolver*);
@@ -128,7 +128,7 @@ These functions are implemented as follows:
    </function> */
 QErrorCode RSPSolverCreate(RSPSolver *rsp_solver,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                           QVoid *user_ctx,
+                           void *user_ctx,
 #endif
                            const GetLinearRSPSolution get_linear_rsp_solution)
 {

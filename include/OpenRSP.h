@@ -67,7 +67,7 @@ extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
                                           const QInt*,
                                           const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                          QVoid*,
+                                          void*,
 #endif
                                           const GetPertCat);
 /*extern QErrorCode OpenRSPSetWaveFunction(OpenRSP*,const ElecWavType);*/
@@ -76,7 +76,7 @@ extern QErrorCode OpenRSPSetOverlap(OpenRSP*,
                                     const QcPertInt*,
                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                    QVoid*,
+                                    void*,
 #endif
                                     const GetOverlapMat,
                                     const GetOverlapExp);
@@ -85,7 +85,7 @@ extern QErrorCode OpenRSPAddOneOper(OpenRSP*,
                                     const QcPertInt*,
                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                    QVoid*,
+                                    void*,
 #endif
                                     const GetOneOperMat,
                                     const GetOneOperExp);
@@ -94,7 +94,7 @@ extern QErrorCode OpenRSPAddTwoOper(OpenRSP*,
                                     const QcPertInt*,
                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                    QVoid*,
+                                    void*,
 #endif
                                     const GetTwoOperMat,
                                     const GetTwoOperExp);
@@ -103,7 +103,7 @@ extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
                                   const QcPertInt*,
                                   const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                  QVoid*,
+                                  void*,
 #endif
                                   const GetXCFunMat,
                                   const GetXCFunExp);
@@ -112,14 +112,14 @@ extern QErrorCode OpenRSPSetNucHamilton(OpenRSP*,
                                         const QcPertInt*,
                                         const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                        QVoid*,
+                                        void*,
 #endif 
                                         const GetNucContrib,
 /*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
                                         const QInt);
 extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                            QVoid*,
+                                            void*,
 #endif
                                             const GetLinearRSPSolution);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);

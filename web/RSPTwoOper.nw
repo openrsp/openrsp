@@ -39,7 +39,7 @@ QErrorCode OpenRSPAddTwoOper(OpenRSP *open_rsp,
                              const QcPertInt *pert_labels,
                              const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid *user_ctx,
+                             void *user_ctx,
 #endif
                              const GetTwoOperMat get_two_oper_mat,
                              const GetTwoOperExp get_two_oper_exp)
@@ -94,29 +94,29 @@ operator and its derivatives.
 #include "qcmatrix.h"
 #include "RSPPerturbation.h"
 
-typedef QVoid (*GetTwoOperMat)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               QcMat*[],
+typedef void (*GetTwoOperMat)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QcMat*[]);
-typedef QVoid (*GetTwoOperExp)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QInt*,
-                               QcMat*[],
-                               const QInt*,
-                               QcMat*[],
+                              const QInt,
+                              QcMat*[]);
+typedef void (*GetTwoOperExp)(const QInt,
+                              const QcPertInt*,
+                              const QInt*,
+                              const QInt,
+                              const QInt*,
+                              QcMat*[],
+                              const QInt*,
+                              QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
+                              void*,
 #endif
-                               const QInt,
-                               QReal*);
+                              const QInt,
+                              QReal*);
 
 <<RSPTwoOperStruct>>
 
@@ -144,7 +144,7 @@ struct RSPTwoOper {
                                         two-electron operator, only used for
                                         callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                 /* user-defined callback-function context */
+    void *user_ctx;                  /* user-defined callback-function context */
 #endif
     GetTwoOperMat get_two_oper_mat;  /* user-specified function for calculating
                                         integral matrices */
@@ -159,7 +159,7 @@ extern QErrorCode RSPTwoOperCreate(RSPTwoOper**,
                                    const QcPertInt*,
                                    const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
+                                   void*,
 #endif
                                    const GetTwoOperMat,
                                    const GetTwoOperExp);
@@ -168,7 +168,7 @@ extern QErrorCode RSPTwoOperAdd(RSPTwoOper*,
                                 const QcPertInt*,
                                 const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid*,
+                                void*,
 #endif
                                 const GetTwoOperMat,
                                 const GetTwoOperExp);
@@ -240,7 +240,7 @@ QErrorCode RSPTwoOperCreate(RSPTwoOper **two_oper,
                             const QcPertInt *pert_labels,
                             const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid *user_ctx,
+                            void *user_ctx,
 #endif
                             const GetTwoOperMat get_two_oper_mat,
                             const GetTwoOperExp get_two_oper_exp)
@@ -381,7 +381,7 @@ QErrorCode RSPTwoOperAdd(RSPTwoOper *two_oper,
                          const QcPertInt *pert_labels,
                          const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                         QVoid *user_ctx,
+                         void *user_ctx,
 #endif
                          const GetTwoOperMat get_two_oper_mat,
                          const GetTwoOperExp get_two_oper_exp)

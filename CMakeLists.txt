@@ -123,6 +123,16 @@ if(OPENRSP_BUILD_WEB)
     endforeach()
     set_source_files_properties(${OPENRSP_C_FILES}
                                 PROPERTIES GENERATED TRUE)
+    # C test source codes
+    foreach(CHUNK ${OPENRSP_C_TEST_CHUNKS})
+        set(TANGLED_SRC ${OPENRSP_C_TEST_DIR}/${CHUNK})
+        add_custom_command(OUTPUT ${TANGLED_SRC}
+                           DEPENDS openrsp_dirs
+                           COMMAND ${NOTANGLE} -R${CHUNK}
+                                   ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
+    endforeach()
+    set_source_files_properties(${OPENRSP_C_TEST_FILES}
+                                PROPERTIES GENERATED TRUE)
     # Fortran source codes
     foreach(CHUNK ${OPENRSP_FORTRAN_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_FORTRAN_DIR}/${CHUNK})
@@ -174,6 +184,10 @@ if(OPENRSP_TEST_EXECUTABLE)
                     ${OPENRSP_C_FILES}
                     ${OPENRSP_AO_DENS_SRCS})
     endif()
+    add_executable(openrsp_c_test ${OPENRSP_C_TEST_FILES})
+    target_link_libraries(openrsp_c_test
+                          openrsp
+                          ${QCMATRIX_LIB})
 # Test suite is included into the library as functions
 else()
     if(OPENRSP_FORTRAN_API)
@@ -181,11 +195,13 @@ else()
                     ${OPENRSP_HEADER_FILES}
                     ${OPENRSP_FORTRAN_FILES}
                     ${OPENRSP_C_FILES}
+                    ${OPENRSP_C_TEST_FILES}
                     ${OPENRSP_AO_DENS_SRCS})
     else()
         add_library(openrsp
                     ${OPENRSP_HEADER_FILES}
                     ${OPENRSP_C_FILES}
+                    ${OPENRSP_C_TEST_FILES}
                     ${OPENRSP_AO_DENS_SRCS})
     endif()
 endif()

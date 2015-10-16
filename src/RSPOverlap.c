@@ -62,7 +62,7 @@ QErrorCode RSPOverlapCreate(RSPOverlap *overlap,
                             const QcPertInt *pert_labels,
                             const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            QVoid *user_ctx,
+                            void *user_ctx,
 #endif
                             const GetOverlapMat get_overlap_mat,
                             const GetOverlapExp get_overlap_exp)

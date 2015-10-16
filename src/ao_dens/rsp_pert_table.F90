@@ -21,17 +21,17 @@
 
 module rsp_pert_table
 
-    use qcmatrix_f, only: QINT
+    use RSPPertBasicTypes_f, only: QcPertInt
 
     implicit none
 
     public
 
-    integer(kind=QINT), parameter :: RSP_GEO_PERT = 1_QINT
-    integer(kind=QINT), parameter :: RSP_EL_PERT = 2_QINT
-    integer(kind=QINT), parameter :: RSP_ELGR_PERT = 3_QINT
-    integer(kind=QINT), parameter :: RSP_MAG0_PERT = 4_QINT
-    integer(kind=QINT), parameter :: RSP_MAG_PERT = 5_QINT
+    integer(kind=QcPertInt), parameter :: RSP_GEO_PERT = 1_QcPertInt
+    integer(kind=QcPertInt), parameter :: RSP_EL_PERT = 2_QcPertInt
+    integer(kind=QcPertInt), parameter :: RSP_ELGR_PERT = 3_QcPertInt
+    integer(kind=QcPertInt), parameter :: RSP_MAG0_PERT = 4_QcPertInt
+    integer(kind=QcPertInt), parameter :: RSP_MAG_PERT = 5_QcPertInt
     character(4), parameter :: CHAR_PERT_TABLE(5) = (/'GEO ', 'EL  ', 'ELGR', 'MAG0', 'MAG '/)
 
 end module rsp_pert_table

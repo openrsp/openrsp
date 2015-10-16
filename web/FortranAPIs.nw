@@ -1126,13 +1126,13 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: size_pert
                 real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
             end subroutine get_nuc_contrib
-            subroutine RSPNucHamiltonGetContrib_f(nuc_num_pert,    &
-                                                  nuc_pert_labels, &
-                                                  nuc_pert_orders, &
-                                                  user_ctx,        &
-                                                  size_pert,       &
-                                                  val_nuc)         &
-                bind(C, name="RSPNucHamiltonGetContrib_f")
+            subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
+                                                        nuc_pert_labels, &
+                                                        nuc_pert_orders, &
+                                                        user_ctx,        &
+                                                        size_pert,       &
+                                                        val_nuc)         &
+                bind(C, name="RSPNucHamiltonGetContributions_f")
                 use, intrinsic :: iso_c_binding
                 use RSPPertBasicTypes_f, only: C_QCPERTINT
                 integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
@@ -1141,7 +1141,7 @@ module OpenRSP_f
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: size_pert
                 real(kind=C_QREAL), intent(inout) :: val_nuc(size_pert)
-            end subroutine RSPNucHamiltonGetContrib_f
+            end subroutine RSPNucHamiltonGetContributions_f
         end interface
         if (associated(open_rsp%nuc_hamilton_fun)) then
             call RSPNucHamiltonDestroy_f(open_rsp%nuc_hamilton_fun)
@@ -1154,12 +1154,12 @@ module OpenRSP_f
                                     user_ctx,                  &
 #endif
                                     get_nuc_contrib)
-        ierr = OpenRSPSetNucHamilton(open_rsp%c_rsp,                       &
-                                     num_pert_lab,                         &
-                                     pert_labels,                          &
-                                     pert_max_orders,                      &
-                                     c_loc(open_rsp%nuc_hamilton_fun),     &
-                                     c_funloc(RSPNucHamiltonGetContrib_f), &
+        ierr = OpenRSPSetNucHamilton(open_rsp%c_rsp,                             &
+                                     num_pert_lab,                               &
+                                     pert_labels,                                &
+                                     pert_max_orders,                            &
+                                     c_loc(open_rsp%nuc_hamilton_fun),           &
+                                     c_funloc(RSPNucHamiltonGetContributions_f), &
                                      num_atoms)
     end function OpenRSPSetNucHamilton_f
 
@@ -1319,8 +1319,10 @@ module RSPPertBasicTypes_f
     ! <constant name='QCPERTINT_MAX'>
     !   Maximal value of an object of the <QcPertInt> type
     ! </constant>
-    integer(kind=4), parameter, public :: QcPertInt = 8
-    integer, parameter, public :: C_QCPERTINT = C_LONG
+    !integer(kind=4), parameter, public :: QcPertInt = 8
+    !integer, parameter, public :: C_QCPERTINT = C_LONG
+    integer(kind=4), parameter, public :: QcPertInt = 4
+    integer, parameter, public :: C_QCPERTINT = C_INT
 end module RSPPertBasicTypes_f
 
 <<RSPPerturbation.F90>>=
@@ -3005,7 +3007,7 @@ module RSPNucHamilton_f
     end type NucHamiltonFun_f
 
     public :: RSPNucHamiltonCreate_f
-    public :: RSPNucHamiltonGetContrib_f
+    public :: RSPNucHamiltonGetContributions_f
     public :: RSPNucHamiltonDestroy_f
 
     contains
@@ -3070,13 +3072,13 @@ module RSPNucHamilton_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} size_pert size of the perturbations on the nuclear Hamiltonian
     !% \param[real]{out} val_nuc the nuclear contributions
-    subroutine RSPNucHamiltonGetContrib_f(nuc_num_pert,    &
-                                          nuc_pert_labels, &
-                                          nuc_pert_orders, &
-                                          user_ctx,        &
-                                          size_pert,       &
-                                          val_nuc)         &
-        bind(C, name="RSPNucHamiltonGetContrib_f")
+    subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
+                                                nuc_pert_labels, &
+                                                nuc_pert_orders, &
+                                                user_ctx,        &
+                                                size_pert,       &
+                                                val_nuc)         &
+        bind(C, name="RSPNucHamiltonGetContributions_f")
         integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
         integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_labels(nuc_num_pert)
         integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
@@ -3099,7 +3101,7 @@ module RSPNucHamilton_f
         ! cleans up
         nullify(nuc_hamilton_fun)
         return
-    end subroutine RSPNucHamiltonGetContrib_f
+    end subroutine RSPNucHamiltonGetContributions_f
 
     !% \brief cleans the context of callback subroutine of nuclear Hamiltonian
     !  \author Bin Gao
@@ -3331,7 +3333,7 @@ Furthermoe, we implement the following Fortran adapters:
 
 #include "OpenRSP.h"
 
-QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
+QErrorCode OpenRSPCreateFortranAdapter(void **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;
@@ -3340,11 +3342,11 @@ QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
         QErrorExit(FILE_AND_LINE, "failed to allocate memory for c_open_rsp");
     }
     ierr = OpenRSPCreate(c_open_rsp);
-    *open_rsp = (QVoid *)(c_open_rsp);
+    *open_rsp = (void *)(c_open_rsp);
     return ierr;
 }
 
-//QErrorCode f_api_OpenRSPSetElecEOM(QVoid **open_rsp,
+//QErrorCode f_api_OpenRSPSetElecEOM(void **open_rsp,
 //                                   const QInt elec_EOM_type)
 //{
 //    OpenRSP *c_open_rsp;
@@ -3369,7 +3371,7 @@ QErrorCode OpenRSPCreateFortranAdapter(QVoid **open_rsp)
 //    return ierr;
 //}
 
-QErrorCode OpenRSPDestroyFortranAdapter(QVoid **open_rsp)
+QErrorCode OpenRSPDestroyFortranAdapter(void **open_rsp)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;

@@ -78,7 +78,7 @@ module RSPNucHamilton_f
     end type NucHamiltonFun_f
 
     public :: RSPNucHamiltonCreate_f
-    public :: RSPNucHamiltonGetContrib_f
+    public :: RSPNucHamiltonGetContributions_f
     public :: RSPNucHamiltonDestroy_f
 
     contains
@@ -143,13 +143,13 @@ module RSPNucHamilton_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} size_pert size of the perturbations on the nuclear Hamiltonian
     !% \param[real]{out} val_nuc the nuclear contributions
-    subroutine RSPNucHamiltonGetContrib_f(nuc_num_pert,    &
-                                          nuc_pert_labels, &
-                                          nuc_pert_orders, &
-                                          user_ctx,        &
-                                          size_pert,       &
-                                          val_nuc)         &
-        bind(C, name="RSPNucHamiltonGetContrib_f")
+    subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
+                                                nuc_pert_labels, &
+                                                nuc_pert_orders, &
+                                                user_ctx,        &
+                                                size_pert,       &
+                                                val_nuc)         &
+        bind(C, name="RSPNucHamiltonGetContributions_f")
         integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
         integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_labels(nuc_num_pert)
         integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
@@ -172,7 +172,7 @@ module RSPNucHamilton_f
         ! cleans up
         nullify(nuc_hamilton_fun)
         return
-    end subroutine RSPNucHamiltonGetContrib_f
+    end subroutine RSPNucHamiltonGetContributions_f
 
     !% \brief cleans the context of callback subroutine of nuclear Hamiltonian
     !  \author Bin Gao
