@@ -11,7 +11,7 @@ Users can use the following API to get the response functions:
 
 QVoid OpenRSPGetRSPFun_f(const QInt num_props,
                          const QInt *len_tuple,
-                         const QInt *pert_tuple,
+                         const QcPertInt *pert_tuple,
                          const QInt *num_freq_configs,
                          const QReal *pert_freqs,
                          const QInt *kn_rules,
@@ -53,7 +53,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                             const QcMat *ref_overlap,
                             const QInt num_props,
                             const QInt *len_tuple,
-                            const QInt *pert_tuple,
+                            const QcPertInt *pert_tuple,
                             const QInt *num_freq_configs,
                             const QReal *pert_freqs,
                             const QInt *kn_rules,
@@ -62,7 +62,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
 {
     //QErrorCode ierr;  /* error information */
     if (open_rsp->assembled==QFALSE) {
-        QErrorExit(FILE_AND_LINE, "OpenRSPAssemble() should be invoked before any calculation");
+        QErrorExit(FILE_AND_LINE, "OpenRSPAssemble() should be called before calculations");
     }
     //switch (open_rsp->elec_wav_type) {
     ///* density matrix-based response theory */

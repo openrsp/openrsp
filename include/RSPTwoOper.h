@@ -30,11 +30,11 @@
 #if !defined(RSP_TWOOPER_H)
 #define RSP_TWOOPER_H
 
-/* QcMatrix library */
 #include "qcmatrix.h"
+#include "RSPPerturbation.h"
 
-/* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetTwoOperMat)(const QInt,
+                               const QcPertInt*,
                                const QInt*,
                                const QInt,
                                QcMat*[],
@@ -44,6 +44,7 @@ typedef QVoid (*GetTwoOperMat)(const QInt,
                                const QInt,
                                QcMat*[]);
 typedef QVoid (*GetTwoOperExp)(const QInt,
+                               const QcPertInt*,
                                const QInt*,
                                const QInt,
                                const QInt*,
@@ -56,25 +57,37 @@ typedef QVoid (*GetTwoOperExp)(const QInt,
                                const QInt,
                                QReal*);
 
-/* linked list of two-electron operators */
 typedef struct RSPTwoOper RSPTwoOper;
 struct RSPTwoOper {
-    QInt num_pert;                   /* number of different perturbation labels that
-                                        can act as perturbations on the two-electron operator */
-    QInt *pert_labels;               /* all the different perturbation labels */
-    QInt *pert_max_orders;           /*  maximum allowed order of each perturbation (label) */
+    QInt num_pert_lab;               /* number of different perturbation labels
+                                        that can act as perturbations on the
+                                        two-electron operator */
+    QInt oper_num_pert;              /* number of perturbations on the
+                                        two-electron operator, only used for
+                                        callback functions */
+    QInt *pert_max_orders;           /* allowed maximal order of a perturbation
+                                        described by exactly one of these
+                                        different labels */
+    QInt *oper_pert_orders;          /* orders of perturbations on the
+                                        two-electron operator, only used for
+                                        callback functions */
+    QcPertInt *pert_labels;          /* all the different perturbation labels */
+    QcPertInt *oper_pert_labels;     /* labels of perturbations on the
+                                        two-electron operator, only used for
+                                        callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                 /* user-defined callback function context */
+    QVoid *user_ctx;                 /* user-defined callback-function context */
 #endif
-    GetTwoOperMat get_two_oper_mat;  /* user specified function for getting integral matrices */
-    GetTwoOperExp get_two_oper_exp;  /* user specified function for getting expectation values */
+    GetTwoOperMat get_two_oper_mat;  /* user-specified function for calculating
+                                        integral matrices */
+    GetTwoOperExp get_two_oper_exp;  /* user-specified function for calculating
+                                        expectation values */
     RSPTwoOper *next_oper;           /* pointer to the next two-electron operator */
 };
 
-/* functions related to the linked list of two-electron operators */
 extern QErrorCode RSPTwoOperCreate(RSPTwoOper**,
                                    const QInt,
-                                   const QInt*,
+                                   const QcPertInt*,
                                    const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                    QVoid*,
@@ -83,25 +96,25 @@ extern QErrorCode RSPTwoOperCreate(RSPTwoOper**,
                                    const GetTwoOperExp);
 extern QErrorCode RSPTwoOperAdd(RSPTwoOper*,
                                 const QInt,
-                                const QInt*,
+                                const QcPertInt*,
                                 const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                 QVoid*,
 #endif
                                 const GetTwoOperMat,
                                 const GetTwoOperExp);
-extern QErrorCode RSPTwoOperAssemble(RSPTwoOper*);
+extern QErrorCode RSPTwoOperAssemble(RSPTwoOper*,const RSPPert*);
 extern QErrorCode RSPTwoOperWrite(RSPTwoOper*,FILE*);
 extern QErrorCode RSPTwoOperGetMat(RSPTwoOper*,
                                    const QInt,
-                                   const QInt*,
+                                   const QcPertInt*,
                                    const QInt,
                                    QcMat*[],
                                    const QInt,
                                    QcMat*[]);
 extern QErrorCode RSPTwoOperGetExp(RSPTwoOper*,
                                    const QInt,
-                                   const QInt*,
+                                   const QcPertInt*,
                                    const QInt,
                                    const QInt*,
                                    QcMat*[],

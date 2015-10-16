@@ -33,6 +33,8 @@ module RSPNucHamilton_f
 
     use, intrinsic :: iso_c_binding
     use qcmatrix_f, only: QINT,QREAL
+    use RSPPertBasicTypes_f, only: QcPertInt, &
+                                   C_QCPERTINT
 
     implicit none
 
@@ -40,24 +42,27 @@ module RSPNucHamilton_f
 
     ! user specified callback subroutine
     abstract interface
-        subroutine NucHamiltonGetContributions_f(len_tuple,  &
-                                                 pert_tuple, &
+        subroutine NucHamiltonGetContrib_f(nuc_num_pert,    &
+                                           nuc_pert_labels, &
+                                           nuc_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                                 len_ctx,    &
-                                                 user_ctx,   &
+                                           len_ctx,         &
+                                           user_ctx,        &
 #endif
-                                                 size_pert,  &
-                                                 val_nuc)
+                                           size_pert,       &
+                                           val_nuc)
             use qcmatrix_f, only: QINT,QREAL
-            integer(kind=QINT), intent(in) :: len_tuple
-            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            use RSPPertBasicTypes_f, only: QcPertInt
+            integer(kind=QINT), intent(in) :: nuc_num_pert
+            integer(kind=QcPertInt), intent(in) :: nuc_pert_labels(nuc_num_pert)
+            integer(kind=QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: size_pert
             real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
-        end subroutine NucHamiltonGetContributions_f
+        end subroutine NucHamiltonGetContrib_f
     end interface
 
     ! context of callback subroutine of nuclear Hamiltonian
@@ -69,11 +74,11 @@ module RSPNucHamilton_f
         character(len=1), allocatable :: user_ctx(:)
 #endif
         ! callback function
-        procedure(NucHamiltonGetContributions_f), nopass, pointer :: get_nuc_contrib
+        procedure(NucHamiltonGetContrib_f), nopass, pointer :: get_nuc_contrib
     end type NucHamiltonFun_f
 
     public :: RSPNucHamiltonCreate_f
-    public :: RSPNucHamiltonGetContributions_f
+    public :: RSPNucHamiltonGetContrib_f
     public :: RSPNucHamiltonDestroy_f
 
     contains
@@ -95,17 +100,20 @@ module RSPNucHamilton_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_nuc_contrib(len_tuple,  &
-                                       pert_tuple, &
+            subroutine get_nuc_contrib(nuc_num_pert,    &
+                                       nuc_pert_labels, &
+                                       nuc_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,    &
-                                       user_ctx,   &
+                                       len_ctx,         &
+                                       user_ctx,        &
 #endif
-                                       size_pert,  &
+                                       size_pert,       &
                                        val_nuc)
                 use qcmatrix_f, only: QINT,QREAL
-                integer(kind=QINT), intent(in) :: len_tuple
-                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                use RSPPertBasicTypes_f, only: QcPertInt
+                integer(kind=QINT), intent(in) :: nuc_num_pert
+                integer(kind=QcPertInt), intent(in) :: nuc_pert_labels(nuc_num_pert)
+                integer(kind=QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -135,14 +143,16 @@ module RSPNucHamilton_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} size_pert size of the perturbations on the nuclear Hamiltonian
     !% \param[real]{out} val_nuc the nuclear contributions
-    subroutine RSPNucHamiltonGetContributions_f(len_tuple,  &
-                                                pert_tuple, &
-                                                user_ctx,   &
-                                                size_pert,  &
-                                                val_nuc)    &
-        bind(C, name="RSPNucHamiltonGetContributions_f")
-        integer(kind=C_QINT), value, intent(in) :: len_tuple
-        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+    subroutine RSPNucHamiltonGetContrib_f(nuc_num_pert,    &
+                                          nuc_pert_labels, &
+                                          nuc_pert_orders, &
+                                          user_ctx,        &
+                                          size_pert,       &
+                                          val_nuc)         &
+        bind(C, name="RSPNucHamiltonGetContrib_f")
+        integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
+        integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_labels(nuc_num_pert)
+        integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: size_pert
         real(C_QREAL), intent(inout) :: val_nuc(size_pert)
@@ -150,8 +160,9 @@ module RSPNucHamilton_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, nuc_hamilton_fun)
         ! invokes Fortran callback subroutine to calculate the nuclear contributions
-        call nuc_hamilton_fun%get_nuc_contrib(len_tuple,                 &
-                                              pert_tuple,                &
+        call nuc_hamilton_fun%get_nuc_contrib(nuc_num_pert,              &
+                                              nuc_pert_labels,           &
+                                              nuc_pert_orders,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                               nuc_hamilton_fun%len_ctx,  &
                                               nuc_hamilton_fun%user_ctx, &
@@ -161,7 +172,7 @@ module RSPNucHamilton_f
         ! cleans up
         nullify(nuc_hamilton_fun)
         return
-    end subroutine RSPNucHamiltonGetContributions_f
+    end subroutine RSPNucHamiltonGetContrib_f
 
     !% \brief cleans the context of callback subroutine of nuclear Hamiltonian
     !  \author Bin Gao

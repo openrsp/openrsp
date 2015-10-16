@@ -1,111 +1,26 @@
-\section{Linear Response Equation Solver}
-\label{section-OpenRSP-solver}
-
-Users can use the following API to set the linear response equation solver:
-<<OpenRSP.c>>=
-/* <function name='OpenRSPSetLinearRSPSolver' author='Bin Gao' date='2014-08-06'>
-     Set the context of linear response equation solver
-     <param name='open_rsp' direction='inout'>
-       The context of response theory calculations
-     </param>
-     <param name='user_ctx' direction='in'>
-       User-defined callback function context
-     </param>
-     <param name='get_linear_rsp_solution' direction='in'>
-       User-specified callback function of linear response equation solver
-     </param>
-     <return>Error information</return>
-   </function> */
-QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP *open_rsp,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                     QVoid *user_ctx,
-#endif
-                                     const GetLinearRSPSolution get_linear_rsp_solution)
-{
-    QErrorCode ierr;  /* error information */
-    /* creates the context of response equation solver */
-    if (open_rsp->rsp_solver!=NULL) {
-        ierr = RSPSolverDestroy(open_rsp->rsp_solver);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverDestroy()");
-    }
-    else {
-        open_rsp->rsp_solver = (RSPSolver *)malloc(sizeof(RSPSolver));
-        if (open_rsp->rsp_solver==NULL) {
-            QErrorExit(FILE_AND_LINE, "allocates memory for solver");
-        }
-    }
-    ierr = RSPSolverCreate(open_rsp->rsp_solver,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                           user_ctx,
-#endif
-                           get_linear_rsp_solution);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverCreate()");
-    return QSUCCESS;
-}
-
-@ The following header file defines all quantities we need for the linear
-response equation solver.  Type [[GetLinearRSPSolution]] defines the
-requirements of the callback function of the linear response equation solver.
-<<RSPSolver.h>>=
 /*
-  <<OpenRSPLicense>>
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
 
-  <header name='RSPSolver.h' author='Bin Gao' date='2014-08-06'>
-    The header file of linear response equation solver used inside OpenRSP
-  </header>
-*/
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
 
-#if !defined(RSP_SOLVER_H)
-#define RSP_SOLVER_H
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
 
-#include "qcmatrix.h"
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-typedef QVoid (*GetLinearRSPSolution)(const QInt,
-                                      const QReal*,
-                                      const QInt,
-                                      QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                      QVoid*,
-#endif
-                                      QcMat*[]);
-
-<<RSPSolverStruct>>
-
-<<RSPSolverAPIs>>
-
-#endif
-@ The context of linear response equation solver is:
-<<RSPSolverStruct>>=
-typedef struct {
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                               /* user-defined callback-function
-                                                      context */
-#endif
-    GetLinearRSPSolution get_linear_rsp_solution;  /* user-specified function of
-                                                      linear response equation solver */
-} RSPSolver;
-@ and the related functions are:
-<<RSPSolverAPIs>>=
-extern QErrorCode RSPSolverCreate(RSPSolver*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                  QVoid*,
-#endif
-                                  const GetLinearRSPSolution);
-extern QErrorCode RSPSolverAssemble(RSPSolver*);
-extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
-extern QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver*,
-                                                const QInt,
-                                                const QReal*,
-                                                const QInt,
-                                                QcMat*[],
-                                                QcMat*[]);
-extern QErrorCode RSPSolverDestroy(RSPSolver*);
-@
-
-These functions are implemented as follows:
-<<RSPSolver.c>>=
-/*
-  <<OpenRSPLicense>>
 */
 
 #include "RSPSolver.h"

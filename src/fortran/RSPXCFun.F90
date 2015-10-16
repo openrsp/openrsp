@@ -33,6 +33,8 @@ module RSPXCFun_f
 
     use, intrinsic :: iso_c_binding
     use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER,QcMat_C_NULL_PTR
+    use RSPPertBasicTypes_f, only: QcPertInt, &
+                                   C_QCPERTINT
 
     implicit none
 
@@ -40,11 +42,11 @@ module RSPXCFun_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine XCFunGetMat_f(len_tuple,        &
-                                 pert_tuple,       &
+        subroutine XCFunGetMat_f(xc_len_tuple,     &
+                                 xc_pert_tuple,    &
                                  num_freq_configs, &
-                                 len_dmat_tuple,   &
-                                 idx_dmat_tuple,   &
+                                 dmat_num_tuple,   &
+                                 dmat_idx_tuple,   &
                                  num_dmat,         &
                                  dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -55,11 +57,12 @@ module RSPXCFun_f
                                  val_int)
 
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: len_tuple
-            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            use RSPPertBasicTypes_f, only: QcPertInt
+            integer(kind=QINT), intent(in) :: xc_len_tuple
+            integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
             integer(kind=QINT), intent(in) :: num_freq_configs
-            integer(kind=QINT), intent(in) :: len_dmat_tuple
-            integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+            integer(kind=QINT), intent(in) :: dmat_num_tuple
+            integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -69,11 +72,11 @@ module RSPXCFun_f
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
         end subroutine XCFunGetMat_f
-        subroutine XCFunGetExp_f(len_tuple,        &
-                                 pert_tuple,       &
+        subroutine XCFunGetExp_f(xc_len_tuple,     &
+                                 xc_pert_tuple,    &
                                  num_freq_configs, &
-                                 len_dmat_tuple,   &
-                                 idx_dmat_tuple,   &
+                                 dmat_num_tuple,   &
+                                 dmat_idx_tuple,   &
                                  num_dmat,         &
                                  dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -83,11 +86,12 @@ module RSPXCFun_f
                                  num_exp,          &
                                  val_exp)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: len_tuple
-            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            use RSPPertBasicTypes_f, only: QcPertInt
+            integer(kind=QINT), intent(in) :: xc_len_tuple
+            integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
             integer(kind=QINT), intent(in) :: num_freq_configs
-            integer(kind=QINT), intent(in) :: len_dmat_tuple
-            integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+            integer(kind=QINT), intent(in) :: dmat_num_tuple
+            integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -139,11 +143,11 @@ module RSPXCFun_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_xc_fun_mat(len_tuple,        &
-                                      pert_tuple,       &
+            subroutine get_xc_fun_mat(xc_len_tuple,     &
+                                      xc_pert_tuple,    &
                                       num_freq_configs, &
-                                      len_dmat_tuple,   &
-                                      idx_dmat_tuple,   &
+                                      dmat_num_tuple,   &
+                                      dmat_idx_tuple,   &
                                       num_dmat,         &
                                       dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -153,11 +157,12 @@ module RSPXCFun_f
                                       num_int,          &
                                       val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: len_tuple
-                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                use RSPPertBasicTypes_f, only: QcPertInt
+                integer(kind=QINT), intent(in) :: xc_len_tuple
+                integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
                 integer(kind=QINT), intent(in) :: num_freq_configs
-                integer(kind=QINT), intent(in) :: len_dmat_tuple
-                integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+                integer(kind=QINT), intent(in) :: dmat_num_tuple
+                integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -167,11 +172,11 @@ module RSPXCFun_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_xc_fun_mat
-            subroutine get_xc_fun_exp(len_tuple,        &
-                                      pert_tuple,       &
+            subroutine get_xc_fun_exp(xc_len_tuple,     &
+                                      xc_pert_tuple,    &
                                       num_freq_configs, &
-                                      len_dmat_tuple,   &
-                                      idx_dmat_tuple,   &
+                                      dmat_num_tuple,   &
+                                      dmat_idx_tuple,   &
                                       num_dmat,         &
                                       dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -181,11 +186,12 @@ module RSPXCFun_f
                                       num_exp,          &
                                       val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: len_tuple
-                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                use RSPPertBasicTypes_f, only: QcPertInt
+                integer(kind=QINT), intent(in) :: xc_len_tuple
+                integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
                 integer(kind=QINT), intent(in) :: num_freq_configs
-                integer(kind=QINT), intent(in) :: len_dmat_tuple
-                integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+                integer(kind=QINT), intent(in) :: dmat_num_tuple
+                integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -218,9 +224,9 @@ module RSPXCFun_f
     !  \param[integer]{in} pert_tuple perturbation tuple on the XC functional
     !  \param[integer]{in} num_freq_configs the number of different frequency
     !      configurations to be considered for the perturbation tuple
-    !  \param[integer]{in} len_dmat_tuple the number of different perturbation
+    !  \param[integer]{in} dmat_len_tuple the number of different perturbation
     !      tuples of the AO based density matrices passed
-    !  \param[integer]{in} idx_dmat_tuple indices of the density matrix
+    !  \param[integer]{in} dmat_idx_tuple indices of the density matrix
     !      perturbation tuples passed (canonically ordered)
     !  \param[integer]{in} num_dmat number of collected AO based density matrices for
     !      the passed density matrix perturbation tuples and all frequency configurations
@@ -228,22 +234,22 @@ module RSPXCFun_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPXCFunGetMat_f(len_tuple,        &
-                                pert_tuple,       &
+    subroutine RSPXCFunGetMat_f(xc_len_tuple,     &
+                                xc_pert_tuple,    &
                                 num_freq_configs, &
-                                len_dmat_tuple,   &
-                                idx_dmat_tuple,   &
+                                dmat_num_tuple,   &
+                                dmat_idx_tuple,   &
                                 num_dmat,         &
                                 dens_mat,         &
                                 user_ctx,         &
                                 num_int,          &
                                 val_int)          &
         bind(C, name="RSPXCFunGetMat_f")
-        integer(kind=C_QINT), value, intent(in) :: len_tuple
-        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
+        integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
         integer(kind=C_QINT), value, intent(in) :: num_freq_configs
-        integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
-        integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+        integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
+        integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
         integer(kind=C_QINT), value, intent(in) :: num_dmat
         type(C_PTR), intent(in) :: dens_mat(num_dmat)
         type(C_PTR), value, intent(in) :: user_ctx
@@ -271,11 +277,11 @@ module RSPXCFun_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, xcfun_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
-        call xcfun_fun%get_xc_fun_mat(len_tuple,          &
-                                      pert_tuple,         &
+        call xcfun_fun%get_xc_fun_mat(xc_len_tuple,       &
+                                      xc_pert_tuple,      &
                                       num_freq_configs,   &
-                                      len_dmat_tuple,     &
-                                      idx_dmat_tuple,     &
+                                      dmat_num_tuple,     &
+                                      dmat_idx_tuple,     &
                                       num_dmat,           &
                                       f_dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -302,9 +308,9 @@ module RSPXCFun_f
     !  \param[integer]{in} pert_tuple perturbation tuple on the XC functional
     !  \param[integer]{in} num_freq_configs the number of different frequency
     !      configurations to be considered for the perturbation tuple
-    !  \param[integer]{in} len_dmat_tuple the number of different perturbation
+    !  \param[integer]{in} dmat_len_tuple the number of different perturbation
     !      tuples of the AO based density matrices passed
-    !  \param[integer]{in} idx_dmat_tuple indices of the density matrix
+    !  \param[integer]{in} dmat_idx_tuple indices of the density matrix
     !      perturbation tuples passed (canonically ordered)
     !  \param[integer]{in} num_dmat number of collected AO based density matrices for
     !      the passed density matrix perturbation tuples and all frequency configurations
@@ -312,22 +318,22 @@ module RSPXCFun_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
-    subroutine RSPXCFunGetExp_f(len_tuple,        &
-                                pert_tuple,       &
+    subroutine RSPXCFunGetExp_f(xc_len_tuple,     &
+                                xc_pert_tuple,    &
                                 num_freq_configs, &
-                                len_dmat_tuple,   &
-                                idx_dmat_tuple,   &
+                                dmat_num_tuple,   &
+                                dmat_idx_tuple,   &
                                 num_dmat,         &
                                 dens_mat,         &
                                 user_ctx,         &
                                 num_exp,          &
                                 val_exp)          &
         bind(C, name="RSPXCFunGetExp_f")
-        integer(kind=C_QINT), value, intent(in) :: len_tuple
-        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
+        integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
         integer(kind=C_QINT), value, intent(in) :: num_freq_configs
-        integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
-        integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+        integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
+        integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
         integer(kind=C_QINT), value, intent(in) :: num_dmat
         type(C_PTR), intent(in) :: dens_mat(num_dmat)
         type(C_PTR), value, intent(in) :: user_ctx
@@ -347,11 +353,11 @@ module RSPXCFun_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, xcfun_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
-        call xcfun_fun%get_xc_fun_exp(len_tuple,          &
-                                      pert_tuple,         &
+        call xcfun_fun%get_xc_fun_exp(xc_len_tuple,       &
+                                      xc_pert_tuple,      &
                                       num_freq_configs,   &
-                                      len_dmat_tuple,     &
-                                      idx_dmat_tuple,     &
+                                      dmat_num_tuple,     &
+                                      dmat_idx_tuple,     &
                                       num_dmat,           &
                                       f_dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)

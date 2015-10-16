@@ -1,209 +1,26 @@
-\section{Overlap Operator}
-\label{section-OpenRSP-overlap}
-
-\LibName needs to invoke host program's callback functions to calculate the
-integral matrices or expectation values of overlap operator as well as its
-derivatives with respect to different perturbations. Users can use the
-following API to tell \LibName the information of the overlap operator:
-<<OpenRSP.c>>=
-/* <function name='OpenRSPSetOverlap' author='Bin Gao' date='2014-07-30'>
-     Set the overlap operator
-     <param name='open_rsp' direction='inout'>
-       The context of response theory calculations
-     </param>
-     <param name='num_pert_lab' direction='in'>
-       Number of all different perturbation labels that can act on the
-       overlap operator
-     </param>
-     <param name='pert_labels' direction='in'>
-       All the different perturbation labels involved
-     </param>
-     <param name='pert_max_orders' direction='in'>
-       Allowed maximal order of a perturbation described by exactly one of
-       the above different labels
-     </param>
-     <param name='user_ctx' direction='in'>
-       User-defined callback function context
-     </param>
-     <param name='get_overlap_mat' direction='in'>
-       User-specified callback function to calculate integral matrices of
-       overlap operator as well as its derivatives with respect to different
-       perturbations
-     </param>
-     <param name='get_overlap_exp' direction='in'>
-       User-specified callback function to calculate expectation values of
-       overlap operator as well as its derivatives with respect to different
-       perturbations
-     </param>
-     <return>Error information</return>
-   </function> */
-QErrorCode OpenRSPSetOverlap(OpenRSP *open_rsp,
-                             const QInt num_pert_lab,
-                             const QcPertInt *pert_labels,
-                             const QInt *pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid *user_ctx,
-#endif
-                             const GetOverlapMat get_overlap_mat,
-                             const GetOverlapExp get_overlap_exp)
-{
-    QErrorCode ierr;  /* error information */
-    /* creates the context of overlap operator */
-    if (open_rsp->overlap!=NULL) {
-        ierr = RSPOverlapDestroy(open_rsp->overlap);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapDestroy()");
-    }
-    else {
-        open_rsp->overlap = (RSPOverlap *)malloc(sizeof(RSPOverlap));
-        if (open_rsp->overlap==NULL) {
-            QErrorExit(FILE_AND_LINE, "allocates memory for overlap");
-        }
-    }
-    ierr = RSPOverlapCreate(open_rsp->overlap,
-                            num_pert_lab,
-                            pert_labels,
-                            pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            user_ctx,
-#endif
-                            get_overlap_mat,
-                            get_overlap_exp);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOverlapCreate()");
-    return QSUCCESS;
-}
-
-@ The following header file defines all quantities we need for the overlap
-operator. Types [[GetOverlapMat]] and [[GetOverlapExp]] define the requirements
-of two callback functions from the host program to calculate respectively the
-integral matrices and expectation values of overlap operator and its
-derivatives.
-<<RSPOverlap.h>>=
 /*
-  <<OpenRSPLicense>>
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
 
-  <header name='RSPOneOper.h' author='Bin Gao' date='2014-08-05'>
-    The header file of overlap operator used inside OpenRSP
-  </header>
-*/
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
 
-#if !defined(RSP_OVERLAP_H)
-#define RSP_OVERLAP_H
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
 
-#include "qcmatrix.h"
-#include "RSPPerturbation.h"
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-typedef QVoid (*GetOverlapMat)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
-#endif
-                               const QInt,
-                               QcMat*[]);
-typedef QVoid (*GetOverlapExp)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
-#endif
-                               const QInt,
-                               QReal*);
-
-<<RSPOverlapStruct>>
-
-<<RSPOverlapAPIs>>
-
-#endif
-@ The context of overlap operator is:
-<<RSPOverlapStruct>>=
-typedef struct {
-    QInt num_pert_lab;              /* number of different perturbation labels
-                                       that can act as perturbations on the
-                                       overlap operator */
-    QInt bra_num_pert;              /* number of perturbations on the bra center,
-                                       only used for callback functions */
-    QInt ket_num_pert;              /* number of perturbations on the ket center,
-                                       only used for callback functions */
-    QInt oper_num_pert;             /* number of perturbations on the overlap operator,
-                                       only used for callback functions */
-    QInt *pert_max_orders;          /* allowed maximal order of a perturbation
-                                       described by exactly one of these
-                                       different labels */
-    QInt *bra_pert_orders;          /* orders of perturbations on the bra center, 
-                                       only used for callback functions */
-    QInt *ket_pert_orders;          /* orders of perturbations on the ket center,
-                                       only used for callback functions */
-    QInt *oper_pert_orders;         /* orders of perturbations on the overlap operator,
-                                       only used for callback functions */
-    QcPertInt *pert_labels;         /* all the different perturbation labels */
-    QcPertInt *bra_pert_labels;     /* labels of perturbations on the bra center, 
-                                       only used for callback functions */
-    QcPertInt *ket_pert_labels;     /* labels of perturbations on the ket center,
-                                       only used for callback functions */
-    QcPertInt *oper_pert_labels;    /* labels of perturbations on the overlap operator,
-                                       only used for callback functions */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                /* user-defined callback-function context */
-#endif
-    GetOverlapMat get_overlap_mat;  /* user-specified function for calculating
-                                       integral matrices */
-    GetOverlapExp get_overlap_exp;  /* user-specified function for calculating
-                                       expectation values */
-} RSPOverlap;
-@ and the functions related to the overlap operator:
-<<RSPOverlapAPIs>>=
-extern QErrorCode RSPOverlapCreate(RSPOverlap*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
-#endif
-                                   const GetOverlapMat,
-                                   const GetOverlapExp);
-extern QErrorCode RSPOverlapAssemble(RSPOverlap*,const RSPPert*);
-extern QErrorCode RSPOverlapWrite(const RSPOverlap*,FILE*);
-extern QErrorCode RSPOverlapGetMat(RSPOverlap*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   QcMat*[]);
-extern QErrorCode RSPOverlapGetExp(RSPOverlap*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   QcMat*[],
-                                   const QInt,
-                                   QReal*);
-extern QErrorCode RSPOverlapDestroy(RSPOverlap*);
-@
-
-Let us now implement all the functions declared:
-<<RSPOverlap.c>>=
-/*
-  <<OpenRSPLicense>>
 */
 
 #include "RSPOverlap.h"
@@ -365,11 +182,6 @@ QErrorCode RSPOverlapCreate(RSPOverlap *overlap,
     return QSUCCESS;
 }
 
-@ As shown here, we allow for an overlap operator that does not depend on any
-peraturbation---[[num_pert_lab==0]], i.e. any perturbed integral matrix and
-expectation value of this overlap operator is zero.
-
-<<RSPOverlap.c>>=
 /* <function name='RSPOverlapAssemble'
              attr='private'
              author='Bin Gao'

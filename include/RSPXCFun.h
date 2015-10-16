@@ -30,12 +30,11 @@
 #if !defined(RSP_XCFUN_H)
 #define RSP_XCFUN_H
 
-/* QcMatrix library */
 #include "qcmatrix.h"
+#include "RSPPerturbation.h"
 
-/* callback functions to get the integral matrices and expectation values */
 typedef QVoid (*GetXCFunMat)(const QInt,
-                             const QInt*,
+                             const QcPertInt*,
                              const QInt,
                              const QInt,
                              const QInt*,
@@ -47,7 +46,7 @@ typedef QVoid (*GetXCFunMat)(const QInt,
                              const QInt,
                              QcMat*[]);
 typedef QVoid (*GetXCFunExp)(const QInt,
-                             const QInt*,
+                             const QcPertInt*,
                              const QInt,
                              const QInt,
                              const QInt*,
@@ -59,25 +58,33 @@ typedef QVoid (*GetXCFunExp)(const QInt,
                              const QInt,
                              QReal*);
 
-/* linked list of exchange-corrrelation (XC) functionals */
 typedef struct RSPXCFun RSPXCFun;
 struct RSPXCFun {
-    QInt num_pert;               /* number of different perturbation labels that
-                                    can act as perturbations on the XC functional */
-    QInt *pert_labels;           /* all the different perturbation labels */
-    QInt *pert_max_orders;       /*  maximum allowed order of each perturbation (label) */
+    QInt num_pert_lab;           /* number of different perturbation labels
+                                    that can act as perturbations on the
+                                    XC functional */
+    QInt xc_len_tuple;           /* length of perturbation tuple on the
+                                    XC functional, only used for
+                                    callback functions */
+    QInt *pert_max_orders;       /* allowed maximal order of a perturbation
+                                    described by exactly one of these
+                                    different labels */
+    QcPertInt *pert_labels;      /* all the different perturbation labels */
+    QcPertInt *xc_pert_tuple;    /* perturbation tuple on the XC functional,
+                                    only used for callback functions */
 #if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;             /* user-defined callback function context */
+    QVoid *user_ctx;             /* user-defined callbac-kfunction context */
 #endif
-    GetXCFunMat get_xc_fun_mat;  /* user specified function for getting integral matrices */
-    GetXCFunExp get_xc_fun_exp;  /* user specified function for getting expectation values */
-    RSPXCFun *next_xc;           /* pointer to the next exchange-corrrelation functional */
+    GetXCFunMat get_xc_fun_mat;  /* user-specified function for calculating
+                                    integral matrices */
+    GetXCFunExp get_xc_fun_exp;  /* user-specified function for calculating
+                                    expectation values */
+    RSPXCFun *next_xc;           /* pointer to the next XC functional */
 };
 
-/* functions related to the linked list of exchange-corrrelation functionals */
 extern QErrorCode RSPXCFunCreate(RSPXCFun**,
                                  const QInt,
-                                 const QInt*,
+                                 const QcPertInt*,
                                  const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                  QVoid*,
@@ -86,18 +93,18 @@ extern QErrorCode RSPXCFunCreate(RSPXCFun**,
                                  const GetXCFunExp);
 extern QErrorCode RSPXCFunAdd(RSPXCFun*,
                               const QInt,
-                              const QInt*,
+                              const QcPertInt*,
                               const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                               QVoid*,
 #endif
                               const GetXCFunMat,
                               const GetXCFunExp);
-extern QErrorCode RSPXCFunAssemble(RSPXCFun*);
+extern QErrorCode RSPXCFunAssemble(RSPXCFun*,const RSPPert*);
 extern QErrorCode RSPXCFunWrite(RSPXCFun*,FILE*);
 extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
                                  const QInt,
-                                 const QInt*,
+                                 const QcPertInt*,
                                  const QInt,
                                  const QInt,
                                  const QInt*,
@@ -107,7 +114,7 @@ extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
                                  QcMat*[]);
 extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
                                  const QInt,
-                                 const QInt*,
+                                 const QcPertInt*,
                                  const QInt,
                                  const QInt,
                                  const QInt*,

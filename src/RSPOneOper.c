@@ -1,193 +1,26 @@
-\section{One-Electron Operators}
-\label{section-OpenRSP-OneOper}
-
-Users can use the following API to add different one-electron operators:
-<<OpenRSP.c>>=
-/* <function name='OpenRSPAddOneOper' author='Bin Gao' date='2014-07-30'>
-     Add a one-electron operator to the Hamiltonian
-     <param name='open_rsp' direction='inout'>
-       The context of response theory calculations
-     </param>
-     <param name='num_pert_lab' direction='in'>
-       Number of all different perturbation labels that can act on the
-       one-electron operator
-     </param>
-     <param name='pert_labels' direction='in'>
-       All the different perturbation labels involved
-     </param>
-     <param name='pert_max_orders' direction='in'>
-       Allowed maximal order of a perturbation described by exactly one of
-       the above different labels
-     </param>
-     <param name='user_ctx' direction='in'>
-       User-defined callback function context
-     </param>
-     <param name='get_one_oper_mat' direction='in'>
-       User-specified callback function to calculate integral matrices of
-       one-electron operator as well as its derivatives with respect to
-       different perturbations
-     </param>
-     <param name='get_one_oper_exp' direction='in'>
-       User-specified callback function to calculate expectation values of
-       one-electron operator as well as its derivatives with respect to
-       different perturbations
-     </param>
-     <return>Error information</return>
-   </function> */
-QErrorCode OpenRSPAddOneOper(OpenRSP *open_rsp,
-                             const QInt num_pert_lab,
-                             const QcPertInt *pert_labels,
-                             const QInt *pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             QVoid *user_ctx,
-#endif
-                             const GetOneOperMat get_one_oper_mat,
-                             const GetOneOperExp get_one_oper_exp)
-{
-    QErrorCode ierr;  /* error information */
-    /* creates the linked list of one-electron operators */
-    if (open_rsp->one_oper==NULL) {
-        ierr = RSPOneOperCreate(&open_rsp->one_oper,
-                                num_pert_lab,
-                                pert_labels,
-                                pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                user_ctx,
-#endif
-                                get_one_oper_mat,
-                                get_one_oper_exp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOneOperCreate()");
-    }
-    /* adds the one-electron operator to the linked list */
-    else {
-        ierr = RSPOneOperAdd(open_rsp->one_oper,
-                             num_pert_lab,
-                             pert_labels,
-                             pert_max_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             user_ctx,
-#endif
-                             get_one_oper_mat,
-                             get_one_oper_exp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPOneOperAdd()");
-    }
-    return QSUCCESS;
-}
-
-@ The following header file defines all quantities we need for one-electron
-operators. Types [[GetOneOperMat]] and [[GetOneOperpExp]] define the
-requirements of two callback functions from the host program to calculate
-respectively the integral matrices and expectation values of a one-electron
-operator and its derivatives.
-<<RSPOneOper.h>>=
 /*
-  <<OpenRSPLicense>>
+  OpenRSP: open-ended library for response theory
+  Copyright 2015 Radovan Bast,
+                 Daniel H. Friese,
+                 Bin Gao,
+                 Dan J. Jonsson,
+                 Magnus Ringholm,
+                 Kenneth Ruud,
+                 Andreas Thorvaldsen
 
-  <header name='RSPOneOper.h' author='Bin Gao' date='2014-07-30'>
-    The header file of one-electron operators used inside OpenRSP
-  </header>
-*/
+  OpenRSP is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as
+  published by the Free Software Foundation, either version 3 of
+  the License, or (at your option) any later version.
 
-#if !defined(RSP_ONEOPER_H)
-#define RSP_ONEOPER_H
+  OpenRSP is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU Lesser General Public License for more details.
 
-#include "qcmatrix.h"
-#include "RSPPerturbation.h"
+  You should have received a copy of the GNU Lesser General Public
+  License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-typedef QVoid (*GetOneOperMat)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
-#endif
-                               const QInt,
-                               QcMat*[]);
-typedef QVoid (*GetOneOperExp)(const QInt,
-                               const QcPertInt*,
-                               const QInt*,
-                               const QInt,
-                               QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                               QVoid*,
-#endif
-                               const QInt,
-                               QReal*);
-
-<<RSPOneOperStruct>>
-
-<<RSPOneOperAPIs>>
-
-#endif
-@ Here we use a linked list for the context of one-electron operators:
-<<RSPOneOperStruct>>=
-typedef struct RSPOneOper RSPOneOper;
-struct RSPOneOper {
-    QInt num_pert_lab;               /* number of different perturbation labels
-                                        that can act as perturbations on the
-                                        one-electron operator */
-    QInt oper_num_pert;              /* number of perturbations on the
-                                        one-electron operator, only used for
-                                        callback functions */
-    QInt *pert_max_orders;           /* allowed maximal order of a perturbation
-                                        described by exactly one of these
-                                        different labels */
-    QInt *oper_pert_orders;          /* orders of perturbations on the
-                                        one-electron operator, only used for
-                                        callback functions */
-    QcPertInt *pert_labels;          /* all the different perturbation labels */
-    QcPertInt *oper_pert_labels;     /* labels of perturbations on the
-                                        one-electron operator, only used for
-                                        callback functions */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    QVoid *user_ctx;                 /* user-defined callback-function context */
-#endif
-    GetOneOperMat get_one_oper_mat;  /* user-specified function for calculating
-                                        integral matrices */
-    GetOneOperExp get_one_oper_exp;  /* user-specified function for calculating
-                                        expectation values */
-    RSPOneOper *next_oper;           /* pointer to the next one-electron operator */
-};
-@ and the functions related to the one-electron operators:
-<<RSPOneOperAPIs>>=
-extern QErrorCode RSPOneOperCreate(RSPOneOper**,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                   QVoid*,
-#endif
-                                   const GetOneOperMat,
-                                   const GetOneOperExp);
-extern QErrorCode RSPOneOperAdd(RSPOneOper*,
-                                const QInt,
-                                const QcPertInt*,
-                                const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                QVoid*,
-#endif
-                                const GetOneOperMat,
-                                const GetOneOperExp);
-extern QErrorCode RSPOneOperAssemble(RSPOneOper*,const RSPPert*);
-extern QErrorCode RSPOneOperWrite(RSPOneOper*,FILE*);
-extern QErrorCode RSPOneOperGetMat(RSPOneOper*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   QcMat*[]);
-extern QErrorCode RSPOneOperGetExp(RSPOneOper*,
-                                   const QInt,
-                                   const QcPertInt*,
-                                   const QInt,
-                                   QcMat*[],
-                                   const QInt,
-                                   QReal*);
-extern QErrorCode RSPOneOperDestroy(RSPOneOper**);
-@
-
-The functions are implemented as follows:
-<<RSPOneOper.c>>=
-/*
-  <<OpenRSPLicense>>
 */
 
 #include "RSPOneOper.h"
@@ -329,11 +162,6 @@ QErrorCode RSPOneOperCreate(RSPOneOper **one_oper,
     return QSUCCESS;
 }
 
-@ As shown here, we allow for a one-electron operator that does not depend on
-any peraturbation---[[num_pert_lab==0]], i.e. any perturbed integral matrix and
-expectation value of this one-electron operator is zero.
-
-<<RSPOneOper.c>>=
 /* <function name='RSPOneOperAdd'
              attr='private'
              author='Bin Gao'

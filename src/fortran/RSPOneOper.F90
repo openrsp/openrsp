@@ -33,6 +33,8 @@ module RSPOneOper_f
 
     use, intrinsic :: iso_c_binding
     use qcmatrix_f, only: QINT,QREAL,QcMat,QcMat_C_F_POINTER,QcMat_C_NULL_PTR
+    use RSPPertBasicTypes_f, only: QcPertInt, &
+                                   C_QCPERTINT
 
     implicit none
 
@@ -40,17 +42,20 @@ module RSPOneOper_f
 
     ! user specified callback subroutines
     abstract interface
-        subroutine OneOperGetMat_f(len_tuple,  &
-                                   pert_tuple, &
+        subroutine OneOperGetMat_f(oper_num_pert,    &
+                                   oper_pert_labels, &
+                                   oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,    &
-                                   user_ctx,   &
+                                   len_ctx,          &
+                                   user_ctx,         &
 #endif
-                                   num_int,    &
+                                   num_int,          &
                                    val_int)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: len_tuple
-            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            use RSPPertBasicTypes_f, only: QcPertInt
+            integer(kind=QINT), intent(in) :: oper_num_pert
+            integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+            integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -58,19 +63,22 @@ module RSPOneOper_f
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
         end subroutine OneOperGetMat_f
-        subroutine OneOperGetExp_f(len_tuple,  &
-                                   pert_tuple, &
-                                   num_dmat,   &
-                                   dens_mat,   &
+        subroutine OneOperGetExp_f(oper_num_pert,    &
+                                   oper_pert_labels, &
+                                   oper_pert_orders, &
+                                   num_dmat,         &
+                                   dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,    &
-                                   user_ctx,   &
+                                   len_ctx,          &
+                                   user_ctx,         &
 #endif
-                                   num_exp,    &
+                                   num_exp,          &
                                    val_exp)
             use qcmatrix_f, only: QINT,QREAL,QcMat
-            integer(kind=QINT), intent(in) :: len_tuple
-            integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+            use RSPPertBasicTypes_f, only: QcPertInt
+            integer(kind=QINT), intent(in) :: oper_num_pert
+            integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+            integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -122,17 +130,20 @@ module RSPOneOper_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_one_oper_mat(len_tuple,  &
-                                        pert_tuple, &
+            subroutine get_one_oper_mat(oper_num_pert,    &
+                                        oper_pert_labels, &
+                                        oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,    &
-                                        user_ctx,   &
+                                        len_ctx,          &
+                                        user_ctx,         &
 #endif
-                                        num_int,    &
+                                        num_int,          &
                                         val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: len_tuple
-                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                use RSPPertBasicTypes_f, only: QcPertInt
+                integer(kind=QINT), intent(in) :: oper_num_pert
+                integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+                integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
@@ -140,19 +151,22 @@ module RSPOneOper_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_one_oper_mat
-            subroutine get_one_oper_exp(len_tuple,  &
-                                        pert_tuple, &
-                                        num_dmat,   &
-                                        dens_mat,   &
+            subroutine get_one_oper_exp(oper_num_pert,    &
+                                        oper_pert_labels, &
+                                        oper_pert_orders, &
+                                        num_dmat,         &
+                                        dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,    &
-                                        user_ctx,   &
+                                        len_ctx,          &
+                                        user_ctx,         &
 #endif
-                                        num_exp,    &
+                                        num_exp,          &
                                         val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: len_tuple
-                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                use RSPPertBasicTypes_f, only: QcPertInt
+                integer(kind=QINT), intent(in) :: oper_num_pert
+                integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+                integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -186,14 +200,16 @@ module RSPOneOper_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_int number of the integral matrices
     !% \param[C_PTR:type]{inout} val_int the integral matrices
-    subroutine RSPOneOperGetMat_f(len_tuple,  &
-                                  pert_tuple, &
-                                  user_ctx,   &
-                                  num_int,    &
-                                  val_int)    &
+    subroutine RSPOneOperGetMat_f(oper_num_pert,    &
+                                  oper_pert_labels, &
+                                  oper_pert_orders, &
+                                  user_ctx,         &
+                                  num_int,          &
+                                  val_int)          &
         bind(C, name="RSPOneOperGetMat_f")
-        integer(kind=C_QINT), value, intent(in) :: len_tuple
-        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: oper_num_pert
+        integer(kind=C_QCPERTINT), intent(in) :: oper_pert_labels(oper_num_pert)
+        integer(kind=C_QINT), intent(in) :: oper_pert_orders(oper_num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
@@ -211,8 +227,9 @@ module RSPOneOper_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
-        call one_oper_fun%get_one_oper_mat(len_tuple,             &
-                                           pert_tuple,            &
+        call one_oper_fun%get_one_oper_mat(oper_num_pert,         &
+                                           oper_pert_labels,      &
+                                           oper_pert_orders,      &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                            one_oper_fun%len_ctx,  &
                                            one_oper_fun%user_ctx, &
@@ -237,16 +254,18 @@ module RSPOneOper_f
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
     !  \param[integer]{in} num_exp number of expectation values
     !% \param[real]{out} val_exp the expectation values
-    subroutine RSPOneOperGetExp_f(len_tuple,  &
-                                  pert_tuple, &
-                                  num_dmat,   &
-                                  dens_mat,   &
-                                  user_ctx,   &
-                                  num_exp,    &
-                                  val_exp)    &
+    subroutine RSPOneOperGetExp_f(oper_num_pert,    &
+                                  oper_pert_labels, &
+                                  oper_pert_orders, &
+                                  num_dmat,         &
+                                  dens_mat,         &
+                                  user_ctx,         &
+                                  num_exp,          &
+                                  val_exp)          &
         bind(C, name="RSPOneOperGetExp_f")
-        integer(kind=C_QINT), value, intent(in) :: len_tuple
-        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: oper_num_pert
+        integer(kind=C_QCPERTINT), intent(in) :: oper_pert_labels(oper_num_pert)
+        integer(kind=C_QINT), intent(in) :: oper_pert_orders(oper_num_pert)
         integer(kind=C_QINT), value, intent(in) :: num_dmat
         type(C_PTR), intent(in) :: dens_mat(num_dmat)
         type(C_PTR), value, intent(in) :: user_ctx
@@ -266,8 +285,9 @@ module RSPOneOper_f
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the expectation values
-        call one_oper_fun%get_one_oper_exp(len_tuple,             &
-                                           pert_tuple,            &
+        call one_oper_fun%get_one_oper_exp(oper_num_pert,         &
+                                           oper_pert_labels,      &
+                                           oper_pert_orders,      &
                                            num_dmat,              &
                                            f_dens_mat,            &
 #if defined(OPENRSP_F_USER_CONTEXT)

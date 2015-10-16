@@ -33,34 +33,6 @@
 /* QcMatrix library */
 #include "qcmatrix.h"
 
-/* <macrodef name='OPENRSP_PERT_SHORT_INT'>
-     Represent perturbation labels using unsigned short integers
-   </macrodef> */
-#if defined(OPENRSP_PERT_SHORT_INT)
-/* <datatype name='QcPertInt'>
-     Data type of integers to represent perturbation labels
-   </datatype>
-   <constant name='QCPERTINT_MAX'>
-     Maximal value of an object of the <QcPertInt> type
-   </constant>
-   <constant name='QCPERTINT_FMT'>
-     Format string of <QcPertInt> type
-   </constant> */
-typedef unsigned short QcPertInt;
-#define QCPERTINT_MAX USHRT_MAX
-#define QCPERTINT_FMT "hu"
-/* <macrodef name='OPENRSP_PERT_INT'>
-     Represent perturbation labels using unsigned integers
-   </macrodef> */
-#elif defined(OPENRSP_PERT_INT)
-typedef unsigned int QcPertInt;
-#define QCPERTINT_MAX UINT_MAX
-#define QCPERTINT_FMT "u"
-#else
-typedef unsigned long QcPertInt;
-#define QCPERTINT_MAX ULONG_MAX
-#define QCPERTINT_FMT "lu"
-#endif
 /* <macrodef name='OPENRSP_PERT_LABEL_BIT'>
      Set <OPENRSP_PERT_LABEL_BIT>
    </macrodef>
@@ -70,17 +42,30 @@ typedef unsigned long QcPertInt;
 #if !defined(OPENRSP_PERT_LABEL_BIT)
 #define OPENRSP_PERT_LABEL_BIT 10
 #endif
+
+/* <datatype name='QcPertInt'>
+     Data type of integers to represent perturbation labels
+   </datatype>
+   <constant name='QCPERTINT_MAX'>
+     Maximal value of an object of the <QcPertInt> type
+   </constant>
+   <constant name='QCPERTINT_FMT'>
+     Format string of <QcPertInt> type
+   </constant> */
+typedef unsigned long QcPertInt;
+#define QCPERTINT_MAX ULONG_MAX
+#define QCPERTINT_FMT "lu"
 /* <constant name='OPENRSP_PERT_LABEL_MAX'>
      Maximal value for perturbation labels
    </constant>
-   <constant name='OPENRSP_NUM_FREQ_MAX'>
-     Maximal value for number of frequencies
+   <constant name='OPENRSP_PERT_ID_MAX'>
+     Maximal value for internal perturbation identifier
    </constant> */
 extern const QcPertInt OPENRSP_PERT_LABEL_MAX;
-extern const QcPertInt OPENRSP_NUM_FREQ_MAX;
+extern const QcPertInt OPENRSP_PERT_ID_MAX;
 
-typedef QVoid (*GetPertCat)(const QcPertInt,
-                            const QInt,
+typedef QVoid (*GetPertCat)(const QInt,
+                            const QcPertInt,
                             const QInt,
                             const QInt,
                             const QInt*,
@@ -90,17 +75,18 @@ typedef QVoid (*GetPertCat)(const QcPertInt,
                             QInt*);
 
 typedef struct {
-    QcPertInt num_pert;                 /* number of different perturbation labels $p$ */
-    QcPertInt *pert_labels;             /* $a_{1},a_{2},\cdots,a_{p}$ */
+    QInt num_pert_lab;                  /* number of different perturbation
+                                           labels $p$ */
     QInt *pert_max_orders;              /* $n_{1},n_{2},\cdots,n_{p}$ */
     QInt *ptr_ncomp;                    /* pointers to $[N_{j}^{k_{j}}]$
                                            for each $a_{j}$ */
     QInt *pert_num_comps;               /* $[N_{j}^{k_{j}}]$, where
                                            $1\le k_{j}\le n_{j}$ and $1\le j\le p$ */
+    QcPertInt *pert_labels;             /* $a_{1},a_{2},\cdots,a_{p}$ */
 #if defined(OPENRSP_C_USER_CONTEXT)     
     QVoid *user_ctx;                    /* user-defined callback function context */
 #endif
-    GetPertCat get_pert_concatenation;  /* user specified function for getting
+    GetPertCat get_pert_concatenation;  /* user-specified function for getting
                                            the ranks of components of sub-perturbation
                                            tuples (with the same perturbation label)
                                            for given components of the corresponding
@@ -108,7 +94,7 @@ typedef struct {
 } RSPPert;
 
 extern QErrorCode RSPPertCreate(RSPPert*,
-                                const QcPertInt,
+                                const QInt,
                                 const QcPertInt*,
                                 const QInt*,
                                 const QInt*,
@@ -118,12 +104,31 @@ extern QErrorCode RSPPertCreate(RSPPert*,
                                 const GetPertCat);
 extern QErrorCode RSPPertAssemble(RSPPert*);
 extern QErrorCode RSPPertWrite(const RSPPert*,FILE*);
-//extern QErrorCode RSPPertGetFromTuple(const RSPPert*,
-//                                      const QInt,
-//                                      const QcPertInt*,
-//                                      const QcPertInt,
-//                                      const QReal*,
-//                                      QInt*);
+extern QErrorCode RSPPertDestroy(RSPPert*);
+extern QErrorCode RSPPertValidateLabelOrder(const RSPPert*,
+                                            const QInt,
+                                            const QcPertInt*,
+                                            const QInt*);
+extern QErrorCode RSPPertHostToInternal(const RSPPert*,
+                                        const QInt,
+                                        QcPertInt*,
+                                        const QInt,
+                                        QReal*);
+extern QErrorCode RSPPertInternTupleToHostLabelOrder(const QInt,
+                                                     const QcPertInt*,
+                                                     const QInt,
+                                                     const QcPertInt*,
+                                                     const QInt*,
+                                                     QInt*,
+                                                     QcPertInt*,
+                                                     QInt*);
+extern QErrorCode RSPPertInternTupleToHostTuple(const QInt,
+                                                const QcPertInt*,
+                                                const QInt,
+                                                const QcPertInt*,
+                                                const QInt*,
+                                                QInt*,
+                                                QcPertInt*);
 extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
                                           const QcPertInt,
                                           const QInt,
@@ -131,6 +136,5 @@ extern QErrorCode RSPPertGetConcatenation(const RSPPert*,
                                           const QInt,
                                           const QInt*,
                                           QInt*);
-extern QErrorCode RSPPertDestroy(RSPPert*);
 
 #endif
