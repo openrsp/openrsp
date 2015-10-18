@@ -33,6 +33,10 @@
 
 #include "OpenRSP.h"
 
+#if defined(OPENRSP_C_USER_CONTEXT)
+#define PERT_CONTEXT "NRNZGEO"
+#endif
+
 extern void get_pert_concatenation(const QInt,
                                    const QcPertInt,
                                    const QInt,

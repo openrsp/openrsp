@@ -27,7 +27,7 @@
 ! basic data types
 #include "api/qcmatrix_c_type.h"
 
-module RSPPert_f
+module RSPPerturbation_f
 
     use, intrinsic :: iso_c_binding
     use qcmatrix_f, only: QINT
@@ -194,5 +194,5 @@ module RSPPert_f
         nullify(pert_fun%get_pert_concatenation)
     end subroutine RSPPertDestroy_f
 
-end module RSPPert_f
+end module RSPPerturbation_f
 

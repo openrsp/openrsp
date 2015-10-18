@@ -22,22 +22,18 @@
   License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
 
-  This is the header file of perturbations.
+   This is the header file of unit testing of the AO density matrix-based
+   response theory.
 
-  2014-07-31, Bin Gao:
-  * first version
+   2014-07-31, Bin Gao
+   * first version
 */
+#if !defined(OPENRSP_DENS_AO_TEST_H)
+#define OPENRSP_DENS_AO_TEST_H
 
-#include "OpenRSP.h"
+#include "OpenRSPPertCallback.h"
+#include "OpenRSPDensAOCallback.h"
 
-#define NUM_ALL_PERT 3
-extern const QcPertInt PERT_GEOMETRIC;
-extern const QcPertInt PERT_DIPOLE;
-extern const QcPertInt PERT_MAGNETIC;
-extern const QInt MAX_ORDER_GEOMETRIC;
-extern const QInt MAX_ORDER_DIPOLE;
-extern const QInt MAX_ORDER_MAGNETIC;
-extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_SIZES[15];
-extern const QInt NUM_ATOMS;
+extern QErrorCode OpenRSPDensAOTest(OpenRSP*,FILE*);
+
+#endif

@@ -108,20 +108,16 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
 /* <function name='OpenRSPWrite' author='Bin Gao' date='2014-07-30'>
      Writes the OpenRSP context
      <param name='open_rsp' direction='in'>The OpenRSP context</param>
-     <param name='file_name' direction='in'>File to write the context</param>
+     <param name='fp_rsp' direction='inout'>File pointer</param>
      <return>Error information</return>
    </function> */
-QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
+QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, FILE *fp_rsp)
 {
-    FILE *fp_rsp;     /* file pointer */
     QErrorCode ierr;  /* error information */
-    /* opens the file */
-    fp_rsp = fopen(file_name, "a");
-    if (fp_rsp==NULL) {
-        printf("OpenRSPWrite>> file: %s\n", file_name);
-        QErrorExit(FILE_AND_LINE, "failed to open the file in appending mode");
-    }
-    fprintf(fp_rsp, "\nOpenRSP library compiled at %s, %s\n", __TIME__, __DATE__);
+    fprintf(fp_rsp,
+            "\nOpenRSP library compiled at %s, %s\n",
+            __TIME__,
+            __DATE__);
     /* context of the (electronic) wave function */
     /*FIXME: ierr = xxWrite(open_rsp->elec_eom); */
     if (open_rsp->rsp_pert!=NULL) {
@@ -157,8 +153,6 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, const QChar *file_name)
         ierr = RSPSolverWrite(open_rsp->rsp_solver, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverWrite()");
     }
-    /* closes the file */
-    fclose(fp_rsp);
     return QSUCCESS;
 }
 

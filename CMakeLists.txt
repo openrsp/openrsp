@@ -169,6 +169,9 @@ if(OPENRSP_FORTRAN_API)
     include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
 endif()
 
+# Data for unit testing
+include(OpenRSPTestData)
+
 # Builds test suite as executables
 if(OPENRSP_TEST_EXECUTABLE)
     add_definitions(-DOPENRSP_TEST_EXECUTABLE)

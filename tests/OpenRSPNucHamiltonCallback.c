@@ -21,23 +21,18 @@
   You should have received a copy of the GNU Lesser General Public
   License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-
-  This is the header file of perturbations.
-
-  2014-07-31, Bin Gao:
-  * first version
 */
 
-#include "OpenRSP.h"
+#include "OpenRSPNucHamiltonCallback.h"
 
-#define NUM_ALL_PERT 3
-extern const QcPertInt PERT_GEOMETRIC;
-extern const QcPertInt PERT_DIPOLE;
-extern const QcPertInt PERT_MAGNETIC;
-extern const QInt MAX_ORDER_GEOMETRIC;
-extern const QInt MAX_ORDER_DIPOLE;
-extern const QInt MAX_ORDER_MAGNETIC;
-extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_SIZES[15];
-extern const QInt NUM_ATOMS;
+void get_nuc_contrib(const QInt nuc_num_pert,
+                     const QcPertInt *nuc_pert_labels,
+                     const QInt *nuc_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                     void *user_ctx,
+#endif
+                     const QInt size_pert,
+                     QReal *val_nuc)
+{
+/*FIXME: to implement*/
+}
