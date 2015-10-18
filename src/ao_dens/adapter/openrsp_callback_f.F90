@@ -41,6 +41,7 @@ module openrsp_callback_f
                           QcMat,    &
                           QSUCCESS, &
                           QcMat_C_LOC
+    use RSPPertBasicTypes_f, only: QcPertInt
 
     implicit none
 
@@ -96,10 +97,11 @@ module openrsp_callback_f
                                                                val_nuc)      &
             bind(C, name="RSPNucHamiltonGetContributions")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: nuc_hamilton
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: size_pert
             real(kind=C_QREAL), intent(inout) :: val_nuc(2*size_pert)
         end function RSPNucHamiltonGetContributions
@@ -114,14 +116,15 @@ module openrsp_callback_f
                                                  val_int)        &
             bind(C, name="RSPOverlapGetMat")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: overlap
             integer(kind=C_QINT), value, intent(in) :: bra_len_tuple
-            integer(kind=C_QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: ket_len_tuple
-            integer(kind=C_QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPOverlapGetMat
@@ -138,14 +141,15 @@ module openrsp_callback_f
                                                  val_exp)        &
             bind(C, name="RSPOverlapGetExp")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: overlap
             integer(kind=C_QINT), value, intent(in) :: bra_len_tuple
-            integer(kind=C_QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: ket_len_tuple
-            integer(kind=C_QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_exp
@@ -158,10 +162,11 @@ module openrsp_callback_f
                                                  val_int)    &
             bind(C, name="RSPOneOperGetMat")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: one_oper
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPOneOperGetMat
@@ -174,10 +179,11 @@ module openrsp_callback_f
                                                  val_exp)    &
             bind(C, name="RSPOneOperGetExp")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: one_oper
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_exp
@@ -192,10 +198,11 @@ module openrsp_callback_f
                                                  val_int)    &
             bind(C, name="RSPTwoOperGetMat")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: two_oper
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_int
@@ -213,10 +220,11 @@ module openrsp_callback_f
                                                  val_exp)        &
             bind(C, name="RSPTwoOperGetExp")   
             use, intrinsic :: iso_c_binding    
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: one_oper
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
             integer(kind=C_QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
             type(C_PTR), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
@@ -237,10 +245,11 @@ module openrsp_callback_f
                                                val_int)          &
             bind(C, name="RSPXCFunGetMat")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: xc_fun
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_freq_configs
             integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
             integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
@@ -261,10 +270,11 @@ module openrsp_callback_f
                                                val_exp)          &
             bind(C, name="RSPXCFunGetExp")
             use, intrinsic :: iso_c_binding
+            use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: xc_fun
             integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_freq_configs
             integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
             integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
@@ -369,7 +379,7 @@ module openrsp_callback_f
                                                          size_pert,  &
                                                          val_nuc)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: size_pert
         complex(kind=QREAL), intent(inout) :: val_nuc(size_pert)
         real(kind=QREAL), allocatable :: c_val_nuc(:)
@@ -409,11 +419,11 @@ module openrsp_callback_f
                                            num_int,        &
                                            val_int)
         integer(kind=QINT), intent(in) :: bra_len_tuple
-        integer(kind=QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+        integer(kind=QcPertInt), intent(in) :: bra_pert_tuple(bra_len_tuple)
         integer(kind=QINT), intent(in) :: ket_len_tuple
-        integer(kind=QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+        integer(kind=QcPertInt), intent(in) :: ket_pert_tuple(ket_len_tuple)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
@@ -460,11 +470,11 @@ module openrsp_callback_f
                                            num_exp,        &
                                            val_exp)
         integer(kind=QINT), intent(in) :: bra_len_tuple
-        integer(kind=QINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
+        integer(kind=QcPertInt), intent(in) :: bra_pert_tuple(bra_len_tuple)
         integer(kind=QINT), intent(in) :: ket_len_tuple
-        integer(kind=QINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
+        integer(kind=QcPertInt), intent(in) :: ket_pert_tuple(ket_len_tuple)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_exp
@@ -519,7 +529,7 @@ module openrsp_callback_f
                                            num_int,    &
                                            val_int)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
@@ -558,7 +568,7 @@ module openrsp_callback_f
                                            num_exp,    &
                                            val_exp)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_exp
@@ -611,7 +621,7 @@ module openrsp_callback_f
                                            num_int,    &
                                            val_int)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_int
@@ -670,7 +680,7 @@ module openrsp_callback_f
                                            num_exp,        &
                                            val_exp)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: len_dmat_tuple
         integer(kind=QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
         type(QcMat), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
@@ -746,7 +756,7 @@ module openrsp_callback_f
                                          num_int,          &
                                          val_int)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_freq_configs
         integer(kind=QINT), intent(in) :: len_dmat_tuple
         integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
@@ -811,7 +821,7 @@ module openrsp_callback_f
                                          num_exp,          &
                                          val_exp)
         integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
         integer(kind=QINT), intent(in) :: num_freq_configs
         integer(kind=QINT), intent(in) :: len_dmat_tuple
         integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
