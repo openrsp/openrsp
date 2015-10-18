@@ -48,10 +48,10 @@ module OpenRSP_f
     use RSPSolver_f, only: SolverFun_f,       &
                            RSPSolverCreate_f, &
                            RSPSolverDestroy_f
-    use RSPPert_f, only: QcPertInt,       &
-                         PertFun_f,       &
-                         RSPPertCreate_f, &
-                         RSPPertDestroy_f
+    use RSPPerturbation_f, only: QcPertInt,       &
+                                 PertFun_f,       &
+                                 RSPPertCreate_f, &
+                                 RSPPertDestroy_f
     use RSPOverlap_f, only: OverlapFun_f,       &
                             RSPOverlapCreate_f, &
                             RSPOverlapDestroy_f
@@ -121,6 +121,11 @@ module OpenRSP_f
     public :: OpenRSPGetRSPFun_f
     !public :: OpenRSPGetResidue_f
     public :: OpenRSPDestroy_f
+
+    interface OpenRSPWrite_f
+        module procedure OpenRSPWritebyFileName_f
+        module procedure OpenRSPWritebyUnit_f
+    end interface OpenRSPWrite_f
 
     interface 
         integer(C_INT) function OpenRSPCreateFortranAdapter(open_rsp) &
@@ -257,12 +262,18 @@ module OpenRSP_f
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
         end function OpenRSPAssemble
-        integer(C_INT) function OpenRSPWrite(open_rsp, file_name) &
-            bind(C, name="OpenRSPWrite")
+        integer(C_INT) function OpenRSPWriteFortranAdapter(open_rsp,  &
+                                                           file_name) &
+            bind(C, name="OpenRSPWriteFortranAdapter")
             use, intrinsic :: iso_c_binding
             type(C_PTR), value, intent(in) :: open_rsp
             character(C_CHAR), intent(in) :: file_name(*)
-        end function OpenRSPWrite
+        end function OpenRSPWriteFortranAdapter
+        integer(C_INT) function OpenRSPWriteStdOutFortranAdapter(open_rsp) &
+            bind(C, name="OpenRSPWriteStdOutFortranAdapter")
+            use, intrinsic :: iso_c_binding
+            type(C_PTR), value, intent(in) :: open_rsp
+        end function OpenRSPWriteStdOutFortranAdapter
         integer(C_INT) function OpenRSPGetRSPFun(open_rsp,         &
                                                  ref_ham,          &
                                                  ref_state,        &
@@ -1157,12 +1168,49 @@ module OpenRSP_f
         ierr = OpenRSPAssemble(open_rsp%c_rsp)
     end function OpenRSPAssemble_f
 
-    function OpenRSPWrite_f(open_rsp, file_name) result(ierr)
+    function OpenRSPWritebyFileName_f(open_rsp, file_name) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(in) :: open_rsp
         character*(*), intent(in) :: file_name
-        ierr = OpenRSPWrite(open_rsp%c_rsp, file_name//C_NULL_CHAR)
-    end function OpenRSPWrite_f
+        ierr = OpenRSPWriteFortranAdapter(open_rsp%c_rsp, &
+                                          file_name//C_NULL_CHAR)
+    end function OpenRSPWritebyFileName_f
+
+    function OpenRSPWritebyUnit_f(open_rsp, io_unit) result(ierr)
+        integer(kind=4) :: ierr
+        type(OpenRSP), intent(in) :: open_rsp
+        integer(kind=4), intent(in) :: io_unit
+integer(kind=4), parameter :: MAX_LEN_QCCHAR = 256
+integer(kind=4), parameter :: QCSTDOUT = 6
+        logical(kind=4) is_opened
+        logical(kind=4) is_named
+        character(MAX_LEN_QCCHAR) file_name
+        if (io_unit==QCSTDOUT) then
+            ierr = OpenRSPWriteStdOutFortranAdapter(open_rsp%c_rsp)
+        else
+            ! gets the file name from its associated logical unit
+            inquire(unit=io_unit,     &
+                    opened=is_opened, &
+                    named=is_named,   &
+                    name=file_name)
+            if (is_opened .and. is_named) then
+                if (len_trim(file_name)==MAX_LEN_QCCHAR) then
+                    write(QCSTDOUT,100) "file name too long, increase MAX_LEN_QCCHAR", &
+                                        MAX_LEN_QCCHAR
+                    call QErrorExit(QCSTDOUT, __LINE__, "OpenRSP.F90")
+                else
+                    ! writes by file name
+                    ierr = OpenRSPWriteFortranAdapter(open_rsp%c_rsp, &
+                                                      trim(file_name)//C_NULL_CHAR)
+                end if
+            else
+                write(QCSTDOUT,100) "logical unit is not named and/or opened", &
+                                    io_unit
+                call QErrorExit(QCSTDOUT, __LINE__, "OpenRSP.F90")
+            end if
+        end if
+100     format("OpenRSPWritebyUnit_f>> ",A,I6)
+    end function OpenRSPWritebyUnit_f
 
     function OpenRSPGetRSPFun_f(open_rsp,         &
                                 ref_ham,          &

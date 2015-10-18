@@ -38,29 +38,17 @@ QErrorCode main()
 {
     FILE *fp_log=stdout;  /* file pointer */
 #else
-QErrorCode test_c_OpenRSP(FILE *fp_log)
+QErrorCode OpenRSPTest(FILE *fp_log)
 {
 #endif
 #include "OpenRSPTestPerturbations.h"
-    OpenRSP open_rsp;                                 /* context of response theory calculations */
-    const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT] = {      /* labels of all perturbations */
-        PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC};
-    const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT] = {  /* maximum allowed orders of all perturbations */
-        MAX_ORDER_GEOMETRIC,MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC};
-    const QInt ALL_PERT_SIZES[] = {                   /* sizes of all perturbations up to their maximum orders */
-        12,78,364,1365,4368,12376,31824,              /* geometric derivatives (4 atoms) */
-        3,                                            /* electric dipole */
-        3,6,10,15,21,28,36};                          /* magnetic derivatives */
-#if defined(OPENRSP_C_USER_CONTEXT)
-    char *pert_context = "NRNZGEO";                  /* user defined context for perturbations */
-#endif
-    QErrorCode ierr;                                  /* error information */
-    const QInt NUM_ATOMS = 4;
+    OpenRSP open_rsp;  /* context of response theory calculations */
+    QErrorCode ierr;   /* error information */
 
     /* creates the context of response theory calculations */
     ierr = OpenRSPCreate(&open_rsp);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPCreate() passed\n");
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate()");
+    fprintf(fp_log, "OpenRSPTest>> OpenRSPCreate() passed\n");
 
     /* sets information of all perturbations */
     ierr = OpenRSPSetPerturbations(&open_rsp,
@@ -69,11 +57,11 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
                                    ALL_PERT_MAX_ORDERS,
                                    ALL_PERT_SIZES,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   (void *)pert_context,
+                                   (void *)PERT_CONTEXT,
 #endif
                                    &get_pert_concatenation);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetPerturbations");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetPerturbations() passed\n");
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetPerturbations()");
+    fprintf(fp_log, "OpenRSPTest>> OpenRSPSetPerturbations() passed\n");
 
     /* sets the nuclear Hamiltonian */
     ierr = OpenRSPSetNucHamilton(&open_rsp,
@@ -81,22 +69,22 @@ QErrorCode test_c_OpenRSP(FILE *fp_log)
                                  ALL_PERT_LABELS,
                                  ALL_PERT_MAX_ORDERS,
 #if defined(OPENRSP_C_USER_CONTEXT)   
-                                 (void *)pert_context,
+                                 (void *)NUC_HAMILTON_CONTEXT,
 #endif
                                  &get_nuc_contrib,
                                  NUM_ATOMS);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucHamilton");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPSetNucHamilton() passed\n");
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucHamilton()");
+    fprintf(fp_log, "OpenRSPTest>> OpenRSPSetNucHamilton() passed\n");
 
     /* tests the density matrix-based response theory */
-    ierr = OpenRSPAODensTest(&open_rsp, fp_log);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAODensTest");
-    fprintf(fp_log, "test_c_OpenRSP>> density matrix-based response theory passed\n");
+    ierr = OpenRSPDensAOTest(&open_rsp, fp_log);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDensAOTest()");
+    fprintf(fp_log, "OpenRSPTest>> density matrix-based response theory passed\n");
 
     /* destroys the context of response theory calculations */
     ierr = OpenRSPDestroy(&open_rsp);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDestroy");
-    fprintf(fp_log, "test_c_OpenRSP>> OpenRSPDestroy() passed\n");
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDestroy()");
+    fprintf(fp_log, "OpenRSPTest>> OpenRSPDestroy() passed\n");
 
     return QSUCCESS;
 }

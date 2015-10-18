@@ -29,21 +29,18 @@
   * first version
 */
 
-#if !defined(OPENRSP_AO_DENS_CALLBACK_H)
-#define OPENRSP_AO_DENS_CALLBACK_H
+#if !defined(OPENRSP_DENS_AO_CALLBACK_H)
+#define OPENRSP_DENS_AO_CALLBACK_H
 
 #include "OpenRSP.h"
+#include "OpenRSPTestData.h"
 
-#if defined(ZERO_BASED_NUMBERING)
-#define IDX_BLOCK_ROW 0
-#define IDX_BLOCK_COL 0
-#define IDX_FIRST_ROW 0
-#define IDX_FIRST_COL 0
-#else
-#define IDX_BLOCK_ROW 1
-#define IDX_BLOCK_COL 1
-#define IDX_FIRST_ROW 1
-#define IDX_FIRST_COL 1
+#if defined(OPENRSP_C_USER_CONTEXT)
+#define OVERLAP_CONTEXT "OVERLAP"
+#define ONEHAM_CONTEXT "ONEHAM"
+#define EXT_FIELD_CONTEXT "EXT_FIELD"
+#define TWO_OPER_CONTEXT "NONLAO"
+#define SOLVER_CONTEXT "SOLVER"
 #endif
 
 extern void get_overlap_mat(const QInt,
@@ -117,14 +114,6 @@ extern void get_two_oper_exp(const QInt,
 #endif
                              const QInt,
                              QReal*);
-extern void get_nuc_contrib(const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            void*,
-#endif
-                            const QInt,
-                            QReal*);
 extern void get_linear_rsp_solution(const QInt,
                                     const QReal*,
                                     const QInt,

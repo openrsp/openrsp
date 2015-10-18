@@ -123,7 +123,7 @@ extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
 #endif
                                             const GetLinearRSPSolution);
 extern QErrorCode OpenRSPAssemble(OpenRSP*);
-extern QErrorCode OpenRSPWrite(const OpenRSP*,const QChar*);
+extern QErrorCode OpenRSPWrite(const OpenRSP*,FILE*);
 extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
                                    const QcMat*,
                                    const QcMat*,

@@ -22,18 +22,28 @@
   License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
 
-   This is the header file of unit testing of the AO density matrix-based
-   response theory.
+  This header file contains callback function for nuclear Hamiltonian.
 
-   2014-07-31, Bin Gao
-   * first version
+  2015-10-16, Bin Gao:
+  * first version
 */
-#if !defined(OPENRSP_AO_DENS_TEST_H)
-#define OPENRSP_AO_DENS_TEST_H
 
-#include "OpenRSPPertCallback.h"
-#include "OpenRSPAODensCallback.h"
+#if !defined(OPENRSP_NUC_HAMILTON_CALLBACK_H)
+#define OPENRSP_NUC_HAMILTON_CALLBACK_H
 
-extern QErrorCode OpenRSPAODensTest(OpenRSP*,FILE*);
+#include "OpenRSP.h"
+
+#if defined(OPENRSP_C_USER_CONTEXT)
+#define NUC_HAMILTON_CONTEXT "NUC_HAMILTON"
+#endif
+
+extern void get_nuc_contrib(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QReal*);
 
 #endif

@@ -66,6 +66,34 @@ QErrorCode OpenRSPCreateFortranAdapter(void **open_rsp)
 //    return ierr;
 //}
 
+QErrorCode OpenRSPWriteFortranAdapter(const void *open_rsp,
+                                      const char *file_name)
+{
+    FILE *fp_rsp;
+    OpenRSP *c_open_rsp;
+    QErrorCode ierr;
+    fp_rsp = fopen(file_name, "a");
+    if (fp_rsp==NULL) {
+        printf("OpenRSPWriteFortranAdapter>> file name %s\n", file_name);
+        QErrorExit(FILE_AND_LINE, "failed to open the file");
+    }
+    c_open_rsp = (OpenRSP *)open_rsp;
+    ierr = OpenRSPWrite(c_open_rsp, fp_rsp);
+    fprintf(fp_rsp, "\n");
+    fclose(fp_rsp);
+    return ierr;
+}
+
+QErrorCode OpenRSPWriteStdOutFortranAdapter(const void *open_rsp)
+{
+    OpenRSP *c_open_rsp;
+    QErrorCode ierr;
+    c_open_rsp = (OpenRSP *)open_rsp;
+    ierr = OpenRSPWrite(c_open_rsp, stdout);
+    fprintf(stdout, "\n");
+    return ierr;
+}
+
 QErrorCode OpenRSPDestroyFortranAdapter(void **open_rsp)
 {
     OpenRSP *c_open_rsp;

@@ -35,4 +35,5 @@ void get_pert_concatenation(const QInt pert_label,
 #endif
                             QInt *rank_sub_comps)
 {
+/*FIXME: to implement*/
 }

@@ -31,3 +31,17 @@ const QcPertInt PERT_MAGNETIC = 5;
 const QInt MAX_ORDER_GEOMETRIC = 7;
 const QInt MAX_ORDER_DIPOLE = 1;
 const QInt MAX_ORDER_MAGNETIC = 7;
+/* labels of all perturbations */
+const QcPertInt ALL_PERT_LABELS[]={PERT_GEOMETRIC,
+                                   PERT_DIPOLE,
+                                   PERT_MAGNETIC};
+/* allowed maximal orders of all perturbations */
+const QInt ALL_PERT_MAX_ORDERS[]={MAX_ORDER_GEOMETRIC,
+                                  MAX_ORDER_DIPOLE,
+                                  MAX_ORDER_MAGNETIC};
+/* sizes of all perturbations up to their maximal orders */
+const QInt ALL_PERT_SIZES[]={
+    12,78,364,1365,4368,12376,31824,  /* geometric derivatives (4 atoms) */
+    3,                                /* electric dipole */
+    3,6,10,15,21,28,36};              /* magnetic derivatives */
+const QInt NUM_ATOMS=4;
