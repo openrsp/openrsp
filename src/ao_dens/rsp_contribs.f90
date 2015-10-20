@@ -25,7 +25,7 @@ module rsp_contribs
 !  use basis_set,  only: cgto
   use rsp_field_tuple, only: p_tuple, p_tuple_remove_first, p_tuple_getone, &
                              p_tuple_standardorder, merge_p_tuple, &
-                             p_tuple_p1_cloneto_p2, p_tuple_external
+                             p_tuple_p1_cloneto_p2, p_tuple_to_external_tuple
   use rsp_indices_and_addressing
   use qcmatrix_f
                                         
@@ -284,7 +284,7 @@ contains
     complex(8), allocatable, dimension(:) :: tmp_ave
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
                                           blk_sizes_merged, translated_index, pert_ext_bra, &
-                                          pert_ext_ket, pert_ext_ord_bra, pert_ext_ord_ket
+                                          pert_ext_ket
     integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
 
@@ -309,8 +309,8 @@ else
     else
    
 
-      call p_tuple_external(bra, np_bra, pert_ext_bra, pert_ext_ord_bra)
-      call p_tuple_external(ket, np_ket, pert_ext_ket, pert_ext_ord_ket)
+      call p_tuple_to_external_tuple(bra, np_bra, pert_ext_bra)
+      call p_tuple_to_external_tuple(ket, np_ket, pert_ext_ket)
 
 
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
@@ -362,8 +362,8 @@ else
        allocate(tmp_ave(tmp_ave_size))
        tmp_ave = 0.0
 
-       call get_ovl_exp(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
-                        pert_ext_ord_ket, 0, noc, noc, 1, (/D/), tmp_ave_size, tmp_ave)
+       call get_ovl_exp(np_bra, pert_ext_bra, np_ket, pert_ext_ket, &
+                        0, noc, 1, (/D/), tmp_ave_size, tmp_ave)
          
        
        k = 1
@@ -442,8 +442,6 @@ else
 
        deallocate(pert_ext_bra)
        deallocate(pert_ext_ket)
-       deallocate(pert_ext_ord_bra)
-       deallocate(pert_ext_ord_ket)
        
        deallocate(tmp_ave)
        deallocate(merged_indices)
@@ -481,7 +479,7 @@ else
     external :: get_ovl_mat
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
                                           blk_sizes_merged, translated_index, pert_ext_bra, &
-                                          pert_ext_ord_bra, pert_ext_ket, pert_ext_ord_ket
+                                          pert_ext_ket
                                           
     integer, allocatable, dimension(:,:) :: blk_sizes, merged_indices
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
@@ -514,8 +512,8 @@ else
 
     else
 
-      call p_tuple_external(bra, np_bra, pert_ext_bra, pert_ext_ord_bra)
-      call p_tuple_external(ket, np_ket, pert_ext_ket, pert_ext_ord_ket)
+      call p_tuple_to_external_tuple(bra, np_bra, pert_ext_bra)
+      call p_tuple_to_external_tuple(ket, np_ket, pert_ext_ket)
 
 
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
@@ -572,8 +570,8 @@ else
 
        end do
 
-       call get_ovl_mat(np_bra, pert_ext_bra, pert_ext_ord_bra, np_ket, pert_ext_ket, &
-            pert_ext_ord_ket, 0, noc, noc, tmp_fock_size, tmp_fock)
+       call get_ovl_mat(np_bra, pert_ext_bra, np_ket, pert_ext_ket, &
+                        0, noc, tmp_fock_size, tmp_fock)
        
        k = 1
        do j = 1, bra_static%n_perturbations
@@ -655,8 +653,6 @@ else
 
        deallocate(pert_ext_bra)
        deallocate(pert_ext_ket)
-       deallocate(pert_ext_ord_bra)
-       deallocate(pert_ext_ord_ket)
        
        deallocate(merged_indices)
        deallocate(translated_index)

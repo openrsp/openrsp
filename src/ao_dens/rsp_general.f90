@@ -812,7 +812,7 @@ module rsp_general
                 offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
                outer_indices_size, merged_triang_size, merged_nblks, npert_ext
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ext_ord
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
     integer, dimension(total_num_perturbations) :: ncarray, ncouter, ncinner, pidouter, &
@@ -845,7 +845,7 @@ module rsp_general
  !                   p_tuples(1)%n_perturbations, num_p_tuples - 1, &
  !                   p_tuples(2:num_p_tuples))
 
-    call p_tuple_external(p_tuples(1), npert_ext, pert_ext, pert_ext_ord)
+    call p_tuple_to_external_tuple(p_tuples(1), npert_ext, pert_ext)
  
     call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
     t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%n_perturbations)/)
@@ -968,7 +968,7 @@ module rsp_general
    
           if (num_p_tuples == 2) then
           
-             call get_1el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/dens_tuple(2)/), &
+             call get_1el_exp(npert_ext, pert_ext, 1, (/dens_tuple(2)/), &
                               size(contrib), contrib)
           
              
@@ -1006,7 +1006,7 @@ module rsp_general
    
           if (num_p_tuples == 2) then
    
-             call get_2el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/dens_tuple(2)/), &
+             call get_2el_exp(npert_ext, pert_ext, 1, (/dens_tuple(2)/), &
                               1, (/D_unp/), size(contrib), contrib)
    
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -1016,7 +1016,7 @@ module rsp_general
     
           elseif (num_p_tuples == 3) then
           
-             call get_2el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/dens_tuple(2)/), &
+             call get_2el_exp(npert_ext, pert_ext, 1, (/dens_tuple(2)/), &
                               1, (/dens_tuple(3)/), size(contrib), contrib)
           
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -1185,11 +1185,9 @@ module rsp_general
        write(*,*) 'Getting a 1el contribution with npert pert ord ='
        write(*,*) npert_ext
        write(*,*) pert_ext
-       write(*,*) pert_ext_ord
        
        
-       call get_1el_exp(npert_ext, pert_ext, pert_ext_ord, 1, D_unp, &
-                              size(contrib), contrib)
+       call get_1el_exp(npert_ext, pert_ext, 1, D_unp, size(contrib), contrib)
        
 !        call rsp_oneave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
@@ -1215,8 +1213,8 @@ module rsp_general
        tmp = tmp - contrib
        contrib = 0.0
 
-       call get_2el_exp(npert_ext, pert_ext, pert_ext_ord, 1, (/D_unp/), &
-                              1, (/D_unp/), size(contrib), contrib)
+       call get_2el_exp(npert_ext, pert_ext, 1, (/D_unp/), &
+                        1, (/D_unp/), size(contrib), contrib)
        
 !        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &
@@ -1263,7 +1261,6 @@ module rsp_general
     end do
 
     deallocate(pert_ext)
-    deallocate(pert_ext_ord)
     
     deallocate(merged_blk_info)
     deallocate(nfields)
@@ -1712,7 +1709,7 @@ module rsp_general
     integer, dimension(p12(1)%n_perturbations + p12(2)%n_perturbations) :: & 
     pids_current_contribution, translated_index
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ext_ord
+    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext
     integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
     integer :: d_supsize
@@ -1724,7 +1721,7 @@ module rsp_general
     complex(8), allocatable, dimension(:) :: tmp, prop_forcache
     complex(8), dimension(*) :: prop
 
-    call p_tuple_external(p12(1), npert_ext, pert_ext, pert_ext_ord)
+    call p_tuple_to_external_tuple(p12(1), npert_ext, pert_ext)
 
     
     d_supsize = derivative_superstructure_getsize(p12(2), kn, .FALSE., &
@@ -1828,7 +1825,7 @@ module rsp_general
                              p12(2)%n_perturbations, outer_indices(i,:), F, D, S, W)
  
  
-       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ext_ord, 1, (/W/), size(tmp), tmp)
+       call get_ovl_exp(0, noc, 0, noc, npert_ext, pert_ext, 1, (/W/), size(tmp), tmp)
        
  
 !        call rsp_ovlave(p12(1)%n_perturbations, p12(1)%plab, &
@@ -1941,7 +1938,6 @@ module rsp_general
     call QcMatDst(W)
 
     deallocate(pert_ext)
-    deallocate(pert_ext_ord)
     
     deallocate(deriv_structb)
     deallocate(ncarray)
@@ -2077,7 +2073,7 @@ module rsp_general
     complex(8), allocatable, dimension(:) :: tmp, prop_forcache
     complex(8), dimension(*) :: prop
 
-    call p_tuple_external(p12(1), npert_ext, pert_ext, pert_ord_ext)
+    call p_tuple_to_external_tuple(p12(1), npert_ext, pert_ext)
 
     
     d_supsize = derivative_superstructure_getsize(p12(2), kn, .TRUE., &
