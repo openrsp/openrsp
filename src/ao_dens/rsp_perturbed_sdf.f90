@@ -128,7 +128,7 @@ use qcmatrix_f
     
     integer :: sstr_incr, i, j, superstructure_size, nblks, perturbed_matrix_size, id_outp
     integer :: ierr, npert_ext
-    integer, allocatable, dimension(:) :: ind, blk_sizes, pert_ext, pert_ord_ext
+    integer, allocatable, dimension(:) :: ind, blk_sizes, pert_ext
     integer, allocatable, dimension(:,:) :: blk_info, indices
     integer, dimension(0) :: noc
     character(4), dimension(0) :: nof
@@ -172,7 +172,7 @@ use qcmatrix_f
 
     ! Process perturbation tuple for external call
     
-    call p_tuple_external(pert, npert_ext, pert_ext, pert_ord_ext)
+    call p_tuple_to_external_tuple(pert, npert_ext, pert_ext)
     
     
     ! Get the appropriate Fock/density/overlap matrices
@@ -189,7 +189,7 @@ use qcmatrix_f
     end do
 ! write(*,*) 'Sp a', Sp(1)%elms
 
-    call get_ovl_mat(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, &
+    call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
                      perturbed_matrix_size, Sp)
 
 !     call rsp_ovlint(zeromat%nrow, pert%n_perturbations, pert%plab, &
@@ -336,7 +336,7 @@ ierr = QcMatWrite_f(Fp(i), "Fp", ASCII_VIEW)
        ! Note (MaR): Passing only real part of freq. Is this OK?
        ! MaR: May need to vectorize RHS and X
        
-       call get_rsp_sol(1, 1, (/sum(real(pert%freq(:)))/), RHS, X)
+       call get_rsp_sol(1, (/sum(real(pert%freq(:)))/), 1, RHS, X)
        
 !        call get_rsp_sol(RHS(1), 1, (/sum(real(pert%freq(:)))/), X)
 !        call rsp_solver_exec(RHS(1), (/sum(real(pert%freq(:)))/), X)
@@ -458,7 +458,6 @@ end if
     deallocate(derivative_structure)
     deallocate(ind)
     deallocate(pert_ext)
-    deallocate(pert_ord_ext)
     deallocate(Fp)
     deallocate(Dp)
     deallocate(Sp)
@@ -478,7 +477,7 @@ end if
     
     integer :: sstr_incr, i, j, superstructure_size, nblks, perturbed_matrix_size, id_outp
     integer :: ierr, npert_ext
-    integer, allocatable, dimension(:) :: ind, blk_sizes, pert_ext, pert_ord_ext
+    integer, allocatable, dimension(:) :: ind, blk_sizes, pert_ext
     integer, allocatable, dimension(:,:) :: blk_info, indices
     integer, dimension(0) :: noc
     character(4), dimension(0) :: nof
@@ -522,7 +521,7 @@ end if
 
     ! Process perturbation tuple for external call
     
-    call p_tuple_external(pert, npert_ext, pert_ext, pert_ord_ext)
+    call p_tuple_to_external_tuple(pert, npert_ext, pert_ext)
     
     
     ! Get the appropriate Fock/density/overlap matrices
@@ -539,7 +538,7 @@ end if
     end do
 ! write(*,*) 'Sp a', Sp(1)%elms
 
-    call get_ovl_mat(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, &
+    call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
                      perturbed_matrix_size, Sp)
 
 !     call rsp_ovlint(zeromat%nrow, pert%n_perturbations, pert%plab, &
@@ -671,7 +670,7 @@ end if
 
     
     ! Note (MaR): Passing only real part of freq. Is this OK?
-    call get_rsp_sol(size(indices, 1), 1, (/sum(real(pert%freq(:)))/), RHS, X)
+    call get_rsp_sol(1, (/sum(real(pert%freq(:)))/), size(indices, 1), RHS, X)
 
     
     do i = 1, size(indices, 1)   
@@ -767,7 +766,6 @@ end if
     deallocate(derivative_structure)
     deallocate(ind)
     deallocate(pert_ext)
-    deallocate(pert_ord_ext)
     deallocate(Fp)
     deallocate(Dp)
     deallocate(Sp)
@@ -940,7 +938,7 @@ end if
     integer, allocatable, dimension(:) :: o_whichpert, o_whichpertbig, o_wh_forave
     integer, allocatable, dimension(:) :: ncoutersmall, pidoutersmall, ncinnersmall
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: blk_sizes_merged, pert_ext, pert_ord_ext
+    integer, allocatable, dimension(:) :: blk_sizes_merged, pert_ext
     integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
     integer, allocatable, dimension(:,:) :: triang_indices_fp, blk_sizes
     integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
@@ -984,7 +982,7 @@ end if
     allocate(nblks_tuple(num_p_tuples))
 
     
-    call p_tuple_external(p_tuples(1), npert_ext, pert_ext, pert_ord_ext)
+    call p_tuple_to_external_tuple(p_tuples(1), npert_ext, pert_ext)
     
     
     call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
@@ -1105,7 +1103,7 @@ end if
 
              call cpu_time(time_start)
              
-             call get_2el_mat(npert_ext, pert_ext, pert_ord_ext, 1, (/dens_tuple(2)/), size(tmp), tmp)
+             call get_2el_mat(npert_ext, pert_ext, 1, (/dens_tuple(2)/), size(tmp), tmp)
              
 !              call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1287,7 +1285,7 @@ end if
 
        if (num_p_tuples <= 1) then
 
-          call get_1el_mat(npert_ext, pert_ext, pert_ord_ext, size(Fp), Fp)
+          call get_1el_mat(npert_ext, pert_ext, size(Fp), Fp)
        
 !           call rsp_oneint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1309,7 +1307,7 @@ end if
 
           call cpu_time(time_start)
           
-          call get_2el_mat(npert_ext, pert_ext, pert_ord_ext, 1, (/D_unp/), size(Fp), Fp)
+          call get_2el_mat(npert_ext, pert_ext, 1, (/D_unp/), size(Fp), Fp)
           
                       
 !           call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -1376,7 +1374,6 @@ end if
 
 
     deallocate(pert_ext)
-    deallocate(pert_ord_ext)
     
     deallocate(nfields)
     deallocate(nblks_tuple)

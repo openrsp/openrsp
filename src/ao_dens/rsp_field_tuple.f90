@@ -38,7 +38,8 @@ module rsp_field_tuple
   
   ! NEW 2014
   
-  public p_tuple_external
+  public p_tuple_to_external_orders
+  public p_tuple_to_external_tuple
   
   
   
@@ -101,7 +102,7 @@ module rsp_field_tuple
 
   ! NEW NOVEMBER 2014
   
-  subroutine p_tuple_external(pert, num_pert, perturbations, pert_orders)
+  subroutine p_tuple_to_external_orders(pert, num_pert, perturbations, pert_orders)
   
     implicit none
     
@@ -171,7 +172,48 @@ module rsp_field_tuple
     end do
       
   end subroutine
+
+
+  subroutine p_tuple_to_external_tuple(pert, num_pert, perturbations)
   
+    implicit none
+    
+    type(p_tuple) :: pert
+    integer :: num_pert, i
+    integer, dimension(:), allocatable :: perturbations
+    
+    num_pert = pert%n_perturbations
+    allocate(perturbations(num_pert))
+
+    do i = 1, pert%n_perturbations
+    
+       if (pert%plab(i) == 'GEO ') then
+       
+          perturbations(i) = 1
+       
+       else if (pert%plab(i) == 'EL  ') then
+
+          perturbations(i) = 2
+       
+       else if (pert%plab(i) == 'ELGR') then
+       
+          perturbations(i) = 3
+       
+       else if (pert%plab(i) == 'MAG ') then
+       
+          perturbations(i) = 4
+       
+       else if (pert%plab(i) == 'MAG0 ') then
+    
+          perturbations(i) = 5
+          
+       end if
+    
+    end do
+    
+  end subroutine
+  
+
   ! NEW 2014
   
   

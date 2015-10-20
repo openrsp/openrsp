@@ -378,20 +378,21 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertInternTupleToHostTuple()");
         /* checks if the perturbations on the XC functional result in
            zero values */
-        if (cur_xc->xc_len_tuple<0) continue;
-        /* calculates integral matrices using the callback function */
-        cur_xc->get_xc_fun_mat(cur_xc->xc_len_tuple,
-                               cur_xc->xc_pert_tuple,
-                               num_freq_configs,
-                               dmat_num_tuple,
-                               dmat_idx_tuple,
-                               num_dmat,
-                               dens_mat,
+        if (cur_xc->xc_len_tuple>=0) {
+            /* calculates integral matrices using the callback function */
+            cur_xc->get_xc_fun_mat(cur_xc->xc_len_tuple,
+                                   cur_xc->xc_pert_tuple,
+                                   num_freq_configs,
+                                   dmat_num_tuple,
+                                   dmat_idx_tuple,
+                                   num_dmat,
+                                   dens_mat,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               cur_xc->user_ctx,
+                                   cur_xc->user_ctx,
 #endif
-                               num_int,
-                               val_int);
+                                   num_int,
+                                   val_int);
+        }
         /* moves to the next XC functional */
         cur_xc = cur_xc->next_xc;
     } while (cur_xc!=NULL);
@@ -465,20 +466,21 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertInternTupleToHostTuple()");
         /* checks if the perturbations on the XC functional result in
            zero values */
-        if (cur_xc->xc_len_tuple<0) continue;
-        /* calculates expectation values using the callback function */
-        cur_xc->get_xc_fun_exp(cur_xc->xc_len_tuple,
-                               cur_xc->xc_pert_tuple,
-                               num_freq_configs,
-                               dmat_num_tuple,
-                               dmat_idx_tuple,
-                               num_dmat,
-                               dens_mat,
+        if (cur_xc->xc_len_tuple>=0) {
+            /* calculates expectation values using the callback function */
+            cur_xc->get_xc_fun_exp(cur_xc->xc_len_tuple,
+                                   cur_xc->xc_pert_tuple,
+                                   num_freq_configs,
+                                   dmat_num_tuple,
+                                   dmat_idx_tuple,
+                                   num_dmat,
+                                   dens_mat,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                               cur_xc->user_ctx,
+                                   cur_xc->user_ctx,
 #endif
-                               num_exp,
-                               val_exp);
+                                   num_exp,
+                                   val_exp);
+        }
         /* moves to the next XC functional */
         cur_xc = cur_xc->next_xc;
     } while (cur_xc!=NULL);

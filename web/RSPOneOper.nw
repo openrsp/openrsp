@@ -534,16 +534,17 @@ QErrorCode RSPOneOperGetMat(RSPOneOper *one_oper,
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertInternTupleToHostLabelOrder()");
         /* checks if the perturbations on the one-electron operator
            result in zero values */
-        if (cur_oper->oper_num_pert<0) continue;
-        /* calculates integral matrices using the callback function */
-        cur_oper->get_one_oper_mat(cur_oper->oper_num_pert,
-                                   cur_oper->oper_pert_labels,
-                                   cur_oper->oper_pert_orders,
+        if (cur_oper->oper_num_pert>=0) {
+            /* calculates integral matrices using the callback function */
+            cur_oper->get_one_oper_mat(cur_oper->oper_num_pert,
+                                       cur_oper->oper_pert_labels,
+                                       cur_oper->oper_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   cur_oper->user_ctx,
+                                       cur_oper->user_ctx,
 #endif
-                                   num_int,
-                                   val_int);
+                                       num_int,
+                                       val_int);
+        }
         /* moves to the next operator */
         cur_oper = cur_oper->next_oper;
     } while (cur_oper!=NULL);
@@ -604,18 +605,19 @@ QErrorCode RSPOneOperGetExp(RSPOneOper *one_oper,
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPPertInternTupleToHostLabelOrder()");
         /* checks if the perturbations on the one-electron operator
            result in zero values */
-        if (cur_oper->oper_num_pert<0) continue;
-        /* calculates expectation values using the callback function */
-        cur_oper->get_one_oper_exp(cur_oper->oper_num_pert,
-                                   cur_oper->oper_pert_labels,
-                                   cur_oper->oper_pert_orders,
-                                   num_dmat,
-                                   dens_mat,
+        if (cur_oper->oper_num_pert>=0) {
+            /* calculates expectation values using the callback function */
+            cur_oper->get_one_oper_exp(cur_oper->oper_num_pert,
+                                       cur_oper->oper_pert_labels,
+                                       cur_oper->oper_pert_orders,
+                                       num_dmat,
+                                       dens_mat,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                   cur_oper->user_ctx,
+                                       cur_oper->user_ctx,
 #endif
-                                   num_exp,
-                                   val_exp);
+                                       num_exp,
+                                       val_exp);
+        }
         /* moves to the next operator */
         cur_oper = cur_oper->next_oper;
     } while (cur_oper!=NULL);

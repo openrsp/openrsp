@@ -107,7 +107,7 @@ if(OPENRSP_BUILD_WEB)
     foreach(CHUNK ${OPENRSP_HEADER_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_HEADER_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}
-                           DEPENDS openrsp_dirs
+                           DEPENDS openrsp_dirs ${OPENRSP_WEB_FILES}
                            COMMAND ${NOTANGLE} -R${CHUNK}
                                    ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
     endforeach()
@@ -117,7 +117,7 @@ if(OPENRSP_BUILD_WEB)
     foreach(CHUNK ${OPENRSP_C_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_C_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}
-                           DEPENDS openrsp_dirs
+                           DEPENDS openrsp_dirs ${OPENRSP_WEB_FILES}
                            COMMAND ${NOTANGLE} -R${CHUNK}
                                    ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
     endforeach()
@@ -127,7 +127,7 @@ if(OPENRSP_BUILD_WEB)
     foreach(CHUNK ${OPENRSP_C_TEST_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_C_TEST_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}
-                           DEPENDS openrsp_dirs
+                           DEPENDS openrsp_dirs ${OPENRSP_WEB_FILES}
                            COMMAND ${NOTANGLE} -R${CHUNK}
                                    ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
     endforeach()
@@ -137,7 +137,7 @@ if(OPENRSP_BUILD_WEB)
     foreach(CHUNK ${OPENRSP_FORTRAN_CHUNKS})
         set(TANGLED_SRC ${OPENRSP_FORTRAN_DIR}/${CHUNK})
         add_custom_command(OUTPUT ${TANGLED_SRC}
-                           DEPENDS openrsp_dirs
+                           DEPENDS openrsp_dirs ${OPENRSP_WEB_FILES}
                            COMMAND ${NOTANGLE} -R${CHUNK}
                                    ${OPENRSP_WEB_FILES} > ${TANGLED_SRC})
     endforeach()
