@@ -164,8 +164,6 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
     if (F_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for Fock matrix");
     }
-    ierr = QcMatCreate(F_unpert[0]);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatCreate(F)");
     ierr = OpenRSPTestReadMat(FOCK_AO_HF, 0, 1, F_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(F)");
     /* sets the unperturbed AO-based density matrix */
@@ -173,8 +171,6 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
     if (D_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for density matrix");
     }
-    ierr = QcMatCreate(D_unpert[0]);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatCreate(D)");
     ierr = OpenRSPTestReadMat(DENS_AO_HF, 0, 1, D_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(D)");
     /* sets the unperturbed AO-based overlap integral matrix */
@@ -182,8 +178,6 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
     if (S_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for overlap integral matrix");
     }
-    ierr = QcMatCreate(S_unpert[0]);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling QcMatCreate(S)");
     ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, S_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(S)");
 
