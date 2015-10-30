@@ -149,7 +149,7 @@ use qcmatrix_f
     call QcMatInit(T)
     call QcMatInit(U)
     
-    
+
     call sdf_getdata_s_2014(D, get_emptypert(), (/1/), A)
     call sdf_getdata_s_2014(S, get_emptypert(), (/1/), B)
     call sdf_getdata_s_2014(F, get_emptypert(), (/1/), C)
@@ -229,6 +229,7 @@ use qcmatrix_f
 
 ! write(*,*) 'Fp a', Fp(1)%elms
 
+
     call f_l_cache_allocate_2014(fock_lowerorder_cache)
     call rsp_fock_lowerorder_2014(pert, pert%n_perturbations, 1, (/get_emptypert()/), &
                          get_1el_mat, get_ovl_mat, get_2el_mat, get_xc_mat, 0, D, &
@@ -291,7 +292,9 @@ ierr = QcMatWrite_f(Dp(i), "Dp_b", ASCII_VIEW)
        ! 3. Complete the particular contribution to Fp
 ! write(*,*) 'Fp b2', Fp(1)%elms
        call cpu_time(time_start)
-       call get_2el_mat(0, noc, noc, 1, (/Dp(i)/), 1, Fp(i:i))
+!get_2el_mat(npert_ext, pert_ext, 1, (/D_unp/), size(Fp), Fp)
+
+       call get_2el_mat(0, noc, 1, (/Dp(i)/), 1, Fp(i:i))
 !        call rsp_twoint(zeromat%nrow, 0, nof, noc, pert%pdim, Dp(i), &
 !                           1, Fp(i:i))
 ierr = QcMatWrite_f(Fp(i), "Fp_b", ASCII_VIEW)
@@ -357,7 +360,7 @@ ierr = QcMatWrite_f(X(1), "X", ASCII_VIEW)
        ! 6. Make homogeneous contribution to Fock matrix
 
        call cpu_time(time_start)
-       call get_2el_mat(0, noc, noc, 1, (/Dh(i)/), 1, Fp(i:i))
+       call get_2el_mat(0, noc, 1, (/Dh(i)/), 1, Fp(i:i))
 ierr = QcMatWrite_f(Dh(i), "Dh_c", ASCII_VIEW)
 ierr = QcMatWrite_f(Fp(i), "Fp_c", ASCII_VIEW)
 
@@ -1052,6 +1055,7 @@ end if
        call QcMatInit(dens_tuple(j), Fp(1))
     end do
 
+
     if (total_num_perturbations > p_tuples(1)%n_perturbations) then
 
        k = 1
@@ -1283,6 +1287,7 @@ end if
 
     else
 
+
        if (num_p_tuples <= 1) then
 
           call get_1el_mat(npert_ext, pert_ext, size(Fp), Fp)
@@ -1295,21 +1300,20 @@ end if
 ! NOTE: Find out if necessary ovlint/oneint in "outer indices case" above
 ! NOTE (Oct 12): Probably not unless some hidden density matrix dependence
 
+
           t_matrix_bra = get_emptypert()
           t_matrix_ket = get_emptypert()
-
           call rsp_ovlint_t_matrix_2014(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
                                    t_matrix_bra, t_matrix_ket, get_ovl_mat, property_size, Fp)
-
        end if
 
        if (num_p_tuples <= 2) then
+
 
           call cpu_time(time_start)
           
           call get_2el_mat(npert_ext, pert_ext, 1, (/D_unp/), size(Fp), Fp)
           
-                      
 !           call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
 !                p_tuples(1)%pdim, D_unp, &

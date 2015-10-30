@@ -499,6 +499,7 @@ module openrsp_callback_f
                 write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
+            c_val_exp = 0.0
             ierr = RSPOverlapGetExp(ctx_saved%overlap, &
                                     bra_len_tuple,     &
                                     bra_pert_tuple,    &
@@ -512,7 +513,8 @@ module openrsp_callback_f
                                     c_val_exp)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
-                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+                val_exp(ival) = val_exp(ival) &
+                              + cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
             end do
             do ival = 1, num_dmat
                 c_dens_mat(ival) = C_NULL_PTR
@@ -593,6 +595,7 @@ module openrsp_callback_f
                 write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
+            c_val_exp = 0.0
             ierr = RSPOneOperGetExp(ctx_saved%one_oper, &
                                     len_tuple,          &
                                     pert_tuple,         &
@@ -602,7 +605,8 @@ module openrsp_callback_f
                                     c_val_exp)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
-                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+                val_exp(ival) = val_exp(ival) &
+                              + cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
             end do
             do ival = 1, num_dmat
                 c_dens_mat(ival) = C_NULL_PTR
@@ -718,6 +722,7 @@ module openrsp_callback_f
                 write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
+            c_val_exp = 0.0
             ierr = RSPTwoOperGetExp(ctx_saved%two_oper, &
                                     len_tuple,          &
                                     pert_tuple,         &
@@ -730,7 +735,8 @@ module openrsp_callback_f
                                     c_val_exp)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
-                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+                val_exp(ival) = val_exp(ival) &
+                              + cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
             end do
             do ival = 1, sum(num_LHS_dmat)
                 c_LHS_dens_mat(ival) = C_NULL_PTR
@@ -850,6 +856,7 @@ module openrsp_callback_f
                 write(STDOUT,100) "failed to allocate memory for c_val_exp", num_exp
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
+            c_val_exp = 0.0
             ierr = RSPXCFunGetExp(ctx_saved%xc_fun, &
                                   len_tuple,        &
                                   pert_tuple,       &
@@ -862,7 +869,8 @@ module openrsp_callback_f
                                   c_val_exp)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
-                val_exp(ival) = cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
+                val_exp(ival) = val_exp(ival) &
+                              + cmplx(c_val_exp(2*ival-1), c_val_exp(2*ival), kind=QREAL)
             end do
             do ival = 1, num_dmat
                 c_dens_mat(ival) = C_NULL_PTR
