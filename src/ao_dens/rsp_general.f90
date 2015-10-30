@@ -845,6 +845,8 @@ module rsp_general
  !                   p_tuples(1)%n_perturbations, num_p_tuples - 1, &
  !                   p_tuples(2:num_p_tuples))
 
+!    call QcMatInit(D_unp)
+
     call p_tuple_to_external_tuple(p_tuples(1), npert_ext, pert_ext)
  
     call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
@@ -934,7 +936,7 @@ module rsp_general
    
        do i = 2, num_p_tuples
    
-          call QcMatInit(dens_tuple(i))
+          call QcMatInit(dens_tuple(i), D_unp)
    
        end do
    
@@ -1006,8 +1008,8 @@ module rsp_general
    
           if (num_p_tuples == 2) then
    
-             call get_2el_exp(npert_ext, pert_ext, 1, (/dens_tuple(2)/), &
-                              1, (/D_unp/), size(contrib), contrib)
+             call get_2el_exp(npert_ext, pert_ext, (/1/), (/dens_tuple(2)/), &
+                              (/1/), (/D_unp/), size(contrib), contrib)
    
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1016,8 +1018,8 @@ module rsp_general
     
           elseif (num_p_tuples == 3) then
           
-             call get_2el_exp(npert_ext, pert_ext, 1, (/dens_tuple(2)/), &
-                              1, (/dens_tuple(3)/), size(contrib), contrib)
+             call get_2el_exp(npert_ext, pert_ext, (/1/), (/dens_tuple(2)/), &
+                              (/1/), (/dens_tuple(3)/), size(contrib), contrib)
           
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
@@ -1213,8 +1215,8 @@ module rsp_general
        tmp = tmp - contrib
        contrib = 0.0
 
-       call get_2el_exp(npert_ext, pert_ext, 1, (/D_unp/), &
-                        1, (/D_unp/), size(contrib), contrib)
+       call get_2el_exp(npert_ext, pert_ext, (/1/), (/D_unp/), &
+                        (/1/), (/D_unp/), size(contrib), contrib)
        
 !        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
 !                        (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%pdim, &

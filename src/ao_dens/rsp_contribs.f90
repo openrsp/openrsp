@@ -563,16 +563,13 @@ else
        tmp_fock_size = product(blks_tuple_triang_size)
 
        allocate(tmp_fock(tmp_fock_size))
-
        do i = 1, tmp_fock_size
           
-          call QcMatInit(tmp_fock(i))
+          call QcMatInit(tmp_fock(i), fock(1))
 
        end do
-
        call get_ovl_mat(np_bra, pert_ext_bra, np_ket, pert_ext_ket, &
                         0, noc, tmp_fock_size, tmp_fock)
-       
        k = 1
        do j = 1, bra_static%n_perturbations
           pids_current_contribution(k) = bra_static%pid(j)
@@ -642,10 +639,8 @@ else
     
           end if
 
-
           ! MaR: Frequency factor should be complex in general
           call QcMatrAXPY(dreal(0.5 * (sum(bra%freq) - sum(ket%freq))), tmp_fock(int_result_offset), fock(fock_offset))
-
 !           fock(fock_offset) = fock(fock_offset) + &
 !           0.5 * (sum(bra%freq) - sum(ket%freq)) * tmp_fock(int_result_offset)
 
@@ -664,13 +659,11 @@ else
        deallocate(blk_sizes_merged)
        deallocate(merged_blk_info)
 
-
        do i = 1, tmp_fock_size
           
           call QcMatDst(tmp_fock(i))
 
        end do
-
        deallocate(tmp_fock)
 
     end if
