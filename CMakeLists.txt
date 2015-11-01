@@ -213,12 +213,12 @@ endif()
 
 # Installs the static library, header files and Fortran module files
 install(TARGETS openrsp
-        ARCHIVE DESTINATION lib)
+        ARCHIVE DESTINATION openrsp/lib)
 install(FILES ${OPENRSP_HEADER_FILES}
-        DESTINATION include)
+        DESTINATION openrsp/include)
 if(OPENRSP_FORTRAN_API)
     install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/
-            DESTINATION include)
+            DESTINATION openrsp/include)
 endif()
 
 # Uninstalls target, modified from (accessing date 2015-09-27)
