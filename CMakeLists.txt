@@ -216,7 +216,7 @@ install(FILES ${OPENRSP_HEADER_FILES}
         DESTINATION include)
 if(OPENRSP_FORTRAN_API)
     install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/
-            DESTINATION include)
+            DESTINATION lib)
 endif()
 
 # Uninstalls target, modified from (accessing date 2015-09-27)
