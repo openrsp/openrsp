@@ -165,7 +165,9 @@ endif()
 # Header files and Fortran module files
 include_directories(${OPENRSP_HEADER_DIR})
 if(OPENRSP_FORTRAN_API)
-    set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
+    if("${CMAKE_Fortran_MODULE_DIRECTORY}" STREQUAL "")
+        set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
+    endif()
     include_directories(${CMAKE_Fortran_MODULE_DIRECTORY})
 endif()
 
@@ -216,7 +218,7 @@ install(FILES ${OPENRSP_HEADER_FILES}
         DESTINATION include)
 if(OPENRSP_FORTRAN_API)
     install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/
-            DESTINATION lib)
+            DESTINATION include)
 endif()
 
 # Uninstalls target, modified from (accessing date 2015-09-27)
