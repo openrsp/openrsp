@@ -31,12 +31,13 @@
 #include "OpenRSP.h"
 
 #define NUM_ALL_PERT 3
-extern const QcPertInt PERT_GEOMETRIC;
-extern const QcPertInt PERT_DIPOLE;
-extern const QcPertInt PERT_MAGNETIC;
-extern const QInt MAX_ORDER_GEOMETRIC;
-extern const QInt MAX_ORDER_DIPOLE;
-extern const QInt MAX_ORDER_MAGNETIC;
+#define PERT_GEOMETRIC 1
+#define PERT_DIPOLE 2
+#define PERT_MAGNETIC 5
+#define MAX_ORDER_GEOMETRIC 7
+#define MAX_ORDER_DIPOLE 1
+#define MAX_ORDER_MAGNETIC 7
+
 extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
 extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
 extern const QInt ALL_PERT_SIZES[15];

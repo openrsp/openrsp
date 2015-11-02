@@ -25,12 +25,6 @@
 
 #include "OpenRSPTestPerturbations.h"
 
-const QcPertInt PERT_GEOMETRIC = 1;
-const QcPertInt PERT_DIPOLE = 2;
-const QcPertInt PERT_MAGNETIC = 5;
-const QInt MAX_ORDER_GEOMETRIC = 7;
-const QInt MAX_ORDER_DIPOLE = 1;
-const QInt MAX_ORDER_MAGNETIC = 7;
 /* labels of all perturbations */
 const QcPertInt ALL_PERT_LABELS[]={PERT_GEOMETRIC,
                                    PERT_DIPOLE,
