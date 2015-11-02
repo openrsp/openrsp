@@ -26,8 +26,8 @@
 #include "RSPPerturbation.h"
 
 const QcPertInt OPENRSP_PERT_LABEL_MAX = (1<<OPENRSP_PERT_LABEL_BIT)-1;
-const QcPertInt OPENRSP_PERT_ID_MAX =
-                (QCPERTINT_MAX-OPENRSP_PERT_LABEL_MAX)>>OPENRSP_PERT_LABEL_BIT;
+const QcPertInt OPENRSP_PERT_ID_MAX = (QCPERTINT_MAX-(1<<OPENRSP_PERT_LABEL_BIT)+1)
+                                    >> OPENRSP_PERT_LABEL_BIT;
 
 /* see https://scaryreasoner.wordpress.com/2009/02/28/checking-sizeof-at-compile-time
    accessing date Oct. 6, 2015 */
