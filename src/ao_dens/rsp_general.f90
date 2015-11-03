@@ -1008,7 +1008,7 @@ module rsp_general
    
           if (num_p_tuples == 2) then
    
-             call get_2el_exp(npert_ext, pert_ext, (/1/), (/dens_tuple(2)/), &
+             call get_2el_exp(npert_ext, pert_ext, 1, (/1/), (/dens_tuple(2)/), &
                               (/1/), (/D_unp/), size(contrib), contrib)
    
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -1018,7 +1018,7 @@ module rsp_general
     
           elseif (num_p_tuples == 3) then
           
-             call get_2el_exp(npert_ext, pert_ext, (/1/), (/dens_tuple(2)/), &
+             call get_2el_exp(npert_ext, pert_ext, 1, (/1/), (/dens_tuple(2)/), &
                               (/1/), (/dens_tuple(3)/), size(contrib), contrib)
           
 !              call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
@@ -1215,7 +1215,10 @@ module rsp_general
        tmp = tmp - contrib
        contrib = 0.0
 
-       call get_2el_exp(npert_ext, pert_ext, (/1/), (/D_unp/), &
+       write(*,*) 'pert definition', npert_ext
+       write(*,*) pert_ext
+
+       call get_2el_exp(npert_ext, pert_ext, 1, (/1/), (/D_unp/), &
                         (/1/), (/D_unp/), size(contrib), contrib)
        
 !        call rsp_twoave(p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
