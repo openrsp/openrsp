@@ -17,6 +17,7 @@ module rsp_perturbed_sdf
   use rsp_perturbed_matrices
   use rsp_sdf_caching
   use rsp_lof_caching
+  use rsp_property_caching
 !  use interface_2el
   
   use qcmatrix_f
@@ -25,6 +26,7 @@ module rsp_perturbed_sdf
 
 
   public rsp_fds_2014
+  public rsp_fds
   public get_fds_2014
   public get_fds_2014_mc
   public rsp_fock_lowerorder_2014
@@ -46,7 +48,7 @@ module rsp_perturbed_sdf
 
     
     type(p_tuple) :: pert
-    type(p_tuple), dimension(pert%n_perturbations) :: psub
+    type(p_tuple), dimension(pert%npert) :: psub
     integer, dimension(2) :: kn
     integer :: i, j, k, id_outp
     type(SDF_2014) :: F, D, S
@@ -57,7 +59,7 @@ module rsp_perturbed_sdf
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
     ! Then (at final recursion level) get perturbed F, D, S 
-    if (pert%n_perturbations > 1) then
+    if (pert%npert > 1) then
 
        call make_p_tuple_subset(pert, psub)
 
@@ -76,7 +78,7 @@ module rsp_perturbed_sdf
 
     if (sdf_already_2014(D, pert) .eqv. .FALSE.) then
          
-       if (kn_skip(pert%n_perturbations, pert%pid, kn) .eqv. .FALSE.) then
+       if (kn_skip(pert%npert, pert%pid, kn) .eqv. .FALSE.) then
 
           write(id_outp,*) 'Calling ovlint/fock/density with labels ', pert%plab, &
                      ' and perturbation id ', pert%pid, ' with frequencies (real part)', &
@@ -85,7 +87,7 @@ module rsp_perturbed_sdf
                  
           k = 1
 
-          do j = 1, pert%n_perturbations
+          do j = 1, pert%npert
 
              pert%pid(j) = k
              k = k + 1
@@ -116,7 +118,899 @@ module rsp_perturbed_sdf
   
   
 
+  
+  
+  
+  
+  
+  recursive subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
+                               get_1el_mat, get_2el_mat, get_xc_mat, dryrun, cache, id_outp)
 
+    implicit none
+
+    integer :: n_props
+    integer, dimension(n_props) :: n_freq_cfgs
+    type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
+    type(p_tuple), allocatable, dimension(:) :: p_dummy_orders
+    logical :: termination, dryrun
+    integer, dimension(0) :: noc
+    character(4), dimension(0) :: nof
+    integer, dimension(n_props, 2) :: kn_rule
+    integer :: i, j, k, id_outp, max_order
+    integer, allocatable, dimension(:) :: size_i
+    type(QcMat) :: Fp_dum
+    type(contrib_cache_outer) :: F, D, S
+    type(contrib_cache), target :: cache
+    type(contrib_cache), pointer :: cache_next, lof_cache, lof_next
+    type(contrib_cache_outer), pointer :: cache_outer_next
+    external :: get_rsp_sol, get_ovl_mat, get_1el_mat,  get_2el_mat, get_xc_mat
+
+    max_order = max(maxval(kn_rule(:, 1)), maxval(kn_rule(:, 2)))
+    
+    ! Make dummy perturbation tuples to head cache to identify by perturbation order: Identifier is pdim
+    allocate(p_dummy_orders(max_order))
+    do i = 1, max_order
+       p_dummy_orders(i)%npert = 1
+       allocate(p_dummy_orders(i)%pdim(1))
+       allocate(p_dummy_orders(i)%plab(1))
+       allocate(p_dummy_orders(i)%pid(1))
+       allocate(p_dummy_orders(i)%freq(1))
+       p_dummy_orders(i)%pdim = (/i/)
+       p_dummy_orders(i)%plab = (/'DMMY'/)
+       p_dummy_orders(i)%pid = (/1/)
+       p_dummy_orders(i)%freq = (/0.0/)
+    end do
+
+    
+    ! Recurse to identify all necessary perturbed F, D, S
+    do i = 1, n_props
+       call rsp_fds_recurse(p_tuples(i), kn_rule(i, :), max_order, p_dummy_orders, cache, id_outp)
+    end do
+           
+    cache_next => cache
+    
+    call contrib_cache_allocate(lof_cache)
+    
+    !   For each order of perturbation identified (lowest to highest):
+    do i = 1, max_order
+
+       ! Cycle until order reached
+       do while(.NOT.(cache_next%p_inner%pdim(1) == i))
+          cache_next => cache_next%next
+       end do
+       
+       
+       ! Contains number of components of perturbed matrices for each perturbation
+       allocate(size_i(cache_next%num_outer))       
+       k = 1
+       
+       ! Cycle until at start of outer cache
+       cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
+       cache_outer_next => cache_outer_next%next
+             
+       ! Traverse all elements of outer cache of present cache element
+       termination = .FALSE.
+       do while(.NOT.(termination))
+       
+          ! Recurse to identify lower-order Fock matrix contributions
+          ! The p_tuples attribute should always be length 1 here, so OK to take the first element
+          call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
+                                      1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))    
+       
+          ! Get number of perturbed matrices for this tuple
+          size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
+          k = k + 1
+
+          termination = cache_outer_next%last
+          cache_outer_next => cache_outer_next%next
+          
+       end do
+
+       lof_next => lof_cache
+       
+       ! Cycle lower-order Fock cache until at start
+       do while(.NOT.(lof_next%last))
+          lof_next => lof_next%next
+       end do
+       lof_next => lof_next%next
+       lof_next => lof_next%next
+       
+       ! Traverse cache and precalculate elements
+       termination = .FALSE.
+       do while (.NOT.(termination))
+       
+          call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next)
+          
+          termination = (lof_next%last)
+          
+       end do
+       
+       call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
+            get_rsp_sol, get_ovl_mat,  get_2el_mat, F, D, S, lof_next)
+       
+       
+
+       
+       
+       deallocate(size_i)
+          
+    end do
+    
+    deallocate(lof_cache)
+    
+    
+    deallocate(p_dummy_orders)
+    
+
+
+
+
+
+  end subroutine
+
+
+  recursive subroutine rsp_fds_recurse(pert, kn, max_order, p_dummy_orders, contribution_cache, id_outp)
+
+    implicit none
+
+    integer :: n_props, max_order
+    type(p_tuple) :: pert
+    type(p_tuple), dimension(pert%npert) :: psub
+    type(p_tuple), dimension(max_order) :: p_dummy_orders
+    integer, dimension(2) :: kn
+    integer :: i, j, k, id_outp
+    type(contrib_cache) :: contribution_cache
+    
+    ! Unless at final recursion level, recurse further
+    ! Make all size (n - 1) subsets of the perturbations and recurse
+    ! Then (at final recursion level) get perturbed F, D, S 
+    if (pert%npert > 1) then
+
+       call make_p_tuple_subset(pert, psub)
+
+       do i = 1, size(psub)
+
+          if (contrib_cache_already(contribution_cache, 2, (/p_dummy_orders(psub(i)%npert), &
+                              p_tuple_standardorder(psub(i))/)) .eqv. .FALSE.) then
+
+             call rsp_fds_recurse(psub(i), kn, max_order, p_dummy_orders, contribution_cache, id_outp)
+
+          end if
+
+       end do       
+
+    end if
+
+    if (contrib_cache_already(contribution_cache, 2, (/p_dummy_orders(pert%npert), &
+                              p_tuple_standardorder(pert)/)) .eqv. .FALSE.) then
+         
+       if (kn_skip(pert%npert, pert%pid, kn) .eqv. .FALSE.) then
+
+          write(id_outp,*) 'Identified necessary ovlint/fock/density with labels ', pert%plab, &
+                     ' and perturbation id ', pert%pid, ' with frequencies (real part)', &
+                     real(pert%freq)
+          write(id_outp,*) ' '
+                 
+          k = 1
+
+          do j = 1, pert%npert
+
+             pert%pid(j) = k
+             k = k + 1
+
+          end do
+
+          call contrib_cache_add_element(contribution_cache, 2, (/p_dummy_orders(pert%npert), &
+                                                                  p_tuple_standardorder(pert)/))
+
+       else
+
+!           write(*,*) 'Would have identified necessary ovlint/fock/density with labels ', &
+!                      pert%plab, ' and perturbation id ', pert%pid, &
+!                      ' but it was k-n forbidden'
+!           write(*,*) ' '
+
+       end if
+
+    else
+
+!        write(*,*) 'FDS identifier for labels ', pert%plab, &
+!                   'and perturbation id ', pert%pid, ' was found in cache'
+!        write(*,*) ' '
+
+    end if
+
+  end subroutine
+  
+  recursive subroutine rsp_lof_recurse(pert, total_num_perturbations, &
+                       num_p_tuples, p_tuples, dryrun, fock_lowerorder_cache, &
+                       fp_size, Fp)
+
+    implicit none
+
+    ! fp_size and Fp are dummy if this is a dryrun
+    
+    logical :: density_order_skip, dryrun
+    type(p_tuple) :: pert
+    integer :: num_p_tuples, density_order, i, j, total_num_perturbations
+    integer :: fp_size
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
+    type(contrib_cache) :: fock_lowerorder_cache
+    type(QcMat), dimension(fp_size) :: Fp
+
+    if (pert%npert >= 1) then
+
+       ! The differentiation can do three things:
+       ! 1. Differentiate the expression 'directly'
+
+       if (p_tuples(1)%npert == 0) then
+
+          call rsp_lof_recurse(p_tuple_remove_first(pert), & 
+               total_num_perturbations, num_p_tuples, &
+               (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
+               dryrun, fock_lowerorder_cache, fp_size, Fp)
+
+       else
+
+          call rsp_lof_recurse(p_tuple_remove_first(pert), &
+               total_num_perturbations, num_p_tuples, &
+               (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
+               p_tuples(2:size(p_tuples))/), dryrun, fock_lowerorder_cache, &
+               fp_size, Fp)
+
+       end if
+    
+       ! 2. Differentiate all of the contraction densities in turn
+
+       do i = 2, num_p_tuples
+
+          t_new = p_tuples
+
+          if (p_tuples(i)%npert == 0) then
+
+             t_new(i) = p_tuple_getone(pert, 1)
+
+          else
+
+             t_new(i) = p_tuple_extend(t_new(i), p_tuple_getone(pert, 1))
+
+          end if
+
+          call rsp_lof_recurse(p_tuple_remove_first(pert), &
+               total_num_perturbations, num_p_tuples, &
+               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp)
+
+       end do
+
+       ! 3. Chain rule differentiate w.r.t. the density (giving 
+       ! a(nother) pert D contraction)
+
+       call rsp_lof_recurse(p_tuple_remove_first(pert), &
+            total_num_perturbations, num_p_tuples + 1, &
+            (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
+            fock_lowerorder_cache, fp_size, Fp)
+
+    else
+
+!        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
+
+       density_order_skip = .FALSE.
+
+       do i = 2, num_p_tuples
+
+          if (p_tuples(i)%npert >= total_num_perturbations) then
+
+             density_order_skip = .TRUE.
+
+          end if
+
+       end do
+      
+       if (density_order_skip .EQV. .FALSE.) then
+
+          if (contrib_cache_already(fock_lowerorder_cache, &
+          num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples)) .EQV. .FALSE.) then
+
+             if (.NOT.(dryrun)) then
+             
+                write(*,*) 'Getting lower-order perturbed Fock order contribution from cache'
+                call contrib_cache_getdata(fock_lowerorder_cache, num_p_tuples, p_tuples, &
+                fp_size, .TRUE., fock=Fp)
+             
+             else
+             
+                write(*,*) 'Identified lower-order perturbed Fock order contribution already in cache'
+                
+             end if   
+          
+          else
+
+             if (dryrun) then
+          
+                write(*,*) 'Identified perturbed Fock matrix lower order contribution'
+
+                do i = 1, num_p_tuples
+                   if (i == 1) then
+                      write(*,*) 'F', p_tuples(i)%pid
+                   else
+                      write(*,*) 'D', p_tuples(i)%pid
+                   end if
+                end do
+                call contrib_cache_add_element(fock_lowerorder_cache, num_p_tuples, p_tuples)
+                
+                
+             else
+             
+                write(*,*) 'ERROR: Wanted cache element that was not calculated'
+                
+             end if
+          
+          end if
+
+       else
+
+!           write(*,*) 'Skipping contribution: At least one contraction D perturbed' 
+!           write(*,*) 'at order for which perturbed D is to be found '
+!           write(*,*) ' '
+
+       end if
+
+    end if
+
+  end subroutine
+  
+  subroutine rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, cache)
+
+    implicit none
+
+    logical :: traverse_end
+    integer :: cache_offset, i, j, k, m, n 
+    integer :: id_outp
+    integer :: total_outer_size_1, c1_ctr, lhs_ctr_1, num_pert
+    integer :: num_0, num_1
+    type(contrib_cache) :: cache
+    type(contrib_cache_outer) :: D
+    type(contrib_cache_outer), pointer :: outer_next
+    type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
+    type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, contrib_0, contrib_1
+    type(QcMat) :: D_unp
+    integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
+    integer, allocatable, dimension(:) :: pert_ext
+    external :: get_1el_mat, get_ovl_mat, get_2el_mat
+    
+    
+    ! Assume indices for inner, outer blocks are calculated earlier
+    
+    call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
+    
+    outer_next => cache%contribs_outer
+    
+    allocate(outer_contract_sizes_1(cache%num_outer))
+    
+   
+    ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
+    
+    traverse_end = .FALSE.
+    
+    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => outer_next%next
+       
+    total_outer_size_1 = 0
+    num_0 = 0
+    num_1 = 0
+        
+    k = 1
+    
+    do while (traverse_end .EQV. .FALSE.)
+  
+       if (outer_next%num_dmat == 0) then
+
+          num_0 = 1
+          outer_contract_sizes_1(k) = 1
+
+          
+          total_outer_size_1 = total_outer_size_1 + 1
+          
+       else if (outer_next%num_dmat == 1) then
+       
+          num_1 = num_1 + 1
+       
+          outer_contract_sizes_1(k) = outer_next%blks_tuple_triang_size(1)
+          
+          total_outer_size_1 = total_outer_size_1 + outer_next%outer_size
+
+       end if
+   
+       write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+    
+       do i = 1, outer_next%num_dmat
+          
+          write(*,*) 'D', outer_next%p_tuples(i)%pid
+       
+       end do
+    
+       
+    
+       if (outer_next%next%dummy_entry) then
+    
+          traverse_end = .TRUE.
+    
+       end if
+    
+       k = k + 1
+    
+       outer_next => outer_next%next
+    
+    end do
+ 
+!     ! Make collapsed contraction sizes array for 1-el call
+!  
+!     allocate(outer_contract_sizes_1_coll(num_1))
+!     
+!     k = 1 
+!      do i = 1, cache%num_outer
+!         if (outer_contract_sizes_1(i) > 0 then
+!            outer_contract_sizes_1_coll(k) = outer_contract_sizes_1(i)
+!           k = k + 1
+!         end if
+!     end do
+    
+    ! Allocate and set up outer
+    
+    allocate(LHS_dmat_1(sum(outer_contract_sizes_1(:))))
+    
+    traverse_end = .FALSE.
+    
+    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => outer_next%next
+       
+    k = 1
+    lhs_ctr_1 = 1
+    
+    do while (traverse_end .EQV. .FALSE.)
+
+       ! No chain rule applications
+       if (outer_next%num_dmat == 0) then
+
+          ! May need to initialize D_unp
+          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
+               1, ind_unsorted=(/1/), mat=D_unp)
+
+       ! One chain rule application
+       else if (outer_next%num_dmat == 1) then
+       
+          do m = 1, outer_contract_sizes_1(k) 
+             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .TRUE., &
+                  1, ind_unsorted=outer_next%indices(m, :), mat=LHS_dmat_1(lhs_ctr_1 + m  - 1))
+          end do
+       
+       end if
+   
+       if (outer_next%next%dummy_entry) then
+          traverse_end = .TRUE.
+       end if
+
+       lhs_ctr_1 = lhs_ctr_1 + outer_contract_sizes_1(k)
+       k = k + 1
+       
+       outer_next => outer_next%next
+    
+    end do
+    
+    ! May need to initialize
+    allocate(contrib_0(cache%blks_triang_size))
+    allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
+    
+    ! Calculate contributions
+    
+    
+    ! Calculate one-electron contributions
+    if (num_0 > 0) then
+    
+    
+       call get_1el_mat(num_pert, pert_ext, num_0, 1, &
+                        (/D_unp/), size(contrib_0), contrib_0)
+      
+       t_matrix_bra = get_emptypert()
+       t_matrix_ket = get_emptypert()
+      
+!        call rsp_ovlave_t_matrix(get_ovl_mat, cache%p_inner, cache%p_inner%npert, &
+!                                 t_matrix_bra, t_matrix_ket, 1, &
+!                                 D_unp, size(contrib_0), contrib_0)
+    
+    end if
+    
+    ! Calculate two-electron contributions
+!     call get_1el_exp(num_pert, pert_ext, cache%num_outer, outer_contract_sizes_1, LHS_dmat_1, &
+!     size(contrib_1), contrib_1)
+                       
+                       
+    ! Traversal: Add nuc-nuc, 1-el and two-el contributions together
+    
+    traverse_end = .FALSE.
+    
+    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => outer_next%next
+      
+    k = 1
+    
+    c1_ctr = 1
+    
+    
+    do while (traverse_end .EQV. .FALSE.)
+  
+       ! One-el and two-el contributions
+       if (outer_next%num_dmat == 0) then
+       
+          allocate(outer_next%data_int(cache%blks_triang_size))
+
+          outer_next%data_int = contrib_0
+          ! FIXME: NEED TO LOOP AND ADD
+!           outer_next%data_int = outer_next%data_int + contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
+
+          c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_1(k)
+
+       ! Only two-el contribution
+       else if (outer_next%num_dmat == 1) then
+       
+          allocate(outer_next%data_int(cache%blks_triang_size * outer_contract_sizes_1(k)))
+
+          ! FIXME: NEED TO LOOP AND ADD
+!           outer_next%data_int = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
+!                             outer_contract_sizes_1(k) - 1)
+          
+
+          c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_1(k)
+                   
+       end if
+   
+       if (outer_next%next%dummy_entry) then
+    
+          traverse_end = .TRUE.
+    
+       end if
+    
+       k = k + 1
+    
+       outer_next => outer_next%next
+    
+    end do
+
+        
+    deallocate(outer_contract_sizes_1)
+    
+  end subroutine
+
+
+  ! Do main part of perturbed S, D, F calculation at one order
+  subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
+  get_rsp_sol, get_ovl_mat,  get_2el_mat, F, D, S, lof_cache)
+  
+    implicit none
+    
+    logical :: termination
+    integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
+    integer :: i, j, k, m, nblks
+    integer, dimension(0) :: noc
+    integer, allocatable, dimension(:) :: pert_ext, blk_sizes, ind
+    integer, allocatable, dimension(:,:) :: blk_info
+    integer, allocatable, dimension(:,:) :: indices
+    integer, dimension(num_outer) :: size_i
+    complex(8), dimension(num_outer) :: freq_sums
+    type(p_tuple) :: pert
+    type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
+    type(contrib_cache) :: lof_cache
+    type(contrib_cache_outer), target :: cache_outer
+    type(contrib_cache_outer) :: F, D, S
+    type(contrib_cache_outer), pointer :: cache_outer_next
+    type(Qcmat), dimension(sum(size_i)) :: Dh, Dp, Fp, Sp, RHS, X
+    type(Qcmat) :: A, B, C, T, U
+    external :: get_rsp_sol, get_ovl_mat,  get_2el_mat
+    
+    ! Initialize all matrices
+    
+    call QcMatInit(A)
+    call QcMatInit(B)
+    call QcMatInit(C)
+    call QcMatInit(T)
+    call QcMatInit(U)
+    
+    call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., contrib_size=1, & 
+    ind_unsorted=(/1/), mat=A)
+    call contrib_cache_getdata_outer(S, 1, (/get_emptypert()/), .TRUE., contrib_size=1, & 
+    ind_unsorted=(/1/), mat=B)
+    call contrib_cache_getdata_outer(F, 1, (/get_emptypert()/), .TRUE., contrib_size=1, & 
+    ind_unsorted=(/1/), mat=C)
+    
+    do i = 1, sum(size_i)
+    
+       call QcMatInit(Dh(i), A)
+       call QcMatInit(Dp(i), A)
+       call QcMatInit(Fp(i), A)
+       call QcMatInit(Sp(i), A)
+       call QcMatInit(RHS(i), A)
+       call QcMatInit(X(i), A)
+    
+    end do
+    
+    cache_outer_next => cache_outer
+    
+    ! Get perturbed overlap matrices
+!     call rsp_ovl_mat(pert, size_i(k), A, S)
+    
+    ! Cycle to start
+    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
+    cache_outer_next => cache_outer_next%next
+ 
+    ! Traverse
+    ind_ctr = 1
+    k = 1
+    termination = .FALSE.
+    
+    do while(.NOT.(termination))
+
+       pert = cache_outer_next%p_tuples(1)
+       
+       ! Get frequency sum
+       freq_sums(k) = sum(real(pert%freq(:))) 
+       
+       ! Set up block info
+       nblks = get_num_blks(pert)
+
+       allocate(blk_info(nblks, 3))
+       allocate(blk_sizes(pert%npert))
+       blk_info = get_blk_info(nblks, pert)
+       blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
+    
+    
+       ! For each cache element:
+       ! Calculate Sp
+       call p_tuple_to_external_tuple(pert, npert_ext, pert_ext)
+       call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
+                     size_i(k), Sp(ind_ctr:ind_ctr + size_i(k) - 1))
+       
+       deallocate(pert_ext)
+       
+       call contrib_cache_outer_add_element(S, .FALSE., 1, & 
+            (/pert/), data_mat = Sp(ind_ctr:ind_ctr + size_i(k) - 1) )
+       
+       ! Add the initialized Dp to cache
+       
+       call contrib_cache_outer_add_element(D, .FALSE., 1, & 
+            (/pert/), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+      
+       ! Assemble Fp (lower-order) for all components and add to cache
+             
+       call rsp_lof_recurse(pert, pert%npert, &
+                            0, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
+                            Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+       call contrib_cache_outer_add_element(F, .FALSE., 1, & 
+            (/pert/), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+       
+       ! Calculate Dp for all components and add to cache
+       
+       ! Set up Z matrix calculation
+       superstructure_size = derivative_superstructure_getsize(pert, &
+                          (/pert%npert, pert%npert/), &
+                          .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+
+       sstr_incr = 0
+       
+       allocate(derivative_structure(superstructure_size, 3))
+       allocate(indices(size_i(k), pert%npert))
+       allocate(ind(pert%npert))
+       
+       call derivative_superstructure(pert, &
+            (/pert%npert, pert%npert/), .FALSE., &
+            (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+            superstructure_size, sstr_incr, derivative_structure)
+      
+       call make_triangulated_indices(nblks, blk_info, size_i(k), indices)
+       
+       ! Calculate Z matrices and process to get Dp
+       do j = 1, size(indices, 1)
+       
+          ind = indices(j, :)
+          
+!           call rsp_get_matrix_z_2014(superstructure_size, derivative_structure, &
+!                (/pert%npert,pert%npert/), pert%npert, &
+!                (/ (m, m = 1, pert%npert) /), pert%npert, &
+!                ind, F, D, S, Dp(ind_ctr + j - 1: ind_ctr + j - 1))
+       
+          call QcMatkABC(-1.0d0, Dp(ind_ctr + j - 1), B, A, T)
+          call QcMatkABC(-1.0d0, A, B, Dp(ind_ctr + j - 1), U)
+          call QcMatRAXPY(1.0d0, T, U)
+          call QcMatRAXPY(1.0d0, U, Dp(ind_ctr + j - 1))
+       
+       end do
+       
+       call contrib_cache_outer_add_element(F, .FALSE., 1, & 
+            (/pert/), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+       
+       ! Clean up and set up next iteration
+       deallocate(indices)
+       deallocate(ind)
+       deallocate(derivative_structure)
+       
+       deallocate(blk_sizes)
+       deallocate(blk_info)
+              
+       ind_ctr = ind_ctr + size_i(k)
+       k = k + 1
+    
+       termination = cache_outer_next%last
+       cache_outer_next => cache_outer_next%next
+       
+    end do
+    
+    ! Outside traversal:
+    ! Complete Fp using Dp
+    call get_2el_mat(0, noc, sum(size_i), Dp, sum(size_i), Fp)
+        
+    ind_ctr = 1
+    k = 1
+    
+    ! Cycle to start
+    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
+    cache_outer_next => cache_outer_next%next
+       
+    ! Traverse
+    termination = .FALSE.
+    do while(.NOT.(termination))
+
+       pert = cache_outer_next%p_tuples(1)
+    
+    
+       ! Set up block info
+       nblks = get_num_blks(pert)
+
+       allocate(blk_info(nblks, 3))
+       allocate(blk_sizes(pert%npert))
+       blk_info = get_blk_info(nblks, pert)
+       blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
+    
+       ! For each cache element:
+       ! Add the completed Fp to cache
+       
+       call contrib_cache_outer_add_element(F, .FALSE., 1, & 
+            (/pert/), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+       
+       ! Construct right-hand side for all components
+       
+       ! Set up Y matrix calculation
+       superstructure_size = derivative_superstructure_getsize(pert, &
+                          (/pert%npert, pert%npert/), &
+                          .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+
+       sstr_incr = 0
+       
+       allocate(derivative_structure(superstructure_size, 3))
+       allocate(indices(size_i(k), pert%npert))
+       allocate(ind(pert%npert))
+       
+       call derivative_superstructure(pert, &
+            (/pert%npert, pert%npert/), .FALSE., &
+            (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+            superstructure_size, sstr_incr, derivative_structure)
+      
+       call make_triangulated_indices(nblks, blk_info, size_i(k), indices)
+       
+       ! Calculate RHS matrices
+       do j = 1, size(indices, 1)
+       
+          ind = indices(j, :)
+          
+!           call rsp_get_matrix_y_2014(superstructure_size, derivative_structure, &
+!                 pert%npert, (/ (m, m = 1, pert%npert) /), &
+!                 pert%npert, ind, F, D, S, RHS(1))
+       
+       end do
+       
+
+       ! Clean up and set up next iteration
+       deallocate(indices)
+       deallocate(ind)
+       deallocate(derivative_structure)
+       
+       deallocate(blk_sizes)
+       deallocate(blk_info)
+       
+       ind_ctr = ind_ctr + size_i(k)
+       k = k + 1
+    
+       termination = cache_outer_next%last
+       cache_outer_next => cache_outer_next%next
+       
+    end do
+    
+    ! Outside traversal:
+    ! Solve all response equations (opportunities for optimization for e.g.
+    ! first-order EL, but that can be introduced later)
+    
+    call get_rsp_sol(num_outer, size_i, (/(i - i + 1, i = 1, num_outer)/), freq_sums, RHS, X)
+! FIXME: REINSTATE NEXT LINE
+    !     call QmatDst(RHS(1))
+        
+    ind_ctr = 1
+    k = 1
+            
+    ! Cycle to start
+    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
+    cache_outer_next => cache_outer_next%next
+       
+    ! Traverse
+    termination = .FALSE.
+    do while(.NOT.(termination))
+
+       ! For each cache element:
+       ! Construct Dh for all components
+    
+       do j = 1, size_i(k)
+    
+          call QcMatkABC(-1.0d0, X(ind_ctr + j - 1), B, A, T)
+          call QcMatkABC(1.0d0, A, B, X(ind_ctr + j - 1), U)
+          call QcMatRAXPY(1.0d0, T, U)
+          call QcMatAEqB(Dh(ind_ctr + j - 1), U)
+    
+       end do
+    
+       ind_ctr = ind_ctr + size_i(k)
+       k = k + 1
+    
+       termination = cache_outer_next%last
+       cache_outer_next => cache_outer_next%next
+       
+    end do
+    
+    ! Outside traversal
+    ! Calculate Fh for all components using Dh
+    call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
+    
+    ind_ctr = 1
+    k = 1
+    
+    ! Cycle to start
+    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
+    cache_outer_next => cache_outer_next%next
+       
+    ! Traverse
+    termination = .FALSE.
+    do while(.NOT.(termination))
+
+       do j = 1, size_i(k)
+    
+          call QcMatRAXPY(1.0d0, Dh(ind_ctr + j - 1), Dp(ind_ctr + j - 1))
+    
+       end do
+    
+       call contrib_cache_outer_add_element(D, .FALSE., 1, & 
+            (/pert/), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+       
+       call contrib_cache_outer_add_element(F, .FALSE., 1, & 
+            (/pert/), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+    
+       ! For each cache element:
+       ! Add together Dp and Dh and store
+       ! Store Fp
+    
+       ind_ctr = ind_ctr + size_i(k)
+       k = k + 1
+    
+       termination = cache_outer_next%last
+       cache_outer_next => cache_outer_next%next
+       
+    end do
+    
+  end subroutine
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
     subroutine get_fds_2014(pert, F, D, S, get_rsp_sol, get_ovl_mat, &
                        get_1el_mat, get_2el_mat, get_xc_mat, id_outp)
@@ -159,7 +1053,7 @@ use qcmatrix_f
     nblks = get_num_blks(pert)
 
     allocate(blk_info(nblks, 3))
-    allocate(blk_sizes(pert%n_perturbations))
+    allocate(blk_sizes(pert%npert))
 
     blk_info = get_blk_info(nblks, pert)
     perturbed_matrix_size = get_triangulated_size(nblks, blk_info)
@@ -192,8 +1086,8 @@ use qcmatrix_f
     call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
                      perturbed_matrix_size, Sp)
 
-!     call rsp_ovlint(zeromat%nrow, pert%n_perturbations, pert%plab, &
-!                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
+!     call rsp_ovlint(zeromat%nrow, pert%npert, pert%plab, &
+!                        (/ (1, j = 1, pert%npert) /), pert%pdim, &
 !                        nblks, blk_info, blk_sizes, &
 !                        perturbed_matrix_size, Sp)
 
@@ -231,7 +1125,7 @@ use qcmatrix_f
 
 
     call f_l_cache_allocate_2014(fock_lowerorder_cache)
-    call rsp_fock_lowerorder_2014(pert, pert%n_perturbations, 1, (/get_emptypert()/), &
+    call rsp_fock_lowerorder_2014(pert, pert%npert, 1, (/get_emptypert()/), &
                          get_1el_mat, get_ovl_mat, get_2el_mat, get_xc_mat, 0, D, &
                          perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
@@ -244,17 +1138,17 @@ use qcmatrix_f
     ! then the actual superstructure call
 
     superstructure_size = derivative_superstructure_getsize(pert, &
-                          (/pert%n_perturbations, pert%n_perturbations/), .FALSE., &
+                          (/pert%npert, pert%npert/), .FALSE., &
                           (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     sstr_incr = 0
 
     allocate(derivative_structure(superstructure_size, 3))
-    allocate(indices(perturbed_matrix_size, pert%n_perturbations))
-    allocate(ind(pert%n_perturbations))
+    allocate(indices(perturbed_matrix_size, pert%npert))
+    allocate(ind(pert%npert))
 
-    call derivative_superstructure(pert, (/pert%n_perturbations, &
-         pert%n_perturbations/), .FALSE., &
+    call derivative_superstructure(pert, (/pert%npert, &
+         pert%npert/), .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          superstructure_size, sstr_incr, derivative_structure)
     call make_triangulated_indices(nblks, blk_info, perturbed_matrix_size, indices)
@@ -267,8 +1161,8 @@ ierr = QcMatWrite_f(Fp(i), "Fp_a", ASCII_VIEW)
 ! write(*,*) 'Dp 0', Dp(1)%elms
 
        call rsp_get_matrix_z_2014(superstructure_size, derivative_structure, &
-               (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
-               (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
+               (/pert%npert,pert%npert/), pert%npert, &
+               (/ (j, j = 1, pert%npert) /), pert%npert, &
                ind, F, D, S, Dp(i))
 ierr = QcMatWrite_f(Dp(i), "Dp_a", ASCII_VIEW)
 
@@ -329,8 +1223,8 @@ ierr = QcMatWrite_f(Fp(i), "Fp_b", ASCII_VIEW)
     call QcMatInit(X(1))
 
        call rsp_get_matrix_y_2014(superstructure_size, derivative_structure, &
-                pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
-                pert%n_perturbations, ind, F, D, S, RHS(1))
+                pert%npert, (/ (j, j = 1, pert%npert) /), &
+                pert%npert, ind, F, D, S, RHS(1))
 
 ierr = QcMatWrite_f(Dp(i), "Dp", ASCII_VIEW)
 ierr = QcMatWrite_f(RHS(1), "RHS", ASCII_VIEW)
@@ -511,7 +1405,7 @@ end if
     nblks = get_num_blks(pert)
 
     allocate(blk_info(nblks, 3))
-    allocate(blk_sizes(pert%n_perturbations))
+    allocate(blk_sizes(pert%npert))
 
     blk_info = get_blk_info(nblks, pert)
     perturbed_matrix_size = get_triangulated_size(nblks, blk_info)
@@ -544,8 +1438,8 @@ end if
     call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
                      perturbed_matrix_size, Sp)
 
-!     call rsp_ovlint(zeromat%nrow, pert%n_perturbations, pert%plab, &
-!                        (/ (1, j = 1, pert%n_perturbations) /), pert%pdim, &
+!     call rsp_ovlint(zeromat%nrow, pert%npert, pert%plab, &
+!                        (/ (1, j = 1, pert%npert) /), pert%pdim, &
 !                        nblks, blk_info, blk_sizes, &
 !                        perturbed_matrix_size, Sp)
 
@@ -582,7 +1476,7 @@ end if
 ! write(*,*) 'Fp a', Fp(1)%elms
 
     call f_l_cache_allocate_2014(fock_lowerorder_cache)
-    call rsp_fock_lowerorder_2014(pert, pert%n_perturbations, 1, (/get_emptypert()/), &
+    call rsp_fock_lowerorder_2014(pert, pert%npert, 1, (/get_emptypert()/), &
                          get_1el_mat, get_ovl_mat, get_2el_mat, get_xc_mat, 0, D, &
                          perturbed_matrix_size, Fp, fock_lowerorder_cache)
 
@@ -596,17 +1490,17 @@ end if
     ! then the actual superstructure call
 
     superstructure_size = derivative_superstructure_getsize(pert, &
-                          (/pert%n_perturbations, pert%n_perturbations/), .FALSE., &
+                          (/pert%npert, pert%npert/), .FALSE., &
                           (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     sstr_incr = 0
 
     allocate(derivative_structure(superstructure_size, 3))
-    allocate(indices(perturbed_matrix_size, pert%n_perturbations))
-    allocate(ind(pert%n_perturbations))
+    allocate(indices(perturbed_matrix_size, pert%npert))
+    allocate(ind(pert%npert))
 
-    call derivative_superstructure(pert, (/pert%n_perturbations, &
-         pert%n_perturbations/), .FALSE., &
+    call derivative_superstructure(pert, (/pert%npert, &
+         pert%npert/), .FALSE., &
          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
          superstructure_size, sstr_incr, derivative_structure)
     call make_triangulated_indices(nblks, blk_info, perturbed_matrix_size, indices)
@@ -616,8 +1510,8 @@ end if
        ind = indices(i, :)
 
        call rsp_get_matrix_z_2014(superstructure_size, derivative_structure, &
-               (/pert%n_perturbations,pert%n_perturbations/), pert%n_perturbations, &
-               (/ (j, j = 1, pert%n_perturbations) /), pert%n_perturbations, &
+               (/pert%npert,pert%npert/), pert%npert, &
+               (/ (j, j = 1, pert%npert) /), pert%npert, &
                ind, F, D, S, Dp(i))
 
 
@@ -666,8 +1560,8 @@ end if
        ! 4. Make right-hand side using Dp
 
        call rsp_get_matrix_y_2014(superstructure_size, derivative_structure, &
-                pert%n_perturbations, (/ (j, j = 1, pert%n_perturbations) /), &
-                pert%n_perturbations, ind, F, D, S, RHS(i))
+                pert%npert, (/ (j, j = 1, pert%npert) /), &
+                pert%npert, ind, F, D, S, RHS(i))
        
     end do
 
@@ -796,12 +1690,12 @@ end if
     type(QcMat), dimension(property_size) :: Fp
     type(f_l_cache_2014) :: fock_lowerorder_cache
 
-    if (pert%n_perturbations >= 1) then
+    if (pert%npert >= 1) then
 
        ! The differentiation can do three things:
        ! 1. Differentiate the expression 'directly'
 
-       if (p_tuples(1)%n_perturbations == 0) then
+       if (p_tuples(1)%npert == 0) then
 
           call rsp_fock_lowerorder_2014(p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
@@ -826,7 +1720,7 @@ end if
 
           t_new = p_tuples
 
-          if (p_tuples(i)%n_perturbations == 0) then
+          if (p_tuples(i)%npert == 0) then
 
              t_new(i) = p_tuple_getone(pert, 1)
 
@@ -860,7 +1754,7 @@ end if
 
        do i = 2, num_p_tuples
 
-          if (p_tuples(i)%n_perturbations >= total_num_perturbations) then
+          if (p_tuples(i)%npert >= total_num_perturbations) then
 
              density_order_skip = .TRUE.
 
@@ -953,22 +1847,22 @@ end if
 
 !    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
 !    ncouter = nc_only(total_num_perturbations, total_num_perturbations - & 
-!                      p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+!                      p_tuples(1)%npert, num_p_tuples - 1, &
 !                      p_tuples(2:num_p_tuples), ncarray)
-!    ncinner = nc_only(total_num_perturbations, p_tuples(1)%n_perturbations, 1, &
+!    ncinner = nc_only(total_num_perturbations, p_tuples(1)%npert, 1, &
 !                      p_tuples(1), ncarray)
 
-    allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
-    allocate(ncinnersmall(p_tuples(1)%n_perturbations))
-    allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%n_perturbations))
+    allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%npert))
+    allocate(ncinnersmall(p_tuples(1)%npert))
+    allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%npert))
 
 !    ncoutersmall = nc_onlysmall(total_num_perturbations, total_num_perturbations - &
-!                                p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+!                                p_tuples(1)%npert, num_p_tuples - 1, &
 !                                p_tuples(2:num_p_tuples), ncarray)
-!    ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%n_perturbations, &
+!    ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%npert, &
 !                   1, p_tuples(1), ncarray)
 !    pidoutersmall = get_pidoutersmall(total_num_perturbations - &
-!                    p_tuples(1)%n_perturbations, num_p_tuples - 1, &
+!                    p_tuples(1)%npert, num_p_tuples - 1, &
  !                   p_tuples(2:num_p_tuples))
 
     ! MaR: Second way of blks_tuple_info can in the general case be larger than
@@ -988,13 +1882,13 @@ end if
     call p_tuple_to_external_tuple(p_tuples(1), npert_ext, pert_ext)
     
     
-    call p_tuple_p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
-    t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%n_perturbations)/)
+    call p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
+    t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%npert)/)
 
 
     do i = 1, num_p_tuples
 
-       nfields(i) = p_tuples(i)%n_perturbations
+       nfields(i) = p_tuples(i)%npert
        nblks_tuple(i) = get_num_blks(p_tuples(i))
 
     end do
@@ -1020,7 +1914,7 @@ end if
 
     outer_indices_size = product(blks_tuple_triang_size(2:num_p_tuples))
 
-    if (p_tuples(1)%n_perturbations == 0) then
+    if (p_tuples(1)%npert == 0) then
 
        inner_indices_size = 1
 
@@ -1035,7 +1929,7 @@ end if
 
     o_whichpert = make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
 !    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
-!                      p_tuples(1)%n_perturbations, pidoutersmall, &
+!                      p_tuples(1)%npert, pidoutersmall, &
 !                      ncarray, ncoutersmall, o_whichpert)
 
     call sdf_getdata_s_2014(D, get_emptypert(), (/1/), D_unp)
@@ -1056,12 +1950,12 @@ end if
     end do
 
 
-    if (total_num_perturbations > p_tuples(1)%n_perturbations) then
+    if (total_num_perturbations > p_tuples(1)%npert) then
 
        k = 1
 
        do i = 2, num_p_tuples
-          do j = 1, p_tuples(i)%n_perturbations
+          do j = 1, p_tuples(i)%npert
 
              o_wh_forave(p_tuples(i)%pid(j)) = k
              k = k + 1
@@ -1070,14 +1964,14 @@ end if
        end do
 
        allocate(outer_indices(outer_indices_size,total_num_perturbations - &
-                p_tuples(1)%n_perturbations))
-       allocate(inner_indices(inner_indices_size,p_tuples(1)%n_perturbations))
+                p_tuples(1)%npert))
+       allocate(inner_indices(inner_indices_size,p_tuples(1)%npert))
 
        call make_triangulated_tuples_indices(num_p_tuples - 1, total_num_perturbations, & 
             nblks_tuple(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, &
             :, :), blks_tuple_triang_size(2:num_p_tuples), outer_indices)
 
-       if (p_tuples(1)%n_perturbations > 0) then
+       if (p_tuples(1)%npert > 0) then
 
           call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
                1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
@@ -1099,7 +1993,7 @@ end if
 
              call sdf_getdata_s_2014(D, p_tuples(j), (/ &
                              (outer_indices(i,o_wh_forave(p_tuples(j)%pid(k))), &
-                             k = 1, p_tuples(j)%n_perturbations) /), dens_tuple(j))
+                             k = 1, p_tuples(j)%npert) /), dens_tuple(j))
 
           end do
 
@@ -1109,8 +2003,8 @@ end if
              
              call get_2el_mat(npert_ext, pert_ext, 1, (/dens_tuple(2)/), size(tmp), tmp)
              
-!              call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!              call rsp_twoint(zeromat%nrow, p_tuples(1)%npert, p_tuples(1)%plab, &
+!                              (/ (1, j = 1, p_tuples(1)%npert) /), &
 !                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
              call cpu_time(time_end)
 !              print *, 'seconds spent in 2-el contribution', time_end - time_start
@@ -1119,12 +2013,12 @@ end if
           ! MaR: Reintroduce after minimal working version is complete
           call cpu_time(time_start)
           
-!           call get_xc_mat(p_tuples(1)%n_perturbations, p_tuples(1)%pdim, &
-!                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), p_tuples(1)%plab, &
+!           call get_xc_mat(p_tuples(1)%npert, p_tuples(1)%pdim, &
+!                           (/ (1, j = 1, p_tuples(1)%npert) /), p_tuples(1)%plab, &
 !                           num_p_tuples, (/ D_unp, (dens_tuple(k), k = 2, num_p_tuples) /), tmp)
           
-!           call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, &
-!                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!           call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%npert, &
+!                p_tuples(1)%plab, (/ (1, j = 1, p_tuples(1)%npert) /), &
 !                p_tuples(1)%pdim, (/ D_unp, &
 !                (dens_tuple(k), k = 2, num_p_tuples) /), property_size, tmp)
           call cpu_time(time_end)
@@ -1133,19 +2027,19 @@ end if
           ! MaR: Remove and consider as part of 2el contribution
 !           if (num_p_tuples <= 2) then
 !              call cpu_time(time_start)
-!              call rsp_pe(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                              (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!              call rsp_pe(zeromat%nrow, p_tuples(1)%npert, p_tuples(1)%plab, &
+!                              (/ (1, j = 1, p_tuples(1)%npert) /), &
 !                              p_tuples(1)%pdim, dens_tuple(2), size(tmp), tmp)
 !              call cpu_time(time_end)
 ! !             print *, 'seconds spent in PE contribution', time_end - time_start
 !           end if
 
-          if (p_tuples(1)%n_perturbations > 0) then
+          if (p_tuples(1)%npert > 0) then
 
              do j = 1, size(inner_indices,1)
 
                 offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, &
-                nblks_tuple, (/ (p_tuples(k)%n_perturbations, k = 1, num_p_tuples) /), &
+                nblks_tuple, (/ (p_tuples(k)%npert, k = 1, num_p_tuples) /), &
                 blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
                 (/inner_indices(j, :), outer_indices(i, :) /)) 
 
@@ -1159,7 +2053,7 @@ end if
 
              offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations, &
              nblks_tuple(2:num_p_tuples), &
-             (/ (p_tuples(k)%n_perturbations, k = 2, num_p_tuples) /), &
+             (/ (p_tuples(k)%npert, k = 2, num_p_tuples) /), &
              blks_tuple_info(2:num_p_tuples, :, :), blk_sizes(2:num_p_tuples,:), & 
              blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
 
@@ -1169,9 +2063,9 @@ end if
 
        end do
 
-       if (p_tuples(1)%n_perturbations > 0) then
+       if (p_tuples(1)%npert > 0) then
 
-          call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+          call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 
           do i = 2, num_p_tuples
 
@@ -1182,7 +2076,7 @@ end if
 
        else
 
-          call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
+          call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 
           do i = 3, num_p_tuples
 
@@ -1197,7 +2091,7 @@ end if
 
        k = 1
        do i = 1, num_p_tuples
-          do j = 1, p_tuples(i)%n_perturbations
+          do j = 1, p_tuples(i)%npert
              pids_current_contribution(k) = p_tuples(i)%pid(j)
              k = k + 1
           end do
@@ -1255,7 +2149,7 @@ end if
     
           end do
 
-          if (p_tuples(1)%n_perturbations > 0) then
+          if (p_tuples(1)%npert > 0) then
 
              lo_offset = get_triang_blks_tuple_offset(num_p_tuples, &
                          total_num_perturbations, nblks_tuple, &
@@ -1292,8 +2186,8 @@ end if
 
           call get_1el_mat(npert_ext, pert_ext, size(Fp), Fp)
        
-!           call rsp_oneint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                           (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!           call rsp_oneint(zeromat%nrow, p_tuples(1)%npert, p_tuples(1)%plab, &
+!                           (/ (1, j = 1, p_tuples(1)%npert) /), &
 !                           p_tuples(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
 !                    1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), property_size, Fp)
 
@@ -1303,7 +2197,7 @@ end if
 
           t_matrix_bra = get_emptypert()
           t_matrix_ket = get_emptypert()
-          call rsp_ovlint_t_matrix_2014(t_matrix_newpid%n_perturbations, t_matrix_newpid, &
+          call rsp_ovlint_t_matrix_2014(t_matrix_newpid%npert, t_matrix_newpid, &
                                    t_matrix_bra, t_matrix_ket, get_ovl_mat, property_size, Fp)
        end if
 
@@ -1314,8 +2208,8 @@ end if
           
           call get_2el_mat(npert_ext, pert_ext, 1, (/D_unp/), size(Fp), Fp)
           
-!           call rsp_twoint(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!           call rsp_twoint(zeromat%nrow, p_tuples(1)%npert, p_tuples(1)%plab, &
+!                (/ (1, j = 1, p_tuples(1)%npert) /), &
 !                p_tuples(1)%pdim, D_unp, &
 !                property_size, Fp)
           call cpu_time(time_end)
@@ -1325,8 +2219,8 @@ end if
 
        ! MaR: Reintroduce when minimal working version is complete
 !        call cpu_time(time_start)
-!        call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%n_perturbations, p_tuples(1)%plab, &
-!                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /), &
+!        call rsp_xcint_adapt(zeromat%nrow, p_tuples(1)%npert, p_tuples(1)%plab, &
+!                       (/ (1, j = 1, p_tuples(1)%npert) /), &
 !                       p_tuples(1)%pdim, &
 !                       (/ D_unp /), &
 !                       property_size, Fp)
@@ -1337,9 +2231,9 @@ end if
 !        if (num_p_tuples <= 2) then
 !           call cpu_time(time_start)
 !           call rsp_pe(zeromat%nrow,                                 &
-!                       p_tuples(1)%n_perturbations,                  &
+!                       p_tuples(1)%npert,                  &
 !                       p_tuples(1)%plab,                             &
-!                       (/ (1, j = 1, p_tuples(1)%n_perturbations) /),&
+!                       (/ (1, j = 1, p_tuples(1)%npert) /),&
 !                       p_tuples(1)%pdim,                             &
 !                       D_unp,                                        &
 !                       property_size,                                &

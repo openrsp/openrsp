@@ -10,6 +10,7 @@ module rsp_property_caching
 
   use rsp_field_tuple
   use rsp_indices_and_addressing
+  use qcmatrix_f
 !  use matrix_backend
 
   implicit none
@@ -23,13 +24,16 @@ module rsp_property_caching
 
   ! NEW 2014
   
-!  public contrib_cache_initialize
-!  public contrib_cache_next_element
-!  public contrib_cache_outer_next_element
-!  public contrib_cache_add_element
-!  public contrib_cache_already
-!  public contrib_cache_getdata
-!  public contrib_cache_allocate
+ public contrib_cache_initialize
+ public contrib_cache_next_element
+ public contrib_cache_outer_next_element
+ public contrib_cache_outer_cycle_first
+ public contrib_cache_outer_add_element
+ public contrib_cache_add_element
+ public contrib_cache_already
+ public contrib_cache_getdata
+ public contrib_cache_allocate
+ public contrib_cache_outer_allocate
   
   ! END NEW 2014
   
@@ -50,33 +54,46 @@ module rsp_property_caching
   
   ! Define contrib cache datatype
 
-!  type contrib_cache_outer
-!
-!    type(contrib_cache_outer), pointer :: next
-!    logical :: last
-!    integer :: num_dmat
-!    type(p_tuple), allocatable, dimension(:) :: outer_p_tuples
-!    integer :: outer_size
-!    integer :: contrib_size
-!    integer, allocatable, dimension(:) :: nblks_tuple
-!    integer, allocatable, dimension(:,:) :: blk_sizes
-!    integer, allocatable, dimension(:,:) :: indices
-!    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
-!    integer, allocatable, dimension(:) :: blks_tuple_triang_size
-!    type(openrsp_matrix), allocatable, dimension(:) :: data_int ! Fock matrix contribution data
-!    complex(8), allocatable, dimension(:) :: data_ave ! Property data    
-!
-!  end type 
-!  
-!  type contrib_cache
-!
-!    type(contrib_cache), pointer :: next
-!    logical :: last
-!    type(p_tuple) :: p_inner
-!    integer :: num_outer
-!    type(contrib_cache_outer) :: contribs_outer
-!
-!  end type 
+  
+
+  
+ type contrib_cache_outer
+
+   type(contrib_cache_outer), pointer :: next
+   logical :: last
+   logical :: dummy_entry
+   integer :: num_dmat
+   type(p_tuple), allocatable, dimension(:) :: p_tuples
+   integer :: outer_size
+   integer :: contrib_size
+   integer, allocatable, dimension(:) :: nblks_tuple
+   integer, allocatable, dimension(:,:) :: blk_sizes
+   integer, allocatable, dimension(:,:) :: indices
+   integer, allocatable, dimension(:,:,:) :: blks_tuple_info
+   integer, allocatable, dimension(:) :: blks_tuple_triang_size
+   type(QcMat), allocatable, dimension(:) :: data_int ! Fock matrix contribution data
+   complex(8), allocatable, dimension(:) :: data_ave ! Property data    
+
+ end type 
+
+ type contrib_cache
+
+   type(contrib_cache), pointer :: next
+   logical :: last
+   type(p_tuple) :: p_inner
+   integer :: num_outer
+   integer :: nblks
+   integer, allocatable, dimension(:) :: blk_sizes
+   integer :: blks_triang_size
+   integer, allocatable, dimension(:,:) :: blk_info
+   integer, allocatable, dimension(:,:) :: indices
+   
+   
+   
+   type(contrib_cache_outer), pointer :: contribs_outer
+
+ end type 
+
   
   
   ! END NEW 2014
@@ -135,7 +152,7 @@ module rsp_property_caching
     allocate(new_element%p_tuples(num_p_tuples))
 
     do i = 1, num_p_tuples
-       call p_tuple_p1_cloneto_p2(p_tuples(i), new_element%p_tuples(i))
+       call p1_cloneto_p2(p_tuples(i), new_element%p_tuples(i))
     end do
 
     allocate(new_element%data(property_size))
@@ -218,48 +235,6 @@ module rsp_property_caching
                                    p_tuples_standardorder(next_element%num_p_tuples, &
                                    next_element%p_tuples), p_tuples_st_order)
 
-! if (property_cache_already .eqv. .true.) then
-! 
-! if (num_p_tuples == 3) then
-! 
-! if (p_tuples(2)%n_perturbations == 2 .AND. p_tuples(3)%n_perturbations == 2) then
-! 
-! if ((p_tuples(2)%pid(1) == 6) .AND. (p_tuples(2)%pid(1) == 6) &
-!      .AND. (p_tuples(3)%pid(1) == 1)) then
-! 
-! write(*,*) ' '
-! write(*,*) 'pr_cache already match: pristine:'
-! 
-! do i = 1, num_p_tuples
-! 
-! write(*,*) p_tuples(i)%pid
-! write(*,*) p_tuples(i)%pdim
-! write(*,*) p_tuples(i)%freq
-! 
-! end do
-! 
-! write(*,*) ' '
-! write(*,*) 'st_order:'
-! 
-! do i = 1, num_p_tuples
-! 
-! write(*,*) p_tuples(i)%pid
-! write(*,*) p_tuples(i)%pdim
-! write(*,*) p_tuples(i)%freq
-! 
-! end do
-! 
-! 
-! write(*,*) ' '
-! 
-! end if
-! 
-! end if
-! 
-! end if
-! 
-! end if
-
        end if
 
        if (next_element%last .eqv. .TRUE.) then
@@ -311,34 +286,6 @@ module rsp_property_caching
     found = .FALSE.
 
 
-
-! if (num_p_tuples == 3) then
-! 
-! if (p_tuples(2)%n_perturbations == 2 .AND. p_tuples(3)%n_perturbations == 2) then
-! 
-! if ((p_tuples(2)%pid(1) == 6) .AND. (p_tuples(2)%pid(1) == 6) &
-!      .AND. (p_tuples(3)%pid(1) == 1)) then
-! 
-! write(*,*) ' '
-! write(*,*) 'pr_cache getdata:'
-! 
-! do i = 1, num_p_tuples
-! 
-! write(*,*) p_tuples(i)%pid
-! write(*,*) p_tuples(i)%pdim
-! write(*,*) p_tuples(i)%freq
-! 
-! end do
-! 
-! 
-! 
-! end if
-! 
-! end if
-! 
-! end if
-
-
     ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
     ! COULD THIS BE DONE IN ANOTHER WAY?
     do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
@@ -366,16 +313,16 @@ module rsp_property_caching
        total_num_perturbations = 0
 
        do i = 1, num_p_tuples
-          total_num_perturbations = total_num_perturbations + p_tuples(i)%n_perturbations
+          total_num_perturbations = total_num_perturbations + p_tuples(i)%npert
        end do
 
        next_element%p_tuples = p_tuples_standardorder(next_element%num_p_tuples, &
                                                       next_element%p_tuples)
 
 
-       if (p_tuples(1)%n_perturbations > 0) then
+       if (p_tuples(1)%npert > 0) then
 
-          call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+          call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 
           do i = 2, num_p_tuples
 
@@ -386,7 +333,7 @@ module rsp_property_caching
 
        else
 
-          call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
+          call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 
           do i = 3, num_p_tuples
 
@@ -426,7 +373,7 @@ module rsp_property_caching
        k = 1
 
        do i = 1, num_p_tuples
-          do j = 1, p_tuples(i)%n_perturbations
+          do j = 1, p_tuples(i)%npert
              pids_current_contribution(k) = p_tuples_st_order(i)%pid(j)
              k = k + 1
           end do
@@ -443,7 +390,7 @@ module rsp_property_caching
 
        do i = 1, num_p_tuples
 
-          nfields(i) = p_tuples_st_order(i)%n_perturbations
+          nfields(i) = p_tuples_st_order(i)%npert
           nblks_tuple(i) = get_num_blks(p_tuples_st_order(i))
           blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_st_order(i))
           blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
@@ -465,7 +412,7 @@ module rsp_property_caching
              translated_index(j) = indices(i,pids_current_contribution(j))
           end do
 
-          if (p_tuples(1)%n_perturbations > 0) then
+          if (p_tuples(1)%npert > 0) then
 
              cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
              total_num_perturbations, nblks_tuple, & 
@@ -522,7 +469,7 @@ module rsp_property_caching
 
     allocate(current_element%p_tuples(1))
 
-    current_element%p_tuples(1)%n_perturbations = 0
+    current_element%p_tuples(1)%npert = 0
 
     allocate(current_element%p_tuples(1)%pdim(1))
     allocate(current_element%p_tuples(1)%plab(1))
@@ -535,540 +482,781 @@ module rsp_property_caching
     ! NEW 2014
   
   
-!    function contrib_cache_next_element(current_element) result(next_element)
-!
-!    implicit none
-!
-!    type(contrib_cache), target :: current_element
-!    type(contrib_cache), pointer :: next_element
-!
-!    next_element => current_element%next
-!
-!  end function
-!
-!  function contrib_cache_outer_next_element(current_element) result(next_element)
-!
-!    implicit none
-!
-!    type(contrib_cache_outer), target :: current_element
-!    type(contrib_cache_outer), pointer :: next_element
-!
-!    next_element => current_element%next
-!
-!  end function
-!  
-!  
-!  subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples)
-!
-!    implicit none
-!
-!    integer :: num_p_tuples
-!    type(contrib_cache) :: new_element
-!    type(p_tuple), dimension(num_p_tuples) :: p_tuples
-!
-!    new_element%last = .TRUE.
-!    call p1_cloneto_p2(p_tuples(1), new_element%p_inner)
-!    
-!    if (num_p_tuples > 1) then
-!    
-!       call contrib_cache_outer_initialize(new_element%contribs_outer, num_p_tuples - 1, &
-!                                           p_tuples(2:num_p_tuples))
-!    
-!    end if
-!
-!  end subroutine
-!  
-!  
-!  subroutine contrib_cache_outer_initialize(new_element, num_dmat, outer_p_tuples)
-!
-!    implicit none
-!
-!    integer :: num_dmat, i
-!    type(contrib_cache_outer) :: new_element
-!    type(p_tuple), dimension(num_dmat) :: outer_p_tuples
-!
-!    new_element%last = .TRUE.
-!    
-!    do i = 1, num_dmat
-!       call p1_cloneto_p2(outer_p_tuples(i), new_element%outer_p_tuples(i))
-!    end do
-!       
-!  end subroutine
-!  
-!  
-!  subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples)
-!
-!    implicit none
-!
-!    integer :: num_p_tuples
-!    type(contrib_cache), target :: current_element
-!    type(contrib_cache), pointer :: new_element
-!    type(contrib_cache), pointer :: new_element_ptr
-!    type(contrib_cache), pointer :: next_element
-!    type(p_tuple), dimension(num_p_tuples) :: p_tuples
-!    type(p_tuple) :: emptypert
-!
-!    ! If cache element for inner perturbations already exists, just add outer
-!    if (contrib_cache_already_inner(current_element, p_tuples(1))) then
-!    
-!       next_element => current_element
-!    
-!       ! Skip to cache element for this inner
-!       do while (p_tuple_compare(next_element%p_inner, p_tuples(1)) .EQV. .FALSE.)
-!
-!          next_element => next_element%next
-!           
+ function contrib_cache_cycle_first(current_element) result(next_element)
+
+   implicit none
+
+   type(contrib_cache), target :: current_element
+   type(contrib_cache), pointer :: next_element
+   
+   next_element => current_element
+   
+   do while (next_element%last .eqv. .FALSE.)
+          next_element => next_element%next
+   end do
+
+   next_element => next_element%next   
+
+ end function
+
+ function contrib_cache_outer_cycle_first(current_element) result(next_element)
+
+   implicit none
+
+   type(contrib_cache_outer), target :: current_element
+   type(contrib_cache_outer), pointer :: next_element
+   
+   next_element => current_element
+   
+   do while (next_element%last .eqv. .FALSE.)
+          next_element => next_element%next
+   end do
+
+   next_element => next_element%next   
+
+ end function
+ 
+ function contrib_cache_next_element(current_element) result(next_element)
+
+   implicit none
+
+   type(contrib_cache), target :: current_element
+   type(contrib_cache), pointer :: next_element
+
+   next_element => current_element%next
+
+ end function
+
+ function contrib_cache_outer_next_element(current_element) result(next_element)
+
+   implicit none
+
+   type(contrib_cache_outer), target :: current_element
+   type(contrib_cache_outer), pointer :: next_element
+
+   next_element => current_element%next
+
+ end function
+ 
+ 
+  subroutine contrib_cache_allocate(current_element)
+
+   implicit none
+
+   type(contrib_cache), pointer :: current_element
+   !type(contrib_cache), pointer :: current_element
+   allocate(current_element)
+
+   current_element%next => current_element
+   current_element%last = .TRUE.
+
+   current_element%p_inner%npert = 0
+   
+   allocate(current_element%p_inner%pdim(1))
+   allocate(current_element%p_inner%plab(1))
+   allocate(current_element%p_inner%pid(1))
+   allocate(current_element%p_inner%freq(1))
+   
+   current_element%p_inner%pdim = (/0/)
+   current_element%p_inner%plab = (/'NUTN'/)
+   current_element%p_inner%pid = (/0/)
+   current_element%p_inner%freq = (/0.0/)
+   
+   call contrib_cache_outer_allocate(current_element%contribs_outer)
+   
+ end subroutine
+
+ subroutine contrib_cache_outer_allocate(current_element)
+
+    implicit none
+
+    type(contrib_cache_outer), pointer :: current_element
+
+    allocate(current_element)
+
+    current_element%next => current_element
+    current_element%num_dmat = 0
+    current_element%last = .TRUE.
+    current_element%dummy_entry = .TRUE.
+
+    allocate(current_element%p_tuples(1))
+
+    current_element%p_tuples(1)%npert = 0
+
+    allocate(current_element%p_tuples(1)%pdim(1))
+    allocate(current_element%p_tuples(1)%plab(1))
+    allocate(current_element%p_tuples(1)%pid(1))
+    allocate(current_element%p_tuples(1)%freq(1))
+        
+   current_element%p_tuples(1)%pdim = (/0/)
+   current_element%p_tuples(1)%plab = (/'NUTN'/)
+   current_element%p_tuples(1)%pid = (/0/)
+   current_element%p_tuples(1)%freq = (/0.0/)
+
+  end subroutine
+ 
+ subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples)
+
+   implicit none
+
+   integer :: num_p_tuples
+   type(contrib_cache) :: new_element
+   type(p_tuple), dimension(num_p_tuples) :: p_tuples
+
+   new_element%last = .TRUE.
+   call p1_cloneto_p2(p_tuples(1), new_element%p_inner)
+   
+  
+   if (num_p_tuples > 1) then
+   
+   
+!    write(*,*) 'outer case a'
+      call contrib_cache_outer_allocate(new_element%contribs_outer)
+      call contrib_cache_outer_add_element(new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
+                                          p_tuples(2:num_p_tuples))
+   
+   
+   else
+   
+!    write(*,*) 'outer case b'
+      call contrib_cache_outer_allocate(new_element%contribs_outer)
+      call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
+                                          p_tuples(2:num_p_tuples))
+      
+   end if
+      
+ end subroutine
+ 
+ 
+ subroutine contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
+
+   implicit none
+
+   logical :: unperturbed
+   integer :: num_dmat, i, total_npert
+   integer, allocatable, dimension(:) :: nblks_tuple, blks_tuple_triang_size
+   integer, allocatable, dimension(:,:) :: blk_sizes
+   integer, allocatable, dimension(:,:,:) :: blks_tuple_info
+   type(contrib_cache_outer) :: new_element
+   type(p_tuple), dimension(num_dmat) :: outer_p_tuples
+
+   new_element%num_dmat = num_dmat
+   new_element%last = .TRUE.
+   new_element%dummy_entry = .FALSE.
+   
+   
+!     write(*,*) 'New outer cache'
+!     write(*,*) 'num dmats', num_dmat
+
+   if (.NOT.(unperturbed)) then
+!       do i = 1, num_dmat
+!         write(*,*) 'i', i
+!         write(*,*) outer_p_tuples(i)%npert
+!         write(*,*) outer_p_tuples(i)%pdim
+!         write(*,*) outer_p_tuples(i)%plab
+!         write(*,*) 'D', outer_p_tuples(i)%pid
 !       end do
-!       
-!       if (num_p_tuples > 1) then
-!      
-!          call contrib_cache_outer_initialize(next_element%contribs_outer, &
-!               num_p_tuples - 1, p_tuples(2:num_p_tuples))
-!             
-!       else
-!          
-!          call empty_p_tuple(emptypert)
-!!           call contrib_cache_outer_add_element(next_element%contribs_outer, 1, emptypert)
-!        
-!       end if
-!
-!
-!    ! Otherwise, add both inner and outer    
-!    else
-!    
-!       next_element => current_element
-!
-!       allocate(new_element)
-!
-!       call contrib_cache_initialize(new_element, num_p_tuples, p_tuples)
-!
-!       new_element_ptr => new_element
-!
-!       do while (next_element%last .EQV. .FALSE.)
-!          next_element => contrib_cache_next_element(next_element)
-!       end do
-!
-!       next_element%last = .FALSE.
-!       new_element%next => next_element%next
-!       next_element%next => new_element
-!       
-!    end if
-!
-!  end subroutine
-!  
-!  
-!  ! MAYBE SOME WORK REMAINING ON THIS FUNCTION
-!  
-!  function contrib_cache_already(current_element, num_p_tuples, p_tuples)
-!
-!    implicit none
-!
-!    logical :: contrib_cache_already
-!    integer :: passedlast, passedlast_outer, num_p_tuples, i
-!    type(contrib_cache), target :: current_element
-!    type(contrib_cache), pointer :: next_element
-!    type(p_tuple), dimension(num_p_tuples) :: p_tuples
-!    type(p_tuple) :: emptypert, p_tuple_ord, p_tmp_ord
-!    
-!    next_element => current_element
-!    passedlast = 0
-!    call p_tuple_ordered(p_tuples(1), p_tuple_ord)
-!    contrib_cache_already = .FALSE.
-!
-!    ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-!    ! COULD THIS BE DONE IN ANOTHER WAY?
-!    do while ((passedlast < 2) .AND. (contrib_cache_already .eqv. .FALSE.))
-!
-!       next_element => contrib_cache_next_element(next_element)
-!
-!       call p_tuple_ordered(next_element%p_inner, p_tmp_ord)
-!       
-!       contrib_cache_already = p_tuple_compare(p_tmp_ord, p_tuple_ord)
-!
-!       if (contrib_cache_already) then
-!          
-!          if (num_p_tuples > 1) then
-!          
-!             contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
-!                                     num_p_tuples - 1, p_tuples(2:num_p_tuples))
-!             
-!          else
-!          
-!             call empty_p_tuple(emptypert)          
-!             contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
-!                                     1, (/emptypert/))
-!                       
-!          end if
-!       
-!       end if
-!
-!       if (next_element%last .eqv. .TRUE.) then
-!          passedlast = passedlast + 1
-!       end if
-!
-!    end do
-!
-!  end function
-!  
-!
-!  ! NOT DONE WITH THIS FUNCTION
-!  
-!  function contrib_cache_already_outer(current_element, num_dmat, p_tuples_outer)
-!
-!    implicit none
-!
-!    logical :: contrib_cache_already_outer
-!    integer :: passedlast, passedlast_outer, num_dmat, i
-!    type(contrib_cache_outer), target :: current_element
-!    type(contrib_cache_outer), pointer :: next_element
-!    type(p_tuple), dimension(num_dmat) :: p_tuples_outer, p_tuples_ord
-!    
-!    next_element => current_element
-!    passedlast = 0
-!    call p_tuples_ordered(num_dmat, p_tuples_outer, p_tuples_ord)
-!    contrib_cache_already_outer = .FALSE.
-!
-!    ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-!    ! COULD THIS BE DONE IN ANOTHER WAY?
-!    do while ((passedlast < 2) .AND. (contrib_cache_already_outer .eqv. .FALSE.))
-!
-!    ! Make sure the tuples that need to be ordered are ordered
-!    
-!       next_element => contrib_cache_outer_next_element(next_element)
-!
-!       if (next_element%num_dmat == num_dmat) then
-!       
-!       contrib_cache_already_outer = p_tuples_compare(num_dmat, &
-!                                     next_element%outer_p_tuples, p_tuples_ord)
-!
-!                                  
-!
-!                                  
-!       end if
-!
-!       if (next_element%last .eqv. .TRUE.) then
-!          passedlast = passedlast + 1
-!       end if
-!
-!    end do
-!
-!
-!  end function
-!
-!    ! NOT DONE WITH THIS FUNCTION
-!  
-!  function contrib_cache_already_inner(current_element, p_inner)
-!
-!    implicit none
-!
-!    logical :: contrib_cache_already_inner
-!    integer :: passedlast,  i
-!    type(contrib_cache), target :: current_element
-!    type(contrib_cache), pointer :: next_element
-!    type(p_tuple) :: p_inner, p_tuple_ord
-!    
-!    next_element => current_element
-!    passedlast = 0
-!    call p_tuple_ordered(p_inner, p_tuple_ord)
-!    contrib_cache_already_inner = .FALSE.
-!
-!    ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-!    ! COULD THIS BE DONE IN ANOTHER WAY?
-!    do while ((passedlast < 2) .AND. (contrib_cache_already_inner .eqv. .FALSE.))
-!
-!    ! Make sure the tuples that need to be ordered are ordered
-!    
-!       next_element => contrib_cache_next_element(next_element)
-!      
-!       contrib_cache_already_inner = p_tuple_compare(next_element%p_inner, p_tuple_ord)
-!
-!       if (next_element%last .eqv. .TRUE.) then
-!          passedlast = passedlast + 1
-!       end if
-!
-!    end do
-!
-!
-!  end function
-!  
+   
+   
+     allocate(new_element%p_tuples(num_dmat))
+   
+     do i = 1, num_dmat
+   
+        call p1_cloneto_p2(outer_p_tuples(i), new_element%p_tuples(i))
+     end do
+
+     total_npert = sum((/(outer_p_tuples(i)%npert, i = 1, num_dmat)/))
+     
+     allocate(nblks_tuple(num_dmat))
+     allocate(blk_sizes(num_dmat, total_npert))
+     allocate(blks_tuple_info(num_dmat, total_npert, 3))
+     allocate(blks_tuple_triang_size(total_npert))
+     
+     nblks_tuple = (/(get_num_blks(outer_p_tuples(i)), i = 1, num_dmat)/)
+   
+     do i = 1, num_dmat
+     
+        blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), outer_p_tuples(i))
+        blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
+        blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
+        blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
+                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
+                                   
+     end do
+   
+   
+   else
+   
+     allocate(new_element%p_tuples(1)) 
+   
+      new_element%p_tuples%npert = 0
+   
+   allocate(new_element%p_tuples(1)%pdim(1))
+   allocate(new_element%p_tuples(1)%plab(1))
+   allocate(new_element%p_tuples(1)%pid(1))
+   allocate(new_element%p_tuples(1)%freq(1))
+   
+   new_element%p_tuples(1)%pdim = (/0/)
+   new_element%p_tuples(1)%plab = (/'NUTN'/)
+   new_element%p_tuples(1)%pid = (/0/)
+   new_element%p_tuples(1)%freq = (/0.0/)
+   
+   
+   end if
+   
+      
+ end subroutine
+   
+
+   
+
+ subroutine contrib_cache_outer_add_element(curr_element, unperturbed, num_dmat, &
+            outer_p_tuples, data_mat, data_scal)
+
+   implicit none
+
+   logical :: unperturbed
+   integer :: num_dmat, i
+   type(contrib_cache_outer), target :: curr_element
+   type(contrib_cache_outer), pointer :: new_element
+   type(contrib_cache_outer), pointer :: new_element_ptr
+   type(contrib_cache_outer), pointer :: next_element
+   type(p_tuple), dimension(num_dmat) :: outer_p_tuples
+   type(Qcmat), optional, dimension(*) :: data_mat
+   complex(8), optional, dimension(*) :: data_scal
+   
+   next_element => curr_element
+
+  allocate(new_element)
+
+   call contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
+   
+  
+   new_element_ptr => new_element
+   
+   do while (next_element%last .eqv. .FALSE.)
+      next_element => contrib_cache_outer_next_element(next_element)
+   end do
+   
+
+   next_element%last = .FALSE.
+   new_element%next => next_element%next
+   next_element%next => new_element
+      
+ end subroutine
+ 
+ subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples)
+
+   implicit none
+
+   integer :: num_p_tuples, i
+   type(contrib_cache), target :: current_element
+   type(contrib_cache), pointer :: new_element
+   type(contrib_cache), pointer :: new_element_ptr
+   type(contrib_cache), pointer :: next_element
+   type(p_tuple), dimension(num_p_tuples) :: p_tuples
+   type(p_tuple) :: emptypert
+
+   
+
+   
+!     write(*,*) 'adding outer cache element, p tuples = ', num_p_tuples
+    
+!     do i = 1, num_p_tuples
 !     
-!  ! Missing contents (to be taken from non-outer routine below)
-!  
-!  subroutine contrib_cache_getdata_outer(cache, num_p_tuples, p_tuples, &
-!             contrib_size, fock_or_prop, fock, prop)
-!
-!    implicit none
-!    logical :: found, fock_or_prop
-!    integer :: i, j, k, first, last, passedlast, num_p_tuples, &
-!               contrib_size, total_num_perturbations, pr_offset, cache_offset, &
-!               merged_triang_size, merged_nblks
-!    integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contrib, & 
-!                                          p_tuples_dimensions, &
-!                                          p_tuples_dimensions_cacheorder, &
-!                                          pids_merged_pert, translated_index
-!    integer, allocatable, dimension(:) :: blk_sizes_merged
-!    integer, dimension(num_p_tuples) :: nfields, nblks_tuple, blks_tuple_triang_size
-!    integer, allocatable, dimension(:,:) :: indices, blk_sizes
-!    integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
-!    type(contrib_cache), target :: cache
-!    type(contrib_cache), pointer :: next_element
-!    type(contrib_cache_outer), pointer :: next_element_outer
-!    type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_ord
-!    type(p_tuple) :: merged_p_tuple
-!    type(openrsp_matrix), optional, dimension(contrib_size) :: fock
-!    complex(8), optional, dimension(contrib_size) :: prop
+!     if (i == 1) then
+!     
+!     write(*,*) 'E', p_tuples(i)%pid
+!     
+!     else
+!     
+!     write(*,*) 'D',  p_tuples(i)%pid
+!     
+!     end if
+!     
+!     
+!     end do
+   
+   ! If cache element for inner perturbations already exists, just add outer
+   if (contrib_cache_already_inner(current_element, p_tuples(1))) then
+   
+      next_element => current_element
+   
+      ! Skip to cache element for this inner
+      do while (p_tuple_compare(next_element%p_inner, p_tuples(1)) .EQV. .FALSE.)
+
+         next_element => next_element%next
+          
+      end do
+      
+      if (num_p_tuples > 1) then
+     
+!      write(*,*) 'add case a'
+     
+         call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+              num_p_tuples - 1, p_tuples(2:num_p_tuples))
+            
+      else
+!      write(*,*) 'add case b'
+     
+     
+!          call empty_p_tuple(emptypert)
+          call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/))
+       
+      end if
+
+
+   ! Otherwise, add both inner and outer    
+   else
+   
+      next_element => current_element
+
+      allocate(new_element)
+
+      call contrib_cache_initialize(new_element, num_p_tuples, p_tuples)
+      
+      new_element_ptr => new_element
+
+      do while (next_element%last .EQV. .FALSE.)
+         next_element => contrib_cache_next_element(next_element)
+      end do
+
+      next_element%last = .FALSE.
+      new_element%next => next_element%next
+      next_element%next => new_element
+      
+   end if
+
+ end subroutine
+ 
+ 
+ ! MAYBE SOME WORK REMAINING ON THIS FUNCTION
+ 
+ function contrib_cache_already(current_element, num_p_tuples, p_tuples)
+
+   implicit none
+
+   logical :: contrib_cache_already
+   integer :: passedlast, passedlast_outer, num_p_tuples, i
+   type(contrib_cache), target :: current_element
+   type(contrib_cache), pointer :: next_element
+   type(p_tuple), dimension(num_p_tuples) :: p_tuples
+   type(p_tuple) :: emptypert, p_tuple_ord, p_tmp_ord
+   
+   next_element => current_element
+   passedlast = 0
+   
+   
+!    write(*,*) 'n p tuples for already', num_p_tuples
 !    
-!  end subroutine
-!  
-!! Missing variable declaration and allocations, otherwise OK
-!
-!  ! Assumes that p_tuples is in standard order
-!  subroutine contrib_cache_getdata(cache, num_p_tuples, p_tuples, contrib_size, fock_or_prop, fock, prop)
-!
-!    implicit none
-!
-!    logical :: found, fock_or_prop
-!    integer :: i, j, k, first, last, passedlast, num_p_tuples, &
-!               contrib_size, total_num_perturbations, pr_offset, cache_offset, &
-!               merged_triang_size, merged_nblks, res_offset
-!    integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contrib, & 
-!                                          p_tuples_dimensions, &
-!                                          p_tuples_dimensions_cacheorder, &
-!                                          pids_merged_pert, translated_index
-!    integer, allocatable, dimension(:) :: blk_sizes_merged
-!    integer, dimension(num_p_tuples) :: nfields, nblks_tuple, blks_tuple_triang_size
-!    integer, allocatable, dimension(:,:) :: indices, blk_sizes
-!    integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
-!    type(contrib_cache), target :: cache
-!    type(contrib_cache), pointer :: next_element
-!    type(contrib_cache_outer), pointer :: next_element_outer
-!    type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_ord
-!    type(p_tuple) :: merged_p_tuple
-!    type(openrsp_matrix), optional, dimension(contrib_size) :: fock
-!    complex(8), optional, dimension(contrib_size) :: prop
-!
-!
-!    next_element => cache
-!    passedlast = 0
-!    found = .FALSE.
-!
-!
-!    call p_tuples_ordered(num_p_tuples, p_tuples, p_tuples_ord)
-!
-!    ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-!    ! COULD THIS BE DONE IN ANOTHER WAY?
-!    do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
-!
-!       next_element => contrib_cache_next_element(next_element)
-!
-!       found = p_tuple_compare(next_element%p_inner, p_tuples_ord(1))
-!
-!       if (next_element%last) then
-!          passedlast = passedlast + 1
-!       end if
-!
+!    do i = 1, num_p_tuples
+!    
+!    write(*,*) 'p tuple', i
+!    
+!    write(*,*) 'npert', p_tuples(i)%npert
+!    write(*,*) 'pid', p_tuples(i)%pid
+!    write(*,*) 'plab', p_tuples(i)%plab
+!    write(*,*) 'pfreq', p_tuples(i)%freq
+!    write(*,*) 'pdim', p_tuples(i)%pdim
+!    
+!    write(*,*) ' '
+!    
 !    end do
-!
-!    
-!    if (found) then
-!    
-!       next_element_outer => next_element%contribs_outer
-!       passedlast = 0
-!       found = .FALSE.
-!
-!       ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-!       ! COULD THIS BE DONE IN ANOTHER WAY?
-!       do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
-!
-!          next_element_outer => contrib_cache_outer_next_element(next_element_outer)
-!
-!          if (next_element_outer%num_dmat == num_p_tuples - 1) then
-!
-!             found = p_tuples_compare(num_p_tuples - 1, next_element_outer%outer_p_tuples, &
-!                                      p_tuples_ord(2:num_p_tuples))
-!
-!          end if
-!
-!          if (next_element%last) then
-!             passedlast = passedlast + 1
-!          end if
-!
-!       end do
-!       
-!       if (found) then
-!
-!          total_num_perturbations = 0
-!
-!          do i = 1, num_p_tuples
-!             total_num_perturbations = total_num_perturbations + p_tuples(i)%n_perturbations
-!          end do
-!
-!
-!          if (p_tuples(1)%n_perturbations > 0) then
-!
-!             call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
-!
-!             do i = 2, num_p_tuples
-!
-!                ! This can be problematic - consider rewriting merge_p_tuple as subroutine
-!                call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
-!
-!             end do
-!
-!          else
-!
-!             call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
-!
-!             do i = 3, num_p_tuples
-!
-!                ! This can be problematic - consider rewriting merge_p_tuple as subroutine
-!                call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
-!                
-!             end do
-!
-!          end if
-!
-!          call p_tuple_ordered(merged_p_tuple, merged_p_tuple)
-!          merged_nblks = get_num_blks(merged_p_tuple)
-!
-!          allocate(merged_blk_info(1,merged_nblks, 3))
-!
-!          merged_blk_info(1,:,:) = get_blk_info(merged_nblks, merged_p_tuple)
-!          merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-!
-!          allocate(blk_sizes(num_p_tuples, total_num_perturbations))
-!          allocate(blk_sizes_merged(total_num_perturbations))
-!
-!          blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-!          merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-!
-!          allocate(indices(contrib_size, total_num_perturbations))
-!
-!          call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-!               merged_triang_size, indices)
-!
-!          allocate(translated_index(total_num_perturbations))
-!          allocate(pids_in_cache(total_num_perturbations))
-!          allocate(pids_current_contrib(total_num_perturbations))
-!          allocate(pids_merged_pert(total_num_perturbations))
-!          allocate(p_tuples_dimensions(total_num_perturbations))
-!          allocate(p_tuples_dimensions_cacheorder(total_num_perturbations))
-!
-!          k = 1
-!
-!          do i = 1, num_p_tuples
-!             do j = 1, p_tuples(i)%n_perturbations
-!!                 pids_current_contrib(k) = p_tuples_ord(i)%perts(j)%pid
-!                k = k + 1
-!             end do
-!          end do
-!
-!          do i = 1, total_num_perturbations
-!!              pids_merged_pert(i) = merged_p_tuple%perts(i)%pid
-!          end do
-!
-!          p_tuples_dimensions = get_ncarray(total_num_perturbations, num_p_tuples, &
-!                                            p_tuples_ord)
-!
-!          allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
-!
-!          do i = 1, num_p_tuples
-!
-!             nfields(i) = p_tuples_ord(i)%n_perturbations
-!             nblks_tuple(i) = get_num_blks(p_tuples_ord(i))
-!             blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_ord(i))
-!             blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-!                                         blks_tuple_info(i,1:nblks_tuple(i),:))
-!             blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-!             blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-!
-!          end do
-!
-!          do i = 1, size(indices, 1)
-!
-!             res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
-!             (/merged_nblks/), & 
-!             (/total_num_perturbations/), (/merged_blk_info/), blk_sizes_merged, &
-!             (/merged_triang_size/), &
-!             (/indices(i, : )/) )
-!
-!             do j = 1, total_num_perturbations
-!                translated_index(j) = indices(i,pids_current_contrib(j))
-!             end do
-!
-!             if (p_tuples(1)%n_perturbations > 0) then
-!
-!                cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
-!                total_num_perturbations, nblks_tuple, & 
-!                nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
-!
-!             else
-!
-!                cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
-!                total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
-!                nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
-!                blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
-!                translated_index)
-!
-!             end if
-!
-!             if (fock_or_prop) then
-!             
-!             write(*,*) 'dummy matrix in prop caching'
-!             
-!                fock(res_offset) = &
-!!                 fock(res_offset) + &
-!                next_element_outer%data_int(cache_offset) 
-!                
-!             else
-!
-!                prop(res_offset) = &
-!                prop(res_offset) + &
-!                next_element_outer%data_ave(cache_offset)              
-!             
-!             end if
-!
-!          end do
-!
-!      
-!       else
-!
-!          write(*,*) 'Failed to retrieve data in contrib_cache_getdata: Element not found'
-!
-!       end if
-!       
-!       
-!       
-!    else
-!
-!       write(*,*) 'Failed to retrieve data in contrib_cache_getdata: Element not found'
-!
-!    end if
-!
-!
-!  end subroutine
-!
-!
-!  
-!  
-!  
-!  
-!  subroutine contrib_cache_allocate(current_element)
-!
-!    implicit none
-!
-!    type(contrib_cache), pointer :: current_element
-!
-!    allocate(current_element)
-!
-!    current_element%next => current_element
-!    current_element%last = .TRUE.
-!
-!    current_element%p_inner%n_perturbations = 0
-!!     allocate(current_element%p_inner%perts(1))
-!    ! Also set values of perturbation?
-!    
-!  end subroutine
+
+   p_tuple_ord = p_tuple_standardorder(p_tuples(1))
+   contrib_cache_already = .FALSE.
+
+   call empty_p_tuple(emptypert)
+   
+   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
+   ! COULD THIS BE DONE IN ANOTHER WAY?
+   do while ((passedlast < 2) .AND. (contrib_cache_already .eqv. .FALSE.))
+
+      next_element => contrib_cache_next_element(next_element)
+
+      p_tmp_ord = p_tuple_standardorder(next_element%p_inner)
+      
+      contrib_cache_already = p_tuple_compare(p_tmp_ord, p_tuple_ord)
+
+      if (contrib_cache_already) then
+         
+         if (num_p_tuples > 1) then
+         
+! write(*,*) 'match ,comparing with np > 1'
+! write(*,*) next_element%contribs_outer%num_dmat
+
+         
+            contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+                                    num_p_tuples - 1, p_tuples(2:num_p_tuples))
+            
+         else
+         
+            
+            contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+                                    0, (/emptypert/))
+                      
+         end if
+      
+      end if
+
+      if (next_element%last .eqv. .TRUE.) then
+         passedlast = passedlast + 1
+      end if
+
+   end do
+
+ end function
+ 
+
+ ! NOT DONE WITH THIS FUNCTION
+ 
+ function contrib_cache_already_outer(current_element, num_dmat, p_tuples_outer)
+
+   implicit none
+
+   logical :: contrib_cache_already_outer
+   integer :: passedlast, passedlast_outer, num_dmat, i
+   type(contrib_cache_outer), target :: current_element
+   type(contrib_cache_outer), pointer :: next_element
+   type(p_tuple), dimension(num_dmat) :: p_tuples_outer, p_tuples_ord
+   
+   next_element => current_element
+   passedlast = 0
+   p_tuples_ord = p_tuples_standardorder(num_dmat, p_tuples_outer)
+   contrib_cache_already_outer = .FALSE.
+
+   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
+   ! COULD THIS BE DONE IN ANOTHER WAY?
+   do while ((passedlast < 2) .AND. (contrib_cache_already_outer .eqv. .FALSE.))
+
+   ! Make sure the tuples that need to be ordered are ordered
+   
+!    write(*,*) 'curr element is last', next_element%last
+   
+      next_element => contrib_cache_outer_next_element(next_element)
+      
+!       write(*,*) 'next element is last', next_element%last
+
+      if (next_element%num_dmat == num_dmat .AND. .NOT.(next_element%dummy_entry)) then
+      
+      contrib_cache_already_outer = p_tuples_compare(num_dmat, &
+                                    next_element%p_tuples, p_tuples_ord)
+
+                                 
+
+                                 
+      end if
+
+      if (next_element%last .eqv. .TRUE.) then
+         passedlast = passedlast + 1
+      end if
+
+   end do
+! write(*,*) 'Was it found?', contrib_cache_already_outer
+
+ end function
+
+   ! NOT DONE WITH THIS FUNCTION
+ 
+ function contrib_cache_already_inner(current_element, p_inner)
+
+   implicit none
+
+   logical :: contrib_cache_already_inner
+   integer :: passedlast,  i
+   type(contrib_cache), target :: current_element
+   type(contrib_cache), pointer :: next_element
+   type(p_tuple) :: p_inner, p_tuple_ord
+   
+   next_element => current_element
+   passedlast = 0
+   p_tuple_ord = p_tuple_standardorder(p_inner)
+   contrib_cache_already_inner = .FALSE.
+
+   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
+   ! COULD THIS BE DONE IN ANOTHER WAY?
+   do while ((passedlast < 2) .AND. (contrib_cache_already_inner .eqv. .FALSE.))
+
+   ! Make sure the tuples that need to be ordered are ordered
+   
+      next_element => contrib_cache_next_element(next_element)
+     
+      contrib_cache_already_inner = p_tuple_compare(next_element%p_inner, p_tuple_ord)
+
+      if (next_element%last .eqv. .TRUE.) then
+         passedlast = passedlast + 1
+      end if
+
+   end do
+
+
+ end function
+ 
+    
+ ! Missing contents (to be taken from non-outer routine below)
+ 
+ subroutine contrib_cache_getdata_outer(cache, num_p_tuples, p_tuples, &
+            mat_or_scal, contrib_size, ind_unsorted, mat, prop)
+
+! Proposed: Puts all data into return array if prop or specified matrix if mat
+            
+! ind_unsorted, mat, prop are optional            
+            
+   implicit none
+   logical :: found, mat_or_scal
+   integer :: i, j, k, first, last, passedlast, num_p_tuples, &
+              total_num_perturbations, pr_offset, cache_offset, &
+              merged_triang_size, merged_nblks
+   integer :: contrib_size
+   integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contrib, & 
+                                         p_tuples_dimensions, &
+                                         p_tuples_dimensions_cacheorder, &
+                                         pids_merged_pert, translated_index
+   integer, allocatable, dimension(:) :: blk_sizes_merged
+   integer, dimension(num_p_tuples) :: nfields, nblks_tuple, blks_tuple_triang_size
+   integer, allocatable, dimension(:,:) :: indices, blk_sizes
+   integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
+   type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_ord
+   type(p_tuple) :: merged_p_tuple
+   integer, dimension(p_tuples(1)%npert), optional ::  ind_unsorted
+   type(contrib_cache_outer), target :: cache
+   type(contrib_cache_outer), pointer :: next_element
+   type(QcMat), optional :: mat
+   complex(8), optional, dimension(contrib_size) :: prop
+   
+ end subroutine
+ 
+! Missing variable declaration and allocations, otherwise OK
+
+ ! Assumes that p_tuples is in standard order
+ subroutine contrib_cache_getdata(cache, num_p_tuples, p_tuples, contrib_size, &
+                                  fock_or_prop, fock, prop)
+
+   implicit none
+
+   logical :: found, fock_or_prop
+   integer :: i, j, k, first, last, passedlast, num_p_tuples, &
+              contrib_size, total_num_perturbations, pr_offset, cache_offset, &
+              merged_triang_size, merged_nblks, res_offset
+   integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contrib, & 
+                                         p_tuples_dimensions, &
+                                         p_tuples_dimensions_cacheorder, &
+                                         pids_merged_pert, translated_index
+   integer, allocatable, dimension(:) :: blk_sizes_merged
+   integer, dimension(num_p_tuples) :: nfields, nblks_tuple, blks_tuple_triang_size
+   integer, allocatable, dimension(:,:) :: indices, blk_sizes
+   integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
+   type(contrib_cache), target :: cache
+   type(contrib_cache), pointer :: next_element
+   type(contrib_cache_outer), pointer :: next_element_outer
+   type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_ord
+   type(p_tuple) :: merged_p_tuple
+   type(QcMat), optional, dimension(contrib_size) :: fock
+   complex(8), optional, dimension(contrib_size) :: prop
+
+
+   next_element => cache
+   passedlast = 0
+   found = .FALSE.
+
+
+    p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
+
+   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
+   ! COULD THIS BE DONE IN ANOTHER WAY?
+   do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
+
+      next_element => contrib_cache_next_element(next_element)
+
+      found = p_tuple_compare(next_element%p_inner, p_tuples_ord(1))
+
+      if (next_element%last) then
+         passedlast = passedlast + 1
+      end if
+
+   end do
+
+   
+   if (found) then
+   
+      next_element_outer => next_element%contribs_outer
+      passedlast = 0
+      found = .FALSE.
+
+      do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
+
+         next_element_outer => contrib_cache_outer_next_element(next_element_outer)
+
+         if (next_element_outer%num_dmat == num_p_tuples - 1) then
+
+            found = p_tuples_compare(num_p_tuples - 1, next_element_outer%p_tuples, &
+                                     p_tuples_ord(2:num_p_tuples))
+
+         end if
+
+         if (next_element%last) then
+            passedlast = passedlast + 1
+         end if
+
+      end do
+      
+      if (found) then
+
+         total_num_perturbations = 0
+
+         do i = 1, num_p_tuples
+            total_num_perturbations = total_num_perturbations + p_tuples(i)%npert
+         end do
+
+
+         if (p_tuples(1)%npert > 0) then
+
+            call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+
+            do i = 2, num_p_tuples
+
+               call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
+
+            end do
+
+         else
+
+            call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
+
+            do i = 3, num_p_tuples
+
+               call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
+               
+            end do
+
+         end if
+
+         merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
+         merged_nblks = get_num_blks(merged_p_tuple)
+
+         allocate(merged_blk_info(1,merged_nblks, 3))
+
+         merged_blk_info(1,:,:) = get_blk_info(merged_nblks, merged_p_tuple)
+         merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
+
+         allocate(blk_sizes(num_p_tuples, total_num_perturbations))
+         allocate(blk_sizes_merged(total_num_perturbations))
+
+         blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
+         merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+
+         allocate(indices(contrib_size, total_num_perturbations))
+
+         call make_triangulated_indices(merged_nblks, merged_blk_info, & 
+              merged_triang_size, indices)
+
+         allocate(translated_index(total_num_perturbations))
+         allocate(pids_in_cache(total_num_perturbations))
+         allocate(pids_current_contrib(total_num_perturbations))
+         allocate(pids_merged_pert(total_num_perturbations))
+         allocate(p_tuples_dimensions(total_num_perturbations))
+         allocate(p_tuples_dimensions_cacheorder(total_num_perturbations))
+
+         k = 1
+
+         do i = 1, num_p_tuples
+            do j = 1, p_tuples(i)%npert
+!                 pids_current_contrib(k) = p_tuples_ord(i)%perts(j)%pid
+               k = k + 1
+            end do
+         end do
+
+         do i = 1, total_num_perturbations
+!              pids_merged_pert(i) = merged_p_tuple%perts(i)%pid
+         end do
+
+         p_tuples_dimensions = get_ncarray(total_num_perturbations, num_p_tuples, &
+                                           p_tuples_ord)
+
+         allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
+
+         do i = 1, num_p_tuples
+
+            nfields(i) = p_tuples_ord(i)%npert
+            nblks_tuple(i) = get_num_blks(p_tuples_ord(i))
+            blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_ord(i))
+            blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
+                                        blks_tuple_info(i,1:nblks_tuple(i),:))
+            blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
+            blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
+
+         end do
+
+         do i = 1, size(indices, 1)
+
+            res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
+            (/merged_nblks/), & 
+            (/total_num_perturbations/), (/merged_blk_info/), blk_sizes_merged, &
+            (/merged_triang_size/), &
+            (/indices(i, : )/) )
+
+            do j = 1, total_num_perturbations
+               translated_index(j) = indices(i,pids_current_contrib(j))
+            end do
+
+            if (p_tuples(1)%npert > 0) then
+
+               cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
+               total_num_perturbations, nblks_tuple, & 
+               nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
+
+            else
+
+               cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
+               total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
+               nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
+               blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
+               translated_index)
+
+            end if
+
+            if (fock_or_prop) then
+            
+            write(*,*) 'dummy matrix in prop caching'
+            
+               fock(res_offset) = &
+               next_element_outer%data_int(cache_offset) 
+               ! + fock(res_offset)
+               
+            else
+
+               prop(res_offset) = &
+               prop(res_offset) + &
+               next_element_outer%data_ave(cache_offset)              
+            
+            end if
+
+         end do
+
+     
+      else
+
+         write(*,*) 'Failed to retrieve data in contrib_cache_getdata: Element not found'
+
+      end if
+      
+      
+      
+   else
+
+      write(*,*) 'Failed to retrieve data in contrib_cache_getdata: Element not found'
+
+   end if
+
+
+ end subroutine
+
+
+ 
+ 
+ 
+ 
+
   
   ! END NEW 2014
   

@@ -14,7 +14,7 @@ module rsp_field_tuple
   public p_tuple_getone
   public p_tuple_remove_first
   public merge_p_tuple
-  public p_tuple_p1_cloneto_p2
+  public p1_cloneto_p2
   public p_tuple_deallocate
   public get_emptypert
   public empty_p_tuple
@@ -45,40 +45,40 @@ module rsp_field_tuple
   
   public p_tuple_dealloc
   public p1_lt_p2
-  public p_tuples_compare_2014
-  public p_tuple_compare_2014
+!   public p_tuples_compare_2014
+!   public p_tuple_compare_2014
   public get_p_subset
-  public p1_cloneto_p2
+!   public p1_cloneto_p2
   public p1_switch_p2
   public p1_merge_p2
-  public p_tuple_ordered
-  public p_tuples_ordered
+!   public p_tuple_ordered
+!   public p_tuples_ordered
   public make_p_tuple_subsets
   
   
-  ! Perturbation datatype
-  type pert
-
-     integer :: pdim ! Number of components
-     integer :: pfcomp ! First component is component #pfcomp
-     integer :: plab ! Perturbation label
-     integer :: pid ! Perturbation ID
-     complex(8) :: freq ! Frequency of perturbation
-
-  end type
+!   ! Perturbation datatype
+!   type pert
+! 
+!      integer :: pdim ! Number of components
+!      integer :: pfcomp ! First component is component #pfcomp
+!      integer :: plab ! Perturbation label
+!      integer :: pid ! Perturbation ID
+!      complex(8) :: freq ! Frequency of perturbation
+! 
+!   end type
   
-  ! Perturbation tuple datatype
-  type p_tuple_2014
-
-     integer :: n_perturbations ! Number of perturbations
-     integer, allocatable, dimension(:) :: pdim ! Dimensions of perturbations
-     integer, allocatable, dimension(:) :: plab ! Perturbation labels
-     integer, allocatable, dimension(:) :: pfcomp ! First component is component #pfcomp
-     integer, allocatable, dimension(:) :: pid ! Pert. ID - for k,n rule evaluations
-     complex(8), allocatable, dimension(:) :: freq ! Frequencies of perturbations
-     ! Add other perturbation identification info as needed
-
-  end type
+!   ! Perturbation tuple datatype
+!   type p_tuple_2014
+! 
+! !      integer :: n_perturbations ! Number of perturbations
+!      integer, allocatable, dimension(:) :: pdim ! Dimensions of perturbations
+!      integer, allocatable, dimension(:) :: plab ! Perturbation labels
+!      integer, allocatable, dimension(:) :: pfcomp ! First component is component #pfcomp
+!      integer, allocatable, dimension(:) :: pid ! Pert. ID - for k,n rule evaluations
+!      complex(8), allocatable, dimension(:) :: freq ! Frequencies of perturbations
+!      ! Add other perturbation identification info as needed
+! 
+!   end type
   
   ! END NEW 2014
   
@@ -87,7 +87,7 @@ module rsp_field_tuple
 
   type p_tuple
 
-     integer :: n_perturbations ! Number of perturbations
+!      integer :: n_perturbations ! Number of perturbations
      integer :: npert
      integer, allocatable, dimension(:) :: pdim ! Dimensions of perturbations
      character(4), allocatable, dimension(:) :: plab ! Perturbation labels
@@ -108,11 +108,11 @@ module rsp_field_tuple
     
     type(p_tuple) :: pert
     integer :: num_pert, i, mp, j
-    integer, dimension(pert%n_perturbations) :: plab_int
+    integer, dimension(pert%npert) :: plab_int
     integer, dimension(:), allocatable :: perturbations, pert_orders
     
     
-    do i = 1, pert%n_perturbations
+    do i = 1, pert%npert
     
        if (pert%plab(i) == 'GEO ') then
        
@@ -182,10 +182,10 @@ module rsp_field_tuple
     integer :: num_pert, i
     integer, dimension(:), allocatable :: perturbations
     
-    num_pert = pert%n_perturbations
+    num_pert = pert%npert
     allocate(perturbations(num_pert))
 
-    do i = 1, pert%n_perturbations
+    do i = 1, pert%npert
     
        if (pert%plab(i) == 'GEO ') then
        
@@ -224,7 +224,7 @@ module rsp_field_tuple
 
       type(p_tuple) :: p1
 
-      p1%n_perturbations = 0
+      p1%npert = 0
 
       deallocate(p1%pdim) 
       deallocate(p1%plab)
@@ -247,9 +247,9 @@ module rsp_field_tuple
       integer :: i
       logical :: p1_lt_p2
 
-      call p_tuple_ordered(p1, p1_ord)
-      call p_tuple_ordered(p2, p2_ord)
-
+      p1_ord = p_tuple_standardorder(p1)
+      p2_ord = p_tuple_standardorder(p2)
+      
       p1_lt_p2 = .FALSE.
 
       if (p1%npert < p2%npert) then
@@ -305,63 +305,63 @@ module rsp_field_tuple
     end function
     
     
-   ! Compare two tuples of perturbation tuples to see if they are equivalent
-    function p_tuples_compare_2014(num_p_tuples, p_tuples_1, p_tuples_2)
-    
-      implicit none
-      
-      logical :: p_tuples_compare_2014, none_unequal_yet
-      integer :: num_p_tuples
-      integer :: i
-      type(p_tuple), dimension(num_p_tuples) :: p_tuples_1, p_tuples_2
-      type(p_tuple), dimension(num_p_tuples) :: p_tuples_1_ord, p_tuples_2_ord
-      
-      call p_tuples_ordered(num_p_tuples, p_tuples_1, p_tuples_1_ord)
-      call p_tuples_ordered(num_p_tuples, p_tuples_2, p_tuples_2_ord)
-      
-      p_tuples_compare_2014 = .FALSE.
-      none_unequal_yet = .TRUE.
-      
-      do i = 1, num_p_tuples
-      
-         none_unequal_yet = none_unequal_yet .AND. &
-                            p_tuple_compare_2014(p_tuples_1_ord(i), p_tuples_2_ord(i))
-      
-      end do
-      
-      if (none_unequal_yet) p_tuples_compare_2014 = .TRUE.
-      
-    end function
+!    ! Compare two tuples of perturbation tuples to see if they are equivalent
+!     function p_tuples_compare_2014(num_p_tuples, p_tuples_1, p_tuples_2)
+!     
+!       implicit none
+!       
+!       logical :: p_tuples_compare_2014, none_unequal_yet
+!       integer :: num_p_tuples
+!       integer :: i
+!       type(p_tuple), dimension(num_p_tuples) :: p_tuples_1, p_tuples_2
+!       type(p_tuple), dimension(num_p_tuples) :: p_tuples_1_ord, p_tuples_2_ord
+!       
+!       call p_tuples_ordered(num_p_tuples, p_tuples_1, p_tuples_1_ord)
+!       call p_tuples_ordered(num_p_tuples, p_tuples_2, p_tuples_2_ord)
+!       
+!       p_tuples_compare_2014 = .FALSE.
+!       none_unequal_yet = .TRUE.
+!       
+!       do i = 1, num_p_tuples
+!       
+!          none_unequal_yet = none_unequal_yet .AND. &
+!                             p_tuple_compare_2014(p_tuples_1_ord(i), p_tuples_2_ord(i))
+!       
+!       end do
+!       
+!       if (none_unequal_yet) p_tuples_compare_2014 = .TRUE.
+!       
+!     end function
   
-    ! Compare two perturbation tuples to see if they are equivalent
-    function p_tuple_compare_2014(p1, p2)
-    
-      implicit none
-      
-      logical :: p_tuple_compare_2014
-      integer :: i
-      type (p_tuple) :: p1, p2
-      
-      p_tuple_compare_2014 = .TRUE.
-      
-      if (p1%npert == p2%npert) then
-      
-         do i = 1, p1%npert
-      
-           if (.NOT. (p1%pdim(i) == p2%pdim(i))) p_tuple_compare_2014 = .FALSE.
-           if (.NOT. (p1%pfcomp(i) == p2%pfcomp(i))) p_tuple_compare_2014 = .FALSE.
-           if (.NOT. (p1%plab(i) == p2%plab(i))) p_tuple_compare_2014 = .FALSE.
-           if (.NOT. (p1%freq(i) == p2%freq(i))) p_tuple_compare_2014 = .FALSE.
-            
-         end do
-      
-      else
-      
-         p_tuple_compare_2014 = .FALSE.
-      
-      end if
-      
-    end function
+!     ! Compare two perturbation tuples to see if they are equivalent
+!     function p_tuple_compare_2014(p1, p2)
+!     
+!       implicit none
+!       
+!       logical :: p_tuple_compare_2014
+!       integer :: i
+!       type (p_tuple) :: p1, p2
+!       
+!       p_tuple_compare_2014 = .TRUE.
+!       
+!       if (p1%npert == p2%npert) then
+!       
+!          do i = 1, p1%npert
+!       
+!            if (.NOT. (p1%pdim(i) == p2%pdim(i))) p_tuple_compare_2014 = .FALSE.
+!            if (.NOT. (p1%pfcomp(i) == p2%pfcomp(i))) p_tuple_compare_2014 = .FALSE.
+!            if (.NOT. (p1%plab(i) == p2%plab(i))) p_tuple_compare_2014 = .FALSE.
+!            if (.NOT. (p1%freq(i) == p2%freq(i))) p_tuple_compare_2014 = .FALSE.
+!             
+!          end do
+!       
+!       else
+!       
+!          p_tuple_compare_2014 = .FALSE.
+!       
+!       end if
+!       
+!     end function
   
     ! Get a general subset of perturbation tuple p1   
     subroutine get_p_subset(p1, sub_size, which_perts, p_subset)
@@ -430,20 +430,20 @@ module rsp_field_tuple
   
   
   
-   ! Clone perturbation tuple p1 into p2
-    subroutine p1_cloneto_p2(p1, p2)
-
-      implicit none
-
-      type(p_tuple), intent(in) :: p1
-      type(p_tuple), intent(out) :: p2
-
-      p2%npert = p1%npert
-!       if (allocated(p2%perts)) deallocate(p2%perts)
-!       allocate(p2%perts(p2%npert))
-!       p2%perts = p1%perts
-
-    end subroutine
+!    ! Clone perturbation tuple p1 into p2
+!     subroutine p1_cloneto_p2(p1, p2)
+! 
+!       implicit none
+! 
+!       type(p_tuple), intent(in) :: p1
+!       type(p_tuple), intent(out) :: p2
+! 
+!       p2%npert = p1%npert
+! !       if (allocated(p2%perts)) deallocate(p2%perts)
+! !       allocate(p2%perts(p2%npert))
+! !       p2%perts = p1%perts
+! 
+!     end subroutine
 
 
     ! Switch perturbation tuples p1 and p2
@@ -476,114 +476,126 @@ module rsp_field_tuple
       
     end subroutine
 
-     ! Order perturbation tuple
-    subroutine p_tuple_ordered(p1, p_ord)
-
-      implicit none
-
-      integer :: i, j, min_pdim, min_pfcomp, min_plab, new_min
-      complex(8) :: min_freq
-      type(p_tuple), intent(in) :: p1
-      type(pert) :: temp
-      type(p_tuple), intent(out) :: p_ord
-
-      call p1_cloneto_p2(p1, p_ord)
-
-      do i = 1, p_ord%npert
-
-         min_pdim = p_ord%pdim(i)
-         min_pfcomp = p_ord%pfcomp(i)
-!          min_plab = p_ord%plab(i)
-         min_freq = p_ord%freq(i)
-         new_min = i
-
-         do j = i + 1, p_ord%npert
-
-            if (p_ord%pdim(j) < min_pdim) then
-
-               new_min = j
-
-            elseif (p_ord%pdim(j) == min_pdim) then
-
-               if (p_ord%pfcomp(j) < min_pfcomp) then
-
-                  new_min = j
-
-               elseif (p_ord%pfcomp(j) == min_pfcomp) then
-
-!                   if (p_ord%plab(j) < min_plab) then
+!      ! Order perturbation tuple
+!     subroutine p_tuple_ordered(p1, p_ord)
 ! 
-!                      new_min = j
+!       implicit none
 ! 
-!                   elseif (p_ord%plab(j) == min_plab) then
+!       integer :: i, j, min_pdim, min_pfcomp, min_plab, new_min
+!       complex(8) :: min_freq
+!       type(p_tuple), intent(in) :: p1
+! !       type(pert) :: temp
+!       type(p_tuple), intent(out) :: p_ord
 ! 
-!                      if (real(p_ord%freq(j)) < real(min_freq)) then
+!       call p1_cloneto_p2(p1, p_ord)
 ! 
-!                         new_min = j
+!          write(*,*) 'npert', p1%npert
+!    write(*,*) 'pid', p1%pid
+!    write(*,*) 'pfreq', p1%freq
+!    write(*,*) 'pdim', p1%pdim
+!       
+!          write(*,*) 'p ord npert', p_ord%npert
+!    write(*,*) 'pid', p_ord%pid
+!    write(*,*) 'pfreq', p_ord%freq
+!    write(*,*) 'pdim', p_ord%pdim
+!       
+!       
+!       
+!       do i = 1, p_ord%npert
 ! 
-!                      end if
+!          min_pdim = p_ord%pdim(i)
+!          min_pfcomp = p_ord%pfcomp(i)
+! !          min_plab = p_ord%plab(i)
+!          min_freq = p_ord%freq(i)
+!          new_min = i
 ! 
-!                   end if
-
-               end if
-
-            end if
-
-         end do
-         
-!          temp = p_ord%perts(new_min)
-!          p_ord%perts(new_min) = p_ord%perts(i)
-!          p_ord%perts(i) = temp
-
-      end do
-
-      ! Maybe some sorting remains: Find out during testing
-
-    end subroutine
-    
-      ! Order tuples of perturbation tuples
-    ! Also order the tuples themselves
-    subroutine p_tuples_ordered(num_p_tuples, p_tuples, p_tuples_ord)
-
-      implicit none
-
-      integer, intent(in) :: num_p_tuples
-      integer :: i, j, new_min
-      type(p_tuple), dimension(num_p_tuples), intent(in) :: p_tuples
-      type(p_tuple), dimension(num_p_tuples), intent(out) :: p_tuples_ord
-
-      do i = 1, num_p_tuples
-         
-         call p_tuple_ordered(p_tuples(i), p_tuples_ord(i))
-
-      end do
-
-      ! No reordering of first tuple since it contains "inner" perturbations
-      ! Only reordering of D contraction tuples: Therefore starting with i = 2
-      do i = 2, num_p_tuples
-
-         new_min = i
-
-         do j = i + 1, num_p_tuples 
-
-            if (p1_lt_p2(p_tuples_ord(i), p_tuples_ord(j))) then
-
-               new_min = j
-               call p_tuple_ordered(p_tuples_ord(new_min), p_tuples_ord(i))
-
-            end if
-
-         end do
-
-         if (.NOT.(new_min == i)) then
-
-            call p1_switch_p2(p_tuples_ord(i), p_tuples_ord(new_min))
-
-         end if
-
-      end do
-
-    end subroutine
+!          do j = i + 1, p_ord%npert
+! 
+!             if (p_ord%pdim(j) < min_pdim) then
+! 
+!                new_min = j
+! 
+!             elseif (p_ord%pdim(j) == min_pdim) then
+! 
+!                if (p_ord%pfcomp(j) < min_pfcomp) then
+! 
+!                   new_min = j
+! 
+!                elseif (p_ord%pfcomp(j) == min_pfcomp) then
+! 
+! !                   if (p_ord%plab(j) < min_plab) then
+! ! 
+! !                      new_min = j
+! ! 
+! !                   elseif (p_ord%plab(j) == min_plab) then
+! ! 
+! !                      if (real(p_ord%freq(j)) < real(min_freq)) then
+! ! 
+! !                         new_min = j
+! ! 
+! !                      end if
+! ! 
+! !                   end if
+! 
+!                end if
+! 
+!             end if
+! 
+!          end do
+!          
+! !          temp = p_ord%perts(new_min)
+! !          p_ord%perts(new_min) = p_ord%perts(i)
+! !          p_ord%perts(i) = temp
+! 
+!       end do
+! 
+!       ! Maybe some sorting remains: Find out during testing
+! 
+!     end subroutine
+!     
+!       ! Order tuples of perturbation tuples
+!     ! Also order the tuples themselves
+!     subroutine p_tuples_ordered(num_p_tuples, p_tuples, p_tuples_ord)
+! 
+!       implicit none
+! 
+!       integer, intent(in) :: num_p_tuples
+!       integer :: i, j, new_min
+!       type(p_tuple), dimension(num_p_tuples), intent(in) :: p_tuples
+!       type(p_tuple), dimension(num_p_tuples), intent(out) :: p_tuples_ord
+! 
+!       do i = 1, num_p_tuples
+!          
+!          call p_tuple_ordered(p_tuples(i), p_tuples_ord(i))
+! 
+!       end do
+! 
+!       ! No reordering of first tuple since it contains "inner" perturbations
+!       ! Only reordering of D contraction tuples: Therefore starting with i = 2
+!       do i = 2, num_p_tuples
+! 
+!          new_min = i
+! 
+!          do j = i + 1, num_p_tuples 
+! 
+!             if (p1_lt_p2(p_tuples_ord(i), p_tuples_ord(j))) then
+! 
+!                new_min = j
+!                call p_tuple_ordered(p_tuples_ord(new_min), p_tuples_ord(i))
+! 
+!             end if
+! 
+!          end do
+! 
+!          if (.NOT.(new_min == i)) then
+! 
+!             call p1_switch_p2(p_tuples_ord(i), p_tuples_ord(new_min))
+! 
+!          end if
+! 
+!       end do
+! 
+!     end subroutine
     
     
     
@@ -632,14 +644,14 @@ module rsp_field_tuple
     type(p_tuple) :: pert, ext, p_tuple_extend
     integer :: i
 
-    allocate(p_tuple_extend%pdim(pert%n_perturbations + 1))
-    allocate(p_tuple_extend%plab(pert%n_perturbations + 1))
-    allocate(p_tuple_extend%pid(pert%n_perturbations + 1))
-    allocate(p_tuple_extend%freq(pert%n_perturbations + 1))
+    allocate(p_tuple_extend%pdim(pert%npert + 1))
+    allocate(p_tuple_extend%plab(pert%npert + 1))
+    allocate(p_tuple_extend%pid(pert%npert + 1))
+    allocate(p_tuple_extend%freq(pert%npert + 1))
 
-    if (pert%n_perturbations == 0) then
+    if (pert%npert == 0) then
 
-       p_tuple_extend%n_perturbations = pert%n_perturbations + 1
+       p_tuple_extend%npert = pert%npert + 1
        p_tuple_extend%pdim = (/ext%pdim(:)/)
        p_tuple_extend%plab = (/ext%plab(:)/)
        p_tuple_extend%pid = (/ext%pid(:)/)
@@ -647,11 +659,11 @@ module rsp_field_tuple
 
     else
 
-       p_tuple_extend%n_perturbations = pert%n_perturbations + 1
-       p_tuple_extend%pdim = (/(pert%pdim(i), i = 1, pert%n_perturbations), ext%pdim(:)/)
-       p_tuple_extend%plab = (/(pert%plab(i), i = 1, pert%n_perturbations), ext%plab(:)/)
-       p_tuple_extend%pid = (/(pert%pid(i), i = 1, pert%n_perturbations), ext%pid(:)/)
-       p_tuple_extend%freq = (/(pert%freq(i), i = 1, pert%n_perturbations), ext%freq(:)/)
+       p_tuple_extend%npert = pert%npert + 1
+       p_tuple_extend%pdim = (/(pert%pdim(i), i = 1, pert%npert), ext%pdim(:)/)
+       p_tuple_extend%plab = (/(pert%plab(i), i = 1, pert%npert), ext%plab(:)/)
+       p_tuple_extend%pid = (/(pert%pid(i), i = 1, pert%npert), ext%pid(:)/)
+       p_tuple_extend%freq = (/(pert%freq(i), i = 1, pert%npert), ext%freq(:)/)
  
 end if
 
@@ -670,7 +682,7 @@ end if
     allocate(p_tuple_getone%pid(1))
     allocate(p_tuple_getone%freq(1))
 
-    p_tuple_getone%n_perturbations = 1
+    p_tuple_getone%npert = 1
     p_tuple_getone%pdim = (/pert%pdim(which)/)
     p_tuple_getone%plab = (/pert%plab(which)/)
     p_tuple_getone%pid = (/pert%pid(which)/)
@@ -685,22 +697,22 @@ end if
 
     type(p_tuple) :: pert, p_tuple_remove_first
 
-    allocate(p_tuple_remove_first%pdim(pert%n_perturbations - 1))
-    allocate(p_tuple_remove_first%plab(pert%n_perturbations - 1))
-    allocate(p_tuple_remove_first%pid(pert%n_perturbations - 1))
-    allocate(p_tuple_remove_first%freq(pert%n_perturbations - 1))
+    allocate(p_tuple_remove_first%pdim(pert%npert - 1))
+    allocate(p_tuple_remove_first%plab(pert%npert - 1))
+    allocate(p_tuple_remove_first%pid(pert%npert - 1))
+    allocate(p_tuple_remove_first%freq(pert%npert - 1))
 
-    if (pert%n_perturbations > 1) then
+    if (pert%npert > 1) then
 
-       p_tuple_remove_first%n_perturbations = pert%n_perturbations - 1
-       p_tuple_remove_first%pdim = (/pert%pdim(2:pert%n_perturbations)/)
-       p_tuple_remove_first%plab = (/pert%plab(2:pert%n_perturbations)/)
-       p_tuple_remove_first%pid = (/pert%pid(2:pert%n_perturbations)/)
-       p_tuple_remove_first%freq = (/pert%freq(2:pert%n_perturbations)/)
+       p_tuple_remove_first%npert = pert%npert - 1
+       p_tuple_remove_first%pdim = (/pert%pdim(2:pert%npert)/)
+       p_tuple_remove_first%plab = (/pert%plab(2:pert%npert)/)
+       p_tuple_remove_first%pid = (/pert%pid(2:pert%npert)/)
+       p_tuple_remove_first%freq = (/pert%freq(2:pert%npert)/)
 
     else
 
-       p_tuple_remove_first%n_perturbations = 0
+       p_tuple_remove_first%npert = 0
        p_tuple_remove_first%pdim = (/0/)
        p_tuple_remove_first%plab = (/'NUTN'/)
        p_tuple_remove_first%pid = (/0/)
@@ -718,42 +730,42 @@ end if
 
     type(p_tuple) :: p1, p2, merge_p_tuple
 
-    allocate(merge_p_tuple%pdim(p1%n_perturbations + p2%n_perturbations))
-    allocate(merge_p_tuple%plab(p1%n_perturbations + p2%n_perturbations))
-    allocate(merge_p_tuple%pid(p1%n_perturbations + p2%n_perturbations))
-    allocate(merge_p_tuple%freq(p1%n_perturbations + p2%n_perturbations))
+    allocate(merge_p_tuple%pdim(p1%npert + p2%npert))
+    allocate(merge_p_tuple%plab(p1%npert + p2%npert))
+    allocate(merge_p_tuple%pid(p1%npert + p2%npert))
+    allocate(merge_p_tuple%freq(p1%npert + p2%npert))
 
     ! NOTE (MaR): ARE THESE CASE DISTINCTIONS UNNECESSARY? CONSIDER REWRITE.
 
-    if (p1%n_perturbations > 0 .AND. p2%n_perturbations > 0) then
+    if (p1%npert > 0 .AND. p2%npert > 0) then
 
-       merge_p_tuple%n_perturbations = p1%n_perturbations + p2%n_perturbations
+       merge_p_tuple%npert = p1%npert + p2%npert
        merge_p_tuple%pdim = (/p1%pdim(:), p2%pdim(:)/)
        merge_p_tuple%plab = (/p1%plab(:), p2%plab(:)/)
        merge_p_tuple%pid = (/p1%pid(:), p2%pid(:)/)
        merge_p_tuple%freq = (/p1%freq(:), p2%freq(:)/)
 
-    elseif (p1%n_perturbations > 0 .AND. p2%n_perturbations == 0) then
+    elseif (p1%npert > 0 .AND. p2%npert == 0) then
 
-       merge_p_tuple%n_perturbations = p1%n_perturbations
+       merge_p_tuple%npert = p1%npert
        merge_p_tuple%pdim = p1%pdim(:)
        merge_p_tuple%plab = p1%plab(:)
        merge_p_tuple%pid = p1%pid(:)
        merge_p_tuple%freq = p1%freq(:)
 
-    elseif (p1%n_perturbations == 0 .AND. p2%n_perturbations > 0) then
+    elseif (p1%npert == 0 .AND. p2%npert > 0) then
 
-       merge_p_tuple%n_perturbations = p2%n_perturbations
+       merge_p_tuple%npert = p2%npert
        merge_p_tuple%pdim = p2%pdim(:)
        merge_p_tuple%plab = p2%plab(:)
        merge_p_tuple%pid = p2%pid(:)
        merge_p_tuple%freq = p2%freq(:)
 
-    elseif (p1%n_perturbations == 0 .AND. p2%n_perturbations == 0) then
+    elseif (p1%npert == 0 .AND. p2%npert == 0) then
 
        merge_p_tuple = get_emptypert()
        ! MaR: KEEP NEXT LINES FOR REVERSION IN CASE get_emptypert() DOESN'T WORK
-       ! merge_p_tuple%n_perturbations = 0
+       ! merge_p_tuple%npert = 0
        ! merge_p_tuple%pdim = (/0/)
        ! merge_p_tuple%plab = (/'NUTN'/)
        ! merge_p_tuple%pid = (/0/)
@@ -762,24 +774,30 @@ end if
     else
 
        write(*,*) 'Error in merge_p_tuple: Unrecognized size of p1 or p2 or both:', &
-                   p1%n_perturbations, p2%n_perturbations
+                   p1%npert, p2%npert
 
     end if
 
   end function
 
-  subroutine p_tuple_p1_cloneto_p2(p1, p2)
+  subroutine p1_cloneto_p2(p1, p2)
 
     implicit none
 
     type(p_tuple) :: p1, p2
 
-    p2%n_perturbations = p1%n_perturbations
+!     write(*,*) 'presenting p1', p1%npert
+!     write(*,*) 'dim', p1%pdim
+!     write(*,*) 'lab', p1%plab
+!     write(*,*) 'pid', p1%pid
+!     write(*,*) 'freq', p1%freq
+    
+    p2%npert = p1%npert
 
-    allocate(p2%pdim(p1%n_perturbations)) 
-    allocate(p2%plab(p1%n_perturbations))
-    allocate(p2%pid(p1%n_perturbations))
-    allocate(p2%freq(p1%n_perturbations))
+    allocate(p2%pdim(p1%npert)) 
+    allocate(p2%plab(p1%npert))
+    allocate(p2%pid(p1%npert))
+    allocate(p2%freq(p1%npert))
 
     p2%pdim = p1%pdim
     p2%plab = p1%plab
@@ -792,7 +810,7 @@ end if
 
     type(p_tuple) :: p1
 
-    p1%n_perturbations = 0
+    p1%npert = 0
 
     deallocate(p1%pdim) 
     deallocate(p1%plab)
@@ -812,7 +830,7 @@ end if
 
       type(p_tuple) :: emptypert
 
-      emptypert%n_perturbations = 0
+      emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
@@ -827,7 +845,7 @@ end if
 
       type(p_tuple) :: emptypert
 
-      emptypert%n_perturbations = 0
+      emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
@@ -849,7 +867,7 @@ end if
 
 prn = 0
 
-if (p1%n_perturbations == 2 .and. p2%n_perturbations == 2) then
+if (p1%npert == 2 .and. p2%npert == 2) then
 
 if (p1%pid(1) == 6 .or. p2%pid(1) == 6) then
 
@@ -873,13 +891,13 @@ end if
 
     ! Compare number of perturbations
     ! REMEMBER: INCREASING ORDER OF DIFFERENTIATION
-    if (p1%n_perturbations < p2%n_perturbations) then
+    if (p1%npert < p2%npert) then
 
        p_tuple_p1_lt_p2 = .TRUE.
 
-    elseif (p1%n_perturbations == p2%n_perturbations) then
+    elseif (p1%npert == p2%npert) then
 
-       do i = 1, p1%n_perturbations
+       do i = 1, p1%npert
 
           ! Compare dimensionality
           ! REMEMBER: DECREASING ORDER OF DIMENSIONALITY
@@ -957,20 +975,20 @@ end if
     complex(8) :: temporary_freq, current_minimum_freq
 
 
-    call p_tuple_p1_cloneto_p2(pert, p_tuple_st)
+    call p1_cloneto_p2(pert, p_tuple_st)
 
     position_in_result = 1
 
 
 
-    do i = position_in_result, p_tuple_st%n_perturbations
+    do i = position_in_result, p_tuple_st%npert
 
        current_minimum_pdim = p_tuple_st%pdim(i)
        current_minimum_plab = p_tuple_st%plab(i)
        current_minimum_freq = p_tuple_st%freq(i)
        new_minimum = i
 
-       do j = i + 1, p_tuple_st%n_perturbations
+       do j = i + 1, p_tuple_st%npert
 
 ! write(*,*) 'j', j
 
@@ -1036,15 +1054,15 @@ end if
     current_first_position = 1
     current_last_position = 1
 
-    do while (current_last_position <= p_tuple_st%n_perturbations)
+    do while (current_last_position <= p_tuple_st%npert)
 
-       if (current_last_position < p_tuple_st%n_perturbations) then
+       if (current_last_position < p_tuple_st%npert) then
 
           do while ((p_tuple_st%plab(current_last_position) == &
                      p_tuple_st%plab(current_first_position)))
 
              current_last_position = current_last_position + 1
-             if (current_last_position > p_tuple_st%n_perturbations) exit
+             if (current_last_position > p_tuple_st%npert) exit
 
           end do
 
@@ -1112,7 +1130,7 @@ end if
 
 ! if (num_p_tuples == 3) then
 ! 
-! if (p_tuples(2)%n_perturbations == 2 .AND. p_tuples(3)%n_perturbations == 2) then
+! if (p_tuples(2)%npert == 2 .AND. p_tuples(3)%npert == 2) then
 
 ! if ((p_tuples(2)%pid(1) == 6) .AND. (p_tuples(2)%pid(1) == 6) &
 !      .AND. (p_tuples(3)%pid(1) == 1) .AND. (p_tuples(3)%pid(2) == 10)) then
@@ -1141,7 +1159,7 @@ end if
 
     do i = 1, num_p_tuples
 
-       call p_tuple_p1_cloneto_p2(p_tuples(i), p_tuples_st(i))
+       call p1_cloneto_p2(p_tuples(i), p_tuples_st(i))
 
     end do
 
@@ -1169,17 +1187,17 @@ end if
 
        if (.NOT.(new_minimum == i)) then
 
-          call p_tuple_p1_cloneto_p2(p_tuples_st(new_minimum),temporary_pert)
+          call p1_cloneto_p2(p_tuples_st(new_minimum),temporary_pert)
           call p_tuple_deallocate(p_tuples_st(new_minimum))
 
           p_tuples_st(i) = p_tuple_standardorder(p_tuples_st(i))
 
-          call p_tuple_p1_cloneto_p2(p_tuples_st(i),p_tuples_st(new_minimum))
+          call p1_cloneto_p2(p_tuples_st(i),p_tuples_st(new_minimum))
           call p_tuple_deallocate(p_tuples_st(i))
 
           temporary_pert = p_tuple_standardorder(temporary_pert)
 
-          call p_tuple_p1_cloneto_p2(temporary_pert,p_tuples_st(i))
+          call p1_cloneto_p2(temporary_pert,p_tuples_st(i))
           call p_tuple_deallocate(temporary_pert)
 
        end if
@@ -1304,11 +1322,11 @@ end if
     logical :: p_tuple_compare
     type(p_tuple) :: p1, p2
 
-    if (p1%n_perturbations == p2%n_perturbations) then
+    if (p1%npert == p2%npert) then
 
-       if (plab_compare(p1%n_perturbations, p1%plab, p2%plab) .eqv. .TRUE.) then
+       if (plab_compare(p1%npert, p1%plab, p2%plab) .eqv. .TRUE.) then
 
-          if (pfreq_compare(p1%n_perturbations, p1%freq, p2%freq) .eqv. .TRUE.) then
+          if (pfreq_compare(p1%npert, p1%freq, p2%freq) .eqv. .TRUE.) then
              ! NOTE (MaR): Commented code is pseudo for comparing other perturbation info
              ! if (p1%other == p2%other) then
              p_tuple_compare = .TRUE.
@@ -1342,22 +1360,22 @@ end if
     implicit none
 
     type(p_tuple) :: pert
-    type(p_tuple), dimension(pert%n_perturbations) :: psub
+    type(p_tuple), dimension(pert%npert) :: psub
     integer :: i, j, k, m
 
-    do i = 1, pert%n_perturbations
+    do i = 1, pert%npert
 
-       psub(i)%n_perturbations = pert%n_perturbations - 1
+       psub(i)%npert = pert%npert - 1
 
-       allocate(psub(i)%pdim(pert%n_perturbations - 1))
-       allocate(psub(i)%plab(pert%n_perturbations - 1))
-       allocate(psub(i)%pid(pert%n_perturbations - 1))
-       allocate(psub(i)%freq(pert%n_perturbations - 1))
+       allocate(psub(i)%pdim(pert%npert - 1))
+       allocate(psub(i)%plab(pert%npert - 1))
+       allocate(psub(i)%pid(pert%npert - 1))
+       allocate(psub(i)%freq(pert%npert - 1))
 
        k = i
        m = 1
 
-       do j = 1, (pert%n_perturbations)
+       do j = 1, (pert%npert)
 
           if (.NOT.(j == k)) then
 

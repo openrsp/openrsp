@@ -67,7 +67,7 @@ module rsp_sdf_caching
 !     allocate(new_instance)
 !     new_instance%next => new_instance
 !     new_instance%last = .TRUE.
-!     new_instance%perturb%n_perturbations = 0
+!     new_instance%perturb%npert = 0
 !     allocate(new_instance%perturb%pdim(0))
 !     allocate(new_instance%perturb%plab(0))
 !     allocate(new_instance%perturb%pid(0))
@@ -93,7 +93,7 @@ module rsp_sdf_caching
 ! 
 !     new_element%last = .TRUE.
 ! 
-!     call p_tuple_p1_cloneto_p2(pert, new_element%perturb)
+!     call p1_cloneto_p2(pert, new_element%perturb)
 !     allocate(new_element%data(perturbed_matrix_size))
 ! 
 !     do i = 1, perturbed_matrix_size
@@ -120,7 +120,7 @@ module rsp_sdf_caching
 !     type(SDF), pointer :: next_element
 !     type(p_tuple) :: pert_tuple
 !     type(matrix) :: M
-!     integer, dimension(pert_tuple%n_perturbations) :: ind, ind_unsorted
+!     integer, dimension(pert_tuple%npert) :: ind, ind_unsorted
 !     integer :: i, offset, passedlast, nblks, sorted_triangulated_indices
 !     integer, allocatable, dimension(:,:) :: blk_info
 !     integer, allocatable, dimension(:) :: blk_sizes
@@ -129,7 +129,7 @@ module rsp_sdf_caching
 ! 
 !     ind = ind_unsorted
 ! 
-!     if (pert_tuple%n_perturbations > 0) then
+!     if (pert_tuple%npert > 0) then
 ! 
 !        nblks = get_num_blks(pert_tuple)
 !        allocate(blk_sizes(nblks))
@@ -137,10 +137,10 @@ module rsp_sdf_caching
 !        blk_info = get_blk_info(nblks, pert_tuple)
 !        blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
 ! 
-!        call sort_triangulated_indices(pert_tuple%n_perturbations, nblks, &
+!        call sort_triangulated_indices(pert_tuple%npert, nblks, &
 !                                          blk_info, ind)
 ! 
-!        offset = get_triang_blks_offset(nblks, pert_tuple%n_perturbations, &
+!        offset = get_triang_blks_offset(nblks, pert_tuple%npert, &
 !                                        blk_info, blk_sizes, ind)
 ! 
 !        deallocate(blk_sizes)
@@ -161,9 +161,9 @@ module rsp_sdf_caching
 ! 
 !        next_element => sdf_next_element(next_element)
 ! 
-!        if (next_element%perturb%n_perturbations == pert_tuple%n_perturbations) then
+!        if (next_element%perturb%npert == pert_tuple%npert) then
 ! 
-!           if (pert_tuple%n_perturbations == 0) then
+!           if (pert_tuple%npert == 0) then
 ! 
 !              found = .TRUE.
 ! 
@@ -208,19 +208,19 @@ module rsp_sdf_caching
 !     type(SDF), pointer :: next_element
 !     type(p_tuple) :: pert_tuple
 !     type(matrix) :: sdf_getdata
-!     integer, dimension(pert_tuple%n_perturbations) :: ind
+!     integer, dimension(pert_tuple%npert) :: ind
 !     integer :: i, offset, passedlast
 ! 
 !     next_element => current_element
 ! 
-!     if (pert_tuple%n_perturbations > 0) then
+!     if (pert_tuple%npert > 0) then
 ! 
 !        offset = 1
 !        
-!        do i = 1, pert_tuple%n_perturbations
+!        do i = 1, pert_tuple%npert
 ! 
 !           offset = offset + (ind(i) - 1)*product(pert_tuple%pdim(i: &
-!                    pert_tuple%n_perturbations))/pert_tuple%pdim(i)
+!                    pert_tuple%npert))/pert_tuple%pdim(i)
 !  
 !        end do
 ! 
@@ -237,9 +237,9 @@ module rsp_sdf_caching
 ! 
 !        next_element => sdf_next_element(next_element)
 ! 
-!        if (next_element%perturb%n_perturbations == pert_tuple%n_perturbations) then
+!        if (next_element%perturb%npert == pert_tuple%npert) then
 ! 
-!           if (pert_tuple%n_perturbations == 0) then
+!           if (pert_tuple%npert == 0) then
 ! 
 !              found = .TRUE.
 ! 
@@ -286,7 +286,7 @@ module rsp_sdf_caching
     allocate(new_instance)
     new_instance%next => new_instance
     new_instance%last = .TRUE.
-    new_instance%perturb%n_perturbations = 0
+    new_instance%perturb%npert = 0
     allocate(new_instance%perturb%pdim(0))
     allocate(new_instance%perturb%plab(0))
     allocate(new_instance%perturb%pid(0))
@@ -313,7 +313,7 @@ module rsp_sdf_caching
 
     new_element%last = .TRUE.
 
-    call p_tuple_p1_cloneto_p2(pert, new_element%perturb)
+    call p1_cloneto_p2(pert, new_element%perturb)
     allocate(new_element%data(perturbed_matrix_size))
 
     do i = 1, perturbed_matrix_size
@@ -337,7 +337,7 @@ module rsp_sdf_caching
     type(SDF_2014), pointer :: next_element
     type(p_tuple) :: pert_tuple
     type(QcMat) :: M
-    integer, dimension(pert_tuple%n_perturbations) :: ind, ind_unsorted
+    integer, dimension(pert_tuple%npert) :: ind, ind_unsorted
     integer :: i, offset, passedlast, nblks, sorted_triangulated_indices
     integer, allocatable, dimension(:,:) :: blk_info
     integer, allocatable, dimension(:) :: blk_sizes
@@ -346,7 +346,7 @@ module rsp_sdf_caching
 
     ind = ind_unsorted
 
-    if (pert_tuple%n_perturbations > 0) then
+    if (pert_tuple%npert > 0) then
 
        nblks = get_num_blks(pert_tuple)
        allocate(blk_sizes(nblks))
@@ -354,10 +354,10 @@ module rsp_sdf_caching
        blk_info = get_blk_info(nblks, pert_tuple)
        blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
 
-       call sort_triangulated_indices(pert_tuple%n_perturbations, nblks, &
+       call sort_triangulated_indices(pert_tuple%npert, nblks, &
                                          blk_info, ind)
 
-       offset = get_triang_blks_offset(nblks, pert_tuple%n_perturbations, &
+       offset = get_triang_blks_offset(nblks, pert_tuple%npert, &
                                        blk_info, blk_sizes, ind)
 
        deallocate(blk_sizes)
@@ -378,9 +378,9 @@ module rsp_sdf_caching
 
        next_element => sdf_next_element_2014(next_element)
 
-       if (next_element%perturb%n_perturbations == pert_tuple%n_perturbations) then
+       if (next_element%perturb%npert == pert_tuple%npert) then
 
-          if (pert_tuple%n_perturbations == 0) then
+          if (pert_tuple%npert == 0) then
 
              found = .TRUE.
 
@@ -425,19 +425,19 @@ module rsp_sdf_caching
     type(SDF_2014), pointer :: next_element
     type(p_tuple) :: pert_tuple
     type(QcMat) :: sdf_getdata_2014
-    integer, dimension(pert_tuple%n_perturbations) :: ind
+    integer, dimension(pert_tuple%npert) :: ind
     integer :: i, offset, passedlast
 
     next_element => current_element
 
-    if (pert_tuple%n_perturbations > 0) then
+    if (pert_tuple%npert > 0) then
 
        offset = 1
        
-       do i = 1, pert_tuple%n_perturbations
+       do i = 1, pert_tuple%npert
 
           offset = offset + (ind(i) - 1)*product(pert_tuple%pdim(i: &
-                   pert_tuple%n_perturbations))/pert_tuple%pdim(i)
+                   pert_tuple%npert))/pert_tuple%pdim(i)
  
        end do
 
@@ -454,9 +454,9 @@ module rsp_sdf_caching
 
        next_element => sdf_next_element_2014(next_element)
 
-       if (next_element%perturb%n_perturbations == pert_tuple%n_perturbations) then
+       if (next_element%perturb%npert == pert_tuple%npert) then
 
-          if (pert_tuple%n_perturbations == 0) then
+          if (pert_tuple%npert == 0) then
 
              found = .TRUE.
 
