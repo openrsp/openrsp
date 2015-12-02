@@ -55,7 +55,7 @@ module rsp_perturbed_matrices
 
     superstructure_size = 0
 
-    if (pert%n_perturbations > 0) then
+    if (pert%npert > 0) then
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
                              p_tuple_remove_first(pert), kn, primed, &
@@ -78,9 +78,9 @@ module rsp_perturbed_matrices
 
        if (primed .EQV. .TRUE.) then
 
-          if ( ( ( (current_derivative_term(1)%n_perturbations <= kn(2)) .AND.&
-              current_derivative_term(2)%n_perturbations <= kn(2) ) .AND. &
-              current_derivative_term(3)%n_perturbations <= kn(2) ) .eqv. .TRUE.) then
+          if ( ( ( (current_derivative_term(1)%npert <= kn(2)) .AND.&
+              current_derivative_term(2)%npert <= kn(2) ) .AND. &
+              current_derivative_term(3)%npert <= kn(2) ) .eqv. .TRUE.) then
 
              superstructure_size = 1
 
@@ -92,9 +92,9 @@ module rsp_perturbed_matrices
 
        else
 
-          if ( ( (kn_skip(current_derivative_term(1)%n_perturbations, current_derivative_term(1)%pid, kn) .OR. &
-                  kn_skip(current_derivative_term(2)%n_perturbations, current_derivative_term(2)%pid, kn) ) .OR. &
-                  kn_skip(current_derivative_term(3)%n_perturbations, current_derivative_term(3)%pid, kn) ) .eqv. &
+          if ( ( (kn_skip(current_derivative_term(1)%npert, current_derivative_term(1)%pid, kn) .OR. &
+                  kn_skip(current_derivative_term(2)%npert, current_derivative_term(2)%pid, kn) ) .OR. &
+                  kn_skip(current_derivative_term(3)%npert, current_derivative_term(3)%pid, kn) ) .eqv. &
                   .FALSE.) then
 
              superstructure_size = 1
@@ -126,7 +126,7 @@ module rsp_perturbed_matrices
     type(p_tuple), dimension(3) :: current_derivative_term
     type(p_tuple), dimension(superstructure_size, 3) :: derivative_structure
 
-    if (pert%n_perturbations > 0) then
+    if (pert%npert > 0) then
 
        call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
             (/p_tuple_extend(current_derivative_term(1), p_tuple_getone(pert, 1)), &
@@ -148,9 +148,9 @@ module rsp_perturbed_matrices
 
        if (primed .EQV. .TRUE.) then
 
-          if ( ( ( (current_derivative_term(1)%n_perturbations <= kn(2)) .AND.&
-              current_derivative_term(2)%n_perturbations <= kn(2) ) .AND. &
-              current_derivative_term(3)%n_perturbations <= kn(2) ) .eqv. .TRUE.) then
+          if ( ( ( (current_derivative_term(1)%npert <= kn(2)) .AND.&
+              current_derivative_term(2)%npert <= kn(2) ) .AND. &
+              current_derivative_term(3)%npert <= kn(2) ) .eqv. .TRUE.) then
 
              new_element_position = new_element_position + 1
              derivative_structure(new_element_position, :) = current_derivative_term
@@ -159,11 +159,11 @@ module rsp_perturbed_matrices
 
        else
 
-          if ( ( (kn_skip(current_derivative_term(1)%n_perturbations,  &
+          if ( ( (kn_skip(current_derivative_term(1)%npert,  &
                           current_derivative_term(1)%pid, kn) .OR. &
-                  kn_skip(current_derivative_term(2)%n_perturbations,  &
+                  kn_skip(current_derivative_term(2)%npert,  &
                           current_derivative_term(2)%pid, kn) ) .OR. &
-                  kn_skip(current_derivative_term(3)%n_perturbations, &
+                  kn_skip(current_derivative_term(3)%npert, &
                           current_derivative_term(3)%pid, kn) ) .eqv. .FALSE.) then
 
              new_element_position = new_element_position + 1 
@@ -668,7 +668,7 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     merged_p_tuple = merge_p_tuple(p_tuple_a, merge_p_tuple(deriv_struct(1,1), &
                      merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3))))
 
-    if (kn_skip(merged_p_tuple%n_perturbations, &
+    if (kn_skip(merged_p_tuple%npert, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
 !        A = zeromat
@@ -709,16 +709,16 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: indices
 
-    if (pert_tuple%n_perturbations == 0) then
+    if (pert_tuple%npert == 0) then
 
        allocate(get_fds_data_index(1))
        get_fds_data_index(1) = 1
 
     else
 
-       allocate(get_fds_data_index(pert_tuple%n_perturbations))
+       allocate(get_fds_data_index(pert_tuple%npert))
 
-       do i = 1, pert_tuple%n_perturbations
+       do i = 1, pert_tuple%npert
 
           get_fds_data_index(i) = indices(which_index_is_pid(pert_tuple%pid(i)))
 
@@ -739,9 +739,9 @@ subroutine rsp_get_matrix_w_2014(superstructure_size, &
 
     frequency_zero_or_sum = 0.0
 
-    if (pert_tuple%n_perturbations > 0) then
+    if (pert_tuple%npert > 0) then
 
-       do i = 1, pert_tuple%n_perturbations
+       do i = 1, pert_tuple%npert
 
           frequency_zero_or_sum = frequency_zero_or_sum + pert_tuple%freq(i)
 

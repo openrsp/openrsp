@@ -13,7 +13,7 @@ module rsp_lof_caching
                              p_tuples_compare,       &
                              p_tuples_standardorder, &
                              merge_p_tuple,          &
-                             p_tuple_p1_cloneto_p2
+                             p1_cloneto_p2
   use rsp_indices_and_addressing
 !   use matrix_defop, matrix => openrsp_matrix
 !   use matrix_lowlevel, only: mat_init
@@ -70,7 +70,7 @@ module rsp_lof_caching
 !     allocate(new_element%p_tuples(num_p_tuples))
 ! 
 !     do i = 1, num_p_tuples
-!        call p_tuple_p1_cloneto_p2(p_tuples(i), new_element%p_tuples(i))
+!        call p1_cloneto_p2(p_tuples(i), new_element%p_tuples(i))
 !     end do
 ! 
 !     allocate(new_element%data(property_size))
@@ -140,7 +140,7 @@ module rsp_lof_caching
 !        total_num_perturbations = 0
 ! 
 !        do i = 1, num_p_tuples
-!           total_num_perturbations = total_num_perturbations + p_tuples(i)%n_perturbations
+!           total_num_perturbations = total_num_perturbations + p_tuples(i)%npert
 !        end do
 ! 
 !        next_element%p_tuples = p_tuples_standardorder(next_element%num_p_tuples, &
@@ -148,9 +148,9 @@ module rsp_lof_caching
 ! 
 !        ! get triangulated indices for Fp
 ! 
-!        if (p_tuples(1)%n_perturbations > 0) then
+!        if (p_tuples(1)%npert > 0) then
 ! 
-!           call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+!           call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 ! 
 !           do i = 2, num_p_tuples
 ! 
@@ -161,7 +161,7 @@ module rsp_lof_caching
 ! 
 !        else
 ! 
-!           call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
+!           call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 ! 
 !           do i = 3, num_p_tuples
 ! 
@@ -202,7 +202,7 @@ module rsp_lof_caching
 !        k = 1
 ! 
 !        do i = 1, num_p_tuples
-!           do j = 1, p_tuples_st_order(i)%n_perturbations
+!           do j = 1, p_tuples_st_order(i)%npert
 !              pids_current_contribution(k) = p_tuples_st_order(i)%pid(j)
 !           k = k + 1
 !           end do
@@ -221,7 +221,7 @@ module rsp_lof_caching
 ! 
 !        do i = 1, num_p_tuples
 ! 
-!           nfields(i) = p_tuples_st_order(i)%n_perturbations
+!           nfields(i) = p_tuples_st_order(i)%npert
 !           nblks_tuple(i) = get_num_blks(p_tuples_st_order(i))
 !           blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_st_order(i))
 !           blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
@@ -251,7 +251,7 @@ module rsp_lof_caching
 ! 
 !           end do
 ! 
-!           if (p_tuples(1)%n_perturbations > 0) then
+!           if (p_tuples(1)%npert > 0) then
 ! 
 !              cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
 !              total_num_perturbations, nblks_tuple, & 
@@ -313,7 +313,7 @@ module rsp_lof_caching
     allocate(new_element%p_tuples(num_p_tuples))
 
     do i = 1, num_p_tuples
-       call p_tuple_p1_cloneto_p2(p_tuples(i), new_element%p_tuples(i))
+       call p1_cloneto_p2(p_tuples(i), new_element%p_tuples(i))
     end do
 
     allocate(new_element%data(property_size))
@@ -381,7 +381,7 @@ module rsp_lof_caching
        total_num_perturbations = 0
 
        do i = 1, num_p_tuples
-          total_num_perturbations = total_num_perturbations + p_tuples(i)%n_perturbations
+          total_num_perturbations = total_num_perturbations + p_tuples(i)%npert
        end do
 
        next_element%p_tuples = p_tuples_standardorder(next_element%num_p_tuples, &
@@ -389,9 +389,9 @@ module rsp_lof_caching
 
        ! get triangulated indices for Fp
 
-       if (p_tuples(1)%n_perturbations > 0) then
+       if (p_tuples(1)%npert > 0) then
 
-          call p_tuple_p1_cloneto_p2(p_tuples(1), merged_p_tuple)
+          call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
 
           do i = 2, num_p_tuples
 
@@ -402,7 +402,7 @@ module rsp_lof_caching
 
        else
 
-          call p_tuple_p1_cloneto_p2(p_tuples(2), merged_p_tuple)
+          call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 
           do i = 3, num_p_tuples
 
@@ -443,7 +443,7 @@ module rsp_lof_caching
        k = 1
 
        do i = 1, num_p_tuples
-          do j = 1, p_tuples_st_order(i)%n_perturbations
+          do j = 1, p_tuples_st_order(i)%npert
              pids_current_contribution(k) = p_tuples_st_order(i)%pid(j)
           k = k + 1
           end do
@@ -462,7 +462,7 @@ module rsp_lof_caching
 
        do i = 1, num_p_tuples
 
-          nfields(i) = p_tuples_st_order(i)%n_perturbations
+          nfields(i) = p_tuples_st_order(i)%npert
           nblks_tuple(i) = get_num_blks(p_tuples_st_order(i))
           blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_st_order(i))
           blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
@@ -492,7 +492,7 @@ module rsp_lof_caching
 
           end do
 
-          if (p_tuples(1)%n_perturbations > 0) then
+          if (p_tuples(1)%npert > 0) then
 
              cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
              total_num_perturbations, nblks_tuple, & 
@@ -647,7 +647,7 @@ module rsp_lof_caching
 
     allocate(current_element%p_tuples(1))
 
-    current_element%p_tuples(1)%n_perturbations = 0
+    current_element%p_tuples(1)%npert = 0
 
     allocate(current_element%p_tuples(1)%pdim(1))
     allocate(current_element%p_tuples(1)%plab(1))
@@ -773,7 +773,7 @@ module rsp_lof_caching
 ! 
 !     allocate(current_element%p_tuples(1))
 ! 
-!     current_element%p_tuples(1)%n_perturbations = 0
+!     current_element%p_tuples(1)%npert = 0
 ! 
 !     allocate(current_element%p_tuples(1)%pdim(1))
 !     allocate(current_element%p_tuples(1)%plab(1))

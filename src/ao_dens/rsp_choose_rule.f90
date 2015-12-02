@@ -30,26 +30,26 @@ module rsp_choose_rule
 
     ! Do the case n = 1 first to establish one value
 
-    minsize = kn_prod(pert%n_perturbations - 1, 1, pert%pdim(2:pert%n_perturbations), &
-              pert%n_perturbations - 1 - 1, pert%pdim(1)) 
+    minsize = kn_prod(pert%npert - 1, 1, pert%pdim(2:pert%npert), &
+              pert%npert - 1 - 1, pert%pdim(1)) 
 
 
-    minsize = minsize + kn_prod(pert%n_perturbations - 1, &
-              0, pert%pdim(2:pert%n_perturbations), 1, 1)
+    minsize = minsize + kn_prod(pert%npert - 1, &
+              0, pert%pdim(2:pert%npert), 1, 1)
 
     min_n = 1
 
     ! Get the products for the pert dimensions as dictated by k and n
     ! Assume that integer division rounds down to nearest lower integer
 
-    do n = (pert%n_perturbations/2), pert%n_perturbations - 1
+    do n = (pert%npert/2), pert%npert - 1
 
-       csize = kn_prod(pert%n_perturbations - 1, 1, pert%pdim(2:pert%n_perturbations), &
-                 pert%n_perturbations - n - 1, pert%pdim(1))
+       csize = kn_prod(pert%npert - 1, 1, pert%pdim(2:pert%npert), &
+                 pert%npert - n - 1, pert%pdim(1))
 
 
-       csize = csize + kn_prod(pert%n_perturbations - 1, &
-                 0, pert%pdim(2:pert%n_perturbations), n, 1)
+       csize = csize + kn_prod(pert%npert - 1, &
+                 0, pert%pdim(2:pert%npert), n, 1)
 
        ! If the products are smaller than the previous min, update 
        ! index identifer and minsize
@@ -64,7 +64,7 @@ module rsp_choose_rule
     end do
 
     get_bestkn(2) = min_n
-    get_bestkn(1) = pert%n_perturbations - min_n - 1
+    get_bestkn(1) = pert%npert - min_n - 1
 
   end function
 

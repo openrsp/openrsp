@@ -25,7 +25,7 @@ module rsp_contribs
 !  use basis_set,  only: cgto
   use rsp_field_tuple, only: p_tuple, p_tuple_remove_first, p_tuple_getone, &
                              p_tuple_standardorder, merge_p_tuple, &
-                             p_tuple_p1_cloneto_p2, p_tuple_to_external_tuple
+                             p1_cloneto_p2, p_tuple_to_external_tuple
   use rsp_indices_and_addressing
   use qcmatrix_f
                                         
@@ -279,7 +279,7 @@ contains
     type(QcMat) :: D
     type(p_tuple) :: fields, bra, ket, merged_p_tuple, bra_static, ket_static
     external :: get_ovl_exp
-    integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
+    integer, dimension(bra%npert + ket%npert) :: pids_current_contribution
     complex(8), dimension(propsize) :: ave
     complex(8), allocatable, dimension(:) :: tmp_ave
     integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size, &
@@ -316,8 +316,8 @@ else
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
 
        ! Make frequency independent blocks for bra/ket
-       call p_tuple_p1_cloneto_p2(bra, bra_static)
-       call p_tuple_p1_cloneto_p2(ket, ket_static)
+       call p1_cloneto_p2(bra, bra_static)
+       call p1_cloneto_p2(ket, ket_static)
 
        bra_static%freq = 0.0
        ket_static%freq = 0.0
@@ -325,10 +325,10 @@ else
        allocate(nfields(2))
        allocate(nblks_tuple(2))
     
-       nfields(1) = bra_static%n_perturbations
+       nfields(1) = bra_static%npert
        nblks_tuple(1) = get_num_blks(bra_static)
 
-       nfields(2) = ket_static%n_perturbations
+       nfields(2) = ket_static%npert
        nblks_tuple(2) = get_num_blks(ket_static)
                
        total_num_perturbations = sum(nfields)
@@ -367,12 +367,12 @@ else
          
        
        k = 1
-       do j = 1, bra_static%n_perturbations
+       do j = 1, bra_static%npert
           pids_current_contribution(k) = bra_static%pid(j)
           k = k + 1
        end do
 
-       do j = 1, ket_static%n_perturbations
+       do j = 1, ket_static%npert
           pids_current_contribution(k) = ket_static%pid(j)
           k = k + 1
        end do
@@ -409,7 +409,7 @@ else
           ! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
           ! because of no frequencies.
     
-          if (bra_static%n_perturbations == 0) then
+          if (bra_static%npert == 0) then
     
              tmp_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(2), &
@@ -417,7 +417,7 @@ else
                                  blk_sizes(2,:), blks_tuple_triang_size(2), & 
                                  (/ translated_index(:) /))
     
-          elseif (ket_static%n_perturbations == 0) then
+          elseif (ket_static%npert == 0) then
     
              tmp_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(1), &
@@ -473,7 +473,7 @@ else
     integer :: total_num_perturbations, np_bra, np_ket
     integer, dimension(0) :: noc
     type(p_tuple) :: fields, bra, ket, merged_p_tuple, tester, bra_static, ket_static
-    integer, dimension(bra%n_perturbations + ket%n_perturbations) :: pids_current_contribution
+    integer, dimension(bra%npert + ket%npert) :: pids_current_contribution
     type(QcMat), dimension(propsize) :: fock
     type(QcMat), allocatable, dimension(:) :: tmp_fock
     external :: get_ovl_mat
@@ -519,8 +519,8 @@ else
        merged_p_tuple = p_tuple_standardorder(merge_p_tuple(bra, ket))
 
        ! Make frequency independent blocks for bra/ket
-       call p_tuple_p1_cloneto_p2(bra, bra_static)
-       call p_tuple_p1_cloneto_p2(ket, ket_static)
+       call p1_cloneto_p2(bra, bra_static)
+       call p1_cloneto_p2(ket, ket_static)
 
        bra_static%freq = 0.0
        ket_static%freq = 0.0
@@ -528,10 +528,10 @@ else
        allocate(nfields(2))
        allocate(nblks_tuple(2))
     
-       nfields(1) = bra_static%n_perturbations
+       nfields(1) = bra_static%npert
        nblks_tuple(1) = get_num_blks(bra_static)
 
-       nfields(2) = ket_static%n_perturbations
+       nfields(2) = ket_static%npert
        nblks_tuple(2) = get_num_blks(ket_static)
                
        total_num_perturbations = sum(nfields)
@@ -571,12 +571,12 @@ else
        call get_ovl_mat(np_bra, pert_ext_bra, np_ket, pert_ext_ket, &
                         0, noc, tmp_fock_size, tmp_fock)
        k = 1
-       do j = 1, bra_static%n_perturbations
+       do j = 1, bra_static%npert
           pids_current_contribution(k) = bra_static%pid(j)
           k = k + 1
        end do
 
-       do j = 1, ket_static%n_perturbations
+       do j = 1, ket_static%npert
           pids_current_contribution(k) = ket_static%pid(j)
           k = k + 1
        end do
@@ -613,7 +613,7 @@ else
           ! MaR: Will there ever be a completely unperturbed case? If so, it should be zero anyway
           ! because of no frequencies.
     
-          if (bra_static%n_perturbations == 0) then
+          if (bra_static%npert == 0) then
     
              int_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(2), &
@@ -621,7 +621,7 @@ else
                                  blk_sizes(2,:), blks_tuple_triang_size(2), & 
                                  (/ translated_index(:) /))
     
-          elseif (ket_static%n_perturbations == 0) then
+          elseif (ket_static%npert == 0) then
     
              int_result_offset = get_triang_blks_tuple_offset(1, &
                                  total_num_perturbations, nblks_tuple(1), &

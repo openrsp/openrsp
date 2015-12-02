@@ -262,9 +262,9 @@ module rsp_indices_and_addressing
 
 !     fields = p_tuple_standardorder(fields)
 
-    allocate(each_field(fields%n_perturbations))
+    allocate(each_field(fields%npert))
 
-    do i = 1, fields%n_perturbations
+    do i = 1, fields%npert
 
        each_field(i) = p_tuple_getone(fields, i)
 
@@ -273,7 +273,7 @@ module rsp_indices_and_addressing
     curr_blk_start = 1
     get_num_blks = 1
 
-    do i = 1, fields%n_perturbations
+    do i = 1, fields%npert
 
        if (p_tuple_compare(each_field(curr_blk_start),each_field(i)) &
              .EQV. .FALSE.) then
@@ -301,11 +301,11 @@ module rsp_indices_and_addressing
     type(p_tuple) :: fields
     type(p_tuple), allocatable, dimension(:) :: each_field
 
-    allocate(each_field(fields%n_perturbations))
+    allocate(each_field(fields%npert))
 
-    if (fields%n_perturbations > 0) then
+    if (fields%npert > 0) then
 
-       do i = 1, fields%n_perturbations
+       do i = 1, fields%npert
 
           each_field(i) = p_tuple_getone(fields, i)
 
@@ -319,7 +319,7 @@ module rsp_indices_and_addressing
        blk_info(1, 1) = 1
        blk_info(1, 3) = each_field(1)%pdim(1)
 
-       do i = 1, fields%n_perturbations
+       do i = 1, fields%npert
 
           if (p_tuple_compare(each_field(curr_blk_start),each_field(i)) &
              .EQV. .FALSE.) then
@@ -336,15 +336,15 @@ module rsp_indices_and_addressing
 
        if (nblks > 1) then
 
-          blk_info(nblks, 2) = fields%n_perturbations - blk_info(nblks, 1) + 1
+          blk_info(nblks, 2) = fields%npert - blk_info(nblks, 1) + 1
 
        elseif (nblks == 1) then
 
-          blk_info(1, 2) = fields%n_perturbations
+          blk_info(1, 2) = fields%npert
 
        end if
 
-       do i = 1, fields%n_perturbations
+       do i = 1, fields%npert
 
           call p_tuple_deallocate(each_field(i))
 
@@ -378,11 +378,11 @@ module rsp_indices_and_addressing
     type(p_tuple) :: fields
     type(p_tuple), allocatable, dimension(:) :: each_field
 
-    allocate(each_field(fields%n_perturbations))
+    allocate(each_field(fields%npert))
 
-    if (fields%n_perturbations > 0) then
+    if (fields%npert > 0) then
 
-       do i = 1, fields%n_perturbations
+       do i = 1, fields%npert
 
           each_field(i) = p_tuple_getone(fields, i)
 
@@ -395,7 +395,7 @@ module rsp_indices_and_addressing
        get_blk_info(1, 1) = 1
        get_blk_info(1, 3) = each_field(1)%pdim(1)
 
-       do i = 1, fields%n_perturbations
+       do i = 1, fields%npert
 
           if (p_tuple_compare(each_field(curr_blk_start),each_field(i)) &
              .EQV. .FALSE.) then
@@ -412,15 +412,15 @@ module rsp_indices_and_addressing
 
        if (nblks > 1) then
 
-          get_blk_info(nblks, 2) = fields%n_perturbations - get_blk_info(nblks, 1) + 1
+          get_blk_info(nblks, 2) = fields%npert - get_blk_info(nblks, 1) + 1
 
        elseif (nblks == 1) then
 
-          get_blk_info(1, 2) = fields%n_perturbations
+          get_blk_info(1, 2) = fields%npert
 
        end if
 
-       do i = 1, fields%n_perturbations
+       do i = 1, fields%npert
 
           call p_tuple_deallocate(each_field(i))
 
@@ -947,7 +947,7 @@ module rsp_indices_and_addressing
 
     do i = 1, total_order
        do j = 1, num_p_tuples
-          do k = 1, p_tuples(j)%n_perturbations
+          do k = 1, p_tuples(j)%npert
 
              if (p_tuples(j)%pid(k) == i) then
                 get_ncarray(i) = p_tuples(j)%pdim(k)
@@ -1016,7 +1016,7 @@ module rsp_indices_and_addressing
     end do
 
     do i = 1, num_p_tuples
-       do j = 1, p_tuples(i)%n_perturbations
+       do j = 1, p_tuples(i)%npert
           nc_only(p_tuples(i)%pid(j)) = ncarray(p_tuples(i)%pid(j))
        end do
     end do
@@ -1036,7 +1036,7 @@ module rsp_indices_and_addressing
     k = 1
 
     do i = 1, num_p_tuples
-       do j = 1, p_tuples(i)%n_perturbations
+       do j = 1, p_tuples(i)%npert
 
           nc_onlysmall(k) = ncarray(p_tuples(i)%pid(j))
           k = k + 1
@@ -1104,7 +1104,7 @@ module rsp_indices_and_addressing
     k = 1
 
     do i = 2, num_p_tuples
-       do j = 1, p_tuples(i)%n_perturbations
+       do j = 1, p_tuples(i)%npert
 
           make_outerwhichpert(p_tuples(i)%pid(j)) = k
           k = k + 1
@@ -1126,7 +1126,7 @@ module rsp_indices_and_addressing
     k = 1
 
     do i = 1, len_outer
-       do j = 1, o_orders(i)%n_perturbations
+       do j = 1, o_orders(i)%npert
 
           get_pidoutersmall(k) = o_orders(i)%pid(j)
           k = k + 1
