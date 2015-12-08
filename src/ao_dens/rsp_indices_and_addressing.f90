@@ -49,6 +49,8 @@ module rsp_indices_and_addressing
   
   public QcMatInit
   public QcMatZero
+  public QcMatcAB
+  public QcMatkAB
   public QcMatcABC
   public QcMatkABC
   public QcMatAEqB
@@ -108,6 +110,33 @@ module rsp_indices_and_addressing
     ierr = QcMatZeroEntries_f(A)
 
   end subroutine
+      
+  ! Compute R = kA * B (k complex)
+  subroutine QcMatcAB(k, A, B, R)
+  
+    implicit none
+    
+    type(QcMat) :: A, B, R
+    integer(kind=4) :: ierr
+    complex(8) :: k
+
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), A, B, (/0.0d0, 0.0d0/), R)
+
+  end subroutine
+  
+  ! Compute R = kA * B * C (k real)
+  subroutine QcMatkAB(k, A, B, R)
+  
+    implicit none
+    
+    type(QcMat) :: A, B, R
+    integer(kind=4) :: ierr
+    real(8) :: k
+        
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), A, B, (/0.0d0, 0.0d0/), R)
+  
+  end subroutine
+  
   
   ! Compute R = kA * B * C (k complex)
   subroutine QcMatcABC(k, A, B, C, R)
@@ -127,7 +156,7 @@ module rsp_indices_and_addressing
     ierr = QcMatDestroy_f(T)
 
   end subroutine
-  
+
   ! Compute R = kA * B * C (k real)
   subroutine QcMatkABC(k, A, B, C, R)
   

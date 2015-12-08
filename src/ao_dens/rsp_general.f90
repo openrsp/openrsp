@@ -293,9 +293,10 @@ module rsp_general
     character(4), dimension(sum(np)), intent(in) :: pert_labels
     character(256) :: filename
     integer :: i, j, k, m, n
-    integer, dimension(n_props) :: num_blks, prop_sizes
+    integer :: dum_ind
+    integer, dimension(sum(n_freq_cfgs)) :: prop_sizes, num_blks
     integer(kind=QINT), intent(in), dimension(n_props) :: kn_rules
-    integer, dimension(n_props, 2) :: kn_rule
+    integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     character, optional, dimension(20) :: file_id
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
@@ -315,11 +316,11 @@ module rsp_general
     call contrib_cache_outer_allocate(F)
     
     call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
-         data_mat=(/S_unpert/))
+         data_size = 1, data_mat=(/S_unpert/))
     call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
-         data_mat=(/D_unpert/))
+         data_size = 1, data_mat=(/D_unpert/))
     call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
-         data_mat=(/F_unpert/))         
+         data_size = 1, data_mat=(/F_unpert/))         
 
     write(id_outp,*) ' '
     write(id_outp,*) 'OpenRSP lib called'
@@ -339,8 +340,8 @@ module rsp_general
        write(id_outp,*) 'Property', i, 'is order', np(i)
        write(id_outp,*) 'The choice of k, n is', kn_rules(i), 'and', np(i) - 1 - kn_rules(i)
        write(id_outp,*) ' '
-       write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims(sum(np(1:i)) - np(1) + 1:sum(np(1:i)))
-       write(id_outp,*) 'The perturbation labels are:                          ', pert_labels(sum(np(1:i)) - np(1) + 1:sum(np(1:i)))
+       write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+       write(id_outp,*) 'The perturbation labels are:                          ', pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
        write(id_outp,*) 'Number of frequency configurations:', n_freq_cfgs(i)
        write(id_outp,*) ' '
         
@@ -361,18 +362,22 @@ module rsp_general
  
           end if
           
+
+          
           p_tuples(k)%npert = np(i)
           allocate(p_tuples(k)%pdim(np(i)))
           allocate(p_tuples(k)%plab(np(i)))
           allocate(p_tuples(k)%pid(np(i)))
           allocate(p_tuples(k)%freq(np(i)))
           
-          p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(1) + 1:sum(np(1:i)))
-          p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(1) + 1:sum(np(1:i)))
+          p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+          p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
           ! Unsure of addressing in next line
-          p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(1)*n_freq_cfgs(1) + &
-          1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(1)*n_freq_cfgs(1) + 1 + (j - 1)*np(i))
+          
+
+          p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
+          1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + 1 + (j)*np(i))
        
           write(id_outp,*) 'Frequency configuration', j
           write(id_outp,*) ' '
@@ -380,22 +385,32 @@ module rsp_general
           write(id_outp,*) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
           write(id_outp,*) ' '
        
+              
+          num_blks(k) = get_num_blks(p_tuples(k))
+       
+          write(*,*) 'Number of blocks:', num_blks(k)
+       
+          allocate(blk_info(num_blks(k), 3))
+          allocate(blk_sizes(num_blks(k)))
+          blk_info = get_blk_info(num_blks(k), p_tuples(k))
+          write(*,*) 'Block info:', blk_info
+          blk_sizes = get_triangular_sizes(num_blks(k), blk_info(1:num_blks(k), 2), &
+                                           blk_info(1:num_blks(k), 3))
+
+          write(*,*) 'Block sizes:', blk_sizes
+                                           
+          prop_sizes(k) = get_triangulated_size(num_blks(k), blk_info)
+          
+          write(*,*) 'Property size:', prop_sizes(k)
+       
+          deallocate(blk_info)
+          deallocate(blk_sizes)
+       
           k = k + 1
        
       
        end do
-       
-       num_blks(i) = get_num_blks(p_tuples(k))
-       allocate(blk_info(num_blks(i), 3))
-       allocate(blk_sizes(num_blks(i)))
-       blk_info = get_blk_info(num_blks(i), p_tuples(k))
-       blk_sizes = get_triangular_sizes(num_blks(i), blk_info(1:num_blks(i), 2), &
-                                        blk_info(1:num_blks(i), 3))
 
-       prop_sizes(i) = get_triangulated_size(num_blks(i), blk_info)
-       
-       deallocate(blk_info)
-       deallocate(blk_sizes)
               
     end do
       
@@ -469,8 +484,9 @@ module rsp_general
     implicit none
 
     integer :: n_props, id_outp, i
-    integer, dimension(n_props) :: n_freq_cfgs, prop_sizes
-    integer, dimension(n_props, 2) :: kn_rule
+    integer, dimension(n_props) :: n_freq_cfgs
+    integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
+    integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     type(p_tuple) :: emptypert
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), dimension(2) :: emptyp_tuples
@@ -1785,40 +1801,44 @@ module rsp_general
        if (outer_next%num_dmat == 0) then
 
           call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
-               1, ind_unsorted=(/1/), mat=LHS_dmat_2(lhs_ctr_2))
+               1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
           call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
-               1, ind_unsorted=(/1/), mat=RHS_dmat_2(rhs_ctr_2))
+               1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
 
        ! One chain rule application
        else if (outer_next%num_dmat == 1) then
        
           do m = 1, outer_contract_sizes_1(k) 
              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .TRUE., &
-                  1, ind_unsorted=outer_next%indices(m, :), mat=LHS_dmat_1(lhs_ctr_1 + m  - 1))
+                  1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+                  mat_sing=LHS_dmat_1(lhs_ctr_1 + m  - 1))
           end do
        
           do m = 1, outer_contract_sizes_2(k, 1) 
              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .TRUE., &
-                  1, ind_unsorted=outer_next%indices(m, :), mat=LHS_dmat_2(lhs_ctr_2 + m  - 1))
+                  1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+                  mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
           end do
           
           call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
-               1, ind_unsorted=(/1/), mat=RHS_dmat_2(rhs_ctr_2))
+               1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
        
        ! Two chain rule applications
        else if (outer_next%num_dmat == 2) then
        
           do m = 1, outer_contract_sizes_2(k, 1) 
              call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .TRUE., &
-                  1, ind_unsorted=outer_next%indices(m, 1:outer_next%p_tuples(1)%npert), &
-                  mat=LHS_dmat_2(lhs_ctr_2 + m  - 1))
+                  1, ind_len=outer_next%p_tuples(1)%npert, &
+                  ind_unsorted=outer_next%indices(m, 1:outer_next%p_tuples(1)%npert), &
+                  mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
           end do
           
           do n = 1, outer_contract_sizes_2(k, 2) 
              call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .TRUE., &
-                  1, ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
+                  1, ind_len=outer_next%p_tuples(1)%npert + 1, &
+                  ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
                   outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
-                  mat=RHS_dmat_2(rhs_ctr_2 + n  - 1))
+                  mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
           end do          
        
        end if
@@ -1899,11 +1919,11 @@ module rsp_general
        ! Nuc-nuc, one-el and two-el contribution
        if (outer_next%num_dmat == 0) then
        
-          allocate(outer_next%data_ave(cache%blks_triang_size))
+          allocate(outer_next%data_scal(cache%blks_triang_size))
 
-          outer_next%data_ave = contrib_0
-          outer_next%data_ave = outer_next%data_ave + contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
-          outer_next%data_ave = outer_next%data_ave + contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
+          outer_next%data_scal = contrib_0
+          outer_next%data_scal = outer_next%data_scal + contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
+          outer_next%data_scal = outer_next%data_scal + contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
 
           c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
           c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
@@ -1911,13 +1931,13 @@ module rsp_general
        ! One-el and two-el contribution
        else if (outer_next%num_dmat == 1) then
        
-          allocate(outer_next%data_ave(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+          allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                    outer_contract_sizes_2(k, 2)))
 
-          outer_next%data_ave = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
+          outer_next%data_scal = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) - 1)
           
-          outer_next%data_ave = outer_next%data_ave + contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
+          outer_next%data_scal = outer_next%data_scal + contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) - 1)
 
           c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
@@ -1926,10 +1946,10 @@ module rsp_general
        ! Only two-electron contribution
        else if (outer_next%num_dmat == 2) then
        
-          allocate(outer_next%data_ave(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+          allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                    outer_contract_sizes_2(k, 2)))
                    
-          outer_next%data_ave = contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
+          outer_next%data_scal = contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) - 1)
        
           c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
@@ -2196,8 +2216,8 @@ module rsp_general
 !           end do
 !    
 !           outer_next%contrib_size = inner_triang_size * outer_next%outer_size
-!           allocate(outer_next%data_ave(outer_next%contrib_size))
-!           outer_next%data_ave = prop_forcache
+!           allocate(outer_next%data_scal(outer_next%contrib_size))
+!           outer_next%data_scal = prop_forcache
 !            
 !        end do
 !  
