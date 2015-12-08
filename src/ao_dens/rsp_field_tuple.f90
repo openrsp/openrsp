@@ -1239,6 +1239,12 @@ end if
 
     do i = 1, num_p_tuples
 
+!        write(*,*) 'plab a', p_tuples(i)%plab
+!        write(*,*) 'plab b', p_tuples_st_order(i)%plab
+!     
+!        write(*,*) 'Comparison:', p_tuple_compare(p_tuple_standardorder(p_tuples(i)), &
+!                                    p_tuple_standardorder(p_tuples_st_order(i)))
+    
        elem_by_elem_isequivalent = elem_by_elem_isequivalent .AND. &
                                    p_tuple_compare(p_tuple_standardorder(p_tuples(i)), &
                                    p_tuple_standardorder(p_tuples_st_order(i)))
