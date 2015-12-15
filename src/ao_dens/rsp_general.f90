@@ -1732,8 +1732,8 @@ module rsp_general
           outer_contract_sizes_1(k) = outer_next%blks_tuple_triang_size(1)
           outer_contract_sizes_2(k, :) = (/outer_next%blks_tuple_triang_size(1),1/)
           
-          total_outer_size_1 = total_outer_size_1 + outer_next%outer_size
-          total_outer_size_2 = total_outer_size_2 + outer_next%outer_size
+          total_outer_size_1 = total_outer_size_1 + outer_next%blks_tuple_triang_size(1)
+          total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1)
        
        else if (outer_next%num_dmat == 2) then
        
@@ -1741,7 +1741,7 @@ module rsp_general
           outer_contract_sizes_2(k, :) = (/outer_next%blks_tuple_triang_size(1), &
                                          outer_next%blks_tuple_triang_size(2)/)
           
-          total_outer_size_2 = total_outer_size_2 + outer_next%outer_size
+          total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1)*outer_next%blks_tuple_triang_size(2)
        
        end if
    

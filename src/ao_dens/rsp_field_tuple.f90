@@ -470,9 +470,12 @@ module rsp_field_tuple
       
       type(p_tuple) :: p1, p2, p_merge
       
-      call p1_cloneto_p2(p1, p_merge)
-      p_merge%npert = p_merge%npert + p2%npert
-!       p_merge%perts = (/p_merge%perts, p2%perts/)
+      p_merge = merge_p_tuple(p1, p2)
+      
+      
+!       call p1_cloneto_p2(p1, p_merge)
+!       p_merge%npert = p_merge%npert + p2%npert
+! !       p_merge%perts = (/p_merge%perts, p2%perts/)
       
     end subroutine
 

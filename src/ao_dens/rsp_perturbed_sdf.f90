@@ -130,6 +130,7 @@ module rsp_perturbed_sdf
 
     integer :: n_props
     integer, dimension(n_props) :: n_freq_cfgs
+    type(p_tuple) :: p_test
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), allocatable, dimension(:) :: p_dummy_orders
     logical :: termination, dryrun
@@ -137,8 +138,9 @@ module rsp_perturbed_sdf
     character(4), dimension(0) :: nof
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     integer :: i, j, k, id_outp, max_order, max_npert
+    integer, dimension(1) :: dfs
     integer, allocatable, dimension(:) :: size_i
-    type(QcMat) :: Fp_dum
+    type(QcMat) :: Fp_dum, M_test
     type(contrib_cache_outer) :: F, D, S
     type(contrib_cache), target :: cache
     type(contrib_cache), pointer :: cache_next, lof_cache, lof_next
@@ -151,6 +153,16 @@ module rsp_perturbed_sdf
     
 !     write(*,*) 'max order', max_order
 !     write(*,*) 'max npert', max_npert
+
+       p_test%npert = 1
+       allocate(p_test%pdim(1))
+       allocate(p_test%plab(1))
+       allocate(p_test%pid(1))
+       allocate(p_test%freq(1))
+       p_test%pdim = (/12/)
+       p_test%plab = (/'GEO '/)
+       p_test%pid = (/1/)
+       p_test%freq = (/0.0/)
 
     
     ! Make dummy perturbation tuples to head cache to identify by perturbation order: Identifier is frequencies
@@ -183,10 +195,12 @@ module rsp_perturbed_sdf
            
     cache_next => cache
     
-    call contrib_cache_allocate(lof_cache)
+
     
     !   For each order of perturbation identified (lowest to highest):
     do i = 1, max_order
+    
+       call contrib_cache_allocate(lof_cache)
 
        ! Cycle until order reached
        do while(.NOT.(cache_next%p_inner%freq(1) == 1.0*i))
@@ -217,6 +231,8 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
                                       1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))
        
+       write(*,*) 'lof recursion done'
+       
           ! Get number of perturbed matrices for this tuple
           size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
 !           write(*,*) 'size i', size_i(k)
@@ -236,6 +252,8 @@ module rsp_perturbed_sdf
        lof_next => lof_next%next
        lof_next => lof_next%next
        
+              write(*,*) 'lof calculation starting'
+       
        ! Traverse cache and precalculate elements
        termination = .FALSE.
        do while (.NOT.(termination))
@@ -250,15 +268,27 @@ module rsp_perturbed_sdf
        call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
             get_rsp_sol, get_ovl_mat,  get_2el_mat, F, D, S, lof_next)
        
-       
+!        call QcMatInit(Fp_dum)
 
+!        write(*,*) 'getting sample matrix'
+!        dfs = (/4/)
+!        
+!        call contrib_cache_getdata_outer(D, 1, (/p_test/), .FALSE., &
+!                   contrib_size=1, ind_len=1, ind_unsorted=dfs, &
+!                   mat_sing=Fp_dum)
        
+!        j = QcMatWrite_f(Fp_dum, 'Fp_dum', ASCII_VIEW)
+       
+!        write(*,*) 'got sample matrix'
+!        stop
        
        deallocate(size_i)
+       
+       deallocate(lof_cache)
           
     end do
     
-    deallocate(lof_cache)
+!     deallocate(lof_cache)
     
     
     deallocate(p_dummy_orders)
@@ -413,10 +443,14 @@ module rsp_perturbed_sdf
        ! 3. Chain rule differentiate w.r.t. the density (giving 
        ! a(nother) pert D contraction)
 
-       call rsp_lof_recurse(p_tuple_remove_first(pert), &
-            total_num_perturbations, num_p_tuples + 1, &
-            (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
-            fock_lowerorder_cache, fp_size, Fp)
+       if (num_p_tuples < 2) then
+       
+          call rsp_lof_recurse(p_tuple_remove_first(pert), &
+               total_num_perturbations, num_p_tuples + 1, &
+               (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
+               fock_lowerorder_cache, fp_size, Fp)
+               
+       end if
 
     else
 
@@ -436,13 +470,21 @@ module rsp_perturbed_sdf
       
        if (density_order_skip .EQV. .FALSE.) then
        
-          write(*,*) 'num p tuples', num_p_tuples
-          write(*,*) 'plab', p_tuples(1)%plab
+!           write(*,*) 'num p tuples', num_p_tuples
+!           write(*,*) 'plab', p_tuples(1)%plab
 
           if (contrib_cache_already(fock_lowerorder_cache, &
           num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples))) then
 
              if (.NOT.(dryrun)) then
+             
+                do i = 1, num_p_tuples
+                   if (i == 1) then
+                      write(*,*) 'F ', p_tuples(i)%plab
+                   else
+                      write(*,*) 'D ', p_tuples(i)%plab
+                   end if
+                end do
              
                 write(*,*) 'Getting lower-order perturbed Fock order contribution from cache'
                 call contrib_cache_getdata(fock_lowerorder_cache, num_p_tuples, p_tuples, &
@@ -507,6 +549,7 @@ module rsp_perturbed_sdf
     integer :: id_outp
     integer :: total_outer_size_1, c1_ctr, lhs_ctr_1, num_pert
     integer :: num_0, num_1
+    character(30) :: mat_str, fmt_str, fmt_str2
     type(contrib_cache) :: cache
     type(contrib_cache_outer) :: D
     type(contrib_cache_outer), pointer :: outer_next
@@ -553,23 +596,23 @@ module rsp_perturbed_sdf
        
           num_1 = num_1 + 1
           outer_contract_sizes_1(k) = outer_next%blks_tuple_triang_size(1)
-          total_outer_size_1 = total_outer_size_1 + outer_next%outer_size
+          total_outer_size_1 = total_outer_size_1 + outer_next%blks_tuple_triang_size(1)
 
        end if
    
        if (outer_next%num_dmat == 0) then
        
-          write(*,*) 'All inner contribution'
+          write(*,*) 'All inner contribution', total_outer_size_1
  
        else
        
-          write(*,*) 'Outer contribution:'
+          write(*,*) 'Outer contribution:', total_outer_size_1
           
        end if
        
        do i = 1, outer_next%num_dmat
           
-          write(*,*) 'D', outer_next%p_tuples(i)%plab
+          write(*,*) 'D ', outer_next%p_tuples(i)%plab
        
        end do
     
@@ -601,7 +644,14 @@ module rsp_perturbed_sdf
     
     ! Allocate and set up outer
     
-    allocate(LHS_dmat_1(sum(outer_contract_sizes_1(:))))
+!     write(*,*) 'outer contract sizes_1', outer_contract_sizes_1
+!     if (sum(outer_contract_sizes_1) > 10000) then
+!     stop
+!     
+!     end if
+!     
+    
+    allocate(LHS_dmat_1(sum(outer_contract_sizes_1)))
     
     call QCMatInit(D_unp)
 ! write(*,*) 'A'
@@ -639,12 +689,20 @@ module rsp_perturbed_sdf
        ! One chain rule application
        if (outer_next%num_dmat == 1) then
        
+!              write(*,*) 'D', outer_next%blks_tuple_triang_size 
+!              write(*,*) 'outer_next%indices', outer_next%indices
+!              write(*,*) 'outer_next%indices(m, :)', outer_next%indices(m, :)
+       
           do m = 1, outer_contract_sizes_1(k) 
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .TRUE., &
+             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
                   contrib_size=1, ind_len=1, ind_unsorted=outer_next%indices(m, :), &
                   mat_sing=LHS_dmat_1(lhs_ctr_1 + m  - 1))
+                  write(*,*) 'indices', outer_next%indices(m, :)
+                  write(*,*) 'got matrix', lhs_ctr_1 + m  - 1
+    j = QcMatWrite_f(LHS_dmat_1(lhs_ctr_1 + m  - 1), 'LHS_dmat_1', ASCII_VIEW)
           end do
        
+!              write(*,*) 'D2' 
        end if
    
        if (outer_next%next%dummy_entry) then
@@ -660,8 +718,16 @@ module rsp_perturbed_sdf
     
 !     write(*,*) 'blks triang size', cache%blks_triang_size
     
+       if (cache%blks_triang_size > 10000) then
+    stop
+    
+    end if
+    
+    
     allocate(contrib_0(cache%blks_triang_size))
     allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
+    
+
     
     do i = 1, size(contrib_0)
 !       write(*,*) 'i is', i
@@ -672,6 +738,7 @@ module rsp_perturbed_sdf
     
     do i = 1, size(contrib_1)
       call QCMatInit(contrib_1(i), D_unp)
+      call QCMatZero(contrib_1(i))
     end do
 
     
@@ -699,8 +766,79 @@ module rsp_perturbed_sdf
     
 !            j = QcMatWrite_f(contrib_0(1), 'contrib 0_1', ASCII_VIEW)
     
+    write(*,*) 'num pert', num_pert
+    write(*,*) 'pert_ext', pert_ext
+    write(*,*) 'LHS dmat 1 size', size(LHS_dmat_1)
+    write(*,*) 'size contrib 1', size(contrib_1)
+    
+    
+    if ((size(LHS_dmat_1) == 15) .AND. (size(contrib_1) == 180)) then
+    
+!        do i = 1, 15
+!        
+!           
+!        
+!           if (i < 10) then
+!           
+!              fmt_str = "(A8, I1)"
+!           
+!           else if (i < 100) then
+!           
+!              fmt_str = "(A8, I2)"
+!           
+!           else
+!           
+!              fmt_str = "(A8, I3)"
+!           
+!           end if
+!           
+!           write(mat_str, fmt_str) 'LHS_dmat_', i
+!           
+!           write(*,*) 'i', i
+!           write(*,*) 'fname:', mat_str
+!           
+!           
+!           
+!           j = QcMatWrite_f(LHS_dmat_1(i), trim(mat_str), ASCII_VIEW)
+!           
+!           do k = 1, 12
+!           
+!           if ((i-1)* 12 + k < 10) then
+!           
+!              fmt_str = "(A8, I1)"
+!           
+!           else if ((i-1)* 12 + k < 100) then
+!           
+!              fmt_str = "(A8, I2)"
+!           
+!           else
+!           
+!              fmt_str = "(A8, I3)"
+!           
+!           end if
+!           
+!           write(mat_str, fmt_str) 'contrib_', (i-1) * 12 + k
+!           write(*,*) 'k', k
+!           write(*,*) 'fname:', mat_str
+!           
+!           j = QcMatWrite_f(contrib_1((i-1)*12 + k), trim(mat_str), ASCII_VIEW)
+!           
+!           end do
+!           
+!           
+!           
+!           
+!           
+!                  
+!        end do
+    
+    
+
+    
+    end if
+    
     ! Calculate two-electron contributions
-    call get_2el_mat(num_pert, pert_ext, outer_contract_sizes_1, LHS_dmat_1, &
+    call get_2el_mat(num_pert, pert_ext, size(LHS_dmat_1), LHS_dmat_1, &
     size(contrib_1), contrib_1)
                        
                        
@@ -716,20 +854,37 @@ module rsp_perturbed_sdf
     c1_ctr = 1
     
     
+    write(*,*) 'Inner perturbation ', cache%p_inner%plab
+    write(*,*) 'Inner perturbation size ', cache%blks_triang_size
+    write(*,*) ' '
+    
     do while (traverse_end .EQV. .FALSE.)
+    
+       do i = 1, outer_next%num_dmat
+       write(*,*) 'Outer perturbation(s) ', i, ' are ', outer_next%p_tuples(i)%plab
+       
+       end do
+    
+       
+       write(*,*) 'Outer size ', outer_contract_sizes_1(k)
+
   
        ! One-el and two-el contributions
        if (outer_next%num_dmat == 0) then
        
-          allocate(outer_next%data_mat(cache%blks_triang_size))
+          allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
           
-          do i = 1, cache%blks_triang_size
+          do i = 1, cache%blks_triang_size*outer_contract_sizes_1(k)
+!           write(*,*) 'i is', i
 
              call QcMatInit(outer_next%data_mat(i), D_unp)
              call QcMatZero(outer_next%data_mat(i))
 !              write(*,*) 'A'
              call QcMatkAB(1.0d0, contrib_0(i), contrib_1(c1_ctr + i - 1), outer_next%data_mat(i))
 !              write(*,*) 'B'
+!            j = QcMatWrite_f(contrib_0(1), 'contrib_0', ASCII_VIEW)
+!            j = QcMatWrite_f(contrib_1(1), 'contrib_1', ASCII_VIEW)
+!            j = QcMatWrite_f(outer_next%data_mat(1), 'lof_1', ASCII_VIEW)
           
           end do
           
@@ -738,9 +893,9 @@ module rsp_perturbed_sdf
        ! Only two-el contribution
        else if (outer_next%num_dmat == 1) then
        
-          allocate(outer_next%data_mat(cache%blks_triang_size))
+          allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
 
-          do i = 1, cache%blks_triang_size
+          do i = 1, cache%blks_triang_size*outer_contract_sizes_1(k)
 
              call QcMatInit(outer_next%data_mat(i), D_unp)
              call QcMatZero(outer_next%data_mat(i))
@@ -748,9 +903,12 @@ module rsp_perturbed_sdf
           
           end do
 
-          c1_ctr = c1_ctr + cache%blks_triang_size
+          c1_ctr = c1_ctr + cache%blks_triang_size*outer_contract_sizes_1(k)
                    
        end if
+       
+       write(*,*) 'Size of data', size(outer_next%data_mat)
+       write(*,*) ' '
    
        if (outer_next%next%dummy_entry) then
     
@@ -779,11 +937,13 @@ module rsp_perturbed_sdf
     logical :: termination
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
     integer :: i, j, k, m, nblks
+    integer :: first, last
     integer, dimension(0) :: noc
     integer, allocatable, dimension(:) :: pert_ext, blk_sizes, ind
     integer, allocatable, dimension(:,:) :: blk_info
     integer, allocatable, dimension(:,:) :: indices
     integer, dimension(num_outer) :: size_i
+    character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
     type(p_tuple) :: pert
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
@@ -875,9 +1035,16 @@ module rsp_perturbed_sdf
       
        ! Assemble Fp (lower-order) for all components and add to cache
              
+       write(*,*) 'About to get lof data'
+             
        call rsp_lof_recurse(pert, pert%npert, &
                             1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                             Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+                            
+       write(*,*) 'Returned from lof'
+                            
+!               j = QcMatWrite_f(Fp(1), 'Fp 1 a', ASCII_VIEW)
+!        j = QcMatWrite_f(Fp(13), 'Fp 13 a', ASCII_VIEW)                            
        call contrib_cache_outer_add_element(F, .FALSE., 1, & 
             (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
        
@@ -918,6 +1085,9 @@ module rsp_perturbed_sdf
        
        end do
        
+       
+
+       
        call contrib_cache_outer_add_element(F, .FALSE., 1, & 
             (/pert/), data_size = size_i(k),  data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
        
@@ -937,10 +1107,76 @@ module rsp_perturbed_sdf
        
     end do
     
+!            j = QcMatWrite_f(Dp(1), 'Dp 1', ASCII_VIEW)
+!        j = QcMatWrite_f(Dp(13), 'Dp 13', ASCII_VIEW)
+!               j = QcMatWrite_f(Fp(1), 'Fp 1 before', ASCII_VIEW)
+!        j = QcMatWrite_f(Fp(13), 'Fp 13 before', ASCII_VIEW)
+    
+    write(*,*) 'size of Dp, Fp', size(Dp), size(Fp)
+    
+    
+!     do i = 1, size(Dp)
+!     
+!     
+!           if (i < 10) then
+!           
+!              fmt_str = "(A3, I1)"
+!           
+!           else if (i < 100) then
+!           
+!              fmt_str = "(A3, I2)"
+!           
+!           else
+!           
+!              fmt_str = "(A3, I3)"
+!           
+!           end if
+!           
+!           write(mat_str, fmt_str) 'Dp_', i
+!           
+!           write(*,*) 'i', i
+!           write(*,*) 'fname:', mat_str
+!           
+!           
+!           
+!           j = QcMatWrite_f(Dp(i), trim(mat_str), ASCII_VIEW)
+!     
+!     end do
+    
+    k = 36
+    
+    if (size(Dp) > k) then
+    
+    write(*,*) 'Dp multiples', size(Dp)/k + 1
+    
+    do i = 1, size(Dp)/k + 1
+    
+       if (.NOT.((i - 1) *k >= size(Dp))) then
+    
+          first = (i - 1) * k + 1
+          last = min(i * k, size(Dp))
+    
+          call get_2el_mat(0, noc, last - first + 1, Dp(first:last), last - first + 1, Fp(first:last))
+    
+       end if
+       
+    end do
+    
+    
+    
+    
+    else
+    
     ! Outside traversal:
     ! Complete Fp using Dp
     call get_2el_mat(0, noc, sum(size_i), Dp, sum(size_i), Fp)
-        
+    
+    end if
+
+    
+!            j = QcMatWrite_f(Fp(1), 'Fp 1', ASCII_VIEW)
+!        j = QcMatWrite_f(Fp(13), 'Fp 13', ASCII_VIEW)
+    
     ind_ctr = 1
     k = 1
     
@@ -1021,9 +1257,127 @@ module rsp_perturbed_sdf
     ! Solve all response equations (opportunities for optimization for e.g.
     ! first-order EL, but that can be introduced later)
     
-    call get_rsp_sol(num_outer, size_i, (/(i - i + 1, i = 1, num_outer)/), freq_sums, RHS, X)
-! FIXME: REINSTATE NEXT LINE
-    !     call QmatDst(RHS(1))
+    ! IN NEW FORMAT, AWAITING CHANGES TO CALLBACK STRUCTURE
+!     call get_rsp_sol(num_outer, size_i, (/(i - i + 1, i = 1, num_outer)/), freq_sums, RHS, X)
+    
+!           j = QcMatWrite_f(RHS(1), 'RHS 1', ASCII_VIEW)
+!           j = QcMatWrite_f(X(1), 'X 1 before', ASCII_VIEW)
+          
+!           write(*,*) 'num outer', num_outer
+!           write(*,*) 'freq sums', freq_sums
+!           write(*,*) 'size i', size_i
+!           write(*,*) 'sum size i', sum(size_i)
+!           write(*,*) 'size of rhs', size(RHS)
+!           write(*,*) 'size of X', size(RHS)
+          
+
+          m  = 1
+
+    ind_ctr = 1
+    k = 1
+    
+    ! Cycle to start
+    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
+    cache_outer_next => cache_outer_next%next
+       
+    ! Traverse
+    termination = .FALSE.
+    do while(.NOT.(termination))
+
+!        write(*,*) 'first component', ind_ctr
+!     
+!        write(*,*) 'freq sums', freq_sums(k)
+!        write(*,*) 'size i', size_i(k)
+! j = QcMatWrite_f(RHS(1), 'RHS_1', ASCII_VIEW)
+!     j = QcMatWrite_f(RHS(13), 'RHS_13', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(15), 'RHS_15', ASCII_VIEW)
+!         
+!         if (size(RHS) > 15) then
+!         
+!         
+!         j = QcMatWrite_f(RHS(16), 'RHS_16', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(17), 'RHS_17', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(18), 'RHS_18', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(19), 'RHS_19', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(20), 'RHS_20', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(21), 'RHS_21', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(22), 'RHS_22', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(23), 'RHS_23', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(24), 'RHS_24', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(25), 'RHS_25', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(26), 'RHS_26', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(27), 'RHS_27', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(28), 'RHS_28', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(29), 'RHS_29', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(30), 'RHS_30', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(31), 'RHS_31', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(32), 'RHS_32', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(33), 'RHS_33', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(34), 'RHS_34', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(35), 'RHS_35', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(36), 'RHS_36', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(37), 'RHS_37', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(38), 'RHS_38', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(39), 'RHS_39', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(40), 'RHS_40', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(41), 'RHS_41', ASCII_VIEW)
+!         j = QcMatWrite_f(RHS(42), 'RHS_42', ASCII_VIEW)
+!         
+!         
+!         end if
+!         j = QcMatWrite_f(X(13), 'X i1 before', ASCII_VIEW)
+
+       
+       
+    if (size_i(k) > m) then
+    
+    write(*,*) 'Rsp multiples', size_i(k)/m + 1
+!     
+    do i = 1, size_i(k)/m + 1
+    
+       if (.NOT.((i - 1) *m >= size_i(k))) then
+    
+          first = (i - 1) * m + 1
+          last = min(i * m, size_i(k))
+          
+          write(*,*) 'first, last: ', first, last
+
+          
+           call get_rsp_sol(1, real((/freq_sums(k)/)), last - first + 1, RHS(ind_ctr + first - 1:ind_ctr + last - 1), &
+                X(ind_ctr + first - 1:ind_ctr + last - 1))
+          
+!           call get_2el_mat(0, noc, last - first + 1, Dp(first:last), last - first + 1, Fp(first:last))
+    
+       end if
+       
+    end do
+       
+    else
+          
+       ! "OLD NEW FORMAT": NOT SUPPOSED TO BE IN TRAVERSAL WHEN CHANGING TO NEW FORMAT
+       call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
+            X(ind_ctr:ind_ctr + size_i(k) - 1))
+    
+    end if
+    
+       ind_ctr = ind_ctr + size_i(k)
+       k = k + 1
+    
+       termination = cache_outer_next%last
+       cache_outer_next => cache_outer_next%next
+       
+    end do
+    
+
+    
+    j = QcMatWrite_f(X(1), 'X_1_after', ASCII_VIEW)
+    j = QcMatWrite_f(X(13), 'X_13_after', ASCII_VIEW)
+     j = QcMatWrite_f(X(15), 'X_15_after', ASCII_VIEW)
+       
+    do i = 1, size(RHS)
+!     write(*,*) 'i dst', i
+          call QcmatDst(RHS(i))
+    end do
         
     ind_ctr = 1
     k = 1
@@ -1046,6 +1400,8 @@ module rsp_perturbed_sdf
           call QcMatRAXPY(1.0d0, T, U)
           call QcMatAEqB(Dh(ind_ctr + j - 1), U)
     
+
+    
        end do
     
        ind_ctr = ind_ctr + size_i(k)
@@ -1056,9 +1412,34 @@ module rsp_perturbed_sdf
        
     end do
     
+    
+        k = 36
+    
+    if (size(Dh) > k) then
+    
+    write(*,*) 'Dh multiples', size(Dh)/k + 1
+    
+    do i = 1, size(Dh)/k + 1
+    
+       if (.NOT.((i - 1) *k >= size(Dh))) then
+    
+          first = (i - 1) * k + 1
+          last = min(i * k, size(Dh))
+    
+          call get_2el_mat(0, noc, last - first + 1, Dh(first:last), last - first + 1, Fp(first:last))
+    
+       end if
+       
+    end do
+    
+    else
+    
     ! Outside traversal
     ! Calculate Fh for all components using Dh
     call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
+    
+    
+    end if
     
     ind_ctr = 1
     k = 1
@@ -1071,18 +1452,32 @@ module rsp_perturbed_sdf
     termination = .FALSE.
     do while(.NOT.(termination))
 
+       pert = cache_outer_next%p_tuples(1)
+       
+       write(*,*) 'Pert: ', pert%plab, pert%freq
+       
+       
        do j = 1, size_i(k)
     
+!             m = QcMatWrite_f(Dp(ind_ctr + j - 1), 'Dp_before', ASCII_VIEW)
+            
           call QcMatRAXPY(1.0d0, Dh(ind_ctr + j - 1), Dp(ind_ctr + j - 1))
+          
+!           m = QcMatWrite_f(Dp(ind_ctr + j - 1), 'Dp_after', ASCII_VIEW)
     
        end do
+    
+           call contrib_cache_outer_add_element(F, .FALSE., 1, & 
+            (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
     
        call contrib_cache_outer_add_element(D, .FALSE., 1, & 
             (/pert/), data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
        
-       call contrib_cache_outer_add_element(F, .FALSE., 1, & 
-            (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
-    
+!        if(pert%npert ==1) then
+!         if(pert%plab(1) .eq. 'GEO ') then
+!               stop
+!          end if
+!        end if
        ! For each cache element:
        ! Add together Dp and Dh and store
        ! Store Fp
@@ -1094,6 +1489,38 @@ module rsp_perturbed_sdf
        cache_outer_next => cache_outer_next%next
        
     end do
+    
+!     do i = 1, size(Dp)
+!     
+!     
+!           if (i < 10) then
+!           
+!              fmt_str = "(A3, I1)"
+!           
+!           else if (i < 100) then
+!           
+!              fmt_str = "(A3, I2)"
+!           
+!           else
+!           
+!              fmt_str = "(A3, I3)"
+!           
+!           end if
+!           
+!           write(mat_str, fmt_str) 'Dp_', i
+!           
+!           write(*,*) 'i', i
+!           write(*,*) 'fname:', mat_str
+!           
+!           
+!           
+!           j = QcMatWrite_f(Dp(i), trim(mat_str), ASCII_VIEW)
+!     
+!     end do
+    
+!     stop
+    
+    
     
   end subroutine
   

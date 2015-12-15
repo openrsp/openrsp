@@ -64,7 +64,7 @@ module rsp_property_caching
    logical :: dummy_entry
    integer :: num_dmat
    type(p_tuple), allocatable, dimension(:) :: p_tuples
-   integer :: outer_size
+!    integer :: outer_size
    integer :: contrib_size
    integer, allocatable, dimension(:) :: nblks_tuple
    integer, allocatable, dimension(:,:) :: blk_sizes
@@ -654,7 +654,7 @@ module rsp_property_caching
    new_element%last = .TRUE.
    new_element%dummy_entry = .FALSE.
    
-   
+! 
 !     write(*,*) 'New outer cache'
 !     write(*,*) 'num dmats', num_dmat
 
@@ -680,7 +680,7 @@ module rsp_property_caching
      allocate(new_element%nblks_tuple(num_dmat))
      allocate(new_element%blk_sizes(num_dmat, total_npert))
      allocate(new_element%blks_tuple_info(num_dmat, total_npert, 3))
-     allocate(new_element%blks_tuple_triang_size(total_npert))
+     allocate(new_element%blks_tuple_triang_size(num_dmat))
      
      new_element%nblks_tuple = (/(get_num_blks(outer_p_tuples(i)), i = 1, num_dmat)/)
    
@@ -695,6 +695,13 @@ module rsp_property_caching
                                    new_element%blks_tuple_info(i, 1:new_element%nblks_tuple(i), :))
                                    
      end do
+     
+!      write(*,*) 'new_element%blks_tuple_triang_size', new_element%blks_tuple_triang_size
+     allocate(new_element%indices(product(new_element%blks_tuple_triang_size), total_npert))
+     call make_triangulated_tuples_indices(num_dmat, total_npert, new_element%nblks_tuple, &
+          new_element%blks_tuple_info, new_element%blks_tuple_triang_size, new_element%indices)
+     
+     
    
    
    else
@@ -727,63 +734,124 @@ module rsp_property_caching
 
    implicit none
 
-   logical :: unperturbed
-   integer :: num_dmat, i, j
+   logical :: unperturbed, found_element
+   integer :: num_dmat, i, j, passedlast
    integer, optional :: data_size
    type(contrib_cache_outer), target :: curr_element
    type(contrib_cache_outer), pointer :: new_element
    type(contrib_cache_outer), pointer :: new_element_ptr
    type(contrib_cache_outer), pointer :: next_element
-   type(p_tuple), dimension(num_dmat) :: outer_p_tuples
+   type(p_tuple), dimension(num_dmat) :: outer_p_tuples, p_tuples_st_order
+   
    type(Qcmat), optional, dimension(*) :: data_mat
    complex(8), optional, dimension(*) :: data_scal
-   
-   next_element => curr_element
 
-  allocate(new_element)
+   if (contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)) then
+   
+      next_element => curr_element
+      passedlast = 0
+      p_tuples_st_order = p_tuples_standardorder(num_dmat, outer_p_tuples)
+      found_element = .FALSE.
 
-   call contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
-   
-  
-   new_element_ptr => new_element
-   
-   do while (next_element%last .eqv. .FALSE.)
-      next_element => contrib_cache_outer_next_element(next_element)
-   end do
-   
-   if(present(data_mat)) then
+      do while ((passedlast < 2) .AND. (found_element .eqv. .FALSE.))
       
-      if (.NOT.(allocated(new_element%data_mat))) then
-   
-         allocate(new_element%data_mat(data_size))
-   
+         
+
+         next_element => next_element%next
+         
+!          write(*,*) 'size data mat a', size(next_element%data_mat)
+         
+         if (next_element%num_dmat == num_dmat .AND. .NOT.(next_element%dummy_entry)) then
+            found_element = p_tuples_compare(next_element%num_dmat, &
+            p_tuples_standardorder(next_element%num_dmat, &
+            next_element%p_tuples), p_tuples_st_order)
+         end if
+            
+         if (next_element%last .eqv. .TRUE.) then
+            passedlast = passedlast + 1
+         end if
+
+      end do
+      
+!       write(*,*) 'size data mat b', size(next_element%data_mat)
+! 
+!       write(*,*) 'Found?', found_element
+!       write(*,*) 'lab 1', p_tuples_st_order(1)%plab
+!       write(*,*) 'lab 2', next_element%p_tuples(1)%plab
+!       
+!       write(*,*) 'size data mat c', size(next_element%data_mat)
+      
+      if(present(data_mat)) then
+      
+!       write(*,*) 'lab, freq', outer_p_tuples(1)%plab, outer_p_tuples(1)%freq
+!       write(*,*) 'size data mat d', size(next_element%data_mat)
+!          write(*,*) 'data size', data_size
+      
          do i = 1, data_size
-      
-            call QcMatInit(new_element%data_mat(i), data_mat(i))
-      
+            call QcMatAEqB(next_element%data_mat(i),  data_mat(i))
+           
+!            if (size(outer_p_tuples(1)%plab) > 0) then
+!            if (outer_p_tuples(1)%plab(1) .eq. 'GEO ') then
+!            
+!            write(*,*) 'adding element'
+!            
+!            j = QcMatWrite_f(next_element%data_mat(i), 'data_mat_i_cache', ASCII_VIEW)
+!            j = QcMatWrite_f(data_mat(i), 'data_mat_i', ASCII_VIEW)
+!            
+!            end if
+!            end if
+           
          end do
-      
+   
+   
+   
       end if
    
-      do i = 1, data_size
+      if (present(data_scal)) then
+   
+      end if
       
-         call QcMatAEqB(new_element%data_mat(i),  data_mat(i))
-         j = QcMatWrite_f(data_mat(i), 'dmi', ASCII_VIEW)
-         j = QcMatWrite_f(new_element%data_mat(i), 'dmj', ASCII_VIEW)
-      
+   
+   else
+   
+      next_element => curr_element
+      allocate(new_element)
+      call contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
+      new_element_ptr => new_element
+   
+      do while (next_element%last .eqv. .FALSE.)
+         next_element => contrib_cache_outer_next_element(next_element)
       end do
    
-   end if
-   
-   if (present(data_scal)) then
-   
-   
-   end if
-   
+      if(present(data_mat)) then
+      
+         if (.NOT.(allocated(new_element%data_mat))) then
 
-   next_element%last = .FALSE.
-   new_element%next => next_element%next
-   next_element%next => new_element
+            allocate(new_element%data_mat(data_size))
+   
+            do i = 1, data_size
+               call QcMatInit(new_element%data_mat(i), data_mat(i))
+            end do
+      
+         end if
+   
+         do i = 1, data_size
+            call QcMatAEqB(new_element%data_mat(i),  data_mat(i))
+!             j = QcMatWrite_f(data_mat(i), 'dmi', ASCII_VIEW)
+!             j = QcMatWrite_f(new_element%data_mat(i), 'dmj', ASCII_VIEW)
+         end do
+   
+      end if
+   
+      if (present(data_scal)) then
+   
+      end if
+
+      next_element%last = .FALSE.
+      new_element%next => next_element%next
+      next_element%next => new_element
+   
+   end if
       
  end subroutine
  
@@ -1091,6 +1159,7 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
+!       write(*,*) 'b0'
    if (from_inner) then
       
       allocate(p_tuples_srch(num_p_tuples - 1))
@@ -1147,17 +1216,17 @@ module rsp_property_caching
             total_num_perturbations = total_num_perturbations + p_tuples(i)%npert
          end do
 
-
+! write(*,*) 'a1'
          if (p_tuples(1)%npert > 0) then
-
+! write(*,*) 'a2'
             call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
-
+! write(*,*) 'a22'
             do i = 2, num_p_tuples
-
+! write(*,*) 'a23 i', i
                call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
-
+! write(*,*) 'a24 i', i
             end do
-
+! write(*,*) 'a3'
          else
 
             call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
@@ -1169,7 +1238,7 @@ module rsp_property_caching
             end do
 
          end if
-
+!       write(*,*) 'b1'
          merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
          merged_nblks = get_num_blks(merged_p_tuple)
 
@@ -1188,7 +1257,7 @@ module rsp_property_caching
 
          call make_triangulated_indices(merged_nblks, merged_blk_info, & 
               merged_triang_size, indices)
-
+!       write(*,*) 'b2'
          allocate(translated_index(total_num_perturbations))
          allocate(pids_in_cache(total_num_perturbations))
          allocate(pids_current_contrib(total_num_perturbations))
@@ -1213,7 +1282,7 @@ module rsp_property_caching
                                            p_tuples_ord)
 
          allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
-
+!       write(*,*) 'b3'
          do i = 1, num_p_tuples
 
             nfields(i) = p_tuples_ord(i)%npert
@@ -1225,7 +1294,7 @@ module rsp_property_caching
             blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
 
          end do
-
+!       write(*,*) 'b4'
          do i = 1, size(indices, 1)
 
             res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
@@ -1253,7 +1322,7 @@ module rsp_property_caching
                translated_index)
 
             end if
-
+      write(*,*) 'b5 i', i
             if (present(mat)) then
             
                write(*,*) 'res offset', res_offset
@@ -1289,11 +1358,18 @@ module rsp_property_caching
     if (p_tuples_srch(1)%npert > 0) then
 
        nblks = get_num_blks(p_tuples_srch(1))
+       
        allocate(blk_sizes_sing(nblks))
        allocate(blk_info(nblks, 3))
        blk_info = get_blk_info(nblks, p_tuples_srch(1))
        blk_sizes_sing = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
 
+!        write(*,*) ' p_tuples_srch(1)%npert',p_tuples_srch(1)%npert
+!        write(*,*) ' nblks',nblks
+!        write(*,*) ' blk_info ', blk_info
+!        write(*,*) ' ind_unsorted ', ind_unsorted
+       
+       
        call sort_triangulated_indices(p_tuples_srch(1)%npert, nblks, &
                                          blk_info, ind_unsorted)
 
@@ -1313,15 +1389,22 @@ module rsp_property_caching
 
 !          write(*,*) 'cache element retrieval, offset', offset
 !          write(*,*) 'length of mat', size(next_element_outer%data_mat), next_element_outer%last, &
-!          next_element_outer%p_tuples(1)%plab
+!          next_element_outer%p_tuples(1)%plab, next_element_outer%p_tuples(1)%freq
 !          write(*,*) 'length of mat', size(next_element_outer%next%data_mat), &
 !          next_element_outer%next%last, next_element_outer%next%p_tuples(1)%plab
 !          write(*,*) 'length of mat', size(next_element_outer%next%next%data_mat), &
 !          next_element_outer%next%next%last, next_element_outer%next%next%p_tuples(1)%plab
          
          
+         
       
          call QcMatAEqB(mat_sing, next_element_outer%data_mat(offset))
+         
+!          if (offset == 4) then
+!            write(*,*) 'printing matrix'
+!            j = QcMatWrite_f(mat_sing, 'mat_sing', ASCII_VIEW)
+!            
+!          end if
 
       else
 
@@ -1330,7 +1413,7 @@ module rsp_property_caching
       end if
    
     end if
-   
+!          write(*,*) 'b6'
  end subroutine
  
 ! Missing variable declaration and allocations, otherwise OK
@@ -1380,8 +1463,12 @@ module rsp_property_caching
    
       if (present(mat)) then
             
+!             write (*,*) 'going for a'
+            
          call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
               p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, mat=mat)
+
+!               write(*,*) 'returned from a'
               
       else if (present(mat_sing)) then
             
