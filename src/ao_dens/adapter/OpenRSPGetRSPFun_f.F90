@@ -227,12 +227,56 @@
         ! Properties: Eggg, Ef, Eggfff, Efff
         
             deallocate(f_rsp_tensor)
-            allocate(f_rsp_tensor(364 + 3 + 78*(10 + 18 + 27) + 18 + 10 + 27 + 27))
+            allocate(f_rsp_tensor(364 + 3 + 78*(10 + 10 + 10) + 10 + 10 + 10 + 10))
         
                  ierr = QcMatWrite_f(f_F_unpert(1), 'F_before_call', ASCII_VIEW)
                  ierr = QcMatWrite_f(f_S_unpert(1), 'S_before_call', ASCII_VIEW)
                  ierr = QcMatWrite_f(f_D_unpert(1), 'D_before_call', ASCII_VIEW)
         
+!             call openrsp_get_property_2014(4,                                 &
+!                                            (/3, 1, 5, 3/),                                 &
+!                                            (/12, 12, 12, &
+!                                            3, &
+!                                            12, 12, 3, 3, 3, &
+!                                            3, 3, 3/),                               &
+!                                            (/1, 1, 1, &
+!                                            1, &
+!                                            1, 1, 1, 1, 1, &
+!                                            1, 1, 1/),                         &
+!                                            (/'GEO ', 'GEO ', 'GEO ', &
+!                                            'EL  ', &
+!                                            'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', &
+!                                            'EL  ', 'EL  ', 'EL  '/),                              &
+!                                            (/1, 1, 3, 4/),                          &
+!                                            (/dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0) /), &
+!                                            (/1, 0, 1, 0/),                                  &
+!                                            f_F_unpert(1),                             &
+!                                            f_S_unpert(1),                             &
+!                                            f_D_unpert(1),                             &
+!                                            f_callback_RSPSolverGetLinearRSPSolution,  &
+!                                            f_callback_RSPNucHamiltonGetContributions, &
+!                                            f_callback_RSPOverlapGetMat,               &
+!                                            f_callback_RSPOverlapGetExp,               &
+!                                            f_callback_RSPOneOperGetMat,               &
+!                                            f_callback_RSPOneOperGetExp,               &
+!                                            f_callback_RSPTwoOperGetMat,               &
+!                                            f_callback_RSPTwoOperGetExp,               &
+!                                            f_callback_RSPXCFunGetMat,                 &
+!                                            f_callback_RSPXCFunGetExp,                 &
+!                                            STDOUT,                                    &
+!                                            f_rsp_tensor)
+                                           
             call openrsp_get_property_2014(4,                                 &
                                            (/3, 1, 5, 3/),                                 &
                                            (/12, 12, 12, &
@@ -275,8 +319,7 @@
                                            f_callback_RSPXCFunGetMat,                 &
                                            f_callback_RSPXCFunGetExp,                 &
                                            STDOUT,                                    &
-                                           f_rsp_tensor)
-                                           
+                                           f_rsp_tensor)                                           
                                            
          ! DEBUG CODE ENDS: ORIGINAL CALL BELOW
 !         

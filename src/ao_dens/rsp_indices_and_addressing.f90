@@ -132,9 +132,17 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B, R
     integer(kind=4) :: ierr
     real(8) :: k
-        
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), A, B, (/0.0d0, 0.0d0/), R)
+    
+!     j = QcMatWrite_f(A, 'A', ASCII_VIEW)
+!     j = QcMatWrite_f(B, 'B', ASCII_VIEW)
+
+    ierr = QcMatAXPY_f((/k, 0.0d0/), B, A)
+    ierr = QcMatAXPY_f((/k, 0.0d0/), A, R)
+    
+!     ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), A, B, (/0.0d0, 0.0d0/), R)
   
+!     j = QcMatWrite_f(R, 'R', ASCII_VIEW)
+    
   end subroutine
   
   
