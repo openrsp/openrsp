@@ -1,8 +1,5 @@
-! Copyright 2012 Magnus Ringholm
+! Copyright 2015 Magnus Ringholm
 !
-! This file is made available under the terms of the
-! GNU Lesser General Public License version 3.
-
 !> @file Contains module rsp_general
 
 !> General response routines. This module organizes, computes and prints
@@ -39,8 +36,7 @@ module rsp_general
                                     rsp_get_matrix_z_2014,             &
                                     rsp_get_matrix_w_2014,             &
                                     rsp_get_matrix_y_2014
-  use rsp_perturbed_sdf, only: rsp_fds_2014, &
-                               rsp_fds
+  use rsp_perturbed_sdf, only: rsp_fds
   use rsp_property_caching, only: property_cache,                      &
                                   contrib_cache_outer,                 &
                                   contrib_cache,                       &
@@ -68,22 +64,11 @@ module rsp_general
 
   implicit none
 
-!   public get_prop_2014
-  public rsp_energy_2014
-  public get_energy_2014
-  public rsp_pulay_n_2014
-  public get_pulay_n_2014
-  public rsp_pulay_lag_2014
-  public get_pulay_lag_2014
-  public rsp_idem_lag_2014
-  public get_idem_lag_2014
-  public rsp_scfe_lag_2014
-  public get_scfe_lag_2014
+  public openrsp_get_property
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
-  public openrsp_get_property_2014
-  
+
   private
 
   real(8) :: time_start
@@ -91,195 +76,7 @@ module rsp_general
 
   contains
   
-!   subroutine openrsp_get_property_2014(nprops, np, pert_dims, pert_first_comp, pert_labels, num_freq_cfgs, pert_freqs, &
-!                                    kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
-!                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-!                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
-!                                    get_xc_exp, id_outp, rsp_tensor, file_id)
-!     implicit none
-! 
-!     integer(kind=QINT), intent(in) :: nprops
-!     integer(kind=QINT), dimension(nprops), intent(in) :: np, num_freq_cfgs
-!     integer(kind=4), intent(in) :: id_outp
-!     integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
-!     character(4), dimension(sum(np)), intent(in) :: pert_labels
-!     integer :: i, j, num_blks, prop_size
-!     integer(kind=QINT), intent(in), dimension(nprops) :: kn_rules
-!     integer, dimension(2) :: kn_rule
-!     character, optional, dimension(20) :: file_id
-!     integer, allocatable, dimension(:) :: blk_sizes
-!     integer, allocatable, dimension(:,:) :: blk_info
-!     complex(8), dimension(dot_product(np, num_freq_cfgs)), intent(in) :: pert_freqs
-!     integer(kind=QINT) num_perts
-!     real :: timing_start, timing_end
-!     type(p_tuple) :: perturbations
-!     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
-!     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
-!     complex(8), dimension(*) :: rsp_tensor
-!     type(QcMat) :: S_unpert, D_unpert, F_unpert
-!     type(SDF_2014), pointer :: S, D, F
-!     integer kn(2)
-! 
-!     if (nprops/=1) then
-!        write(*,*) 'ERROR: Only one property at a time supported for now'
-! 
-!     else
-! 
-!     if (num_freq_cfgs(1)/=1) then
-! 
-!        write(*,*) 'ERROR: Only one frequency configuration for each property supported for now'
-! 
-!     else
-! 
-!     call sdf_setup_datatype_2014(S, S_unpert)
-!     call sdf_setup_datatype_2014(D, D_unpert)
-!     call sdf_setup_datatype_2014(F, F_unpert)
-!     
-!     
-!     ! Loop over properties should start here
-!     
-!     num_perts = np(1)
-! 
-!     kn_rule(1) = kn_rules(1)
-!     kn_rule(2) = num_perts - 1 - kn_rules(1)
-! 
-!     
-!     kn(1) = kn_rule(1)
-!     kn(2) = kn_rule(2)
-!     
-!     perturbations%npert = num_perts
-!     allocate(perturbations%pdim(num_perts))
-! !     allocate(perturbations%pfcomp(num_perts))
-!     allocate(perturbations%plab(num_perts))
-!     allocate(perturbations%pid(num_perts))
-!     allocate(perturbations%freq(num_perts))
-!     perturbations%pdim = pert_dims
-! 
-!     do i = 1, num_perts
-!          perturbations%plab(i) = pert_labels(i)
-!     end do
-!     
-!     perturbations%pid = (/(i, i = 1, num_perts)/)
-!     
-!     write(*,*), 'num perts first', num_perts
-!     write(*,*), 'in p tuple first', perturbations%npert
-! 
-!     
-!     ! Loop over frequencies should start here
-!     
-!     
-!     perturbations%freq = pert_freqs(1:num_perts)
-!     
-!     num_blks = get_num_blks(perturbations)
-!     allocate(blk_info(num_blks, 3))
-!     allocate(blk_sizes(num_blks))
-!     blk_info = get_blk_info(num_blks, perturbations)
-!     blk_sizes = get_triangular_sizes(num_blks, blk_info(1:num_blks, 2), &
-!                                      blk_info(1:num_blks, 3))
-! 
-!     prop_size = get_triangulated_size(num_blks, blk_info)
-!                                      
-!                                      
-!     write(id_outp,*) ' '
-!     write(id_outp,*) 'OpenRSP lib called'
-!     write(id_outp,*) ' '
-!     write(id_outp,*) 'Calculating a property of order ', num_perts
-!     write(id_outp,*) 'The choice of k, n is ', kn(1), ' and ', kn(2)
-!     write(id_outp,*) ' '
-!     write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims
-! !     write(id_outp,*) 'The first component of each perturbation is:          ', pert_first_comp
-!     write(id_outp,*) 'The perturbation labels are:                          ', pert_labels
-!     write(id_outp,*) 'The frequencies of the perturbations (real part) are: ', (/(real(pert_freqs(i)), i = 1, num_perts)/)
-!     write(id_outp,*) 'The frequencies of the perturbations (imag. part) are:', (/(aimag(pert_freqs(i)), i = 1, num_perts)/)
-!     write(id_outp,*) ' '
-!  
-!     if ((kn(1) - kn(2) > 1) .OR. .NOT.(kn(1) + kn(2) == num_perts - 1)) then
-! 
-!        write(id_outp,*) 'ERROR: Invalid choice of (k,n)'
-!        write(id_outp,*) 'Valid choices for k are integers between and including 0 and ', (num_perts - 1)/2
-!        write(id_outp,*) 'Valid choices of n are such that k + n =', num_perts - 1
-!        write(id_outp,*) 'Cannot proceed with calculation: Exiting OpenRSP lib'
-!        write(id_outp,*) ' '
-!        return
-!  
-!     end if
-! 
-!     
-!     write(id_outp,*) 'Starting clock: About to call get_prop routine'
-!     write(id_outp,*) ' '
-! 
-!     call cpu_time(timing_start)
-! 
-!     call get_prop_2014(perturbations, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
-!                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-!                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-!                   id_outp, prop_size, rsp_tensor)
-! 
-!     call cpu_time(timing_end)
-! 
-!     write(id_outp,*) 'Clock stopped: Property was calculated'
-!     write(id_outp,*) 'Time spent in get_prop:',  timing_end - timing_start, ' seconds'
-!     write(id_outp,*) ' '
-! 
-!     write(id_outp,*) 'Property was calculated'
-!     write(id_outp,*) ' '
-!     
-! 
-! 
-!     if (present(file_id)) then
-! !       open(unit=260, file='rsp_tensor_' // trim(adjustl(file_id)), &
-! !             status='replace', action='write') 
-! !        open(unit=261, file='rsp_tensor_human_' // trim(adjustl(file_id)), &
-! !             status='replace', action='write') 
-!     else
-!        open(unit=260, file='rsp_tensor', &
-!             status='replace', action='write') 
-!        open(unit=261, file='rsp_tensor_human', &
-!             status='replace', action='write') 
-!             
-!        call print_rsp_tensor_tr(1, perturbations%npert, perturbations%pdim, &
-!        (/ (1, j = 1, (perturbations%npert - 1) ) /), num_blks, blk_sizes, &
-!        blk_info, prop_size, rsp_tensor, 260, 261)
-! 
-!     close(260)
-!     close(261)
-!     end if
-! 
-! 
-! 
-!     if (present(file_id)) then
-! !        write(*,*) 'Property was printed to rsp_tensor_' // trim(adjustl(file_id))
-! !        write(*,*) 'Property (formatted print) was printed to rsp_tensor_human_' &
-! !                    // trim(adjustl(file_id)) 
-!     else
-!        write(*,*) 'Property was printed to rsp_tensor'
-!        write(*,*) 'Property (formatted print) was printed to rsp_tensor_human'
-!     end if
-! 
-!     write(*,*) ' '
-!     write(*,*) 'End of print'
-! 
-! !     call print_rsp_tensor(1, perturbations%npert, perturbations%pdim, &
-! !     (/ (1, j = 1, (perturbations%npert - 1) ) /), num_blks, blk_sizes, &
-! !     blk_info, prop, id_outp, id_outp)
-! 
-!     deallocate(blk_info)
-! 
-!   end if
-! 
-!   end if
-! 
-!   end subroutine
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  subroutine openrsp_get_property_2014(n_props, np, pert_dims, pert_first_comp, pert_labels, n_freq_cfgs, pert_freqs, &
+  subroutine openrsp_get_property(n_props, np, pert_dims, pert_first_comp, pert_labels, n_freq_cfgs, pert_freqs, &
                                    kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
@@ -309,8 +106,10 @@ module rsp_general
     complex(8), dimension(*) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert
     type(contrib_cache_outer), pointer :: S, D, F
-    integer kn(2)
+    integer :: kn(2)
 
+    ! Set up S, D, F data structures
+    
     call contrib_cache_outer_allocate(S)
     call contrib_cache_outer_allocate(D)
     call contrib_cache_outer_allocate(F)
@@ -322,9 +121,13 @@ module rsp_general
     call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
          data_size = 1, data_mat=(/F_unpert/))         
 
+    ! Present calculation and initialize perturbation tuple datatypes and
+    ! associated size/indexing information
+    
     write(id_outp,*) ' '
     write(id_outp,*) 'OpenRSP lib called'
     write(id_outp,*) ' '
+    
     if (n_props == 1) then
        write(id_outp,*) 'Calculating one property'
     else  
@@ -361,9 +164,7 @@ module rsp_general
              return
  
           end if
-          
-
-          
+         
           p_tuples(k)%npert = np(i)
           allocate(p_tuples(k)%pdim(np(i)))
           allocate(p_tuples(k)%plab(np(i)))
@@ -373,9 +174,6 @@ module rsp_general
           p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
-          ! Unsure of addressing in next line
-          
-
           p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
           1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + 1 + (j)*np(i))
        
@@ -385,7 +183,6 @@ module rsp_general
           write(id_outp,*) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
           write(id_outp,*) ' '
        
-              
           num_blks(k) = get_num_blks(p_tuples(k))
        
           write(*,*) 'Number of blocks:', num_blks(k)
@@ -413,7 +210,9 @@ module rsp_general
 
               
     end do
-      
+
+    ! Calculate properties
+    
     write(id_outp,*) 'Starting clock: About to start property calculations'
     write(id_outp,*) ' '
 
@@ -429,7 +228,9 @@ module rsp_general
     write(id_outp,*) 'Clock stopped: Property calculations finished'
     write(id_outp,*) 'Time spent:',  timing_end - timing_start, ' seconds'
     write(id_outp,*) ' '
-        
+
+    ! Print results
+    
     k = 1
     n = 1
     
@@ -483,6 +284,8 @@ module rsp_general
 
     implicit none
 
+    
+    logical :: traverse_end
     integer :: n_props, id_outp, i
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
@@ -493,7 +296,7 @@ module rsp_general
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: props
-    type(contrib_cache), pointer :: contribution_cache
+    type(contrib_cache), pointer :: contribution_cache, cache_next
     type(property_cache), pointer :: contribs_cache
     type(contrib_cache_outer) :: F, D, S
     
@@ -521,15 +324,16 @@ module rsp_general
     write(id_outp,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
     write(id_outp,*) ' '
     
-!     write(*,*) 'num perts', pert%npert
+
+    
+    ! For each property: Recurse to identify HF energy-type contributions, store in cache
+    
+    call contrib_cache_allocate(contribution_cache)
 
     do i = 1, n_props
-
-
-       call property_cache_allocate(contribs_cache)
-       call contrib_cache_allocate(contribution_cache)
+       
        write(id_outp,*) ' '
-       write(id_outp,*) 'Calculating HF-energy type contribs'
+       write(id_outp,*) 'Identifying HF-energy type contributions'
        write(id_outp,*) ' '
 
        call cpu_time(time_start)
@@ -540,9 +344,289 @@ module rsp_general
        call cpu_time(time_end)
 
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished calculating HF energy-type contribs'
+       write(id_outp,*) 'Finished identifying HF energy-type contributions'
        write(id_outp,*) ' '
-       deallocate(contribs_cache)
+       
+    end do
+
+    ! Calculate all identified contributions and store in cache
+    
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating HF-energy type contributions'
+    write(id_outp,*) ' '
+    
+    call cpu_time(time_start)
+    
+    traverse_end = .FALSE.
+
+    cache_next => contribution_cache
+
+    ! Cycle cache
+    do while (cache_next%last .eqv. .FALSE.)
+       cache_next => cache_next%next
+    end do
+
+    cache_next => cache_next%next
+    cache_next => cache_next%next
+       
+    ! Traverse linked list and calculate
+    do while (traverse_end .eqv. .FALSE.)
+       
+       write(*,*) 'Calculating contribution for inner perturbation tuple'
+       write(*,*) cache_next%p_inner%plab
+
+       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+       write(*,*) ' '
+          
+       if (cache_next%last) then
+          traverse_end = .TRUE.
+       end if
+          
+       cache_next => cache_next%next
+          
+    end do
+
+    call cpu_time(time_end)
+
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(id_outp,*) 'Finished calculating HF energy-type contributions'
+    write(id_outp,*) ' '
+
+    ! For each property: Recurse to identify HF energy-type contributions and 
+    ! add to the property under consideration
+       
+    do i = 1, n_props
+
+       call property_cache_allocate(contribs_cache)
+       call contrib_cache_allocate(contribution_cache)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Assembling HF-energy type contributions'
+       write(id_outp,*) ' '
+
+       call cpu_time(time_start)
+       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
+            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+            contribution_cache, prop_sizes(i), &
+            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
+       call cpu_time(time_end)
+
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished assembling HF energy-type contributions'
+       write(id_outp,*) ' '
+       
+       write(*,*) 'Property is now', &
+       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
+
+    end do
+    
+    
+    ! For each property: Recurse to identify Pulay n and Pulay Lagrange type contributions and
+    ! store in cache
+       
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating Pulay contributions'
+    write(id_outp,*) ' '
+    
+    call cpu_time(time_start)
+    
+    traverse_end = .FALSE.
+
+    cache_next => contribution_cache
+
+    ! Cycle cache
+    do while (cache_next%last .eqv. .FALSE.)
+       cache_next => cache_next%next
+    end do
+
+    cache_next => cache_next%next
+    cache_next => cache_next%next
+       
+    ! Traverse linked list and calculate
+    do while (traverse_end .eqv. .FALSE.)
+       
+       write(*,*) 'Calculating contribution for inner perturbation tuple'
+       write(*,*) cache_next%p_inner%plab
+
+       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+       write(*,*) ' '
+          
+       if (cache_next%last) then
+          traverse_end = .TRUE.
+       end if
+          
+       cache_next => cache_next%next
+          
+    end do
+
+    call cpu_time(time_end)
+
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(id_outp,*) 'Finished calculating contributions'
+    write(id_outp,*) ' '
+
+    ! For each property: Recurse to identify Pulay n and Pulay Lagrange contributions and 
+    ! add to the property under consideration
+       
+    do i = 1, n_props
+
+       call property_cache_allocate(contribs_cache)
+       call contrib_cache_allocate(contribution_cache)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Assembling Pulay contributions'
+       write(id_outp,*) ' '
+
+       call cpu_time(time_start)
+       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
+            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+            contribution_cache, prop_sizes(i), &
+            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
+       call cpu_time(time_end)
+
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished assembling Pulay contributions'
+       write(id_outp,*) ' '
+       
+       write(*,*) 'Property is now', &
+       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
+
+    end do
+  
+  ! For each property: Recurse to identify idempotency Lagrange type contributions and
+    ! store in cache
+       
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating contributions'
+    write(id_outp,*) ' '
+    
+    call cpu_time(time_start)
+    
+    traverse_end = .FALSE.
+
+    cache_next => contribution_cache
+
+    ! Cycle cache
+    do while (cache_next%last .eqv. .FALSE.)
+       cache_next => cache_next%next
+    end do
+
+    cache_next => cache_next%next
+    cache_next => cache_next%next
+       
+    ! Traverse linked list and calculate
+    do while (traverse_end .eqv. .FALSE.)
+       
+       write(*,*) 'Calculating contribution for inner perturbation tuple'
+       write(*,*) cache_next%p_inner%plab
+
+       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+       write(*,*) ' '
+          
+       if (cache_next%last) then
+          traverse_end = .TRUE.
+       end if
+          
+       cache_next => cache_next%next
+          
+    end do
+
+    call cpu_time(time_end)
+
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(id_outp,*) 'Finished calculating contributions'
+    write(id_outp,*) ' '
+
+    ! For each property: Recurse to identify  contributions and 
+    ! add to the property under consideration
+       
+    do i = 1, n_props
+
+       call property_cache_allocate(contribs_cache)
+       call contrib_cache_allocate(contribution_cache)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Assembling  contributions'
+       write(id_outp,*) ' '
+
+       call cpu_time(time_start)
+       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
+            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+            contribution_cache, prop_sizes(i), &
+            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
+       call cpu_time(time_end)
+
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished assembling contributions'
+       write(id_outp,*) ' '
+       
+       write(*,*) 'Property is now', &
+       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
+
+    end do
+    
+    ! For each property: Recurse to identify SCFE contributions and
+    ! store in cache
+       
+    write(id_outp,*) ' '
+    write(id_outp,*) 'Calculating contributions'
+    write(id_outp,*) ' '
+    
+    call cpu_time(time_start)
+    
+    traverse_end = .FALSE.
+
+    cache_next => contribution_cache
+
+    ! Cycle cache
+    do while (cache_next%last .eqv. .FALSE.)
+       cache_next => cache_next%next
+    end do
+
+    cache_next => cache_next%next
+    cache_next => cache_next%next
+       
+    ! Traverse linked list and calculate
+    do while (traverse_end .eqv. .FALSE.)
+       
+       write(*,*) 'Calculating contribution for inner perturbation tuple'
+       write(*,*) cache_next%p_inner%plab
+
+       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+       write(*,*) ' '
+          
+       if (cache_next%last) then
+          traverse_end = .TRUE.
+       end if
+          
+       cache_next => cache_next%next
+          
+    end do
+
+    call cpu_time(time_end)
+
+    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+    write(id_outp,*) 'Finished calculating contributions'
+    write(id_outp,*) ' '
+
+    ! For each property: Recurse to identify  contributions and 
+    ! add to the property under consideration
+       
+    do i = 1, n_props
+
+       call property_cache_allocate(contribs_cache)
+       call contrib_cache_allocate(contribution_cache)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Assembling  contributions'
+       write(id_outp,*) ' '
+
+       call cpu_time(time_start)
+       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
+            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+            contribution_cache, prop_sizes(i), &
+            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
+       call cpu_time(time_end)
+
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished assembling contributions'
+       write(id_outp,*) ' '
        
        write(*,*) 'Property is now', &
        props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
@@ -723,11 +807,6 @@ module rsp_general
   
   ! END NEW 2014
   
-  
-  
-  
-  
-
 
 
 ! BEGIN NEW 2014
@@ -1127,51 +1206,7 @@ module rsp_general
 
     end if
 
-    ! After dryrun recursion is done, calculate all necessary cache elements 
-    ! and recurse again to get cache retrieval situations
-    if ((pert%npert == total_num_perturbations) .AND. dryrun) then
-    
-    
-       traverse_end = .FALSE.
-!        write(*,*) 'dryrun is done'
 
-       cache_next => cache
-
-       ! Cycle to last element of cache
-       do while (cache_next%last .eqv. .FALSE.)
-          cache_next => cache_next%next
-       end do
-
-       cache_next => cache_next%next
-       cache_next => cache_next%next
-       
-       ! Traverse linked list while getting contribs until at last element again
-       do while (traverse_end .eqv. .FALSE.)
-       
-       write(*,*) 'Calculating energy-type contribs for inner perturbation tuple'
-       write(*,*) cache_next%p_inner%pid
-
-          call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, cache_next)
-                 write(*,*) ' '
-          
-          if (cache_next%last) then
-             traverse_end = .TRUE.
-          end if
-          
-          cache_next => cache_next%next
-          
-       end do
-       
-!        write(*,*) 'finished calculation'
-! 
-!        ! Do new recursion for cache retrieval situations
-!        call rsp_energy_recurse(pert, total_num_perturbations, kn, num_p_tuples, &
-!                        p_tuples, density_order, D, get_nucpot, get_1el_exp,  &
-!                        get_t_exp, get_2el_exp, .FALSE., cache_next, p_size=p_size, prop=prop)
-!                        
-! !        write(*,*) 'finished new recursion'
-
-     end if
 
   end subroutine
 
@@ -1678,6 +1713,7 @@ module rsp_general
     integer :: id_outp, c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
     integer :: total_outer_size_1, total_outer_size_2
     integer :: num_0, num_1, num_pert
+    character(30) :: mat_str, fmt_str
     type(contrib_cache_outer) :: D
     type(contrib_cache) :: cache
     type(contrib_cache_outer), pointer :: outer_next
@@ -1696,9 +1732,12 @@ module rsp_general
     
     outer_next => cache%contribs_outer
     
+    write(*,*) 'num outer', cache%num_outer
+
+    
     allocate(outer_contract_sizes_1(cache%num_outer))
     allocate(outer_contract_sizes_2(cache%num_outer,2))
-    
+        
    
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
     
@@ -1719,6 +1758,7 @@ module rsp_general
        if (outer_next%num_dmat == 0) then
 
           num_0 = 1
+          num_1 = num_1 + 1
           outer_contract_sizes_1(k) = 1
           outer_contract_sizes_2(k, :) = (/1,1/)
           
@@ -1779,11 +1819,35 @@ module rsp_general
         end if
     end do
     
+    write(*,*) 'outer 1', outer_contract_sizes_1
+    write(*,*) 'outer 2 1', outer_contract_sizes_2(:,1)
+    write(*,*) 'outer 2 2', outer_contract_sizes_2(:,2)
+    
+
     ! Allocate and set up outer
     
     allocate(LHS_dmat_1(sum(outer_contract_sizes_1(:))))
     allocate(LHS_dmat_2(sum(outer_contract_sizes_2(:, 1))))
     allocate(RHS_dmat_2(sum(outer_contract_sizes_2(:, 2))))
+    
+    do i = 1, size(LHS_dmat_1)
+    
+       call QcMatInit(LHS_dmat_1(i))
+    
+    end do
+    
+    do i = 1, size(LHS_dmat_2)
+    
+       call QcMatInit(LHS_dmat_2(i))
+    
+    end do
+    
+    do i = 1, size(RHS_dmat_2)
+    
+       call QcMatInit(RHS_dmat_2(i))
+    
+    end do
+    
     
     traverse_end = .FALSE.
     
@@ -1799,47 +1863,54 @@ module rsp_general
 
        ! No chain rule applications
        if (outer_next%num_dmat == 0) then
-
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
+       
+          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+               1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_1(lhs_ctr_1))
+          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
                1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
+          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
                1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
 
+               
        ! One chain rule application
        else if (outer_next%num_dmat == 1) then
        
+       
           do m = 1, outer_contract_sizes_1(k) 
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .TRUE., &
+             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
                   1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
                   mat_sing=LHS_dmat_1(lhs_ctr_1 + m  - 1))
           end do
        
           do m = 1, outer_contract_sizes_2(k, 1) 
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .TRUE., &
+             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
                   1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
                   mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
           end do
           
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .TRUE., &
+          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
                1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+       
        
        ! Two chain rule applications
        else if (outer_next%num_dmat == 2) then
        
+       
           do m = 1, outer_contract_sizes_2(k, 1) 
-             call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .TRUE., &
+             call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .FALSE., &
                   1, ind_len=outer_next%p_tuples(1)%npert, &
                   ind_unsorted=outer_next%indices(m, 1:outer_next%p_tuples(1)%npert), &
                   mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
           end do
           
           do n = 1, outer_contract_sizes_2(k, 2) 
-             call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .TRUE., &
+             call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .FALSE., &
                   1, ind_len=outer_next%p_tuples(1)%npert + 1, &
                   ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
                   outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
                   mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
           end do          
+       
        
        end if
    
@@ -1856,25 +1927,66 @@ module rsp_general
     
     end do
     
+    write(*,*) 'cache%blks_triang_size', cache%blks_triang_size
+    write(*,*) 'total_outer_size_1', total_outer_size_1
+    write(*,*) 'total_outer_size_2', total_outer_size_2
+    
+    
     allocate(contrib_0(cache%blks_triang_size))
     allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
     allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
+    
+    
+    do i = 1, size(LHS_dmat_1)
+    
+    
+          if (i < 10) then
+          
+             fmt_str = "(A11, I1)"
+          
+          else if (i < 100) then
+          
+             fmt_str = "(A11, I2)"
+          
+          else
+          
+             fmt_str = "(A11, I3)"
+          
+          end if
+          
+          write(mat_str, fmt_str) 'LHS_dmaE_1_', i
+          
+          write(*,*) 'i', i
+          write(*,*) 'fname:', mat_str
+          
+          
+          
+          j = QcMatWrite_f(LHS_dmat_1(i), trim(mat_str), ASCII_VIEW)
+    
+    end do
+    
     
     ! Calculate contributions
     
     ! Calculate nuclear-nuclear repulsion contribution
     if (num_0 > 0) then
     
+    
+       write(*,*) 'nucpot'
+    
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
+       
+       write(*,*) 'nucpot contribution: ', contrib_0
     
     end if
     
     ! Calculate one-electron contributions
     if (num_1 > 0) then
     
+       write(*,*) '1-el'
        contrib_1 = 0.0
-       call get_1el_exp(num_pert, pert_ext, num_1, outer_contract_sizes_1_coll, &
+       call get_1el_exp(num_pert, pert_ext, total_outer_size_1, &
                         LHS_dmat_1, size(contrib_1), contrib_1)
       
        t_matrix_bra = get_emptypert()
@@ -1884,13 +1996,19 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
     
+    write(*,*) '1-el contribution: ', contrib_1
+    
     end if
+    
+    write(*,*) '2-el'
     
     ! Calculate two-electron contributions
     contrib_2 = 0.0
     call get_2el_exp(num_pert, pert_ext, cache%num_outer, outer_contract_sizes_2(:, 1), LHS_dmat_2, & 
                      outer_contract_sizes_2(:, 2), RHS_dmat_2, size(contrib_2), contrib_2)
                        
+    
+    write(*,*) '2-el contribution: ', contrib_2
     
     ! Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
     
@@ -1972,296 +2090,9 @@ module rsp_general
     deallocate(outer_contract_sizes_2)
     
   end subroutine
-!     total_contrib_size = 0
-!     total_num_outer = total_num_perturbations - cache%p_inner%npert
-!     
-!     inner_nblks = get_num_blks(cache%p_inner)
-!     inner_blks_tuple_info = get_blk_info(inner_nblks, cache%p_inner)
-!     inner_triang_size = get_triangulated_size(inner_nblks, inner_blks_tuple_info(1:inner_nblks, :))
-!     inner_blk_sizes = get_triangular_sizes(inner_nblks, inner_blks_tuple_info(1:inner_nblks, 2), &
-!                       inner_blks_tuple_info(1:inner_nblks, 3))
-!     
-!     call make_triangulated_tuples_indices(1, cache%p_inner%npert, (/inner_nblks/), &
-!          inner_blks_tuple_info, (/inner_triang_size/), inner_indices)
-!     
-!     if (total_num_outer > 0) then
-!     
-!        do i = 1, cache%num_outer
-!     
-!           outer_next => cache%contribs_outer%next
-!        
-!           allocate(outer_next%nblks_tuple(outer_next%num_dmat))
-!           allocate(outer_next%blk_sizes(outer_next%num_dmat, total_num_outer))
-!           allocate(outer_next%blks_tuple_info(outer_next%num_dmat, total_num_outer, 3))
-!           allocate(outer_next%blks_tuple_triang_size((outer_next%num_dmat)))
-!        
-!           do j = 1, outer_next%num_dmat
-!        
-!              outer_next%nblks_tuple(j) = get_num_blks(outer_next%outer_p_tuples(j))
-!              outer_next%blks_tuple_info(j, :, :) = get_blk_info(outer_next%nblks_tuple(j), & 
-!                                                    outer_next%outer_p_tuples(j))
-!              outer_next%blks_tuple_triang_size(j) = get_triangulated_size(outer_next%nblks_tuple(j), &
-!                                                     outer_next%blks_tuple_info(j, 1:outer_next%nblks_tuple(j), :))
-!              outer_next%blk_sizes(j, 1:outer_next%nblks_tuple(j)) = &
-!              get_triangular_sizes(outer_next%nblks_tuple(j), &
-!              outer_next%blks_tuple_info(i,1:outer_next%nblks_tuple(j),2), &
-!              outer_next%blks_tuple_info(i,1:outer_next%nblks_tuple(j),3))
-!              outer_next%outer_size = product(outer_next%blks_tuple_triang_size)
-!        
-!           end do
-!        
-!           allocate(outer_next%indices(outer_next%outer_size, total_num_outer))
-!        
-!           ! MaR: Unsure about 2nd argument (maybe total_num_perturbations)
-!           call make_triangulated_tuples_indices(outer_next%num_dmat, total_num_outer, & 
-!                outer_next%nblks_tuple, outer_next%blks_tuple_info, &
-!                outer_next%blks_tuple_triang_size, outer_next%indices)
-!        
-!           total_outer_size = total_contrib_size + outer_next%outer_size
-!        
-!     
-!        end do
-!     
-!        allocate(dens_tuples(total_outer_size,2))
-!        allocate(contrib(inner_triang_size * total_outer_size))    
-!     
-!        call empty_p_tuple(emptypert)
-!     
-!        do i = 1, total_outer_size
-!     
-!           call sdf_getdata_s(D, emptypert, (/1/), dens_tuples(i, 2))
-!     
-!        end do
-!     
-!        m = 0
-!     
-!        do i = 1, cache%num_outer
-!     
-!           outer_next => cache%contribs_outer%next
-!        
-!           do j = 1, outer_next%outer_size
-!        
-!              m = m + 1
-!        
-!              istart = 1
-!              iend = 0
-!        
-!              do k = 1, outer_next%num_dmat
-!           
-!                 iend = iend + outer_next%outer_p_tuples(k)%npert
-!           
-!                 call sdf_getdata_s(D, outer_next%outer_p_tuples(k), outer_next%indices(j,istart:iend), &
-!                      dens_tuples(m, k))
-!                   
-!                 istart = iend + 1
-!        
-!              end do
-!           
-!           end do
-!           
-!        end do
-!                 ! MaR: Restore this later   
-! !        call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-! !                             cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
-! !                             dens_tuples(:,1), contrib)
-! 
-! !        call empty_p_tuples(t_matrix_bra)
-! !        call empty_p_tuples(t_matrix_ket)
-! 
-!        t_mat_p_tuple = cache%p_inner
-!        t_mat_p_tuple%pid = (/(i, i = 1, t_mat_p_tuple%npert)/)
-! 
-!        ! MaR: Restore this later
-!            
-! !        call rsp_ovlave_t_matrix(get_tmatrix_contrib, t_mat_p_tuple%npert, t_mat_p_tuple, &
-! !                                 t_matrix_bra, t_matrix_ket, &
-! !                                 dens_tuples(:,1), total_outer_size, contrib)                         
-!                          
-! !        call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-! !                             cache%p_inner%plab, cache%p_inner%freq, 1, total_outer_size, &
-! !                             dens_tuples, contrib)
-!  
-!      ! Loop to get offset and put in rsp tensor and cache
-!     
-!        do i = 1, cache%num_outer
-!     
-!           outer_next => cache%contribs_outer%next
-!        
-!           do j = 1, outer_next%outer_size
-! 
-!              if (cache%p_inner%npert > 0) then
-!           
-!                 do k = 1, inner_triang_size
-!              
-!                    ! Merging of blks_tuple_info can give mem issues
-!                    offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
-!                    total_num_perturbations, (/inner_nblks, outer_next%nblks_tuple(:)/), &
-!                    (/cache%p_inner%npert, (outer_next%outer_p_tuples(m)%npert, m = 1, outer_next%num_dmat)/), &
-!                    (/inner_blks_tuple_info, (outer_next%blks_tuple_info(m, :, :), m = 1, outer_next%num_dmat)/), &
-!                    (/inner_blk_sizes, (outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/), &
-!                    (/inner_triang_size, (outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/), &
-!                    (/inner_indices(k,:), outer_next%indices(j,:)/))
-! 
-!                    prop_forcache(offset) = prop_forcache(offset) + contrib(k)
-! 
-!                 end do
-!              
-!              else
-!              
-!                 offset = get_triang_blks_tuple_offset(outer_next%num_dmat, total_num_perturbations, &
-!                 outer_next%nblks_tuple, (/(outer_next%outer_p_tuples(m)%npert, m = 1,outer_next% num_dmat)/), &
-!                 outer_next%blks_tuple_info, outer_next%blk_sizes, outer_next%blks_tuple_triang_size, &
-!                 outer_next%indices(j,:))
-! 
-!                 prop_forcache(offset) = prop_forcache(offset) + contrib(k)
-! 
-!              end if
-!           
-!           end do
-!           
-!                    
-!           
-!           if (cache%p_inner%npert > 0) then
-!     
-!              call p1_cloneto_p2(cache%p_inner, merged_p_tuple)
-!     
-!              do j = 1, outer_next%num_dmat
-!     
-!                 call p1_merge_p2(outer_next%outer_p_tuples(j), merged_p_tuple, merged_p_tuple)
-!    
-!              end do
-!    
-!           else
-!    
-!              call p1_cloneto_p2(outer_next%outer_p_tuples(1), merged_p_tuple)
-!    
-!              do j = 2, outer_next%num_dmat
-!    
-!                 call p1_merge_p2(outer_next%outer_p_tuples(j), merged_p_tuple, merged_p_tuple)
-!    
-!              end do
-!    
-!           end if
-!    
-!           call p_tuple_ordered(merged_p_tuple, merged_p_tuple)
-!    
-!           ! MaR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
-!           ! PIDS ARE IN STANDARD ORDER? FIND OUT
-!    
-!           m = 1
-!       
-!           do j = 1, cache%p_inner%npert
-!              pids_current_contrib(j) = cache%p_inner%pid(j)
-!              m = m + 1
-!           end do
-!           
-!           do j = 1, outer_next%num_dmat
-!              do k = 1, outer_next%outer_p_tuples(j)%npert
-!                 pids_current_contrib(k) = outer_next%outer_p_tuples(j)%pid(k)
-!                 m = m + 1
-!              end do
-!           end do
-!     
-!           merged_nblks = get_num_blks(merged_p_tuple)
-!        
-!           allocate(merged_blk_info(1, merged_nblks, 3))
-!        
-!           merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-!           blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-!           merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-!           merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-!     
-!           allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
-!     
-!           call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-!                                          merged_triang_size, triang_indices_pr)
-!     
-!        
-!           do j = 1, size(triang_indices_pr, 1)
-!     
-!              prop_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-!                          (/merged_p_tuple%npert/), &
-!                          (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-!                          (/triang_indices_pr(j, :) /))
-!     
-!              do k = 1, total_num_perturbations
-!     
-!                 translated_index(k) = triang_indices_pr(j,pids_current_contrib(k))
-!     
-!              end do
-! 
-!              
-!              if (cache%p_inner%npert > 0) then
-! 
-!                 ! Merging of blks_tuple_info can give mem issues
-!                 cache_offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
-!                 total_num_perturbations, (/inner_nblks, outer_next%nblks_tuple(:)/), &
-!                 (/cache%p_inner%npert, (outer_next%outer_p_tuples(m)%npert, m = 1, num_dmat)/), &
-!                 (/inner_blks_tuple_info, (outer_next%blks_tuple_info(m, :, :), m = 1, num_dmat)/), &
-!                 (/inner_blk_sizes, (outer_next%blk_sizes(m,:), m = 1, num_dmat)/), &
-!                 (/inner_triang_size, (outer_next%blks_tuple_triang_size(m), m = 1, num_dmat)/), &
-!                 (/ translated_index(:) /))
-!     
-!              else
-! 
-!                 cache_offset = get_triang_blks_tuple_offset(outer_next%num_dmat, total_num_perturbations, &
-!                 outer_next%nblks_tuple, (/(outer_next%outer_p_tuples(m)%npert, m = 1, num_dmat)/), &
-!                 outer_next%blks_tuple_info, outer_next%blk_sizes, outer_next%blks_tuple_triang_size, &
-!                 (/ translated_index(:) /))
-! 
-!              end if
-!    
-!              prop(prop_offset) = prop(prop_offset) + prop_forcache(cache_offset)
-!    
-!           end do
-!    
-!           outer_next%contrib_size = inner_triang_size * outer_next%outer_size
-!           allocate(outer_next%data_scal(outer_next%contrib_size))
-!           outer_next%data_scal = prop_forcache
-!            
-!        end do
-!  
-!  
-!     else
-!                   ! MaR: Restore this later
-! !        call get_nucpot_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-! !                             cache%p_inner%plab, cache%p_inner%freq, prop)
-! 
-!        call empty_p_tuple(emptypert)
-!        call sdf_getdata_s(D, emptypert, (/1/), D_unp)
-!                ! MaR: Restore this later                           
-! !        call get_1el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-! !                             cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
-! !                             (/D_unp/), prop)
-!     
-!        t_mat_p_tuple = cache%p_inner
-!        t_mat_p_tuple%pid = (/(i, i = 1, t_mat_p_tuple%npert)/)
-! 
-!               ! MaR: Restore this later
-!            
-! !        call rsp_ovlave_t_matrix(get_tmatrix_contrib, t_mat_p_tuple%npert, t_mat_p_tuple, &
-! !                                 t_matrix_bra, t_matrix_ket, &
-! !                                 (/D_unp/), 1, prop)         
-!     
-!     
-! !        call get_2el_contrib(cache%p_inner%npert, cache%p_inner%pdim, cache%p_inner%pfcomp, &
-! !                              cache%p_inner%plab, cache%p_inner%freq, 1, 1, &
-! !                              (/D_unp, D_unp/), prop)
-!    
-!     end if
-! 
-! !  write(*,*) 'energy contrib'
-! !  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
-! !  (/ (1, j = 1, (merged_p_tuple%npert - 1) ) /), merged_nblks, blk_sizes_merged, &
-! !  merged_blk_info, prop_forcache)
-! 
-! 
-!   end subroutine
 
-  ! END NEW 2014
   
-  
-  
+ 
   
   
 
@@ -3690,7 +3521,6 @@ module rsp_general
     end if
 
   end subroutine
-
 
   recursive subroutine print_rsp_tensor_tr(lvl, npert, pdim, ind, &
                        nblks, blk_sizes, blk_info, propsize, prop, print_id, &

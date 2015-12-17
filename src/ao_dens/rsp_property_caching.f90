@@ -65,6 +65,7 @@ module rsp_property_caching
    integer :: num_dmat
    type(p_tuple), allocatable, dimension(:) :: p_tuples
 !    integer :: outer_size
+   integer :: prime
    integer :: contrib_size
    integer, allocatable, dimension(:) :: nblks_tuple
    integer, allocatable, dimension(:,:) :: blk_sizes
@@ -603,6 +604,8 @@ module rsp_property_caching
    type(contrib_cache) :: new_element
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
 
+   write(*,*) 'new contrib cache inner: ', p_tuples(1)%plab
+   
    new_element%last = .TRUE.
    call p1_cloneto_p2(p_tuples(1), new_element%p_inner)
    
@@ -615,6 +618,10 @@ module rsp_property_caching
                            new_element%blk_info(:,2),new_element%blk_info(:,3))
                    
    new_element%blks_triang_size = product(new_element%blk_sizes)
+  
+   write(*,*) 'nblks', new_element%nblks
+   write(*,*) 'blk sizes', new_element%blk_sizes
+   write(*,*) 'blks triang size', new_element%blks_triang_size
   
   
    if (num_p_tuples > 1) then
@@ -1322,13 +1329,13 @@ module rsp_property_caching
                translated_index)
 
             end if
-      write(*,*) 'b5 i', i
+!       write(*,*) 'b5 i', i
             if (present(mat)) then
             
-               write(*,*) 'res offset', res_offset
-               write(*,*) 'res size', size(mat)
-               write(*,*) 'cache offset', cache_offset
-               write(*,*) 'cache size', size(next_element_outer%data_mat)
+!                write(*,*) 'res offset', res_offset
+!                write(*,*) 'res size', size(mat)
+!                write(*,*) 'cache offset', cache_offset
+!                write(*,*) 'cache size', size(next_element_outer%data_mat)
                
             
                call QcMatAEqB(mat(res_offset), next_element_outer%data_mat(cache_offset))

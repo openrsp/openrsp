@@ -334,6 +334,8 @@ module openrsp_callback_f
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%rsp_solver)) then
+        write(*,*) 'freq sums in solver callback', freq_sums
+        
 #if defined(OPENRSP_DEBUG)
             write(STDOUT,100) "size", size_pert, num_freq_sums
 #endif
