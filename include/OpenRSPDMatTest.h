@@ -28,12 +28,12 @@
    2014-07-31, Bin Gao
    * first version
 */
-#if !defined(OPENRSP_DENS_AO_TEST_H)
-#define OPENRSP_DENS_AO_TEST_H
+#if !defined(OPENRSP_DMAT_TEST_H)
+#define OPENRSP_DMAT_TEST_H
 
 #include "OpenRSPPertCallback.h"
-#include "OpenRSPDensAOCallback.h"
+#include "OpenRSPDMatCallback.h"
 
-extern QErrorCode OpenRSPDensAOTest(OpenRSP*,FILE*);
+extern QErrorCode OpenRSPDMatTest(OpenRSP*,FILE*);
 
 #endif

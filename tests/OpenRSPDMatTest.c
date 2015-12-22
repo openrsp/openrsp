@@ -28,7 +28,7 @@
    * first version
 */
 
-#include "OpenRSPDensAOTest.h"
+#include "OpenRSPDMatTest.h"
 
 #if defined(QCMATRIX_SINGLE_PRECISION)
 #define QCREAL_FMT "f"
@@ -36,7 +36,7 @@
 #define QCREAL_FMT "lf"
 #endif
 
-QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
+QErrorCode OpenRSPDMatTest(OpenRSP *open_rsp, FILE *fp_log)
 {
 #include "OpenRSPTestPerturbations.h"
     /* overlap operator */
@@ -86,7 +86,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
     ///* sets the equation of motion of electrons */
     //ierr = OpenRSPSetElecEOM(open_rsp, ELEC_AO_D_MATRIX);
     //QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetElecEOM");
-    //fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPSetElecEOM() passed\n");
+    //fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPSetElecEOM() passed\n");
 
     /* sets the context of linear response equation solver */
     ierr = OpenRSPSetLinearRSPSolver(open_rsp,
@@ -95,7 +95,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
 #endif
                                      &get_linear_rsp_solution);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetLinearRSPSolver()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPSetLinearRSPSolver() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPSetLinearRSPSolver() passed\n");
 
     /* sets the context of overlap operator */
     ierr = OpenRSPSetOverlap(open_rsp,
@@ -108,7 +108,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_overlap_mat,
                              &get_overlap_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetOverlap()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPSetOverlap() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPSetOverlap() passed\n");
 
     /* adds one-electron Hamiltonian */
     ierr = OpenRSPAddOneOper(open_rsp,
@@ -121,7 +121,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_one_oper_mat,
                              &get_one_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(h)");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAddOneOper(h) passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAddOneOper(h) passed\n");
 
     /* adds external field */
     ierr = OpenRSPAddOneOper(open_rsp,
@@ -134,7 +134,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_one_oper_mat,
                              &get_one_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(V)");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAddOneOper(V) passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAddOneOper(V) passed\n");
 
     /* adds two-electron operator */
     ierr = OpenRSPAddTwoOper(open_rsp,
@@ -147,38 +147,38 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_two_oper_mat,
                              &get_two_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddTwoOper()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAddTwoOper() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAddTwoOper() passed\n");
 
     /* assembles the context of response theory calculations */
     ierr = OpenRSPAssemble(open_rsp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAssemble()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAssemble() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAssemble() passed\n");
 
     /* writes the context of response theory calculations */
     ierr = OpenRSPWrite(open_rsp, fp_log);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPWrite()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPWrite() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPWrite() passed\n");
 
     /* sets the unperturbed AO-based Fock matrix */
     F_unpert[0] = (QcMat *)malloc(sizeof(QcMat));
     if (F_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for Fock matrix");
     }
-    ierr = OpenRSPTestReadMat(FOCK_AO_HF, 0, 1, F_unpert);
+    ierr = OpenRSPTestReadMat(DMAT_HF_FOCK, 0, 1, F_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(F)");
     /* sets the unperturbed AO-based density matrix */
     D_unpert[0] = (QcMat *)malloc(sizeof(QcMat));
     if (D_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for density matrix");
     }
-    ierr = OpenRSPTestReadMat(DENS_AO_HF, 0, 1, D_unpert);
+    ierr = OpenRSPTestReadMat(DMAT_HF_DENSITY, 0, 1, D_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(D)");
     /* sets the unperturbed AO-based overlap integral matrix */
     S_unpert[0] = (QcMat *)malloc(sizeof(QcMat));
     if (S_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for overlap integral matrix");
     }
-    ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, S_unpert);
+    ierr = OpenRSPTestReadMat(DMAT_OVERLAP, 0, 1, S_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(S)");
 
     /* gets the polarizability */
@@ -196,7 +196,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                             size_rsp_funs,
                             rsp_funs);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPGetRSPFun()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPGetRSPFun() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPGetRSPFun() passed\n");
     for (ipert=0,ival=0; ipert<3; ipert++) {
         for (jpert=0; jpert<3; jpert++) {
             fprintf(fp_log,

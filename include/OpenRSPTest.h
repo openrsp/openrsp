@@ -37,7 +37,7 @@
 #include "OpenRSPTestPerturbations.h"
 #include "OpenRSPPertCallback.h"
 #include "OpenRSPNucHamiltonCallback.h"
-#include "OpenRSPDensAOTest.h"
+#include "OpenRSPDMatTest.h"
 
 #if !defined(OPENRSP_TEST_EXECUTABLE)
 extern QErrorCode OpenRSPTest(FILE *fp_log);
