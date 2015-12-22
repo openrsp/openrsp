@@ -203,10 +203,10 @@ QErrorCode RSPSolverWrite(const RSPSolver *rsp_solver, FILE *fp_solver)
      </param>
      <param name='RHS_mat' direction='in'>
        Right-hand-side (RHS) matrices, size is the dot product of <num_comps>
-       and <num_freq_sums>
+       and <num_freq_sums>, and index of <num_freq_sums> runs faster in memory
      <param name='rsp_param' direction='inout'>
        Solved response parameters, size is the dot product of <num_comps> and
-       <num_freq_sums>
+       <num_freq_sums>, and index of <num_freq_sums> runs faster in memory
      </param>
      <return>Error information</return>
    </function> */
