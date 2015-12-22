@@ -29,8 +29,8 @@
   * first version
 */
 
-#if !defined(OPENRSP_DENS_AO_CALLBACK_H)
-#define OPENRSP_DENS_AO_CALLBACK_H
+#if !defined(OPENRSP_DMAT_CALLBACK_H)
+#define OPENRSP_DMAT_CALLBACK_H
 
 #include "OpenRSP.h"
 #include "OpenRSPTestData.h"
@@ -115,8 +115,9 @@ extern void get_two_oper_exp(const QInt,
                              const QInt,
                              QReal*);
 extern void get_linear_rsp_solution(const QInt,
+                                    const QInt*,
+                                    const QInt*,
                                     const QReal*,
-                                    const QInt,
                                     QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                     void*,

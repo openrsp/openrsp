@@ -23,7 +23,7 @@
 
 */
 
-#include "OpenRSPDensAOCallback.h"
+#include "OpenRSPDMatCallback.h"
 
 void get_overlap_mat(const QInt bra_num_pert,
                      const QcPertInt *bra_pert_labels,
@@ -78,7 +78,7 @@ void get_overlap_mat(const QInt bra_num_pert,
                            "allocates memory for temporary matrices");
                     exit(QFAILURE);
                 }
-                ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, tmp_int);
+                ierr = OpenRSPTestReadMat(DMAT_OVERLAP, 0, 1, tmp_int);
                 if (ierr!=QSUCCESS) {
                     printf("get_overlap_mat>> error happened at %s: %s\n",
                            FILE_AND_LINE,
@@ -201,7 +201,7 @@ void get_overlap_exp(const QInt bra_num_pert,
                            "allocats memory for matrix");
                     exit(QFAILURE);
                 }
-                ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, val_int);
+                ierr = OpenRSPTestReadMat(DMAT_OVERLAP, 0, 1, val_int);
                 if (ierr!=QSUCCESS) {
                     printf("get_overlap_mat>> error happened at %s: %s\n",
                            FILE_AND_LINE,
@@ -348,7 +348,7 @@ void get_one_oper_mat(const QInt oper_num_pert,
                             exit(QFAILURE);
                         }
                     }
-                    ierr = OpenRSPTestReadMat(DIPLEN_AO, 0, 3, tmp_int);
+                    ierr = OpenRSPTestReadMat(DMAT_DIPLEN, 0, 3, tmp_int);
                     if (ierr!=QSUCCESS) {
                         printf("get_one_oper_mat>> error happened at %s: %s\n",
                                FILE_AND_LINE,
@@ -427,7 +427,7 @@ void get_one_oper_mat(const QInt oper_num_pert,
                         exit(QFAILURE);
                     }
                 }
-                ierr = OpenRSPTestReadMat(DIPLEN_AO, 0, 3, tmp_int);
+                ierr = OpenRSPTestReadMat(DMAT_DIPLEN, 0, 3, tmp_int);
                 if (ierr!=QSUCCESS) {
                     printf("get_one_oper_mat>> error happened at %s: %s\n",
                            FILE_AND_LINE,
@@ -534,7 +534,7 @@ void get_one_oper_exp(const QInt oper_num_pert,
                     }
                     offset_exp = 0;
                     for (ilab=0; ilab<3; ilab++) {
-                        ierr = OpenRSPTestReadMat(DIPLEN_AO, ilab, 1, val_int);
+                        ierr = OpenRSPTestReadMat(DMAT_DIPLEN, ilab, 1, val_int);
                         if (ierr!=QSUCCESS) {
                             printf("get_one_oper_exp>> error happened at %s: %s\n",
                                    FILE_AND_LINE,
@@ -610,7 +610,7 @@ void get_one_oper_exp(const QInt oper_num_pert,
                 }
                 offset_exp = 0;
                 for (ilab=0; ilab<3; ilab++) {
-                    ierr = OpenRSPTestReadMat(DIPLEN_AO, ilab, 1, val_int);
+                    ierr = OpenRSPTestReadMat(DMAT_DIPLEN, ilab, 1, val_int);
                     if (ierr!=QSUCCESS) {
                         printf("get_one_oper_exp>> error happened at %s: %s\n",
                                FILE_AND_LINE,
@@ -796,9 +796,10 @@ void get_two_oper_exp(const QInt oper_num_pert,
     }
 }
 
-void get_linear_rsp_solution(const QInt size_pert,
+void get_linear_rsp_solution(const QInt num_pert,
+                             const QInt *num_comps,
+                             const QInt *num_freq_sums,
                              const QReal *freq_sums,
-                             const QInt num_freq_sums,
                              QcMat *RHS_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              void *user_ctx,

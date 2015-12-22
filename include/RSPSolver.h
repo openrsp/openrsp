@@ -33,8 +33,9 @@
 #include "qcmatrix.h"
 
 typedef void (*GetLinearRSPSolution)(const QInt,
+                                     const QInt*,
+                                     const QInt*,
                                      const QReal*,
-                                     const QInt,
                                      QcMat*[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                                      void*,
@@ -59,8 +60,9 @@ extern QErrorCode RSPSolverAssemble(RSPSolver*);
 extern QErrorCode RSPSolverWrite(const RSPSolver*,FILE*);
 extern QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver*,
                                                 const QInt,
+                                                const QInt*,
+                                                const QInt*,
                                                 const QReal*,
-                                                const QInt,
                                                 QcMat*[],
                                                 QcMat*[]);
 extern QErrorCode RSPSolverDestroy(RSPSolver*);

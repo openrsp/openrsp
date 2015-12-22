@@ -1,273 +1,70 @@
 \section{Unit Testing\index{Unit testing}}
 \label{section-unit-testing}
 
-\subsection{Testing C APIs}
+\subsection{Numerical reference data}
+\label{subsection-reference-data}
 
-We first implement perturbations and its callback function for unit testing:
-<<OpenRSPTestPerturbations.h>>=
-/*
-  <<OpenRSPLicense>>
+To test \LibName, we mimic callback functions by reading different data files
+[[*.dat]]. These files were obtained from calculations using Dalton program
+for the following twisted hydrogen peroxide with STO-3G:
+\begin{verbatim}
+H   1.6701141465  -0.1122989688   1.8068721870
+H  -0.7421983272  -1.5025093539  -1.8068589821
+O   0.0475007085   0.0952594669  -1.3682817885
+O  -0.1137549810   0.0064888625   1.3682805836
+\end{verbatim}
 
-  This is the header file of perturbations.
+For the time being, we have the following reference data at Hartree-Fock level
+as shown in Table~\ref{table-H2O2-HF-STO-3G}.
+\begin{table}[hbt]
+  \centering
+  \caption{Numerical reference data of the twisted hydrogen peroxide from
+    Dalton program, calculated at Hartree-Fock level with STO-3G basis sets.}
+  \label{table-H2O2-HF-STO-3G}
+  \begin{tabular}{lll}
+    \hline\hline
+    Property(frequencies) & $k$ & Files\\
+    \hline
+    $\mathcal{L}_{k,0-k}^{g}(0)$ & $0$ & \texttt{tests/DMatHF/E1g}\\
+    \hline
+    $\mathcal{L}_{k,1-k}^{gg}(0,0)$ & $0$ & \texttt{tests/DMatHF/E2g}\\
+    \hline
+    $\mathcal{L}_{k,2-k}^{ggg}(0,0,0)$ & $0$ & \texttt{tests/DMatHF/E3gk0}\\
+    \hline
+    $\mathcal{L}_{k,2-k}^{ggg}(0,0,0)$ & $1$ & \texttt{tests/DMatHF/E3gk1}\\
+    \hline
+    $\mathcal{L}_{k,3-k}^{gggg}(0,0,0,0)$ & $1$ & \texttt{tests/DMatHF/E4g}\\
+    \hline
+    $\mathcal{L}_{k,0-k}^{f}(0)$ & $0$ & \texttt{tests/DMatHF/E1f}\\
+    \hline
+    $\mathcal{L}_{k,2-k}^{fff}(0,0,0)$ & $1$ & \texttt{tests/DMatHF/E3f}\\
+    \hline
+    $\mathcal{L}_{k,2-k}^{fff}(-2\omega,\omega,\omega)$ & $1$ & \texttt{tests/DMatHF/E3fww}\\
+    \hline
+    $\mathcal{L}_{k,2-k}^{fff}(-3\omega,\omega,2\omega)$ & $1$ & \texttt{tests/DMatHF/E3fw2w}\\
+    \hline
+    $\mathcal{L}_{k,4-k}^{fffff}(-2\omega,-\omega,0,\omega,2\omega)$ & $2$ & \texttt{tests/DMatHF/E5f}\\
+    \hline
+    $\mathcal{L}_{k,1-k}^{gf}(0,0)$ & $0$ & \texttt{tests/DMatHF/E1g1f}\\
+    \hline
+    $\mathcal{L}_{k,2-k}^{gff}(0,0,0)$ & $0$ & \texttt{tests/DMatHF/E1g2f}\\
+    \hline
+    $\mathcal{L}_{k,4-k}^{gffff}(0,-3\omega,\omega,\omega,\omega)$ & $0$ & \texttt{tests/DMatHF/E1g4fk0}\\
+    \hline
+    $\mathcal{L}_{k,4-k}^{gffff}(0,-3\omega,\omega,\omega,\omega)$ & $1$ & \texttt{tests/DMatHF/E1g4fk1}\\
+    \hline
+    $\mathcal{L}_{k,4-k}^{gggff}(0,0,0,-\omega,\omega)$ & $2$ & \texttt{tests/DMatHF/E3g2f}\\
+    \hline
+    $\mathcal{L}_{k,5-k}^{ggffff}(0,0,-\omega,-\omega,0,2\omega)$ & $1$ & \texttt{tests/DMatHF/E2g4f}\\
+    \hline\hline
+  \end{tabular}
+\end{table}
 
-  2014-07-31, Bin Gao:
-  * first version
-*/
-
-#include "OpenRSP.h"
-
-#define NUM_ALL_PERT 3
-#define PERT_GEOMETRIC 1
-#define PERT_DIPOLE 2
-#define PERT_MAGNETIC 5
-#define MAX_ORDER_GEOMETRIC 7
-#define MAX_ORDER_DIPOLE 1
-#define MAX_ORDER_MAGNETIC 7
-
-extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_SIZES[15];
-extern const QInt NUM_ATOMS;
-<<OpenRSPTestPerturbations.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSPTestPerturbations.h"
-
-/* labels of all perturbations */
-const QcPertInt ALL_PERT_LABELS[]={PERT_GEOMETRIC,
-                                   PERT_DIPOLE,
-                                   PERT_MAGNETIC};
-/* allowed maximal orders of all perturbations */
-const QInt ALL_PERT_MAX_ORDERS[]={MAX_ORDER_GEOMETRIC,
-                                  MAX_ORDER_DIPOLE,
-                                  MAX_ORDER_MAGNETIC};
-/* sizes of all perturbations up to their maximal orders */
-const QInt ALL_PERT_SIZES[]={
-    12,78,364,1365,4368,12376,31824,  /* geometric derivatives (4 atoms) */
-    3,                                /* electric dipole */
-    3,6,10,15,21,28,36};              /* magnetic derivatives */
-const QInt NUM_ATOMS=4;
-@ Here we have used three different perturbation labels for geometric, dipole
-length and magnetic perturbations.
-<<OpenRSPPertCallback.h>>=
-/*
-  <<OpenRSPLicense>>
-
-  This is the header file of perturbations' callback function.
-
-  2014-07-31, Bin Gao:
-  * first version
-*/
-
-#if !defined(OPENRSP_PERT_CALLBACK_H)
-#define OPENRSP_PERT_CALLBACK_H
-
-#include "OpenRSP.h"
-
-#if defined(OPENRSP_C_USER_CONTEXT)
-#define PERT_CONTEXT "NRNZGEO"
-#endif
-
-extern void get_pert_concatenation(const QInt,
-                                   const QcPertInt,
-                                   const QInt,
-                                   const QInt,
-                                   const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                   void*,
-#endif
-                                   QInt*);
-
-#endif
-<<OpenRSPPertCallback.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSPPertCallback.h"
-
-void get_pert_concatenation(const QInt pert_label,
-                            const QcPertInt first_cat_comp,
-                            const QInt num_cat_comps,
-                            const QInt num_sub_tuples,
-                            const QInt *len_sub_tuples,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            void *user_ctx,
-#endif
-                            QInt *rank_sub_comps)
-{
-/*FIXME: to implement*/
-}
-@
-
-The following header and C files implement the callback function for nuclear
-Hamiltonian:
-<<OpenRSPNucHamiltonCallback.h>>=
-/*
-  <<OpenRSPLicense>>
-
-  This header file contains callback function for nuclear Hamiltonian.
-
-  2015-10-16, Bin Gao:
-  * first version
-*/
-
-#if !defined(OPENRSP_NUC_HAMILTON_CALLBACK_H)
-#define OPENRSP_NUC_HAMILTON_CALLBACK_H
-
-#include "OpenRSP.h"
-
-#if defined(OPENRSP_C_USER_CONTEXT)
-#define NUC_HAMILTON_CONTEXT "NUC_HAMILTON"
-#endif
-
-extern void get_nuc_contrib(const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            void*,
-#endif
-                            const QInt,
-                            QReal*);
-
-#endif
-<<OpenRSPNucHamiltonCallback.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSPNucHamiltonCallback.h"
-
-void get_nuc_contrib(const QInt nuc_num_pert,
-                     const QcPertInt *nuc_pert_labels,
-                     const QInt *nuc_pert_orders,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                     void *user_ctx,
-#endif
-                     const QInt size_pert,
-                     QReal *val_nuc)
-{
-/*FIXME: to implement*/
-}
-@
-
-We next implement callback functions for AO-based response theory calculations:
-<<OpenRSPDensAOCallback.h>>=
-/*
-  <<OpenRSPLicense>>
-
-  This header file contains callback functions for AO-based response theory
-  calculations.
-
-  2015-10-16, Bin Gao:
-  * first version
-*/
-
-#if !defined(OPENRSP_DENS_AO_CALLBACK_H)
-#define OPENRSP_DENS_AO_CALLBACK_H
-
-#include "OpenRSP.h"
-#include "OpenRSPTestData.h"
-
-#if defined(OPENRSP_C_USER_CONTEXT)
-#define OVERLAP_CONTEXT "OVERLAP"
-#define ONEHAM_CONTEXT "ONEHAM"
-#define EXT_FIELD_CONTEXT "EXT_FIELD"
-#define TWO_OPER_CONTEXT "NONLAO"
-#define SOLVER_CONTEXT "SOLVER"
-#endif
-
-extern void get_overlap_mat(const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-                            const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-                            const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            void*,
-#endif
-                            const QInt,
-                            QcMat*[]);
-extern void get_overlap_exp(const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-                            const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-                            const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-                            const QInt,
-                            QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            void*,
-#endif
-                            const QInt,
-                            QReal*);
-extern void get_one_oper_mat(const QInt,
-                             const QcPertInt*,
-                             const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             void*,
-#endif
-                             const QInt,
-                             QcMat*[]);
-extern void get_one_oper_exp(const QInt,
-                             const QcPertInt*,
-                             const QInt*,
-                             const QInt,
-                             QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             void*,
-#endif
-                             const QInt,
-                             QReal*);
-extern void get_two_oper_mat(const QInt,
-                             const QcPertInt*,
-                             const QInt*,
-                             const QInt,
-                             QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             void*,
-#endif
-                             const QInt,
-                             QcMat*[]);
-extern void get_two_oper_exp(const QInt,
-                             const QcPertInt*,
-                             const QInt*,
-                             const QInt,
-                             const QInt*,
-                             QcMat*[],
-                             const QInt*,
-                             QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                             void*,
-#endif
-                             const QInt,
-                             QReal*);
-extern void get_linear_rsp_solution(const QInt,
-                                    const QReal*,
-                                    const QInt,
-                                    QcMat*[],
-#if defined(OPENRSP_C_USER_CONTEXT)
-                                    void*,
-#endif
-                                    QcMat*[]);
-
-#endif
-@ Here we mimic callback functions by reading different AO-based matrices from
-files [[*.dat]]. These matrices were calculated from Dalton program, and saved
-in the directory [[tests]]. During building, the following CMake file will
-generated list of filenames containing these AO-based matrices:
+During building, the following CMake file will generate lists of filenames
+containing the above data files:
 <<OpenRSPTestData.cmake>>=
 # Generated by notangle -ROpenRSPTestData.cmake web/UnitTesting.nw > cmake/OpenRSPTestData.cmake
 include_directories(${PROJECT_BINARY_DIR})
-# atomic-orbital (AO) density matrix-based response theory
 set(OPENRSP_TEST_DATA ${PROJECT_BINARY_DIR}/OpenRSPTestData.h)
 file(WRITE ${OPENRSP_TEST_DATA} "#if !defined(OPENRSP_TEST_DATA_H)\n")
 file(APPEND ${OPENRSP_TEST_DATA} "#define OPENRSP_TEST_DATA_H\n\n")
@@ -280,34 +77,36 @@ file(APPEND ${OPENRSP_TEST_DATA} "                                     QcMat*[])
 # function of zeroing matrices
 file(APPEND ${OPENRSP_TEST_DATA} "extern QErrorCode OpenRSPTestZeroMat(const QInt,\n")
 file(APPEND ${OPENRSP_TEST_DATA} "                                     QcMat*[]);\n\n")
+# atomic-orbital (AO) density matrix-based response theory
+#
 # unperturbed AO-based Fock matrix
-get_filename_component(FOCK_AO_HF
-                       ${LIB_OPENRSP_PATH}/tests/FockAOHF.dat
+get_filename_component(DMAT_HF_FOCK
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/FOCK.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
-     "#define FOCK_AO_HF \"${FOCK_AO_HF}\"\n")
+     "#define DMAT_HF_FOCK \"${DMAT_HF_FOCK}\"\n")
 # unperturbed AO-based density matrix
-get_filename_component(DENS_AO_HF
-                       ${LIB_OPENRSP_PATH}/tests/DensAOHF.dat
+get_filename_component(DMAT_HF_DENSITY
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/DENSITY.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
-     "#define DENS_AO_HF \"${DENS_AO_HF}\"\n")
+     "#define DMAT_HF_DENSITY \"${DMAT_HF_DENSITY}\"\n")
 # unperturbed AO-based overlap integral matrix
-get_filename_component(OVERLAP_AO
-                       ${LIB_OPENRSP_PATH}/tests/OverlapAO.dat
+get_filename_component(DMAT_OVERLAP
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/OVERLAP.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
-     "#define OVERLAP_AO \"${OVERLAP_AO}\"\n")
+     "#define DMAT_OVERLAP \"${DMAT_OVERLAP}\"\n")
 # unperturbed AO-based dipole length integral matrices
-get_filename_component(DIPLEN_AO
-                       ${LIB_OPENRSP_PATH}/tests/DipLenAO.dat
+get_filename_component(DMAT_DIPLEN
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/DIPLEN.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
-     "#define DIPLEN_AO \"${DIPLEN_AO}\"\n")
+     "#define DMAT_DIPLEN \"${DMAT_DIPLEN}\"\n")
 # two-electron integrals contracted with perturbed AO-based density matrices
 # for solving polarizability at frequency as 0.072
 get_filename_component(ALPHA_GMAT_AO_HF
@@ -324,8 +123,7 @@ file(APPEND
      ${OPENRSP_TEST_DATA}
      "#define ALPHA_RSPARAM_AO_HF \"${ALPHA_RSPARAM_AO_HF}\"\n")
 file(APPEND ${OPENRSP_TEST_DATA} "\n#endif\n")
-@ The following file will read a [[tests/*.dat]] file and put the data into
-matrices:
+@ The following file will read a [[*.dat]] file and put the data into matrices:
 <<OpenRSPTestData.c>>=
 /*
   <<OpenRSPLicense>>
@@ -594,15 +392,278 @@ QErrorCode OpenRSPTestZeroMat(const QInt num_mat, QcMat *mat_zero[])
     return QSUCCESS;
 }
 
-@ By using the above functions to read matrices for [[dat]] files and zero
-matrices, we can implement the following file callback functions for AO-based
-response theory calculations:
-<<OpenRSPDensAOCallback.c>>=
+@
+
+\subsection{Testing C APIs}
+
+We first implement perturbations and its callback function for unit testing:
+<<OpenRSPTestPerturbations.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This is the header file of perturbations.
+
+  2014-07-31, Bin Gao:
+  * first version
+*/
+
+#include "OpenRSP.h"
+
+#define NUM_ALL_PERT 3
+#define PERT_GEOMETRIC 1
+#define PERT_DIPOLE 2
+#define PERT_MAGNETIC 5
+#define MAX_ORDER_GEOMETRIC 7
+#define MAX_ORDER_DIPOLE 1
+#define MAX_ORDER_MAGNETIC 7
+
+extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
+extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
+extern const QInt ALL_PERT_SIZES[15];
+extern const QInt NUM_ATOMS;
+<<OpenRSPTestPerturbations.c>>=
 /*
   <<OpenRSPLicense>>
 */
 
-#include "OpenRSPDensAOCallback.h"
+#include "OpenRSPTestPerturbations.h"
+
+/* labels of all perturbations */
+const QcPertInt ALL_PERT_LABELS[]={PERT_GEOMETRIC,
+                                   PERT_DIPOLE,
+                                   PERT_MAGNETIC};
+/* allowed maximal orders of all perturbations */
+const QInt ALL_PERT_MAX_ORDERS[]={MAX_ORDER_GEOMETRIC,
+                                  MAX_ORDER_DIPOLE,
+                                  MAX_ORDER_MAGNETIC};
+/* sizes of all perturbations up to their maximal orders */
+const QInt ALL_PERT_SIZES[]={
+    12,78,364,1365,4368,12376,31824,  /* geometric derivatives (4 atoms) */
+    3,                                /* electric dipole */
+    3,6,10,15,21,28,36};              /* magnetic derivatives */
+const QInt NUM_ATOMS=4;
+@ Here we have used three different perturbation labels for geometric, dipole
+length and magnetic perturbations.
+<<OpenRSPPertCallback.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This is the header file of perturbations' callback function.
+
+  2014-07-31, Bin Gao:
+  * first version
+*/
+
+#if !defined(OPENRSP_PERT_CALLBACK_H)
+#define OPENRSP_PERT_CALLBACK_H
+
+#include "OpenRSP.h"
+
+#if defined(OPENRSP_C_USER_CONTEXT)
+#define PERT_CONTEXT "NRNZGEO"
+#endif
+
+extern void get_pert_concatenation(const QInt,
+                                   const QcPertInt,
+                                   const QInt,
+                                   const QInt,
+                                   const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                   void*,
+#endif
+                                   QInt*);
+
+#endif
+<<OpenRSPPertCallback.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSPPertCallback.h"
+
+void get_pert_concatenation(const QInt pert_label,
+                            const QcPertInt first_cat_comp,
+                            const QInt num_cat_comps,
+                            const QInt num_sub_tuples,
+                            const QInt *len_sub_tuples,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void *user_ctx,
+#endif
+                            QInt *rank_sub_comps)
+{
+/*FIXME: to implement*/
+}
+@
+
+The following header and C files implement the callback function for nuclear
+Hamiltonian:
+<<OpenRSPNucHamiltonCallback.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This header file contains callback function for nuclear Hamiltonian.
+
+  2015-10-16, Bin Gao:
+  * first version
+*/
+
+#if !defined(OPENRSP_NUC_HAMILTON_CALLBACK_H)
+#define OPENRSP_NUC_HAMILTON_CALLBACK_H
+
+#include "OpenRSP.h"
+
+#if defined(OPENRSP_C_USER_CONTEXT)
+#define NUC_HAMILTON_CONTEXT "NUC_HAMILTON"
+#endif
+
+extern void get_nuc_contrib(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QReal*);
+
+#endif
+<<OpenRSPNucHamiltonCallback.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSPNucHamiltonCallback.h"
+
+void get_nuc_contrib(const QInt nuc_num_pert,
+                     const QcPertInt *nuc_pert_labels,
+                     const QInt *nuc_pert_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                     void *user_ctx,
+#endif
+                     const QInt size_pert,
+                     QReal *val_nuc)
+{
+/*FIXME: to implement*/
+}
+@
+
+We next implement callback functions for AO-based response theory calculations:
+<<OpenRSPDMatCallback.h>>=
+/*
+  <<OpenRSPLicense>>
+
+  This header file contains callback functions for AO-based response theory
+  calculations.
+
+  2015-10-16, Bin Gao:
+  * first version
+*/
+
+#if !defined(OPENRSP_DMAT_CALLBACK_H)
+#define OPENRSP_DMAT_CALLBACK_H
+
+#include "OpenRSP.h"
+#include "OpenRSPTestData.h"
+
+#if defined(OPENRSP_C_USER_CONTEXT)
+#define OVERLAP_CONTEXT "OVERLAP"
+#define ONEHAM_CONTEXT "ONEHAM"
+#define EXT_FIELD_CONTEXT "EXT_FIELD"
+#define TWO_OPER_CONTEXT "NONLAO"
+#define SOLVER_CONTEXT "SOLVER"
+#endif
+
+extern void get_overlap_mat(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QcMat*[]);
+extern void get_overlap_exp(const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            const QcPertInt*,
+                            const QInt*,
+                            const QInt,
+                            QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                            void*,
+#endif
+                            const QInt,
+                            QReal*);
+extern void get_one_oper_mat(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QcMat*[]);
+extern void get_one_oper_exp(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+                             const QInt,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QReal*);
+extern void get_two_oper_mat(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+                             const QInt,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QcMat*[]);
+extern void get_two_oper_exp(const QInt,
+                             const QcPertInt*,
+                             const QInt*,
+                             const QInt,
+                             const QInt*,
+                             QcMat*[],
+                             const QInt*,
+                             QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                             void*,
+#endif
+                             const QInt,
+                             QReal*);
+extern void get_linear_rsp_solution(const QInt,
+                                    const QInt*,
+                                    const QInt*,
+                                    const QReal*,
+                                    QcMat*[],
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                    void*,
+#endif
+                                    QcMat*[]);
+
+#endif
+@ By using the functions developed in
+Subsection~\ref{subsection-reference-data}, we can implement the following file
+callback functions to read matrices from [[*.dat]] files for the AO-based
+response theory calculations:
+<<OpenRSPDMatCallback.c>>=
+/*
+  <<OpenRSPLicense>>
+*/
+
+#include "OpenRSPDMatCallback.h"
 
 void get_overlap_mat(const QInt bra_num_pert,
                      const QcPertInt *bra_pert_labels,
@@ -657,7 +718,7 @@ void get_overlap_mat(const QInt bra_num_pert,
                            "allocates memory for temporary matrices");
                     exit(QFAILURE);
                 }
-                ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, tmp_int);
+                ierr = OpenRSPTestReadMat(DMAT_OVERLAP, 0, 1, tmp_int);
                 if (ierr!=QSUCCESS) {
                     printf("get_overlap_mat>> error happened at %s: %s\n",
                            FILE_AND_LINE,
@@ -780,7 +841,7 @@ void get_overlap_exp(const QInt bra_num_pert,
                            "allocats memory for matrix");
                     exit(QFAILURE);
                 }
-                ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, val_int);
+                ierr = OpenRSPTestReadMat(DMAT_OVERLAP, 0, 1, val_int);
                 if (ierr!=QSUCCESS) {
                     printf("get_overlap_mat>> error happened at %s: %s\n",
                            FILE_AND_LINE,
@@ -927,7 +988,7 @@ void get_one_oper_mat(const QInt oper_num_pert,
                             exit(QFAILURE);
                         }
                     }
-                    ierr = OpenRSPTestReadMat(DIPLEN_AO, 0, 3, tmp_int);
+                    ierr = OpenRSPTestReadMat(DMAT_DIPLEN, 0, 3, tmp_int);
                     if (ierr!=QSUCCESS) {
                         printf("get_one_oper_mat>> error happened at %s: %s\n",
                                FILE_AND_LINE,
@@ -1006,7 +1067,7 @@ void get_one_oper_mat(const QInt oper_num_pert,
                         exit(QFAILURE);
                     }
                 }
-                ierr = OpenRSPTestReadMat(DIPLEN_AO, 0, 3, tmp_int);
+                ierr = OpenRSPTestReadMat(DMAT_DIPLEN, 0, 3, tmp_int);
                 if (ierr!=QSUCCESS) {
                     printf("get_one_oper_mat>> error happened at %s: %s\n",
                            FILE_AND_LINE,
@@ -1113,7 +1174,7 @@ void get_one_oper_exp(const QInt oper_num_pert,
                     }
                     offset_exp = 0;
                     for (ilab=0; ilab<3; ilab++) {
-                        ierr = OpenRSPTestReadMat(DIPLEN_AO, ilab, 1, val_int);
+                        ierr = OpenRSPTestReadMat(DMAT_DIPLEN, ilab, 1, val_int);
                         if (ierr!=QSUCCESS) {
                             printf("get_one_oper_exp>> error happened at %s: %s\n",
                                    FILE_AND_LINE,
@@ -1189,7 +1250,7 @@ void get_one_oper_exp(const QInt oper_num_pert,
                 }
                 offset_exp = 0;
                 for (ilab=0; ilab<3; ilab++) {
-                    ierr = OpenRSPTestReadMat(DIPLEN_AO, ilab, 1, val_int);
+                    ierr = OpenRSPTestReadMat(DMAT_DIPLEN, ilab, 1, val_int);
                     if (ierr!=QSUCCESS) {
                         printf("get_one_oper_exp>> error happened at %s: %s\n",
                                FILE_AND_LINE,
@@ -1375,9 +1436,10 @@ void get_two_oper_exp(const QInt oper_num_pert,
     }
 }
 
-void get_linear_rsp_solution(const QInt size_pert,
+void get_linear_rsp_solution(const QInt num_pert,
+                             const QInt *num_comps,
+                             const QInt *num_freq_sums,
                              const QReal *freq_sums,
-                             const QInt num_freq_sums,
                              QcMat *RHS_mat[],
 #if defined(OPENRSP_C_USER_CONTEXT)
                              void *user_ctx,
@@ -1413,7 +1475,7 @@ void get_linear_rsp_solution(const QInt size_pert,
 }
 
 @ The atomic-orbital density matrix-based response theory is tested by:
-<<OpenRSPDensAOTest.h>>=
+<<OpenRSPDMatTest.h>>=
 /*
   <<OpenRSPLicense>>
 
@@ -1423,16 +1485,16 @@ void get_linear_rsp_solution(const QInt size_pert,
    2014-07-31, Bin Gao
    * first version
 */
-#if !defined(OPENRSP_DENS_AO_TEST_H)
-#define OPENRSP_DENS_AO_TEST_H
+#if !defined(OPENRSP_DMAT_TEST_H)
+#define OPENRSP_DMAT_TEST_H
 
 #include "OpenRSPPertCallback.h"
-#include "OpenRSPDensAOCallback.h"
+#include "OpenRSPDMatCallback.h"
 
-extern QErrorCode OpenRSPDensAOTest(OpenRSP*,FILE*);
+extern QErrorCode OpenRSPDMatTest(OpenRSP*,FILE*);
 
 #endif
-<<OpenRSPDensAOTest.c>>=
+<<OpenRSPDMatTest.c>>=
 /*
   <<OpenRSPLicense>>
 
@@ -1442,7 +1504,7 @@ extern QErrorCode OpenRSPDensAOTest(OpenRSP*,FILE*);
    * first version
 */
 
-#include "OpenRSPDensAOTest.h"
+#include "OpenRSPDMatTest.h"
 
 #if defined(QCMATRIX_SINGLE_PRECISION)
 #define QCREAL_FMT "f"
@@ -1450,7 +1512,7 @@ extern QErrorCode OpenRSPDensAOTest(OpenRSP*,FILE*);
 #define QCREAL_FMT "lf"
 #endif
 
-QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
+QErrorCode OpenRSPDMatTest(OpenRSP *open_rsp, FILE *fp_log)
 {
 #include "OpenRSPTestPerturbations.h"
     /* overlap operator */
@@ -1500,7 +1562,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
     ///* sets the equation of motion of electrons */
     //ierr = OpenRSPSetElecEOM(open_rsp, ELEC_AO_D_MATRIX);
     //QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetElecEOM");
-    //fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPSetElecEOM() passed\n");
+    //fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPSetElecEOM() passed\n");
 
     /* sets the context of linear response equation solver */
     ierr = OpenRSPSetLinearRSPSolver(open_rsp,
@@ -1509,7 +1571,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
 #endif
                                      &get_linear_rsp_solution);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetLinearRSPSolver()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPSetLinearRSPSolver() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPSetLinearRSPSolver() passed\n");
 
     /* sets the context of overlap operator */
     ierr = OpenRSPSetOverlap(open_rsp,
@@ -1522,7 +1584,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_overlap_mat,
                              &get_overlap_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetOverlap()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPSetOverlap() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPSetOverlap() passed\n");
 
     /* adds one-electron Hamiltonian */
     ierr = OpenRSPAddOneOper(open_rsp,
@@ -1535,7 +1597,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_one_oper_mat,
                              &get_one_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(h)");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAddOneOper(h) passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAddOneOper(h) passed\n");
 
     /* adds external field */
     ierr = OpenRSPAddOneOper(open_rsp,
@@ -1548,7 +1610,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_one_oper_mat,
                              &get_one_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddOneOper(V)");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAddOneOper(V) passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAddOneOper(V) passed\n");
 
     /* adds two-electron operator */
     ierr = OpenRSPAddTwoOper(open_rsp,
@@ -1561,38 +1623,38 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                              &get_two_oper_mat,
                              &get_two_oper_exp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddTwoOper()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAddTwoOper() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAddTwoOper() passed\n");
 
     /* assembles the context of response theory calculations */
     ierr = OpenRSPAssemble(open_rsp);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAssemble()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPAssemble() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPAssemble() passed\n");
 
     /* writes the context of response theory calculations */
     ierr = OpenRSPWrite(open_rsp, fp_log);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPWrite()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPWrite() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPWrite() passed\n");
 
     /* sets the unperturbed AO-based Fock matrix */
     F_unpert[0] = (QcMat *)malloc(sizeof(QcMat));
     if (F_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for Fock matrix");
     }
-    ierr = OpenRSPTestReadMat(FOCK_AO_HF, 0, 1, F_unpert);
+    ierr = OpenRSPTestReadMat(DMAT_HF_FOCK, 0, 1, F_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(F)");
     /* sets the unperturbed AO-based density matrix */
     D_unpert[0] = (QcMat *)malloc(sizeof(QcMat));
     if (D_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for density matrix");
     }
-    ierr = OpenRSPTestReadMat(DENS_AO_HF, 0, 1, D_unpert);
+    ierr = OpenRSPTestReadMat(DMAT_HF_DENSITY, 0, 1, D_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(D)");
     /* sets the unperturbed AO-based overlap integral matrix */
     S_unpert[0] = (QcMat *)malloc(sizeof(QcMat));
     if (S_unpert[0]==NULL) {
         QErrorExit(FILE_AND_LINE, "allocates memory for overlap integral matrix");
     }
-    ierr = OpenRSPTestReadMat(OVERLAP_AO, 0, 1, S_unpert);
+    ierr = OpenRSPTestReadMat(DMAT_OVERLAP, 0, 1, S_unpert);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPTestReadMat(S)");
 
     /* gets the polarizability */
@@ -1610,7 +1672,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
                             size_rsp_funs,
                             rsp_funs);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPGetRSPFun()");
-    fprintf(fp_log, "OpenRSPDensAOTest>> OpenRSPGetRSPFun() passed\n");
+    fprintf(fp_log, "OpenRSPDMatTest>> OpenRSPGetRSPFun() passed\n");
     for (ipert=0,ival=0; ipert<3; ipert++) {
         for (jpert=0; jpert<3; jpert++) {
             fprintf(fp_log,
@@ -1657,7 +1719,7 @@ QErrorCode OpenRSPDensAOTest(OpenRSP *open_rsp, FILE *fp_log)
 #include "OpenRSPTestPerturbations.h"
 #include "OpenRSPPertCallback.h"
 #include "OpenRSPNucHamiltonCallback.h"
-#include "OpenRSPDensAOTest.h"
+#include "OpenRSPDMatTest.h"
 
 #if !defined(OPENRSP_TEST_EXECUTABLE)
 extern QErrorCode OpenRSPTest(FILE *fp_log);
@@ -1724,8 +1786,8 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     fprintf(fp_log, "OpenRSPTest>> OpenRSPSetNucHamilton() passed\n");
 
     /* tests the density matrix-based response theory */
-    ierr = OpenRSPDensAOTest(&open_rsp, fp_log);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDensAOTest()");
+    ierr = OpenRSPDMatTest(&open_rsp, fp_log);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDMatTest()");
     fprintf(fp_log, "OpenRSPTest>> density matrix-based response theory passed\n");
 
     /* destroys the context of response theory calculations */

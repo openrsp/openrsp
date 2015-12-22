@@ -877,19 +877,32 @@ module rsp_perturbed_sdf
                 
                 write(*,*) 'frequency passed:', real((/freq_sums(k)/))
           
-                call get_rsp_sol(1, dcmplx(real((/freq_sums(k)/)), 0.0d0), last - first + 1, &
-                     RHS(ind_ctr + first - 1:ind_ctr + last - 1), &
-                     X(ind_ctr + first - 1:ind_ctr + last - 1))
+                !To Magnus: could you please check if the new callback subroutine works?
+                call get_rsp_sol(1,                                    &
+                                 (/last-first+1/),                     &
+                                 (/1/),                                &
+                                 dcmplx(real((/freq_sums(k)/)),0.0d0), &
+                                 RHS(ind_ctr+first-1:ind_ctr+last-1),  &
+                                 X(ind_ctr+first-1:ind_ctr+last-1))
+                !call get_rsp_sol(1, dcmplx(real((/freq_sums(k)/)), 0.0d0), last - first + 1, &
+                !     RHS(ind_ctr + first - 1:ind_ctr + last - 1), &
+                !     X(ind_ctr + first - 1:ind_ctr + last - 1))
    
              end if
        
           end do
        
        else
-          
+          !To Magnus: could you please check if the new callback subroutine works?
+          call get_rsp_sol(1,                                    &
+                           (/size_i(k)/),                        &
+                           (/1/),                                &
+                           dcmplx(real((/freq_sums(k)/)),0.0d0), &
+                           RHS(ind_ctr:ind_ctr+size_i(k)-1),     &
+                           X(ind_ctr:ind_ctr+size_i(k)-1))
           ! "OLD NEW FORMAT": NOT SUPPOSED TO BE IN TRAVERSAL WHEN CHANGING TO NEW FORMAT
-          call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
-               X(ind_ctr:ind_ctr + size_i(k) - 1))
+          !call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
+          !     X(ind_ctr:ind_ctr + size_i(k) - 1))
     
        end if
     
