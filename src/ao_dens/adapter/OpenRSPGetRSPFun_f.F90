@@ -226,12 +226,11 @@
         ! DEBUGGING: HARD-CODED VERSION FOR TESTING, ORIGINAL IN COMMENTS BELOW
         ! Properties: Eggg, Ef, Eggfff, Efff
         
-            deallocate(f_rsp_tensor)
-            allocate(f_rsp_tensor(364 + 3 + 78*(10 + 10 + 10) + 10 + 10 + 10 + 10))
+
         
-                 ierr = QcMatWrite_f(f_F_unpert(1), 'F_before_call', ASCII_VIEW)
-                 ierr = QcMatWrite_f(f_S_unpert(1), 'S_before_call', ASCII_VIEW)
-                 ierr = QcMatWrite_f(f_D_unpert(1), 'D_before_call', ASCII_VIEW)
+!                  ierr = QcMatWrite_f(f_F_unpert(1), 'F_before_call', ASCII_VIEW)
+!                  ierr = QcMatWrite_f(f_S_unpert(1), 'S_before_call', ASCII_VIEW)
+!                  ierr = QcMatWrite_f(f_D_unpert(1), 'D_before_call', ASCII_VIEW)
         
 !             call openrsp_get_property(4,                                 &
 !                                            (/3, 1, 5, 3/),                                 &
@@ -312,7 +311,10 @@
 !                                            STDOUT,                                    &
 !                                            f_rsp_tensor)      
 !                                       
-                                      
+
+            deallocate(f_rsp_tensor)
+            allocate(f_rsp_tensor(364 + 3 + 78*(10 + 18 + 27) + 18 + 10 + 27 + 27))
+
                                       
             call openrsp_get_property(4,                                 &
                                            (/3, 1, 5, 3/),                                 &

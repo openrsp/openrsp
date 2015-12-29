@@ -604,7 +604,7 @@ module rsp_property_caching
    type(contrib_cache) :: new_element
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
 
-   write(*,*) 'new contrib cache inner: ', p_tuples(1)%plab
+!    write(*,*) 'new contrib cache inner: ', p_tuples(1)%plab
    
    new_element%last = .TRUE.
    call p1_cloneto_p2(p_tuples(1), new_element%p_inner)
@@ -619,9 +619,9 @@ module rsp_property_caching
                    
    new_element%blks_triang_size = product(new_element%blk_sizes)
   
-   write(*,*) 'nblks', new_element%nblks
-   write(*,*) 'blk sizes', new_element%blk_sizes
-   write(*,*) 'blks triang size', new_element%blks_triang_size
+!    write(*,*) 'nblks', new_element%nblks
+!    write(*,*) 'blk sizes', new_element%blk_sizes
+!    write(*,*) 'blks triang size', new_element%blks_triang_size
   
   
    if (num_p_tuples > 1) then
@@ -684,12 +684,19 @@ module rsp_property_caching
 
      total_npert = sum((/(outer_p_tuples(i)%npert, i = 1, num_dmat)/))
      
-     allocate(new_element%nblks_tuple(num_dmat))
-     allocate(new_element%blk_sizes(num_dmat, total_npert))
-     allocate(new_element%blks_tuple_info(num_dmat, total_npert, 3))
-     allocate(new_element%blks_tuple_triang_size(num_dmat))
+!      write(*,*) 'total_npert', total_npert
+     
+     if (total_npert > 0) then
+     
+        allocate(new_element%nblks_tuple(num_dmat))
+        allocate(new_element%blk_sizes(num_dmat, total_npert))
+        allocate(new_element%blks_tuple_info(num_dmat, total_npert, 3))
+        allocate(new_element%blks_tuple_triang_size(num_dmat))
+     
      
      new_element%nblks_tuple = (/(get_num_blks(outer_p_tuples(i)), i = 1, num_dmat)/)
+   
+!      write(*,*) 'new_element%nblks_tuple', new_element%nblks_tuple   
    
      do i = 1, num_dmat
      
@@ -708,6 +715,7 @@ module rsp_property_caching
      call make_triangulated_tuples_indices(num_dmat, total_npert, new_element%nblks_tuple, &
           new_element%blks_tuple_info, new_element%blks_tuple_triang_size, new_element%indices)
      
+     end if
      
    
    
