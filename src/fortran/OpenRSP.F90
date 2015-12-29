@@ -342,9 +342,10 @@ module OpenRSP_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_linear_rsp_solution(num_freq_sums, &
+            subroutine get_linear_rsp_solution(num_pert,      &
+                                               num_comps,     &
+                                               num_freq_sums, &
                                                freq_sums,     &
-                                               size_pert,     &
                                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
                                                len_ctx,       &
@@ -352,30 +353,33 @@ module OpenRSP_f
 #endif
                                                rsp_param)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: num_freq_sums
-                real(kind=QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-                integer(kind=QINT), intent(in) :: size_pert
-                type(QcMat), intent(in) :: RHS_mat(num_freq_sums*size_pert)
+                integer(kind=QINT), intent(in) :: num_pert
+                integer(kind=QINT), intent(in) :: num_comps(num_pert)
+                integer(kind=QINT), intent(in) :: num_freq_sums(num_pert)
+                real(kind=QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
+                type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
-                type(QcMat), intent(inout) :: rsp_param(num_freq_sums*size_pert)
+                type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
             end subroutine get_linear_rsp_solution
-            subroutine RSPSolverGetLinearRSPSolution_f(num_freq_sums, &
+            subroutine RSPSolverGetLinearRSPSolution_f(num_pert,      &
+                                                       num_comps,     &
+                                                       num_freq_sums, &
                                                        freq_sums,     &
-                                                       size_pert,     &
                                                        RHS_mat,       &
                                                        user_ctx,      &
                                                        rsp_param)     &
                 bind(C, name="RSPSolverGetLinearRSPSolution_f")
                 use, intrinsic :: iso_c_binding
-                integer(kind=C_QINT), value, intent(in) :: num_freq_sums
-                real(kind=C_QREAL), intent(in) :: freq_sums(2*num_freq_sums)
-                integer(kind=C_QINT), value, intent(in) :: size_pert
-                type(C_PTR), intent(in) :: RHS_mat(num_freq_sums*size_pert)
+                integer(kind=C_QINT), value, intent(in) :: num_pert
+                integer(kind=C_QINT), intent(in) :: num_comps(num_pert)
+                integer(kind=C_QINT), intent(in) :: num_freq_sums(num_pert)
+                real(kind=C_QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
+                type(C_PTR), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
                 type(C_PTR), value, intent(in) :: user_ctx
-                type(C_PTR), intent(inout) :: rsp_param(num_freq_sums*size_pert)
+                type(C_PTR), intent(in) :: rsp_param(dot_product(num_comps,num_freq_sums))
             end subroutine RSPSolverGetLinearRSPSolution_f
         end interface
         if (associated(open_rsp%solver_fun)) then

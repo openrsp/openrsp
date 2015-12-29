@@ -75,20 +75,22 @@ module openrsp_callback_f
 
     interface
         integer(C_INT) function RSPSolverGetLinearRSPSolution(rsp_solver,    &
+                                                              num_pert,      &
+                                                              num_comps,     &
                                                               num_freq_sums, &
                                                               freq_sums,     &
-                                                              size_pert,     &
                                                               RHS_mat,       &
                                                               rsp_param)     &
             bind(C, name="RSPSolverGetLinearRSPSolution")
             use, intrinsic :: iso_c_binding
             implicit none
             type(C_PTR), value, intent(in) :: rsp_solver
-            integer(kind=C_QINT), value, intent(in) :: num_freq_sums
-            real(kind=C_QREAL), intent(in) :: freq_sums(num_freq_sums)
-            integer(kind=C_QINT), value, intent(in) :: size_pert
-            type(C_PTR), intent(in) :: RHS_mat(size_pert*num_freq_sums)
-            type(C_PTR), intent(in) :: rsp_param(size_pert*num_freq_sums)
+            integer(kind=C_QINT), value, intent(in) :: num_pert
+            integer(kind=C_QINT), intent(in) :: num_comps(num_pert)
+            integer(kind=C_QINT), intent(in) :: num_freq_sums(num_pert)
+            real(kind=C_QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
+            type(C_PTR), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
+            type(C_PTR), intent(in) :: rsp_param(dot_product(num_comps,num_freq_sums))
         end function RSPSolverGetLinearRSPSolution
         integer(C_INT) function RSPNucHamiltonGetContributions(nuc_hamilton, &
                                                                len_tuple,    &
@@ -319,50 +321,63 @@ module openrsp_callback_f
     end subroutine RSP_CTX_Destroy
 
     ! callback subroutine to get the solution of linear response equation
-    subroutine f_callback_RSPSolverGetLinearRSPSolution(num_freq_sums, &
+    subroutine f_callback_RSPSolverGetLinearRSPSolution(num_pert,      &
+                                                        num_comps,     &
+                                                        num_freq_sums, &
                                                         freq_sums,     &
-                                                        size_pert,     &
                                                         RHS_mat,       &
                                                         rsp_param)
-        integer(kind=QINT), intent(in) :: num_freq_sums
-        real(kind=QREAL), intent(in) :: freq_sums(num_freq_sums)
-        integer(kind=QINT), intent(in) :: size_pert
-        type(QcMat), intent(in) :: RHS_mat(size_pert*num_freq_sums)
-        type(QcMat), intent(inout) :: rsp_param(size_pert*num_freq_sums)
+        integer(kind=QINT), intent(in) :: num_pert
+        integer(kind=QINT), intent(in) :: num_comps(num_pert)
+        integer(kind=QINT), intent(in) :: num_freq_sums(num_pert)
+        complex(kind=C_QREAL), intent(in) :: freq_sums(sum(num_freq_sums))
+        type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
+        type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
+        real(kind=C_QREAL), allocatable :: c_freq_sums(:)
         type(C_PTR), allocatable :: c_RHS_mat(:)
         type(C_PTR), allocatable :: c_rsp_param(:)
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%rsp_solver)) then
-        write(*,*) 'freq sums in solver callback', freq_sums
-        
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", size_pert, num_freq_sums
+            write(STDOUT,100) "size", num_pert, num_comps, num_freq_sums
 #endif
-            allocate(c_RHS_mat(size_pert*num_freq_sums), stat=ierr)
+            allocate(c_freq_sums(2*sum(num_freq_sums)), stat=ierr)
+            if (ierr/=0) then
+                write(STDOUT,100) "failed to allocate memory for c_freq_sums", &
+                                  2*sum(num_freq_sums)
+                call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+            end if
+            do imat = 1, sum(num_freq_sums)
+                c_freq_sums(2*imat-1) = real(freq_sums(imat))
+                c_freq_sums(2*imat) = aimag(freq_sums(imat))
+            end do
+            allocate(c_RHS_mat(dot_product(num_comps,num_freq_sums)), stat=ierr)
             if (ierr/=0) then
                 write(STDOUT,100) "failed to allocate memory for c_RHS_mat", &
-                                  size_pert*num_freq_sums
+                                  dot_product(num_comps,num_freq_sums)
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
             ierr = QcMat_C_LOC(A=RHS_mat, c_A=c_RHS_mat)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
-            allocate(c_rsp_param(size_pert*num_freq_sums), stat=ierr)
+            allocate(c_rsp_param(dot_product(num_comps,num_freq_sums)), stat=ierr)
             if (ierr/=0) then
                 write(STDOUT,100) "failed to allocate memory for c_rsp_param", &
-                                  size_pert*num_freq_sums
+                                  dot_product(num_comps,num_freq_sums)
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
             ierr = QcMat_C_LOC(A=rsp_param, c_A=c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             ierr = RSPSolverGetLinearRSPSolution(ctx_saved%rsp_solver, &
+                                                 num_pert,             &
+                                                 num_comps,            &
                                                  num_freq_sums,        &
-                                                 freq_sums,            &
-                                                 size_pert,            &
+                                                 c_freq_sums,          &
                                                  c_RHS_mat,            &
                                                  c_rsp_param)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
-            do imat = 1, size_pert*num_freq_sums
+            deallocate(c_freq_sums)
+            do imat = 1, dot_product(num_comps,num_freq_sums)
                 c_RHS_mat(imat) = C_NULL_PTR
                 c_rsp_param(imat) = C_NULL_PTR
             end do
@@ -372,7 +387,7 @@ module openrsp_callback_f
             write(STDOUT,100) "null callback function for linear response equation solver"
             call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
         end if
-100     format("f_callback_RSPSolverGetLinearRSPSolution>> ",A,2I12)
+100     format("f_callback_RSPSolverGetLinearRSPSolution>> ",A,600I6)
     end subroutine f_callback_RSPSolverGetLinearRSPSolution
 
     ! callback subroutine to get nuclear contributions
