@@ -77,8 +77,8 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     fprintf(fp_log, "OpenRSPTest>> OpenRSPSetNucHamilton() passed\n");
 
     /* tests the density matrix-based response theory */
-    ierr = OpenRSPDensAOTest(&open_rsp, fp_log);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDensAOTest()");
+    ierr = OpenRSPDMatTest(&open_rsp, fp_log);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPDMatTest()");
     fprintf(fp_log, "OpenRSPTest>> density matrix-based response theory passed\n");
 
     /* destroys the context of response theory calculations */

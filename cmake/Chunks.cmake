@@ -11,8 +11,8 @@ set(OPENRSP_HEADER_CHUNKS
     OpenRSPTestPerturbations.h
     OpenRSPPertCallback.h
     OpenRSPNucHamiltonCallback.h
-    OpenRSPDensAOCallback.h
-    OpenRSPDensAOTest.h
+    OpenRSPDMatCallback.h
+    OpenRSPDMatTest.h
     OpenRSPTest.h)
 set(OPENRSP_C_CHUNKS
     RSPPerturbation.c
@@ -28,8 +28,8 @@ set(OPENRSP_C_TEST_CHUNKS
     OpenRSPPertCallback.c
     OpenRSPTestData.c
     OpenRSPNucHamiltonCallback.c
-    OpenRSPDensAOCallback.c
-    OpenRSPDensAOTest.c
+    OpenRSPDMatCallback.c
+    OpenRSPDMatTest.c
     OpenRSPTest.c)
 set(OPENRSP_FORTRAN_CHUNKS
     RSPPertBasicTypes.F90

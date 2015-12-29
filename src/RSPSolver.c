@@ -99,36 +99,42 @@ QErrorCode RSPSolverWrite(const RSPSolver *rsp_solver, FILE *fp_solver)
      <param name='rsp_solver' direction='in'>
        The context of response equation solver
      </param>
-     <param name='num_freq_sums' direction='in'>
-       Number of complex frequency sums on the left hand side of the linear
+     <param name='num_pert' direction='in'>
+       Number of different perturbations on the right hand side of the linear
        response equation
      </param>
-     <param name='freq_sums' direction='in'>
-       The complex frequency sums on the left hand side
+     <param name='num_comps' direction='in'>
+       Number of components of each perturbation, size is <num_pert>
      </param>
-     <param name='size_pert' direction='in'>
-       Size of perturbations acting on the time-dependent
-       self-consistent-field (TDSCF) equation
+     <param name='num_freq_sums' direction='in'>
+       For each perturbation, number of complex frequency sums on the left hand
+       side of the linear response equation, size is <num_pert>
+     </param>
+     <param name='freq_sums' direction='in'>
+       The complex frequency sums on the left hand side of the linear response
+       equation, size is twice of the sum of <num_freq_sums>
      </param>
      <param name='RHS_mat' direction='in'>
-       Right-hand-side (RHS) matrices, size is the product of <size_pert>
-       and <num_freq_sums>
+       Right-hand-side (RHS) matrices, size is the dot product of <num_comps>
+       and <num_freq_sums>, and index of <num_freq_sums> runs faster in memory
      <param name='rsp_param' direction='inout'>
-       Solved response parameters, size is the product of <size_pert>
-       and <num_freq_sums>
+       Solved response parameters, size is the dot product of <num_comps> and
+       <num_freq_sums>, and index of <num_freq_sums> runs faster in memory
      </param>
      <return>Error information</return>
    </function> */
 QErrorCode RSPSolverGetLinearRSPSolution(const RSPSolver *rsp_solver,
-                                         const QInt num_freq_sums,
+                                         const QInt num_pert,
+                                         const QInt *num_comps,
+                                         const QInt *num_freq_sums,
                                          const QReal *freq_sums,
-                                         const QInt size_pert,
                                          QcMat *RHS_mat[],
                                          QcMat *rsp_param[])
 {
-    rsp_solver->get_linear_rsp_solution(num_freq_sums,
+    rsp_solver->get_linear_rsp_solution(num_pert,
+                                        num_comps,
+                                        num_freq_sums,
                                         freq_sums,
-                                        size_pert,
                                         RHS_mat,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                         rsp_solver->user_ctx,
