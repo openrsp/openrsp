@@ -747,7 +747,7 @@ module rsp_perturbed_sdf
 !     
 !     end do
     
-    k = 36
+    k = 129
     
     if (size(Dp) > k) then
     
