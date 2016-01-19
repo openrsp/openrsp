@@ -861,6 +861,8 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     merged_p_tuple = merge_p_tuple(p_tuple_a, merge_p_tuple(deriv_struct(1,1), &
                      merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3))))
 
+    ! NOTE JAN 16: Does not seem likely that the skip condition will ever be met here: Any calculation
+    ! of Zeta should already be "not skip" for this merged tuple
     if (kn_skip(merged_p_tuple%npert, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 

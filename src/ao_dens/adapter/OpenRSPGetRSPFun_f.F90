@@ -313,37 +313,40 @@
 !                                       
 
             deallocate(f_rsp_tensor)
-            allocate(f_rsp_tensor(364 + 3 + 78*(10 + 18 + 27) + 18 + 10 + 27 + 27))
-
+            allocate(f_rsp_tensor(364 + 3 + 18 + 10 + 27 + 27))
+!                                                        (/3, 1, 5, 3/),         
+!                                                        12, 12, 3, 3, 3, &
+!                                            1, 1, 1, 1, 1, &
+! (/1, 1, 1, 4/),                          &
+!                                            (/1, 0, 1, 0/),                                  &
+!             allocate(f_rsp_tensor(364 + 3 + 78*(10 + 18 + 27) + 18 + 10 + 27 + 27))
+!                                            'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.144d0, 0.0d0), &
+!                                            dcmplx(-0.072d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(-0.216d0, 0.0d0), &
+!                                            dcmplx(0.144d0, 0.0d0), dcmplx(0.072d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
                                       
-            call openrsp_get_property(4,                                 &
-                                           (/3, 1, 5, 3/),                                 &
+            call openrsp_get_property(3,                                 &
+                                           (/3, 1, 3/),                                 &
                                            (/12, 12, 12, &
                                            3, &
-                                           12, 12, 3, 3, 3, &
                                            3, 3, 3/),                               &
                                            (/1, 1, 1, &
                                            1, &
-                                           1, 1, 1, 1, 1, &
                                            1, 1, 1/),                         &
                                            (/'GEO ', 'GEO ', 'GEO ', &
                                            'EL  ', &
-                                           'GEO ', 'GEO ', 'EL  ', 'EL  ', 'EL  ', &
                                            'EL  ', 'EL  ', 'EL  '/),                              &
-                                           (/1, 1, 3, 4/),                          &
+                                           (/1, 1, 4/),                          &
                                            (/dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
                                            dcmplx(0.0d0, 0.0d0), &
-                                           dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
-                                           dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
-                                           dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.144d0, 0.0d0), &
-                                           dcmplx(-0.072d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), &
-                                           dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(-0.216d0, 0.0d0), &
-                                           dcmplx(0.144d0, 0.0d0), dcmplx(0.072d0, 0.0d0), &
                                            dcmplx(0.144d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), &
                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
                                            dcmplx(-0.018d0, 0.0d0), dcmplx(0.012d0, 0.0d0), dcmplx(0.006d0, 0.0d0), &
                                            dcmplx(0.216d0, 0.0d0), dcmplx(-0.144d0, 0.0d0), dcmplx(-0.072d0, 0.0d0) /), &
-                                           (/1, 0, 1, 0/),                                  &
+                                           (/1, 0, 0/),                                  &
                                            f_F_unpert(1),                             &
                                            f_S_unpert(1),                             &
                                            f_D_unpert(1),                             &

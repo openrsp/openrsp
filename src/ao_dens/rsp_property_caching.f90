@@ -28,6 +28,7 @@ module rsp_property_caching
  public contrib_cache_next_element
  public contrib_cache_outer_next_element
  public contrib_cache_outer_cycle_first
+ public contrib_cache_cycle_outer
  public contrib_cache_outer_add_element
  public contrib_cache_add_element
  public contrib_cache_already
@@ -64,8 +65,11 @@ module rsp_property_caching
    logical :: dummy_entry
    integer :: num_dmat
    type(p_tuple), allocatable, dimension(:) :: p_tuples
-!    integer :: outer_size
-   integer :: prime
+
+   ! Contribution type: 1: Only Pulay n, 3: Only Lagrange, 4: Both Pulay and Lagrange
+   integer :: contrib_type = 0
+   
+   integer :: n_rule = 0
    integer :: contrib_size
    integer, allocatable, dimension(:) :: nblks_tuple
    integer, allocatable, dimension(:,:) :: blk_sizes
@@ -82,15 +86,14 @@ module rsp_property_caching
    type(contrib_cache), pointer :: next
    logical :: last
    type(p_tuple) :: p_inner
+
    integer :: num_outer
    integer :: nblks
    integer, allocatable, dimension(:) :: blk_sizes
    integer :: blks_triang_size
    integer, allocatable, dimension(:,:) :: blk_info
    integer, allocatable, dimension(:,:) :: indices
-   
-   
-   
+         
    type(contrib_cache_outer), pointer :: contribs_outer
 
  end type 
@@ -482,7 +485,86 @@ module rsp_property_caching
 
     ! NEW 2014
   
-  
+ function contrib_cache_cycle_outer(current_element, num_p_tuples, p_tuples, &
+            n_rule) result(next_outer)
+
+   implicit none
+
+   integer :: num_p_tuples, i, passedlast
+   logical :: found
+   integer, optional :: n_rule
+   type(contrib_cache), target :: current_element
+   type(contrib_cache), pointer :: new_element
+   type(contrib_cache), pointer :: next_element
+   type(contrib_cache_outer), pointer :: next_outer
+   type(p_tuple), dimension(num_p_tuples) :: p_tuples
+   type(p_tuple) :: emptypert
+
+      
+   ! If cache element for inner perturbations already exists, just add outer
+   if (contrib_cache_already_inner(current_element, p_tuples(1))) then
+   
+      next_element => current_element
+   
+      ! Skip to cache element for this inner
+      do while (p_tuple_compare(next_element%p_inner, p_tuples(1)) .EQV. .FALSE.)
+
+!       write(*,*) 'skiparoo'
+      
+         next_element => next_element%next
+
+          
+      end do
+      
+      next_outer => next_element%contribs_outer
+      
+      passedlast = 0
+      found = .FALSE.
+
+      do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
+
+         next_outer => contrib_cache_outer_next_element(next_outer)
+
+         if (num_p_tuples > 1) then
+         
+            found = p_tuples_compare(num_p_tuples - 1, next_outer%p_tuples, &
+                                     p_tuples(2:))
+                                  
+         else
+         
+            found = p_tuples_compare(num_p_tuples - 1, next_outer%p_tuples, &
+                                     (/get_emptypert()/))
+         
+         end if
+                                  
+         if (present(n_rule)) then
+      
+            found = found .AND. (n_rule == next_outer%n_rule)
+      
+         end if
+
+         if (next_outer%last) then
+            passedlast = passedlast + 1
+         end if
+
+      end do
+      
+      if (.NOT.(found)) then
+      
+         write(*,*) 'ERROR: Did not find expected outer cache element'
+         
+      end if
+      
+   else
+   
+      write(*,*) 'ERROR: Did not find expected cache element'
+      
+   end if
+   
+
+ end function
+ 
+ 
  function contrib_cache_cycle_first(current_element) result(next_element)
 
    implicit none
@@ -596,11 +678,12 @@ module rsp_property_caching
 
   end subroutine
  
- subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples)
+ subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples, n_rule)
 
    implicit none
 
    integer :: num_p_tuples
+   integer, optional :: n_rule
    type(contrib_cache) :: new_element
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
 
@@ -627,18 +710,44 @@ module rsp_property_caching
    if (num_p_tuples > 1) then
    
    
+
+   
+   
 !    write(*,*) 'outer case a'
       call contrib_cache_outer_allocate(new_element%contribs_outer)
-      call contrib_cache_outer_add_element(new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
-                                          p_tuples(2:num_p_tuples))
+
+      if (present(n_rule)) then
+      
+         call contrib_cache_outer_add_element(new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
+                                              p_tuples(2:num_p_tuples), n_rule=n_rule)   
+         
+      else
+         
+         call contrib_cache_outer_add_element(new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
+                                              p_tuples(2:num_p_tuples))   
+         
+      end if
+      
    
    
    else
    
 !    write(*,*) 'outer case b'
       call contrib_cache_outer_allocate(new_element%contribs_outer)
-      call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
-                                          p_tuples(2:num_p_tuples))
+      
+      if (present(n_rule)) then
+         
+         call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
+                                              p_tuples(2:num_p_tuples), n_rule=n_rule)
+         
+      else
+      
+         call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
+                                              p_tuples(2:num_p_tuples))
+         
+      end if
+      
+
       
    end if
       
@@ -745,13 +854,13 @@ module rsp_property_caching
    
 
  subroutine contrib_cache_outer_add_element(curr_element, unperturbed, num_dmat, &
-            outer_p_tuples, data_size, data_mat, data_scal)
+            outer_p_tuples, data_size, data_mat, data_scal, n_rule)
 
    implicit none
 
-   logical :: unperturbed, found_element
+   logical :: unperturbed, found_element, already
    integer :: num_dmat, i, j, passedlast
-   integer, optional :: data_size
+   integer, optional :: data_size, n_rule
    type(contrib_cache_outer), target :: curr_element
    type(contrib_cache_outer), pointer :: new_element
    type(contrib_cache_outer), pointer :: new_element_ptr
@@ -761,7 +870,17 @@ module rsp_property_caching
    type(Qcmat), optional, dimension(*) :: data_mat
    complex(8), optional, dimension(*) :: data_scal
 
-   if (contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)) then
+   if (present(n_rule)) then
+   
+      already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples, n_rule=n_rule)
+   
+   else
+   
+      already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)
+   
+   end if
+   
+   if (already) then
    
       next_element => curr_element
       passedlast = 0
@@ -861,6 +980,12 @@ module rsp_property_caching
       if (present(data_scal)) then
    
       end if
+      
+      if (present(n_rule)) then
+      
+         new_element%n_rule = n_rule
+      
+      end if
 
       next_element%last = .FALSE.
       new_element%next => next_element%next
@@ -870,11 +995,12 @@ module rsp_property_caching
       
  end subroutine
  
- subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples)
+ subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples, n_rule)
 
    implicit none
 
    integer :: num_p_tuples, i
+   integer, optional :: n_rule
    type(contrib_cache), target :: current_element
    type(contrib_cache), pointer :: new_element
    type(contrib_cache), pointer :: new_element_ptr
@@ -923,16 +1049,36 @@ module rsp_property_caching
      
          next_element%num_outer = next_element%num_outer + 1
      
-         call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
-              num_p_tuples - 1, p_tuples(2:num_p_tuples))
+         if (present(n_rule)) then
+         
+            call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+                 num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule)
+         
+         else
+         
+            call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+                 num_p_tuples - 1, p_tuples(2:num_p_tuples))
+         
+         end if
+     
+         
             
       else
 !      write(*,*) 'add case b'
      
          next_element%num_outer = next_element%num_outer + 1
-     
-!          call empty_p_tuple(emptypert)
-          call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/))
+
+          if (present(n_rule)) then
+         
+             call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/), n_rule)
+         
+          else
+             ! call empty_p_tuple(emptypert)
+             call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/))
+         
+          end if
+         
+
        
       end if
 
@@ -945,8 +1091,20 @@ module rsp_property_caching
 
       
       allocate(new_element)
+      
+      
+      if (present(n_rule)) then
+         
+         call contrib_cache_initialize(new_element, num_p_tuples, p_tuples, n_rule)   
+         
+      else
+         
+         call contrib_cache_initialize(new_element, num_p_tuples, p_tuples)   
+         
+      end if
+         
 
-      call contrib_cache_initialize(new_element, num_p_tuples, p_tuples)
+      
 
 !       write(*,*) 'pdim of non-skip', new_element%p_inner%freq
       
@@ -968,12 +1126,13 @@ module rsp_property_caching
  
  ! MAYBE SOME WORK REMAINING ON THIS FUNCTION
  
- function contrib_cache_already(current_element, num_p_tuples, p_tuples)
+ function contrib_cache_already(current_element, num_p_tuples, p_tuples, n_rule)
 
    implicit none
 
    logical :: contrib_cache_already
    integer :: passedlast, passedlast_outer, num_p_tuples, i
+   integer, optional :: n_rule
    type(contrib_cache), target :: current_element
    type(contrib_cache), pointer :: next_element
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
@@ -1028,15 +1187,34 @@ module rsp_property_caching
 ! write(*,*) 'match ,comparing with np > 1'
 ! write(*,*) next_element%contribs_outer%num_dmat
 
-         
-            contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
-                                    num_p_tuples - 1, p_tuples(2:num_p_tuples))
+
+            if (present(n_rule)) then
+            
+               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+                                       num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule=n_rule)
+            
+            else
+
+               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+                                       num_p_tuples - 1, p_tuples(2:num_p_tuples))
+            
+            end if
+
             
          else
          
+            if (present(n_rule)) then
             
-            contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
-                                    0, (/emptypert/))
+               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+                                       0, (/emptypert/), n_rule=n_rule)
+            
+            else
+            
+               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+                                       0, (/emptypert/))
+            
+            end if            
+            
                       
          end if
       
@@ -1055,12 +1233,13 @@ module rsp_property_caching
 
  ! NOT DONE WITH THIS FUNCTION
  
- function contrib_cache_already_outer(current_element, num_dmat, p_tuples_outer)
+ function contrib_cache_already_outer(current_element, num_dmat, p_tuples_outer, n_rule)
 
    implicit none
 
    logical :: contrib_cache_already_outer
    integer :: passedlast, passedlast_outer, num_dmat, i
+   integer, optional :: n_rule
    type(contrib_cache_outer), target :: current_element
    type(contrib_cache_outer), pointer :: next_element
    type(p_tuple), dimension(num_dmat) :: p_tuples_outer, p_tuples_ord
@@ -1084,11 +1263,16 @@ module rsp_property_caching
 
       if (next_element%num_dmat == num_dmat .AND. .NOT.(next_element%dummy_entry)) then
       
-      contrib_cache_already_outer = p_tuples_compare(num_dmat, &
-                                    next_element%p_tuples, p_tuples_ord)
+         contrib_cache_already_outer = p_tuples_compare(num_dmat, &
+                                       next_element%p_tuples, p_tuples_ord)
 
-                                 
+                                    
+         if (present(n_rule)) then
+      
+            contrib_cache_already_outer = contrib_cache_already_outer .AND. (n_rule == next_element%n_rule)
 
+         end if
+         
                                  
       end if
 
@@ -1141,7 +1325,8 @@ module rsp_property_caching
  ! Missing contents (to be taken from non-outer routine below)
  
  subroutine contrib_cache_getdata_outer(cache, num_p_tuples, p_tuples, &
-            from_inner, contrib_size, ind_len, ind_unsorted, mat, mat_sing, scal)
+            from_inner, contrib_size, ind_len, ind_unsorted, hard_offset, mat, mat_sing, &
+            scal, n_rule)
 
 ! Proposed: Puts all data into return array if prop or specified matrix if mat
             
@@ -1152,7 +1337,8 @@ module rsp_property_caching
    integer :: i, j, k, first, last, passedlast, num_p_tuples, &
               total_num_perturbations, pr_offset, cache_offset, &
               merged_triang_size, merged_nblks, inner_rm, res_offset, &
-              ind_len, nblks, offset
+              ind_len, nblks, offset, cache_hard_offset
+   integer, optional :: hard_offset, n_rule
    integer :: contrib_size
    integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contrib, & 
                                          p_tuples_dimensions, &
@@ -1174,6 +1360,17 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
+   if (present(hard_offset)) then
+   
+      cache_hard_offset = hard_offset
+   
+   else
+   
+      cache_hard_offset = 0
+   
+   end if
+   
+   
 !       write(*,*) 'b0'
    if (from_inner) then
       
@@ -1214,6 +1411,12 @@ module rsp_property_caching
 
       found = p_tuples_compare(num_p_tuples - inner_rm, next_element_outer%p_tuples, &
                                   p_tuples_srch_ord)
+                                  
+      if (present(n_rule)) then
+      
+         found = found .AND. (n_rule == next_element_outer%n_rule)
+      
+      end if
 
       if (next_element_outer%last) then
          passedlast = passedlast + 1
@@ -1221,7 +1424,7 @@ module rsp_property_caching
 
    end do
    
-   if (present(mat)) then
+   if (present(mat) .OR. present(scal)) then
    
       if (found) then
 
@@ -1346,14 +1549,14 @@ module rsp_property_caching
 !                write(*,*) 'cache size', size(next_element_outer%data_mat)
                
             
-               call QcMatAEqB(mat(res_offset), next_element_outer%data_mat(cache_offset))
+               call QcMatAEqB(mat(res_offset), next_element_outer%data_mat(cache_offset + cache_hard_offset))
 
                
             else if (present(scal)) then
 
                scal(res_offset) = &
                scal(res_offset) + &
-               next_element_outer%data_scal(cache_offset)              
+               next_element_outer%data_scal(cache_offset + cache_hard_offset)              
             
             end if
 
@@ -1413,7 +1616,7 @@ module rsp_property_caching
          
          
       
-         call QcMatAEqB(mat_sing, next_element_outer%data_mat(offset))
+         call QcMatAEqB(mat_sing, next_element_outer%data_mat(offset + cache_hard_offset))
          
 !          if (offset == 4) then
 !            write(*,*) 'printing matrix'
@@ -1435,14 +1638,16 @@ module rsp_property_caching
 
  ! Assumes that p_tuples is in standard order
  subroutine contrib_cache_getdata(cache, num_p_tuples, p_tuples, contrib_size, &
-                                  ind_len, ind_unsorted, mat, mat_sing, scal)
+                                  ind_len, ind_unsorted, hard_offset, mat, mat_sing, scal, n_rule)
 
    implicit none
 
    logical :: found
    integer :: i, j, k, first, last, passedlast, num_p_tuples, &
               contrib_size, total_num_perturbations, pr_offset, cache_offset, &
-              merged_triang_size, merged_nblks, res_offset, ind_len
+              merged_triang_size, merged_nblks, res_offset, ind_len, &
+              cache_hard_offset
+   integer, optional :: hard_offset, n_rule
    integer, optional, dimension(ind_len) :: ind_unsorted
    type(contrib_cache), target :: cache
    type(contrib_cache), pointer :: next_element
@@ -1453,6 +1658,16 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
+   if (present(hard_offset)) then
+   
+      cache_hard_offset = hard_offset
+   
+   else
+   
+      cache_hard_offset = 0
+   
+   end if
+   
 
    next_element => cache
    passedlast = 0
@@ -1477,23 +1692,59 @@ module rsp_property_caching
    if (found) then
    
       if (present(mat)) then
-            
-!             write (*,*) 'going for a'
-            
-         call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
-              p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, mat=mat)
 
-!               write(*,*) 'returned from a'
+         if (present(n_rule)) then
+             
+            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+                 p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, hard_offset, &
+                 mat=mat, n_rule=n_rule)
+       
+         else
+         
+            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+                 p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, hard_offset, mat=mat)
+         
+         end if
+      
+         
+
               
       else if (present(mat_sing)) then
+      
+         if (present(n_rule)) then
+       
+            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+                 p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
+                 mat_sing=mat_sing, n_rule=n_rule)
+       
+         else
+         
+            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+                 p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
+                 mat_sing=mat_sing)
+                 
+         end if
             
-         call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
-              p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, mat_sing=mat_sing)
+         
               
       else if (present(scal)) then
+      
+         if (present(n_rule)) then
+         
+            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+                 p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
+                 scal=scal, n_rule=n_rule)       
+       
+         else
+         
+            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+                 p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
+                 scal=scal)
+         
+         end if
+      
 
-         call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
-              p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, scal=scal)
+         
          
       end if
       
