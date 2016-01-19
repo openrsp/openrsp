@@ -35,7 +35,12 @@ module rsp_general
                                     rsp_get_matrix_lambda_2014,        &
                                     rsp_get_matrix_z_2014,             &
                                     rsp_get_matrix_w_2014,             &
-                                    rsp_get_matrix_y_2014
+                                    rsp_get_matrix_y_2014,             &
+                                    rsp_get_matrix_zeta,          &
+                                    rsp_get_matrix_lambda,        &
+                                    rsp_get_matrix_z,             &
+                                    rsp_get_matrix_w,             &
+                                    rsp_get_matrix_y
   use rsp_perturbed_sdf, only: rsp_fds
   use rsp_property_caching, only: property_cache,                      &
                                   contrib_cache_outer,                 &
@@ -52,6 +57,7 @@ module rsp_general
                                   contrib_cache_outer_add_element,     &
                                   contrib_cache_outer_next_element,    &
                                   contrib_cache_outer_cycle_first,     &
+                                  contrib_cache_cycle_outer,     &
                                   contrib_cache_add_element,           &
                                   contrib_cache_already,               &
                                   contrib_cache_getdata,               &
@@ -290,7 +296,7 @@ module rsp_general
 
     
     logical :: traverse_end
-    integer :: n_props, id_outp, i
+    integer :: n_props, id_outp, i, j, k
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
@@ -333,23 +339,31 @@ module rsp_general
     ! For each property: Recurse to identify HF energy-type contributions, store in cache
     
     call contrib_cache_allocate(contribution_cache)
+    
+    k = 1
 
     do i = 1, n_props
+    
+       do j = 1, n_freq_cfgs(i)
        
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Identifying HF-energy type contributions'
-       write(id_outp,*) ' '
+          write(id_outp,*) ' '
+          write(id_outp,*) 'Identifying HF-energy type contributions'
+          write(id_outp,*) ' '
 
-       call cpu_time(time_start)
-       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
-            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .TRUE., &
-            contribution_cache, prop_sizes(i), &
-            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
-       call cpu_time(time_end)
+          call cpu_time(time_start)
+          call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
+               0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .TRUE., &
+               contribution_cache, prop_sizes(k), &
+               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+          call cpu_time(time_end)
 
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished identifying HF energy-type contributions'
-       write(id_outp,*) ' '
+          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+          write(id_outp,*) 'Finished identifying HF energy-type contributions'
+          write(id_outp,*) ' '
+          
+          k = k + 1
+       
+       end do
        
     end do
 
@@ -398,37 +412,106 @@ module rsp_general
 
     ! For each property: Recurse to identify HF energy-type contributions and 
     ! add to the property under consideration
-       
+
+    k = 1
+    
     do i = 1, n_props
+    
+       do j = 1, n_freq_cfgs(i)
 
-       call property_cache_allocate(contribs_cache)
-       call contrib_cache_allocate(contribution_cache)
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Assembling HF-energy type contributions'
-       write(id_outp,*) ' '
+          call property_cache_allocate(contribs_cache)
+          call contrib_cache_allocate(contribution_cache)
+          write(id_outp,*) ' '
+          write(id_outp,*) 'Assembling HF-energy type contributions'
+          write(id_outp,*) ' '
 
-       call cpu_time(time_start)
-       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
-            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
-            contribution_cache, prop_sizes(i), &
-            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
-       call cpu_time(time_end)
+          call cpu_time(time_start)
+          call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
+               0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+               contribution_cache, prop_sizes(k), &
+               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+          call cpu_time(time_end)
 
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished assembling HF energy-type contributions'
-       write(id_outp,*) ' '
+          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+          write(id_outp,*) 'Finished assembling HF energy-type contributions'
+          write(id_outp,*) ' '
        
-       write(*,*) 'Property is now', &
-       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
+          write(*,*) 'Property is now', &
+          props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
 
+          k = k + 1
+       
+       end do
+       
     end do
     
     
-    ! For each property: Recurse to identify Pulay n and Pulay Lagrange type contributions and
-    ! store in cache
+    deallocate(contribution_cache)
+    
+! Notes:
+! 
+! The primed contributions are a subset of the nonprimed contributions
+! 
+! If the nonprimed recursion is done, then the primed recursion can be 
+! a point-by-point test of the resulting elements upon traversal
+! 
+! Scheme:
+!
+! - Do the nonprimed recursion for identification
+!
+! - Traverse for calculation:
+! - Check each element for primed-validity
+! - If no: Calculate only Pulay n contribution (allocate accordingly)
+! - If yes: Calculate both Pulay n and all Lagrange contributions (allocate accordingly)
+! 
+! - Do the nonprimed recursion again for retrieval: 
+! - Check each nonprimed "yes" element for primed-validity
+! - If no: Retrieve only Pulay n contribution
+! - If yes: Retrieve both Pulay n and all Lagrange contributions
+! 
+! Comments:
+!
+! - Need to add optional "hard offset" argument for addressing proper contribution
+! - Ensures sparing recursion, groups Pulay n and Pulay Lagrange contributions together
+!   for increased efficiency
+! - Fits well with existing framework
+
+    
+    
+    
+    ! For each property: Recurse to two-factor contributions and store in cache
+    
+    call contrib_cache_allocate(contribution_cache)
+    
+    do i = 1, n_props
+    
+       do j = 1, n_freq_cfgs(i)
+       
+          write(id_outp,*) ' '
+          write(id_outp,*) 'Identifying two-factor contributions'
+          write(id_outp,*) ' '
+
+          call cpu_time(time_start)
+          
+          call rsp_twofact_recurse(p_tuples(k), kn_rule(k,:), (/emptypert, emptypert/), &
+               .TRUE., contribution_cache, prop_sizes(k), &
+               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+          
+          call cpu_time(time_end)
+
+          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+          write(id_outp,*) 'Finished identifying two-factor contributions'
+          write(id_outp,*) ' '
+          
+          k = k + 1
+       
+       end do
+       
+    end do
+    
        
     write(id_outp,*) ' '
-    write(id_outp,*) 'Calculating Pulay contributions'
+    write(id_outp,*) 'Calculating two-factor contributions'
     write(id_outp,*) ' '
     
     call cpu_time(time_start)
@@ -448,10 +531,11 @@ module rsp_general
     ! Traverse linked list and calculate
     do while (traverse_end .eqv. .FALSE.)
        
-       write(*,*) 'Calculating contribution for inner perturbation tuple'
+       write(*,*) 'Calculating contribution for factor 1 tuple'
        write(*,*) cache_next%p_inner%plab
 
-       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+       call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next)
+          
        write(*,*) ' '
           
        if (cache_next%last) then
@@ -465,179 +549,49 @@ module rsp_general
     call cpu_time(time_end)
 
     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-    write(id_outp,*) 'Finished calculating contributions'
+    write(id_outp,*) 'Finished calculating two-factor contributions'
     write(id_outp,*) ' '
 
-    ! For each property: Recurse to identify Pulay n and Pulay Lagrange contributions and 
+    ! For each property: Recurse to identify two-factor contributions and 
     ! add to the property under consideration
        
+    k = 1
+    
     do i = 1, n_props
+    
+       do j = 1, n_freq_cfgs(i)
 
-       call property_cache_allocate(contribs_cache)
-       call contrib_cache_allocate(contribution_cache)
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Assembling Pulay contributions'
-       write(id_outp,*) ' '
+          call property_cache_allocate(contribs_cache)
+          call contrib_cache_allocate(contribution_cache)
+          write(id_outp,*) ' '
+          write(id_outp,*) 'Assembling two-factor contributions'
+          write(id_outp,*) ' '
 
-       call cpu_time(time_start)
-       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
-            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
-            contribution_cache, prop_sizes(i), &
-            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
-       call cpu_time(time_end)
+          call cpu_time(time_start)
+          
+          call rsp_twofact_recurse(p_tuples(k), kn_rule(k,:), (/emptypert, emptypert/), &
+               .FALSE., contribution_cache, prop_sizes(k), &
+               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+          
+          call cpu_time(time_end)
 
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished assembling Pulay contributions'
-       write(id_outp,*) ' '
+          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+          write(id_outp,*) 'Finished assembling two-factor contributions'
+          write(id_outp,*) ' '
        
-       write(*,*) 'Property is now', &
-       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
+          write(*,*) 'Property is now', &
+          props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
 
+          k = k + 1
+          
+       end do
+       
     end do
   
-  ! For each property: Recurse to identify idempotency Lagrange type contributions and
-    ! store in cache
-       
-    write(id_outp,*) ' '
-    write(id_outp,*) 'Calculating contributions'
-    write(id_outp,*) ' '
-    
-    call cpu_time(time_start)
-    
-    traverse_end = .FALSE.
-
-    cache_next => contribution_cache
-
-    ! Cycle cache
-    do while (cache_next%last .eqv. .FALSE.)
-       cache_next => cache_next%next
-    end do
-
-    cache_next => cache_next%next
-    cache_next => cache_next%next
-       
-    ! Traverse linked list and calculate
-    do while (traverse_end .eqv. .FALSE.)
-       
-       write(*,*) 'Calculating contribution for inner perturbation tuple'
-       write(*,*) cache_next%p_inner%plab
-
-       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
-       write(*,*) ' '
-          
-       if (cache_next%last) then
-          traverse_end = .TRUE.
-       end if
-          
-       cache_next => cache_next%next
-          
-    end do
-
-    call cpu_time(time_end)
-
-    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-    write(id_outp,*) 'Finished calculating contributions'
-    write(id_outp,*) ' '
-
-    ! For each property: Recurse to identify  contributions and 
-    ! add to the property under consideration
-       
-    do i = 1, n_props
-
-       call property_cache_allocate(contribs_cache)
-       call contrib_cache_allocate(contribution_cache)
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Assembling  contributions'
-       write(id_outp,*) ' '
-
-       call cpu_time(time_start)
-       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
-            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
-            contribution_cache, prop_sizes(i), &
-            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
-       call cpu_time(time_end)
-
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished assembling contributions'
-       write(id_outp,*) ' '
-       
-       write(*,*) 'Property is now', &
-       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
-
-    end do
-    
-    ! For each property: Recurse to identify SCFE contributions and
-    ! store in cache
-       
-    write(id_outp,*) ' '
-    write(id_outp,*) 'Calculating contributions'
-    write(id_outp,*) ' '
-    
-    call cpu_time(time_start)
-    
-    traverse_end = .FALSE.
-
-    cache_next => contribution_cache
-
-    ! Cycle cache
-    do while (cache_next%last .eqv. .FALSE.)
-       cache_next => cache_next%next
-    end do
-
-    cache_next => cache_next%next
-    cache_next => cache_next%next
-       
-    ! Traverse linked list and calculate
-    do while (traverse_end .eqv. .FALSE.)
-       
-       write(*,*) 'Calculating contribution for inner perturbation tuple'
-       write(*,*) cache_next%p_inner%plab
-
-       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
-       write(*,*) ' '
-          
-       if (cache_next%last) then
-          traverse_end = .TRUE.
-       end if
-          
-       cache_next => cache_next%next
-          
-    end do
-
-    call cpu_time(time_end)
-
-    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-    write(id_outp,*) 'Finished calculating contributions'
-    write(id_outp,*) ' '
-
-    ! For each property: Recurse to identify  contributions and 
-    ! add to the property under consideration
-       
-    do i = 1, n_props
-
-       call property_cache_allocate(contribs_cache)
-       call contrib_cache_allocate(contribution_cache)
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Assembling  contributions'
-       write(id_outp,*) ' '
-
-       call cpu_time(time_start)
-       call rsp_energy_recurse(p_tuples(i), p_tuples(i)%npert, kn_rule(i,:), 1, (/emptypert/), &
-            0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
-            contribution_cache, prop_sizes(i), &
-            props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i))))
-       call cpu_time(time_end)
-
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished assembling contributions'
-       write(id_outp,*) ' '
-       
-       write(*,*) 'Property is now', &
-       props(sum(prop_sizes(1:i)) - prop_sizes(i) + 1:sum(prop_sizes(1:i)))
-
-    end do
+    deallocate(contribution_cache)
   
-  
+   
+    
   end subroutine
   
   
@@ -1981,7 +1935,7 @@ module rsp_general
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
-       write(*,*) 'nucpot contribution: ', contrib_0
+!        write(*,*) 'nucpot contribution: ', contrib_0
     
     end if
     
@@ -2000,11 +1954,11 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
     
-    write(*,*) '1-el contribution: ', contrib_1
+!     write(*,*) '1-el contribution: ', contrib_1
     
     end if
     
-    write(*,*) '2-el'
+!     write(*,*) '2-el'
     
     ! Calculate two-electron contributions
     contrib_2 = 0.0
@@ -2012,7 +1966,7 @@ module rsp_general
                      outer_contract_sizes_2(:, 2), RHS_dmat_2, size(contrib_2), contrib_2)
                        
     
-    write(*,*) '2-el contribution: ', contrib_2
+!     write(*,*) '2-el contribution: ', contrib_2
     
     ! Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
     
@@ -2096,8 +2050,556 @@ module rsp_general
   end subroutine
 
   
- 
+   recursive subroutine rsp_twofact_recurse(pert, kn, p12, dryrun, cache, p_size, prop)
+
+    implicit none
+
+    logical :: dryrun
+    type(p_tuple) :: pert, merged_p_tuple
+    type(p_tuple), dimension(2) :: p12
+    type(contrib_cache) :: cache
+    type(contrib_cache_outer), pointer :: curr_outer
+    integer ::  i
+    integer :: hard_offset
+    integer, dimension(2) :: kn
+    integer :: nblks, block_size, p_size
+    integer, allocatable, dimension(:,:,:) :: blk_info
+    complex(8), dimension(p_size) :: prop
+    
+    if (pert%npert > 0) then
+
+       call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
+       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), dryrun, &
+       cache, p_size, prop)
+       
+       call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
+       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), dryrun, &
+       cache, p_size, prop)
+
+    else
+    
+       ! Get size of p12(2) contribution for cache addressing offset
+    
+       nblks = get_num_blks(p12(1))
+       allocate(blk_info(1, nblks, 3))
+       blk_info(1,:,:) = get_blk_info(nblks, p12(1))
+       block_size = get_triangulated_size(nblks, blk_info)
+       deallocate(blk_info)
+       
+       if (p12(2)%npert > 0) then
+       
+          nblks = get_num_blks(p12(2))
+          allocate(blk_info(1, nblks, 3))
+          blk_info(1,:,:) = get_blk_info(nblks, p12(2))
+          block_size = block_size * get_triangulated_size(nblks, blk_info)
+          deallocate(blk_info)
+       
+       end if
+       
+       hard_offset = 0
+
+       if (kn_skip(p12(2)%npert, p12(2)%pid, kn) .EQV. .FALSE.) then
+
+          if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
+
+             if (.NOT.(dryrun)) then
+
+             ! FIXME: CHANGE THIS TO WORK WITH CONTRIBUTION TYPE
+             
+                write(*,*) 'Retrieving Pulay n contribution:'
+                write(*,*) 'S', p12(1)%pid
+                write(*,*) 'W', p12(2)%pid
+             
+                call contrib_cache_getdata(cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
+                hard_offset = hard_offset + block_size
+             
+             else
+             
+                curr_outer = contrib_cache_cycle_outer(cache, 2, p12, n_rule=kn(2))
+                if (curr_outer%contrib_type == 3) then
+                
+                   curr_outer%contrib_type = 4
+                
+                end if
+             
+             end if
+       
+          else
+          
+             if (dryrun) then
+             
+                write(*,*) 'Identified Pulay n contribution:'
+                write(*,*) 'S', p12(1)%pid
+                write(*,*) 'W', p12(2)%pid
+                
+                call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
+                
+                curr_outer = contrib_cache_cycle_outer(cache, 2, p12, n_rule=kn(2))
+                curr_outer%contrib_type = 1
+             
+             else
+             
+                write(*,*) 'ERROR: Expected to find Pulay contribution but it was not present'
+                write(*,*) 'S', p12(1)%pid
+                write(*,*) 'W', p12(2)%pid
+             
+             end if
+
+          end if
+
+       end if
+       
+       
+       if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
+
+          if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
+
+             if (.NOT.(dryrun)) then
+             
+             ! FIXME: CHANGE THIS TO WORK WITH CONTRIBUTION TYPE
+             
+                write(*,*) 'Retrieving Lagrange contributions:'
+                write(*,*) 'A', p12(1)%pid
+                write(*,*) 'B', p12(2)%pid
+
+                ! Pulay Lagrange contribution
+                call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
+                scal=prop, n_rule=kn(2))
+                hard_offset = hard_offset + block_size
+                
+                ! Idempotency Lagrange contribution
+                call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
+                scal=prop, n_rule=kn(2))
+                hard_offset = hard_offset + block_size
+                
+                ! SCFE Lagrange contribution
+                call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
+                scal=prop, n_rule=kn(2))
+            
+             else
+             
+                curr_outer = contrib_cache_cycle_outer(cache, 2, p12, n_rule=kn(2))
+                if (curr_outer%contrib_type == 1) then
+                
+                   curr_outer%contrib_type = 4
+                
+                end if
+            
+             end if
+       
+          else
+          
+             if (dryrun) then
+             
+                write(*,*) 'Identified Lagrange contributions:'
+                write(*,*) 'A', p12(1)%pid
+                write(*,*) 'B', p12(2)%pid
+                
+                call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
+                
+                curr_outer = contrib_cache_cycle_outer(cache, 2, p12, n_rule=kn(2))
+                curr_outer%contrib_type = 3
+             
+             else
+             
+                write(*,*) 'ERROR: Expected to find Lagrange contributions but they were not present'
+                write(*,*) 'A', p12(1)%pid
+                write(*,*) 'B', p12(2)%pid
+             
+             end if
+          
+
+
+          end if
+
+       end if 
+
+    end if
+
+  end subroutine
   
+  
+  subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, cache)
+
+    implicit none
+
+    logical :: traverse_end
+    integer :: cache_offset, i, j, k, m, n 
+    integer :: id_outp, i_supsize
+    integer :: ctr_lagrange, ctr_pulay_n, o_ctr, size_lagrange, size_pulay_n
+    integer :: sstr_incr
+    integer, dimension(0) :: nof
+    integer, allocatable, dimension(:) :: o_supsize, o_supsize_prime, o_size
+    integer, allocatable, dimension(:) :: which_index_is_pid
+    complex(8), allocatable, dimension(:) :: contrib_pulay
+    character(30) :: mat_str, fmt_str
+    type(p_tuple) :: p_inner
+    type(p_tuple), allocatable, dimension(:,:) :: d_struct_inner, d_struct_o
+    type(contrib_cache_outer) :: S, D, F
+    type(contrib_cache) :: cache
+    type(contrib_cache_outer), pointer :: outer_next
+    type(QcMat), allocatable, dimension(:) :: Lambda, Zeta, W
+    type(QcMat) :: Y, Z
+           
+    integer, allocatable, dimension(:) :: pert_ext
+    
+    external :: get_ovl_exp
+    
+   ! Assume indices for inner, outer blocks are calculated earlier during the recursion
+    
+    ! Unsure about npert argument
+    call p_tuple_to_external_tuple(cache%p_inner, cache%p_inner%npert, pert_ext)
+    
+    outer_next => cache%contribs_outer
+    
+    write(*,*) 'num outer', cache%num_outer
+
+    i_supsize = 3**cache%p_inner%npert
+    
+    
+    allocate(o_supsize(cache%num_outer))
+    allocate(o_supsize_prime(cache%num_outer))
+    allocate(o_size(cache%num_outer))
+
+    
+    ! Prepare matrices for inner tuple
+    
+    i_supsize = derivative_superstructure_getsize(cache%p_inner, &
+                (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                (/get_emptypert(), get_emptypert(), get_emptypert()/))
+
+    allocate(d_struct_inner(i_supsize, 3))
+                   
+    call derivative_superstructure(outer_next%p_tuples(1), &
+          (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+          i_supsize, sstr_incr, d_struct_inner)  
+          
+    allocate(Lambda(cache%blks_triang_size))
+    allocate(Zeta(cache%blks_triang_size))
+    
+    
+    which_index_is_pid = 0
+          
+    do i = 1, cache%p_inner%npert
+          
+       which_index_is_pid(cache%p_inner%pid(i)) = i
+          
+    end do
+          
+    sstr_incr = 0
+
+        
+    do i = 1, size(cache%indices, 1)
+    
+       call QcMatInit(Lambda(i))
+       call QcMatInit(Zeta(i))
+       
+       call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/outer_next%n_rule, &
+            outer_next%n_rule/), i_supsize, d_struct_inner, cache%p_inner%npert, &
+            which_index_is_pid, size(cache%indices(i,:)), cache%indices(i,:), &
+            F, D, S, Zeta(i))
+                  
+       call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
+            d_struct_inner, cache%p_inner%npert, which_index_is_pid, &
+            size(cache%indices(i,:)), cache%indices(i,:), D, S, Lambda(i))
+    
+    end do
+          
+    
+    ! Traverse outer elements to determine which contributions are Pulay n and/or Lagrange
+    ! Allocate accordingly: One array for Pulay n/Pulay Lagrange combined, one each for last two
+    ! Alternatively, put directly in cache as they are calculated
+    ! Do in turn (later introduce memory management for memory-intensive jobs): 
+    !
+    ! - Make all W matrices
+    ! - Do S * W contraction and store
+    ! - Make all Zeta matrices
+    ! - Make Z in turn, contract and store
+    ! - Make all Lambda matrices
+    ! - Make Y in turn, contract and store
+   
+    ! Traversal: Find number of matrices/terms for contraction
+    
+    traverse_end = .FALSE.
+    
+    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => outer_next%next
+
+    size_pulay_n = 0
+    size_lagrange = 0
+    
+    k = 1
+    
+    do while (traverse_end .EQV. .FALSE.)
+  
+       write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+    
+       do i = 1, outer_next%num_dmat
+          
+          write(*,*) 'B', outer_next%p_tuples(i)%pid
+       
+       end do
+    
+       ! Here and elsewhere: k in kn rule does not matter as long as it 
+       ! is > n; it will always > n so used like this
+       
+       o_supsize(k) = derivative_superstructure_getsize(outer_next%p_tuples(1), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/))
+                   
+       o_supsize_prime(k) = derivative_superstructure_getsize(outer_next%p_tuples(1), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/))
+                   
+       o_size(k) = outer_next%contrib_type * outer_next%blks_tuple_triang_size(1)
+       
+       if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
+       
+          size_pulay_n = size_pulay_n + outer_next%blks_tuple_triang_size(1)
+       
+       end if
+       
+       if (outer_next%contrib_type >= 3) then
+       
+          size_lagrange = size_lagrange + 3 * outer_next%blks_tuple_triang_size(1)
+       
+       end if
+     
+    
+       if (outer_next%next%dummy_entry) then
+    
+          traverse_end = .TRUE.
+    
+       end if
+    
+       k = k + 1
+    
+       outer_next => outer_next%next
+    
+    end do
+    
+    
+    
+    
+    ! Traversal: Make W matrices and store
+    
+    traverse_end = .FALSE.
+    
+    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => outer_next%next
+       
+    ctr_pulay_n = 0
+    ctr_lagrange = 0
+    o_ctr = 1
+    
+    allocate(W(size_pulay_n + size_lagrange/3))
+    
+    do i = 1, size(w)
+    
+       call QcMatInit(W(i))
+    
+    end do
+    
+    allocate(contrib_pulay(size_pulay_n + size_lagrange/3))
+       
+    k = 1
+    
+        
+    
+    do while (traverse_end .EQV. .FALSE.)
+  
+       write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+    
+       do i = 1, outer_next%num_dmat
+          
+          write(*,*) 'B', outer_next%p_tuples(i)%pid
+       
+       end do
+    
+       
+       
+       
+       if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
+      
+          allocate(d_struct_o(o_supsize(k), 3))
+
+          
+          which_index_is_pid = 0
+          
+          do j = 1, outer_next%p_tuples(1)%npert
+          
+             which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
+          
+          end do
+          
+          sstr_incr = 0
+      
+          call derivative_superstructure(outer_next%p_tuples(1), &
+          (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+          o_supsize(k), sstr_incr, d_struct_o)
+      
+          do j = 1, size(outer_next%indices, 1)
+          
+             call rsp_get_matrix_w(o_supsize(k), d_struct_o, outer_next%p_tuples(1)%npert, &
+                  which_index_is_pid, size(outer_next%indices(j,:)), outer_next%indices(j,:), &
+                  F, D, S, W(o_ctr))
+                  
+             o_ctr = o_ctr + 1
+       
+       
+          end do
+       
+       
+          deallocate(d_struct_o)
+       
+       end if
+    
+       if (outer_next%next%dummy_entry) then
+    
+          traverse_end = .TRUE.
+    
+       end if
+    
+       k = k + 1
+    
+       outer_next => outer_next%next
+    
+    end do
+    
+    ! Outside traversal: Calculate contributions
+    
+    call get_ovl_exp(0, nof, 0, nof, size(pert_ext), pert_ext, size(W), W, &
+                     size(contrib_pulay), contrib_pulay)
+    
+    
+    ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
+    
+    traverse_end = .FALSE.
+    
+    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => outer_next%next
+
+    
+    call QcMatInit(Y)
+    call QcMatInit(Z)
+    
+    do i = 1, size(w)
+    
+       call QcMatInit(W(i))
+    
+    end do
+    
+    k = 1
+    o_ctr = 1
+    
+    do while (traverse_end .EQV. .FALSE.)
+
+       
+        
+        
+       ! Store Pulay n terms (if any)
+       if ((outer_next%contrib_type == 1)) then
+          
+          do j = 1, size(outer_next%indices, 1)
+          
+             outer_next%data_scal(j) = contrib_pulay(o_ctr)
+             o_ctr = o_ctr + 1
+          
+          end do
+          
+       end if
+       
+       ! Store Pulay Lagrange terms (if any)
+       if ((outer_next%contrib_type == 4)) then
+          
+          do j = 1, size(outer_next%indices, 1)
+          
+             outer_next%data_scal(j + outer_next%blks_tuple_triang_size(1)) = &
+             contrib_pulay(o_ctr)
+             o_ctr = o_ctr + 1
+          
+          end do
+          
+       end if
+       
+       ! Calculate and store idempotency and SCFE terms
+       if ((outer_next%contrib_type == 3) .OR. (outer_next%contrib_type == 4)) then
+      
+          if (outer_next%contrib_type == 3) then
+
+             cache_offset = outer_next%blks_tuple_triang_size(1)
+             
+          elseif (outer_next%contrib_type == 4) then
+             
+             cache_offset = 2 * outer_next%blks_tuple_triang_size(1)
+          
+          end if
+      
+          allocate(d_struct_o(o_supsize_prime(k), 3))
+
+          
+          which_index_is_pid = 0
+          
+          do j = 1, outer_next%p_tuples(1)%npert
+          
+             which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
+          
+          end do
+          
+          sstr_incr = 0
+      
+          call derivative_superstructure(outer_next%p_tuples(1), &
+          (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+          o_supsize_prime(k), sstr_incr, d_struct_o)
+          
+         
+          
+          do j = 1, size(outer_next%indices, 1)
+          
+             call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, outer_next%p_tuples(1)%npert, &
+                  which_index_is_pid, size(outer_next%indices(j,:)), outer_next%indices(j,:), &
+                  F, D, S, Y)
+             
+             ! NOTE: Rule choice very likely to give correct exclusion but
+             ! have another look if something goes wrong
+             call rsp_get_matrix_z(o_supsize_prime(k), d_struct_o, &
+                  (/outer_next%n_rule, outer_next%n_rule/), outer_next%p_tuples(1)%npert, &
+                  which_index_is_pid, size(outer_next%indices(j,:)), outer_next%indices(j,:), &
+                  F, D, S, Z)
+                  
+             do i = 1, size(cache%indices, 1)
+             
+                call QcMatTraceAB(Lambda(i), Y, outer_next%data_scal(cache_offset + j))
+             
+             
+             end do
+                  
+                  
+             
+       
+       
+          end do
+       
+       
+          deallocate(d_struct_o)
+      
+      
+       end if
+       
+       
+       k = k + 1
+       
+       outer_next => outer_next%next
+    
+    end do
+    
+
+    
+    
+  end subroutine
   
 
   recursive subroutine rsp_pulay_n_2014(pert, kn, p12, S, D, F, get_ovl_exp, cache, p_size, prop)
