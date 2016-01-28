@@ -485,8 +485,8 @@ module rsp_property_caching
 
     ! NEW 2014
   
- function contrib_cache_cycle_outer(current_element, num_p_tuples, p_tuples, &
-            n_rule) result(next_outer)
+ subroutine contrib_cache_cycle_outer(current_element, num_p_tuples, p_tuples, &
+            next_outer, n_rule)
 
    implicit none
 
@@ -500,22 +500,33 @@ module rsp_property_caching
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
    type(p_tuple) :: emptypert
 
+!    write(*,*) 'plab 1', p_tuples(1)%plab
+!       write(*,*) 'curr elem plab', current_element%p_inner%plab
+!       write(*,*) 'next', current_element%next%p_inner%plab
+!       write(*,*) 'next', current_element%next%next%p_inner%plab
+!       write(*,*) 'next', current_element%next%next%next%p_inner%plab
+!       write(*,*) 'next', current_element%next%next%next%next%p_inner%plab
+!       write(*,*) 'next', current_element%next%next%next%next%next%p_inner%plab
       
+   
    ! If cache element for inner perturbations already exists, just add outer
    if (contrib_cache_already_inner(current_element, p_tuples(1))) then
    
       next_element => current_element
+      
+!       write(*,*) 'inner', next_element%p_inner%plab
+
    
       ! Skip to cache element for this inner
       do while (p_tuple_compare(next_element%p_inner, p_tuples(1)) .EQV. .FALSE.)
 
-!       write(*,*) 'skiparoo'
+!        write(*,*) 'inner compare', next_element%p_inner%plab
       
-         next_element => next_element%next
-
-          
+        next_element => next_element%next
+         
       end do
       
+!       write(*,*) 'inner skip OK'
       next_outer => next_element%contribs_outer
       
       passedlast = 0
@@ -525,6 +536,8 @@ module rsp_property_caching
 
          next_outer => contrib_cache_outer_next_element(next_outer)
 
+!          write(*,*) 'next outer', next_outer%p_tuples(1)%plab
+         
          if (num_p_tuples > 1) then
          
             found = p_tuples_compare(num_p_tuples - 1, next_outer%p_tuples, &
@@ -562,7 +575,9 @@ module rsp_property_caching
    end if
    
 
- end function
+!    write(*,*) 'end of function', found
+   
+ end subroutine
  
  
  function contrib_cache_cycle_first(current_element) result(next_element)
@@ -592,6 +607,8 @@ module rsp_property_caching
    next_element => current_element
    
    do while (next_element%last .eqv. .FALSE.)
+!           write(*,*) 'cycling', next_element%dummy_entry, next_element%last
+   
           next_element => next_element%next
    end do
 
@@ -702,6 +719,11 @@ module rsp_property_caching
                    
    new_element%blks_triang_size = product(new_element%blk_sizes)
   
+   allocate(new_element%indices(new_element%blks_triang_size, new_element%p_inner%npert))
+   
+   call make_triangulated_indices(new_element%nblks, new_element%blk_info, &
+        new_element%blks_triang_size, new_element%indices)
+  
 !    write(*,*) 'nblks', new_element%nblks
 !    write(*,*) 'blk sizes', new_element%blk_sizes
 !    write(*,*) 'blks triang size', new_element%blks_triang_size
@@ -718,8 +740,9 @@ module rsp_property_caching
 
       if (present(n_rule)) then
       
-         call contrib_cache_outer_add_element(new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
-                                              p_tuples(2:num_p_tuples), n_rule=n_rule)   
+         call contrib_cache_outer_add_element(new_element%contribs_outer, &
+              .NOT.( p_tuples(2)%npert > 0), num_p_tuples - 1, &
+               p_tuples(2:num_p_tuples), n_rule=n_rule)   
          
       else
          
@@ -771,8 +794,8 @@ module rsp_property_caching
    new_element%dummy_entry = .FALSE.
    
 ! 
-!     write(*,*) 'New outer cache'
-!     write(*,*) 'num dmats', num_dmat
+!       write(*,*) 'New outer cache'
+!       write(*,*) 'num dmats', num_dmat
 
    if (.NOT.(unperturbed)) then
 !       do i = 1, num_dmat
@@ -844,7 +867,7 @@ module rsp_property_caching
    new_element%p_tuples(1)%pid = (/0/)
    new_element%p_tuples(1)%freq = (/0.0/)
    
-   
+!    write(*,*) 'initialized empty outer'
    end if
    
       
@@ -879,6 +902,8 @@ module rsp_property_caching
       already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)
    
    end if
+   
+!    write(*,*) 'already?', already
    
    if (already) then
    
@@ -983,6 +1008,7 @@ module rsp_property_caching
       
       if (present(n_rule)) then
       
+!          write(*,*) 'assigned n rule', n_rule
          new_element%n_rule = n_rule
       
       end if
@@ -1043,9 +1069,10 @@ module rsp_property_caching
           
       end do
 !          write(*,*) 'pdim of skip', next_element%p_inner%freq
-      if (num_p_tuples > 1) then
+      ! NOTE: AND CONDITION MAY ADD WRONG KIND OF CACHE ELEMENT, REVISIT IF ERROR
+      if (num_p_tuples > 1 .AND. p_tuples(2)%npert > 0) then
      
-!      write(*,*) 'add case a'
+!       write(*,*) 'add case a'
      
          next_element%num_outer = next_element%num_outer + 1
      
@@ -1064,7 +1091,7 @@ module rsp_property_caching
          
             
       else
-!      write(*,*) 'add case b'
+!       write(*,*) 'add case b'
      
          next_element%num_outer = next_element%num_outer + 1
 
@@ -1091,6 +1118,8 @@ module rsp_property_caching
 
       
       allocate(new_element)
+      
+!       write(*,*) 'adding inner and outer'
       
       
       if (present(n_rule)) then
@@ -1281,7 +1310,7 @@ module rsp_property_caching
       end if
 
    end do
-! write(*,*) 'Was it found?', contrib_cache_already_outer
+!  write(*,*) 'Was it found?', contrib_cache_already_outer
 
  end function
 
@@ -1434,18 +1463,8 @@ module rsp_property_caching
             total_num_perturbations = total_num_perturbations + p_tuples(i)%npert
          end do
 
-! write(*,*) 'a1'
-         if (p_tuples(1)%npert > 0) then
-! write(*,*) 'a2'
-            call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
-! write(*,*) 'a22'
-            do i = 2, num_p_tuples
-! write(*,*) 'a23 i', i
-               call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
-! write(*,*) 'a24 i', i
-            end do
-! write(*,*) 'a3'
-         else
+
+         if (p_tuples(1)%npert == 0) then
 
             call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
 
@@ -1454,9 +1473,30 @@ module rsp_property_caching
                call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
                
             end do
+            
 
+         else
+            
+            call p1_cloneto_p2(p_tuples(1), merged_p_tuple) 
+            
+            if (num_p_tuples > 1) then
+            
+               if (p_tuples(2)%npert > 0) then
+            
+                  do i = 2, num_p_tuples
+
+                     call p1_merge_p2(merged_p_tuple, p_tuples(i), merged_p_tuple)
+
+                  end do
+               
+               end if
+            
+            end if
+     
          end if
+         
 !       write(*,*) 'b1'
+
          merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
          merged_nblks = get_num_blks(merged_p_tuple)
 
@@ -1525,22 +1565,58 @@ module rsp_property_caching
                translated_index(j) = indices(i,pids_current_contrib(j))
             end do
 
-            if (p_tuples(1)%npert > 0) then
+         if (p_tuples(1)%npert == 0) then
 
-               cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
-               total_num_perturbations, nblks_tuple, & 
-               nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
-
-            else
-
-               cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
+            cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
                total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
                nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
                blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
                translated_index)
 
+         else
+            
+            if (num_p_tuples > 1) then
+            
+               if (p_tuples(2)%npert > 0) then
+            
+                  cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
+                  total_num_perturbations, nblks_tuple, & 
+                  nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
+
+               else
+               
+!                   write(*,*) 'getting cache offset'
+!                   write(*,*) 'total_num_perturbations', total_num_perturbations
+!                   write(*,*) 'nblks_tuple', nblks_tuple(1)
+!                   write(*,*) 'nfields', nfields(1)
+!                   write(*,*) 'blks_tuple_info', blks_tuple_info(1,:,:)
+!                   write(*,*) 'blk_sizes', blk_sizes(1,:)
+!                   write(*,*) 'blks_tuple_triang_size', blks_tuple_triang_size(1)
+!                   write(*,*) 'translated_index', translated_index
+            
+                  cache_offset = get_triang_blks_tuple_offset(1, &
+                  total_num_perturbations, nblks_tuple(1), & 
+                  nfields(1), blks_tuple_info(1,:,:), blk_sizes(1,:), &
+                  blks_tuple_triang_size(1), translated_index)
+               
+!                   write(*,*) 'got cache offset'
+               
+               end if
+            
+            else
+            
+               cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
+               total_num_perturbations, nblks_tuple, & 
+               nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
+            
+               
             end if
+     
+         end if
+            
+
 !       write(*,*) 'b5 i', i
+!       write(*,*) 'data scal len', size(next_element_outer%data_scal)
             if (present(mat)) then
             
 !                write(*,*) 'res offset', res_offset
@@ -1730,6 +1806,8 @@ module rsp_property_caching
       else if (present(scal)) then
       
          if (present(n_rule)) then
+         
+            write(*,*) 'getting scal nrule'
          
             call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
