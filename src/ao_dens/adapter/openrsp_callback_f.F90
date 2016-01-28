@@ -528,6 +528,7 @@ module openrsp_callback_f
                                     c_dens_mat,        &
                                     num_exp,           &
                                     c_val_exp)
+!             write(*,*) 'back from ovl call'
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
                 val_exp(ival) = val_exp(ival) &
@@ -539,6 +540,7 @@ module openrsp_callback_f
             deallocate(c_dens_mat)
             deallocate(c_val_exp)
         end if
+!         write(*,*) 'about to return from ovlgetexp'
 100     format("f_callback_RSPOverlapGetExp>> ",A,5I12)
     end subroutine f_callback_RSPOverlapGetExp
 

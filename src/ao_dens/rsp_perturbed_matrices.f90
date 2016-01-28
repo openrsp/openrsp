@@ -645,7 +645,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
     implicit none
 
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
+    integer :: i, total_num_perturbations, superstructure_size, indices_len, j
     type(p_tuple) :: p_tuple_a, merged_p_tuple, merged_A, merged_B
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(2) :: kn
@@ -661,6 +661,13 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     call QcMatInit(T)
 
     do i = 1, superstructure_size
+    
+       do j = 1, 3
+       
+!           write(*,*) 'pids', deriv_struct(i, j)%pid
+       
+       
+       end do
 
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
@@ -858,6 +865,10 @@ subroutine rsp_get_matrix_w(superstructure_size, &
          
     end do
 
+!     write(*,*) '1 pid', deriv_struct(1,1)%pid
+!     write(*,*) '2 pid', deriv_struct(1,2)%pid
+!     write(*,*) '3 pid', deriv_struct(1,3)%pid
+    
     merged_p_tuple = merge_p_tuple(p_tuple_a, merge_p_tuple(deriv_struct(1,1), &
                      merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3))))
 
