@@ -1828,6 +1828,15 @@ module rsp_general
     rhs_ctr_2 = 1
     
     do while (traverse_end .EQV. .FALSE.)
+    
+    
+!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+!     
+!        do i = 1, outer_next%num_dmat
+!           
+!           write(*,*) 'D', outer_next%p_tuples(i)%pid
+!        
+!        end do
 
        ! No chain rule applications
        if (outer_next%num_dmat == 0) then
@@ -1865,15 +1874,15 @@ module rsp_general
        
        
           do m = 1, outer_contract_sizes_2(k, 1) 
-             call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .FALSE., &
+             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
                   1, ind_len=outer_next%p_tuples(1)%npert, &
                   ind_unsorted=outer_next%indices(m, 1:outer_next%p_tuples(1)%npert), &
                   mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
           end do
           
           do n = 1, outer_contract_sizes_2(k, 2) 
-             call contrib_cache_getdata_outer(D, 1, outer_next%p_tuples, .FALSE., &
-                  1, ind_len=outer_next%p_tuples(1)%npert + 1, &
+             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
+                  1, ind_len=outer_next%p_tuples(2)%npert, &
                   ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
                   outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
                   mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
@@ -1905,7 +1914,7 @@ module rsp_general
     allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
     
     
-!     do i = 1, size(LHS_dmat_1)
+!     do i = 1, size(LHS_dmat_2)
 !     
 !     
 !           if (i < 10) then
@@ -1922,14 +1931,43 @@ module rsp_general
 !           
 !           end if
 !           
-! !           write(mat_str, fmt_str) 'LHS_dmaE_1_', i
+!           write(mat_str, fmt_str) 'LHS_dmaE_2_', i
 !           
-! !           write(*,*) 'i', i
-! !           write(*,*) 'fname:', mat_str
+!           write(*,*) 'i', i
+!           write(*,*) 'fname:', mat_str
 !           
 !           
 !           
-!           j = QcMatWrite_f(LHS_dmat_1(i), trim(mat_str), ASCII_VIEW)
+!           j = QcMatWrite_f(LHS_dmat_2(i), trim(mat_str), ASCII_VIEW)
+!     
+!     end do
+!     
+!     
+!     do i = 1, size(RHS_dmat_2)
+!     
+!     
+!           if (i < 10) then
+!           
+!              fmt_str = "(A11, I1)"
+!           
+!           else if (i < 100) then
+!           
+!              fmt_str = "(A11, I2)"
+!           
+!           else
+!           
+!              fmt_str = "(A11, I3)"
+!           
+!           end if
+!           
+!           write(mat_str, fmt_str) 'RHS_dmaE_2_', i
+!           
+!           write(*,*) 'i', i
+!           write(*,*) 'fname:', mat_str
+!           
+!           
+!           
+!           j = QcMatWrite_f(RHS_dmat_2(i), trim(mat_str), ASCII_VIEW)
 !     
 !     end do
     
@@ -1964,7 +2002,7 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
     
-    write(*,*) '1-el contribution: ', contrib_1
+!     write(*,*) '1-el contribution: ', contrib_1
     
     end if
     
