@@ -1681,7 +1681,8 @@ module rsp_property_caching
    
       if (found) then
 
-!          write(*,*) 'cache element retrieval, offset', offset
+!          write(*,*) 'cache element retrieval, offset, hard', offset, cache_hard_offset
+!          write(*,*) 'data mat len', size(next_element_outer%data_mat)
 !          write(*,*) 'length of mat', size(next_element_outer%data_mat), next_element_outer%last, &
 !          next_element_outer%p_tuples(1)%plab, next_element_outer%p_tuples(1)%freq
 !          write(*,*) 'length of mat', size(next_element_outer%next%data_mat), &
