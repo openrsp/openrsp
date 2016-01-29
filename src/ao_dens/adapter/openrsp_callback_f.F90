@@ -412,6 +412,7 @@ module openrsp_callback_f
                                   size_pert
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
+            c_val_nuc = 0.0
             ierr = RSPNucHamiltonGetContributions(ctx_saved%nuc_hamilton, &
                                                   len_tuple,              &
                                                   pert_tuple,             &
@@ -419,7 +420,8 @@ module openrsp_callback_f
                                                   c_val_nuc)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, size_pert
-                val_nuc(ival) = cmplx(c_val_nuc(2*ival-1), c_val_nuc(2*ival), kind=QREAL)
+                val_nuc(ival) = val_nuc(ival) &
+                              + cmplx(c_val_nuc(2*ival-1), c_val_nuc(2*ival), kind=QREAL)
             end do
             deallocate(c_val_nuc)
         end if
