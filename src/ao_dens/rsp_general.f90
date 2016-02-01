@@ -1914,7 +1914,7 @@ module rsp_general
     allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
     
     
-!     do i = 1, size(LHS_dmat_2)
+!     do i = 1, min(size(LHS_dmat_2), 12)
 !     
 !     
 !           if (i < 10) then
@@ -1943,7 +1943,7 @@ module rsp_general
 !     end do
 !     
 !     
-!     do i = 1, size(RHS_dmat_2)
+!     do i = 1, min(size(RHS_dmat_2), 12)
 !     
 !     
 !           if (i < 10) then
@@ -1978,7 +1978,7 @@ module rsp_general
     if (num_0 > 0) then
     
     
-       write(*,*) 'nucpot'
+!        write(*,*) 'nucpot'
     
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
@@ -1990,7 +1990,7 @@ module rsp_general
     ! Calculate one-electron contributions
     if (num_1 > 0) then
     
-       write(*,*) '1-el'
+!        write(*,*) '1-el'
        contrib_1 = 0.0
        call get_1el_exp(num_pert, pert_ext, total_outer_size_1, &
                         LHS_dmat_1, size(contrib_1), contrib_1)
@@ -2850,6 +2850,8 @@ module rsp_general
          
           
           do j = 1, o_triang_size
+
+! CONTINUE HERE: IDEMPOTENCY AND SCFE CONTRIBUTIONS SEEM VERY LARGE: LOOK AT MATRICES
           
              call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, cache%p_inner%npert + &
                   outer_next%p_tuples(1)%npert, &
@@ -2877,11 +2879,11 @@ module rsp_general
                 call QcMatTraceAB(Zeta(i), Z, outer_next%data_scal(c_snap + &
                 cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i))
              
-                write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
-                (j-1) * cache%blks_triang_size + i)
+!                 write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
+!                 (j-1) * cache%blks_triang_size + i)
                 
-                write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
+!                 write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
+!                 cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
              
              
              end do
