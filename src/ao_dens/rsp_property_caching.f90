@@ -1438,8 +1438,36 @@ module rsp_property_caching
    
       next_element_outer => contrib_cache_outer_next_element(next_element_outer)
 
-      found = p_tuples_compare(num_p_tuples - inner_rm, next_element_outer%p_tuples, &
+!       write(*,*) 'num  - inner', num_p_tuples - inner_rm
+!       write(*,*) 'len outer', size(next_element_outer%p_tuples)
+!        if (size(next_element_outer%p_tuples) == 1) then
+!       write(*,*) 'outer plab', next_element_outer%p_tuples(1)%plab
+!       end if
+!       write(*,*) 'len srch', size(p_tuples_srch_ord)
+      
+!             if (size(next_element_outer%p_tuples) == 1) then
+!          write(*,*) next_element_outer%p_tuples(1)%plab
+         if ((size(p_tuples_srch_ord) == 0) .AND. &
+             (size(next_element_outer%p_tuples) == 1) ) then
+             
+             if ((next_element_outer%p_tuples(1)%plab(1) == 'NUTN')) then
+            
+                found = .TRUE.
+            
+            end if
+            
+         end if
+!          write(*,*) 'outer case'
+      
+      
+!       end if
+      
+      
+      if (size(next_element_outer%p_tuples) == size(p_tuples_srch_ord)) then
+         found = p_tuples_compare(num_p_tuples - inner_rm, next_element_outer%p_tuples, &
                                   p_tuples_srch_ord)
+      end if   
+                               
                                   
       if (present(n_rule)) then
       
@@ -1452,6 +1480,13 @@ module rsp_property_caching
       end if
 
    end do
+   
+   if (.NOT.(found)) then
+   
+      write(*,*) 'ERROR: Element not found'
+      stop
+   
+   end if
    
    if (present(mat) .OR. present(scal)) then
    
@@ -1778,6 +1813,7 @@ module rsp_property_caching
        
          else
          
+!             write(*,*) 'outer mat case b'
             call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, hard_offset, mat=mat)
          
@@ -1808,7 +1844,7 @@ module rsp_property_caching
       
          if (present(n_rule)) then
          
-            write(*,*) 'getting scal nrule'
+!             write(*,*) 'getting scal nrule'
          
             call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &

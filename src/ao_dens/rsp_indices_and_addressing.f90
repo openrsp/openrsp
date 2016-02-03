@@ -173,11 +173,19 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B, C, R
     type(QcMat) T
     integer(kind=4) :: ierr
+    integer :: i
     real(8) :: k
         
     call QcMatInit(T, A)
     ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), B, C, (/0.0d0, 0.0d0/), T)
+    
+     i = QcMatWrite_f(T, 'T_BC', ASCII_VIEW)
+     
+    
     ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
+    
+    i = QcMatWrite_f(R, 'R_ABC', ASCII_VIEW)
+    
     ierr = QcMatDestroy_f(T)
   
   end subroutine
