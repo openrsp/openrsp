@@ -331,7 +331,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
     implicit none
 
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
+    integer :: i, total_num_perturbations, superstructure_size, indices_len, j
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
@@ -345,6 +345,15 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     call QcMatInit(T)
     
     do i = 1, superstructure_size
+   
+!        write(*,*) 'Deriv struct', i
+!    
+!        do j = 1, 3
+!          write(*,*) j, ':', deriv_struct(i,j)%plab
+!          
+!        
+!        end do
+    
 
 !        call sdf_getdata_s_2014(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
 !             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
@@ -363,9 +372,26 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 !        Y = Y + A*B*C
+
+!        if (i == 1) then
+!        
+!          j = QcMatWrite_f(A, 'Y_F', ASCII_VIEW)
+!          j = QcMatWrite_f(B, 'Y_D', ASCII_VIEW)
+!          j = QcMatWrite_f(C, 'Y_S', ASCII_VIEW)
+! 
+!        
+!        end if
        
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Y)
+!        stop
+!        if (i == 1) then
+!        
+!          j = QcMatWrite_f(Y, 'Y_tmp_a', ASCII_VIEW)
+!          
+!        
+!        end if
+       
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
@@ -401,6 +427,13 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        call QcMatkABC(-1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Y)
 
+!             if (i == 1) then
+!        
+!          j = QcMatWrite_f(Y, 'Y_tmp_b', ASCII_VIEW)
+!          
+!        
+!        end if
+       
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then

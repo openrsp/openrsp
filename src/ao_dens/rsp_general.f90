@@ -425,8 +425,6 @@ module rsp_general
     
        do j = 1, n_freq_cfgs(i)
 
-          call property_cache_allocate(contribs_cache)
-          call contrib_cache_allocate(contribution_cache)
           write(id_outp,*) ' '
           write(id_outp,*) 'Assembling HF-energy type contributions'
           write(id_outp,*) ' '
@@ -441,9 +439,12 @@ module rsp_general
           write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
           write(id_outp,*) 'Finished assembling HF energy-type contributions'
           write(id_outp,*) ' '
-       
-          write(*,*) 'Property is now', &
-          props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
+
+          write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+          min(sum(prop_sizes(1:k)) - prop_sizes(k) + 13, sum(prop_sizes(1:k))))
+          
+!           write(*,*) 'Property is now', &
+!           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
 
           k = k + 1
        
@@ -501,8 +502,13 @@ module rsp_general
 
           call cpu_time(time_start)
           
-          call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
-               kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
+!           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
+!                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
+!                .TRUE., contribution_cache, prop_sizes(k), &
+!                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+          
+             call rsp_twofact_recurse(p_tuples(k), &
+               kn_rule(k,:), (/emptypert, emptypert/), &
                .TRUE., contribution_cache, prop_sizes(k), &
                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
@@ -578,8 +584,13 @@ module rsp_general
 
           call cpu_time(time_start)
           
-          call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
-               kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
+!           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
+!                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
+!                .FALSE., contribution_cache, prop_sizes(k), &
+!                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+               
+          call rsp_twofact_recurse(p_tuples(k), &
+               kn_rule(k,:), (/emptypert, emptypert/), &
                .FALSE., contribution_cache, prop_sizes(k), &
                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
@@ -588,9 +599,13 @@ module rsp_general
           write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
           write(id_outp,*) 'Finished assembling two-factor contributions'
           write(id_outp,*) ' '
-       
-          write(*,*) 'Property is now', &
-          props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
+
+                   write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+          min(sum(prop_sizes(1:k)) - prop_sizes(k) + 13, sum(prop_sizes(1:k))))
+          
+          
+!           write(*,*) 'Property is now', &
+!           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
 
           k = k + 1
           
@@ -1001,12 +1016,12 @@ module rsp_general
     type(p_tuple) :: pert
     integer, dimension(2) :: kn
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, id_outp
-    integer, optional :: p_size
+    integer :: p_size
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(contrib_cache_outer) :: D
     type(contrib_cache), target :: cache
     type(contrib_cache), pointer :: cache_next
-    complex(8), dimension(*), optional :: prop
+    complex(8), dimension(p_size), optional :: prop
     external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
 
 !     write(*,*) 'Dryrun?', dryrun
@@ -1133,8 +1148,8 @@ module rsp_general
              
                 ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
                 ! THIS CALL (LIKE property_cache_getdata ASSUMES)
-                ! call contrib_cache_getdata(cache, num_p_tuples, &
-                !    p_tuples_standardorder(num_p_tuples, p_tuples), p_size, .FALSE., prop=prop)
+                call contrib_cache_getdata(cache, num_p_tuples, &
+                   p_tuples_standardorder(num_p_tuples, p_tuples), p_size, 0, scal=prop)
 
              end if
 
@@ -1565,6 +1580,12 @@ module rsp_general
        
 !       call rsp_nucpot(nucpot_pert, contrib) 
 
+                       write(*,*) ' '
+          write(*,*) 'nucpot contrib', contrib(1:min(12, size(contrib)))
+
+
+
+
        tmp = tmp + contrib
        contrib = 0.0
 
@@ -1581,7 +1602,7 @@ module rsp_general
 !                        blk_sizes(1, 1:nblks_tuple(1)), contrib)
 
                                  write(*,*) ' '
-          write(*,*) 'oneave contrib', contrib
+          write(*,*) 'oneave contrib', contrib(1:min(12, size(contrib)))
                        
        tmp = tmp + contrib
        contrib = 0.0
@@ -1594,7 +1615,7 @@ module rsp_general
                                 D_unp, get_ovl_exp, inner_indices_size, contrib)
 
                                           write(*,*) ' '
-          write(*,*) 'ovlave t mat contrib', contrib
+          write(*,*) 'ovlave t mat contrib', contrib(1:min(12, size(contrib)))
                                 
        tmp = tmp - contrib
        contrib = 0.0
@@ -1610,7 +1631,7 @@ module rsp_general
 !                        D_unp, D_unp, contrib)
 
                                  write(*,*) ' '
-          write(*,*) 'twoave contrib', contrib
+          write(*,*) 'twoave contrib', contrib(1:min(12, size(contrib)))
                        
        tmp = tmp + 0.5*(contrib)
 
@@ -1983,7 +2004,7 @@ module rsp_general
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
-!        write(*,*) 'nucpot contribution: ', contrib_0
+       write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
     
     end if
     
@@ -2002,7 +2023,7 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
     
-!     write(*,*) '1-el contribution: ', contrib_1
+    write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
     
     end if
     
@@ -2014,7 +2035,7 @@ module rsp_general
                      outer_contract_sizes_2(:, 2), RHS_dmat_2, size(contrib_2), contrib_2)
                        
     
-!     write(*,*) '2-el contribution: ', contrib_2
+    write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
     
     ! Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
     
@@ -2045,9 +2066,13 @@ module rsp_general
        
           allocate(outer_next%data_scal(cache%blks_triang_size))
 
+          ! Factor 0.5 for two-el because no chain rule applications
+          
           outer_next%data_scal = contrib_0
-          outer_next%data_scal = outer_next%data_scal + contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
-          outer_next%data_scal = outer_next%data_scal + contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
+          outer_next%data_scal = outer_next%data_scal + &
+          contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
+          outer_next%data_scal = outer_next%data_scal + &
+          0.5*contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
 
           c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
           c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
@@ -2061,7 +2086,8 @@ module rsp_general
           outer_next%data_scal = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) - 1)
           
-          outer_next%data_scal = outer_next%data_scal + contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
+          outer_next%data_scal = outer_next%data_scal + &
+          contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) - 1)
 
           c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
@@ -2079,6 +2105,9 @@ module rsp_general
           c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                    outer_contract_sizes_2(k, 2)
        end if
+       
+       write(*,*) 'data scal sample', outer_next%data_scal(1:min(12, size(outer_next%data_scal)))
+       
    
        if (outer_next%next%dummy_entry) then
     
@@ -2102,12 +2131,12 @@ module rsp_general
 
     implicit none
 
-    logical :: dryrun
+    logical :: dryrun, lag_eligible
     type(p_tuple) :: pert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
     type(contrib_cache) :: cache
     type(contrib_cache_outer), pointer :: curr_outer
-    integer ::  i
+    integer ::  i, j
     integer :: hard_offset
     integer, dimension(2) :: kn
     integer :: nblks, block_size, p_size
@@ -2128,6 +2157,10 @@ module rsp_general
     
        p12(1) = p_tuple_standardorder(p12(1))
        p12(2) = p_tuple_standardorder(p12(2))
+       
+!        write(*,*) 'Twofact recursion:'
+!        write(*,*) 'A', p12(1)%pid
+!        write(*,*) 'B', p12(2)%pid
     
        ! Get size of p12(2) contribution for cache addressing offset
     
@@ -2163,6 +2196,8 @@ module rsp_general
              
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
+                
+                write(*,*) 'Prop after retrieval', prop(1:min(12, size(prop)))
              
              else
              
@@ -2201,8 +2236,23 @@ module rsp_general
 
        end if
        
+       lag_eligible = .FALSE.
        
-       if ((kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) .AND. (p12(1)%npert > 0)) then
+       do j = 1, p12(1)%npert
+       
+          if (p12(1)%pid(j) == 1) then
+          
+             lag_eligible = .TRUE.
+          
+          end if
+       
+       end do
+       
+!        write(*,*) 'Lagrange eligible?', lag_eligible
+       
+       
+       if ((kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) .AND. &
+           (p12(1)%npert > 0) .AND. lag_eligible) then
 
           if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
 
@@ -2221,16 +2271,22 @@ module rsp_general
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
+                write(*,*) 'Prop after Pulay Lagrange retrieval', prop(1:min(12, size(prop)))
+                
 !                 write(*,*) 'Idempotency lagrange hard offset', hard_offset
                 ! Idempotency Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
+                write(*,*) 'Prop after idempotency Lagrange retrieval', prop(1:min(12, size(prop)))
+                
 !                 write(*,*) 'SCFE lagrange hard offset', hard_offset
                 ! SCFE Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
+                
+                write(*,*) 'Prop after SCFE Lagrange retrieval', prop(1:min(12, size(prop)))
             
              else
              
@@ -2295,11 +2351,21 @@ module rsp_general
     type(contrib_cache) :: cache
     type(contrib_cache_outer), pointer :: outer_next
     type(QcMat), allocatable, dimension(:) :: Lambda, Zeta, W
-    type(QcMat) :: Y, Z
+    type(QcMat) :: Y, Z, D_unp
            
     integer, allocatable, dimension(:) :: pert_ext
     
     external :: get_ovl_exp
+    
+    ! Getting unperturbed D for template
+    
+    call QCMatInit(D_unp)
+
+    call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+         contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
+    
+    
+    
     
    ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
@@ -2500,8 +2566,10 @@ module rsp_general
 !           write(*,*) 'lagrange max n', lagrange_max_n
        
           ! CONTINUE HERE: CREATE INNER INDICES WHEN MAKING CACHE ENTRY (IT IS MISSING NOW)
-          call QcMatInit(Lambda(i))
-          call QcMatInit(Zeta(i))
+          call QcMatInit(Lambda(i), D_unp)
+          call QcMatInit(Zeta(i), D_unp)
+          call QcMatZero(Lambda(i))
+          call QcMatZero(Zeta(i))
        
           call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
                lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
@@ -2540,8 +2608,9 @@ module rsp_general
     
     do i = 1, size(w)
     
-       call QcMatInit(W(i))
-    
+       call QcMatInit(W(i), D_unp)
+       call QcMatZero(W(i))
+       
     end do
     
     allocate(contrib_pulay(cache%blks_triang_size* ( size_pulay_n + size_lagrange/3)))
@@ -2687,7 +2756,7 @@ module rsp_general
                   
              o_ctr = o_ctr + 1
        
-              i = QcMatWrite_f(W(1), 'W1', ASCII_VIEW)
+!               i = QcMatWrite_f(W(1), 'W1', ASCII_VIEW)
        
           end do
        
@@ -2729,8 +2798,8 @@ module rsp_general
                      size(contrib_pulay), contrib_pulay)
     
     
-    
-    write(*,*) 'Pulay contribution', contrib_pulay
+    contrib_pulay = -2.0 * contrib_pulay
+    write(*,*) 'Pulay contribution sample', contrib_pulay(1:min(size(contrib_pulay), 12))
     
     ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
     
@@ -2742,14 +2811,18 @@ module rsp_general
     outer_next => outer_next%next
 
     
-    call QcMatInit(Y)
-    call QcMatInit(Z)
+
     
-    do i = 1, size(w)
-    
-       call QcMatInit(W(i))
-    
-    end do
+    call QcMatInit(Z, D_unp)
+    call QcMatZero(Z)
+    call QcMatInit(Y, D_unp)
+    call QcMatZero(Y)
+!     
+!     do i = 1, size(w)
+!     
+!        call QcMatInit(W(i))
+!     
+!     end do
     
     k = 1
     o_ctr = 1
@@ -2870,6 +2943,15 @@ module rsp_general
                   
              do i = 1, cache%blks_triang_size
            
+           
+           
+                if ((i == 1) .AND. (j == 1)) then
+           
+                    m = QcMatWrite_f(Lambda(1), 'Lambda_1', ASCII_VIEW)
+                    m = QcMatWrite_f(Y, 'Y_1', ASCII_VIEW)
+                    
+                end if
+           
 !                 write(*,*) 'mat trace i j,', i, j
 !                 write(*,*) 'c snap, j disp', c_snap, (j-1) * cache%blks_triang_size
 !                 write(*,*) 'property displ', cache%blks_triang_size*o_triang_size
@@ -2878,6 +2960,28 @@ module rsp_general
                 (j-1) * cache%blks_triang_size + i))
                 call QcMatTraceAB(Zeta(i), Z, outer_next%data_scal(c_snap + &
                 cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i))
+                
+                outer_next%data_scal(c_snap + &
+                (j-1) * cache%blks_triang_size + i) = &
+                -2.0 * outer_next%data_scal(c_snap + &
+                (j-1) * cache%blks_triang_size + i)
+                
+                
+                outer_next%data_scal(c_snap + &
+                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i) = &
+                -2.0 * outer_next%data_scal(c_snap + &
+                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
+             
+             if ((i == 1) .AND. (j == 1)) then
+           
+                   write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
+                (j-1) * cache%blks_triang_size + i)
+                
+                write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
+                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
+             
+                    
+                end if
              
 !                 write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
 !                 (j-1) * cache%blks_triang_size + i)

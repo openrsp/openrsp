@@ -416,27 +416,63 @@
                                            
                                            
                                            
-                                           
+!                                            
 ! GGG, FFFx4
                                            
                                            
-                   deallocate(f_rsp_tensor)
-            allocate(f_rsp_tensor(364 + 18 + 10))
+!                    deallocate(f_rsp_tensor)
+!             allocate(f_rsp_tensor(364 + 18 + 10))
+! 
+! 
+!             call openrsp_get_property(2,                                 &
+!                                            (/3, 3/),                                 &
+!                                            (/12, 12, 12, &
+!                                            3, 3, 3/),                               &
+!                                            (/1, 1, 1, &
+!                                            1, 1, 1/),                         &
+!                                            (/'GEO ', 'GEO ', 'GEO ', &
+!                                            'EL  ', 'EL  ', 'EL  '/),                              &
+!                                            (/1, 2/),                          &
+!                                            (/dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
+!                                            dcmplx(0.144d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), &
+!                                            dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0) /), &
+!                                            (/1, 0/),                                  &
+!                                            f_F_unpert(1),                             &
+!                                            f_S_unpert(1),                             &
+!                                            f_D_unpert(1),                             &
+!                                            f_callback_RSPSolverGetLinearRSPSolution,  &
+!                                            f_callback_RSPNucHamiltonGetContributions, &
+!                                            f_callback_RSPOverlapGetMat,               &
+!                                            f_callback_RSPOverlapGetExp,               &
+!                                            f_callback_RSPOneOperGetMat,               &
+!                                            f_callback_RSPOneOperGetExp,               &
+!                                            f_callback_RSPTwoOperGetMat,               &
+!                                            f_callback_RSPTwoOperGetExp,               &
+!                                            f_callback_RSPXCFunGetMat,                 &
+!                                            f_callback_RSPXCFunGetExp,                 &
+!                                            STDOUT,                                    &
+!                                            f_rsp_tensor)                                                            
+                                           
+                                           
+                                           
+                                           
+                                           
+                                                
+! GGG
+                                           
+                                           
+            deallocate(f_rsp_tensor)
+            allocate(f_rsp_tensor(364))
 
 
-            call openrsp_get_property(2,                                 &
-                                           (/3, 3/),                                 &
-                                           (/12, 12, 12, &
-                                           3, 3, 3/),                               &
-                                           (/1, 1, 1, &
-                                           1, 1, 1/),                         &
-                                           (/'GEO ', 'GEO ', 'GEO ', &
-                                           'EL  ', 'EL  ', 'EL  '/),                              &
-                                           (/1, 2/),                          &
-                                           (/dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), &
-                                           dcmplx(0.144d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), dcmplx(-0.072d0, 0.0d0), &
-                                           dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0) /), &
-                                           (/1, 0/),                                  &
+            call openrsp_get_property(1,                                 &
+                                           (/3/),                                 &
+                                           (/12, 12, 12/),                               &
+                                           (/1, 1, 1/),                         &
+                                           (/'GEO ', 'GEO ', 'GEO '/),                              &
+                                           (/1/),                          &
+                                           (/dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0), dcmplx(0.0d0, 0.0d0)/), &
+                                           (/1/),                                  &
                                            f_F_unpert(1),                             &
                                            f_S_unpert(1),                             &
                                            f_D_unpert(1),                             &
@@ -451,13 +487,7 @@
                                            f_callback_RSPXCFunGetMat,                 &
                                            f_callback_RSPXCFunGetExp,                 &
                                            STDOUT,                                    &
-                                           f_rsp_tensor)                                                            
-                                           
-                                           
-                                           
-                                           
-                                           
-                                           
+                                           f_rsp_tensor)                                            
                                            
                                            
                                            
