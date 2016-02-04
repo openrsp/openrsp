@@ -440,8 +440,8 @@ module rsp_general
           write(id_outp,*) 'Finished assembling HF energy-type contributions'
           write(id_outp,*) ' '
 
-          write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-          min(sum(prop_sizes(1:k)) - prop_sizes(k) + 13, sum(prop_sizes(1:k))))
+!           write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+!           min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
           
 !           write(*,*) 'Property is now', &
 !           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
@@ -600,8 +600,8 @@ module rsp_general
           write(id_outp,*) 'Finished assembling two-factor contributions'
           write(id_outp,*) ' '
 
-                   write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-          min(sum(prop_sizes(1:k)) - prop_sizes(k) + 13, sum(prop_sizes(1:k))))
+                   write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+          sum(prop_sizes(1:k)))
           
           
 !           write(*,*) 'Property is now', &
@@ -1698,10 +1698,11 @@ module rsp_general
     implicit none
 
     logical :: traverse_end
-    integer :: cache_offset, i, j, k, m, n 
+    integer :: cache_offset, i, j, k, m, n, p, offset
     integer :: id_outp, c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
     integer :: total_outer_size_1, total_outer_size_2
-    integer :: num_0, num_1, num_pert
+    integer :: num_0, num_1, num_pert, tot_num_pert
+    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
     character(30) :: mat_str, fmt_str
     type(contrib_cache_outer) :: D
     type(contrib_cache) :: cache
@@ -1711,7 +1712,7 @@ module rsp_general
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
     integer, allocatable, dimension(:) :: pert_ext
     integer, allocatable, dimension(:,:) :: outer_contract_sizes_2
-    complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2
+    complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2, data_tmp
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     
     
@@ -1895,13 +1896,24 @@ module rsp_general
        
        
           do m = 1, outer_contract_sizes_2(k, 1) 
+          
+!           write(*,*) 'LHS: putting indices',outer_next%indices(1 + &
+!           (m - 1) * outer_next%blks_tuple_triang_size(2), &
+!           1:outer_next%p_tuples(1)%npert)
+!           write(*,*) 'into', lhs_ctr_2 + m  - 1
              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
                   1, ind_len=outer_next%p_tuples(1)%npert, &
-                  ind_unsorted=outer_next%indices(m, 1:outer_next%p_tuples(1)%npert), &
+                  ind_unsorted=outer_next%indices(1 + &
+                  (m - 1) * outer_next%blks_tuple_triang_size(2), &
+                  1:outer_next%p_tuples(1)%npert), &
                   mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
           end do
           
           do n = 1, outer_contract_sizes_2(k, 2) 
+          
+!           write(*,*) 'RHS: putting indices', outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
+!                   outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert)
+!           write(*,*) 'into', rhs_ctr_2 + n  - 1
              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
                   1, ind_len=outer_next%p_tuples(2)%npert, &
                   ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
@@ -1909,6 +1921,7 @@ module rsp_general
                   mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
           end do          
        
+!        stop
        
        end if
    
@@ -2004,7 +2017,7 @@ module rsp_general
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
-       write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
+!        write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
     
     end if
     
@@ -2023,7 +2036,7 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
     
-    write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
+!     write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
     
     end if
     
@@ -2035,7 +2048,7 @@ module rsp_general
                      outer_contract_sizes_2(:, 2), RHS_dmat_2, size(contrib_2), contrib_2)
                        
     
-    write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
+!     write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
     
     ! Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
     
@@ -2064,14 +2077,17 @@ module rsp_general
        ! Nuc-nuc, one-el and two-el contribution
        if (outer_next%num_dmat == 0) then
        
+!           write(*,*) 'allocating', cache%blks_triang_size
           allocate(outer_next%data_scal(cache%blks_triang_size))
+          allocate(data_tmp(cache%blks_triang_size))
+!           write(*,*) 'done allocating'
 
           ! Factor 0.5 for two-el because no chain rule applications
           
-          outer_next%data_scal = contrib_0
-          outer_next%data_scal = outer_next%data_scal + &
+          data_tmp = contrib_0
+          data_tmp = data_tmp + &
           contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
-          outer_next%data_scal = outer_next%data_scal + &
+          data_tmp = data_tmp + &
           0.5*contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
 
           c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
@@ -2082,11 +2098,14 @@ module rsp_general
        
           allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                    outer_contract_sizes_2(k, 2)))
+          allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                   outer_contract_sizes_2(k, 2)))
+                   
 
-          outer_next%data_scal = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
+          data_tmp = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) - 1)
           
-          outer_next%data_scal = outer_next%data_scal + &
+          data_tmp = data_tmp + &
           contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) - 1)
 
@@ -2098,16 +2117,117 @@ module rsp_general
        
           allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                    outer_contract_sizes_2(k, 2)))
+          allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                   outer_contract_sizes_2(k, 2)))
                    
-          outer_next%data_scal = contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
+          data_tmp = contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
                             outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) - 1)
        
           c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                    outer_contract_sizes_2(k, 2)
        end if
        
-       write(*,*) 'data scal sample', outer_next%data_scal(1:min(12, size(outer_next%data_scal)))
+       if (outer_next%num_dmat == 0) then
        
+       
+          outer_next%data_scal = data_tmp
+          
+       else
+       
+          
+       
+          if (cache%p_inner%npert > 0) then
+          
+             tot_num_pert = cache%p_inner%npert + &
+             sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+                   
+             allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+                
+             do j = 1, outer_next%num_dmat + 1
+                
+                if (j == 1) then
+                
+                   do m = 1, cache%nblks
+                   
+                      blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+                      
+                   end do
+                
+                
+                else
+                
+                   do m = 1, outer_next%nblks_tuple(j - 1)
+                
+                      do p = 1, 3
+                   
+                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                   
+                      end do
+                
+                   end do
+                   
+                end if
+                
+             end do
+       
+             do i = 1, size(outer_next%indices, 1)
+          
+                do j = 1, size(cache%indices, 1)
+             
+!                    write(*,*) 'outer_next%num_dmat + 1', outer_next%num_dmat + 1
+!                    write(*,*) 'cache%p_inner%npert + sum', cache%p_inner%npert + &
+!                    sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+!                    write(*,*) '(/cache%nblks, outer_next%nblks_tuple(:) /)', &
+!                    (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /)
+!                    write(*,*) 'cache%p_inner%npert', &
+!                    (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/)
+!                    write(*,*) 'cache%blk_info', blks_tuple_info
+!                    write(*,*) 'cache%blk_sizes', &
+!                    (/cache%blk_sizes, (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)/)
+!                    write(*,*) 'cache%blks_triang_size', &
+!                    (/cache%blks_triang_size, &
+!                    (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/)
+!                    write(*,*) 'indices', (/cache%indices(j, :), outer_next%indices(i, :)/)
+                             
+!                    stop
+
+             
+                   offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
+                   cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
+                   (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
+                   (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
+                   blks_tuple_info, &
+                   (/cache%blk_sizes, (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)/), &
+                   (/cache%blks_triang_size, &
+                   (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
+                   (/cache%indices(j, :), outer_next%indices(i, :)/))
+                
+!                    write(*,*) 'inner, outer ind', cache%indices(j, :), outer_next%indices(i, :)
+!                    write(*,*) 'offset in cache', offset, 'is j', j, 'tmp', j + size(cache%indices, 1) * (i - 1)
+!                    write(*,*) 'data is', data_tmp(j + size(cache%indices, 1) * (i - 1))
+!                    write(*,*) ' '
+                   outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
+                            
+             
+                end do
+          
+             end do
+             
+             deallocate(blks_tuple_info)
+          
+          else
+          
+             write(*,*) 'ERROR: UNEXPECTED: NO INNER PERTURBATIONS'
+          
+          
+          end if
+                 
+       end if
+       
+!        write(*,*) 'data scal sample', outer_next%data_scal(1:min(12, size(outer_next%data_scal)))
+       
+       
+       deallocate(data_tmp)
    
        if (outer_next%next%dummy_entry) then
     
@@ -2197,7 +2317,7 @@ module rsp_general
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
-                write(*,*) 'Prop after retrieval', prop(1:min(12, size(prop)))
+!                 write(*,*) 'Prop after retrieval', prop(1:min(12, size(prop)))
              
              else
              
@@ -2271,22 +2391,22 @@ module rsp_general
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
-                write(*,*) 'Prop after Pulay Lagrange retrieval', prop(1:min(12, size(prop)))
+!                 write(*,*) 'Prop after Pulay Lagrange retrieval', prop(1:min(12, size(prop)))
                 
 !                 write(*,*) 'Idempotency lagrange hard offset', hard_offset
-                ! Idempotency Lagrange contribution
+!                 Idempotency Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
-                write(*,*) 'Prop after idempotency Lagrange retrieval', prop(1:min(12, size(prop)))
-                
+!                 write(*,*) 'Prop after idempotency Lagrange retrieval', prop(1:min(12, size(prop)))
+!                 
 !                 write(*,*) 'SCFE lagrange hard offset', hard_offset
-                ! SCFE Lagrange contribution
+!                 SCFE Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 
-                write(*,*) 'Prop after SCFE Lagrange retrieval', prop(1:min(12, size(prop)))
+!                 write(*,*) 'Prop after SCFE Lagrange retrieval', prop(1:min(12, size(prop)))
             
              else
              
@@ -2336,13 +2456,14 @@ module rsp_general
     implicit none
 
     logical :: traverse_end, any_lagrange
-    integer :: cache_offset, i, j, k, m, n, c_ctr, c_snap, lagrange_max_n
-    integer :: id_outp, i_supsize, o_triang_size
+    integer :: cache_offset, i, j, k, m, n, p, c_ctr, c_snap, lagrange_max_n
+    integer :: id_outp, i_supsize, o_triang_size, offset, tot_num_pert
     integer :: ctr_lagrange, ctr_pulay_n, o_ctr, size_lagrange, size_pulay_n
     integer :: sstr_incr
     integer, dimension(0) :: nof
     integer, allocatable, dimension(:) :: o_supsize, o_supsize_prime, o_size
     integer, allocatable, dimension(:) :: which_index_is_pid
+    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
     complex(8), allocatable, dimension(:) :: contrib_pulay
     character(30) :: mat_str, fmt_str
     type(p_tuple) :: p_inner
@@ -2799,7 +2920,7 @@ module rsp_general
     
     
     contrib_pulay = -2.0 * contrib_pulay
-    write(*,*) 'Pulay contribution sample', contrib_pulay(1:min(size(contrib_pulay), 12))
+!     write(*,*) 'Pulay contribution sample', contrib_pulay(1:min(size(contrib_pulay), 12))
     
     ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
     
@@ -2825,7 +2946,7 @@ module rsp_general
 !     end do
     
     k = 1
-    o_ctr = 1
+    o_ctr = 0
     
     do while (traverse_end .EQV. .FALSE.)
 
@@ -2842,39 +2963,99 @@ module rsp_general
           o_triang_size = size(outer_next%indices, 1)
              
        end if
+
+       
+       
+       tot_num_pert = cache%p_inner%npert + &
+       sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+                   
+       allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+               
+       do j = 1, outer_next%num_dmat + 1
+          if (j == 1) then
+             do m = 1, cache%nblks
+                blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+             end do
+          else
+             if (size(outer_next%p_tuples) > 0) then
+                if (outer_next%p_tuples(1)%npert > 0) then
+                   do m = 1, outer_next%nblks_tuple(j - 1)
+                      do p = 1, 3
+                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                      end do
+                   end do
+                end if
+             end if
+          end if
+       end do
        
         
-        
-       ! Store Pulay n terms (if any)
-       if ((outer_next%contrib_type == 1)) then
+       ! Store any Pulay n and Lagrange terms
+!        if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
+       
+          do i = 1, o_triang_size
           
-          do j = 1, o_triang_size * cache%blks_triang_size
-          
-             outer_next%data_scal(j) = contrib_pulay(o_ctr)
-             o_ctr = o_ctr + 1
-             c_ctr = c_ctr + 1
-          
+             do j = 1, size(cache%indices, 1)
+                
+                if (size(outer_next%p_tuples) > 0) then
+                   if (outer_next%p_tuples(1)%npert > 0) then
+
+                      offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
+                      (/cache%nblks, outer_next%nblks_tuple(1)/), &
+                      (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
+                      blks_tuple_info, &
+                      (/cache%blk_sizes, outer_next%blk_sizes(1,:)/), &
+                      (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
+                      (/cache%indices(j, :), outer_next%indices(i, :)/))
+                      
+                   else
+                   
+                      offset = j
+                   
+                   end if
+                   
+                end if
+                
+!                 write(*,*) 'Pulay'
+!                 write(*,*) 'offset', i, j, offset
+!                 write(*,*) 'contrib offset', j + size(cache%indices, 1) * (i - 1) + o_ctr
+                
+                if (outer_next%contrib_type == 1) then
+                
+                   
+                
+                   outer_next%data_scal(offset) = contrib_pulay(j + &
+                   size(cache%indices, 1) * (i - 1) + o_ctr)
+                   c_ctr = c_ctr + 1
+                   
+                else if (outer_next%contrib_type == 3) then
+
+                   outer_next%data_scal(offset) = contrib_pulay(j + &
+                   size(cache%indices, 1) * (i - 1) + o_ctr)
+                   c_ctr = c_ctr + 1
+                   
+                else if (outer_next%contrib_type == 4) then
+                
+                   outer_next%data_scal(offset) = contrib_pulay(j + &
+                   size(cache%indices, 1) * (i - 1) + o_ctr)
+                   
+                   outer_next%data_scal(offset + size(cache%indices, 1) * o_triang_size) = &
+                   contrib_pulay(j + size(cache%indices, 1) * (i - 1) + &
+                   size(cache%indices, 1) * o_triang_size  + o_ctr)
+                   c_ctr = c_ctr + 2
+                
+                
+                end if
+                   
+                
+             end do
+             
           end do
           
-       end if
+!        end if
        
        c_snap = c_ctr
-       
-       ! Store Pulay Lagrange terms (if any)
-       if ((outer_next%contrib_type >= 3)) then
-          
-          do j = 1, o_triang_size * cache%blks_triang_size
-          
-             outer_next%data_scal(j + c_snap) = &
-             contrib_pulay(o_ctr)
-             o_ctr = o_ctr + 1
-             c_ctr = c_ctr + 1             
-          
-          end do
-          
-       end if
-       
-       c_snap = c_ctr
+       o_ctr = o_ctr + c_snap
        
        ! Calculate and store idempotency and SCFE terms
        if ((outer_next%contrib_type == 3) .OR. (outer_next%contrib_type == 4)) then
@@ -2922,66 +3103,85 @@ module rsp_general
           
          
           
-          do j = 1, o_triang_size
+          do i = 1, o_triang_size
 
-! CONTINUE HERE: IDEMPOTENCY AND SCFE CONTRIBUTIONS SEEM VERY LARGE: LOOK AT MATRICES
-          
+             call QcMatZero(Y)
              call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, cache%p_inner%npert + &
                   outer_next%p_tuples(1)%npert, &
                   which_index_is_pid(1:cache%p_inner%npert + &
-                  outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
+                  outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
                   F, D, S, Y)
              
              ! NOTE: Rule choice very likely to give correct exclusion but
              ! have another look if something goes wrong
+             call QcMatZero(Z)
              call rsp_get_matrix_z(o_supsize_prime(k), d_struct_o, &
                   (/outer_next%n_rule, outer_next%n_rule/), cache%p_inner%npert + &
                   outer_next%p_tuples(1)%npert, &
                   which_index_is_pid(1:cache%p_inner%npert + &
-                  outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
+                  outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
                   F, D, S, Z)
                   
-             do i = 1, cache%blks_triang_size
+             do j = 1, cache%blks_triang_size
            
            
            
-                if ((i == 1) .AND. (j == 1)) then
-           
-                    m = QcMatWrite_f(Lambda(1), 'Lambda_1', ASCII_VIEW)
-                    m = QcMatWrite_f(Y, 'Y_1', ASCII_VIEW)
-                    
+!                 if ((i == 1) .AND. (j == 1)) then
+!            
+!                     m = QcMatWrite_f(Lambda(1), 'Lambda_1', ASCII_VIEW)
+!                     m = QcMatWrite_f(Y, 'Y_1', ASCII_VIEW)
+!                     
+!                 end if
+                
+                if (size(outer_next%p_tuples) > 0) then
+                   if (outer_next%p_tuples(1)%npert > 0) then
+
+                      offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
+                      (/cache%nblks, outer_next%nblks_tuple(1)/), &
+                      (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
+                      blks_tuple_info, &
+                      (/cache%blk_sizes, outer_next%blk_sizes(1,:)/), &
+                      (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
+                      (/cache%indices(j, :), outer_next%indices(i, :)/))
+                      
+                   else
+                   
+                      offset = j
+                   
+                   end if
+                   
                 end if
+                
+!                 write(*,*) 'Idem/SCFE c_snap', c_snap
+!                 write(*,*) 'i, j, offset', i, j, offset
+!                 write(*,*) 'contrib offset', j + size(cache%indices, 1) * (i - 1)
+                
            
 !                 write(*,*) 'mat trace i j,', i, j
 !                 write(*,*) 'c snap, j disp', c_snap, (j-1) * cache%blks_triang_size
 !                 write(*,*) 'property displ', cache%blks_triang_size*o_triang_size
              
-                call QcMatTraceAB(Lambda(i), Y, outer_next%data_scal(c_snap + &
-                (j-1) * cache%blks_triang_size + i))
-                call QcMatTraceAB(Zeta(i), Z, outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i))
+                call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
+                call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
+                cache%blks_triang_size*o_triang_size + offset))
+                
+                outer_next%data_scal(c_snap + offset) = &
+                -2.0 * outer_next%data_scal(c_snap + offset)
                 
                 outer_next%data_scal(c_snap + &
-                (j-1) * cache%blks_triang_size + i) = &
+                cache%blks_triang_size*o_triang_size + offset) = &
                 -2.0 * outer_next%data_scal(c_snap + &
-                (j-1) * cache%blks_triang_size + i)
-                
-                
-                outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i) = &
-                -2.0 * outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
+                cache%blks_triang_size*o_triang_size + offset)
              
-             if ((i == 1) .AND. (j == 1)) then
-           
-                   write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
-                (j-1) * cache%blks_triang_size + i)
+!              if ((i <= 2) .AND. (j <= 12)) then
+!                    write(*,*) 'i, j, offset', i, j, offset
+!                    write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + offset)
                 
-                write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
+!                 write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
+!                 cache%blks_triang_size*o_triang_size + offset)
              
                     
-                end if
+!                 end if
              
 !                 write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
 !                 (j-1) * cache%blks_triang_size + i)
@@ -3000,9 +3200,12 @@ module rsp_general
        
        
           deallocate(d_struct_o)
+          
       
       
        end if
+       
+       deallocate(blks_tuple_info)
        
        if (outer_next%next%dummy_entry) then
     
@@ -3953,6 +4156,10 @@ module rsp_general
                    (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
                    
           call QcMatTraceAB(Zeta, Z, tmp_tr)
+          
+          
+        
+          
           prop_forcache(offset) = prop_forcache(offset) - tmp_tr
 
        end do
