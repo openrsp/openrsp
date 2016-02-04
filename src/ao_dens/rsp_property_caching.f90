@@ -1389,6 +1389,11 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
+ 
+   
+   
+   
+   
    if (present(hard_offset)) then
    
       cache_hard_offset = hard_offset
@@ -1491,6 +1496,12 @@ module rsp_property_caching
    if (present(mat) .OR. present(scal)) then
    
       if (found) then
+      
+!         write(*,*) 'THIS IS THE CACHE DATA'
+!     write(*,*) next_element_outer%data_scal
+!      write(*,*)  ' ' 
+   
+         
 
          total_num_perturbations = 0
 
@@ -1665,6 +1676,16 @@ module rsp_property_caching
                
             else if (present(scal)) then
 
+            
+!                if (i < 24) then
+!                
+!                   write(*,*) 'Indices', indices(i,:)
+!                   write(*,*) 'Results offset', res_offset
+!                   write(*,*) 'Cache offset', cache_offset
+!              
+!                
+!                end if
+            
                scal(res_offset) = &
                scal(res_offset) + &
                next_element_outer%data_scal(cache_offset + cache_hard_offset)              
