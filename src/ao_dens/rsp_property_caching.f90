@@ -35,8 +35,12 @@ module rsp_property_caching
  public contrib_cache_getdata
  public contrib_cache_allocate
  public contrib_cache_outer_allocate
+ public contrib_cache_store
+ public contrib_cache_retrieve
+ public contrib_cache_outer_store
+ public contrib_cache_outer_retrieve
   
-  ! END NEW 2014
+ ! END NEW 2014
   
   
   !  Define property contribution cache datatype
@@ -55,7 +59,7 @@ module rsp_property_caching
   
   ! Define contrib cache datatype
 
-  
+  ! NOTE FEB 2016: SET DEFAULT VALUES FOR ALL NON-ALLOCATE ATTRIBUTES OF CACHE TYPES
 
   
  type contrib_cache_outer
@@ -70,7 +74,7 @@ module rsp_property_caching
    integer :: contrib_type = 0
    
    integer :: n_rule = 0
-   integer :: contrib_size
+   integer :: contrib_size = 0
    integer, allocatable, dimension(:) :: nblks_tuple
    integer, allocatable, dimension(:,:) :: blk_sizes
    integer, allocatable, dimension(:,:) :: indices
@@ -484,6 +488,570 @@ module rsp_property_caching
   end subroutine
 
     ! NEW 2014
+    
+    
+ subroutine contrib_cache_store(cache, fname)
+ 
+   implicit none
+   
+   logical :: termination
+   integer :: num_entries, i, j, funit
+   character(50) :: fname
+  
+   type(contrib_cache), target :: cache
+   type(contrib_cache), pointer :: cache_next
+   type(contrib_cache_outer), pointer :: outer_next
+ 
+ 
+   funit = 260
+ 
+   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='replace', action='write')
+   
+   ! Cycle to start
+   cache_next => cache
+   do while(.NOT.(cache_next%last))
+      cache_next => cache_next%next
+   end do
+   cache_next => cache_next%next
+   cache_next => cache_next%next
+   
+   num_entries = 0
+   
+   ! Traverse to get number of entries
+   termination = .FALSE.
+   do while(.NOT.(termination))
+   
+      num_entries = num_entries + 1
+   
+      termination = cache_next%last
+      cache_next => cache_next%next
+   
+   end do
+   
+   write(funit,*) num_entries
+   
+   ! Cycle to start
+   do while(.NOT.(cache_next%last))
+      cache_next => cache_next%next
+   end do
+   cache_next => cache_next%next
+   cache_next => cache_next%next
+   
+      
+   ! Traverse and store
+   termination = .FALSE.
+   do i = 1, num_entries
+   
+      write(funit,*) cache_next%last
+      write(funit,*) cache_next%p_inner%npert
+      do j = 1, cache_next%p_inner%npert
+      
+         write(funit,*) cache_next%p_inner%pdim(j)
+         write(funit,*) cache_next%p_inner%plab(j)
+         write(funit,*) cache_next%p_inner%pid(j)
+         write(funit,*) cache_next%p_inner%freq(j)
+      
+      end do
+      
+      write(funit,*) cache_next%num_outer
+      write(funit,*) cache_next%nblks
+      
+      write(funit,*) size(cache_next%blk_sizes)
+      write(funit,*) cache_next%blk_sizes
+      
+      write(funit,*) cache_next%blks_triang_size
+
+      write(funit,*) size(cache_next%blk_info, 1)
+      write(funit,*) size(cache_next%blk_info, 2)
+      write(funit,*) cache_next%blk_info
+     
+      write(funit,*) size(cache_next%indices, 1)
+      write(funit,*) size(cache_next%indices, 2)
+      write(funit,*) cache_next%indices
+      
+         
+      
+      outer_next => cache_next%contribs_outer
+      
+      ! num_outer may not be well-defined; consider 
+      ! switching to traversal with termination instead
+         
+      call contrib_cache_outer_put(outer_next, fname, funit)
+   
+      cache_next => cache_next%next
+   
+   end do
+   
+   
+   close(funit)
+ 
+ end subroutine
+ 
+ 
+ subroutine contrib_cache_retrieve(cache, fname)
+ 
+   implicit none
+   
+   logical :: termination, cache_ext
+   integer :: num_entries, i, j, funit
+   character(50) :: fname
+  
+   type(contrib_cache), target :: cache
+   type(contrib_cache), pointer :: cache_next, cache_new, cache_orig
+   type(contrib_cache_outer), pointer :: outer_next
+ 
+   inquire(file=fname // '.DAT', exist=cache_ext)
+   
+   if (.NOT.(cache_ext)) then
+   
+      write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+      stop
+   
+   end if
+ 
+   funit = 260
+ 
+   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='old', action='read')
+   
+   read(funit,*) num_entries
+
+   ! Cache allocation may need own subroutine because of target/pointer issues
+   ! Set up first element of cache
+   cache_next => cache
+   allocate(cache_next)
+   
+   call contrib_cache_read_one_inner(cache_next, fname, funit)
+   allocate(cache_next%contribs_outer)
+   outer_next => cache_next%contribs_outer
+   call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
+   
+   cache_orig => cache_next
+   
+   ! Get all remaining elements
+   do i = 1, num_entries - 1
+   
+      call contrib_cache_retrieve_one_inner(cache_next, fname, funit)
+      cache_next => cache_next%next
+      outer_next => cache_next%contribs_outer
+         
+      call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
+  
+   end do
+   
+   ! Bite the tail
+   cache_next%next => cache_orig
+   
+   
+   close(funit)
+ 
+ end subroutine
+ 
+ subroutine contrib_cache_retrieve_one_inner(cache, fname, funit)
+ 
+    implicit none
+ 
+    integer :: funit 
+    character(50) :: fname
+    type(contrib_cache), target :: cache
+    type(contrib_cache), pointer :: cache_new
+ 
+    allocate(cache_new)
+ 
+    call contrib_cache_read_one_inner(cache_new, fname, funit)
+    
+    cache%next => cache_new
+ 
+ end subroutine
+ 
+ 
+ 
+ 
+ subroutine contrib_cache_read_one_inner(cache, fname, funit)
+ 
+   implicit none
+   
+   integer :: num_entries, i, j, funit
+   integer :: size_i, size_j
+   character(50) :: fname
+  
+   type(contrib_cache), pointer :: cache
+   
+   read(funit,*) cache%last
+   read(funit,*) cache%p_inner%npert
+   
+   if (cache%p_inner%npert == 0) then
+
+      allocate(cache%p_inner%pdim(1))
+      
+   else
+    
+      allocate(cache%p_inner%pdim(cache%p_inner%npert))
+   
+   end if
+   
+   do j = 1, cache%p_inner%npert
+      
+         read(funit,*) cache%p_inner%pdim(j)
+         read(funit,*) cache%p_inner%plab(j)
+         read(funit,*) cache%p_inner%pid(j)
+         read(funit,*) cache%p_inner%freq(j)
+      
+   end do
+      
+      read(funit,*) cache%num_outer
+      read(funit,*) cache%nblks
+      
+      read(funit,*) size_i
+      allocate(cache%blk_sizes(size_i))
+      read(funit,*) cache%blk_sizes
+      
+      read(funit,*) cache%blks_triang_size
+
+      read(funit,*) size_i
+      read(funit,*) size_j
+      allocate(cache%blk_info(size_i, size_j))
+      read(funit,*) cache%blk_info
+     
+      read(funit,*) size_i
+      read(funit,*) size_j
+      allocate(cache%indices(size_i, size_j))
+      read(funit,*) cache%indices
+      
+           
+         
+      
+   
+ end subroutine
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ subroutine contrib_cache_outer_store(cache, fname)
+ 
+   implicit none
+   
+   type(contrib_cache_outer) :: cache
+   character(50) :: fname
+   integer :: funit
+   
+   funit = 260
+ 
+   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='replace', action='write')
+        
+   call contrib_cache_outer_put(cache, fname, funit)
+        
+        
+   close(funit)
+ 
+ 
+ end subroutine
+ 
+ 
+ ! Assumes file 'fname' is already opened with I/O unit 'funit'
+ subroutine contrib_cache_outer_put(cache, fname, funit)
+ 
+   implicit none
+   
+   logical :: termination
+   integer :: num_entries, i, j, k, mat_scal_none, funit
+   character(50) :: fname
+   character(10) :: str_fid
+   character(8) :: fid_fmt
+  
+   type(contrib_cache_outer), target :: cache
+   type(contrib_cache_outer), pointer :: cache_next
+ 
+   
+ 
+   ! Cycle to start
+   cache_next => cache
+   do while(.NOT.(cache_next%last))
+      cache_next => cache_next%next
+   end do
+   cache_next => cache_next%next
+   cache_next => cache_next%next
+   
+   num_entries = 0
+   
+   ! Traverse to get number of entries
+   termination = .FALSE.
+   do while(.NOT.(termination))
+   
+      num_entries = num_entries + 1
+   
+      termination = cache_next%last
+      cache_next => cache_next%next
+   
+   end do
+   
+   write(funit,*) num_entries
+   
+   ! Cycle to start
+   do while(.NOT.(cache_next%last))
+      cache_next => cache_next%next
+   end do
+   cache_next => cache_next%next
+   cache_next => cache_next%next
+  
+   ! Traverse and store
+   do i = 1, num_entries
+   
+      write(funit,*) cache_next%last
+      write(funit,*) cache_next%dummy_entry
+      write(funit,*) cache_next%num_dmat
+      write(funit,*) cache_next%contrib_type
+      write(funit,*) cache_next%n_rule
+      write(funit,*) cache_next%contrib_size
+      
+      write(funit,*) size(cache_next%nblks_tuple)
+      write(funit,*) cache_next%nblks_tuple
+      
+      write(funit,*) size(cache_next%blk_sizes, 1)
+      write(funit,*) size(cache_next%blk_sizes, 2)
+      do j = 1, size(cache_next%blk_sizes, 1)
+         write(funit,*) cache_next%blk_sizes(j, :)
+      end do   
+      
+      write(funit,*) size(cache_next%indices, 1)
+      write(funit,*) size(cache_next%indices, 2)
+      do j = 1, size(cache_next%indices, 1)
+         write(funit,*) cache_next%indices(j,:)
+      end do
+      
+      write(funit,*) size(cache_next%blks_tuple_info, 1)
+      write(funit,*) size(cache_next%blks_tuple_info, 2)
+      write(funit,*) size(cache_next%blks_tuple_info, 3)
+      
+      do j = 1, size(cache_next%blks_tuple_info, 1)
+         do k = 1, size(cache_next%blks_tuple_info, 2)
+            write(funit,*) cache_next%blks_tuple_info(j, k, :)
+         end do
+      end do
+      
+      write(funit,*) size(cache_next%blks_tuple_triang_size)
+      write(funit,*) cache_next%blks_tuple_triang_size
+      
+      if (allocated(cache_next%data_mat)) then
+      
+         mat_scal_none = 0
+         write(funit,*) mat_scal_none
+         write(funit,*) size(cache_next%data_mat)
+         
+         fid_fmt = '(I10.10)'
+         
+         do j = 1, size(cache_next%data_mat)
+            
+            write(str_fid, fid_fmt) j
+         
+            k = QcMatWrite_f(cache_next%data_mat(j), trim(adjustl(fname)) // '_MAT_' // &
+                 trim(str_fid) // '.DAT', BINARY_VIEW)
+         
+         end do
+         
+      
+      elseif (allocated(cache_next%data_scal)) then
+      
+         mat_scal_none = 1
+         write(funit,*) mat_scal_none
+         write(funit,*) size(cache_next%data_scal)
+         write(funit,*) cache_next%data_scal
+         
+      
+      else
+      
+         mat_scal_none = 2 
+         write(funit,*) mat_scal_none
+      
+      end if
+            
+      cache_next => cache_next%next
+   
+   
+   end do
+ 
+ 
+ 
+ end subroutine
+ 
+ 
+ ! Add condition to handle "not from inner"
+ subroutine contrib_cache_outer_retrieve(cache, fname, from_inner, funit_in)
+ 
+   implicit none
+   
+   logical :: from_inner, cache_ext
+   integer :: funit, i, j, k
+   integer, optional :: funit_in
+   integer :: num_entries
+   character(50) :: fname
+   type(contrib_cache_outer), target :: cache
+   type(contrib_cache_outer), pointer :: cache_next, cache_orig
+   
+   ! If not as part of inner cache, then open file
+   if (.NOT.(from_inner)) then
+   
+      inquire(file=fname // '.DAT', exist=cache_ext)
+      
+      if (.NOT.(cache_ext)) then
+   
+         write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+         stop
+   
+      end if
+      
+      funit = 260
+      
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+           form='unformatted', status='old', action='read')
+   
+   end if
+   
+   
+   
+   read(funit, *) num_entries
+ 
+   call contrib_cache_read_one_outer(cache, fname, funit)
+
+   cache_next => cache
+   cache_orig => cache
+   
+   do i = 1, num_entries - 1
+   
+      call contrib_cache_retrieve_one_outer(cache_next, fname, funit)
+      cache_next => cache_next%next
+    
+   end do
+
+   cache_next%next => cache_orig
+   
+   
+   if (.NOT.(from_inner)) then
+      
+      close(260)
+      
+   end if
+ 
+ end subroutine
+ 
+ 
+ 
+ subroutine contrib_cache_retrieve_one_outer(cache, fname, funit)
+ 
+   implicit none
+   
+   integer :: funit
+   character(50) :: fname
+   type(contrib_cache_outer), target :: cache
+   type(contrib_cache_outer), pointer :: cache_new
+   
+   allocate(cache_new)
+   
+   call contrib_cache_read_one_outer(cache_new, fname, funit)
+   
+   cache%next => cache_new
+  
+ 
+ end subroutine
+ 
+ 
+ subroutine contrib_cache_read_one_outer(cache, fname, funit)
+ 
+   implicit none
+   
+   logical :: from_inner
+   integer :: funit, i, j, k
+   integer :: size_i, size_j, size_k
+   integer :: mat_scal_none
+   character(50) :: fname
+   character(10) :: str_fid
+   character(8) :: fid_fmt
+   type(contrib_cache_outer) :: cache
+   
+  
+   read(funit,*) cache%last
+   read(funit,*) cache%dummy_entry
+   read(funit,*) cache%num_dmat
+   read(funit,*) cache%contrib_type
+   read(funit,*) cache%n_rule
+   read(funit,*) cache%contrib_size
+      
+   read(funit,*) size_i
+   allocate(cache%nblks_tuple(size_i))
+   read(funit,*) cache%nblks_tuple
+      
+   read(funit,*) size_i
+   read(funit,*) size_j
+   allocate(cache%blk_sizes(size_i, size_j))
+   do j = 1, size_i
+      read(funit,*) cache%blk_sizes(j, :)
+   end do   
+      
+   read(funit,*) size_i
+   read(funit,*) size_j
+   allocate(cache%indices(size_i, size_j))
+   do j = 1, size_i
+      read(funit,*) cache%indices(j,:)
+   end do
+      
+   read(funit,*) size_i
+   read(funit,*) size_j
+   read(funit,*) size_k
+   allocate(cache%blks_tuple_info(size_i, size_j, size_k))
+   do j = 1, size_i
+      do k = 1, size_j
+         read(funit,*) cache%blks_tuple_info(j, k, :)
+      end do
+   end do
+      
+   read(funit,*) size_i
+   allocate(cache%blks_tuple_triang_size(size_i))
+   read(funit,*) cache%blks_tuple_triang_size
+      
+   read(funit,*) mat_scal_none
+      
+      
+   if (mat_scal_none == 0) then
+   
+      fid_fmt = '(I10.10)'
+   
+      read(funit,*) size_i
+      
+      allocate(cache%data_mat(size_i))
+      
+      do i = 1, size_i
+      
+         write(str_fid, fid_fmt) i
+      
+         call QcMatInit(cache%data_mat(i))
+         k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
+                          trim(str_fid) // '.DAT', BINARY_VIEW)
+      
+      end do
+   
+   
+   elseif (mat_scal_none == 1) then
+   
+      read(funit,*) size_i
+      allocate(cache%data_scal(size_i))
+      read(funit,*) cache%data_scal
+   
+   end if
+      
+           
+   
+ end subroutine
+ 
+ 
+    
   
  subroutine contrib_cache_cycle_outer(current_element, num_p_tuples, p_tuples, &
             next_outer, n_rule)

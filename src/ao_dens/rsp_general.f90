@@ -113,7 +113,31 @@ module rsp_general
     type(QcMat) :: S_unpert, D_unpert, F_unpert
     type(contrib_cache_outer), pointer :: S, D, F
     integer :: kn(2)
+    logical :: r_exist
+    integer, dimension(3) :: rs_info
+    integer, dimension(3) :: prog_info
+    
+    prog_info = (/0,0,0/)
+    
+    inquire(file='OPENRSP_RESTART', exist=r_exist)
+    
+    if (r_exist) then
+    
+       open(unit=260, file='OPENRSP_RESTART', action='read') 
+       read(260,*) rs_info(1)
+       read(260,*) rs_info(2)
+       read(260,*) rs_info(3)
+       close(260)
+    
+    else
+    
+       rs_info = 0
+    
+    end if
 
+    
+    
+    
     ! Set up S, D, F data structures
     
     call contrib_cache_outer_allocate(S)
