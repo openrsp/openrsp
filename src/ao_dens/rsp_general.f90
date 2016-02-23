@@ -62,7 +62,16 @@ module rsp_general
                                   contrib_cache_already,               &
                                   contrib_cache_getdata,               &
                                   contrib_cache_getdata_outer,               &
-                                  contrib_cache_allocate
+                                  contrib_cache_allocate, &
+                                  contrib_cache_retrieve, &
+                                  contrib_cache_outer_retrieve, &
+                                  contrib_cache_store, &
+                                  mat_scal_store, &
+                                  mat_scal_retrieve, &
+                                  rs_check, &
+                                  prog_incr, &
+                                  prog_init
+                                  
   
   use rsp_sdf_caching
   
@@ -119,37 +128,33 @@ module rsp_general
     
     prog_info = (/0,0,0/)
     
-    inquire(file='OPENRSP_RESTART', exist=r_exist)
+    call prog_init(rs_info)
+
+    if (rs_check(prog_info, rs_info)) then
     
-    if (r_exist) then
+       call contrib_cache_outer_retrieve(S, 'S', .FALSE., 260)
+       call contrib_cache_outer_retrieve(D, 'D', .FALSE., 260)
+       call contrib_cache_outer_retrieve(F, 'F', .FALSE., 260)
     
-       open(unit=260, file='OPENRSP_RESTART', action='read') 
-       read(260,*) rs_info(1)
-       read(260,*) rs_info(2)
-       read(260,*) rs_info(3)
-       close(260)
     
     else
     
-       rs_info = 0
+       ! Set up S, D, F data structures
+    
+       call contrib_cache_outer_allocate(S)
+       call contrib_cache_outer_allocate(D)
+       call contrib_cache_outer_allocate(F)
+    
+       call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
+            data_size = 1, data_mat=(/S_unpert/))
+       call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
+            data_size = 1, data_mat=(/D_unpert/))
+       call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
+            data_size = 1, data_mat=(/F_unpert/))         
     
     end if
-
     
-    
-    
-    ! Set up S, D, F data structures
-    
-    call contrib_cache_outer_allocate(S)
-    call contrib_cache_outer_allocate(D)
-    call contrib_cache_outer_allocate(F)
-    
-    call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
-         data_size = 1, data_mat=(/S_unpert/))
-    call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
-         data_size = 1, data_mat=(/D_unpert/))
-    call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
-         data_size = 1, data_mat=(/F_unpert/))         
+    call prog_incr(prog_info, 3)
 
     ! Present calculation and initialize perturbation tuple datatypes and
     ! associated size/indexing information
@@ -261,7 +266,7 @@ module rsp_general
     call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, prop_sizes, rsp_tensor)
+                  id_outp, prop_sizes, rsp_tensor, prog_info, rs_info)
 
     call cpu_time(timing_end)
 
@@ -320,13 +325,14 @@ module rsp_general
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, prop_sizes, props)
+                  id_outp, prop_sizes, props, prog_info, rs_info)
 
     implicit none
 
     
     logical :: traverse_end
     integer :: n_props, id_outp, i, j, k
+    integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
@@ -343,477 +349,392 @@ module rsp_general
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
   
+    call prog_incr(prog_info, 1)
   
-    ! Get all necessary F, D, S derivatives
+    if (rs_check(prog_info, rs_info, lvl=1)) then
     
-    write(id_outp,*) ' '
-    write(id_outp,*) 'Calculating perturbed overlap/density/Fock matrices'
-    write(id_outp,*) ' '
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Perturbed overlap/density/Fock matrix stage was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
+       
+       call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+       call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+       call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+  
+    else
+  
+       ! Get all necessary F, D, S derivatives
+     
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Calculating perturbed overlap/density/Fock matrices'
+       write(id_outp,*) ' '
 
-    call cpu_time(time_start)
-    call contrib_cache_allocate(contribution_cache)
+       call cpu_time(time_start)
+       call contrib_cache_allocate(contribution_cache)
         
-    call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
-                 get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                 get_2el_mat, get_xc_mat, .TRUE., contribution_cache, id_outp)
+       call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
+                    get_rsp_sol, get_ovl_mat, get_1el_mat, &
+                    get_2el_mat, get_xc_mat, .TRUE., contribution_cache, id_outp, &
+                    prog_info, rs_info)
                      
-    deallocate(contribution_cache)
-    call cpu_time(time_end)
+       deallocate(contribution_cache)
+       call cpu_time(time_end)
 
-    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-    write(id_outp,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
-    write(id_outp,*) ' '
-    
-
-    
-    ! For each property: Recurse to identify HF energy-type contributions, store in cache
-    
-    call contrib_cache_allocate(contribution_cache)
-    
-    k = 1
-
-    do i = 1, n_props
-    
-       do j = 1, n_freq_cfgs(i)
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
+       write(id_outp,*) ' '
        
-          write(id_outp,*) ' '
-          write(id_outp,*) 'Identifying HF-energy type contributions'
-          write(id_outp,*) ' '
+    end if
+    
+    call prog_incr(prog_info, 1)
+    
+    if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'HF energy-type contribution identification was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
+    
+       call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+    
+    else
+    
+       ! For each property: Recurse to identify HF energy-type contributions, store in cache
+    
+       call contrib_cache_allocate(contribution_cache)
+    
+       k = 1
 
-          call cpu_time(time_start)
-          call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
-               0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .TRUE., &
-               contribution_cache, prop_sizes(k), &
-               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
-          call cpu_time(time_end)
+       do i = 1, n_props
+    
+          do j = 1, n_freq_cfgs(i)
+       
+             write(id_outp,*) ' '
+             write(id_outp,*) 'Identifying HF-energy type contributions'
+             write(id_outp,*) ' '
 
-          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-          write(id_outp,*) 'Finished identifying HF energy-type contributions'
-          write(id_outp,*) ' '
+             call cpu_time(time_start)
+             call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
+                  0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .TRUE., &
+                  contribution_cache, prop_sizes(k), &
+                  props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+             call cpu_time(time_end)
+
+             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+             write(id_outp,*) 'Finished identifying HF energy-type contributions'
+             write(id_outp,*) ' '
           
-          k = k + 1
+             k = k + 1
+       
+          end do
        
        end do
-       
-    end do
-
-    ! Calculate all identified contributions and store in cache
     
-    write(id_outp,*) ' '
-    write(id_outp,*) 'Calculating HF-energy type contributions'
-    write(id_outp,*) ' '
-    
-    call cpu_time(time_start)
-    
-    traverse_end = .FALSE.
 
-    cache_next => contribution_cache
+       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+    
+    end if
+    
+    call prog_incr(prog_info, 1)
+    
+    if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'HF energy-type contribution calculation was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
+           
+    else
+    
+       ! Calculate all identified contributions and store in cache
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Calculating HF-energy type contributions'
+       write(id_outp,*) ' '
+    
+       call cpu_time(time_start)
+    
+       traverse_end = .FALSE.
 
-    ! Cycle cache
-    do while (cache_next%last .eqv. .FALSE.)
+       cache_next => contribution_cache
+
+       ! Cycle cache
+       do while (cache_next%last .eqv. .FALSE.)
+          cache_next => cache_next%next
+       end do
+
        cache_next => cache_next%next
-    end do
-
-    cache_next => cache_next%next
-    cache_next => cache_next%next
-       
-    ! Traverse linked list and calculate
-    do while (traverse_end .eqv. .FALSE.)
-       
-       write(*,*) 'Calculating contribution for inner perturbation tuple'
-       write(*,*) cache_next%p_inner%plab
-
-       call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
-       write(*,*) ' '
-          
-       if (cache_next%last) then
-          traverse_end = .TRUE.
-       end if
-          
        cache_next => cache_next%next
-          
-    end do
-
-    call cpu_time(time_end)
-
-    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-    write(id_outp,*) 'Finished calculating HF energy-type contributions'
-    write(id_outp,*) ' '
-
-    ! For each property: Recurse to identify HF energy-type contributions and 
-    ! add to the property under consideration
-
-    k = 1
-    
-    do i = 1, n_props
-    
-       do j = 1, n_freq_cfgs(i)
-
-          write(id_outp,*) ' '
-          write(id_outp,*) 'Assembling HF-energy type contributions'
-          write(id_outp,*) ' '
-
-          call cpu_time(time_start)
-          call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
-               0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
-               contribution_cache, prop_sizes(k), &
-               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
-          call cpu_time(time_end)
-
-          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-          write(id_outp,*) 'Finished assembling HF energy-type contributions'
-          write(id_outp,*) ' '
-
-!           write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-!           min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
-          
-!           write(*,*) 'Property is now', &
-!           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
-
-          k = k + 1
        
+       ! Traverse linked list and calculate
+       do while (traverse_end .eqv. .FALSE.)
+       
+          write(*,*) 'Calculating contribution for inner perturbation tuple'
+          write(*,*) cache_next%p_inner%plab
+
+          call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+          write(*,*) ' '
+          
+          if (cache_next%last) then
+             traverse_end = .TRUE.
+          end if
+          
+          cache_next => cache_next%next
+          
+       end do
+
+       call cpu_time(time_end)
+
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished calculating HF energy-type contributions'
+       write(id_outp,*) ' '
+       
+       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+    
+    end if
+    
+    call prog_incr(prog_info, 1)
+
+    
+    if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'HF energy-type contribution assembly was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
+       
+       call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+           
+    else
+    
+       ! For each property: Recurse to identify HF energy-type contributions and 
+       ! add to the property under consideration
+
+       k = 1
+    
+       do i = 1, n_props
+    
+          do j = 1, n_freq_cfgs(i)
+
+             write(id_outp,*) ' '
+             write(id_outp,*) 'Assembling HF-energy type contributions'
+             write(id_outp,*) ' '
+
+             call cpu_time(time_start)
+             call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
+                  0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+                  contribution_cache, prop_sizes(k), &
+                  props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+             call cpu_time(time_end)
+
+             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+             write(id_outp,*) 'Finished assembling HF energy-type contributions'
+             write(id_outp,*) ' '
+
+   !           write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+   !           min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
+          
+   !           write(*,*) 'Property is now', &
+   !           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
+
+             k = k + 1
+       
+          end do
+        
        end do
        
-    end do
-    
+       call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+
+    end if
     
     deallocate(contribution_cache)
     
-! Notes:
-! 
-! The primed contributions are a subset of the nonprimed contributions
-! 
-! If the nonprimed recursion is done, then the primed recursion can be 
-! a point-by-point test of the resulting elements upon traversal
-! 
-! Scheme:
-!
-! - Do the nonprimed recursion for identification
-!
-! - Traverse for calculation:
-! - Check each element for primed-validity
-! - If no: Calculate only Pulay n contribution (allocate accordingly)
-! - If yes: Calculate both Pulay n and all Lagrange contributions (allocate accordingly)
-! 
-! - Do the nonprimed recursion again for retrieval: 
-! - Check each nonprimed "yes" element for primed-validity
-! - If no: Retrieve only Pulay n contribution
-! - If yes: Retrieve both Pulay n and all Lagrange contributions
-! 
-! Comments:
-!
-! - Need to add optional "hard offset" argument for addressing proper contribution
-! - Ensures sparing recursion, groups Pulay n and Pulay Lagrange contributions together
-!   for increased efficiency
-! - Fits well with existing framework
-
-    
-    
+    call prog_incr(prog_info, 1)
     
     ! For each property: Recurse to two-factor contributions and store in cache
     
-    k  = 1
     
-    call contrib_cache_allocate(contribution_cache)
+    if (rs_check(prog_info, rs_info, lvl=1)) then
     
-    do i = 1, n_props
-    
-       do j = 1, n_freq_cfgs(i)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Two-factor type contribution identification was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
        
-          write(id_outp,*) ' '
-          write(id_outp,*) 'Identifying two-factor contributions'
-          write(id_outp,*) ' '
+       call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+           
+    else
+    
+       k  = 1
+    
+       call contrib_cache_allocate(contribution_cache)
+    
+       do i = 1, n_props
+    
+          do j = 1, n_freq_cfgs(i)
+       
+             write(id_outp,*) ' '
+             write(id_outp,*) 'Identifying two-factor contributions'
+             write(id_outp,*) ' '
 
-          call cpu_time(time_start)
+             call cpu_time(time_start)
           
-!           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
-!                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
-!                .TRUE., contribution_cache, prop_sizes(k), &
-!                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+   !           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
+   !                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
+   !                .TRUE., contribution_cache, prop_sizes(k), &
+   !                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
              call rsp_twofact_recurse(p_tuples(k), &
-               kn_rule(k,:), (/emptypert, emptypert/), &
-               .TRUE., contribution_cache, prop_sizes(k), &
-               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+                  kn_rule(k,:), (/emptypert, emptypert/), &
+                  .TRUE., contribution_cache, prop_sizes(k), &
+                  props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
-          call cpu_time(time_end)
+             call cpu_time(time_end)
 
-          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-          write(id_outp,*) 'Finished identifying two-factor contributions'
-          write(id_outp,*) ' '
+             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+             write(id_outp,*) 'Finished identifying two-factor contributions'
+             write(id_outp,*) ' '
           
-          k = k + 1
+             k = k + 1
+       
+          end do
        
        end do
+    
+       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+    
+    end if
+    
+    call prog_incr(prog_info, 1)
+    
+    if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Two-factor type contribution calculation was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
        
-    end do
+    else
     
-       
-    write(id_outp,*) ' '
-    write(id_outp,*) 'Calculating two-factor contributions'
-    write(id_outp,*) ' '
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Calculating two-factor contributions'
+       write(id_outp,*) ' '
     
-    call cpu_time(time_start)
+       call cpu_time(time_start)
     
-    traverse_end = .FALSE.
+       traverse_end = .FALSE.
 
-    cache_next => contribution_cache
+       cache_next => contribution_cache
 
-    ! Cycle cache
-    do while (cache_next%last .eqv. .FALSE.)
+       ! Cycle cache
+       do while (cache_next%last .eqv. .FALSE.)
+          cache_next => cache_next%next
+       end do
+
        cache_next => cache_next%next
-    end do
-
-    cache_next => cache_next%next
-    cache_next => cache_next%next
-       
-    ! Traverse linked list and calculate
-    do while (traverse_end .eqv. .FALSE.)
-       
-       write(*,*) 'Calculating contribution for factor 1 tuple'
-       write(*,*) cache_next%p_inner%plab
-
-       call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next)
-          
-       write(*,*) ' '
-          
-       if (cache_next%last) then
-          traverse_end = .TRUE.
-       end if
-          
        cache_next => cache_next%next
-          
-    end do
-
-    call cpu_time(time_end)
-
-    write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-    write(id_outp,*) 'Finished calculating two-factor contributions'
-    write(id_outp,*) ' '
-
-!     stop
-    
-    ! For each property: Recurse to identify two-factor contributions and 
-    ! add to the property under consideration
        
-    k = 1
-    
-    do i = 1, n_props
-    
-       do j = 1, n_freq_cfgs(i)
+       ! Traverse linked list and calculate
+       do while (traverse_end .eqv. .FALSE.)
+       
+          write(*,*) 'Calculating contribution for factor 1 tuple'
+          write(*,*) cache_next%p_inner%plab
 
-          write(id_outp,*) ' '
-          write(id_outp,*) 'Assembling two-factor contributions'
-          write(id_outp,*) ' '
-
-          call cpu_time(time_start)
+          call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next)
           
-!           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
-!                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
-!                .FALSE., contribution_cache, prop_sizes(k), &
-!                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+          write(*,*) ' '
+          
+          if (cache_next%last) then
+             traverse_end = .TRUE.
+          end if
+          
+          cache_next => cache_next%next
+          
+       end do
+
+       call cpu_time(time_end)
+
+       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+       write(id_outp,*) 'Finished calculating two-factor contributions'
+       write(id_outp,*) ' '
+       
+       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+       
+    end if
+
+    call prog_incr(prog_info, 1)
+    
+    
+    
+    if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'Two-factor type contribution assembly was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
+       
+       call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+       
+    else
+    
+       ! For each property: Recurse to identify two-factor contributions and 
+       ! add to the property under consideration
+       
+       k = 1
+    
+       do i = 1, n_props
+    
+          do j = 1, n_freq_cfgs(i)
+
+             write(id_outp,*) ' '
+             write(id_outp,*) 'Assembling two-factor contributions'
+             write(id_outp,*) ' '
+
+             call cpu_time(time_start)
+          
+   !           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
+   !                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
+   !                .FALSE., contribution_cache, prop_sizes(k), &
+   !                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
                
-          call rsp_twofact_recurse(p_tuples(k), &
-               kn_rule(k,:), (/emptypert, emptypert/), &
-               .FALSE., contribution_cache, prop_sizes(k), &
-               props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
+             call rsp_twofact_recurse(p_tuples(k), &
+                  kn_rule(k,:), (/emptypert, emptypert/), &
+                  .FALSE., contribution_cache, prop_sizes(k), &
+                  props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
-          call cpu_time(time_end)
+             call cpu_time(time_end)
 
-          write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-          write(id_outp,*) 'Finished assembling two-factor contributions'
-          write(id_outp,*) ' '
+             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+             write(id_outp,*) 'Finished assembling two-factor contributions'
+             write(id_outp,*) ' '
 
-                   write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-          sum(prop_sizes(1:k)))
+            write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+                                      sum(prop_sizes(1:k)))
           
           
-!           write(*,*) 'Property is now', &
-!           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
+   !           write(*,*) 'Property is now', &
+   !           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
 
-          k = k + 1
+             k = k + 1
           
+          end do
+       
        end do
        
-    end do
+       call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+  
+    end if
   
     deallocate(contribution_cache)
   
+    call prog_incr(prog_info, 1)
    
     
   end subroutine
   
   
-  
-
-!   subroutine get_prop_2014(pert, kn, num_blks, blk_sizes, blk_info, F, D, S, get_rsp_sol, &
-!                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-!                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-!                   id_outp, prop_size, prop)
-! 
-! !     use rsp_property_caching
-!                   
-!     implicit none
-! 
-!     type(p_tuple) :: pert, emptypert
-!     type(p_tuple), dimension(2) :: emptyp_tuples
-!     integer :: num_blks, id_outp, prop_size
-!     integer, dimension(2) :: kn
-!     integer, dimension(num_blks) :: blk_sizes
-!     integer, dimension(num_blks,3) :: blk_info
-!     type(sdf_2014) :: F, D, S
-!     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
-!     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
-!     complex(8), dimension(*) :: prop
-!     type(contrib_cache), pointer :: contribution_cache
-!     type(property_cache), pointer :: contribs_cache
-!     
-! 
-!     call empty_p_tuple(emptypert)
-!     emptyp_tuples = (/emptypert, emptypert/)
-
-    !prop = 0.0
-
-    ! Get all necessary F, D, S derivatives as dictated by
-    ! number of perturbations and kn
-! 
-!     write(id_outp,*) ' '
-!     write(id_outp,*) 'Calculating perturbed overlap/density/Fock matrices'
-!     write(id_outp,*) ' '
-! 
-!     call cpu_time(time_start)
-!     call rsp_fds_2014(pert, kn, F, D, S, get_rsp_sol, get_ovl_mat, get_1el_mat, &
-!                  get_2el_mat, get_xc_mat, id_outp)
-!     call cpu_time(time_end)
-! 
-!     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!     write(id_outp,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
-!     write(id_outp,*) ' '
-
-! 
-! write(*,*) 'num perts', pert%npert
-! 
-! 
-!     call property_cache_allocate(contribs_cache)
-!     call contrib_cache_allocate(contribution_cache)
-!     write(id_outp,*) ' '
-!     write(id_outp,*) 'Calculating HF-energy type contribs'
-!     write(id_outp,*) ' '
-! 
-!     call cpu_time(time_start)
-! !     call rsp_energy_2014(pert, pert%npert, kn, 1, (/emptypert/), 0, D, get_nucpot, &
-! !                     get_1el_exp, get_ovl_exp, get_2el_exp, contrib_cache, prop_size, prop)
-!     call rsp_energy_recurse(pert, pert%npert, kn, 1, (/emptypert/), 0, D, get_nucpot, &
-!                     get_1el_exp, get_ovl_exp, get_2el_exp, .TRUE., contribution_cache, prop_size, prop)
-!     call cpu_time(time_end)
-! 
-!     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!     write(id_outp,*) 'Finished calculating HF energy-type contribs'
-!     write(id_outp,*) ' '
-!     deallocate(contribs_cache)
-!     
-!     write(*,*) 'Property is now', prop(1:prop_size)
-
-! 
-!     write(*,*) ' '
-!     write(*,*) 'Calculating exchange/correlation contribs'
-!     write(*,*) ' '
-!     call cpu_time(time_start)
-!     ! CHANGE TO USE CALLBACK FUNCTIONALITY
-! !     call rsp_xcave_interface(pert, kn, num_blks, blk_sizes, blk_info, D, &
-! !                              get_xc_exp, prop)
-!     call cpu_time(time_end)
-!     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!     write(*,*) 'Finished calculating exchange/correlation contribs'
-!     write(*,*) ' '
-! 
-!     
-!     write(*,*) 'Property is now', prop(1:prop_size)
-! 
-!     call property_cache_allocate(contribs_cache)
-!     write(*,*) ' '
-!     write(*,*) 'Calculating Pulay n type contribs'
-!     write(*,*) ' '
-!     call cpu_time(time_start)
-!     call rsp_pulay_n_2014(pert, kn, (/emptypert, emptypert/), S, D, F, &
-!                      get_ovl_exp, contribs_cache, prop_size, prop)
-!     call cpu_time(time_end)
-!     write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!     write(*,*) ' '
-!     write(*,*) 'Finished calculating Pulay n type contribs'
-!     write(*,*) ' '
-!     deallocate(contribs_cache)
-!     
-!         write(*,*) 'Property is now', prop(1:prop_size)
-! 
-!     ! There are Lagrangian type contribs only when not using n + 1 rule
-!     if (kn(2) < pert%npert) then
-! 
-!        call property_cache_allocate(contribs_cache)
-!        write(*,*) ' '
-!        write(*,*) 'Calculating Pulay Lagrangian type contribs'
-!        write(*,*) ' '
-!        call cpu_time(time_start)
-!        call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
-!                           (/p_tuple_getone(pert,1), emptypert/), &
-!                           S, D, F, get_ovl_exp, contribs_cache, prop_size, prop)
-!        call cpu_time(time_end)
-!        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!        write(*,*) ' '
-!        write(*,*) 'Finished calculating Pulay Lagrangian type contribs' 
-!        write(*,*) ' '
-!    
-!        deallocate(contribs_cache)
-!    
-!        write(*,*) 'Property is now', prop(1:prop_size)
-!    
-!        call property_cache_allocate(contribs_cache)
-!        write(*,*) ' '
-!        write(*,*) 'Calculating idempotency Lagrangian type contribs'
-!        write(*,*) ' '
-!        call cpu_time(time_start)
-!        ! MaR: Unchanged by introduction of callback functionality
-!        call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
-!                          (/p_tuple_getone(pert,1), emptypert/), &
-!                          S, D, F, contribs_cache, prop_size, prop)
-!        call cpu_time(time_end)
-!        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!        write(*,*) ' '
-!        write(*,*) 'Finished calculating idempotency Lagrangian type contribs'
-!        write(*,*) ' '
-!    
-!        deallocate(contribs_cache)
-!    
-!        write(*,*) 'Property is now', prop(1:prop_size)
-!        
-!        call property_cache_allocate(contribs_cache)
-!        write(*,*) ' '
-!        write(*,*) 'Calculating SCF Lagrangian type contribs'
-!        write(*,*) ' '
-!        call cpu_time(time_start)
-!        ! MaR: Unchanged by introduction of callback functionality
-!        call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
-!                          (/p_tuple_getone(pert,1), emptypert/), &
-!                          S, D, F, contribs_cache, prop_size, prop)
-!        call cpu_time(time_end)
-!    
-!    
-!        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-!        write(*,*) ' '
-!        write(*,*) 'Finished calculating SCF Lagrangian type contribs'
-!        write(*,*) ' '
-! 
-!        deallocate(contribs_cache)
-! 
-!     write(*,*) 'Property is now', prop(1:prop_size)       
-!        
-!     end if
-! 
-!   end subroutine
-  
-  
-  ! END NEW 2014
-  
+   
 
 
 ! BEGIN NEW 2014

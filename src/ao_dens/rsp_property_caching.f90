@@ -39,6 +39,11 @@ module rsp_property_caching
  public contrib_cache_retrieve
  public contrib_cache_outer_store
  public contrib_cache_outer_retrieve
+ public mat_scal_store
+ public mat_scal_retrieve
+ public rs_check
+ public prog_incr
+ public prog_init
   
  ! END NEW 2014
   
@@ -489,6 +494,219 @@ module rsp_property_caching
 
     ! NEW 2014
     
+  ! Initialize progress/restarting framework
+  subroutine prog_init(rs_info)
+  
+    implicit none
+    
+    integer, dimension(3) :: rs_info
+    logical :: r_exist
+    
+    inquire(file='OPENRSP_RESTART', exist=r_exist)
+    
+    if (r_exist) then
+    
+       open(unit=260, file='OPENRSP_RESTART', action='read') 
+       read(260,*) rs_info(1)
+       read(260,*) rs_info(2)
+       read(260,*) rs_info(3)
+       close(260)
+    
+    else
+    
+       rs_info = (/0, 0, 0/)
+    
+    end if
+    
+  end subroutine
+     
+  ! Check progress counter against restart checkpoint
+  ! Return true if checkpoint not passed, false if passed
+  ! If optional argument 'lvl' specified, only check progress at that level
+  function rs_check(prog_info, rs_info, lvl)
+  
+    implicit none
+    
+    logical :: rs_check
+    integer, dimension(3) :: prog_info, rs_info
+    integer :: i
+    integer, optional :: lvl
+    
+    rs_check = .TRUE.
+    
+    if (present(lvl)) then
+    
+       if (prog_info(lvl) > rs_info(lvl)) then
+       
+          rs_check = .FALSE.
+       
+       end if    
+    
+    else
+    
+       if (.NOT.(prog_info(1) < rs_info(1))) then
+       
+          if (prog_info(1) == rs_info(1)) then
+       
+             if (.NOT.(prog_info(2) < rs_info(2))) then
+             
+                if (prog_info(2) == rs_info(2)) then
+          
+                   if (.NOT.(prog_info(3) <= rs_info(3))) then
+                   
+                      rs_check = .FALSE.
+                                
+                   end if
+                   
+                else
+                
+                   rs_check = .FALSE.
+                 
+                end if
+             
+             end if
+          
+          else 
+          
+             rs_check = .FALSE.
+          
+          end if
+                    
+       end if
+       
+       
+    
+    end if
+    
+    
+  end function
+  
+  
+  ! Increment calculation progress counter and store in file
+  subroutine prog_incr(prog_info, lvl)
+    
+    implicit none
+    
+    integer, dimension(3) :: prog_info
+    integer :: lvl, i
+        
+    prog_info(lvl) = prog_info(lvl) + 1
+    
+    do i = lvl + 1, 3
+    
+       prog_info(lvl) = 0
+    
+    end do
+    
+    open(unit=260, file='OPENRSP_RESTART', status='replace', action='write') 
+       write(260,*) prog_info(1)
+       write(260,*) prog_info(2)
+       write(260,*) prog_info(3)
+    close(260)
+    
+  end subroutine
+ 
+ 
+ subroutine mat_scal_store(array_size, fname, mat, scal, start_pos)
+ 
+   implicit none
+   
+   character(50) :: fname
+   character(10) :: str_fid
+   character(8) :: fid_fmt
+   integer :: array_size, funit, i, k, first_i
+   integer, optional :: start_pos
+   complex(8), dimension(array_size), optional :: scal
+   type(QcMat), dimension(array_size), optional :: mat
+ 
+   funit = 260
+ 
+   if (present(scal)) then
+ 
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+           form='unformatted', status='replace', action='write')
+   
+      write(funit, *) array_size
+      write(funit, *) scal(1:array_size)
+        
+      close(funit)
+      
+    elseif (present(mat)) then
+    
+       fid_fmt = '(I10.10)'
+          
+       
+       if (present(start_pos)) then
+       
+          first_i = start_pos
+          
+       else 
+       
+          first_i = 1
+          
+       end if
+       
+    
+       do i = first_i, array_size
+       
+          write(str_fid, fid_fmt) i
+       
+          k = QcMatWrite_f(mat(i), trim(adjustl(fname)) // '_MAT_' // &
+                           trim(str_fid) // '.DAT', BINARY_VIEW)
+       
+       end do
+    
+    end if
+ 
+ end subroutine
+ 
+  
+ subroutine mat_scal_retrieve(array_size, fname, mat, scal)
+ 
+   implicit none
+   
+   character(50) :: fname
+   character(10) :: str_fid
+   character(8) :: fid_fmt
+   integer :: array_size, funit, i, k
+   complex(8), dimension(array_size), optional :: scal
+   type(QcMat), dimension(array_size), optional :: mat
+ 
+   funit = 260
+ 
+   if (present(scal)) then
+ 
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='old', action='read')
+   
+      read(funit, *) array_size
+      read(funit, *) scal(1:array_size)
+        
+      close(funit)
+      
+    elseif (present(mat)) then
+    
+       fid_fmt = '(I10.10)'
+          
+       do i = 1, array_size
+       
+          write(str_fid, fid_fmt) i
+       
+          k = QcMatRead_f(mat(i), trim(adjustl(fname)) // '_MAT_' // &
+                           trim(str_fid) // '.DAT', BINARY_VIEW)
+       
+       end do
+    
+    end if
+ 
+ end subroutine
+ 
+ 
+ 
+ 
+ 
+
+ 
     
  subroutine contrib_cache_store(cache, fname)
  
@@ -619,8 +837,20 @@ module rsp_property_caching
 
    ! Cache allocation may need own subroutine because of target/pointer issues
    ! Set up first element of cache
+   
+   ! NOTE: DEALLOCATION/ALLOCATION MAY BE PROBLEMATIC   
+    
    cache_next => cache
+   
+!    if (allocated(cache)) then
+!    
+!       nullify(cache)
+!       
+!      
+!    end if
+!    
    allocate(cache_next)
+   cache_next => cache
    
    call contrib_cache_read_one_inner(cache_next, fname, funit)
    allocate(cache_next%contribs_outer)
@@ -726,11 +956,7 @@ module rsp_property_caching
  end subroutine
  
  
- 
- 
- 
- 
- 
+
  
  
  
