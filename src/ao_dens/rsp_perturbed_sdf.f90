@@ -21,7 +21,8 @@ module rsp_perturbed_sdf
   contains
   
   recursive subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
-                               get_1el_mat, get_2el_mat, get_xc_mat, dryrun, cache, id_outp)
+                               get_1el_mat, get_2el_mat, get_xc_mat, dryrun, cache, id_outp, &
+                               prog_info, rs_info)
 
     implicit none
 
@@ -29,7 +30,8 @@ module rsp_perturbed_sdf
     integer, dimension(n_props) :: n_freq_cfgs
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), allocatable, dimension(:) :: p_dummy_orders
-    logical :: termination, dryrun
+    logical :: termination, dryrun, lof_retrieved, sdf_retrieved, rsp_eqn_retrieved
+    integer, dimension(3) :: prog_info, rs_info
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     integer :: i, j, k, id_outp, max_order, max_npert
     integer, allocatable, dimension(:) :: size_i
@@ -57,78 +59,176 @@ module rsp_perturbed_sdf
        p_dummy_orders(i)%freq = (/1.0*i/)
     end do
 
-    ! Recurse to identify all necessary perturbed F, D, S
-    k = 1 
-    do i = 1, n_props
-       do j = 1, n_freq_cfgs(i)
+    call prog_incr(prog_info, 2)
+    
+    if (rs_check(prog_info, rs_info, lvl=2)) then
+          
+       write(*,*) ' '
+       write(*,*) 'SDF identification was completed in previous'
+       write(*,*) 'invocation: Passing to next stage of calculation'
+       write(*,*) ' '
+          
+       call contrib_cache_retrieve(cache, 'OPENRSP_FDS_ID')
+       lof_retrieved = .TRUE.
+             
+    else
+    
+       ! Recurse to identify all necessary perturbed F, D, S
+       k = 1 
+       do i = 1, n_props
+          do j = 1, n_freq_cfgs(i)
        
-          call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, id_outp)
-          k = k + 1
+             call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, id_outp)
+             k = k + 1
        
+          end do
        end do
-    end do
+
+       call contrib_cache_store(cache, 'OPENRSP_FDS_ID')
+       
+    end if
            
     cache_next => cache
+    
+    lof_retrieved = .FALSE.
+    sdf_retrieved = .FALSE.
+    rsp_eqn_retrieved = .FALSE.
+    ! CONTINUE HERE: INTRODUCE RESTARTING SCHEME
     
     !   For each order of perturbation identified (lowest to highest):
     do i = 1, max_order
     
-       call contrib_cache_allocate(lof_cache)
+       call prog_incr(prog_info, 2)
+       
+       if (rs_check(prog_info, rs_info, lvl=2)) then
+          
+          write(*,*) ' '
+          write(*,*) 'LOF identification at order', i, 'was completed'
+          write(*,*) 'in previous invocation: Passing to next stage of calculation'
+          write(*,*) ' '
+          
+          if (.NOT.(lof_retrieved)) then
+          
+             call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
+             lof_retrieved = .TRUE.
+             
+          end if
+       
+       
+       else
+    
+          call contrib_cache_allocate(lof_cache)
 
-       ! Cycle until order reached
-       do while(.NOT.(cache_next%p_inner%freq(1) == 1.0*i))
-          cache_next => cache_next%next
-       end do
+          ! Cycle until order reached
+          do while(.NOT.(cache_next%p_inner%freq(1) == 1.0*i))
+             cache_next => cache_next%next
+          end do
       
-       ! Contains number of components of perturbed matrices for each perturbation
-       allocate(size_i(cache_next%num_outer))       
-       k = 1
+          ! Contains number of components of perturbed matrices for each perturbation
+          allocate(size_i(cache_next%num_outer))       
+          k = 1
        
-       ! Cycle until at start of outer cache
-       cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
-       cache_outer_next => cache_outer_next%next
-       
-       ! Traverse all elements of outer cache of present cache element
-       termination = .FALSE.
-       do while(.NOT.(termination))
-       
-          ! Recurse to identify lower-order Fock matrix contributions
-          ! The p_tuples attribute should always be length 1 here, so OK to take the first element
-          call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
-                                      1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))
-       
-          ! Get number of perturbed matrices for this tuple
-          size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
-          k = k + 1
-
-          termination = cache_outer_next%last
+          ! Cycle until at start of outer cache
+          cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
           cache_outer_next => cache_outer_next%next
-          
-       end do
+       
+          ! Traverse all elements of outer cache of present cache element
+          termination = .FALSE.
+          do while(.NOT.(termination))
+       
+             ! Recurse to identify lower-order Fock matrix contributions
+             ! The p_tuples attribute should always be length 1 here, so OK to take the first element
+             call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
+                                         1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))
+       
+             ! Get number of perturbed matrices for this tuple
+             size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
+             k = k + 1
 
-       lof_next => lof_cache
-       
-       ! Cycle lower-order Fock cache until at start
-       do while(.NOT.(lof_next%last))
-          lof_next => lof_next%next
-       end do
-       lof_next => lof_next%next
-       lof_next => lof_next%next
-       
-       ! Traverse lower-order Fock cache and precalculate elements
-       termination = .FALSE.
-       do while (.NOT.(termination))
-       
-          call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next)
+             termination = cache_outer_next%last
+             cache_outer_next => cache_outer_next%next
           
-          termination = (lof_next%last)
-          lof_next => lof_next%next
+          end do
           
-       end do
+          call contrib_cache_store(lof_cache, 'OPENRSP_LOF_CACHE')
        
-       ! Calculate all perturbed S, D, F at this order
-       call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
-            get_rsp_sol, get_ovl_mat,  get_2el_mat, F, D, S, lof_next)
+       end if
+       
+       call prog_incr(prog_info, 2)
+       
+       if (rs_check(prog_info, rs_info, lvl=2)) then
+          
+          write(*,*) ' '
+          write(*,*) 'LOF calculation at order', i, 'was completed'
+          write(*,*) 'in previous invocation: Passing to next stage of calculation'
+          write(*,*) ' '
+          
+          if (.NOT.(lof_retrieved)) then
+          
+             call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
+             lof_retrieved = .TRUE.
+             
+          end if
+       
+       
+       else
+       
+          lof_next => lof_cache
+       
+          ! Cycle lower-order Fock cache until at start
+          do while(.NOT.(lof_next%last))
+             lof_next => lof_next%next
+          end do
+          lof_next => lof_next%next
+          lof_next => lof_next%next
+       
+          ! Traverse lower-order Fock cache and precalculate elements
+          termination = .FALSE.
+          do while (.NOT.(termination))
+       
+             call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next)
+          
+             termination = (lof_next%last)
+             lof_next => lof_next%next
+          
+          end do
+          
+          call contrib_cache_store(lof_next, 'OPENRSP_LOF_CACHE')
+       
+       end if
+       
+       call prog_incr(prog_info, 2)
+       
+       if (rs_check(prog_info, rs_info, lvl=2)) then
+          
+          write(*,*) ' '
+          write(*,*) 'SDF calculation at order', i, 'was completed'
+          write(*,*) 'in previous invocation: Passing to next stage of calculation'
+          write(*,*) ' '
+          
+          if (.NOT.(sdf_retrieved)) then
+          
+             call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+             call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+             call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+             sdf_retrieved = .TRUE.
+             
+          end if
+       
+       
+       else
+       
+          ! Calculate all perturbed S, D, F at this order
+          call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
+               get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_next, &
+               rsp_eqn_retrieved, prog_info, rs_info)
+            
+            
+          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
+          call contrib_cache_outer_store(D, 'OPENRSP_S_CACHE')
+          call contrib_cache_outer_store(F, 'OPENRSP_S_CACHE')
+       
+       end if
        
        deallocate(size_i)
        deallocate(lof_cache)
@@ -592,15 +692,17 @@ module rsp_perturbed_sdf
 
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
-  get_rsp_sol, get_ovl_mat,  get_2el_mat, F, D, S, lof_cache)
+  get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_cache, &
+  rsp_eqn_retrieved, prog_info, rs_info)
   
     implicit none
     
-    logical :: termination
+    logical :: termination, rsp_eqn_retrieved
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
     integer :: i, j, k, m, w, nblks
     integer :: first, last
     integer, dimension(0) :: noc
+    integer, dimension(3) :: prog_info, rs_info
     integer, allocatable, dimension(:) :: pert_ext, blk_sizes, ind
     integer, allocatable, dimension(:,:) :: blk_info
     integer, allocatable, dimension(:,:) :: indices
@@ -913,7 +1015,10 @@ module rsp_perturbed_sdf
     ! Cycle to start
     cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
     cache_outer_next => cache_outer_next%next
-       
+
+    
+! CONTINUE HERE: Retrieve and store rsp eqn solution vectors according to level 3 cache increment
+    
     ! Traverse
     termination = .FALSE.
     do while(.NOT.(termination))
@@ -932,33 +1037,81 @@ module rsp_perturbed_sdf
 !                 ind_ctr + last - 1
                 
 !                 write(*,*) 'frequency passed:', real((/freq_sums(k)/))
+
+                call prog_incr(prog_info, 3)
+                
+                if (rs_check(prog_info, rs_info, lvl=3)) then
+                
+                   write(*,*) ' '
+                   write(*,*) 'RSP eqn solution batches were completed'
+                   write(*,*) 'in previous invocation: Passing to next stage of calculation'
+                   write(*,*) ' '
           
-                !To Magnus: could you please check if the new callback subroutine works?
-                call get_rsp_sol(1,                                    &
-                                 (/last-first+1/),                     &
-                                 (/1/),                                &
-                                 dcmplx(real((/freq_sums(k)/)),0.0d0), &
-                                 RHS(ind_ctr+first-1:ind_ctr+last-1),  &
-                                 X(ind_ctr+first-1:ind_ctr+last-1))
-                !call get_rsp_sol(1, dcmplx(real((/freq_sums(k)/)), 0.0d0), last - first + 1, &
-                !     RHS(ind_ctr + first - 1:ind_ctr + last - 1), &
-                !     X(ind_ctr + first - 1:ind_ctr + last - 1))
+                   if (.NOT.(rsp_eqn_retrieved)) then
+          
+                      call mat_scal_retrieve(ind_ctr+last-1, 'OPENRSP_MAT_RSP', mat=X(1:ind_ctr+last-1))
+                      rsp_eqn_retrieved = .TRUE.
+             
+                   end if
+
+                else
+
+          
+                   !To Magnus: could you please check if the new callback subroutine works?
+                   call get_rsp_sol(1,                                    &
+                                    (/last-first+1/),                     &
+                                    (/1/),                                &
+                                    dcmplx(real((/freq_sums(k)/)),0.0d0), &
+                                    RHS(ind_ctr+first-1:ind_ctr+last-1),  &
+                                    X(ind_ctr+first-1:ind_ctr+last-1))
+                   !call get_rsp_sol(1, dcmplx(real((/freq_sums(k)/)), 0.0d0), last - first + 1, &
+                   !     RHS(ind_ctr + first - 1:ind_ctr + last - 1), &
+                   !     X(ind_ctr + first - 1:ind_ctr + last - 1))
+                   
+                   call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
+                        mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
+                   
+                end if
    
              end if
        
           end do
        
        else
-          !To Magnus: could you please check if the new callback subroutine works?
-          call get_rsp_sol(1,                                    &
-                           (/size_i(k)/),                        &
-                           (/1/),                                &
-                           dcmplx(real((/freq_sums(k)/)),0.0d0), &
-                           RHS(ind_ctr:ind_ctr+size_i(k)-1),     &
-                           X(ind_ctr:ind_ctr+size_i(k)-1))
-          ! "OLD NEW FORMAT": NOT SUPPOSED TO BE IN TRAVERSAL WHEN CHANGING TO NEW FORMAT
-          !call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
-          !     X(ind_ctr:ind_ctr + size_i(k) - 1))
+       
+          if (rs_check(prog_info, rs_info, lvl=3)) then
+                
+             write(*,*) ' '
+             write(*,*) 'RSP eqn solution batches were completed'
+             write(*,*) 'in previous invocation: Passing to next stage of calculation'
+             write(*,*) ' '
+         
+             if (.NOT.(rsp_eqn_retrieved)) then
+          
+                call mat_scal_retrieve(ind_ctr+last-1, 'OPENRSP_MAT_RSP', mat=X(1:ind_ctr+last-1))
+                rsp_eqn_retrieved = .TRUE.
+             
+             end if
+
+          else
+       
+             !To Magnus: could you please check if the new callback subroutine works?
+             call get_rsp_sol(1,                                    &
+                              (/size_i(k)/),                        &
+                              (/1/),                                &
+                              dcmplx(real((/freq_sums(k)/)),0.0d0), &
+                              RHS(ind_ctr:ind_ctr+size_i(k)-1),     &
+                              X(ind_ctr:ind_ctr+size_i(k)-1))
+             ! "OLD NEW FORMAT": NOT SUPPOSED TO BE IN TRAVERSAL WHEN CHANGING TO NEW FORMAT
+             !call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
+             !     X(ind_ctr:ind_ctr + size_i(k) - 1))
+          
+             call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', &
+                        mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
+                   
+          end if
+          
+          
     
        end if
     
