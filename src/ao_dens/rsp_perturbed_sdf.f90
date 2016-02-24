@@ -22,7 +22,7 @@ module rsp_perturbed_sdf
   
   recursive subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
                                get_1el_mat, get_2el_mat, get_xc_mat, dryrun, cache, id_outp, &
-                               prog_info, rs_info)
+                               prog_info, rs_info, sdf_retrieved)
 
     implicit none
 
@@ -91,7 +91,6 @@ module rsp_perturbed_sdf
     cache_next => cache
     
     lof_retrieved = .FALSE.
-    sdf_retrieved = .FALSE.
     rsp_eqn_retrieved = .FALSE.
     ! CONTINUE HERE: INTRODUCE RESTARTING SCHEME
     
@@ -225,8 +224,8 @@ module rsp_perturbed_sdf
             
             
           call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
-          call contrib_cache_outer_store(D, 'OPENRSP_S_CACHE')
-          call contrib_cache_outer_store(F, 'OPENRSP_S_CACHE')
+          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
+          call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
        
        end if
        

@@ -122,20 +122,36 @@ module rsp_general
     type(QcMat) :: S_unpert, D_unpert, F_unpert
     type(contrib_cache_outer), pointer :: S, D, F
     integer :: kn(2)
-    logical :: r_exist
+    logical :: r_exist, sdf_retrieved
     integer, dimension(3) :: rs_info
     integer, dimension(3) :: prog_info
     
     prog_info = (/0,0,0/)
     
     call prog_init(rs_info)
+    
+    call prog_incr(prog_info, 1)
+    
+    
+    sdf_retrieved = .FALSE.
 
     if (rs_check(prog_info, rs_info)) then
     
-       call contrib_cache_outer_retrieve(S, 'S', .FALSE., 260)
-       call contrib_cache_outer_retrieve(D, 'D', .FALSE., 260)
-       call contrib_cache_outer_retrieve(F, 'F', .FALSE., 260)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'S, D, F initialization stage was completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
     
+    
+       allocate(S)
+       allocate(D)
+       allocate(F)
+    
+       call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
+       call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
+       call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
+    
+       sdf_retrieved = .TRUE.
     
     else
     
@@ -154,7 +170,7 @@ module rsp_general
     
     end if
     
-    call prog_incr(prog_info, 3)
+    call prog_incr(prog_info, 1)
 
     ! Present calculation and initialize perturbation tuple datatypes and
     ! associated size/indexing information
@@ -266,7 +282,7 @@ module rsp_general
     call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, prop_sizes, rsp_tensor, prog_info, rs_info)
+                  id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved)
 
     call cpu_time(timing_end)
 
@@ -325,12 +341,12 @@ module rsp_general
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
-                  id_outp, prop_sizes, props, prog_info, rs_info)
+                  id_outp, prop_sizes, props, prog_info, rs_info, sdf_retrieved)
 
     implicit none
 
     
-    logical :: traverse_end
+    logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved
     integer :: n_props, id_outp, i, j, k
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
@@ -351,6 +367,9 @@ module rsp_general
   
     call prog_incr(prog_info, 1)
   
+    contrib_retrieved = .FALSE.
+    props_retrieved = .FALSE.
+  
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
        write(id_outp,*) ' '
@@ -358,9 +377,13 @@ module rsp_general
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
        
-       call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
-       call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
-       call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+       if(.NOT.(sdf_retrieved)) then
+       
+          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+          
+       end if
   
     else
   
@@ -376,7 +399,7 @@ module rsp_general
        call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                     get_rsp_sol, get_ovl_mat, get_1el_mat, &
                     get_2el_mat, get_xc_mat, .TRUE., contribution_cache, id_outp, &
-                    prog_info, rs_info)
+                    prog_info, rs_info, sdf_retrieved)
                      
        deallocate(contribution_cache)
        call cpu_time(time_end)
@@ -395,8 +418,15 @@ module rsp_general
        write(id_outp,*) 'HF energy-type contribution identification was completed'
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
+       
+       if (.NOT.(contrib_retrieved)) then
+       
+          allocate(contribution_cache)
     
-       call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+          contrib_retrieved = .TRUE.
+          
+       end if
     
     else
     
@@ -444,6 +474,15 @@ module rsp_general
        write(id_outp,*) 'HF energy-type contribution calculation was completed'
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
+       
+       if (.NOT.(contrib_retrieved)) then
+       
+          allocate(contribution_cache)
+    
+          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+          contrib_retrieved = .TRUE.
+          
+       end if
            
     else
     
@@ -504,7 +543,12 @@ module rsp_general
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
        
-       call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+       if (.NOT.(props_retrieved)) then
+       
+          call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+          props_retrieved = .TRUE.
+          
+       end if
            
     else
     
@@ -550,6 +594,8 @@ module rsp_general
     
     deallocate(contribution_cache)
     
+    contrib_retrieved = .FALSE.
+    
     call prog_incr(prog_info, 1)
     
     ! For each property: Recurse to two-factor contributions and store in cache
@@ -562,7 +608,14 @@ module rsp_general
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
        
-       call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+       if (.NOT.(contrib_retrieved)) then
+       
+          allocate(contribution_cache)
+    
+          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+          contrib_retrieved = .TRUE.
+          
+       end if
            
     else
     
@@ -614,6 +667,16 @@ module rsp_general
        write(id_outp,*) 'Two-factor type contribution calculation was completed'
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
+       
+       if (.NOT.(contrib_retrieved)) then
+       
+          allocate(contribution_cache)
+    
+          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+          contrib_retrieved = .TRUE.
+          
+       end if
+       
        
     else
     
@@ -674,7 +737,12 @@ module rsp_general
        write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
        write(id_outp,*) ' '
        
-       call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+       if (.NOT.(props_retrieved)) then
+       
+          call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+          props_retrieved = .TRUE.
+       
+       end if
        
     else
     
@@ -709,8 +777,8 @@ module rsp_general
              write(id_outp,*) 'Finished assembling two-factor contributions'
              write(id_outp,*) ' '
 
-            write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-                                      sum(prop_sizes(1:k)))
+!             write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+!                                       sum(prop_sizes(1:k)))
           
           
    !           write(*,*) 'Property is now', &
@@ -727,6 +795,26 @@ module rsp_general
     end if
   
     deallocate(contribution_cache)
+    
+    k = 1
+    
+    do i = 1, n_props
+    
+       do j = 1, n_freq_cfgs(i)
+          
+          write(*,*) 'Property', i, ', freq. config', j
+          write(*,*) props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+                                      sum(prop_sizes(1:k)))
+          write(*,*) ' '
+          
+          
+          k = k + 1
+          
+       end do
+       
+    end do
+    
+    
   
     call prog_incr(prog_info, 1)
    
