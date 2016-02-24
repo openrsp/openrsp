@@ -594,9 +594,13 @@ module rsp_property_caching
     
     do i = lvl + 1, 3
     
-       prog_info(lvl) = 0
+       prog_info(i) = 0
     
     end do
+    
+    write(*,*) 'Increased progress at level', lvl
+    write(*,*) 'Progress is now', prog_info
+    
     
     open(unit=260, file='OPENRSP_RESTART', status='replace', action='write') 
        write(260,*) prog_info(1)
@@ -611,7 +615,7 @@ module rsp_property_caching
  
    implicit none
    
-   character(50) :: fname
+   character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
    integer :: array_size, funit, i, k, first_i
@@ -626,8 +630,8 @@ module rsp_property_caching
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='replace', action='write')
    
-      write(funit, *) array_size
-      write(funit, *) scal(1:array_size)
+      write(funit) array_size
+      write(funit) scal(1:array_size)
         
       close(funit)
       
@@ -665,7 +669,7 @@ module rsp_property_caching
  
    implicit none
    
-   character(50) :: fname
+   character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
    integer :: array_size, funit, i, k
@@ -679,8 +683,8 @@ module rsp_property_caching
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='old', action='read')
    
-      read(funit, *) array_size
-      read(funit, *) scal(1:array_size)
+      read(funit) array_size
+      read(funit) scal(1:array_size)
         
       close(funit)
       
@@ -714,7 +718,7 @@ module rsp_property_caching
    
    logical :: termination
    integer :: num_entries, i, j, funit
-   character(50) :: fname
+   character(*) :: fname
   
    type(contrib_cache), target :: cache
    type(contrib_cache), pointer :: cache_next
@@ -747,7 +751,7 @@ module rsp_property_caching
    
    end do
    
-   write(funit,*) num_entries
+   write(funit) num_entries
    
    ! Cycle to start
    do while(.NOT.(cache_next%last))
@@ -761,32 +765,32 @@ module rsp_property_caching
    termination = .FALSE.
    do i = 1, num_entries
    
-      write(funit,*) cache_next%last
-      write(funit,*) cache_next%p_inner%npert
+      write(funit) cache_next%last
+      write(funit) cache_next%p_inner%npert
       do j = 1, cache_next%p_inner%npert
       
-         write(funit,*) cache_next%p_inner%pdim(j)
-         write(funit,*) cache_next%p_inner%plab(j)
-         write(funit,*) cache_next%p_inner%pid(j)
-         write(funit,*) cache_next%p_inner%freq(j)
+         write(funit) cache_next%p_inner%pdim(j)
+         write(funit) cache_next%p_inner%plab(j)
+         write(funit) cache_next%p_inner%pid(j)
+         write(funit) cache_next%p_inner%freq(j)
       
       end do
       
-      write(funit,*) cache_next%num_outer
-      write(funit,*) cache_next%nblks
+      write(funit) cache_next%num_outer
+      write(funit) cache_next%nblks
       
-      write(funit,*) size(cache_next%blk_sizes)
-      write(funit,*) cache_next%blk_sizes
+      write(funit) size(cache_next%blk_sizes)
+      write(funit) cache_next%blk_sizes
       
-      write(funit,*) cache_next%blks_triang_size
+      write(funit) cache_next%blks_triang_size
 
-      write(funit,*) size(cache_next%blk_info, 1)
-      write(funit,*) size(cache_next%blk_info, 2)
-      write(funit,*) cache_next%blk_info
+      write(funit) size(cache_next%blk_info, 1)
+      write(funit) size(cache_next%blk_info, 2)
+      write(funit) cache_next%blk_info
      
-      write(funit,*) size(cache_next%indices, 1)
-      write(funit,*) size(cache_next%indices, 2)
-      write(funit,*) cache_next%indices
+      write(funit) size(cache_next%indices, 1)
+      write(funit) size(cache_next%indices, 2)
+      write(funit) cache_next%indices
       
          
       
@@ -813,7 +817,7 @@ module rsp_property_caching
    
    logical :: termination, cache_ext
    integer :: num_entries, i, j, funit
-   character(50) :: fname
+   character(*) :: fname
   
    type(contrib_cache), target :: cache
    type(contrib_cache), pointer :: cache_next, cache_new, cache_orig
@@ -833,14 +837,14 @@ module rsp_property_caching
    open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='old', action='read')
    
-   read(funit,*) num_entries
+   read(funit) num_entries
 
    ! Cache allocation may need own subroutine because of target/pointer issues
    ! Set up first element of cache
    
    ! NOTE: DEALLOCATION/ALLOCATION MAY BE PROBLEMATIC   
     
-   cache_next => cache
+!    cache_next => cache
    
 !    if (allocated(cache)) then
 !    
@@ -849,24 +853,32 @@ module rsp_property_caching
 !      
 !    end if
 !    
-   allocate(cache_next)
+!    allocate(cache)
    cache_next => cache
    
    call contrib_cache_read_one_inner(cache_next, fname, funit)
+   
    allocate(cache_next%contribs_outer)
    outer_next => cache_next%contribs_outer
    call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
    
    cache_orig => cache_next
    
+   write(*,*) 'outer read 1'
+   
    ! Get all remaining elements
    do i = 1, num_entries - 1
    
-      call contrib_cache_retrieve_one_inner(cache_next, fname, funit)
+      call contrib_cache_retrieve_one_inner(cache_next%next, fname, funit)
+      write(*,*) 'inner read', i + 1
+      
       cache_next => cache_next%next
+      allocate(cache_next%contribs_outer)
       outer_next => cache_next%contribs_outer
          
       call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
+      
+      write(*,*) 'outer read', i + 1
   
    end do
    
@@ -878,20 +890,20 @@ module rsp_property_caching
  
  end subroutine
  
- subroutine contrib_cache_retrieve_one_inner(cache, fname, funit)
+ subroutine contrib_cache_retrieve_one_inner(cache_new, fname, funit)
  
     implicit none
  
     integer :: funit 
-    character(50) :: fname
-    type(contrib_cache), target :: cache
+    character(*) :: fname
+!     type(contrib_cache), target :: cache
     type(contrib_cache), pointer :: cache_new
  
     allocate(cache_new)
  
     call contrib_cache_read_one_inner(cache_new, fname, funit)
     
-    cache%next => cache_new
+!     cache%next => cache_new
  
  end subroutine
  
@@ -904,50 +916,59 @@ module rsp_property_caching
    
    integer :: num_entries, i, j, funit
    integer :: size_i, size_j
-   character(50) :: fname
+   character(*) :: fname
   
    type(contrib_cache), pointer :: cache
    
-   read(funit,*) cache%last
-   read(funit,*) cache%p_inner%npert
+   read(funit) cache%last
+   read(funit) cache%p_inner%npert
+   
+   write(*,*) 'cache last', cache%last
+   write(*,*) 'cache%p_inner%npert', cache%p_inner%npert
    
    if (cache%p_inner%npert == 0) then
 
       allocate(cache%p_inner%pdim(1))
+      allocate(cache%p_inner%plab(1))
+      allocate(cache%p_inner%pid(1))
+      allocate(cache%p_inner%freq(1))
       
    else
     
       allocate(cache%p_inner%pdim(cache%p_inner%npert))
+      allocate(cache%p_inner%plab(cache%p_inner%npert))
+      allocate(cache%p_inner%pid(cache%p_inner%npert))
+      allocate(cache%p_inner%freq(cache%p_inner%npert))
    
    end if
    
    do j = 1, cache%p_inner%npert
       
-         read(funit,*) cache%p_inner%pdim(j)
-         read(funit,*) cache%p_inner%plab(j)
-         read(funit,*) cache%p_inner%pid(j)
-         read(funit,*) cache%p_inner%freq(j)
+         read(funit) cache%p_inner%pdim(j)
+         read(funit) cache%p_inner%plab(j)
+         read(funit) cache%p_inner%pid(j)
+         read(funit) cache%p_inner%freq(j)
       
    end do
       
-      read(funit,*) cache%num_outer
-      read(funit,*) cache%nblks
+      read(funit) cache%num_outer
+      read(funit) cache%nblks
       
-      read(funit,*) size_i
+      read(funit) size_i
       allocate(cache%blk_sizes(size_i))
-      read(funit,*) cache%blk_sizes
+      read(funit) cache%blk_sizes
       
-      read(funit,*) cache%blks_triang_size
+      read(funit) cache%blks_triang_size
 
-      read(funit,*) size_i
-      read(funit,*) size_j
+      read(funit) size_i
+      read(funit) size_j
       allocate(cache%blk_info(size_i, size_j))
-      read(funit,*) cache%blk_info
+      read(funit) cache%blk_info
      
-      read(funit,*) size_i
-      read(funit,*) size_j
+      read(funit) size_i
+      read(funit) size_j
       allocate(cache%indices(size_i, size_j))
-      read(funit,*) cache%indices
+      read(funit) cache%indices
       
            
          
@@ -965,7 +986,7 @@ module rsp_property_caching
    implicit none
    
    type(contrib_cache_outer) :: cache
-   character(50) :: fname
+   character(*) :: fname
    integer :: funit
    
    funit = 260
@@ -989,7 +1010,7 @@ module rsp_property_caching
    
    logical :: termination
    integer :: num_entries, i, j, k, mat_scal_none, funit
-   character(50) :: fname
+   character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
   
@@ -1019,7 +1040,7 @@ module rsp_property_caching
    
    end do
    
-   write(funit,*) num_entries
+   write(funit) num_entries
    
    ! Cycle to start
    do while(.NOT.(cache_next%last))
@@ -1031,46 +1052,68 @@ module rsp_property_caching
    ! Traverse and store
    do i = 1, num_entries
    
-      write(funit,*) cache_next%last
-      write(funit,*) cache_next%dummy_entry
-      write(funit,*) cache_next%num_dmat
-      write(funit,*) cache_next%contrib_type
-      write(funit,*) cache_next%n_rule
-      write(funit,*) cache_next%contrib_size
+      write(funit) size(cache_next%p_tuples)
+      do j = 1, size(cache_next%p_tuples)
       
-      write(funit,*) size(cache_next%nblks_tuple)
-      write(funit,*) cache_next%nblks_tuple
-      
-      write(funit,*) size(cache_next%blk_sizes, 1)
-      write(funit,*) size(cache_next%blk_sizes, 2)
-      do j = 1, size(cache_next%blk_sizes, 1)
-         write(funit,*) cache_next%blk_sizes(j, :)
-      end do   
-      
-      write(funit,*) size(cache_next%indices, 1)
-      write(funit,*) size(cache_next%indices, 2)
-      do j = 1, size(cache_next%indices, 1)
-         write(funit,*) cache_next%indices(j,:)
-      end do
-      
-      write(funit,*) size(cache_next%blks_tuple_info, 1)
-      write(funit,*) size(cache_next%blks_tuple_info, 2)
-      write(funit,*) size(cache_next%blks_tuple_info, 3)
-      
-      do j = 1, size(cache_next%blks_tuple_info, 1)
-         do k = 1, size(cache_next%blks_tuple_info, 2)
-            write(funit,*) cache_next%blks_tuple_info(j, k, :)
+         write(funit) cache_next%p_tuples(j)%npert
+         
+         do k = 1, cache_next%p_tuples(j)%npert
+         
+            write(funit) cache_next%p_tuples(j)%pdim(k)
+            write(funit) cache_next%p_tuples(j)%plab(k)
+            write(funit) cache_next%p_tuples(j)%pid(k)
+            write(funit) cache_next%p_tuples(j)%freq(k)
+         
          end do
+      
       end do
       
-      write(funit,*) size(cache_next%blks_tuple_triang_size)
-      write(funit,*) cache_next%blks_tuple_triang_size
+   
+      write(funit) cache_next%last
+      write(funit) cache_next%dummy_entry
+      write(funit) cache_next%num_dmat
+      write(funit) cache_next%contrib_type
+      write(funit) cache_next%n_rule
+      write(funit) cache_next%contrib_size
+      
+      if (cache_next%p_tuples(1)%npert > 0) then
+      
+         write(funit) size(cache_next%nblks_tuple)
+         write(funit) cache_next%nblks_tuple
+      
+         write(funit) size(cache_next%blk_sizes, 1)
+         write(funit) size(cache_next%blk_sizes, 2)
+         do j = 1, size(cache_next%blk_sizes, 1)
+            write(funit) cache_next%blk_sizes(j, :)
+         end do
+      
+         write(funit) size(cache_next%indices, 1)
+         write(funit) size(cache_next%indices, 2)
+         
+         do j = 1, size(cache_next%indices, 1)
+            write(funit) cache_next%indices(j,:)
+         end do
+      
+         write(funit) size(cache_next%blks_tuple_info, 1)
+         write(funit) size(cache_next%blks_tuple_info, 2)
+         write(funit) size(cache_next%blks_tuple_info, 3)
+      
+         do j = 1, size(cache_next%blks_tuple_info, 1)
+            do k = 1, size(cache_next%blks_tuple_info, 2)
+               write(funit) cache_next%blks_tuple_info(j, k, :)
+            end do
+         end do
+      
+         write(funit) size(cache_next%blks_tuple_triang_size)
+         write(funit) cache_next%blks_tuple_triang_size
+      
+      end if
       
       if (allocated(cache_next%data_mat)) then
       
          mat_scal_none = 0
-         write(funit,*) mat_scal_none
-         write(funit,*) size(cache_next%data_mat)
+         write(funit) mat_scal_none
+         write(funit) size(cache_next%data_mat)
          
          fid_fmt = '(I10.10)'
          
@@ -1087,15 +1130,15 @@ module rsp_property_caching
       elseif (allocated(cache_next%data_scal)) then
       
          mat_scal_none = 1
-         write(funit,*) mat_scal_none
-         write(funit,*) size(cache_next%data_scal)
-         write(funit,*) cache_next%data_scal
+         write(funit) mat_scal_none
+         write(funit) size(cache_next%data_scal)
+         write(funit) cache_next%data_scal
          
       
       else
       
          mat_scal_none = 2 
-         write(funit,*) mat_scal_none
+         write(funit) mat_scal_none
       
       end if
             
@@ -1118,9 +1161,20 @@ module rsp_property_caching
    integer :: funit, i, j, k
    integer, optional :: funit_in
    integer :: num_entries
-   character(50) :: fname
+   character(*) :: fname
    type(contrib_cache_outer), target :: cache
    type(contrib_cache_outer), pointer :: cache_next, cache_orig
+   
+   if (present(funit_in)) then
+   
+      funit = funit_in
+      
+   else 
+   
+      funit = 260
+      
+   end if
+   
    
    ! If not as part of inner cache, then open file
    if (.NOT.(from_inner)) then
@@ -1134,23 +1188,27 @@ module rsp_property_caching
    
       end if
       
-      funit = 260
-      
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='old', action='read')
-   
+           
    end if
    
    
    
-   read(funit, *) num_entries
+   read(funit) num_entries
+   
+   write(*,*) 'num entries', num_entries
  
    call contrib_cache_read_one_outer(cache, fname, funit)
 
+   write(*,*) 'read one outer'
+   
    cache_next => cache
    cache_orig => cache
    
    do i = 1, num_entries - 1
+   
+      write(*,*) 'reading another outer'
    
       call contrib_cache_retrieve_one_outer(cache_next, fname, funit)
       cache_next => cache_next%next
@@ -1175,7 +1233,7 @@ module rsp_property_caching
    implicit none
    
    integer :: funit
-   character(50) :: fname
+   character(*) :: fname
    type(contrib_cache_outer), target :: cache
    type(contrib_cache_outer), pointer :: cache_new
    
@@ -1197,59 +1255,88 @@ module rsp_property_caching
    integer :: funit, i, j, k
    integer :: size_i, size_j, size_k
    integer :: mat_scal_none
-   character(50) :: fname
+   character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
    type(contrib_cache_outer) :: cache
    
-  
-   read(funit,*) cache%last
-   read(funit,*) cache%dummy_entry
-   read(funit,*) cache%num_dmat
-   read(funit,*) cache%contrib_type
-   read(funit,*) cache%n_rule
-   read(funit,*) cache%contrib_size
+   
+   read(funit) size_i
+!    write(*,*) 'num p tuples', size_i
+   allocate(cache%p_tuples(size_i))
+   
+      do j = 1, size(cache%p_tuples)
       
-   read(funit,*) size_i
-   allocate(cache%nblks_tuple(size_i))
-   read(funit,*) cache%nblks_tuple
+         read(funit) cache%p_tuples(j)%npert
+         
+         allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
+         allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
+         allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
+         allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
+         
+         do k = 1, cache%p_tuples(j)%npert
+         
+            read(funit) cache%p_tuples(j)%pdim(k)
+            read(funit) cache%p_tuples(j)%plab(k)
+            read(funit) cache%p_tuples(j)%pid(k)
+            read(funit) cache%p_tuples(j)%freq(k)
+         
+         end do
       
-   read(funit,*) size_i
-   read(funit,*) size_j
-   allocate(cache%blk_sizes(size_i, size_j))
-   do j = 1, size_i
-      read(funit,*) cache%blk_sizes(j, :)
-   end do   
-      
-   read(funit,*) size_i
-   read(funit,*) size_j
-   allocate(cache%indices(size_i, size_j))
-   do j = 1, size_i
-      read(funit,*) cache%indices(j,:)
-   end do
-      
-   read(funit,*) size_i
-   read(funit,*) size_j
-   read(funit,*) size_k
-   allocate(cache%blks_tuple_info(size_i, size_j, size_k))
-   do j = 1, size_i
-      do k = 1, size_j
-         read(funit,*) cache%blks_tuple_info(j, k, :)
       end do
-   end do
+   
+  
+   read(funit) cache%last
+   read(funit) cache%dummy_entry
+   read(funit) cache%num_dmat
+   read(funit) cache%contrib_type
+   read(funit) cache%n_rule
+   read(funit) cache%contrib_size
+
+   if (cache%p_tuples(1)%npert > 0) then
+   
+      read(funit) size_i
+      allocate(cache%nblks_tuple(size_i))
+      read(funit) cache%nblks_tuple
       
-   read(funit,*) size_i
-   allocate(cache%blks_tuple_triang_size(size_i))
-   read(funit,*) cache%blks_tuple_triang_size
+      read(funit) size_i
+      read(funit) size_j
+      allocate(cache%blk_sizes(size_i, size_j))
+      do j = 1, size_i
+         read(funit) cache%blk_sizes(j, :)
+      end do   
+     
+      read(funit) size_i
+      read(funit) size_j
+      allocate(cache%indices(size_i, size_j))
+      do j = 1, size_i
+         read(funit) cache%indices(j,:)
+      end do
       
-   read(funit,*) mat_scal_none
+      read(funit) size_i
+      read(funit) size_j
+      read(funit) size_k
+      allocate(cache%blks_tuple_info(size_i, size_j, size_k))
+      do j = 1, size_i
+         do k = 1, size_j
+            read(funit) cache%blks_tuple_info(j, k, :)
+         end do
+      end do
+      
+      read(funit) size_i
+      allocate(cache%blks_tuple_triang_size(size_i))
+      read(funit) cache%blks_tuple_triang_size
+   
+   end if
+   
+   read(funit) mat_scal_none
       
       
    if (mat_scal_none == 0) then
    
       fid_fmt = '(I10.10)'
    
-      read(funit,*) size_i
+      read(funit) size_i
       
       allocate(cache%data_mat(size_i))
       
@@ -1266,9 +1353,9 @@ module rsp_property_caching
    
    elseif (mat_scal_none == 1) then
    
-      read(funit,*) size_i
+      read(funit) size_i
       allocate(cache%data_scal(size_i))
-      read(funit,*) cache%data_scal
+      read(funit) cache%data_scal
    
    end if
       
