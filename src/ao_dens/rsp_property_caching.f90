@@ -717,13 +717,15 @@ module rsp_property_caching
    implicit none
    
    logical :: termination
-   integer :: num_entries, i, j, funit
+   integer :: num_entries, i, j, funit, mat_acc
    character(*) :: fname
   
    type(contrib_cache), target :: cache
    type(contrib_cache), pointer :: cache_next
    type(contrib_cache_outer), pointer :: outer_next
  
+ 
+   mat_acc = 0
  
    funit = 260
  
@@ -799,7 +801,7 @@ module rsp_property_caching
       ! num_outer may not be well-defined; consider 
       ! switching to traversal with termination instead
          
-      call contrib_cache_outer_put(outer_next, fname, funit)
+      call contrib_cache_outer_put(outer_next, fname, funit, mat_acc_in=mat_acc)
    
       cache_next => cache_next%next
    
@@ -981,20 +983,26 @@ module rsp_property_caching
  
  
  
- subroutine contrib_cache_outer_store(cache, fname)
+ subroutine contrib_cache_outer_store(cache, fname, mat_acc_in)
  
    implicit none
    
    type(contrib_cache_outer) :: cache
    character(*) :: fname
-   integer :: funit
+   integer, optional :: mat_acc_in
+   integer :: funit, mat_acc
+   
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if   
    
    funit = 260
  
    open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='replace', action='write')
         
-   call contrib_cache_outer_put(cache, fname, funit)
+   call contrib_cache_outer_put(cache, fname, funit, mat_acc_in=mat_acc)
         
         
    close(funit)
@@ -1004,12 +1012,13 @@ module rsp_property_caching
  
  
  ! Assumes file 'fname' is already opened with I/O unit 'funit'
- subroutine contrib_cache_outer_put(cache, fname, funit)
+ subroutine contrib_cache_outer_put(cache, fname, funit, mat_acc_in)
  
    implicit none
    
    logical :: termination
-   integer :: num_entries, i, j, k, mat_scal_none, funit
+   integer :: num_entries, i, j, k, mat_scal_none, funit, mat_acc
+   integer, optional :: mat_acc_in
    character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
@@ -1017,6 +1026,10 @@ module rsp_property_caching
    type(contrib_cache_outer), target :: cache
    type(contrib_cache_outer), pointer :: cache_next
  
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
    
  
    ! Cycle to start
@@ -1056,6 +1069,7 @@ module rsp_property_caching
       do j = 1, size(cache_next%p_tuples)
       
          write(funit) cache_next%p_tuples(j)%npert
+         write(*,*) 'wrote npert', cache_next%p_tuples(j)%npert
          
          do k = 1, cache_next%p_tuples(j)%npert
          
@@ -1065,6 +1079,8 @@ module rsp_property_caching
             write(funit) cache_next%p_tuples(j)%freq(k)
          
          end do
+         
+         write(*,*) 'stored plab', cache_next%p_tuples(j)%plab
       
       end do
       
@@ -1075,6 +1091,8 @@ module rsp_property_caching
       write(funit) cache_next%contrib_type
       write(funit) cache_next%n_rule
       write(funit) cache_next%contrib_size
+      
+      write(*,*) 'Storage: Dummy entry?', cache_next%dummy_entry
       
       if (cache_next%p_tuples(1)%npert > 0) then
       
@@ -1119,12 +1137,14 @@ module rsp_property_caching
          
          do j = 1, size(cache_next%data_mat)
             
-            write(str_fid, fid_fmt) j
+            write(str_fid, fid_fmt) j + mat_acc
          
             k = QcMatWrite_f(cache_next%data_mat(j), trim(adjustl(fname)) // '_MAT_' // &
                  trim(str_fid) // '.DAT', BINARY_VIEW)
          
          end do
+         
+         mat_acc = mat_acc + size(cache_next%data_mat)
          
       
       elseif (allocated(cache_next%data_scal)) then
@@ -1147,37 +1167,43 @@ module rsp_property_caching
    
    end do
  
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
  
  
  end subroutine
  
  
  ! Add condition to handle "not from inner"
- subroutine contrib_cache_outer_retrieve(cache, fname, from_inner, funit_in)
+ subroutine contrib_cache_outer_retrieve(cache, fname, from_inner, funit_in, mat_acc_in)
  
    implicit none
    
    logical :: from_inner, cache_ext
-   integer :: funit, i, j, k
-   integer, optional :: funit_in
+   integer :: funit, i, j, k, mat_acc
+   integer, optional :: funit_in, mat_acc_in
    integer :: num_entries
    character(*) :: fname
    type(contrib_cache_outer), target :: cache
    type(contrib_cache_outer), pointer :: cache_next, cache_orig
    
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
+   
+
+   funit = 260
    if (present(funit_in)) then
-   
       funit = funit_in
-      
-   else 
-   
-      funit = 260
-      
    end if
    
    
    ! If not as part of inner cache, then open file
    if (.NOT.(from_inner)) then
+   
+      write(*,*) 'Opening ', trim(adjustl(fname))
    
       inquire(file=fname // '.DAT', exist=cache_ext)
       
@@ -1199,7 +1225,7 @@ module rsp_property_caching
    
    write(*,*) 'num entries', num_entries
  
-   call contrib_cache_read_one_outer(cache, fname, funit)
+   call contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in=mat_acc)
 
    write(*,*) 'read one outer'
    
@@ -1210,7 +1236,7 @@ module rsp_property_caching
    
       write(*,*) 'reading another outer'
    
-      call contrib_cache_retrieve_one_outer(cache_next, fname, funit)
+      call contrib_cache_retrieve_one_outer(cache_next, fname, funit, mat_acc_in=mat_acc)
       cache_next => cache_next%next
     
    end do
@@ -1223,31 +1249,45 @@ module rsp_property_caching
       close(260)
       
    end if
+   
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
  
  end subroutine
  
  
  
- subroutine contrib_cache_retrieve_one_outer(cache, fname, funit)
+ subroutine contrib_cache_retrieve_one_outer(cache, fname, funit, mat_acc_in)
  
    implicit none
    
-   integer :: funit
+   integer :: funit, mat_acc
+   integer, optional :: mat_acc_in
    character(*) :: fname
    type(contrib_cache_outer), target :: cache
    type(contrib_cache_outer), pointer :: cache_new
    
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
+   
    allocate(cache_new)
    
-   call contrib_cache_read_one_outer(cache_new, fname, funit)
+   call contrib_cache_read_one_outer(cache_new, fname, funit, mat_acc_in=mat_acc)
    
    cache%next => cache_new
   
  
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
+ 
  end subroutine
  
  
- subroutine contrib_cache_read_one_outer(cache, fname, funit)
+ subroutine contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in)
  
    implicit none
    
@@ -1255,19 +1295,29 @@ module rsp_property_caching
    integer :: funit, i, j, k
    integer :: size_i, size_j, size_k
    integer :: mat_scal_none
+   integer, optional :: mat_acc_in
+   integer :: mat_acc
    character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
    type(contrib_cache_outer) :: cache
    
    
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
+  
+   
    read(funit) size_i
-!    write(*,*) 'num p tuples', size_i
+   write(*,*) 'num p tuples', size_i
    allocate(cache%p_tuples(size_i))
    
       do j = 1, size(cache%p_tuples)
       
          read(funit) cache%p_tuples(j)%npert
+         
+         write(*,*) 'read npert', cache%p_tuples(j)%npert
          
          allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
          allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
@@ -1282,6 +1332,8 @@ module rsp_property_caching
             read(funit) cache%p_tuples(j)%freq(k)
          
          end do
+         
+         write(*,*) 'cache plab at j = ', j, ' is', cache%p_tuples(j)%plab
       
       end do
    
@@ -1292,6 +1344,8 @@ module rsp_property_caching
    read(funit) cache%contrib_type
    read(funit) cache%n_rule
    read(funit) cache%contrib_size
+   
+   write(*,*) 'Dummy entry?', cache%dummy_entry
 
    if (cache%p_tuples(1)%npert > 0) then
    
@@ -1342,13 +1396,18 @@ module rsp_property_caching
       
       do i = 1, size_i
       
-         write(str_fid, fid_fmt) i
+         write(str_fid, fid_fmt) i + mat_acc
+         
+         write(*,*) 'Reading matrix data from', trim(adjustl(fname)) // '_MAT_' // &
+                          trim(str_fid) // '.DAT'
       
          call QcMatInit(cache%data_mat(i))
          k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
                           trim(str_fid) // '.DAT', BINARY_VIEW)
       
       end do
+      
+      mat_acc = mat_acc + size_i
    
    
    elseif (mat_scal_none == 1) then
@@ -1359,7 +1418,9 @@ module rsp_property_caching
    
    end if
       
-           
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
    
  end subroutine
  
@@ -1486,7 +1547,7 @@ module rsp_property_caching
    type(contrib_cache_outer), pointer :: next_element
    
    next_element => current_element
-   
+!    write(*,*) 'out cycling', next_element%dummy_entry, next_element%last
    do while (next_element%last .eqv. .FALSE.)
 !           write(*,*) 'cycling', next_element%dummy_entry, next_element%last
    
@@ -1562,7 +1623,7 @@ module rsp_property_caching
 
     allocate(current_element%p_tuples(1))
 
-    current_element%p_tuples(1)%npert = 1
+    current_element%p_tuples(1)%npert = 0
 
     allocate(current_element%p_tuples(1)%pdim(1))
     allocate(current_element%p_tuples(1)%plab(1))
@@ -2336,7 +2397,8 @@ module rsp_property_caching
          if ((size(p_tuples_srch_ord) == 0) .AND. &
              (size(next_element_outer%p_tuples) == 1) ) then
              
-             if ((next_element_outer%p_tuples(1)%plab(1) == 'NUTN')) then
+!             if ((next_element_outer%p_tuples(1)%plab(1) == 'NUTN')) then
+            if ((next_element_outer%p_tuples(1)%npert == 0)) then
             
                 found = .TRUE.
             

@@ -65,6 +65,7 @@ module rsp_general
                                   contrib_cache_allocate, &
                                   contrib_cache_retrieve, &
                                   contrib_cache_outer_retrieve, &
+                                  contrib_cache_outer_store, &
                                   contrib_cache_store, &
                                   mat_scal_store, &
                                   mat_scal_retrieve, &
@@ -166,9 +167,14 @@ module rsp_general
        call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
             data_size = 1, data_mat=(/D_unpert/))
        call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
-            data_size = 1, data_mat=(/F_unpert/))         
+            data_size = 1, data_mat=(/F_unpert/))
+            
+       call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
+       call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
+       call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
     
     end if
+    
     
     call prog_incr(prog_info, 1)
 
@@ -382,6 +388,7 @@ module rsp_general
           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+          sdf_retrieved = .TRUE.
           
        end if
   
@@ -409,6 +416,7 @@ module rsp_general
        write(id_outp,*) ' '
        
     end if
+    
     
     call prog_incr(prog_info, 1)
     
@@ -465,8 +473,12 @@ module rsp_general
        call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
     
     end if
+
+
     
     call prog_incr(prog_info, 1)
+    
+    
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
@@ -502,9 +514,15 @@ module rsp_general
        do while (cache_next%last .eqv. .FALSE.)
           cache_next => cache_next%next
        end do
-
+       
        cache_next => cache_next%next
-       cache_next => cache_next%next
+       
+       if (cache_next%p_inner%npert == 0) then
+!           write(*,*) 'cycling dummy'
+          cache_next => cache_next%next
+       end if
+       
+       
        
        ! Traverse linked list and calculate
        do while (traverse_end .eqv. .FALSE.)
@@ -532,6 +550,8 @@ module rsp_general
        call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
     
     end if
+    
+
     
     call prog_incr(prog_info, 1)
 
@@ -576,8 +596,8 @@ module rsp_general
              write(id_outp,*) 'Finished assembling HF energy-type contributions'
              write(id_outp,*) ' '
 
-   !           write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-   !           min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
+             write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+             min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
           
    !           write(*,*) 'Property is now', &
    !           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
@@ -598,7 +618,7 @@ module rsp_general
     
     call prog_incr(prog_info, 1)
     
-    ! For each property: Recurse to two-factor contributions and store in cache
+    ! For each property: Recurse to identify two-factor contributions and store in cache
     
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
@@ -659,6 +679,8 @@ module rsp_general
     
     end if
     
+!     stop
+    
     call prog_incr(prog_info, 1)
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
@@ -696,7 +718,11 @@ module rsp_general
        end do
 
        cache_next => cache_next%next
-       cache_next => cache_next%next
+       
+       if (cache_next%p_inner%npert == 0) then
+!           write(*,*) 'cycling dummy'
+          cache_next => cache_next%next
+       end if
        
        ! Traverse linked list and calculate
        do while (traverse_end .eqv. .FALSE.)
@@ -777,8 +803,8 @@ module rsp_general
              write(id_outp,*) 'Finished assembling two-factor contributions'
              write(id_outp,*) ' '
 
-!             write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-!                                       sum(prop_sizes(1:k)))
+            write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+                                      sum(prop_sizes(1:k)))
           
           
    !           write(*,*) 'Property is now', &
@@ -1767,7 +1793,9 @@ module rsp_general
     traverse_end = .FALSE.
     
     outer_next = contrib_cache_outer_cycle_first(outer_next)
-    outer_next => outer_next%next
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
        
     total_outer_size_1 = 0
     total_outer_size_2 = 0
@@ -1818,7 +1846,7 @@ module rsp_general
     
        
     
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
     
           traverse_end = .TRUE.
     
@@ -1875,7 +1903,9 @@ module rsp_general
     traverse_end = .FALSE.
     
     outer_next = contrib_cache_outer_cycle_first(outer_next)
-    outer_next => outer_next%next
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
        
     k = 1
     lhs_ctr_1 = 1
@@ -1958,7 +1988,7 @@ module rsp_general
        
        end if
    
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
           traverse_end = .TRUE.
        end if
 
@@ -2050,7 +2080,7 @@ module rsp_general
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
-!        write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
+       write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
     
     end if
     
@@ -2069,7 +2099,7 @@ module rsp_general
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
     
-!     write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
+    write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
     
     end if
     
@@ -2081,7 +2111,7 @@ module rsp_general
                      outer_contract_sizes_2(:, 2), RHS_dmat_2, size(contrib_2), contrib_2)
                        
     
-!     write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
+    write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
     
     ! Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
     
@@ -2097,7 +2127,9 @@ module rsp_general
     traverse_end = .FALSE.
     
     outer_next = contrib_cache_outer_cycle_first(outer_next)
-    outer_next => outer_next%next
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
       
     k = 1
     
@@ -2262,7 +2294,7 @@ module rsp_general
        
        deallocate(data_tmp)
    
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
     
           traverse_end = .TRUE.
     
