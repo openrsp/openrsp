@@ -1380,6 +1380,12 @@ module rsp_property_caching
       read(funit) size_i
       allocate(cache%blks_tuple_triang_size(size_i))
       read(funit) cache%blks_tuple_triang_size
+      
+   else
+   
+      allocate(cache%indices(1,1))
+      cache%indices(1,1) = 1
+      
    
    end if
    
