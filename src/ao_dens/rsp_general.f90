@@ -679,8 +679,6 @@ module rsp_general
     
     end if
     
-!     stop
-    
     call prog_incr(prog_info, 1)
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
@@ -840,7 +838,7 @@ module rsp_general
        
     end do
     
-    
+!     stop
   
     call prog_incr(prog_info, 1)
    
@@ -1792,11 +1790,12 @@ module rsp_general
     
     traverse_end = .FALSE.
     
-    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
     if (outer_next%dummy_entry) then
        outer_next => outer_next%next
     end if
        
+      
     total_outer_size_1 = 0
     total_outer_size_2 = 0
     num_0 = 0
@@ -1902,7 +1901,7 @@ module rsp_general
     
     traverse_end = .FALSE.
     
-    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
     if (outer_next%dummy_entry) then
        outer_next => outer_next%next
     end if
@@ -2126,7 +2125,7 @@ module rsp_general
     
     traverse_end = .FALSE.
     
-    outer_next = contrib_cache_outer_cycle_first(outer_next)
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
     if (outer_next%dummy_entry) then
        outer_next => outer_next%next
     end if
@@ -2619,10 +2618,10 @@ module rsp_general
     traverse_end = .FALSE.
     
     
-    do while (outer_next%dummy_entry .eqv. .FALSE.)
-        outer_next => outer_next%next
-    end do
-    outer_next => outer_next%next
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
         
     size_pulay_n = 0
     size_lagrange = 0
@@ -2702,7 +2701,7 @@ module rsp_general
        
        outer_next%data_scal = 0.0
          
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
     
           traverse_end = .TRUE.
     
@@ -2715,10 +2714,12 @@ module rsp_general
 !        write(*,*) 'd'
     end do
     
-    do while (outer_next%dummy_entry .eqv. .FALSE.)
-        outer_next => outer_next%next
-    end do
-    outer_next => outer_next%next
+    
+    
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
 !     write(*,*) 'e'
     
     allocate(which_index_is_pid(20))
@@ -2773,18 +2774,18 @@ module rsp_general
     end if    
     
     
-!     write(*,*) 'f'
+    write(*,*) 'f'
     
     ! Traversal: Make W matrices and store
     
     traverse_end = .FALSE.
     
-    do while (outer_next%dummy_entry .eqv. .FALSE.)
-        outer_next => outer_next%next
-    end do
-    outer_next => outer_next%next
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
 
-!     write(*,*) 'g'
+    write(*,*) 'g'
     
     ctr_pulay_n = 0
     ctr_lagrange = 0
@@ -2899,6 +2900,8 @@ module rsp_general
              
              case (1)
              
+!              write(*,*) 'o triang size', o_triang_size
+             
                 call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
                      outer_next%p_tuples(1)%npert, &
                      which_index_is_pid(1:cache%p_inner%npert + &
@@ -2952,7 +2955,7 @@ module rsp_general
        
 !        end if
     
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
     
           traverse_end = .TRUE.
     
@@ -2991,10 +2994,10 @@ module rsp_general
     
     traverse_end = .FALSE.
     
-    do while (outer_next%dummy_entry .eqv. .FALSE.)
-        outer_next => outer_next%next
-    end do
-    outer_next => outer_next%next
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
 
     
 
@@ -3272,7 +3275,7 @@ module rsp_general
        
        deallocate(blks_tuple_info)
        
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
     
           traverse_end = .TRUE.
     
