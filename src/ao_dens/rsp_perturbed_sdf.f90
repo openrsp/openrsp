@@ -21,7 +21,7 @@ module rsp_perturbed_sdf
   contains
   
   recursive subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
-                               get_1el_mat, get_2el_mat, get_xc_mat, dryrun, cache, id_outp, &
+                               get_1el_mat, get_2el_mat, get_xc_mat, dryrun, id_outp, &
                                prog_info, rs_info, sdf_retrieved)
 
     implicit none
@@ -37,7 +37,7 @@ module rsp_perturbed_sdf
     integer, allocatable, dimension(:) :: size_i
     type(QcMat) :: Fp_dum
     type(contrib_cache_outer) :: F, D, S
-    type(contrib_cache), target :: cache
+    type(contrib_cache), pointer :: cache
     type(contrib_cache), pointer :: cache_next, lof_cache, lof_next
     type(contrib_cache_outer), pointer :: cache_outer_next
     external :: get_rsp_sol, get_ovl_mat, get_1el_mat,  get_2el_mat, get_xc_mat
@@ -59,6 +59,8 @@ module rsp_perturbed_sdf
        p_dummy_orders(i)%freq = (/1.0*i/)
     end do
 
+
+    
     call prog_incr(prog_info, 2)
     
     if (rs_check(prog_info, rs_info, lvl=2)) then
@@ -67,11 +69,14 @@ module rsp_perturbed_sdf
        write(*,*) 'SDF identification was completed in previous'
        write(*,*) 'invocation: Passing to next stage of calculation'
        write(*,*) ' '
-          
+       
+       allocate(cache)
        call contrib_cache_retrieve(cache, 'OPENRSP_FDS_ID')
        lof_retrieved = .TRUE.
              
     else
+
+       call contrib_cache_allocate(cache)
     
        ! Recurse to identify all necessary perturbed F, D, S
        k = 1 
@@ -87,7 +92,9 @@ module rsp_perturbed_sdf
        call contrib_cache_store(cache, 'OPENRSP_FDS_ID')
        
     end if
-           
+
+    call prog_incr(prog_info, 2)
+    
     cache_next => cache
     
     lof_retrieved = .FALSE.
@@ -97,8 +104,21 @@ module rsp_perturbed_sdf
     !   For each order of perturbation identified (lowest to highest):
     do i = 1, max_order
     
-       call prog_incr(prog_info, 2)
+       ! Cycle until order reached
+       do while(.NOT.(cache_next%p_inner%freq(1) == 1.0*i))
+          cache_next => cache_next%next
+       end do
+      
+       ! Contains number of components of perturbed matrices for each perturbation
+       allocate(size_i(cache_next%num_outer))       
+       k = 1
        
+       ! Cycle until at start of outer cache
+       cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
+       if (cache_outer_next%dummy_entry) then
+          cache_outer_next => cache_outer_next%next
+       end if
+    
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
           write(*,*) ' '
@@ -108,28 +128,23 @@ module rsp_perturbed_sdf
           
           if (.NOT.(lof_retrieved)) then
           
+             allocate(lof_cache)
+          
              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
+             lof_next => lof_cache
              lof_retrieved = .TRUE.
              
           end if
        
        
        else
-    
-          call contrib_cache_allocate(lof_cache)
-
-          ! Cycle until order reached
-          do while(.NOT.(cache_next%p_inner%freq(1) == 1.0*i))
-             cache_next => cache_next%next
-          end do
-      
-          ! Contains number of components of perturbed matrices for each perturbation
-          allocate(size_i(cache_next%num_outer))       
-          k = 1
        
-          ! Cycle until at start of outer cache
-          cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
-          cache_outer_next => cache_outer_next%next
+          if (.NOT.(lof_retrieved)) then
+    
+             call contrib_cache_allocate(lof_cache)
+             
+          end if
+
        
           ! Traverse all elements of outer cache of present cache element
           termination = .FALSE.
@@ -164,7 +179,10 @@ module rsp_perturbed_sdf
           
           if (.NOT.(lof_retrieved)) then
           
+             allocate(lof_cache)
+          
              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
+             lof_next => lof_cache
              lof_retrieved = .TRUE.
              
           end if
@@ -179,11 +197,17 @@ module rsp_perturbed_sdf
              lof_next => lof_next%next
           end do
           lof_next => lof_next%next
-          lof_next => lof_next%next
+          if (lof_next%p_inner%npert == 0) then
+!             write(*,*) 'cycling dummy'
+             lof_next => lof_next%next
+          end if
+          
        
           ! Traverse lower-order Fock cache and precalculate elements
           termination = .FALSE.
           do while (.NOT.(termination))
+       
+       ! NOTE: INTRODUCE LVL 2 CHECKPOINT HERE
        
              call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next)
           
@@ -197,6 +221,8 @@ module rsp_perturbed_sdf
        end if
        
        call prog_incr(prog_info, 2)
+
+!        stop
        
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
@@ -206,6 +232,10 @@ module rsp_perturbed_sdf
           write(*,*) ' '
           
           if (.NOT.(sdf_retrieved)) then
+          
+!              allocate(S)
+!              allocate(D)
+!              allocate(F)
           
              call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
              call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
@@ -468,8 +498,10 @@ module rsp_perturbed_sdf
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
     traverse_end = .FALSE.
     
-    outer_next = contrib_cache_outer_cycle_first(outer_next)
-    outer_next => outer_next%next
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
        
     total_outer_size_1 = 0
     num_0 = 0
@@ -509,7 +541,7 @@ module rsp_perturbed_sdf
        
        end do
     
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
     
           traverse_end = .TRUE.
     
@@ -554,8 +586,10 @@ module rsp_perturbed_sdf
 
     traverse_end = .FALSE.
     
-    outer_next = contrib_cache_outer_cycle_first(outer_next)
-    outer_next => outer_next%next
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
        
     k = 1
     lhs_ctr_1 = 1
@@ -592,7 +626,7 @@ module rsp_perturbed_sdf
        
        end if
    
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
           traverse_end = .TRUE.
        end if
 
@@ -633,8 +667,10 @@ module rsp_perturbed_sdf
     
     traverse_end = .FALSE.
     
-    outer_next = contrib_cache_outer_cycle_first(outer_next)
-    outer_next => outer_next%next
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
       
     k = 1
     c1_ctr = 1
@@ -676,7 +712,7 @@ module rsp_perturbed_sdf
                    
        end if
        
-       if (outer_next%next%dummy_entry) then
+       if (outer_next%last) then
           traverse_end = .TRUE.
        end if
     
@@ -718,6 +754,9 @@ module rsp_perturbed_sdf
     type(Qcmat) :: A, B, C, T, U
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat
     
+    
+    ! CONTINUE HERE: DEBUG RESTARTED RUN
+    
     ! Initialize all matrices
     
     call QcMatInit(A)
@@ -753,8 +792,10 @@ module rsp_perturbed_sdf
     cache_outer_next => cache_outer
     
     ! Cycle to start
-    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
-    cache_outer_next => cache_outer_next%next
+    cache_outer_next => contrib_cache_outer_cycle_first(cache_outer_next)
+    if (cache_outer_next%dummy_entry) then
+             cache_outer_next => cache_outer_next%next
+    end if
  
     ! Traverse
     ind_ctr = 1
@@ -922,8 +963,10 @@ module rsp_perturbed_sdf
     k = 1
     
     ! Cycle to start
-    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
-    cache_outer_next => cache_outer_next%next
+    cache_outer_next => contrib_cache_outer_cycle_first(cache_outer_next)
+    if (cache_outer_next%dummy_entry) then
+       cache_outer_next => cache_outer_next%next
+    end if
        
     ! Traversal: Adding Fp to cache, constructing RHS
     termination = .FALSE.
@@ -1012,8 +1055,10 @@ module rsp_perturbed_sdf
     k = 1
     
     ! Cycle to start
-    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
-    cache_outer_next => cache_outer_next%next
+    cache_outer_next => contrib_cache_outer_cycle_first(cache_outer_next)
+    if (cache_outer_next%dummy_entry) then
+       cache_outer_next => cache_outer_next%next
+    end if
 
     
 ! CONTINUE HERE: Retrieve and store rsp eqn solution vectors according to level 3 cache increment
@@ -1130,8 +1175,10 @@ module rsp_perturbed_sdf
     k = 1
             
     ! Cycle to start
-    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
-    cache_outer_next => cache_outer_next%next
+    cache_outer_next => contrib_cache_outer_cycle_first(cache_outer_next)
+    if (cache_outer_next%dummy_entry) then
+             cache_outer_next => cache_outer_next%next
+    end if
        
     ! Traverse
     termination = .FALSE.
@@ -1186,8 +1233,10 @@ module rsp_perturbed_sdf
     k = 1
     
     ! Cycle to start
-    cache_outer_next = contrib_cache_outer_cycle_first(cache_outer_next)
-    cache_outer_next => cache_outer_next%next
+    cache_outer_next => contrib_cache_outer_cycle_first(cache_outer_next)
+    if (cache_outer_next%dummy_entry) then
+       cache_outer_next => cache_outer_next%next
+    end if
        
     ! Traverse
     termination = .FALSE.

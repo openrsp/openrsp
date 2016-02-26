@@ -532,15 +532,34 @@ module rsp_property_caching
     integer :: i
     integer, optional :: lvl
     
-    rs_check = .TRUE.
+    rs_check = .FALSE.
+    
+    
+    write(*,*) 'Restart checker called'
+    write(*,*) 'Progress', prog_info
+    write(*,*) 'Restart checkpoint', rs_info
     
     if (present(lvl)) then
     
-       if (prog_info(lvl) > rs_info(lvl)) then
+       do i = 1, lvl
        
-          rs_check = .FALSE.
-       
-       end if    
+          if (rs_info(i) > prog_info(i)) then
+          
+             rs_check = .TRUE.
+             
+          end if
+          
+       end do   
+!        
+!           rs_check = rs_check .AND. (prog_info(i) + 1 >= rs_info(i))
+!        
+!        end do
+!     
+!        if (prog_info(lvl) + 1 >= rs_info(lvl)) then
+!        
+!           rs_check = .FALSE.
+!        
+!        end if    
     
     else
     
@@ -578,6 +597,8 @@ module rsp_property_caching
     
     end if
     
+    
+    write(*,*) 'Should I retrieve restart info?', rs_check
     
   end function
   

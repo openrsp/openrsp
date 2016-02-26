@@ -136,7 +136,7 @@ module rsp_general
     
     sdf_retrieved = .FALSE.
 
-    if (rs_check(prog_info, rs_info)) then
+    if (rs_check(prog_info, rs_info, lvl=1)) then
     
        write(id_outp,*) ' '
        write(id_outp,*) 'S, D, F initialization stage was completed'
@@ -401,14 +401,14 @@ module rsp_general
        write(id_outp,*) ' '
 
        call cpu_time(time_start)
-       call contrib_cache_allocate(contribution_cache)
+!        call contrib_cache_allocate(contribution_cache)
         
        call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                     get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                    get_2el_mat, get_xc_mat, .TRUE., contribution_cache, id_outp, &
+                    get_2el_mat, get_xc_mat, .TRUE., id_outp, &
                     prog_info, rs_info, sdf_retrieved)
                      
-       deallocate(contribution_cache)
+!        deallocate(contribution_cache)
        call cpu_time(time_end)
 
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
@@ -838,8 +838,6 @@ module rsp_general
        
     end do
     
-!     stop
-  
     call prog_incr(prog_info, 1)
    
     
