@@ -99,7 +99,6 @@ module rsp_perturbed_sdf
     
     lof_retrieved = .FALSE.
     rsp_eqn_retrieved = .FALSE.
-    ! CONTINUE HERE: INTRODUCE RESTARTING SCHEME
     
     !   For each order of perturbation identified (lowest to highest):
     do i = 1, max_order
@@ -118,7 +117,28 @@ module rsp_perturbed_sdf
        if (cache_outer_next%dummy_entry) then
           cache_outer_next => cache_outer_next%next
        end if
-    
+
+       ! Traverse to set up size information
+       termination = .FALSE.
+
+       do while(.NOT.(termination))
+          ! Get number of perturbed matrices for this tuple
+          size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
+          k = k + 1
+
+          termination = cache_outer_next%last
+          cache_outer_next => cache_outer_next%next
+          
+       end do
+       
+       
+       ! Cycle until at start of outer cache
+       cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
+       if (cache_outer_next%dummy_entry) then
+          cache_outer_next => cache_outer_next%next
+       end if
+             
+       
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
           write(*,*) ' '
@@ -155,10 +175,7 @@ module rsp_perturbed_sdf
              call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
                                          1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))
        
-             ! Get number of perturbed matrices for this tuple
-             size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
-             k = k + 1
-
+             
              termination = cache_outer_next%last
              cache_outer_next => cache_outer_next%next
           
@@ -207,22 +224,39 @@ module rsp_perturbed_sdf
           termination = .FALSE.
           do while (.NOT.(termination))
        
-       ! NOTE: INTRODUCE LVL 2 CHECKPOINT HERE
+             if (rs_check(prog_info, rs_info, lvl=3)) then
+          
+                write(*,*) ' '
+                write(*,*) 'LOF calculation at order', i, ' inside traversal was completed'
+                write(*,*) 'in previous invocation: Passing to next stage of calculation'
+                write(*,*) ' '
+                
+                ! Note: No cache retrieval here: In order to get to this position, the
+                ! cache would already have been retrieved
+          
+             else
        
-             call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next)
+                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next)
+                
+                call contrib_cache_store(lof_next, 'OPENRSP_LOF_CACHE')
+                
+             end if
+             
+             call prog_incr(prog_info, 3)
+             
+!              stop
           
              termination = (lof_next%last)
              lof_next => lof_next%next
           
           end do
           
-          call contrib_cache_store(lof_next, 'OPENRSP_LOF_CACHE')
+          
        
        end if
        
        call prog_incr(prog_info, 2)
 
-!        stop
        
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
@@ -247,11 +281,17 @@ module rsp_perturbed_sdf
        
        else
        
+!           write(*,*) 'about to call rsp_sdf_calculate'
+          write(*,*) 'cache_next%num_outer', cache_next%num_outer
+          write(*,*) 'size_i', size_i
+       
           ! Calculate all perturbed S, D, F at this order
           call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
                get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_next, &
                rsp_eqn_retrieved, prog_info, rs_info)
-            
+          
+          
+!           write(*,*) 'returned from rsp_sdf_calculate'
             
           call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
           call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
@@ -759,6 +799,7 @@ module rsp_perturbed_sdf
     
     ! Initialize all matrices
     
+    
     call QcMatInit(A)
     call QcMatInit(B)
     call QcMatInit(C)
@@ -797,6 +838,7 @@ module rsp_perturbed_sdf
              cache_outer_next => cache_outer_next%next
     end if
  
+ 
     ! Traverse
     ind_ctr = 1
     k = 1
@@ -824,7 +866,7 @@ module rsp_perturbed_sdf
        call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
                      size_i(k), Sp(ind_ctr:ind_ctr + size_i(k) - 1))
        
-!        write(*,*) 'stage 1'
+       
        
        
        deallocate(pert_ext)
@@ -843,15 +885,10 @@ module rsp_perturbed_sdf
                             1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                             Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
         
-!        write(*,*) 'stage 2'
         
         
        call contrib_cache_outer_add_element(F, .FALSE., 1, & 
             (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
-       
-!         j = QcMatWrite_f(Fp(1), 'Fp_1_lo', ASCII_VIEW)
-       
-!        write(*,*) 'stage a'
        
        ! Calculate Dp for all components and add to cache
        
@@ -1011,17 +1048,10 @@ module rsp_perturbed_sdf
        
           ind = indices(j, :)
           
-!           w = QcMatWrite_f(RHS(1), 'RHS_before', ASCII_VIEW)
-          
           call rsp_get_matrix_y(superstructure_size, derivative_structure, &
                 pert%npert, (/ (m, m = 1, pert%npert) /), &
                 pert%npert, ind, F, D, S, RHS(ind_ctr + j - 1))
                 
-!           w = QcMatWrite_f(RHS(1), 'RHS_1', ASCII_VIEW)
-          
-!           stop
-                
-       
        end do
 
        ! Clean up and set up next iteration
@@ -1039,10 +1069,6 @@ module rsp_perturbed_sdf
        
     end do
 
-    
-        
-    
-    
     ! Outside traversal:
     ! Solve all response equations (opportunities for optimization for e.g.
     ! first-order EL, but that can be introduced later)
@@ -1061,7 +1087,6 @@ module rsp_perturbed_sdf
     end if
 
     
-! CONTINUE HERE: Retrieve and store rsp eqn solution vectors according to level 3 cache increment
     
     ! Traverse
     termination = .FALSE.
@@ -1076,25 +1101,22 @@ module rsp_perturbed_sdf
                 first = (i - 1) * m + 1
                 last = min(i * m, size_i(k))
                 
-                write(*,*) 'first, last, len', first, last, last - first + 1
-!                 write(*,*) 'total ind first last', ind_ctr + first - 1, &
-!                 ind_ctr + last - 1
-                
-!                 write(*,*) 'frequency passed:', real((/freq_sums(k)/))
-
-                call prog_incr(prog_info, 3)
-                
                 if (rs_check(prog_info, rs_info, lvl=3)) then
                 
                    write(*,*) ' '
-                   write(*,*) 'RSP eqn solution batches were completed'
+                   write(*,*) 'RSP eqn solution batch was completed'
                    write(*,*) 'in previous invocation: Passing to next stage of calculation'
                    write(*,*) ' '
           
                    if (.NOT.(rsp_eqn_retrieved)) then
+                   
+                      write(*,*) 'Retrieving RSP eqn solutions from disk'
+                      write(*,*) ' '
           
-                      call mat_scal_retrieve(ind_ctr+last-1, 'OPENRSP_MAT_RSP', mat=X(1:ind_ctr+last-1))
+                      call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
                       rsp_eqn_retrieved = .TRUE.
+                      
+                      write(*,*) 'Finished retrieval'
              
                    end if
 
@@ -1112,10 +1134,14 @@ module rsp_perturbed_sdf
                    !     RHS(ind_ctr + first - 1:ind_ctr + last - 1), &
                    !     X(ind_ctr + first - 1:ind_ctr + last - 1))
                    
+                   
                    call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
                         mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
                    
                 end if
+                
+                call prog_incr(prog_info, 3)
+                
    
              end if
        
@@ -1126,13 +1152,13 @@ module rsp_perturbed_sdf
           if (rs_check(prog_info, rs_info, lvl=3)) then
                 
              write(*,*) ' '
-             write(*,*) 'RSP eqn solution batches were completed'
+             write(*,*) 'RSP eqn solution batch was completed'
              write(*,*) 'in previous invocation: Passing to next stage of calculation'
              write(*,*) ' '
          
              if (.NOT.(rsp_eqn_retrieved)) then
           
-                call mat_scal_retrieve(ind_ctr+last-1, 'OPENRSP_MAT_RSP', mat=X(1:ind_ctr+last-1))
+                call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
                 rsp_eqn_retrieved = .TRUE.
              
              end if
@@ -1150,10 +1176,14 @@ module rsp_perturbed_sdf
              !call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
              !     X(ind_ctr:ind_ctr + size_i(k) - 1))
           
+             write(*,*) 'start pos for storage b', ind_ctr
+          
              call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', &
                         mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
                    
           end if
+          
+          call prog_incr(prog_info, 3)
           
           
     
