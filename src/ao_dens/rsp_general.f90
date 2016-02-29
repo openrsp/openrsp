@@ -522,16 +522,31 @@ module rsp_general
           cache_next => cache_next%next
        end if
        
-       
-       
        ! Traverse linked list and calculate
        do while (traverse_end .eqv. .FALSE.)
        
           write(*,*) 'Calculating contribution for inner perturbation tuple'
           write(*,*) cache_next%p_inner%plab
-
-          call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
           write(*,*) ' '
+          
+          if (rs_check(prog_info, rs_info, lvl=2)) then
+          
+             write(*,*) ' '
+             write(*,*) 'Calculation was completed in previous invocation: Passing to next stage'
+             write(*,*) ' '
+                
+             ! Note: No cache retrieval here: In order to get to this position, the
+             ! cache would already have been retrieved
+          
+          else
+
+             call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+          
+             call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+             
+          end if
+          
+          call prog_incr(prog_info, 2)
           
           if (cache_next%last) then
              traverse_end = .TRUE.
@@ -551,11 +566,8 @@ module rsp_general
     
     end if
     
-
-    
     call prog_incr(prog_info, 1)
-
-    
+   
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
        write(id_outp,*) ' '
@@ -727,10 +739,28 @@ module rsp_general
        
           write(*,*) 'Calculating contribution for factor 1 tuple'
           write(*,*) cache_next%p_inner%plab
-
-          call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next)
-          
           write(*,*) ' '
+          
+          if (rs_check(prog_info, rs_info, lvl=2)) then
+          
+             write(*,*) ' '
+             write(*,*) 'Calculation was completed in previous invocation: Passing to next stage'
+             write(*,*) ' '
+                
+             ! Note: No cache retrieval here: In order to get to this position, the
+             ! cache would already have been retrieved
+          
+          else
+
+             call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next)
+             
+             call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+          
+          end if
+          
+          call prog_incr(prog_info, 2)
+          
+!           stop
           
           if (cache_next%last) then
              traverse_end = .TRUE.

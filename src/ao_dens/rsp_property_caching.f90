@@ -527,13 +527,13 @@ module rsp_property_caching
   
     implicit none
     
-    logical :: rs_check
+    logical :: rs_check, rs_past
     integer, dimension(3) :: prog_info, rs_info
     integer :: i
     integer, optional :: lvl
     
     rs_check = .FALSE.
-    
+    rs_past = .FALSE.
     
     write(*,*) 'Restart checker called'
     write(*,*) 'Progress', prog_info
@@ -543,9 +543,19 @@ module rsp_property_caching
     
        do i = 1, lvl
        
-          if (rs_info(i) > prog_info(i)) then
+          if (prog_info(i) > rs_info(i)) then
           
-             rs_check = .TRUE.
+             rs_past = .TRUE.
+             
+          end if
+             
+          if (.NOT.(rs_past)) then
+          
+             if (rs_info(i) > prog_info(i)) then
+          
+                rs_check = .TRUE.
+                   
+             end if
              
           end if
           
@@ -563,42 +573,13 @@ module rsp_property_caching
     
     else
     
-       if (.NOT.(prog_info(1) < rs_info(1))) then
-       
-          if (prog_info(1) == rs_info(1)) then
-       
-             if (.NOT.(prog_info(2) < rs_info(2))) then
-             
-                if (prog_info(2) == rs_info(2)) then
-          
-                   if (.NOT.(prog_info(3) <= rs_info(3))) then
-                   
-                      rs_check = .FALSE.
-                                
-                   end if
-                   
-                else
-                
-                   rs_check = .FALSE.
-                 
-                end if
-             
-             end if
-          
-          else 
-          
-             rs_check = .FALSE.
-          
-          end if
-                    
-       end if
-       
+       write(*,*) 'ERROR: lvl keyword must be present for restart check'
        
     
     end if
     
     
-    write(*,*) 'Should I retrieve restart info?', rs_check
+    write(*,*) 'Restart conditions met?', rs_check
     
   end function
   
@@ -645,6 +626,8 @@ module rsp_property_caching
    type(QcMat), dimension(array_size), optional :: mat
  
    funit = 260
+   
+   write(*,*) 'array size, start pos', array_size, start_pos
  
    if (present(scal)) then
  
@@ -672,9 +655,10 @@ module rsp_property_caching
        end if
        
     
-       do i = first_i, array_size
+       do i = 1, array_size
        
-          write(str_fid, fid_fmt) i
+          write(str_fid, fid_fmt) i + first_i - 1
+          write(*,*) 'wrote start pos', i + first_i - 1
        
           k = QcMatWrite_f(mat(i), trim(adjustl(fname)) // '_MAT_' // &
                            trim(str_fid) // '.DAT', BINARY_VIEW)
@@ -715,7 +699,12 @@ module rsp_property_caching
           
        do i = 1, array_size
        
+          
+       
           write(str_fid, fid_fmt) i
+          
+          write(*,*) 'Retrieving matrix from ', trim(adjustl(fname)) // '_MAT_' // &
+                           trim(str_fid) // '.DAT'
        
           k = QcMatRead_f(mat(i), trim(adjustl(fname)) // '_MAT_' // &
                            trim(str_fid) // '.DAT', BINARY_VIEW)
