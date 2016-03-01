@@ -31,26 +31,14 @@ module rsp_general
                                         make_triangulated_tuples_indices
   use rsp_perturbed_matrices, only: derivative_superstructure_getsize, &
                                     derivative_superstructure,         &
-                                    rsp_get_matrix_zeta_2014,          &
-                                    rsp_get_matrix_lambda_2014,        &
-                                    rsp_get_matrix_z_2014,             &
-                                    rsp_get_matrix_w_2014,             &
-                                    rsp_get_matrix_y_2014,             &
                                     rsp_get_matrix_zeta,          &
                                     rsp_get_matrix_lambda,        &
                                     rsp_get_matrix_z,             &
                                     rsp_get_matrix_w,             &
                                     rsp_get_matrix_y
   use rsp_perturbed_sdf, only: rsp_fds
-  use rsp_property_caching, only: property_cache,                      &
-                                  contrib_cache_outer,                 &
+  use rsp_property_caching, only: contrib_cache_outer,                 &
                                   contrib_cache,                       &
-                                  property_cache_initialize,           &
-                                  property_cache_next_element,         &
-                                  property_cache_add_element,          &
-                                  property_cache_already,              &
-                                  property_cache_getdata,              &
-                                  property_cache_allocate,             &
                                   contrib_cache_initialize,            &
                                   contrib_cache_next_element,          &
                                   contrib_cache_outer_allocate,     &
@@ -231,10 +219,6 @@ module rsp_general
           p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
-          
-!           write(*,*) 'first, last', dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
-!           1 + (j - 1)*np(i), dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + (j)*np(i)
-          
           p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
           1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + (j)*np(i))
        
@@ -365,7 +349,6 @@ module rsp_general
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: props
     type(contrib_cache), pointer :: contribution_cache, cache_next
-    type(property_cache), pointer :: contribs_cache
     type(contrib_cache_outer) :: F, D, S
     
     call empty_p_tuple(emptypert)
@@ -401,14 +384,12 @@ module rsp_general
        write(id_outp,*) ' '
 
        call cpu_time(time_start)
-!        call contrib_cache_allocate(contribution_cache)
         
        call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                     get_rsp_sol, get_ovl_mat, get_1el_mat, &
                     get_2el_mat, get_xc_mat, .TRUE., id_outp, &
                     prog_info, rs_info, sdf_retrieved)
                      
-!        deallocate(contribution_cache)
        call cpu_time(time_end)
 
        write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
@@ -611,9 +592,6 @@ module rsp_general
              write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
              min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
           
-   !           write(*,*) 'Property is now', &
-   !           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
-
              k = k + 1
        
           end do
@@ -664,11 +642,6 @@ module rsp_general
              write(id_outp,*) ' '
 
              call cpu_time(time_start)
-          
-   !           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
-   !                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
-   !                .TRUE., contribution_cache, prop_sizes(k), &
-   !                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
              call rsp_twofact_recurse(p_tuples(k), &
                   kn_rule(k,:), (/emptypert, emptypert/), &
@@ -760,8 +733,6 @@ module rsp_general
           
           call prog_incr(prog_info, 2)
           
-!           stop
-          
           if (cache_next%last) then
              traverse_end = .TRUE.
           end if
@@ -815,11 +786,6 @@ module rsp_general
 
              call cpu_time(time_start)
           
-   !           call rsp_twofact_recurse(p_tuple_remove_first(p_tuples(k)), &
-   !                kn_rule(k,:), (/p_tuple_getone(p_tuples(k), 1), emptypert/), &
-   !                .FALSE., contribution_cache, prop_sizes(k), &
-   !                props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
-               
              call rsp_twofact_recurse(p_tuples(k), &
                   kn_rule(k,:), (/emptypert, emptypert/), &
                   .FALSE., contribution_cache, prop_sizes(k), &
@@ -830,13 +796,6 @@ module rsp_general
              write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
              write(id_outp,*) 'Finished assembling two-factor contributions'
              write(id_outp,*) ' '
-
-            write(*,*) 'Property is', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-                                      sum(prop_sizes(1:k)))
-          
-          
-   !           write(*,*) 'Property is now', &
-   !           props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k)))
 
              k = k + 1
           
@@ -872,222 +831,11 @@ module rsp_general
    
     
   end subroutine
-  
-  
    
 
 
 ! BEGIN NEW 2014
 
-  recursive subroutine rsp_energy_2014(pert, total_num_perturbations, kn, num_p_tuples, &
-                                p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                                get_t_exp, get_2el_exp, cache, p_size, prop)
-
-    implicit none
-
-    logical :: e_knskip
-    type(p_tuple) :: pert, p_rf1, p_rf2, p_rf3
-    integer, dimension(2) :: kn
-    integer :: num_p_tuples, density_order, i, j, total_num_perturbations
-    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new, p_new1, p_stord
-    type(p_tuple), dimension(num_p_tuples + 1) :: p_new3
-    external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
-    type(SDF_2014) :: D
-    type(property_cache) :: cache
-    complex(8), dimension(*) :: prop
-    integer :: num_blks_full, p_size
-    integer, allocatable, dimension(:,:) :: blk_info_full
-
-
-    
-    
-!     allocate(blk_info_full(num_blks_full, 3))
-        
-!     num_blks_full = get_num_blks(pert)
-    
-!     blk_info_full = get_blk_info(num_blks_full, pert)
-!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
-    
-!     deallocate(blk_info_full)
-        
-    if (pert%npert >= 1) then
-
-       ! The differentiation can do three things:
-       ! 1. Differentiate the energy expression 'directly'
-
-    if (p_tuples(1)%npert == 0) then
-
-       p_rf1 = p_tuple_remove_first(pert)
-       p_new1 = (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/)
-    
-       call rsp_energy_2014(p_rf1, total_num_perturbations, &
-       kn, num_p_tuples, p_new1, &
-       density_order, D, get_nucpot, get_1el_exp, &
-       get_t_exp, get_2el_exp, cache, p_size, prop)
-
-    else
-
-       p_rf1 = p_tuple_remove_first(pert)
-       p_new1 = (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
-       p_tuples(2:size(p_tuples))/)
-
-       call rsp_energy_2014(p_rf1, total_num_perturbations,  &
-       kn, num_p_tuples, p_new1, density_order, D, get_nucpot, get_1el_exp, &
-       get_t_exp, get_2el_exp, cache, p_size, prop)
-
-    end if
-    
-       ! 2. Differentiate all of the contraction densities in turn
-
-       ! Find the number of terms
-
-       do i = 2, num_p_tuples
-
-          t_new = p_tuples
-
-          if (p_tuples(i)%npert == 0) then
-
-             t_new(i) = p_tuple_getone(pert, 1)
-
-          else
-
-             t_new(i) = p_tuple_extend(t_new(i), p_tuple_getone(pert, 1))
-
-          end if
-
-          p_rf2 = p_tuple_remove_first(pert)
-          
-          call rsp_energy_2014(p_rf2, total_num_perturbations, &
-          kn, num_p_tuples, t_new, density_order + 1, D, get_nucpot, get_1el_exp, &
-          get_t_exp, get_2el_exp, cache, p_size, prop)
-
-       end do
-
-       ! MaR: Since we are only calculating Hartree-Fock type energy terms here,
-       ! we don't need to go beyond to perturbed contraction density matrices
-       ! (but that is in general needed for XC contributions)
-       if (num_p_tuples < 3) then
-
-          ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
-          ! a(nother) pert D contraction)
-
-          p_rf3 = p_tuple_remove_first(pert)
-          p_new3 = (/p_tuples(:), p_tuple_getone(pert, 1)/)
-          
-          call rsp_energy_2014(p_rf3, total_num_perturbations, &
-          kn, num_p_tuples + 1, p_new3, &
-          density_order + 1, D, get_nucpot, get_1el_exp, &
-          get_t_exp, get_2el_exp, cache, p_size, prop)
-
-       end if
-
-    ! At the final recursion level: Calculate the contribution (if k,n choice of rule
-    ! allows it) or get it from cache if it was already calculated (and if k,n choice 
-    ! of rule allows it)
-
-    else
-
-       e_knskip = .FALSE.
-
-
-!        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
-
-!        write(*,*) 'Getting energy contribution'
-
-       do i = 1, num_p_tuples
- 
-          if (i > 1) then
-
-!              write(*,*) 'D ', p_tuples(i)%pid
-
-             if(kn_skip(p_tuples(i)%npert, p_tuples(i)%pid, kn) .EQV. .TRUE.) then
-
-                e_knskip = .TRUE.
-
-             end if
-          
-          elseif (i == 1) then
-
-!              write(*,*) 'E ', p_tuples(i)%pid
-
-          end if
-
-       end do
-
-
-       if (e_knskip .EQV. .FALSE.) then
-
-          p_stord = p_tuples_standardorder(num_p_tuples, p_tuples)
-       
-!          open(unit=257, file='totterms', status='old', action='write', &
-!               position='append') 
-!          write(257,*) 'T'
-!          close(257)
-          
-!           write(*,*) 'Evaluating property_cache_already'
-
-          if (property_cache_already(cache, num_p_tuples, p_stord)) then
-
-!             open(unit=257, file='cachehit', status='old', action='write', &
-!                  position='append') 
-!             write(257,*) 'T'
-!             close(257)
-
-!              write(*,*) 'Getting values from cache'
-
-             ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
-             ! THIS CALL (LIKE property_cache_getdata ASSUMES)
-             call property_cache_getdata(cache, num_p_tuples, p_stord, p_size, prop)
-
-!              write(*,*) ' '
-       
-          else
-
-
-       write(*,*) 'Calculating energy contribution'
-
-       do i = 1, num_p_tuples
- 
-          if (i > 1) then
-
-             write(*,*) 'D ', p_tuples(i)%pid
-
-!              if(kn_skip(p_tuples(i)%npert, p_tuples(i)%pid, kn) .EQV. .TRUE.) then
-! 
-!                 e_knskip = .TRUE.
-! 
-!              end if
-          
-          elseif (i == 1) then
-
-             write(*,*) 'E ', p_tuples(i)%pid
-
-          end if
-
-       end do
-
-        write(*,*) 'Property before get energy is', prop(1:p_size)   
-             call get_energy_2014(num_p_tuples, total_num_perturbations, & 
-                  p_stord, density_order, D, get_nucpot, get_1el_exp, &
-                  get_t_exp, get_2el_exp, cache, prop)
-
-                  write(*,*) 'Calculated energy contribution'
-                  write(*,*) ' '
-        write(*,*) 'Property after get energy is', prop(1:p_size)   
-                  
-                  
-          end if
-
-       else
-
-!           write(*,*) 'Energy contribution was k-n skipped'
-!           write(*,*) ' '
-
-       end if
-
-    end if
-
-  end subroutine
 
 
 
@@ -1109,9 +857,6 @@ module rsp_general
     complex(8), dimension(p_size), optional :: prop
     external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
 
-!     write(*,*) 'Dryrun?', dryrun
-!     write(*,*) 'for pert', pert%npert
-    
 
     if (pert%npert >= 1) then
 
@@ -1204,27 +949,23 @@ module rsp_general
 
        if (e_knskip .EQV. .FALSE.) then
        
-!        write(*,*) 'about to check already'
-
           if (contrib_cache_already(cache, num_p_tuples, p_tuples)) then
           
-!           write(*,*) 'was already'
-
              if (.NOT.(dryrun)) then
-             
 
                 write(*,*) 'Cache retrieval: getting contribution'
                 
-                                    do i = 1, num_p_tuples
+                do i = 1, num_p_tuples
 
-    if (i == 1) then
+                    if (i == 1) then
     
-    write(*,*) 'E', p_tuples(i)%pid
+                       write(*,*) 'E', p_tuples(i)%pid
     
-    else 
+                    else 
     
-    write(*,*) 'D', p_tuples(i)%pid
-    end if
+                       write(*,*) 'D', p_tuples(i)%pid
+                       
+                    end if
     
    
                     end do
@@ -1239,32 +980,10 @@ module rsp_general
              end if
 
           else
-!           write(*,*) 'was not already'
-             
 
              if (dryrun) then
              
-!              write (*,*) 'not found, adding element'
-
                 call contrib_cache_add_element(cache, num_p_tuples, p_tuples)
-
-!              else
-! 
-!                 write(*,*) 'ERROR: Contribution should be in cache but was not found', kn
-!                 
-!                     do i = 1, num_p_tuples
-! 
-!     
-!     
-!     
-!     write(*,*) 'p tuples', i
-!     write(*,*) p_tuples(i)%npert
-!     write(*,*) p_tuples(i)%pid
-!    write(*,*) ' '
-!     write(*,*) ' '
-! 
-!     
-!                     end do
 
              end if
 
@@ -1274,510 +993,9 @@ module rsp_general
 
     end if
 
-
-
   end subroutine
 
-    subroutine get_energy_2014(num_p_tuples, total_num_perturbations, &
-                        p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                        get_ovl_exp, get_2el_exp, cache, prop)
 
-    implicit none
-
-    type(p_tuple), dimension(num_p_tuples) :: p_tuples
-    type(p_tuple) :: merged_p_tuple, t_matrix_bra, t_matrix_ket, t_matrix_newpid
-    type(SDF_2014) :: D
-    type(property_cache) :: cache
-    type(QcMat) :: D_unp
-    type(QcMat), allocatable, dimension(:) :: dens_tuple
-!    type(rsp_field), allocatable, dimension(:) :: nucpot_pert
-    external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
-    integer :: i, j, k, m, n, num_p_tuples, total_num_perturbations, density_order, &
-                offset, dtup_ind, pr_offset, ec_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks, npert_ext
-    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext
-    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
-    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer, dimension(total_num_perturbations) :: ncarray, ncouter, ncinner, pidouter, &
-                                              pids_current_contribution, translated_index
-    integer, allocatable, dimension(:) :: o_whichpert, o_whichpertbig, o_wh_forave
-    integer, allocatable, dimension(:) :: inner_offsets, ncoutersmall, pidoutersmall
-    integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
-    complex(8), allocatable, dimension(:) :: tmp, contrib, prop_forcache
-    complex(8), dimension(*) :: prop
-
-!    ncarray = get_ncarray(total_num_perturbations, num_p_tuples, p_tuples)
-!    ncouter = nc_only(total_num_perturbations, total_num_perturbations - &
-!              p_tuples(1)%npert, num_p_tuples - 1, &
-!              p_tuples(2:num_p_tuples), ncarray)
-!    ncinner = nc_only(total_num_perturbations, p_tuples(1)%npert, 1, &
-!                      p_tuples(1), ncarray)
-
-    allocate(dens_tuple(num_p_tuples))
-!    allocate(nucpot_pert(p_tuples(1)%npert))
- !   allocate(ncoutersmall(total_num_perturbations - p_tuples(1)%npert))
- !   allocate(ncinnersmall(p_tuples(1)%npert))
- !   allocate(pidoutersmall(total_num_perturbations - p_tuples(1)%npert))
-
- !   ncoutersmall = nc_onlysmall(total_num_perturbations, total_num_perturbations - &
- !                  p_tuples(1)%npert, num_p_tuples - 1, &
- !                  p_tuples(2:num_p_tuples), ncarray)
- !   ncinnersmall = nc_onlysmall(total_num_perturbations, p_tuples(1)%npert, &
- !                  1, p_tuples(1), ncarray)
- !   pidoutersmall = get_pidoutersmall(total_num_perturbations - &
- !                   p_tuples(1)%npert, num_p_tuples - 1, &
- !                   p_tuples(2:num_p_tuples))
-
-!    call QcMatInit(D_unp)
-
-    call p_tuple_to_external_tuple(p_tuples(1), npert_ext, pert_ext)
- 
-    call p1_cloneto_p2(p_tuples(1), t_matrix_newpid)
-    t_matrix_newpid%pid = (/(i, i = 1, t_matrix_newpid%npert)/)
-
-    allocate(o_whichpert(total_num_perturbations))
-    allocate(o_wh_forave(total_num_perturbations))
-    allocate(nfields(num_p_tuples))
-    allocate(nblks_tuple(num_p_tuples))
-
-    do i = 1, num_p_tuples
-
-       nfields(i) = p_tuples(i)%npert
-       nblks_tuple(i) = get_num_blks(p_tuples(i))
-
-    end do
-
-    allocate(blks_tuple_info(num_p_tuples, total_num_perturbations, 3))
-    allocate(blks_tuple_triang_size(num_p_tuples))
-    allocate(blk_sizes(num_p_tuples, total_num_perturbations))
-    allocate(blk_sizes_merged(total_num_perturbations))
-
-    do i = 1, num_p_tuples
-
-       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples(i))
-       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
-
-       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-    end do
-
-    outer_indices_size = product(blks_tuple_triang_size(2:num_p_tuples))
-
-    if (p_tuples(1)%npert == 0) then
-
-       inner_indices_size = 1
-
-    else
-
-       inner_indices_size = blks_tuple_triang_size(1)
-
-    end if
-    
-    allocate(tmp(inner_indices_size))
-    allocate(contrib(inner_indices_size))
-    allocate(prop_forcache(inner_indices_size*outer_indices_size))
-
-    prop_forcache = 0.0
-    contrib = 0.0
-
-!    call sortdimbypid(total_num_perturbations, total_num_perturbations - &
-!                      p_tuples(1)%npert, pidoutersmall, &
-!                      ncarray, ncoutersmall, o_whichpert)
-
-    call sdf_getdata_s_2014(D, get_emptypert(), (/1/), D_unp)
-
-
-    if (total_num_perturbations > p_tuples(1)%npert) then
-
-       allocate(outer_indices(outer_indices_size,total_num_perturbations - &
-                p_tuples(1)%npert))
-       allocate(inner_indices(inner_indices_size,p_tuples(1)%npert))
-
-       k = 1
-    
-       do i = 2, num_p_tuples
-          do j = 1, p_tuples(i)%npert
-    
-             o_wh_forave(p_tuples(i)%pid(j)) = k
-             k = k + 1
-    
-          end do
-       end do
-    
-       k = 1
-   
-!       do i = 2, num_p_tuples
-!          do j = 1, p_tuples(i)%npert
-!   
-!             ncoutersmall(k) =  p_tuples(i)%pdim(j)
-!             k = k + 1
-!   
-!          end do
-!       end do
-   
-       do i = 2, num_p_tuples
-   
-          call QcMatInit(dens_tuple(i), D_unp)
-   
-       end do
-   
-       call make_triangulated_tuples_indices(num_p_tuples - 1, total_num_perturbations, & 
-            nblks_tuple(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, &
-            :, :), blks_tuple_triang_size(2:num_p_tuples), outer_indices)
-   
-   
-       if (p_tuples(1)%npert > 0) then
-   
-          call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
-               1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
-   
-       end if
-   
-       do i = 1, size(outer_indices, 1)
-   
-          dtup_ind = 0
-   
-          do j = 2, num_p_tuples
-   
-             call sdf_getdata_s_2014(D, p_tuples(j), outer_indices(i, &
-                  dtup_ind+1:dtup_ind + p_tuples(j)%npert), dens_tuple(j))
-   
-             dtup_ind = dtup_ind + p_tuples(j)%npert
-   
-          end do
-   
-          tmp = 0.0
-          contrib = 0.0
-   
-          if (num_p_tuples == 2) then
-          
-             call get_1el_exp(npert_ext, pert_ext, 1, (/dens_tuple(2)/), &
-                              size(contrib), contrib)
-          
-             
-!              call rsp_oneave(p_tuples(1)%npert, p_tuples(1)%plab, &
-!                             (/ (1, j = 1, p_tuples(1)%npert) /), &
-!                             p_tuples(1)%pdim, dens_tuple(2), &
-!                             nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
-!                             blk_sizes(1, 1:nblks_tuple(1)), inner_indices_size, contrib)
-   
-          end if
-          
-          write(*,*) ' '
-          write(*,*) 'oneave contrib',  contrib
-   
-          tmp = tmp + contrib
-          contrib = 0.0
-   
-          if (num_p_tuples == 2) then
-
-             t_matrix_bra = get_emptypert()
-             t_matrix_ket = get_emptypert()
-
-             call rsp_ovlave_t_matrix_2014(t_matrix_newpid%npert, t_matrix_newpid, &
-                                      t_matrix_bra, t_matrix_ket, &
-                                      dens_tuple(2), get_ovl_exp, inner_indices_size, contrib)
-   
-          end if
-   
-   write(*,*) ' '
-          write(*,*) 'ovlave t contrib', contrib
-   
-   
-          tmp = tmp - contrib
-          contrib = 0.0
-   
-          if (num_p_tuples == 2) then
-   
-             call get_2el_exp(npert_ext, pert_ext, 1, (/1/), (/dens_tuple(2)/), &
-                              (/1/), (/D_unp/), size(contrib), contrib)
-   
-!              call rsp_twoave(p_tuples(1)%npert, p_tuples(1)%plab, &
-!                              (/ (1, j = 1, p_tuples(1)%npert) /), &
-!                              p_tuples(1)%pdim, dens_tuple(2), &
-!                              D_unp, inner_indices_size, contrib)
-    
-          elseif (num_p_tuples == 3) then
-          
-             call get_2el_exp(npert_ext, pert_ext, 1, (/1/), (/dens_tuple(2)/), &
-                              (/1/), (/dens_tuple(3)/), size(contrib), contrib)
-          
-!              call rsp_twoave(p_tuples(1)%npert, p_tuples(1)%plab, &
-!                              (/ (1, j = 1, p_tuples(1)%npert) /), &
-!                              p_tuples(1)%pdim, dens_tuple(2), dens_tuple(3), &
-!                              inner_indices_size, contrib)
-    
-          end if
-
-          write(*,*) ' '
-          write(*,*) 'twoave contrib', contrib
-   
-              
-          tmp = tmp + contrib
-    
-          if (p_tuples(1)%npert > 0) then
-    
-             do j = 1, size(inner_indices, 1)
-    
-                offset = get_triang_blks_tuple_offset(num_p_tuples, total_num_perturbations, &
-                         nblks_tuple, (/ (p_tuples(k)%npert, k = 1, num_p_tuples) /), &
-                         blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                         (/inner_indices(j, :), outer_indices(i, :) /)) 
-!     write(*,*) 'indices', (/inner_indices(j, :), outer_indices(i, :) /)
-!     write(*,*) 'offset in cache', offset, 'is j', j
-    
-                prop_forcache(offset) = prop_forcache(offset) + tmp(j)
-    
-             end do
-    
-          else
-    
-             offset = get_triang_blks_tuple_offset(num_p_tuples - 1, total_num_perturbations,  &
-                      nblks_tuple(2:num_p_tuples), &
-                      (/ (p_tuples(k)%npert, k = 2, num_p_tuples) /), &
-                      blks_tuple_info(2:num_p_tuples, :, :), blk_sizes(2:num_p_tuples,:), & 
-                      blks_tuple_triang_size(2:num_p_tuples), (/outer_indices(i, :) /)) 
-    
-             prop_forcache(offset) = prop_forcache(offset) + tmp(1)
-    
-          end if
-    
-       end do
-    
-       if (p_tuples(1)%npert > 0) then
-    
-          call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
-    
-          do i = 2, num_p_tuples
-    
-             ! MaR: This can be problematic - consider rewriting merge_p_tuple as subroutine
-             merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
-   
-          end do
-   
-       else
-   
-          call p1_cloneto_p2(p_tuples(2), merged_p_tuple)
-   
-          do i = 3, num_p_tuples
-   
-             ! This can be problematic - consider rewriting merge_p_tuple as subroutine
-             merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
-   
-          end do
-   
-       end if
-   
-       merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-   
-       ! MR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
-       ! PIDS ARE IN STANDARD ORDER? FIND OUT
-   
-       k = 1
-       do i = 1, num_p_tuples
-          do j = 1, p_tuples(i)%npert
-             pids_current_contribution(k) = p_tuples(i)%pid(j)
-             k = k + 1
-          end do
-       end do
-    
-       merged_nblks = get_num_blks(merged_p_tuple)
-       
-       allocate(merged_blk_info(1, merged_nblks, 3))
-       
-       merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-       blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-       merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-       merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-    
-       allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
-    
-       call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-                                      merged_triang_size, triang_indices_pr)
-    
-       do i = 1, size(triang_indices_pr, 1)
-    
-          pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-                      (/sum(nfields)/), &
-                      (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-                      (/triang_indices_pr(i, :) /))
-    
-          do j = 1, total_num_perturbations
-    
-             translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
-    
-          end do
-    
-          if (p_tuples(1)%npert > 0) then
-    
-             ec_offset = get_triang_blks_tuple_offset(num_p_tuples, &
-                         total_num_perturbations, nblks_tuple, &
-                         nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                         (/ translated_index(:) /))
-    
-          else
-    
-             ec_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
-                         total_num_perturbations, nblks_tuple(2:num_p_tuples), &
-                         nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :), &
-                         blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
-                         (/ translated_index(:) /))
-    
-          end if
-   
-!    write(*,*) 'pr indices are', triang_indices_pr(i,:)
-!       write(*,*) 'translated index is', translated_index(:)
-!    write(*,*) 'offset in prop', pr_offset, 'is cache offset', ec_offset
-   
-          prop(pr_offset) = prop(pr_offset) + prop_forcache(ec_offset)
-   
-       end do
-   
-       call property_cache_add_element(cache, num_p_tuples, p_tuples, &
-                                       inner_indices_size * outer_indices_size, prop_forcache)   
-   
-       deallocate(triang_indices_pr)
-       deallocate(outer_indices)
-       deallocate(inner_indices)
-
-    else
-
-       ! MR: THIS IS THE CASE 'ALL INDICES ARE INNER INDICES'
-       ! THIS TERM OCCURS ONLY ONCE AND DOES NOT NEED TO BE CACHED
-
-!       do i = 1, p_tuples(1)%npert
-!
-!          nucpot_pert(i) = rsp_field(p_tuples(1)%plab(i), p_tuples(1)%freq(i), 1, &
-!                                     p_tuples(1)%pdim(i))
-!
-!       end do
-
-       tmp = 0.0
-       contrib = 0.0
-
-       call get_nucpot(p_tuples(1)%npert, p_tuples(1)%pdim, &
-                       (/ (1, j = 1, p_tuples(1)%npert) /), &
-                       p_tuples(1)%plab, contrib)
-       
-       
-!       call rsp_nucpot(nucpot_pert, contrib) 
-
-                       write(*,*) ' '
-          write(*,*) 'nucpot contrib', contrib(1:min(12, size(contrib)))
-
-
-
-
-       tmp = tmp + contrib
-       contrib = 0.0
-
-       write(*,*) 'Getting a 1el contribution with npert pert ord ='
-       write(*,*) npert_ext
-       write(*,*) pert_ext
-       
-       
-       call get_1el_exp(npert_ext, pert_ext, 1, D_unp, size(contrib), contrib)
-       
-!        call rsp_oneave(p_tuples(1)%npert, p_tuples(1)%plab, &
-!                        (/ (1, j = 1, p_tuples(1)%npert) /), p_tuples(1)%pdim, &
-!                        D_unp, nblks_tuple(1),  blks_tuple_info(1, 1:nblks_tuple(1), :), &
-!                        blk_sizes(1, 1:nblks_tuple(1)), contrib)
-
-                                 write(*,*) ' '
-          write(*,*) 'oneave contrib', contrib(1:min(12, size(contrib)))
-                       
-       tmp = tmp + contrib
-       contrib = 0.0
-
-       t_matrix_bra = get_emptypert()
-       t_matrix_ket = get_emptypert()
-
-       call rsp_ovlave_t_matrix_2014(t_matrix_newpid%npert, t_matrix_newpid, &
-                                t_matrix_bra, t_matrix_ket, &
-                                D_unp, get_ovl_exp, inner_indices_size, contrib)
-
-                                          write(*,*) ' '
-          write(*,*) 'ovlave t mat contrib', contrib(1:min(12, size(contrib)))
-                                
-       tmp = tmp - contrib
-       contrib = 0.0
-
-       write(*,*) 'pert definition', npert_ext
-       write(*,*) pert_ext
-
-       call get_2el_exp(npert_ext, pert_ext, 1, (/1/), (/D_unp/), &
-                        (/1/), (/D_unp/), size(contrib), contrib)
-       
-!        call rsp_twoave(p_tuples(1)%npert, p_tuples(1)%plab, &
-!                        (/ (1, j = 1, p_tuples(1)%npert) /), p_tuples(1)%pdim, &
-!                        D_unp, D_unp, contrib)
-
-                                 write(*,*) ' '
-          write(*,*) 'twoave contrib', contrib(1:min(12, size(contrib)))
-                       
-       tmp = tmp + 0.5*(contrib)
-
-       do i = 1, inner_indices_size
-           prop(i) =  prop(i) + tmp(i)
-       end do
-
-       call p1_cloneto_p2(p_tuples(1), merged_p_tuple)
-
-       do i = 2, num_p_tuples
-
-          ! This can be problematic - consider rewriting merge_p_tuple as subroutine
-          merged_p_tuple = merge_p_tuple(merged_p_tuple, p_tuples(i))
-
-       end do
-
-       merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-       merged_nblks = get_num_blks(merged_p_tuple)
-       allocate(merged_blk_info(1, merged_nblks, 3))
-       merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-       blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-       merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-
-    end if
-
-!  write(*,*) 'energy contribution'
-!  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
-!  (/ (1, j = 1, (merged_p_tuple%npert - 1) ) /), merged_nblks, blk_sizes_merged, &
-!  merged_blk_info, prop_forcache)
-
-    call QcMatDst(D_unp)
-
-    do i = 2, num_p_tuples
-   
-       call QcMatDst(dens_tuple(i))
-   
-    end do
-
-    deallocate(pert_ext)
-    
-    deallocate(merged_blk_info)
-    deallocate(nfields)
-    deallocate(nblks_tuple)
-    deallocate(blks_tuple_info)
-    deallocate(blks_tuple_triang_size)
-    deallocate(blk_sizes)
-    deallocate(blk_sizes_merged)
-!    deallocate(nucpot_pert)
-    deallocate(dens_tuple)
-!    deallocate(ncoutersmall)
-!    deallocate(ncinnersmall)
-!    deallocate(pidoutersmall)
-    deallocate(o_whichpert)
-    deallocate(o_wh_forave)
-    deallocate(tmp)
-    deallocate(contrib)
-    deallocate(prop_forcache)
-
-  end subroutine
-  
-  
   subroutine rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache)
 
     implicit none
@@ -1799,7 +1017,6 @@ module rsp_general
     integer, allocatable, dimension(:,:) :: outer_contract_sizes_2
     complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2, data_tmp
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
-    
     
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
@@ -1897,11 +1114,6 @@ module rsp_general
         end if
     end do
     
-!     write(*,*) 'outer 1', outer_contract_sizes_1
-!     write(*,*) 'outer 2 1', outer_contract_sizes_2(:,1)
-!     write(*,*) 'outer 2 2', outer_contract_sizes_2(:,2)
-    
-
     ! Allocate and set up outer
     
     allocate(LHS_dmat_1(sum(outer_contract_sizes_1(:))))
@@ -1941,15 +1153,6 @@ module rsp_general
     
     do while (traverse_end .EQV. .FALSE.)
     
-    
-!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-!     
-!        do i = 1, outer_next%num_dmat
-!           
-!           write(*,*) 'D', outer_next%p_tuples(i)%pid
-!        
-!        end do
-
        ! No chain rule applications
        if (outer_next%num_dmat == 0) then
        
@@ -1960,7 +1163,6 @@ module rsp_general
           call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
                1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
 
-               
        ! One chain rule application
        else if (outer_next%num_dmat == 1) then
        
@@ -1980,17 +1182,12 @@ module rsp_general
           call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
                1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
        
-       
        ! Two chain rule applications
        else if (outer_next%num_dmat == 2) then
        
        
           do m = 1, outer_contract_sizes_2(k, 1) 
           
-!           write(*,*) 'LHS: putting indices',outer_next%indices(1 + &
-!           (m - 1) * outer_next%blks_tuple_triang_size(2), &
-!           1:outer_next%p_tuples(1)%npert)
-!           write(*,*) 'into', lhs_ctr_2 + m  - 1
              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
                   1, ind_len=outer_next%p_tuples(1)%npert, &
                   ind_unsorted=outer_next%indices(1 + &
@@ -2001,17 +1198,12 @@ module rsp_general
           
           do n = 1, outer_contract_sizes_2(k, 2) 
           
-!           write(*,*) 'RHS: putting indices', outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
-!                   outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert)
-!           write(*,*) 'into', rhs_ctr_2 + n  - 1
              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
                   1, ind_len=outer_next%p_tuples(2)%npert, &
                   ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
                   outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
                   mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
           end do          
-       
-!        stop
        
        end if
    
@@ -2028,81 +1220,14 @@ module rsp_general
     
     end do
     
-!     write(*,*) 'cache%blks_triang_size', cache%blks_triang_size
-!     write(*,*) 'total_outer_size_1', total_outer_size_1
-!     write(*,*) 'total_outer_size_2', total_outer_size_2
-    
-    
     allocate(contrib_0(cache%blks_triang_size))
     allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
     allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
-    
-    
-!     do i = 1, min(size(LHS_dmat_2), 12)
-!     
-!     
-!           if (i < 10) then
-!           
-!              fmt_str = "(A11, I1)"
-!           
-!           else if (i < 100) then
-!           
-!              fmt_str = "(A11, I2)"
-!           
-!           else
-!           
-!              fmt_str = "(A11, I3)"
-!           
-!           end if
-!           
-!           write(mat_str, fmt_str) 'LHS_dmaE_2_', i
-!           
-!           write(*,*) 'i', i
-!           write(*,*) 'fname:', mat_str
-!           
-!           
-!           
-!           j = QcMatWrite_f(LHS_dmat_2(i), trim(mat_str), ASCII_VIEW)
-!     
-!     end do
-!     
-!     
-!     do i = 1, min(size(RHS_dmat_2), 12)
-!     
-!     
-!           if (i < 10) then
-!           
-!              fmt_str = "(A11, I1)"
-!           
-!           else if (i < 100) then
-!           
-!              fmt_str = "(A11, I2)"
-!           
-!           else
-!           
-!              fmt_str = "(A11, I3)"
-!           
-!           end if
-!           
-!           write(mat_str, fmt_str) 'RHS_dmaE_2_', i
-!           
-!           write(*,*) 'i', i
-!           write(*,*) 'fname:', mat_str
-!           
-!           
-!           
-!           j = QcMatWrite_f(RHS_dmat_2(i), trim(mat_str), ASCII_VIEW)
-!     
-!     end do
-    
     
     ! Calculate contributions
     
     ! Calculate nuclear-nuclear repulsion contribution
     if (num_0 > 0) then
-    
-    
-!        write(*,*) 'nucpot'
     
        contrib_0 = 0.0
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
@@ -2114,7 +1239,6 @@ module rsp_general
     ! Calculate one-electron contributions
     if (num_1 > 0) then
     
-!        write(*,*) '1-el'
        contrib_1 = 0.0
        call get_1el_exp(num_pert, pert_ext, total_outer_size_1, &
                         LHS_dmat_1, size(contrib_1), contrib_1)
@@ -2140,15 +1264,6 @@ module rsp_general
     
     write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
     
-    ! Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
-    
-    ! Find out about "length of contributions" attribute in cache datatype: Seems like %contrib_size
-    ! must be cache(inner)%blks_triang_size * product(cache_outer%blks_tuple_triang_size) and it is
-    ! this attribute that should specify the contribution size: However, when outer is used as F, D, S
-    ! storage, the inner size is not applicable and it should be the outer size only: Each situation
-    ! must be handled appropriately
-    
-    
     ! Traversal: Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
     
     traverse_end = .FALSE.
@@ -2169,10 +1284,8 @@ module rsp_general
        ! Nuc-nuc, one-el and two-el contribution
        if (outer_next%num_dmat == 0) then
        
-!           write(*,*) 'allocating', cache%blks_triang_size
           allocate(outer_next%data_scal(cache%blks_triang_size))
           allocate(data_tmp(cache%blks_triang_size))
-!           write(*,*) 'done allocating'
 
           ! Factor 0.5 for two-el because no chain rule applications
           
@@ -2266,24 +1379,6 @@ module rsp_general
           
                 do j = 1, size(cache%indices, 1)
              
-!                    write(*,*) 'outer_next%num_dmat + 1', outer_next%num_dmat + 1
-!                    write(*,*) 'cache%p_inner%npert + sum', cache%p_inner%npert + &
-!                    sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
-!                    write(*,*) '(/cache%nblks, outer_next%nblks_tuple(:) /)', &
-!                    (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /)
-!                    write(*,*) 'cache%p_inner%npert', &
-!                    (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/)
-!                    write(*,*) 'cache%blk_info', blks_tuple_info
-!                    write(*,*) 'cache%blk_sizes', &
-!                    (/cache%blk_sizes, (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)/)
-!                    write(*,*) 'cache%blks_triang_size', &
-!                    (/cache%blks_triang_size, &
-!                    (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/)
-!                    write(*,*) 'indices', (/cache%indices(j, :), outer_next%indices(i, :)/)
-                             
-!                    stop
-
-             
                    offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
                    cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
                    (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
@@ -2294,10 +1389,6 @@ module rsp_general
                    (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
                    (/cache%indices(j, :), outer_next%indices(i, :)/))
                 
-!                    write(*,*) 'inner, outer ind', cache%indices(j, :), outer_next%indices(i, :)
-!                    write(*,*) 'offset in cache', offset, 'is j', j, 'tmp', j + size(cache%indices, 1) * (i - 1)
-!                    write(*,*) 'data is', data_tmp(j + size(cache%indices, 1) * (i - 1))
-!                    write(*,*) ' '
                    outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
                             
              
@@ -2315,9 +1406,6 @@ module rsp_general
           end if
                  
        end if
-       
-!        write(*,*) 'data scal sample', outer_next%data_scal(1:min(12, size(outer_next%data_scal)))
-       
        
        deallocate(data_tmp)
    
@@ -2370,10 +1458,6 @@ module rsp_general
        p12(1) = p_tuple_standardorder(p12(1))
        p12(2) = p_tuple_standardorder(p12(2))
        
-!        write(*,*) 'Twofact recursion:'
-!        write(*,*) 'A', p12(1)%pid
-!        write(*,*) 'B', p12(2)%pid
-    
        ! Get size of p12(2) contribution for cache addressing offset
     
        nblks = get_num_blks(p12(1))
@@ -2409,8 +1493,6 @@ module rsp_general
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
-!                 write(*,*) 'Prop after retrieval', prop(1:min(12, size(prop)))
-             
              else
              
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
@@ -2431,9 +1513,7 @@ module rsp_general
                 write(*,*) 'W', p12(2)%pid
                 
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
-!                 write(*,*) 'added element'
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
-!                 write(*,*) 'cycled'
                 curr_outer%contrib_type = 1
              
              else
@@ -2460,9 +1540,6 @@ module rsp_general
        
        end do
        
-!        write(*,*) 'Lagrange eligible?', lag_eligible
-       
-       
        if ((kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) .AND. &
            (p12(1)%npert > 0) .AND. lag_eligible) then
 
@@ -2475,9 +1552,7 @@ module rsp_general
                 write(*,*) 'Retrieving Lagrange contributions:'
                 write(*,*) 'A', p12(1)%pid
                 write(*,*) 'B', p12(2)%pid
-
                 
-!                 write(*,*) 'Pulay lagrange hard offset', hard_offset
                 ! Pulay Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
@@ -2485,15 +1560,13 @@ module rsp_general
                 
 !                 write(*,*) 'Prop after Pulay Lagrange retrieval', prop(1:min(12, size(prop)))
                 
-!                 write(*,*) 'Idempotency lagrange hard offset', hard_offset
 !                 Idempotency Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
 !                 write(*,*) 'Prop after idempotency Lagrange retrieval', prop(1:min(12, size(prop)))
-!                 
-!                 write(*,*) 'SCFE lagrange hard offset', hard_offset
+
 !                 SCFE Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
@@ -2577,10 +1650,7 @@ module rsp_general
     call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
          contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
     
-    
-    
-    
-   ! Assume indices for inner, outer blocks are calculated earlier during the recursion
+    ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
     ! Unsure about npert argument
     call p_tuple_to_external_tuple(cache%p_inner, cache%p_inner%npert, pert_ext)
@@ -2599,17 +1669,12 @@ module rsp_general
     allocate(o_supsize_prime(cache%num_outer))
     allocate(o_size(cache%num_outer))
 
-!     write(*,*) 'n rule', outer_next%n_rule
-    
-    
     ! Prepare matrices for inner tuple
     
     i_supsize = derivative_superstructure_getsize(p_tuple_remove_first(cache%p_inner), &
                 (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
-!     write(*,*) 'i supsize', i_supsize
-                
     allocate(d_struct_inner(i_supsize, 3))
 
     sstr_incr = 0
@@ -2620,8 +1685,6 @@ module rsp_general
           i_supsize, sstr_incr, d_struct_inner)  
           
     sstr_incr = 0
-          
-!     write(*,*) 'a'
           
     
     ! Traverse outer elements to determine which contributions are Pulay n and/or Lagrange
@@ -2641,8 +1704,6 @@ module rsp_general
     any_lagrange = .FALSE.
     lagrange_max_n = 0    
     
-!     write(*,*) 'b'
-    
     traverse_end = .FALSE.
     
     
@@ -2656,13 +1717,8 @@ module rsp_general
     
     k = 1
     
-!     write(*,*) 'c'
-    
     do while (traverse_end .EQV. .FALSE.)
   
-!         write(*,*) 'traversing'
-  
-      
        if (outer_next%p_tuples(1)%npert == 0) then
        
           o_triang_size = 1
@@ -2675,7 +1731,6 @@ module rsp_general
   
   
        write(*,*) 'Outer contribution, type', outer_next%contrib_type
-!        write(*,*) 'triang size', o_triang_size
     
        do i = 1, outer_next%num_dmat
           
@@ -2704,7 +1759,6 @@ module rsp_general
           
        
        end if
-!        write(*,*) 'b'
        
        if (outer_next%contrib_type >= 3) then
        
@@ -2720,11 +1774,6 @@ module rsp_general
        
        end if
        
-!        write(*,*) 'c'
-!        write(*,*) 'allocation:', o_size(k) * cache%blks_triang_size
-       
-!        write(*,*) 'c2'
-      
        allocate(outer_next%data_scal(o_size(k) * cache%blks_triang_size))
        
        outer_next%data_scal = 0.0
@@ -2739,7 +1788,6 @@ module rsp_general
     
        outer_next => outer_next%next
      
-!        write(*,*) 'd'
     end do
     
     
@@ -2748,7 +1796,6 @@ module rsp_general
     if (outer_next%dummy_entry) then
        outer_next => outer_next%next
     end if
-!     write(*,*) 'e'
     
     allocate(which_index_is_pid(20))
     
@@ -2759,7 +1806,6 @@ module rsp_general
        allocate(Zeta(cache%blks_triang_size))
     
        ! FIXME: Change to max order of all properties
-
     
        which_index_is_pid = 0
           
@@ -2769,17 +1815,8 @@ module rsp_general
           
        end do
           
-
-          
        do i = 1, cache%blks_triang_size
     
-    
-!           write(*,*) 'i', i, ' of', cache%blks_triang_size
-!           write(*,*) 'supsize', i_supsize
-       
-!           write(*,*) 'indices size', size(cache%indices(i,:))
-!           write(*,*) 'lagrange max n', lagrange_max_n
-       
           ! CONTINUE HERE: CREATE INNER INDICES WHEN MAKING CACHE ENTRY (IT IS MISSING NOW)
           call QcMatInit(Lambda(i), D_unp)
           call QcMatInit(Zeta(i), D_unp)
@@ -2801,9 +1838,6 @@ module rsp_general
     
     end if    
     
-    
-    write(*,*) 'f'
-    
     ! Traversal: Make W matrices and store
     
     traverse_end = .FALSE.
@@ -2813,8 +1847,6 @@ module rsp_general
        outer_next => outer_next%next
     end if
 
-    write(*,*) 'g'
-    
     ctr_pulay_n = 0
     ctr_lagrange = 0
     o_ctr = 1
@@ -2832,8 +1864,6 @@ module rsp_general
        
     k = 1
     
-!     write(*,*) 'h'    
-    
     do while (traverse_end .EQV. .FALSE.)
   
        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
@@ -2844,11 +1874,6 @@ module rsp_general
        
        end do
     
-       
-       
-       
-!        if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
-      
           allocate(d_struct_o(o_supsize(k), 3))
           allocate(d_struct_o_prime(o_supsize_prime(k), 3))
 
@@ -2916,10 +1941,6 @@ module rsp_general
              o_triang_size = size(outer_next%indices, 1)
              
           end if
-          
-          
-
-           
             
           do j = 1, o_triang_size
           
@@ -2927,8 +1948,6 @@ module rsp_general
              select case (outer_next%contrib_type)
              
              case (1)
-             
-!              write(*,*) 'o triang size', o_triang_size
              
                 call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
                      outer_next%p_tuples(1)%npert, &
@@ -2960,20 +1979,8 @@ module rsp_general
                      F, D, S, W(o_ctr + o_triang_size))
              
              end select
-          
-          
-          
-          
-          
-!              write(*,*) 'calling w', j
-!              write(*,*) 'wiip', which_index_is_pid
-             
-                  
-!              write(*,*) 'back from w'
                   
              o_ctr = o_ctr + 1
-       
-!               i = QcMatWrite_f(W(1), 'W1', ASCII_VIEW)
        
           end do
        
@@ -2981,8 +1988,6 @@ module rsp_general
           deallocate(d_struct_o)
           deallocate(d_struct_o_prime)
        
-!        end if
-    
        if (outer_next%last) then
     
           traverse_end = .TRUE.
@@ -2995,18 +2000,6 @@ module rsp_general
     
     end do
     
-!     if (o_triang_size == 78) then
-!     
-!     
-!     i = QcMatWrite_f(W(1), 'W1', ASCII_VIEW)
-!     i = QcMatWrite_f(W(12), 'W12', ASCII_VIEW)
-!     i = QcMatWrite_f(W(43), 'W43', ASCII_VIEW)
-!     i = QcMatWrite_f(W(52), 'W52', ASCII_VIEW)
-! !     i = QcMatWrite_f(W(164), 'W164', ASCII_VIEW)
-! !     i = QcMatWrite_f(W(343), 'W343', ASCII_VIEW)
-! !     i = QcMatWrite_f(W(364), 'W364', ASCII_VIEW)
-!     end if
-    
     ! Outside traversal: Calculate contributions
     
     contrib_pulay = 0.0
@@ -3016,7 +2009,6 @@ module rsp_general
     
     
     contrib_pulay = -2.0 * contrib_pulay
-!     write(*,*) 'Pulay contribution sample', contrib_pulay(1:min(size(contrib_pulay), 12))
     
     ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
     
@@ -3027,27 +2019,16 @@ module rsp_general
        outer_next => outer_next%next
     end if
 
-    
-
-    
     call QcMatInit(Z, D_unp)
     call QcMatZero(Z)
     call QcMatInit(Y, D_unp)
     call QcMatZero(Y)
-!     
-!     do i = 1, size(w)
-!     
-!        call QcMatInit(W(i))
-!     
-!     end do
     
     k = 1
     o_ctr = 0
     
     do while (traverse_end .EQV. .FALSE.)
 
-!        write(*,*) 'contrib type', outer_next%contrib_type
-    
        c_ctr = 0
     
        if (outer_next%p_tuples(1)%npert ==0) then
@@ -3087,7 +2068,6 @@ module rsp_general
        
         
        ! Store any Pulay n and Lagrange terms
-!        if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
        
           do i = 1, o_triang_size
           
@@ -3111,10 +2091,6 @@ module rsp_general
                    end if
                    
                 end if
-                
-!                 write(*,*) 'Pulay'
-!                 write(*,*) 'offset', i, j, offset
-!                 write(*,*) 'contrib offset', j + size(cache%indices, 1) * (i - 1) + o_ctr
                 
                 if (outer_next%contrib_type == 1) then
                 
@@ -3148,8 +2124,6 @@ module rsp_general
              
           end do
           
-!        end if
-       
        c_snap = c_ctr
        o_ctr = o_ctr + c_snap
        
@@ -3220,15 +2194,6 @@ module rsp_general
                   
              do j = 1, cache%blks_triang_size
            
-           
-           
-!                 if ((i == 1) .AND. (j == 1)) then
-!            
-!                     m = QcMatWrite_f(Lambda(1), 'Lambda_1', ASCII_VIEW)
-!                     m = QcMatWrite_f(Y, 'Y_1', ASCII_VIEW)
-!                     
-!                 end if
-                
                 if (size(outer_next%p_tuples) > 0) then
                    if (outer_next%p_tuples(1)%npert > 0) then
 
@@ -3248,15 +2213,6 @@ module rsp_general
                    
                 end if
                 
-!                 write(*,*) 'Idem/SCFE c_snap', c_snap
-!                 write(*,*) 'i, j, offset', i, j, offset
-!                 write(*,*) 'contrib offset', j + size(cache%indices, 1) * (i - 1)
-                
-           
-!                 write(*,*) 'mat trace i j,', i, j
-!                 write(*,*) 'c snap, j disp', c_snap, (j-1) * cache%blks_triang_size
-!                 write(*,*) 'property displ', cache%blks_triang_size*o_triang_size
-             
                 call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
                 call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
                 cache%blks_triang_size*o_triang_size + offset))
@@ -3269,36 +2225,12 @@ module rsp_general
                 -2.0 * outer_next%data_scal(c_snap + &
                 cache%blks_triang_size*o_triang_size + offset)
              
-!              if ((i <= 2) .AND. (j <= 12)) then
-!                    write(*,*) 'i, j, offset', i, j, offset
-!                    write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + offset)
-                
-!                 write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
-!                 cache%blks_triang_size*o_triang_size + offset)
-             
-                    
-!                 end if
-             
-!                 write(*,*) 'Idempotency:', outer_next%data_scal(c_snap + &
-!                 (j-1) * cache%blks_triang_size + i)
-                
-!                 write(*,*) 'SCFE:', outer_next%data_scal(c_snap + &
-!                 cache%blks_triang_size*o_triang_size + (j-1) * cache%blks_triang_size + i)
-             
-             
              end do
                   
-                  
-             
-       
-       
           end do
-       
        
           deallocate(d_struct_o)
           
-      
-      
        end if
        
        deallocate(blks_tuple_info)
@@ -3315,1406 +2247,8 @@ module rsp_general
     
     end do
     
-
-    
-    
-  end subroutine
-  
-
-  recursive subroutine rsp_pulay_n_2014(pert, kn, p12, S, D, F, get_ovl_exp, cache, p_size, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert, merged_p_tuple
-    type(p_tuple), dimension(2) :: p12
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    integer ::  i
-    integer, dimension(2) :: kn
-    external :: get_ovl_exp
-    complex(8), dimension(*) :: prop
-    integer :: num_blks_full, p_size
-    integer, allocatable, dimension(:,:) :: blk_info_full
-
-!     allocate(blk_info_full(num_blks_full, 3))
-!         
-!     num_blks_full = get_num_blks(pert)
-!     
-!     blk_info_full = get_blk_info(num_blks_full, pert)
-!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
-!     
-!     deallocate(blk_info_full)
-    
-    if (pert%npert > 0) then
-
-       call rsp_pulay_n_2014(p_tuple_remove_first(pert), kn, &
-       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, &
-       get_ovl_exp, cache, p_size, prop)
-
-       call rsp_pulay_n_2014(p_tuple_remove_first(pert), kn, &
-       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, &
-       get_ovl_exp, cache, p_size, prop)
-
-    else
-
-       if (kn_skip(p12(2)%npert, p12(2)%pid, kn) .EQV. .FALSE.) then
-
-
-
-!          open(unit=257, file='totterms', status='old', action='write', &
-!               position='append')
-!          write(257,*) 'T'
-!          close(257)
-
-          if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
-
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
-
-!             open(unit=257, file='cachehit', status='old', action='write', &
-!                  position='append') 
-!             write(257,*) 'T'
-!             close(257)
-
-             call property_cache_getdata(cache, 2, p12, p_size, prop)
-       
-          else
-
-          write(*,*) 'Calculating Pulay k-n contribution:'
-          write(*,*) 'S', p12(1)%pid
-          write(*,*) 'W', p12(2)%pid
-
-
-             call get_pulay_n_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2)  /), & 
-                               kn, F, D, S, get_ovl_exp, cache, prop)
-
-             write(*,*) 'Calculated Pulay k-n contribution'
-             write(*,*) ' '
-
-          end if
-
-       else
-
-!           write(*,*) 'Pulay k-n contribution was k-n skipped:'
-!           write(*,*) 'S ', p12(1)%pid 
-!           write(*,*) 'W ', p12(2)%pid 
-!           write(*,*) ' '
-
-       end if 
-
-    end if
-
   end subroutine
 
-
-  subroutine get_pulay_n_2014(p12, kn, F, D, S, get_ovl_exp, cache, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert, emptypert, merged_p_tuple
-    type(p_tuple), dimension(2) :: p12
-    type(p_tuple), dimension(:,:), allocatable :: deriv_structb
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    type(QcMat) :: W
-    external :: get_ovl_exp
-    integer :: i, j, k, sstr_incr, offset, total_num_perturbations, &
-                dtup_ind, pr_offset, ca_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks, npert_ext
-    integer, dimension(p12(1)%npert + p12(2)%npert) :: & 
-    pids_current_contribution, translated_index
-    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext
-    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
-    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer :: d_supsize
-    integer, dimension(0) :: noc
-    integer, dimension(2) :: kn
-    integer, allocatable, dimension(:) :: ncarray, ncinner, inner_offsets, &
-                                          which_index_is_pid
-    integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
-    complex(8), allocatable, dimension(:) :: tmp, prop_forcache
-    complex(8), dimension(*) :: prop
-
-    call p_tuple_to_external_tuple(p12(1), npert_ext, pert_ext)
-
-    
-    d_supsize = derivative_superstructure_getsize(p12(2), kn, .FALSE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/))
-
-    allocate(deriv_structb(d_supsize, 3))
-
-    sstr_incr = 0
-
-    call derivative_superstructure(p12(2), kn, .FALSE., &
-         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-         d_supsize, sstr_incr, deriv_structb)
-
-    allocate(nfields(2))
-    allocate(nblks_tuple(2))
-    
-    
-    
-    do i = 1, 2
-    
-       nfields(i) = p12(i)%npert
-       nblks_tuple(i) = get_num_blks(p12(i))
-    
-    end do
-    
-    total_num_perturbations = sum(nfields)
-    
-    allocate(blks_tuple_info(2, total_num_perturbations, 3))
-    allocate(blks_tuple_triang_size(2))
-    allocate(blk_sizes(2, total_num_perturbations))
-    allocate(blk_sizes_merged(total_num_perturbations))
-    
-    do i = 1, 2
-    
-       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p12(i))
-    
-       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
-    
-       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-    end do
-    
-    if (p12(2)%npert == 0) then
-    
-       outer_indices_size = 1
-    
-    else
-    
-       outer_indices_size = blks_tuple_triang_size(2)
-    
-    end if
-    
-    inner_indices_size = blks_tuple_triang_size(1)
-    
-    allocate(prop_forcache(inner_indices_size * outer_indices_size))
-    allocate(ncarray(p12(1)%npert + p12(2)%npert))
-    allocate(ncinner(p12(1)%npert))
-    allocate(tmp(inner_indices_size))
-    allocate(inner_offsets(inner_indices_size))
-    allocate(outer_indices(outer_indices_size, p12(2)%npert))
-    allocate(inner_indices(inner_indices_size, p12(1)%npert))
-    allocate(which_index_is_pid(p12(1)%npert + p12(2)%npert))
-
-    prop_forcache = 0.0
-    
-    ncarray = get_ncarray(p12(1)%npert + p12(2)%npert, 2, p12)
-    ncinner = nc_onlysmall(p12(1)%npert + p12(2)%npert, &
-                           p12(1)%npert, 1, p12(1), ncarray)
-    
-    which_index_is_pid = 0
-    
-    do i = 1, p12(2)%npert
-    
-       which_index_is_pid(p12(2)%pid(i)) = i
-    
-    end do
-    
-    
-    if (p12(2)%npert > 0) then
-    
-       call make_triangulated_indices(nblks_tuple(2), blks_tuple_info(2, &
-            1:nblks_tuple(2), :), blks_tuple_triang_size(2), outer_indices)
-    
-    end if
-    
-    call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
-         1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
-    
-    call QcMatInit(W)
-    
-    do i = 1, size(outer_indices, 1)
-    
-       tmp = 0.0
-
-       call QcMatZero(W)
-
-       call rsp_get_matrix_w_2014(d_supsize, deriv_structb, p12(1)%npert + &
-                             p12(2)%npert, which_index_is_pid, &
-                             p12(2)%npert, outer_indices(i,:), F, D, S, W)
- 
- 
-       call get_ovl_exp(0, noc, 0, noc, npert_ext, pert_ext, 1, (/W/), size(tmp), tmp)
-       
- 
-!        call rsp_ovlave(p12(1)%npert, p12(1)%plab, &
-!                           (/ (j/j, j = 1, p12(1)%npert) /), &
-!                           p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
-!                           1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
-!                           size(tmp), W, tmp)
- 
-       do j = 1, size(inner_indices, 1)
-    
-          if (p12(2)%npert > 0) then
-    
-             offset = get_triang_blks_tuple_offset(2, total_num_perturbations, nblks_tuple, &
-                      (/ p12(1)%npert, p12(2)%npert /), &
-                      blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                      (/inner_indices(j, :), outer_indices(i, :) /)) 
-          else
-    
-             offset = get_triang_blks_tuple_offset(1, total_num_perturbations, &
-                      nblks_tuple(1), (/ p12(1)%npert /), &
-                      blks_tuple_info(1,:,:), blk_sizes(1,:), blks_tuple_triang_size(1), &
-                      (/inner_indices(j, :) /)) 
-
-          end if
-   
-          prop_forcache(offset) = prop_forcache(offset) + tmp(j)
-
-       end do
-    
-    end do
-    
-    call p1_cloneto_p2(p12(1), merged_p_tuple)
-    
-    if (p12(2)%npert > 0) then
-    
-       merged_p_tuple = merge_p_tuple(merged_p_tuple, p12(2))
-    
-    end if
-    
-    merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-    
-    ! MaR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
-    ! PIDS ARE IN STANDARD ORDER? FIND OUT
-
-    k = 1
-    do i = 1, 2
-       do j = 1, p12(i)%npert
-          pids_current_contribution(k) = p12(i)%pid(j)
-          k = k + 1
-       end do
-    end do
-    
-    merged_nblks = get_num_blks(merged_p_tuple)
-
-    allocate(merged_blk_info(1, merged_nblks, 3))
-
-    merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-    blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-    merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-    merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-    
-    allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
-    
-    call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-         merged_triang_size, triang_indices_pr)
-    
-    do i = 1, size(triang_indices_pr, 1)
-    
-       pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-                   (/sum(nfields)/), &
-                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-                   (/triang_indices_pr(i, :) /))
-   
-       do j = 1, total_num_perturbations
-    
-          translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
-    
-       end do
-    
-       if (p12(2)%npert > 0) then
-    
-          ca_offset = get_triang_blks_tuple_offset(2, &
-                      total_num_perturbations, nblks_tuple, &
-                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                      (/ translated_index(:) /))
-    
-       else
-    
-          ca_offset = get_triang_blks_tuple_offset(1, &
-                      total_num_perturbations, nblks_tuple(1), &
-                      nfields(1), blks_tuple_info(1, :, :), &
-                      blk_sizes(1,:), blks_tuple_triang_size(1), & 
-                      (/ translated_index(:) /))
-    
-       end if
-    
-       prop(pr_offset) = prop(pr_offset) + prop_forcache(ca_offset)
-    
-    end do
-    
-
-    write(*,*) 'after pulay kn contribution', prop(1:78)
-!     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
-!     (/ (1, j = 1, (merged_p_tuple%npert - 1) ) /), merged_nblks, blk_sizes_merged, &
-!     merged_blk_info, prop_forcache)
-
-    call property_cache_add_element(cache, 2, p12,  &
-         inner_indices_size * outer_indices_size, prop_forcache)    
-   
-    call QcMatDst(W)
-
-    deallocate(pert_ext)
-    
-    deallocate(deriv_structb)
-    deallocate(ncarray)
-    deallocate(ncinner)
-    deallocate(tmp)
-    deallocate(inner_offsets)
-    deallocate(outer_indices)
-    deallocate(inner_indices)
-    deallocate(which_index_is_pid)
-    deallocate(nfields)
-    deallocate(nblks_tuple)
-    deallocate(blks_tuple_info)
-    deallocate(blks_tuple_triang_size)
-    deallocate(blk_sizes)
-    deallocate(blk_sizes_merged)
-    deallocate(prop_forcache)
-
-  end subroutine
-
-  
-  recursive subroutine rsp_pulay_lag_2014(pert, kn, p12, S, D, F, &
-                       get_ovl_exp, cache, p_size, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert
-    type(p_tuple), dimension(2) :: p12
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    integer ::  i
-    integer, dimension(2) :: kn
-    external :: get_ovl_exp
-    complex(8), dimension(*) :: prop
-    integer :: num_blks_full, p_size
-    integer, allocatable, dimension(:,:) :: blk_info_full
-
-!     allocate(blk_info_full(num_blks_full, 3))
-!         
-!     num_blks_full = get_num_blks(pert)
-!     
-!     blk_info_full = get_blk_info(num_blks_full, pert)
-!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
-!     
-!     deallocate(blk_info_full)
-    
-    if (pert%npert > 0) then
-
-       call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
-       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
-       S, D, F, get_ovl_exp, cache, p_size, prop)
-       call rsp_pulay_lag_2014(p_tuple_remove_first(pert), kn, &
-       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
-       S, D, F, get_ovl_exp, cache, p_size, prop)
-
-    else
-
-       ! At lowest level:
-       if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
-
-
-
-!       open(unit=257, file='totterms', status='old', action='write', position='append') 
-!       write(257,*) 'T'
-!       close(257)
-
-          if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
-
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
-       
-!             open(unit=257, file='cachehit', status='old', action='write', &
-!             position='append') 
-!             write(257,*) 'T'
-!             close(257)
-
-             call property_cache_getdata(cache, 2, p12, p_size, prop)
-
-          else
-
-       write(*,*) 'Calculating Pulay lagrange contribution:'
-       write(*,*) 'S', p12(1)%pid
-       write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
-
-             call get_pulay_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
-                               kn, F, D, S, get_ovl_exp, cache, prop)
-
-             write(*,*) 'Calculated Pulay lagrange contribution'
-             write(*,*) ' '
-
-          end if
-
-       else
-
-!           write(*,*) 'Pulay lagrange contribution was k-n skipped:'
-!           write(*,*) 'S', p12(1)%pid 
-!           write(*,*) 'W', p12(2)%pid, 'primed', kn(2)
-!           write(*,*) ' '
-
-       end if
-
-    end if
-
-  end subroutine
-
-
-  subroutine get_pulay_lag_2014(p12, kn, F, D, S, get_ovl_exp, cache, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert, emptypert, merged_p_tuple
-    type(p_tuple), dimension(2) :: p12
-    type(p_tuple), dimension(:,:), allocatable :: deriv_structb
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    type(QcMat) :: W
-    external :: get_ovl_exp
-    integer :: i, j, k ,m, incr, npert_ext
-    integer :: d_supsize, total_num_perturbations, &
-              offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks
-    integer, dimension(p12(1)%npert + p12(2)%npert) :: & 
-    pids_current_contribution, translated_index
-    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, pert_ext, pert_ord_ext
-    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
-    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer, dimension(2) :: kn
-    integer, dimension(0) :: noc
-    integer, allocatable, dimension(:) :: ncarray, ncinner, inner_offsets, &
-                                          which_index_is_pid
-    integer, allocatable, dimension(:) :: outer_ind_b_large
-    integer, allocatable, dimension(:,:) :: outer_indices, inner_indices
-    complex(8), allocatable, dimension(:) :: tmp, prop_forcache
-    complex(8), dimension(*) :: prop
-
-    call p_tuple_to_external_tuple(p12(1), npert_ext, pert_ext)
-
-    
-    d_supsize = derivative_superstructure_getsize(p12(2), kn, .TRUE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/))
-   
-    allocate(deriv_structb(d_supsize, 3))
-
-    incr = 0
-
-    call derivative_superstructure(p12(2), kn, .TRUE., &
-         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-         d_supsize, incr, deriv_structb)
-
-
-    allocate(nfields(2))
-    allocate(nblks_tuple(2))
-
-    do i = 1, 2
-
-       nfields(i) = p12(i)%npert
-       nblks_tuple(i) = get_num_blks(p12(i))
-
-    end do
-
-    total_num_perturbations = sum(nfields)
-
-    allocate(blks_tuple_info(2, total_num_perturbations, 3))
-    allocate(blks_tuple_triang_size(2))
-    allocate(blk_sizes(2, total_num_perturbations))
-    allocate(blk_sizes_merged(total_num_perturbations))
-
-    do i = 1, 2
-
-       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p12(i))
-       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
-       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-    end do
-
-    if (p12(2)%npert == 0) then
-
-       outer_indices_size = 1
-
-    else
-
-       outer_indices_size = blks_tuple_triang_size(2)
-
-    end if
-
-    inner_indices_size = blks_tuple_triang_size(1)
-
-    allocate(prop_forcache(inner_indices_size * outer_indices_size))
-    allocate(ncarray(p12(1)%npert + p12(2)%npert))
-    allocate(ncinner(p12(1)%npert + p12(2)%npert))
-    allocate(outer_ind_b_large(p12(1)%npert + p12(2)%npert))
-    allocate(tmp(inner_indices_size))
-    allocate(inner_offsets(inner_indices_size))
-    allocate(outer_indices(outer_indices_size, p12(2)%npert))
-    allocate(inner_indices(inner_indices_size, p12(1)%npert))
-    allocate(which_index_is_pid(p12(1)%npert + p12(2)%npert))
-
-    prop_forcache = 0.0
-
-    ncarray = get_ncarray(p12(1)%npert + p12(2)%npert, 2, p12)
-    ncinner = nc_only(p12(1)%npert + p12(2)%npert, &
-              p12(1)%npert, 1, p12(1), ncarray)
-
-    which_index_is_pid = 0
-
-    do i = 1, p12(2)%npert
-
-       which_index_is_pid(p12(2)%pid(i)) = i
-
-    end do
-
-    call make_triangulated_indices(nblks_tuple(2), blks_tuple_info(2, &
-         1:nblks_tuple(2), :), blks_tuple_triang_size(2), outer_indices)
-
-
-    call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
-         1:nblks_tuple(1), :), blks_tuple_triang_size(1), inner_indices)
-
-    call QcMatInit(W)
-
-    do i = 1, size(outer_indices, 1)
-
-       call QcMatZero(W)
-
-       call rsp_get_matrix_w_2014(d_supsize, deriv_structb, p12(1)%npert + &
-                            p12(2)%npert, which_index_is_pid, &
-                            p12(2)%npert, outer_indices(i,:), F, D, S, W)
-
-       tmp = 0.0
-       call get_ovl_exp(0, noc, noc, 0, noc, noc, npert_ext, pert_ext, pert_ord_ext, 1, (/W/), size(tmp), tmp)
-                            
-!        call rsp_ovlave(p12(1)%npert, p12(1)%plab, &
-!                        (/ (j/j, j = 1, p12(1)%npert) /), &
-!                        p12(1)%pdim, nblks_tuple(1), blks_tuple_info(1, &
-!                        1:nblks_tuple(1), :), blk_sizes(1, 1:nblks_tuple(1)), &
-!                        size(tmp), W, tmp)
-
-       do j = 1, size(inner_indices, 1)
-
-          offset = get_triang_blks_tuple_offset(2, total_num_perturbations, nblks_tuple, &
-                   (/ p12(1)%npert, p12(2)%npert /), &
-                   blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                   (/inner_indices(j, :), outer_indices(i, :) /)) 
-
-          prop_forcache(offset) = prop_forcache(offset) + tmp(j)
-
-       end do
-
-    end do
-
-    call p1_cloneto_p2(p12(1), merged_p_tuple)
-
-    if (p12(2)%npert > 0) then
-
-       merged_p_tuple = merge_p_tuple(merged_p_tuple, p12(2))
-
-    end if
-
-    merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-
-    ! MR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
-    ! PIDS ARE IN STANDARD ORDER? FIND OUT
-
-    k = 1
-    do i = 1, 2
-       do j = 1, p12(i)%npert
-          pids_current_contribution(k) = p12(i)%pid(j)
-       k = k + 1
-       end do
-    end do
-
-    merged_nblks = get_num_blks(merged_p_tuple)
-
-    allocate(merged_blk_info(1, merged_nblks, 3))
-
-    merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-    blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-    merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-    merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-
-    allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
-
-    call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-         merged_triang_size, triang_indices_pr)
-
-    do i = 1, size(triang_indices_pr, 1)
-
-       pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-                   (/sum(nfields)/), &
-                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-                   (/triang_indices_pr(i, :) /))
-
-       do j = 1, total_num_perturbations
-
-          translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
-
-       end do
-
-       if (p12(2)%npert > 0) then
-
-          ca_offset = get_triang_blks_tuple_offset(2, &
-                      total_num_perturbations, nblks_tuple, &
-                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                      (/ translated_index(:) /))
-
-       else
-
-          ca_offset = get_triang_blks_tuple_offset(1, &
-                      total_num_perturbations, nblks_tuple(1), &
-                      nfields(1), blks_tuple_info(1, :, :), &
-                      blk_sizes(1,:), blks_tuple_triang_size(1), & 
-                      (/ translated_index(:) /))
-
-       end if
-
-       prop(pr_offset) = prop(pr_offset) + prop_forcache(ca_offset)
-
-    end do
-
-
-!     write(*,*) 'pulay lag contribution'
-!     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
-!     (/ (1, j = 1, (merged_p_tuple%npert - 1) ) /), merged_nblks, blk_sizes_merged, &
-!     merged_blk_info, prop_forcache)
-
-    call property_cache_add_element(cache, 2, p12,  &
-         inner_indices_size * outer_indices_size, prop_forcache)    
-
-
-    deallocate(pert_ext)
-    deallocate(pert_ord_ext)         
-         
-    deallocate(deriv_structb)
-    deallocate(ncarray)
-    deallocate(ncinner)
-    deallocate(outer_ind_b_large)
-    deallocate(tmp)
-    deallocate(inner_offsets)
-    deallocate(outer_indices)
-    deallocate(inner_indices)
-    deallocate(which_index_is_pid)
-    deallocate(nfields)
-    deallocate(nblks_tuple)
-    deallocate(blks_tuple_info)
-    deallocate(blks_tuple_triang_size)
-    deallocate(blk_sizes)
-    deallocate(blk_sizes_merged)
-    deallocate(triang_indices_pr)
-    deallocate(merged_blk_info)
-    deallocate(prop_forcache)
-    call QcMatDst(W)
-
-  end subroutine
-  
-  
-  ! NEW CODE
-  
-  
-  recursive subroutine rsp_idem_lag_2014(pert, kn, p12, S, D, F, &
-                                     cache, p_size, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert
-    type(p_tuple), dimension(2) :: p12
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    integer ::  i
-    integer, dimension(2) :: kn
-    complex(8), dimension(*) :: prop
-    integer :: num_blks_full, p_size
-    integer, allocatable, dimension(:,:) :: blk_info_full
-
-!     allocate(blk_info_full(num_blks_full, 3))
-!         
-!     num_blks_full = get_num_blks(pert)
-!     
-!     blk_info_full = get_blk_info(num_blks_full, pert)
-!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
-!     
-!     deallocate(blk_info_full)
-    
-    if (pert%npert > 0) then
-
-       call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
-       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), S, D, F, &
-       cache, p_size, prop)
-       call rsp_idem_lag_2014(p_tuple_remove_first(pert), kn, &
-       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), S, D, F, &
-       cache, p_size, prop)
-
-    else
-
-       if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
-
-
-
-!          open(unit=257, file='totterms', status='old', action='write', &
-!               position='append') 
-!          write(257,*) 'T'
-!          close(257)
-
-          if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
-
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
-
-!             open(unit=257, file='cachehit', status='old', action='write', &
-!                  position='append')
-!             write(257,*) 'T'
-!             close(257)
-
-             call property_cache_getdata(cache, 2, p12, p_size, prop)
-      
-          else
-
-          write(*,*) 'Calculating idempotency lagrange contribution'
-          write(*,*) 'Zeta', p12(1)%pid
-          write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
-
-             ! At lowest level:
-             call get_idem_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), & 
-                               kn, F, D, S, cache, prop)
-
-             write(*,*) 'Calculated idempotency lagrange contribution'
-             write(*,*) ' '
-
-          end if
-
-       else
-
-!           write(*,*) 'Idempotency lagrange contribution was k-n skipped:'
-!           write(*,*) 'Zeta', p12(1)%pid 
-!           write(*,*) 'Z', p12(2)%pid, 'primed', kn(2)
-!           write(*,*) ' '
-
-       end if
-
-    end if
-
-  end subroutine
-
-
-  subroutine get_idem_lag_2014(p12, kn, F, D, S, cache, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert, emptypert, merged_p_tuple
-    type(p_tuple), dimension(2) :: p12
-    type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    type(QcMat) :: Zeta, Z
-    integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
-              offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks
-    integer, dimension(p12(1)%npert + p12(2)%npert) :: & 
-    pids_current_contribution, translated_index
-    integer, allocatable, dimension(:) :: nfields, nblks_tuple, blks_tuple_triang_size
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged
-    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
-    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer, dimension(2) :: kn
-    integer, dimension(2) :: d_supsize
-    integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, &
-                                          which_index_is_pid2
-    integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
-    integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
-    complex(8) :: tmp_tr
-    complex(8), dimension(*) :: prop
-    complex(8), allocatable, dimension(:) :: prop_forcache
-
-    d_supsize = 0
-    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
-                   kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
-                   kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-
-    allocate(deriv_structa(d_supsize(1), 3))
-    allocate(deriv_structb(d_supsize(2), 3))
-
-    incr1 = 0
-    incr2 = 0
-
-    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., & 
-         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-         d_supsize(1), incr1, deriv_structa)
-    call derivative_superstructure(p12(2), kn, .TRUE., &
-         (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-         d_supsize(2), incr2, deriv_structb)
-
-    allocate(nfields(2))
-    allocate(nblks_tuple(2))
-
-    do i = 1, 2
-
-       nfields(i) = p12(i)%npert
-       nblks_tuple(i) = get_num_blks(p12(i))
-
-    end do
-
-    total_num_perturbations = sum(nfields)
-
-    allocate(blks_tuple_info(2, total_num_perturbations, 3))
-    allocate(blks_tuple_triang_size(2))
-    allocate(blk_sizes(2, total_num_perturbations))
-    allocate(blk_sizes_merged(total_num_perturbations))
-
-    do i = 1, 2
-
-       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p12(i))
-       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
-       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-    end do
-
-    if (p12(2)%npert == 0) then
-
-       outer_indices_size = 1
-
-    else
-
-       outer_indices_size = blks_tuple_triang_size(2)
-
-    end if
-
-    inner_indices_size = blks_tuple_triang_size(1)
-
-    allocate(prop_forcache(inner_indices_size * outer_indices_size))
-    allocate(ncarray(p12(1)%npert + p12(2)%npert))
-    allocate(ncinner(p12(1)%npert + p12(2)%npert))
-    allocate(outer_ind_a_large(p12(1)%npert + p12(2)%npert))
-    allocate(outer_ind_b_large(p12(1)%npert + p12(2)%npert))
-    allocate(outer_indices_a(inner_indices_size, p12(1)%npert))
-    allocate(outer_indices_b(outer_indices_size, p12(2)%npert))
-    allocate(which_index_is_pid1(p12(1)%npert + p12(2)%npert))
-    allocate(which_index_is_pid2(p12(1)%npert + p12(2)%npert))
-
-    prop_forcache = 0.0
-
-    ncarray = get_ncarray(p12(1)%npert + p12(2)%npert, 2, p12)
-    ncinner = nc_only(p12(1)%npert + p12(2)%npert, &
-                      p12(1)%npert, 1, p12(1), ncarray)
-
-    which_index_is_pid1 = 0
-
-    do i = 1, p12(1)%npert
-
-       which_index_is_pid1(p12(1)%pid(i)) = i
-
-    end do
-
-    which_index_is_pid2 = 0
-
-    do i = 1, p12(2)%npert
-
-       which_index_is_pid2(p12(2)%pid(i)) = i
-
-    end do
-
-    call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
-         1:nblks_tuple(1), :), blks_tuple_triang_size(1), outer_indices_a)
-
-
-    call make_triangulated_indices(nblks_tuple(2), blks_tuple_info(2, &
-         1:nblks_tuple(2), :), blks_tuple_triang_size(2), outer_indices_b)
-
-    offset = 0.0
-
-    call QcMatInit(Z)
-    call QcMatInit(Zeta)
-    
-    do i = 1, size(outer_indices_a, 1)
-
-       call QcMatZero(Zeta)
-
-       call rsp_get_matrix_zeta_2014(p_tuple_getone(p12(1), 1), kn, d_supsize(1), &
-            deriv_structa, p12(1)%npert + p12(2)%npert, &
-            which_index_is_pid1, p12(1)%npert, outer_indices_a(i,:), &
-            F, D, S, Zeta)
-
-       do j = 1, size(outer_indices_b, 1)
-
-          call QcMatZero(Z)
-
-          call rsp_get_matrix_z_2014(d_supsize(2), deriv_structb, kn, &
-               p12(1)%npert + p12(2)%npert, which_index_is_pid2, &
-               p12(2)%npert, outer_indices_b(j,:), F, D, S, Z)
-
-          offset = get_triang_blks_tuple_offset(2, total_num_perturbations, nblks_tuple, &
-                   (/ p12(1)%npert, p12(2)%npert /), &
-                   blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                   (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
-                   
-          call QcMatTraceAB(Zeta, Z, tmp_tr)
-          
-          
-        
-          
-          prop_forcache(offset) = prop_forcache(offset) - tmp_tr
-
-       end do
-
-    end do
-
-    call p1_cloneto_p2(p12(1), merged_p_tuple)
-
-    if (p12(2)%npert > 0) then
-
-       merged_p_tuple = merge_p_tuple(merged_p_tuple, p12(2))
-
-    end if
-
-    merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-
-! MR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
-! PIDS ARE IN STANDARD ORDER? FIND OUT
-
-    k = 1
-    do i = 1, 2
-       do j = 1, p12(i)%npert
-          pids_current_contribution(k) = p12(i)%pid(j)
-          k = k + 1
-       end do
-    end do
-
-    merged_nblks = get_num_blks(merged_p_tuple)
-
-    allocate(merged_blk_info(1, merged_nblks, 3))
-
-    merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-    blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-    merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-    merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-
-    allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
-
-    call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-         merged_triang_size, triang_indices_pr)
-
-    do i = 1, size(triang_indices_pr, 1)
-
-       pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-                   (/sum(nfields)/), &
-                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-                   (/triang_indices_pr(i, :) /))
-
-       do j = 1, total_num_perturbations
-
-          translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
-
-       end do
-
-       if (p12(2)%npert > 0) then
-
-          ca_offset = get_triang_blks_tuple_offset(2, &
-                      total_num_perturbations, nblks_tuple, &
-                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                      (/ translated_index(:) /))
-
-       else
-
-          ca_offset = get_triang_blks_tuple_offset(1, &
-                      total_num_perturbations, nblks_tuple(1), &
-                      nfields(1), blks_tuple_info(1, :, :), &
-                      blk_sizes(1,:), blks_tuple_triang_size(1), & 
-                      (/ translated_index(:) /))
-
-       end if
-
-       prop(pr_offset) = prop(pr_offset) + prop_forcache(ca_offset)
-
-    end do
-
-!     write(*,*) 'idempotency contribution'
-!  call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
-!  (/ (1, j = 1, (merged_p_tuple%npert - 1) ) /), merged_nblks, blk_sizes_merged, &
-!  merged_blk_info, prop_forcache)
-
-    call property_cache_add_element(cache, 2, p12,  &
-         inner_indices_size * outer_indices_size, prop_forcache)    
-
-    deallocate(deriv_structa)
-    deallocate(deriv_structb)
-    deallocate(ncarray)
-    deallocate(ncinner)
-    deallocate(outer_ind_a_large)
-    deallocate(outer_ind_b_large)
-    deallocate(outer_indices_a)
-    deallocate(outer_indices_b)
-    deallocate(which_index_is_pid1)
-    deallocate(which_index_is_pid2)
-    deallocate(nfields)
-    deallocate(nblks_tuple)
-    deallocate(blks_tuple_info)
-    deallocate(blks_tuple_triang_size)
-    deallocate(blk_sizes)
-    deallocate(blk_sizes_merged)
-    deallocate(prop_forcache)
-    
-    call QcMatDst(Zeta)
-    call QcMatDst(Z)
-
-  end subroutine
-
-
-
-  recursive subroutine rsp_scfe_lag_2014(pert, kn, p12, S, D, F, &
-                                     cache, p_size, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert
-    type(p_tuple), dimension(2) :: p12
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    integer ::  i
-    integer, dimension(2) :: kn
-    complex(8), dimension(*) :: prop
-    integer :: num_blks_full, p_size
-    integer, allocatable, dimension(:,:) :: blk_info_full
-
-!     allocate(blk_info_full(num_blks_full, 3))
-!         
-!     num_blks_full = get_num_blks(pert)
-!     
-!     blk_info_full = get_blk_info(num_blks_full, pert)
-!     p_size = get_triangulated_size(num_blks_full, blk_info_full)
-!     
-!     deallocate(blk_info_full)
-    
-    if (pert%npert > 0) then
-
-       call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
-            (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), &
-            S, D, F, cache, p_size, prop)
-       call rsp_scfe_lag_2014(p_tuple_remove_first(pert), kn, &
-            (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), &
-            S, D, F, cache, p_size, prop)
-
-    else
-
-       if (kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) then
-
-
-
-!          open(unit=257, file='totterms', status='old', action='write', &
-!               position='append') 
-!          write(257,*) 'T'
-!          close(257)
-
-          if (property_cache_already(cache, 2, p12) .EQV. .TRUE.) then
-
-!             open(unit=257, file='cachehit', status='old', action='write', &
-!                  position='append') 
-!             write(257,*) 'T'
-!             close(257)
-
-!              write(*,*) 'Getting values from cache'
-!              write(*,*) ' '
-
-             call property_cache_getdata(cache, 2, p12, p_size, prop)
-       
-          else
-
-          write(*,*) 'Calculating scfe lagrange contribution'
-          write(*,*) 'Lambda', p12(1)%pid
-          write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
-
-             ! At lowest level:
-             call get_scfe_lag_2014((/ (p_tuple_standardorder(p12(i)) , i = 1, 2) /), &
-             kn, F, D, S, cache, prop)
-
-             write(*,*) 'Calculated scfe lagrange contribution'
-             write(*,*) ' '
-
-          end if
-
-       else
-
-!           write(*,*) 'scfe lagrange contribution was k-n skipped:'
-!           write(*,*) 'Lambda', p12(1)%pid 
-!           write(*,*) 'Y', p12(2)%pid, 'primed', kn(2)
-!           write(*,*) ' '
-
-       end if
-
-    end if
-
-  end subroutine
-
-
-  subroutine get_scfe_lag_2014(p12, kn, F, D, S, cache, prop)
-
-    implicit none
-
-    type(p_tuple) :: pert, emptypert, merged_p_tuple
-    type(p_tuple), dimension(2) :: p12
-    type(p_tuple), dimension(:,:), allocatable :: deriv_structa, deriv_structb
-    type(SDF_2014) :: S, D, F
-    type(property_cache) :: cache
-    type(QcMat) :: L, Y
-    integer :: i, j, k, m, n, p, incr1, incr2, total_num_perturbations, &
-              offset, dtup_ind, pr_offset, ca_offset, inner_indices_size, &
-               outer_indices_size, merged_triang_size, merged_nblks
-    integer, dimension(p12(1)%npert + p12(2)%npert) :: & 
-    pids_current_contribution, translated_index
-    integer, allocatable, dimension(:) :: ncinnersmall, blk_sizes_merged, nfields, nblks_tuple
-    integer, allocatable, dimension(:) :: blks_tuple_triang_size
-    integer, allocatable, dimension(:,:) :: triang_indices_pr, blk_sizes
-    integer, allocatable, dimension(:,:,:) :: merged_blk_info, blks_tuple_info
-    integer, dimension(2) :: kn
-    integer, dimension(2) :: d_supsize
-    integer, allocatable, dimension(:) :: ncarray, ncinner, which_index_is_pid1, which_index_is_pid2
-    integer, allocatable, dimension(:) :: outer_ind_a_large, outer_ind_b_large
-    integer, allocatable, dimension(:,:) :: outer_indices_a, outer_indices_b
-    complex(8) :: tmp_tr
-    complex(8), dimension(*) :: prop
-    complex(8), allocatable, dimension(:) :: prop_forcache
-
-    d_supsize = 0
-
-    d_supsize(1) = derivative_superstructure_getsize(p_tuple_remove_first(p12(1)), &
-                   kn, .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-    d_supsize(2) = derivative_superstructure_getsize(p12(2), &
-                   kn, .TRUE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
-
-    allocate(deriv_structa(d_supsize(1), 3))
-    allocate(deriv_structb(d_supsize(2), 3))
-
-    incr1 = 0
-    incr2 = 0
-
-    call derivative_superstructure(p_tuple_remove_first(p12(1)), kn, .FALSE., &
-                    (/get_emptypert(), get_emptypert(), get_emptypert()/), & 
-                    d_supsize(1), incr1, deriv_structa)
-    call derivative_superstructure(p12(2), kn, .TRUE., &
-                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                    d_supsize(2), incr2, deriv_structb)
-
-    allocate(nfields(2))
-    allocate(nblks_tuple(2))
-
-    do i = 1, 2
-
-       nfields(i) = p12(i)%npert
-       nblks_tuple(i) = get_num_blks(p12(i))
-
-    end do
-
-    total_num_perturbations = sum(nfields)
-
-    allocate(blks_tuple_info(2, total_num_perturbations, 3))
-    allocate(blks_tuple_triang_size(2))
-    allocate(blk_sizes(2, total_num_perturbations))
-    allocate(blk_sizes_merged(total_num_perturbations))
-
-    do i = 1, 2
-
-       blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p12(i))
-       blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                                   blks_tuple_info(i, 1:nblks_tuple(i), :))
-       blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-       blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
-
-    end do
-
-    if (p12(2)%npert == 0) then
-
-       outer_indices_size = 1
-
-    else
-
-       outer_indices_size = blks_tuple_triang_size(2)
-
-    end if
-
-    inner_indices_size = blks_tuple_triang_size(1)
-
-    allocate(prop_forcache(inner_indices_size * outer_indices_size))
-    allocate(ncarray(p12(1)%npert + p12(2)%npert))
-    allocate(ncinner(p12(1)%npert + p12(2)%npert))
-    allocate(outer_indices_a(inner_indices_size, p12(1)%npert))
-    allocate(outer_indices_b(outer_indices_size, p12(2)%npert))
-    allocate(outer_ind_a_large(p12(1)%npert + p12(2)%npert))
-    allocate(outer_ind_b_large(p12(1)%npert + p12(2)%npert))
-    allocate(which_index_is_pid1(p12(1)%npert + p12(2)%npert))
-    allocate(which_index_is_pid2(p12(1)%npert + p12(2)%npert))
-
-    prop_forcache = 0.0
-
-    ncarray = get_ncarray(p12(1)%npert + p12(2)%npert, 2, p12)
-    ncinner = nc_only(p12(1)%npert + p12(2)%npert, &
-              p12(1)%npert, 1, p12(1), ncarray)
-
-    which_index_is_pid1 = 0
-
-    do i = 1, p12(1)%npert
-
-       which_index_is_pid1(p12(1)%pid(i)) = i
-
-    end do
-
-    which_index_is_pid2 = 0
-
-    do i = 1, p12(2)%npert
-
-       which_index_is_pid2(p12(2)%pid(i)) = i
-
-    end do
-
-    call make_triangulated_indices(nblks_tuple(1), blks_tuple_info(1, &
-         1:nblks_tuple(1), :), blks_tuple_triang_size(1), outer_indices_a)
-
-    call make_triangulated_indices(nblks_tuple(2), blks_tuple_info(2, &
-         1:nblks_tuple(2), :), blks_tuple_triang_size(2), outer_indices_b)
-
-    offset = 0
-
-    ! ASSUME CLOSED SHELL
-    call QcMatInit(Y)
-    
-    ! ASSUME CLOSED SHELL
-    call QcMatInit(L)
-
-    do i = 1, size(outer_indices_a, 1)
-
-       call QcMatZero(L)
-
-       call rsp_get_matrix_lambda_2014(p_tuple_getone(p12(1), 1), d_supsize(1), &
-            deriv_structa, p12(1)%npert + p12(2)%npert, &
-            which_index_is_pid1, p12(1)%npert, outer_indices_a(i,:), D, S, L)
-
-       do j = 1, size(outer_indices_b, 1)
-
-          call QcMatZero(Y)
-
-          call rsp_get_matrix_y_2014(d_supsize(2), deriv_structb, &
-               p12(1)%npert + p12(2)%npert, which_index_is_pid2, &
-               p12(2)%npert, outer_indices_b(j,:), F, D, S, Y)
-
-
-          offset = get_triang_blks_tuple_offset(2, total_num_perturbations, nblks_tuple, &
-                   (/ p12(1)%npert, p12(2)%npert /), &
-                   blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                   (/outer_indices_a(i, :), outer_indices_b(j, :) /)) 
-          
-          call QcMatTraceAB(L, Y, tmp_tr)
-          prop_forcache(offset) = prop_forcache(offset) - tmp_tr
-
-       end do
-
-    end do
-
-    call p1_cloneto_p2(p12(1), merged_p_tuple)
-
-    if (p12(2)%npert > 0) then
-
-       merged_p_tuple = merge_p_tuple(merged_p_tuple, p12(2))
-
-    end if
-
-    merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
-
-    ! MR: NOT DOING THE FOLLOWING FOR THE MERGED PERT ASSUMES THAT 
-    ! PIDS ARE IN STANDARD ORDER? FIND OUT
-
-    k = 1
-    do i = 1, 2
-       do j = 1, p12(i)%npert
-          pids_current_contribution(k) = p12(i)%pid(j)
-          k = k + 1
-       end do
-    end do
-
-    merged_nblks = get_num_blks(merged_p_tuple)
-
-    allocate(merged_blk_info(1, merged_nblks, 3))
-
-    merged_blk_info(1, :, :) = get_blk_info(merged_nblks, merged_p_tuple)
-    blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-    merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
-    merged_triang_size = get_triangulated_size(merged_nblks, merged_blk_info)
-
-    allocate(triang_indices_pr(merged_triang_size, sum(merged_blk_info(1, :,2))))
-
-    call make_triangulated_indices(merged_nblks, merged_blk_info, & 
-         merged_triang_size, triang_indices_pr)
-
-    do i = 1, size(triang_indices_pr, 1)
-
-       pr_offset = get_triang_blks_tuple_offset(1, merged_nblks, (/merged_nblks/), &
-                   (/sum(nfields)/), &
-                   (/merged_blk_info/), blk_sizes_merged, (/merged_triang_size/), &
-                   (/triang_indices_pr(i, :) /))
-
-       do j = 1, total_num_perturbations
-
-          translated_index(j) = triang_indices_pr(i,pids_current_contribution(j))
-
-       end do
-
-       if (p12(2)%npert > 0) then
-
-          ca_offset = get_triang_blks_tuple_offset(2, &
-                      total_num_perturbations, nblks_tuple, &
-                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, &
-                      (/ translated_index(:) /))
-
-       else
-
-          ca_offset = get_triang_blks_tuple_offset(1, &
-                      total_num_perturbations, nblks_tuple(1), &
-                      nfields(1), blks_tuple_info(1, :, :), &
-                      blk_sizes(1,:), blks_tuple_triang_size(1), & 
-                      (/ translated_index(:) /))
-
-       end if
-
-       prop(pr_offset) = prop(pr_offset) + prop_forcache(ca_offset)
-
-    end do
-
-!     write(*,*) 'scfe contribution'
-!     call print_rsp_tensor_stdout_tr(1, total_num_perturbations, merged_p_tuple%pdim, &
-!     (/ (1, j = 1, (merged_p_tuple%npert - 1) ) /), merged_nblks, blk_sizes_merged, &
-!     merged_blk_info, prop_forcache)
-
-    call property_cache_add_element(cache, 2, p12,  &
-         inner_indices_size * outer_indices_size, prop_forcache)    
-
-    deallocate(deriv_structa)
-    deallocate(deriv_structb)
-    deallocate(ncarray)
-    deallocate(ncinner)
-    deallocate(outer_indices_a)
-    deallocate(outer_indices_b)
-    deallocate(outer_ind_a_large)
-    deallocate(outer_ind_b_large)
-    deallocate(which_index_is_pid1)
-    deallocate(which_index_is_pid2)
-    deallocate(nfields)
-    deallocate(nblks_tuple)
-    deallocate(blks_tuple_info)
-    deallocate(blks_tuple_triang_size)
-    deallocate(blk_sizes)
-    deallocate(blk_sizes_merged)
-    deallocate(prop_forcache)
-
-    call QcMatDst(L)
-    call QcMatDst(Y)
-
-  end subroutine
-  
-  
-  ! END NEW CODE
-  
-  
   
   recursive subroutine print_rsp_tensor(npert, lvl, pdim, prop, offset)
 

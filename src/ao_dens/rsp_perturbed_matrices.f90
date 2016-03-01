@@ -29,22 +29,12 @@ module rsp_perturbed_matrices
   public get_fds_data_index
   public frequency_zero_or_sum
   
-  public rsp_get_matrix_w_2014
-  public rsp_get_matrix_y_2014
-  public rsp_get_matrix_z_2014
-  public rsp_get_matrix_lambda_2014
-  public rsp_get_matrix_zeta_2014
   public rsp_get_matrix_w
   public rsp_get_matrix_y
   public rsp_get_matrix_z
   public rsp_get_matrix_lambda
   public rsp_get_matrix_zeta
 
-!  type rsp_cfg
-!
-!     type(matrix) :: zeromat
-!
-!  end type
   contains
 
   recursive function derivative_superstructure_getsize(pert, kn, &
@@ -53,7 +43,6 @@ module rsp_perturbed_matrices
     implicit none
 
     logical :: primed
-!    type(matrix) :: zeromat
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     integer, dimension(2) :: kn
@@ -127,7 +116,6 @@ module rsp_perturbed_matrices
     logical :: primed
     integer :: i, superstructure_size, new_element_position
     integer, dimension(2) :: kn    
-!    type(matrix) :: zeromat
     type(p_tuple) :: pert
     type(p_tuple), dimension(3) :: current_derivative_term
     type(p_tuple), dimension(superstructure_size, 3) :: derivative_structure
@@ -184,9 +172,6 @@ module rsp_perturbed_matrices
   end subroutine
 
 
-! BEGIN NEW 2015
-
-! BEGIN NEW 2014
 
 subroutine rsp_get_matrix_w(superstructure_size, &
            deriv_struct, total_num_perturbations, which_index_is_pid, &
@@ -209,13 +194,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
     do i = 1, superstructure_size
 
-!        call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(F, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!        call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-            
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
@@ -235,13 +213,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-!           call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!           call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!           call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-               
           call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
@@ -264,13 +235,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-!           call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!           call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!           call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
           call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
@@ -290,13 +254,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
-
-!           call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!           call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!           call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
                
           call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -345,22 +302,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     call QcMatInit(T)
     
     do i = 1, superstructure_size
-   
-!        write(*,*) 'Deriv struct', i
-!    
-!        do j = 1, 3
-!          write(*,*) j, ':', deriv_struct(i,j)%plab
-!          
-!        
-!        end do
-    
-
-!        call sdf_getdata_s_2014(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!        call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
             
        call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -371,32 +312,12 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
-!        Y = Y + A*B*C
 
-!        if (i == 1) then
-!        
-!          j = QcMatWrite_f(A, 'Y_F', ASCII_VIEW)
-!          j = QcMatWrite_f(B, 'Y_D', ASCII_VIEW)
-!          j = QcMatWrite_f(C, 'Y_S', ASCII_VIEW)
-! 
-!        
-!        end if
-       
+!        Y = Y + A*B*C
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Y)
-!        stop
-!        if (i == 1) then
-!        
-!          j = QcMatWrite_f(Y, 'Y_tmp_a', ASCII_VIEW)
-!          
-!        
-!        end if
-       
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
                
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -409,11 +330,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
           
        end if
 
-!        call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
        call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
@@ -423,27 +339,13 @@ subroutine rsp_get_matrix_w(superstructure_size, &
                        
 
 !        Y = Y - A * B * C
-        
        call QcMatkABC(-1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Y)
-
-!             if (i == 1) then
-!        
-!          j = QcMatWrite_f(Y, 'Y_tmp_b', ASCII_VIEW)
-!          
-!        
-!        end if
-       
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
           ! MaR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT 
           ! MATRICES TO USE HERE AND BELOW
-
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!           call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -463,11 +365,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!           call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
                
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -475,21 +372,14 @@ subroutine rsp_get_matrix_w(superstructure_size, &
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
-         
 
 !           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-          
           call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Y)
 
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
-
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!           call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
                
           call contrib_cache_getdata_outer(S, 1, (/ deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -497,10 +387,8 @@ subroutine rsp_get_matrix_w(superstructure_size, &
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
-
                
 !           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-
           call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Y)
 
@@ -539,13 +427,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     call QcMatInit(T)
 
     do i = 1, superstructure_size
-
-!        call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!        call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
             
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -555,9 +436,9 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)             
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)             
+            total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)
+            
 !        Z = Z + A*B*C
-       
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Z)
 
@@ -567,16 +448,11 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
     if (kn_skip(total_num_perturbations, merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-
-!         call sdf_getdata_s_2014(D, merged_p_tuple, get_fds_data_index(merged_p_tuple, &
-!         total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
        call contrib_cache_getdata_outer(D, 1, (/merged_p_tuple/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_p_tuple, &
         total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
             
 !         Z = Z - A
-        
         call QcMatRAXPY(-1.0d0, A, Z)
 
     end if
@@ -616,13 +492,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
 
-!        call sdf_getdata_s_2014(D, merged_A, get_fds_data_index(merged_A, &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!        call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
        call contrib_cache_getdata_outer(D, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
@@ -631,19 +500,11 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B) 
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)             
+            total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)    
+            
 !        L = L + A * B * C
-       
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, L)            
-            
-
-        
-!        call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(D, merged_B, get_fds_data_index(merged_B, &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-            
             
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -653,7 +514,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)             
 
 !        L = L - A * B * C
-       
        call QcMatkABC(-1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, L)    
 
@@ -695,22 +555,8 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
     do i = 1, superstructure_size
     
-       do j = 1, 3
-       
-!           write(*,*) 'pids', deriv_struct(i, j)%pid
-       
-       
-       end do
-
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
-
-!        call sdf_getdata_s_2014(F, merged_A, get_fds_data_index(merged_A, &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!        call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
 
        call contrib_cache_getdata_outer(F, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
@@ -722,20 +568,9 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)            
      
-     
-         
-       
-     
-
 !        Zeta = Zeta + A * B * C
-       
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Zeta)   
-
-!        call sdf_getdata_s_2014(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(S, merged_B, get_fds_data_index(merged_B, &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
        
        call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -744,8 +579,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_B, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)       
             
-
-
 !        Zeta = Zeta - A * B * C
 
        call QcMatkABC(-1.0d0, A, B, C, T)
@@ -753,9 +586,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
                
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -763,7 +593,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
 !           Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
 !                            frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
-
           call QcMatcABC(((1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
                            frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)   
@@ -771,46 +600,27 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
 
 !           Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-          
           call QcMatcABC(((1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)   
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
-!           call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)                 
 
 !           Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-          
           call QcMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)  
 
        end if
 
-            
-
-       
-!        call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-!        call sdf_getdata_s_2014(F, merged_B, get_fds_data_index(merged_B, &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-     
        call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
@@ -822,14 +632,8 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
             
 !        Zeta = Zeta +  A * B * C
-       
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Zeta)  
-
-!        call sdf_getdata_s_2014(S, merged_A, get_fds_data_index(merged_A, &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-!        call sdf_getdata_s_2014(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!             total_num_perturbations, which_index_is_pid, indices_len, ind), C)
                  
        call contrib_cache_getdata_outer(S, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
@@ -839,16 +643,11 @@ subroutine rsp_get_matrix_w(superstructure_size, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
 !        Zeta = Zeta - A * B * C
-       
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(-1.0d0, T, Zeta)  
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-!           call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-               
                     
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
@@ -856,7 +655,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
 !           Zeta = Zeta - ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
 !                         frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
-                        
           call QcMatcABC(((-1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
                         frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)  
@@ -864,30 +662,22 @@ subroutine rsp_get_matrix_w(superstructure_size, &
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
-!           call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-               
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
 !           Zeta = Zeta - ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-          
           call QcMatcABC(((-1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta)  
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-!           call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-!                total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
 !           Zeta = Zeta - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-
           call QcMatcABC(-1.0d0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, Zeta) 
 
@@ -898,10 +688,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
          
     end do
 
-!     write(*,*) '1 pid', deriv_struct(1,1)%pid
-!     write(*,*) '2 pid', deriv_struct(1,2)%pid
-!     write(*,*) '3 pid', deriv_struct(1,3)%pid
-    
     merged_p_tuple = merge_p_tuple(p_tuple_a, merge_p_tuple(deriv_struct(1,1), &
                      merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3))))
 
@@ -910,20 +696,11 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     if (kn_skip(merged_p_tuple%npert, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-!        A = zeromat
-!        call mat_ensure_alloc(A)
-
-!        call sdf_getdata_s_2014(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, & 
-!        total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       
        call contrib_cache_getdata_outer(F, 1, (/merged_p_tuple/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_p_tuple, & 
        total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
             
-
-
 !        Zeta = Zeta - A
-       
        call QcMatRAXPY(-1.0d0, A, Zeta)         
 
     end if
@@ -939,536 +716,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
   end subroutine
 
 
-
-
-
-
-! END NEW 2015
-  
-  
-  
-  
-  
-  
-! BEGIN NEW 2014
-
-subroutine rsp_get_matrix_w_2014(superstructure_size, &
-           deriv_struct, total_num_perturbations, which_index_is_pid, &
-           indices_len, ind, F, D, S, W)
-
-    implicit none
-
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
-    integer, dimension(total_num_perturbations) :: which_index_is_pid
-    integer, dimension(indices_len) :: ind
-    type(sdf_2014) :: F, D, S
-    type(QcMat) :: W, A, B, C, T
-
-    call QcMatInit(A)
-    call QcMatInit(B)
-    call QcMatInit(C)
-
-    call QcMatInit(T)
-
-    do i = 1, superstructure_size
-
-       call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(F, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!      W = W + A * B * C
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, W)
-            
-
-
-       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-          call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-          call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!            W = W + ((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) - &
-!                                    frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
-               
-          call QcMatcABC(((1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) - &
-                        frequency_zero_or_sum(deriv_struct(i,3))), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, W)
-               
-         
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-          call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-          call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           W = W + ((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-               
-          call QcMatcABC(((1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, W)
-               
-
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
-
-          call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-          call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           W = W + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3))  * A * B * C
-
-          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, W)   
-          
-       end if
-
-    end do
-
-    call QcMatDst(A)
-    call QcMatDst(B)
-    call QcMatDst(C)
-    call QcMatDst(T)
-
-  end subroutine
-
-
-  subroutine rsp_get_matrix_y_2014(superstructure_size, deriv_struct, &
-           total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Y)
-
-    implicit none
-
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
-    integer, dimension(total_num_perturbations) :: which_index_is_pid
-    integer, dimension(indices_len) :: ind
-    type(sdf_2014) :: F, D, S
-    type(QcMat) :: Y, A, B, C, T
-
-    call QcMatInit(A)
-    call QcMatInit(B)
-    call QcMatInit(C)
-
-    call QcMatInit(T)
-    
-    do i = 1, superstructure_size
-
-       call sdf_getdata_s_2014(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Y = Y + A*B*C
-       
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Y)
-
-       if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
-!           Y = Y - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-
-          call QcMatcABC(-1.0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
-          
-       end if
-
-       call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Y = Y - A * B * C
-        
-       call QcMatkABC(-1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Y)
-
-
-       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-          ! MaR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT 
-          ! MATRICES TO USE HERE AND BELOW
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-               
-!           Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
-!                                     frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
-                                    
-          call QcMatcABC(((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
-                                    frequency_zero_or_sum(deriv_struct(i,3))), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
-
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-             (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-          
-          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
-
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-          call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-
-          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
-
-       end if
-
-    end do
-
-    call QcMatDst(A)
-    call QcMatDst(B)
-    call QcMatDst(C)
-    call QcMatDst(T)
-
-
-  end subroutine
-
-
-  subroutine rsp_get_matrix_z_2014(superstructure_size, deriv_struct, kn, &
-           total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Z)
-
-    implicit none
-
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
-    type(p_tuple) :: merged_p_tuple
-    integer, dimension(2) :: kn
-    integer, dimension(total_num_perturbations) :: which_index_is_pid
-    integer, dimension(indices_len) :: ind
-    type(sdf_2014) :: F, D, S
-    type(QcMat) :: Z, A, B, C, T
-
-    call QcMatInit(A)
-    call QcMatInit(B)
-    call QcMatInit(C)
-
-    call QcMatInit(T)
-
-    do i = 1, superstructure_size
-
-       call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Z = Z + A*B*C
-       
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Z)
-
-    end do
-
-    merged_p_tuple = merge_p_tuple(deriv_struct(1,1), merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3)))
-
-    if (kn_skip(total_num_perturbations, merged_p_tuple%pid, kn) .eqv. .FALSE.) then
-
-
-        call sdf_getdata_s_2014(D, merged_p_tuple, get_fds_data_index(merged_p_tuple, &
-        total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
-!         Z = Z - A
-        
-        call QcMatRAXPY(-1.0d0, A, Z)
-
-    end if
-
-    call p_tuple_deallocate(merged_p_tuple)
-
-    call QcMatDst(A)
-    call QcMatDst(B)
-    call QcMatDst(C)
-    call QcMatDst(T)
-
-
-  end subroutine
-
-
-  subroutine rsp_get_matrix_lambda_2014(p_tuple_a, superstructure_size, deriv_struct, &
-           total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L)
-
-    implicit none
-
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(p_tuple) :: p_tuple_a, merged_A, merged_B
-    type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
-    integer, dimension(total_num_perturbations) :: which_index_is_pid
-    integer, dimension(indices_len) :: ind
-    type(sdf_2014) :: D, S
-    type(QcMat) :: L, A, B, C, T
-
-    call QcMatInit(A)
-    call QcMatInit(B)
-    call QcMatInit(C)
-
-    call QcMatInit(T)
-
-    do i = 1, superstructure_size
-
-       merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
-       merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
-
-       call sdf_getdata_s_2014(D, merged_A, get_fds_data_index(merged_A, &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(S, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s_2014(D, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-       
-!        L = L + A * B * C
-       
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, L)            
-            
-
-        
-       call sdf_getdata_s_2014(D, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(D, merged_B, get_fds_data_index(merged_B, &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        L = L - A * B * C
-       
-       call QcMatkABC(-1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, L)    
-
-       call p_tuple_deallocate(merged_A)
-       call p_tuple_deallocate(merged_B)
-       
-    end do
-    
-    
-    call QcMatDst(A)
-    call QcMatDst(B)
-    call QcMatDst(C)
-    call QcMatDst(T)
-
-
-  end subroutine
-
-
-  subroutine rsp_get_matrix_zeta_2014(p_tuple_a, kn, superstructure_size, deriv_struct, &
-           total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Zeta)
-
-    implicit none
-
-    integer :: i, total_num_perturbations, superstructure_size, indices_len
-    type(p_tuple) :: p_tuple_a, merged_p_tuple, merged_A, merged_B
-    type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
-    integer, dimension(2) :: kn
-    integer, dimension(total_num_perturbations) :: which_index_is_pid
-    integer, dimension(indices_len) :: ind
-    type(sdf_2014) :: F, D, S
-    type(QcMat) :: Zeta, A, B, C, T
-
-    call QcMatInit(A)
-    call QcMatInit(B)
-    call QcMatInit(C)
-
-    call QcMatInit(T)
-
-    do i = 1, superstructure_size
-
-       merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
-       merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
-
-       call sdf_getdata_s_2014(F, merged_A, get_fds_data_index(merged_A, &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Zeta = Zeta + A * B * C
-       
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Zeta)   
-
-       call sdf_getdata_s_2014(F, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(S, merged_B, get_fds_data_index(merged_B, &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Zeta = Zeta - A * B * C
-
-       call QcMatkABC(-1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Zeta)   
-
-       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-           .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
-!           Zeta = Zeta + ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
-!                            frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
-
-          call QcMatcABC(((1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,1)) + &
-                           frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Zeta)   
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
-!           Zeta = Zeta + ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-          
-          call QcMatcABC(((1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Zeta)   
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
-!           Zeta = Zeta + frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-          
-          call QcMatcABC(frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Zeta)  
-
-       end if
-
-       call sdf_getdata_s_2014(S, deriv_struct(i,1), get_fds_data_index(deriv_struct(i,1), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(D, deriv_struct(i,2), get_fds_data_index(deriv_struct(i,2), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), B)
-       call sdf_getdata_s_2014(F, merged_B, get_fds_data_index(merged_B, &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Zeta = Zeta +  A * B * C
-       
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Zeta)  
-
-       call sdf_getdata_s_2014(S, merged_A, get_fds_data_index(merged_A, &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-       call sdf_getdata_s_2014(F, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-            total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!        Zeta = Zeta - A * B * C
-       
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(-1.0d0, T, Zeta)  
-
-       if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           Zeta = Zeta - ( ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
-!                         frequency_zero_or_sum(deriv_struct(i,2)) ) * A * B * C
-                        
-          call QcMatcABC(((-1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,3)) + &
-                        frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Zeta)  
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           Zeta = Zeta - ((1.0)/(2.0))*frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-          
-          call QcMatcABC(((-1.0d0)/(2.0d0))*frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Zeta)  
-
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
-
-          call sdf_getdata_s_2014(S, deriv_struct(i,3), get_fds_data_index(deriv_struct(i,3), &
-               total_num_perturbations, which_index_is_pid, indices_len, ind), C)
-
-!           Zeta = Zeta - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
-
-          call QcMatcABC(-1.0d0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Zeta) 
-
-       end if
-
-       call p_tuple_deallocate(merged_A)
-       call p_tuple_deallocate(merged_B)
-         
-    end do
-
-    merged_p_tuple = merge_p_tuple(p_tuple_a, merge_p_tuple(deriv_struct(1,1), &
-                     merge_p_tuple(deriv_struct(1,2), deriv_struct(1,3))))
-
-    if (kn_skip(merged_p_tuple%npert, &
-        merged_p_tuple%pid, kn) .eqv. .FALSE.) then
-
-!        A = zeromat
-!        call mat_ensure_alloc(A)
-
-       call sdf_getdata_s_2014(F, merged_p_tuple, get_fds_data_index(merged_p_tuple, & 
-       total_num_perturbations, which_index_is_pid, indices_len, ind), A)
-
-!        Zeta = Zeta - A
-       
-       call QcMatRAXPY(-1.0d0, A, Zeta)         
-
-    end if
-
-    call p_tuple_deallocate(merged_p_tuple)
-
-    call QcMatDst(A)
-    call QcMatDst(B)
-    call QcMatDst(C)
-    call QcMatDst(T)
-
-
-  end subroutine
-
-
-
-! END NEW 2014
-  
-  
   function get_fds_data_index(pert_tuple, total_num_perturbations, which_index_is_pid, &
                               indices_len, indices)
 
