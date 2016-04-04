@@ -498,9 +498,16 @@ module rsp_indices_and_addressing
     integer, dimension(ntuple, total_num_perturbations, 3) :: blks_info
     integer, dimension(ntuple, total_num_perturbations) :: blk_sizes
     integer, dimension(sum(nfields)) :: inds
-
+    
     offset = 0
     k = 1
+    
+!     write(*,*) 'blks tuple offset, ntuple', ntuple
+!     write(*,*) 'tot, nblks, nfields', total_num_perturbations, nblks_tuple, nfields
+!     write(*,*) 'blks info', blks_info
+!     write(*,*) 'blk sizes', blk_sizes
+!     write(*,*) 'blks sizes', blks_sizes
+!     write(*,*) 'inds', inds
 
     do i = 1, ntuple - 1
 
@@ -512,11 +519,15 @@ module rsp_indices_and_addressing
        k = k + nfields(i)
 
     end do
+    
+!     write(*,*) 'offset is now', offset
 
     offset = offset + get_triang_blks_offset(nblks_tuple(ntuple), nfields(ntuple), &
                       blks_info(ntuple,1:nblks_tuple(ntuple),:), &
                       blk_sizes(ntuple, 1:nblks_tuple(ntuple)),  &
                       inds(k:k + nfields(ntuple) - 1))
+                      
+!     write(*,*) 'got offset', offset
 
   end function
 

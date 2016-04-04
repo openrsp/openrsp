@@ -282,8 +282,8 @@ module rsp_perturbed_sdf
        else
        
 !           write(*,*) 'about to call rsp_sdf_calculate'
-          write(*,*) 'cache_next%num_outer', cache_next%num_outer
-          write(*,*) 'size_i', size_i
+!           write(*,*) 'cache_next%num_outer', cache_next%num_outer
+!           write(*,*) 'size_i', size_i
        
           ! Calculate all perturbed S, D, F at this order
           call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
@@ -439,7 +439,7 @@ module rsp_perturbed_sdf
     ! If recursion is done, proceed to cache manipulation stage
     else
 
-!        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
+       p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
        density_order_skip = .FALSE.
 
        do i = 2, num_p_tuples
@@ -492,7 +492,8 @@ module rsp_perturbed_sdf
                    end if
                 end do
                 
-                call contrib_cache_add_element(fock_lowerorder_cache, num_p_tuples, p_tuples)
+                call contrib_cache_add_element(fock_lowerorder_cache, num_p_tuples, &
+                     p_tuples_standardorder(num_p_tuples, p_tuples))
                 
              else
              
@@ -567,11 +568,11 @@ module rsp_perturbed_sdf
    
        if (outer_next%num_dmat == 0) then
        
-          write(*,*) 'All inner contribution', total_outer_size_1
+          write(*,*) 'All inner contribution'
  
        else
        
-          write(*,*) 'Outer contribution:', total_outer_size_1
+          write(*,*) 'Outer contribution:'
           
        end if
        

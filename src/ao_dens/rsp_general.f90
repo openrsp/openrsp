@@ -636,6 +636,8 @@ module rsp_general
        do i = 1, n_props
     
           do j = 1, n_freq_cfgs(i)
+          
+             write(*,*) 'This kn rule', kn_rule(k,:)
        
              write(id_outp,*) ' '
              write(id_outp,*) 'Identifying two-factor contributions'
@@ -833,13 +835,7 @@ module rsp_general
   end subroutine
    
 
-
-! BEGIN NEW 2014
-
-
-
-
-  recursive subroutine rsp_energy_recurse(pert, total_num_perturbations, kn, num_p_tuples, &
+   recursive subroutine rsp_energy_recurse(pert, total_num_perturbations, kn, num_p_tuples, &
                                   p_tuples, density_order, D, get_nucpot, get_1el_exp, &
                                   get_t_exp, get_2el_exp, dryrun, cache, p_size, prop)
 
@@ -926,6 +922,8 @@ module rsp_general
 
     else
 
+       p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
+    
        e_knskip = .FALSE.
 
        do i = 1, num_p_tuples
@@ -957,18 +955,17 @@ module rsp_general
                 
                 do i = 1, num_p_tuples
 
-                    if (i == 1) then
+                   if (i == 1) then
     
-                       write(*,*) 'E', p_tuples(i)%pid
+                      write(*,*) 'E', p_tuples(i)%pid
     
-                    else 
+                   else 
     
-                       write(*,*) 'D', p_tuples(i)%pid
+                      write(*,*) 'D', p_tuples(i)%pid
                        
-                    end if
+                   end if
     
-   
-                    end do
+                end do
 
                     write(*,*) ''
              
@@ -983,7 +980,26 @@ module rsp_general
 
              if (dryrun) then
              
-                call contrib_cache_add_element(cache, num_p_tuples, p_tuples)
+                write(*,*) 'Adding cache element'
+!                 write(*,*) 'num p tuples when adding', num_p_tuples
+             
+                do i = 1, num_p_tuples
+
+                   if (i == 1) then
+    
+                      write(*,*) 'E', p_tuples(i)%pid
+    
+                   else 
+    
+                      write(*,*) 'D', p_tuples(i)%pid
+                       
+                   end if
+    
+                end do
+             
+             
+                call contrib_cache_add_element(cache, num_p_tuples, &
+                     p_tuples_standardorder(num_p_tuples, p_tuples))
 
              end if
 
@@ -1014,7 +1030,7 @@ module rsp_general
     type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, LHS_dmat_2, RHS_dmat_2
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
     integer, allocatable, dimension(:) :: pert_ext
-    integer, allocatable, dimension(:,:) :: outer_contract_sizes_2
+    integer, allocatable, dimension(:,:) :: outer_contract_sizes_2, blk_sizes
     complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2, data_tmp
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     
@@ -1024,7 +1040,7 @@ module rsp_general
     
     outer_next => cache%contribs_outer
     
-    write(*,*) 'num outer', cache%num_outer
+    write(*,*) 'Number of outer contributions: ', cache%num_outer
 
     
     allocate(outer_contract_sizes_1(cache%num_outer))
@@ -1049,6 +1065,17 @@ module rsp_general
     k = 1
     
     do while (traverse_end .EQV. .FALSE.)
+  
+       write(*,*) 'Outer contribution:'
+    
+       do i = 1, outer_next%num_dmat
+          
+          write(*,*) 'D', outer_next%p_tuples(i)%pid
+       
+       end do
+       
+       write(*,*) ' '
+  
   
        if (outer_next%num_dmat == 0) then
 
@@ -1080,13 +1107,7 @@ module rsp_general
        
        end if
    
-       write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-    
-       do i = 1, outer_next%num_dmat
-          
-          write(*,*) 'D', outer_next%p_tuples(i)%pid
-       
-       end do
+
     
        
     
@@ -1105,6 +1126,9 @@ module rsp_general
     ! Make collapsed contraction sizes array for 1-el call
  
     allocate(outer_contract_sizes_1_coll(num_1))
+    
+!     write(*,*) 'num_1', num_1
+!     write(*,*) 'outer contract sizes 1', outer_contract_sizes_1
     
     k = 1 
      do i = 1, cache%num_outer
@@ -1347,6 +1371,10 @@ module rsp_general
              sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
                    
              allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+             allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+             
+             blks_tuple_info = 0
+             blk_sizes = 0
                 
              do j = 1, outer_next%num_dmat + 1
                 
@@ -1357,6 +1385,8 @@ module rsp_general
                       blks_tuple_info(j, m, :) = cache%blk_info(m, :)
                       
                    end do
+                   
+                   blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
                 
                 
                 else
@@ -1371,6 +1401,9 @@ module rsp_general
                 
                    end do
                    
+                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
+                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                   
                 end if
                 
              end do
@@ -1378,13 +1411,18 @@ module rsp_general
              do i = 1, size(outer_next%indices, 1)
           
                 do j = 1, size(cache%indices, 1)
+                
+!                    write(*,*) 'getting size', blk_sizes
+!                    write(*,*) 'cache blk sizes', cache%blk_sizes
+!                    write(*,*) 'outer blk sizes', (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)
+                   
              
                    offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
                    cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
                    (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
                    (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
                    blks_tuple_info, &
-                   (/cache%blk_sizes, (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)/), &
+                   blk_sizes, &
                    (/cache%blks_triang_size, &
                    (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
                    (/cache%indices(j, :), outer_next%indices(i, :)/))
@@ -1396,6 +1434,7 @@ module rsp_general
           
              end do
              
+             deallocate(blk_sizes)
              deallocate(blks_tuple_info)
           
           else
@@ -1511,6 +1550,8 @@ module rsp_general
                 write(*,*) 'Identified Pulay n contribution:'
                 write(*,*) 'S', p12(1)%pid
                 write(*,*) 'W', p12(2)%pid
+                
+!                 write(*,*) 'kn rule for cache creation', kn
                 
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
@@ -1628,6 +1669,7 @@ module rsp_general
     integer, dimension(0) :: nof
     integer, allocatable, dimension(:) :: o_supsize, o_supsize_prime, o_size
     integer, allocatable, dimension(:) :: which_index_is_pid
+    integer, allocatable, dimension(:,:) :: blk_sizes
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info
     complex(8), allocatable, dimension(:) :: contrib_pulay
     character(30) :: mat_str, fmt_str
@@ -1660,7 +1702,7 @@ module rsp_general
     outer_next => cache%contribs_outer
 
     
-    write(*,*) 'num outer', cache%num_outer
+!     write(*,*) 'num outer', cache%num_outer
 
     i_supsize = 3**cache%p_inner%npert
     
@@ -1734,9 +1776,11 @@ module rsp_general
     
        do i = 1, outer_next%num_dmat
           
-          write(*,*) 'B', outer_next%p_tuples(i)%plab
+          write(*,*) 'B', outer_next%p_tuples(i)%pid
        
        end do
+    
+       write(*,*) ' '
     
        ! Here and elsewhere: k in kn rule does not matter as long as it 
        ! is > n; it will always > n so used like this
@@ -1853,7 +1897,7 @@ module rsp_general
     
     allocate(W(size_pulay_n + size_lagrange/3))
     
-    do i = 1, size(w)
+    do i = 1, size(W)
     
        call QcMatInit(W(i), D_unp)
        call QcMatZero(W(i))
@@ -1866,13 +1910,13 @@ module rsp_general
     
     do while (traverse_end .EQV. .FALSE.)
   
-       write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-    
-       do i = 1, outer_next%num_dmat
-          
-          write(*,*) 'B', outer_next%p_tuples(i)%pid
-       
-       end do
+!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+!     
+!        do i = 1, outer_next%num_dmat
+!           
+!           write(*,*) 'B', outer_next%p_tuples(i)%pid
+!        
+!        end do
     
           allocate(d_struct_o(o_supsize(k), 3))
           allocate(d_struct_o_prime(o_supsize_prime(k), 3))
@@ -1948,6 +1992,16 @@ module rsp_general
              select case (outer_next%contrib_type)
              
              case (1)
+             
+!                 write(*,*) 'supsize', o_supsize(k)
+!                 write(*,*) 'size outer ind', size(outer_next%indices(j,:))
+!                 write(*,*) 'outer_next%indices(j,:)', outer_next%indices(j,:)
+!                 write(*,*) 'inner npert', cache%p_inner%npert
+!                 write(*,*) 'outer npert', outer_next%p_tuples(1)%npert
+!                 write(*,*) 'which ind is pid', which_index_is_pid(1:cache%p_inner%npert + &
+!                      outer_next%p_tuples(1)%npert)
+!                 write(*,*) 'o ctr', o_ctr
+!                 write(*,*) 'size of W', size(W)
              
                 call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
                      outer_next%p_tuples(1)%npert, &
@@ -2029,6 +2083,16 @@ module rsp_general
     
     do while (traverse_end .EQV. .FALSE.)
 
+!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+!     
+!        do i = 1, outer_next%num_dmat
+!           
+!           write(*,*) 'B', outer_next%p_tuples(i)%pid
+!        
+!        end do
+    
+    
+    
        c_ctr = 0
     
        if (outer_next%p_tuples(1)%npert ==0) then
@@ -2047,23 +2111,45 @@ module rsp_general
        sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
                    
        allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+       allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
                
        do j = 1, outer_next%num_dmat + 1
+          
           if (j == 1) then
+             
              do m = 1, cache%nblks
+                
                 blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+             
              end do
+             
+             blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
+          
           else
+             
              if (size(outer_next%p_tuples) > 0) then
+                
                 if (outer_next%p_tuples(1)%npert > 0) then
+                   
                    do m = 1, outer_next%nblks_tuple(j - 1)
+                      
                       do p = 1, 3
+                         
                          blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                      
                       end do
+                   
                    end do
+                   
+                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
+                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                
                 end if
+             
              end if
+          
           end if
+       
        end do
        
         
@@ -2080,7 +2166,7 @@ module rsp_general
                       (/cache%nblks, outer_next%nblks_tuple(1)/), &
                       (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
                       blks_tuple_info, &
-                      (/cache%blk_sizes, outer_next%blk_sizes(1,:)/), &
+                      blk_sizes, &
                       (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
                       (/cache%indices(j, :), outer_next%indices(i, :)/))
                       
@@ -2093,8 +2179,6 @@ module rsp_general
                 end if
                 
                 if (outer_next%contrib_type == 1) then
-                
-                   
                 
                    outer_next%data_scal(offset) = contrib_pulay(j + &
                    size(cache%indices, 1) * (i - 1) + o_ctr)
@@ -2152,7 +2236,7 @@ module rsp_general
           end do
           
           sstr_incr = 0
-      
+          
           if(outer_next%p_tuples(1)%npert ==0) then
           
              call derivative_superstructure(get_emptypert(), &
@@ -2169,10 +2253,7 @@ module rsp_general
             
           end if
       
-          
-          
-         
-          
+
           do i = 1, o_triang_size
 
              call QcMatZero(Y)
@@ -2201,7 +2282,7 @@ module rsp_general
                       (/cache%nblks, outer_next%nblks_tuple(1)/), &
                       (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
                       blks_tuple_info, &
-                      (/cache%blk_sizes, outer_next%blk_sizes(1,:)/), &
+                      blk_sizes, &
                       (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
                       (/cache%indices(j, :), outer_next%indices(i, :)/))
                       
@@ -2212,6 +2293,8 @@ module rsp_general
                    end if
                    
                 end if
+                
+!                 write(*,*) 'offset, c_snap', offset, c_snap
                 
                 call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
                 call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
@@ -2233,6 +2316,7 @@ module rsp_general
           
        end if
        
+       deallocate(blk_sizes)
        deallocate(blks_tuple_info)
        
        if (outer_next%last) then

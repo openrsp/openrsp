@@ -191,7 +191,9 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     call QcMatInit(C)
 
     call QcMatInit(T)
-
+    
+!     write(*,*) 'Get matrix W was called'
+    
     do i = 1, superstructure_size
 
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &

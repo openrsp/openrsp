@@ -35,9 +35,9 @@ module rsp_property_caching
  public prog_incr
  public prog_init
   
-  ! Define contrib cache datatype
+ ! Define contrib cache datatype
 
-  ! NOTE FEB 2016: SET DEFAULT VALUES FOR ALL NON-ALLOCATE ATTRIBUTES OF CACHE TYPES
+ ! NOTE FEB 2016: SET DEFAULT VALUES FOR ALL NON-ALLOCATE ATTRIBUTES OF CACHE TYPES
 
   
  type contrib_cache_outer
@@ -1024,6 +1024,14 @@ module rsp_property_caching
       do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
 
          next_outer => contrib_cache_outer_next_element(next_outer)
+         
+!          write(*,*) 'Next outer in cycle outer'
+         
+!          do i = 1, size(next_outer%p_tuples)
+!          
+!             write(*,*) 'pid', next_outer%p_tuples(i)%pid
+!          
+!          end do
 
          if (num_p_tuples > 1) then
          
@@ -1036,7 +1044,10 @@ module rsp_property_caching
                                      (/get_emptypert()/))
          
          end if
-                                  
+
+!          write(*,*) 'Found before n rule comparison?', found
+!          write(*,*) 'n rule requested, present', n_rule, next_outer%n_rule
+         
          if (present(n_rule)) then
       
             found = found .AND. (n_rule == next_outer%n_rule)
@@ -1278,23 +1289,28 @@ module rsp_property_caching
         allocate(new_element%blks_tuple_triang_size(num_dmat))
      
      
-     new_element%nblks_tuple = (/(get_num_blks(outer_p_tuples(i)), i = 1, num_dmat)/)
+        new_element%nblks_tuple = (/(get_num_blks(outer_p_tuples(i)), i = 1, num_dmat)/)
    
-     do i = 1, num_dmat
+        do i = 1, num_dmat
      
-        new_element%blks_tuple_info(i, :, :) = get_blk_info(new_element%nblks_tuple(i), outer_p_tuples(i))
-        new_element%blk_sizes(i, 1:new_element%nblks_tuple(i)) = &
-        get_triangular_sizes(new_element%nblks_tuple(i), &
-        new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),2), &
-        new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),3))
-        new_element%blks_tuple_triang_size(i) = get_triangulated_size(new_element%nblks_tuple(i), &
-                                   new_element%blks_tuple_info(i, 1:new_element%nblks_tuple(i), :))
+           new_element%blks_tuple_info(i, :, :) = get_blk_info(new_element%nblks_tuple(i), outer_p_tuples(i))
+           new_element%blk_sizes(i, 1:new_element%nblks_tuple(i)) = &
+           get_triangular_sizes(new_element%nblks_tuple(i), &
+           new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),2), &
+           new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),3))
+           new_element%blks_tuple_triang_size(i) = get_triangulated_size(new_element%nblks_tuple(i), &
+                                      new_element%blks_tuple_info(i, 1:new_element%nblks_tuple(i), :))
                                    
-     end do
+        end do
      
-     allocate(new_element%indices(product(new_element%blks_tuple_triang_size), total_npert))
-     call make_triangulated_tuples_indices(num_dmat, total_npert, new_element%nblks_tuple, &
-          new_element%blks_tuple_info, new_element%blks_tuple_triang_size, new_element%indices)
+        allocate(new_element%indices(product(new_element%blks_tuple_triang_size), total_npert))
+        call make_triangulated_tuples_indices(num_dmat, total_npert, new_element%nblks_tuple, &
+             new_element%blks_tuple_info, new_element%blks_tuple_triang_size, new_element%indices)
+     
+     
+     else
+     
+!         write(*,*) 'no external perts'
      
      end if
      
@@ -1302,19 +1318,26 @@ module rsp_property_caching
    
    else
    
-     allocate(new_element%p_tuples(1)) 
+      allocate(new_element%p_tuples(1)) 
    
       new_element%p_tuples%npert = 0
    
-   allocate(new_element%p_tuples(1)%pdim(1))
-   allocate(new_element%p_tuples(1)%plab(1))
-   allocate(new_element%p_tuples(1)%pid(1))
-   allocate(new_element%p_tuples(1)%freq(1))
-   
-   new_element%p_tuples(1)%pdim = (/0/)
-   new_element%p_tuples(1)%plab = (/'NUTN'/)
-   new_element%p_tuples(1)%pid = (/0/)
-   new_element%p_tuples(1)%freq = (/0.0/)
+      allocate(new_element%p_tuples(1)%pdim(1))
+      allocate(new_element%p_tuples(1)%plab(1))
+      allocate(new_element%p_tuples(1)%pid(1))
+      allocate(new_element%p_tuples(1)%freq(1))
+      
+      new_element%p_tuples(1)%pdim = (/0/)
+      new_element%p_tuples(1)%plab = (/'NUTN'/)
+      new_element%p_tuples(1)%pid = (/0/)
+      new_element%p_tuples(1)%freq = (/0.0/)
+      
+      ! MaR: Creating indices for unperturbed entry: Return here if problems arise
+      
+      allocate(new_element%indices(1,1))
+      new_element%indices(1,1) = 1 
+     
+      
    
    end if
    
@@ -1341,6 +1364,8 @@ module rsp_property_caching
    type(Qcmat), optional, dimension(*) :: data_mat
    complex(8), optional, dimension(*) :: data_scal
 
+!    write(*,*) 'Outer add element'
+   
    if (present(n_rule)) then
    
       already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples, n_rule=n_rule)
@@ -1350,6 +1375,8 @@ module rsp_property_caching
       already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)
    
    end if
+   
+!    write(*,*) 'Already?', already
    
    if (already) then
    
@@ -1393,6 +1420,10 @@ module rsp_property_caching
    
    else
    
+!       write(*,*) 'Not already, unperturbed?', unperturbed
+      
+!       write(*,*) 'n rule present?', present(n_rule)
+   
       next_element => curr_element
       allocate(new_element)
       call contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
@@ -1426,6 +1457,8 @@ module rsp_property_caching
       
       if (present(n_rule)) then
       
+!          write(*,*) 'Making n_rule', n_rule
+      
          new_element%n_rule = n_rule
       
       end if
@@ -1442,6 +1475,7 @@ module rsp_property_caching
 
    implicit none
 
+   logical :: empty_outer
    integer :: num_p_tuples, i
    integer, optional :: n_rule
    type(contrib_cache), target :: current_element
@@ -1454,6 +1488,9 @@ module rsp_property_caching
    ! If cache element for inner perturbations already exists, just add outer
    if (contrib_cache_already_inner(current_element, p_tuples(1))) then
    
+   
+!       write(*,*) 'Already inner'
+   
       next_element => current_element
    
       ! Skip to cache element for this inner
@@ -1464,35 +1501,55 @@ module rsp_property_caching
       end do
       
       ! NOTE: AND CONDITION MAY ADD WRONG KIND OF CACHE ELEMENT, REVISIT IF ERROR
-      if (num_p_tuples > 1 .AND. p_tuples(2)%npert > 0) then
+      
+!       write(*,*) 'num p tuples in cc add elem', num_p_tuples
+      
+      empty_outer = .TRUE.
+      
+      if (num_p_tuples > 1) then
      
-         next_element%num_outer = next_element%num_outer + 1
+         if (p_tuples(2)%npert > 0) then
+         
+!             write(*,*) 'Not empty outer'
+         
+            empty_outer = .FALSE.
+            next_element%num_outer = next_element%num_outer + 1
      
-         if (present(n_rule)) then
+            if (present(n_rule)) then
+               
+!                write(*,*) 'n rule present and is', n_rule
          
-            call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
-                 num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule)
+               call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+                    num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule=n_rule)
          
-         else
+            else
          
-            call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
-                 num_p_tuples - 1, p_tuples(2:num_p_tuples))
+               call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+                    num_p_tuples - 1, p_tuples(2:num_p_tuples))
+         
+            end if
          
          end if
+         
+      end if
             
-      else
+      if (empty_outer) then
      
          next_element%num_outer = next_element%num_outer + 1
 
-          if (present(n_rule)) then
+         call empty_p_tuple(emptypert)
          
-             call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/), n_rule)
+         ! MaR: WARNING: CHANGED num_p_tuples ARGUMENT TO 0 BELOW; MAY PRODUCE ERRORS ELSEWHERE
          
-          else
-             ! call empty_p_tuple(emptypert)
-             call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/))
+         if (present(n_rule)) then
          
-          end if
+            call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 0, (/emptypert/), n_rule)
+         
+         else
+            
+            call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 0, (/emptypert/))
+         
+         end if
        
       end if
 
@@ -1765,6 +1822,17 @@ module rsp_property_caching
       passedlast = 0
       found = .FALSE.
 
+!    write(*,*) 'Outer retrieval, coming from inner?', from_inner
+   
+   
+!    write(*,*) 'p tuples srch ord'
+   
+!    do i = 1, num_p_tuples - inner_rm
+!    
+!       write(*,*) 'D', p_tuples_srch_ord(i)%pid
+!    
+!    end do
+      
    do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
 
    
@@ -1781,6 +1849,16 @@ module rsp_property_caching
             
          end if
       
+      
+!       write(*,*) 'Traversing...'
+      
+!       do i = 1, size(next_element_outer%p_tuples)
+!       
+!          write(*,*) 'D', next_element_outer%p_tuples(i)%pid
+!                        
+!       end do
+      
+!       write(*,*) ' '
       
       if (size(next_element_outer%p_tuples) == size(p_tuples_srch_ord)) then
          found = p_tuples_compare(num_p_tuples - inner_rm, next_element_outer%p_tuples, &
@@ -1804,6 +1882,16 @@ module rsp_property_caching
    
       write(*,*) 'ERROR: Element not found'
       stop
+      
+   else
+   
+!       write(*,*) 'FOUND:'
+!       
+!       do i = 1, size(next_element_outer%p_tuples)
+!       
+!          write(*,*) 'D', next_element_outer%p_tuples(i)%pid
+!                        
+!       end do
    
    end if
    
