@@ -901,12 +901,20 @@ end if
     p_tuples_compare = .FALSE.
     elem_by_elem_isequivalent = .TRUE.
 
+!     write(*,*) 'Comparing', num_p_tuples, 'tuples'
+    
     do i = 1, num_p_tuples
 
+!        write(*,*) 'Tuple', i
+    
        elem_by_elem_isequivalent = elem_by_elem_isequivalent .AND. &
                                    p_tuple_compare(p_tuple_standardorder(p_tuples(i)), &
                                    p_tuple_standardorder(p_tuples_st_order(i)))
 
+
+!        write(*,*) 'Equivalency:', elem_by_elem_isequivalent
+       
+                                   
     end do
 
     if (elem_by_elem_isequivalent .eqv. .TRUE.) then
@@ -981,7 +989,17 @@ end if
 
     logical :: p_tuple_compare
     type(p_tuple) :: p1, p2
-
+    
+!     write(*,*) 'Comparing one'
+!     
+!     write(*,*) 'npert 1', p1%npert
+!     write(*,*) 'npert 2', p2%npert
+!     write(*,*) 'plab 1', p1%plab
+!     write(*,*) 'plab 2', p2%plab
+!     write(*,*) 'freq 1', p1%freq
+!     write(*,*) 'freq 2', p2%freq
+!     write(*,*) ' '
+    
     if (p1%npert == p2%npert) then
 
        if (plab_compare(p1%npert, p1%plab, p2%plab) .eqv. .TRUE.) then
