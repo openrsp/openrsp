@@ -1,0 +1,92 @@
+%YAML 1.2
+---
+package: OpenRSP
+version: 1.0.0
+author: >
+    Radovan Bast,
+    Daniel H. Friese,
+    Bin Gao,
+    Dan J. Jonsson,
+    Magnus Ringholm,
+    Kenneth Ruud,
+    Andreas Thorvaldsen
+email: >
+    radovan.bast@gmail.com,
+    daniel.h.friese@uit.no,
+    bin.gao@uit.no,
+    dan.jonsson@uit.no,
+    magnus.ringholm@uit.no,
+    kenneth.ruud@uit.no,
+    ajthorva@yahoo.no
+copyright: >
+    2015-2016 Radovan Bast, Daniel H. Friese, Bin Gao, Dan J. Jonsson,
+    Magnus Ringholm, Kenneth Ruud, Andreas Thorvaldsen
+license: Version 3 of the GNU Lesser General Public License
+category: ComputChem
+description: >
+    Library to predict molecular properties (response properties) as formulated
+    in the response theory.
+homepage: https://gitlab.com/openrsp
+required:
+    - package: tGlueBasics
+      version: 0.1.0
+    - package: QcMatrix
+      version: 1.0.0
+    - package: QcSymbolic
+      version: 0.1.0
+    - package: QcMolecule
+      version: 0.1.0
+    - package: QcSolver
+      version: 0.1.0
+source: https://sourceforge.net/projects/tglue/files/packages/ComputChem/OpenRSP-1.0.0.tar.gz/download
+build:
+    - cd ${COMPUT_CHEM_BUILD_DIR}
+    - mkdir openrsp
+    - cd openrsp
+    - >
+        cmake
+        -DCMAKE_INSTALL_PREFIX=${COMPUT_CHEM_INSTALL_DIR}/openrsp
+        ${COMPUT_CHEM_SRC_DIR}/OpenRSP-1.0.0
+    - make
+    - make install
+plugin:
+    namespace:
+        name: OpenRSP
+        datatype:
+            - name:
+              description:
+        constant:
+            - name:
+              datatype:
+              description:
+        class:
+            - name:
+              description:
+              member:
+                  - name:
+                    datatype:
+                    description:
+              operator:
+                  - name:
+                    description:
+                    param:
+                        - name:
+                          datatype:
+                          direction:
+                          description:
+                    return:
+                        - name:
+                          datatype:
+                          description:
+        function:
+            - name:
+              description:
+              param:
+                  - name:
+                    datatype:
+                    direction:
+                    description:
+              return:
+                  - name:
+                    datatype:
+                    description:
