@@ -123,7 +123,63 @@ typedef void (*GetXCFunExp)(const QInt,
 <<RSPXCFunAPIs>>
 
 #endif
-@ Here we use a linked list for the context of XC functionals:
+
+@ 
+
+The complete density matrix perturbation tuples (canonically ordered) for a
+property $\mathcal{E}^{abc}$ (i.e. the perturbation tuple [[xc_pert_tuple]] is
+[[abc]]) are
+\begin{equation}
+  \label{eq-xcfun-callback-dmat}
+  (\boldsymbol{D},\boldsymbol{D}^{a},\boldsymbol{D}^{b},\boldsymbol{D}^{c}, %
+  \boldsymbol{D}^{ab},\boldsymbol{D}^{ac},\boldsymbol{D}^{bc}),
+\end{equation}
+and with the $(0,2)$ rule, the relevant density matrix perturbation tuples
+become
+\begin{equation}
+  \label{eq-xcfun-callback-dmat-kn-rule}
+  (\boldsymbol{D},\boldsymbol{D}^{b},\boldsymbol{D}^{c},\boldsymbol{D}^{bc}),
+\end{equation}
+which gives the [[dmat_num_tuple]] as $4$.
+
+\fixme{How about identical abc?}
+
+We then need to give the indices of the density matrix perturbation tuples
+passed (canonically ordered), whose size is [[dmat_num_tuple]]. Sticking with
+the above example, the density matrix perturbation tuples passed as
+Eq.~(\ref{eq-xcfun-callback-dmat-kn-rule}) have their associated indices
+[[dmat_idx_tuple]] as [[{1,3,4,7}]], because these numbers correspond to the
+positions of the ``$(k,n)$-surviving'' perturbation tuples in the canonically
+ordered complete density matrix perturbation
+tuples~(\ref{eq-xcfun-callback-dmat}).
+
+The number of collected AO based density matrices for the passed density matrix
+perturbation tuples (specified by [[dmat_idx_tuple]]) and all frequency
+configurations, that is
+\begin{equation}
+  \texttt{num\_freq\_configs}\times %
+  \sum_{\text{i}=0}^{\texttt{dmat\_idx\_tuple}-1}N_{\text{i}},
+\end{equation}
+where $N_{\text{i}}$ is the number of density matrices for the density matrix
+perturbation tuple [[dmat_idx_tuple[i]]] for a frequency configuration.
+
+The collected AO based density matrices are in [[dens_mat]], and size is
+[[num_dmat]], and arranged as [[[num_freq_configs][dmat_idx_tuple]]].
+
+The number of output integral matrices and expectation values equals to the
+product of the size of perturbations on the XC functional (specified by the
+perturbation tuple [[xc_pert_tuple]]) and the number of different frequency
+configurations [[num_freq_configs]], and arranged as\linebreak
+[[[num_freq_configs][xc_pert_tuple]]] and
+[[[num_freq_configs][xc_pert_tuple][2]]].
+
+\fixme{We agree to add an extra argument--integer--to tell which kind of
+differentiation will be performed: (1)~on AO density matrices only, (2)~on XC
+functional only, and (3) on both.}
+
+%%%%%%%%%%%%%
+
+A linked list is also used for the context of XC functionals:
 <<RSPXCFunStruct>>=
 typedef struct RSPXCFun RSPXCFun;
 struct RSPXCFun {
