@@ -71,6 +71,10 @@ module rsp_perturbed_matrices
 
     else
 
+!        write(*,*) 'reached end part', current_derivative_term(1)%npert, &
+!        current_derivative_term(2)%npert, current_derivative_term(3)%npert
+!        write(*,*) 'kn is', kn
+    
        if (primed .EQV. .TRUE.) then
 
           if ( ( ( (current_derivative_term(1)%npert <= kn(2)) .AND.&
@@ -91,10 +95,16 @@ module rsp_perturbed_matrices
                   kn_skip(current_derivative_term(2)%npert, current_derivative_term(2)%pid, kn) ) .OR. &
                   kn_skip(current_derivative_term(3)%npert, current_derivative_term(3)%pid, kn) ) .eqv. &
                   .FALSE.) then
+                  
+!              write(*,*) 'not skipping'
 
              superstructure_size = 1
 
           else
+          
+!              write(*,*) 'Skipping:', kn_skip(current_derivative_term(1)%npert, current_derivative_term(1)%pid, kn), &
+!              kn_skip(current_derivative_term(2)%npert, current_derivative_term(2)%pid, kn), &
+!              kn_skip(current_derivative_term(3)%npert, current_derivative_term(3)%pid, kn)
 
              superstructure_size = 0
 

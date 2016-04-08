@@ -2004,48 +2004,47 @@ module rsp_property_caching
                translated_index(j) = indices(i,pids_current_contrib(j))
             end do
 
-         if (p_tuples(1)%npert == 0) then
+            if (p_tuples(1)%npert == 0) then
 
-            cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
-               total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
-               nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
-               blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
-               translated_index)
+               cache_offset = get_triang_blks_tuple_offset(num_p_tuples - 1, &
+                  total_num_perturbations, nblks_tuple(2:num_p_tuples), & 
+                  nfields(2:num_p_tuples), blks_tuple_info(2:num_p_tuples, :, :),&
+                  blk_sizes(2:num_p_tuples,:), blks_tuple_triang_size(2:num_p_tuples), &
+                  translated_index)
 
-         else
+            else
             
-            if (num_p_tuples > 1) then
+               if (num_p_tuples > 1) then
             
-               if (p_tuples(2)%npert > 0) then
+                  if (p_tuples(2)%npert > 0) then
+            
+                     cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
+                     total_num_perturbations, nblks_tuple, & 
+                     nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
+
+                  else
+               
+                     cache_offset = get_triang_blks_tuple_offset(1, &
+                     total_num_perturbations, nblks_tuple(1), & 
+                     nfields(1), blks_tuple_info(1,:,:), blk_sizes(1,:), &
+                     blks_tuple_triang_size(1), translated_index)
+               
+                  end if
+            
+               else
             
                   cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
                   total_num_perturbations, nblks_tuple, & 
                   nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
-
-               else
-               
-                  cache_offset = get_triang_blks_tuple_offset(1, &
-                  total_num_perturbations, nblks_tuple(1), & 
-                  nfields(1), blks_tuple_info(1,:,:), blk_sizes(1,:), &
-                  blks_tuple_triang_size(1), translated_index)
-               
+                        
                end if
-            
-            else
-            
-               cache_offset = get_triang_blks_tuple_offset(num_p_tuples, &
-               total_num_perturbations, nblks_tuple, & 
-               nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
-            
-               
-            end if
      
-         end if
+            end if
             
             if (present(mat)) then
             
-               call QcMatAEqB(mat(res_offset), next_element_outer%data_mat(cache_offset + cache_hard_offset))
-
+               call QcMatRAXPY(1.0d0, next_element_outer%data_mat(cache_offset + &
+                               cache_hard_offset), mat(res_offset))
                
             else if (present(scal)) then
 
