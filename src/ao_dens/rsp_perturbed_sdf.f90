@@ -886,8 +886,6 @@ module rsp_perturbed_sdf
                             1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                             Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
         
-        
-        
        call contrib_cache_outer_add_element(F, .FALSE., 1, & 
             (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
        
@@ -1177,7 +1175,7 @@ module rsp_perturbed_sdf
              !call get_rsp_sol(1, real((/freq_sums(k)/)), size_i(k), RHS(ind_ctr:ind_ctr + size_i(k) - 1), &
              !     X(ind_ctr:ind_ctr + size_i(k) - 1))
           
-             write(*,*) 'start pos for storage b', ind_ctr
+!              write(*,*) 'start pos for storage b', ind_ctr
           
              call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', &
                         mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
@@ -1260,6 +1258,13 @@ module rsp_perturbed_sdf
     
     end if
     
+    
+
+    
+    
+    
+    
+    
     ind_ctr = 1
     k = 1
     
@@ -1295,6 +1300,7 @@ module rsp_perturbed_sdf
        cache_outer_next => cache_outer_next%next
        
     end do
+    
     
   end subroutine
   

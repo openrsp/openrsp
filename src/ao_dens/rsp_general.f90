@@ -114,6 +114,7 @@ module rsp_general
     logical :: r_exist, sdf_retrieved
     integer, dimension(3) :: rs_info
     integer, dimension(3) :: prog_info
+    character(30) :: fmt_str
     
     prog_info = (/0,0,0/)
     
@@ -286,13 +287,72 @@ module rsp_general
     n = 1
     
     do i = 1, n_props
-    
+      
        do j = 1, n_freq_cfgs(i)
        
-          write(filename, "(A10, I3, A1, I3)") 'rsp_tensor_', i, '_', j
-          open(unit=260, file=filename, &
+          if (i < 10) then
+             if (j < 10) then
+                fmt_str = "(A10, I1, A1, I1)"
+             else if (j < 100) then
+                fmt_str = "(A10, I1, A1, I2)"
+             else if (j < 1000) then
+                fmt_str = "(A10, I1, A1, I3)"
+             else if (j < 10000) then
+                fmt_str = "(A10, I1, A1, I4)"
+             else
+                write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                stop
+             end if
+          else if (i < 100) then
+             if (j < 10) then
+                fmt_str = "(A10, I2, A1, I1)"
+             else if (j < 100) then
+                fmt_str = "(A10, I2, A1, I2)"
+             else if (j < 1000) then
+                fmt_str = "(A10, I2, A1, I3)"
+             else if (j < 10000) then
+                fmt_str = "(A10, I2, A1, I4)"
+             else
+                write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                stop
+             end if
+          else if (i < 1000) then
+             if (j < 10) then
+                fmt_str = "(A10, I3, A1, I1)"
+             else if (j < 100) then
+                fmt_str = "(A10, I3, A1, I2)"
+             else if (j < 1000) then
+                fmt_str = "(A10, I3, A1, I3)"
+             else if (j < 10000) then
+                fmt_str = "(A10, I3, A1, I4)"
+             else
+                write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                stop
+             end if
+          else if (i < 10000) then
+             if (j < 10) then
+                fmt_str = "(A10, I4, A1, I1)"
+             else if (j < 100) then
+                fmt_str = "(A10, I4, A1, I2)"
+             else if (j < 1000) then
+                fmt_str = "(A10, I4, A1, I3)"
+             else if (j < 10000) then
+                fmt_str = "(A10, I4, A1, I4)"
+             else
+                write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                stop
+             end if
+          else
+             write(*,*) 'File write error: More than 10000 properties breaks filename format string'
+             stop
+          end if
+
+          
+       
+          write(filename, fmt_str) 'rsp_tensor_', i, '_', j
+          open(unit=260, file=trim(filename), &
                status='replace', action='write') 
-          open(unit=261, file=filename // '_human', &
+          open(unit=261, file=trim(filename) // '_human', &
                status='replace', action='write') 
             
           allocate(blk_info(num_blks(i), 3))
@@ -1633,6 +1693,8 @@ module rsp_general
                 write(*,*) 'A', p12(1)%pid
                 write(*,*) 'B', p12(2)%pid
                 
+!                 write(*,*) 'kn rule for cache creation', kn
+                
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
                 
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
@@ -1704,7 +1766,7 @@ module rsp_general
     
 !     write(*,*) 'num outer', cache%num_outer
 
-    i_supsize = 3**cache%p_inner%npert
+    i_supsize = 0
     
     
     allocate(o_supsize(cache%num_outer))
@@ -1714,15 +1776,17 @@ module rsp_general
     ! Prepare matrices for inner tuple
     
     i_supsize = derivative_superstructure_getsize(p_tuple_remove_first(cache%p_inner), &
-                (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                (/cache%p_inner%npert, cache%p_inner%npert/), .FALSE., &
                 (/get_emptypert(), get_emptypert(), get_emptypert()/))
 
     allocate(d_struct_inner(i_supsize, 3))
 
+!     write(*,*) 'i supsize', i_supsize
+    
     sstr_incr = 0
     
     call derivative_superstructure(p_tuple_remove_first(cache%p_inner), &
-          (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+          (/cache%p_inner%npert, cache%p_inner%npert/), .FALSE., &
           (/get_emptypert(), get_emptypert(), get_emptypert()/), &
           i_supsize, sstr_incr, d_struct_inner)  
           
@@ -1776,7 +1840,7 @@ module rsp_general
     
        do i = 1, outer_next%num_dmat
           
-          write(*,*) 'B', outer_next%p_tuples(i)%pid
+          write(*,*) 'B', outer_next%p_tuples(i)%plab
        
        end do
     
@@ -2072,6 +2136,12 @@ module rsp_general
     if (outer_next%dummy_entry) then
        outer_next => outer_next%next
     end if
+    
+    do i = 1, size(W)
+    
+       call QcMatDst(W(i))
+    
+    end do
 
     call QcMatInit(Z, D_unp)
     call QcMatZero(Z)
