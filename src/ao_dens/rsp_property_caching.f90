@@ -2089,6 +2089,15 @@ module rsp_property_caching
     end if
    
       if (found) then
+      
+!          write(*,*) 'Getting single matrix:'
+!       
+!          do i = 1, size(next_element_outer%p_tuples)
+!       
+!             write(*,*) 'D', next_element_outer%p_tuples(i)%pid, next_element_outer%p_tuples(i)%freq
+!                        
+!          end do
+      
 
          call QcMatAEqB(mat_sing, next_element_outer%data_mat(offset + cache_hard_offset))
          
