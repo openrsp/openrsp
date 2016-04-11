@@ -222,6 +222,12 @@ module rsp_general
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
           p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
           1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + (j)*np(i))
+          
+          ! MaR: NOTE: Here sorting tuples in standard order: Must sort back to get correct order 
+          ! for returned tensor: Original pids will give key to re-sort
+          
+          p_tuples(k) = p_tuple_standardorder(p_tuples(k))
+          p_tuples(k)%pid = (/(m, m = 1, np(i))/)
        
           write(id_outp,*) 'Frequency configuration', j
           write(id_outp,*) ' '
@@ -229,10 +235,6 @@ module rsp_general
           write(id_outp,*) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
           write(id_outp,*) ' '
           
-          ! NOTE: ORDERING MAY CHANGE HERE AND COULD NEED REORDERING AFTER CALCULATION
-          p_tuples(k) = p_tuple_standardorder(p_tuples(k))
-          p_tuples(k)%pid = (/(m, m = 1, np(i))/)
-       
           num_blks(k) = get_num_blks(p_tuples(k))
        
           write(*,*) 'Number of blocks:', num_blks(k)

@@ -946,7 +946,7 @@ module rsp_perturbed_sdf
     
 !      j = QcMatWrite_f(Dp(1), 'Dp_after_Z', ASCII_VIEW)
     
-! Debug printing kept for later use    
+! ! Debug printing kept for later use    
 !     do i = 1, size(Dp)
 !     
 !           if (i < 10) then
@@ -1091,6 +1091,8 @@ module rsp_perturbed_sdf
     termination = .FALSE.
     do while(.NOT.(termination))
 
+       write(*,*) 'Frequency sum:', freq_sums(k)
+    
        if (size_i(k) > m) then
     
           do i = 1, size_i(k)/m + 1
@@ -1257,13 +1259,6 @@ module rsp_perturbed_sdf
        call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
     
     end if
-    
-    
-
-    
-    
-    
-    
     
     ind_ctr = 1
     k = 1
