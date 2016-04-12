@@ -1473,12 +1473,7 @@ module rsp_general
              do i = 1, size(outer_next%indices, 1)
           
                 do j = 1, size(cache%indices, 1)
-                
-!                    write(*,*) 'getting size', blk_sizes
-!                    write(*,*) 'cache blk sizes', cache%blk_sizes
-!                    write(*,*) 'outer blk sizes', (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)
-                   
-             
+
                    offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
                    cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
                    (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
@@ -1490,8 +1485,7 @@ module rsp_general
                    (/cache%indices(j, :), outer_next%indices(i, :)/))
                 
                    outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
-                            
-             
+                   
                 end do
           
              end do
@@ -1505,7 +1499,8 @@ module rsp_general
           
           
           end if
-                 
+          
+          
        end if
        
        deallocate(data_tmp)
