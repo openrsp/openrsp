@@ -514,10 +514,10 @@ module rsp_perturbed_sdf
     implicit none
 
     logical :: traverse_end
-    integer :: cache_offset, i, j, k, m, n, s
+    integer :: cache_offset, i, j, k, m, n, s, p
     integer :: id_outp
     integer :: total_outer_size_1, c1_ctr, lhs_ctr_1, num_pert
-    integer :: num_0, num_1
+    integer :: num_0, num_1, tot_num_pert, offset
     character(30) :: mat_str, fmt_str
     type(contrib_cache) :: cache
     type(contrib_cache_outer) :: D
@@ -527,6 +527,8 @@ module rsp_perturbed_sdf
     type(QcMat) :: D_unp
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
     integer, allocatable, dimension(:) :: pert_ext
+    integer, allocatable, dimension(:,:) :: blk_sizes
+    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
     external :: get_1el_mat, get_ovl_mat, get_2el_mat
     
     write(*,*) 'Calculating lower-order Fock matrix contribution for perturbation', cache%p_inner%plab
@@ -718,7 +720,7 @@ module rsp_perturbed_sdf
     
     do while (traverse_end .EQV. .FALSE.)
   
-       ! One-el and two-el contributions
+       ! One-el and two-el contributions ("all inner contribution")
        if (outer_next%num_dmat == 0) then
        
           allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
@@ -741,13 +743,125 @@ module rsp_perturbed_sdf
        
           allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
 
-          do i = 1, cache%blks_triang_size*outer_contract_sizes_1(k)
-
-             call QcMatInit(outer_next%data_mat(i), D_unp)
-             call QcMatZero(outer_next%data_mat(i))
-             call QcMatRAXPY(1.0d0, contrib_1(c1_ctr + i - 1), outer_next%data_mat(i))
           
-          end do
+          
+          
+          ! REPLACE THIS
+!           do i = 1, cache%blks_triang_size*outer_contract_sizes_1(k)
+! 
+!              call QcMatInit(outer_next%data_mat(i), D_unp)
+!              call QcMatZero(outer_next%data_mat(i))
+!              call QcMatRAXPY(1.0d0, contrib_1(c1_ctr + i - 1), outer_next%data_mat(i))
+!           
+!           end do
+          ! END REPLACE
+          
+          ! WITH THIS
+          
+          if (cache%p_inner%npert > 0) then
+          
+             tot_num_pert = cache%p_inner%npert + &
+             sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+                   
+             allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+             allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+             
+             blks_tuple_info = 0
+             blk_sizes = 0
+                
+             do j = 1, outer_next%num_dmat + 1
+                
+                if (j == 1) then
+                
+                   do m = 1, cache%nblks
+                   
+                      blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+                      
+                   end do
+                   
+                   blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
+                
+                else
+                
+                   do m = 1, outer_next%nblks_tuple(j - 1)
+                
+                      do p = 1, 3
+                   
+                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                   
+                      end do
+                
+                   end do
+                   
+                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
+                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                   
+                end if
+                
+             end do
+       
+             do i = 1, size(outer_next%indices, 1)
+          
+                do j = 1, size(cache%indices, 1)
+
+                   
+!                    write(*,*) 'getting size', blk_sizes
+!                    write(*,*) 'cache blk sizes', cache%blk_sizes
+!                    write(*,*) 'outer blk sizes', (/(outer_next%blk_sizes(m,:), m = 1, outer_next%num_dmat)/)
+                   
+             
+                   offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
+                   cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
+                   (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
+                   (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
+                   blks_tuple_info, &
+                   blk_sizes, &
+                   (/cache%blks_triang_size, &
+                   (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
+                   (/cache%indices(j, :), outer_next%indices(i, :)/))
+                
+                
+                
+                   call QcMatInit(outer_next%data_mat(offset), D_unp)
+                   call QcMatZero(outer_next%data_mat(offset))
+                   call QcMatRAXPY(1.0d0, contrib_1(c1_ctr + j + size(cache%indices, 1) * (i - 1) - 1), &
+                   outer_next%data_mat(offset))
+                
+!                    outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
+                   
+                   
+!                    if (i == 2) then
+!                    
+!                       write(*,*) 'inner, outer ind', (/cache%indices(j, :), outer_next%indices(i, :) /)
+!                       write(*,*) 'offset in cache is', offset, 'and in data is', j + size(cache%indices, 1) * (i - 1)
+!                       write(*,*) 'data is', data_tmp(j + size(cache%indices, 1) * (i - 1))
+!                       write(*,*) ' '
+!                    
+!                    end if
+                   
+             
+                end do
+          
+             end do
+             
+!              write(*,*) 'data scal sample', outer_next%data_scal(1:min(size(outer_next%data_scal), 30))
+             
+             
+             deallocate(blk_sizes)
+             deallocate(blks_tuple_info)
+          
+          else
+          
+             write(*,*) 'ERROR: UNEXPECTED: NO INNER PERTURBATIONS'
+          
+          
+          end if
+          
+          
+          
+          
+          ! END NEW
+          
 
           c1_ctr = c1_ctr + cache%blks_triang_size*outer_contract_sizes_1(k)
                    
@@ -888,6 +1002,8 @@ module rsp_perturbed_sdf
         
        call contrib_cache_outer_add_element(F, .FALSE., 1, & 
             (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+       
+       
        
        ! Calculate Dp for all components and add to cache
        
@@ -1295,7 +1411,6 @@ module rsp_perturbed_sdf
        cache_outer_next => cache_outer_next%next
        
     end do
-    
     
   end subroutine
   
