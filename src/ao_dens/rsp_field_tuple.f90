@@ -57,6 +57,10 @@ module rsp_field_tuple
 
   contains
 
+  
+  ! Make array of integers to transform character labels to integer labelling of perturbations
+  ! This is a temporary solution: The long-term scheme should inherit numbers from host
+  ! to designate the perturbation labels and  do away with character-type labels
   subroutine p_tuple_to_external_orders(pert, num_pert, perturbations, pert_orders)
   
     implicit none
@@ -118,7 +122,7 @@ module rsp_field_tuple
        if (count(plab_int == i) > 0) then
           
 !FIXME Gao: j should be increment of 1?
-          j = j+1
+          j = j + 1
           perturbations(j) = i
           pert_orders(j) = count(plab_int == i)
        
@@ -128,7 +132,7 @@ module rsp_field_tuple
       
   end subroutine
 
-
+  ! Another transformation routine to be made redundant with long-term scheme
   subroutine p_tuple_to_external_tuple(pert, num_pert, perturbations)
   
     implicit none
@@ -258,6 +262,7 @@ module rsp_field_tuple
     
     
     ! Get a general subset of perturbation tuple p1   
+    ! Doesn't seem to be currently in use, maybe reintroduce later
     subroutine get_p_subset(p1, sub_size, which_perts, p_subset)
     
       implicit none
@@ -281,6 +286,7 @@ module rsp_field_tuple
     end subroutine
   
   ! Put all perturbations in p1 into p2 except perturbation 'except'
+  ! Doesn't seem to be currently in use, maybe reintroduce later
     subroutine p1_cloneto_p2_except(p1, p2, except)
     
       implicit none
@@ -348,16 +354,11 @@ module rsp_field_tuple
       
       p_merge = merge_p_tuple(p1, p2)
       
-      
-!       call p1_cloneto_p2(p1, p_merge)
-!       p_merge%npert = p_merge%npert + p2%npert
-! !       p_merge%perts = (/p_merge%perts, p2%perts/)
-      
     end subroutine
 
     
-     ! Make all (p1%npert - 1) subsets of perturbation tuple p1 
-    ! Assumes that p_sub is unallocated
+    ! Make all (p1%npert - 1) subsets of perturbation tuple p1 
+    ! Doesn't seem to be currently in use, maybe reintroduce later
     subroutine make_p_tuple_subsets(p1, p_sub)
     
       implicit none
@@ -391,6 +392,7 @@ module rsp_field_tuple
     end subroutine
       
   
+  ! Extend perturbation tuple pert by small extension ext
   function p_tuple_extend(pert, ext)
 
     implicit none
@@ -424,6 +426,7 @@ end if
   end function
 
 
+  ! Get perturbation 'which' from perturbation tuple pert
   function p_tuple_getone(pert, which)
 
     implicit none
@@ -444,7 +447,7 @@ end if
 
   end function
 
-
+  ! Remove the first perturbation from tuple pert
   function p_tuple_remove_first(pert)
 
     implicit none
@@ -474,10 +477,9 @@ end if
 
     end if
 
-
-
   end function
-
+  
+  ! Return a perturbation tuple which is the merged tuple of tuples p1 and p2
   function merge_p_tuple(p1, p2)
 
     implicit none
@@ -528,6 +530,7 @@ end if
 
   end function
 
+  ! Take perturbation tuple p1 and clone it into p2
   subroutine p1_cloneto_p2(p1, p2)
 
     implicit none
@@ -548,6 +551,7 @@ end if
 
   end subroutine
 
+  ! Deallocate perturbation tuple p1
   subroutine p_tuple_deallocate(p1)
 
     type(p_tuple) :: p1
@@ -565,7 +569,7 @@ end if
     
   end subroutine
 
-
+  ! Return an emtpy perturbation tuple
   function get_emptypert() result(emptypert)
 
     implicit none
@@ -580,7 +584,7 @@ end if
 
   end function
 
-  
+  ! Make emptypert into an empty perturbation tuple
   subroutine empty_p_tuple(emptypert)
 
     implicit none
@@ -683,10 +687,11 @@ end if
   end function
 
 
+  
+  ! Return a perturbation tuple which is the standard ordered version of tuple pert
   ! FIXME (MaR): THIS FUNCTION IS POORLY WRITTEN AND, ALTHOUGH IT
   ! SEEMS TO BE WORKING, IS BULKY AND MAY CONTAIN
   ! DUPLICATION OF WORK. CONSIDER REWRITING.
-
   function p_tuple_standardorder(pert) result(p_tuple_st)
 
     implicit none
@@ -702,8 +707,6 @@ end if
     call p1_cloneto_p2(pert, p_tuple_st)
 
     position_in_result = 1
-
-
 
     do i = position_in_result, p_tuple_st%npert
 
@@ -829,7 +832,7 @@ end if
 
   end function
 
-
+  ! Return a tuple of pert tuples which is the standard order of the pert tuple tuple p_tuples
   function p_tuples_standardorder(num_p_tuples, p_tuples) result(p_tuples_st)
 
     implicit none
@@ -890,6 +893,7 @@ end if
 
   end function
 
+  ! Determine if p_tuples and p_tuples_st_order are equivalent
   function p_tuples_compare(num_p_tuples, p_tuples, p_tuples_st_order)
 
     implicit none
@@ -901,20 +905,12 @@ end if
     p_tuples_compare = .FALSE.
     elem_by_elem_isequivalent = .TRUE.
 
-!     write(*,*) 'Comparing', num_p_tuples, 'tuples'
-    
     do i = 1, num_p_tuples
 
-!        write(*,*) 'Tuple', i
-    
        elem_by_elem_isequivalent = elem_by_elem_isequivalent .AND. &
                                    p_tuple_compare(p_tuple_standardorder(p_tuples(i)), &
                                    p_tuple_standardorder(p_tuples_st_order(i)))
 
-
-!        write(*,*) 'Equivalency:', elem_by_elem_isequivalent
-       
-                                   
     end do
 
     if (elem_by_elem_isequivalent .eqv. .TRUE.) then
@@ -925,7 +921,7 @@ end if
 
   end function
 
-
+  ! Determine if perturbation label tuples plab1 and plab2 are equivalent
   function plab_compare(n_perturbations, plab1, plab2)
 
     implicit none
@@ -944,7 +940,7 @@ end if
 
   end function
 
-
+  ! Determine if perturbation frequency tuples p1 and p2 are equivalent
   function pfreq_compare(n, p1, p2)
 
     implicit none
@@ -963,6 +959,7 @@ end if
 
   end function
   
+  ! Determine if perturbation ID tuples pid1 and pid2 are equivalent
   function pid_compare(npert, pid1, pid2)
   
     logical :: pid_compare
@@ -983,22 +980,14 @@ end if
     
   end function
 
+  
+  ! Determine if perturbation tuples p1 and p2 are equivalent
   function p_tuple_compare(p1, p2)
 
     implicit none
 
     logical :: p_tuple_compare
     type(p_tuple) :: p1, p2
-    
-!     write(*,*) 'Comparing one'
-!     
-!     write(*,*) 'npert 1', p1%npert
-!     write(*,*) 'npert 2', p2%npert
-!     write(*,*) 'plab 1', p1%plab
-!     write(*,*) 'plab 2', p2%plab
-!     write(*,*) 'freq 1', p1%freq
-!     write(*,*) 'freq 2', p2%freq
-!     write(*,*) ' '
     
     if (p1%npert == p2%npert) then
 
@@ -1032,7 +1021,7 @@ end if
 
   end function
 
-
+  ! Make the pert%npert size (pert%npert - 1) subsets of pert and put them in psub
   subroutine make_p_tuple_subset(pert, psub)
 
     implicit none

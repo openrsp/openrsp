@@ -45,7 +45,6 @@ module rsp_indices_and_addressing
   public make_outerwhichpert
   public get_pidoutersmall
   public sortdimbypid
-!  public mat_init_like_and_zero
   
   public QcMatInit
   public QcMatZero
@@ -58,16 +57,6 @@ module rsp_indices_and_addressing
   public QcMatTraceAB
   public QcMatRAXPY
 
-
-  ! MaR: QcMatrix adapted routines to be separated into new module
-  
-  
-  
-  
-  
-  
-  
-  
   ! Define triangulated index block datatype
 
   type triangulated_index_block
@@ -99,7 +88,7 @@ module rsp_indices_and_addressing
     
   end subroutine
 
-  ! Zero matrix, A should be initialized by QcMatInit()
+  ! Zero the matrix A: A should be initialized by QcMatInit()
   subroutine QcMatZero(A)
 
     implicit none
@@ -133,15 +122,8 @@ module rsp_indices_and_addressing
     integer(kind=4) :: ierr
     real(8) :: k
     
-!     j = QcMatWrite_f(A, 'A', ASCII_VIEW)
-!     j = QcMatWrite_f(B, 'B', ASCII_VIEW)
-
     ierr = QcMatAXPY_f((/k, 0.0d0/), B, A)
     ierr = QcMatAXPY_f((/k, 0.0d0/), A, R)
-    
-!     ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), A, B, (/0.0d0, 0.0d0/), R)
-  
-!     j = QcMatWrite_f(R, 'R', ASCII_VIEW)
     
   end subroutine
   
@@ -157,8 +139,10 @@ module rsp_indices_and_addressing
     complex(8) :: k
         
     call QcMatInit(T, A)
+
     ! T = kB * C
     ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/0.0d0, 0.0d0/), T)
+    
     ! R = A * T
     ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
     ierr = QcMatDestroy_f(T)
@@ -224,8 +208,8 @@ module rsp_indices_and_addressing
     ierr = QcMatGetDimBlock_f(A, dim_block_a)
     ierr = QcMatGetDimBlock_f(A, dim_block_b)
     ierr = QcMatGetMatProdTrace_f(A, B, MAT_NO_OPERATION, dim_block_a, t_ans)
+
     ! What is dimension of answer?
-    
     t = cmplx(t_ans(1), t_ans(2))
   
   end subroutine
@@ -246,8 +230,7 @@ module rsp_indices_and_addressing
   ! End QcMatrix adapted routines
   
   
-  
-  
+  ! Get offset in one tensor for indices 'indices'  
   function get_one_tensor_offset(total_num_perturbations, indices, pids, dims)
 
     implicit none
@@ -266,7 +249,7 @@ module rsp_indices_and_addressing
 
   end function
 
-
+  ! Test routine, unsure if still in use, possibly take out
   subroutine test_making_triangulated_indices(fields)
 
     implicit none
@@ -291,6 +274,7 @@ module rsp_indices_and_addressing
 
   end subroutine
 
+ ! Get number of unique perturbations ("blocks") in tuple 'fields'
  ! Assumes fields is sorted
   function get_num_blks(fields)
 
@@ -329,9 +313,9 @@ module rsp_indices_and_addressing
 
   end function
 
+  ! Subroutine to get various block information for perturbation tuple 'fields'
   ! Returns array of size (nblks, 3) where row 1 is curr_blk_start, row 2 is block_len
   ! row 3 is pdim
-
   subroutine get_blk_info_s(nblks, fields, blk_info)
 
     implicit none
@@ -348,9 +332,6 @@ module rsp_indices_and_addressing
        do i = 1, fields%npert
 
           each_field(i) = p_tuple_getone(fields, i)
-
-! write(*,*) 'field', i, 'is', each_field(i)%plab, each_field(i)%pdim
-! write(*,*) 'field', i, 'is', each_field(i)%pid, each_field(i)%freq
 
        end do
 
@@ -388,8 +369,6 @@ module rsp_indices_and_addressing
 
           call p_tuple_deallocate(each_field(i))
 
-! write(*,*) 'deallocated', i
-
        end do
 
     else
@@ -402,13 +381,12 @@ module rsp_indices_and_addressing
 
     deallocate(each_field)
 
-! write(*,*) 'deallocated total'
-
   end subroutine
 
+  
+  ! Function to get various block information for perturbation tuple 'fields'
   ! Returns array of size (nblks, 3) where row 1 is curr_blk_start, row 2 is block_len
   ! row 3 is pdim
-
   function get_blk_info(nblks, fields)
 
     implicit none
@@ -425,8 +403,6 @@ module rsp_indices_and_addressing
        do i = 1, fields%npert
 
           each_field(i) = p_tuple_getone(fields, i)
-
-! write(*,*) 'field', i, 'is', each_field(i)%plab, each_field(i)%pdim
 
        end do
 
@@ -464,8 +440,6 @@ module rsp_indices_and_addressing
 
           call p_tuple_deallocate(each_field(i))
 
-! write(*,*) 'deallocated', i
-
        end do
 
     else
@@ -478,10 +452,11 @@ module rsp_indices_and_addressing
 
     deallocate(each_field)
 
-! write(*,*) 'deallocated total'
-
   end function
 
+  
+  ! Get offset (non-redundant) for indices 'inds' in tuple of tuple of 
+  ! perturbations as specified by collected block information
   function get_triang_blks_tuple_offset(ntuple, total_num_perturbations, nblks_tuple, &
                                         nfields, blks_info, &
                                         blk_sizes, blks_sizes, inds) result(offset)
@@ -497,13 +472,6 @@ module rsp_indices_and_addressing
     offset = 0
     k = 1
     
-!     write(*,*) 'blks tuple offset, ntuple', ntuple
-!     write(*,*) 'tot, nblks, nfields', total_num_perturbations, nblks_tuple, nfields
-!     write(*,*) 'blks info', blks_info
-!     write(*,*) 'blk sizes', blk_sizes
-!     write(*,*) 'blks sizes', blks_sizes
-!     write(*,*) 'inds', inds
-
     do i = 1, ntuple - 1
 
        offset = offset + (get_triang_blks_offset(nblks_tuple(i), nfields(i), &
@@ -515,18 +483,16 @@ module rsp_indices_and_addressing
 
     end do
     
-!     write(*,*) 'offset is now', offset
-
     offset = offset + get_triang_blks_offset(nblks_tuple(ntuple), nfields(ntuple), &
                       blks_info(ntuple,1:nblks_tuple(ntuple),:), &
                       blk_sizes(ntuple, 1:nblks_tuple(ntuple)),  &
                       inds(k:k + nfields(ntuple) - 1))
                       
-!     write(*,*) 'got offset', offset
-
   end function
 
 
+  ! Get offset (non-redundant) for indices 'ind_unsorted', in tuple of perturbations
+  ! as specified by collected block information
   function get_triang_blks_offset(nblks, nfield, blk_info, blk_sizes, ind_unsorted) &
            result(offset)
 
@@ -537,22 +503,9 @@ module rsp_indices_and_addressing
     integer, dimension(nblks, 3) :: blk_info
     integer, dimension(nfield) :: ind, ind_unsorted
 
-
-! if (nblks == 2) then
-! 
-! write(*,*) 'blk info 1', blk_info(1,:)
-! write(*,*) 'blk info 2', blk_info(2,:)
-! 
-! 
-! end if
-
     offset = 0
 
-! write(*,*) 'unsorted ind', ind_unsorted
-
     ind = sorted_triangulated_indices(nfield, nblks, blk_info, ind_unsorted)
-
-! write(*,*) 'sorted ind', ind
 
     do i = 1, nblks - 1
 
@@ -562,31 +515,14 @@ module rsp_indices_and_addressing
 
     end do
 
-
-!  if (nblks == 2) then
- 
-!  write(*,*) 'new offset 1 ', offset
-! write(*,*) 'blk info 2', blk_info(2,:)
-
-
-! end if
-
     offset = offset + get_triang_offset(blk_info(nblks,2), &
              ind(blk_info(nblks,1): blk_info(nblks,1) + blk_info(nblks,2) - 1), &
              blk_info(nblks,3))
-! 
-! 
-!  if (nblks == 2) then
-!  
-!  write(*,*) 'new offset 2', offset
-! ! write(*,*) 'blk info 2', blk_info(2,:)
-! 
-! 
-! end if
 
   end function
 
 
+  ! Get offset for one block taken from one perturbation tuple
   function get_triang_offset(nfield, ind, pdim) result(offset)
 
     implicit none
@@ -618,6 +554,8 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Get offset par corresponding to one way of one block taken from one
+  ! perturbation tuple
   function get_one_way_triang_offset(remaining, ind, pdim) result(offset)
 
     implicit none
@@ -636,6 +574,7 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Function: Make sorted non-redundant indices from 'indices'
   function sorted_triangulated_indices(nfield, nblks, blk_info, indices)
 
     implicit none
@@ -682,6 +621,7 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Subroutine: Make sorted non-redundant indices from 'indices'
   subroutine sort_triangulated_indices(nfield, nblks, blk_info, indices)
 
     implicit none
@@ -725,6 +665,8 @@ module rsp_indices_and_addressing
   end subroutine
 
 
+  ! Make nonredundant indices for tuple of tuple of perturbations, specified
+  ! by collected block information
   subroutine make_triangulated_tuples_indices(ntuples, total_num_perturbations, &
            nblks_tuple, blks_tuple_info, &
            blks_tuple_triang_size, indices)
@@ -767,7 +709,7 @@ module rsp_indices_and_addressing
 
   end subroutine
 
-
+  ! Make nonredundant indices for tuple of perturbations
   subroutine make_triangulated_indices(nblks, blk_info, triangulated_size, indices)
 
     implicit none
@@ -782,9 +724,6 @@ module rsp_indices_and_addressing
 
     do i = 1, nblks
 
-! write(*,*) 'block', i
-! write(*,*) 'info', blk_info(i,:)
-
        triang_sizes(i) = get_one_triangular_size(blk_info(i, 2), blk_info(i,3))
 
        allocate(blks(i)%t_ind(triang_sizes(i), blk_info(i, 2)))
@@ -793,14 +732,6 @@ module rsp_indices_and_addressing
                                       triang_sizes(i), blks(i)%t_ind)
 
     end do
-
-
-!     do i = 1, nblks
-! 
-!     write(*,*) 'direct product block', i
-! write(*,*) blks(i)%t_ind
-! 
-!     end do
 
     call index_blks_direct_product(nblks, triang_sizes, blks, indices, &
                                    sum(blk_info(:,2)), 1, 1, 1)
@@ -815,7 +746,9 @@ module rsp_indices_and_addressing
 
   end subroutine
 
-
+  
+  ! Make direct product of one set of indices (corresponding to one block) to another 
+  ! until recursion has processed all blocks in this way
   recursive subroutine index_blks_direct_product(nblks, blk_sizes, blks, indices, &
                        nways, current_way, lvl, offset)
 
@@ -860,6 +793,7 @@ module rsp_indices_and_addressing
   end subroutine
 
 
+  ! Make one set of indices for one block of perturbations
   recursive subroutine make_one_triang_index_blk(blk_size, pdim, st_ind, lvl, offset, &
                                                    triang_size, index_blk)
 
@@ -898,6 +832,8 @@ module rsp_indices_and_addressing
 
   end subroutine
 
+  ! Get size of nonredundant representation of elements for one perturbation tuple
+  ! specified by 'blk_nfield' and 'pdims'
   function get_triangular_sizes(nblks, blk_nfield, pdims) result(blk_sizes)
 
     implicit none
@@ -914,6 +850,8 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Get size of nonredundant representation of elements for one perturbation tuple
+  ! specified by 'blk_info'
   function get_triangulated_size(nblks, blk_info)
 
     implicit none
@@ -933,6 +871,7 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Get (non-redundant) size of one block
   function get_one_triangular_size(blk_size, pdim)
 
     implicit none
@@ -944,7 +883,7 @@ module rsp_indices_and_addressing
 
   end function
 
-
+  ! Calculate the factorial quotient (highest)!/(lowest)!
   recursive function fact_terminate_lower(highest, lowest) result(ftl)
 
     implicit none
@@ -965,7 +904,8 @@ module rsp_indices_and_addressing
   end function
 
 
-
+  ! Make one tuple of (non-redundant) indices from an index number
+  ! "What are the indices of index # 'icomp_in' for this perturbation tuple?"
   function make_one_index_tuple(n_perturbations, pdim, icomp_in)
 
     implicit none
@@ -988,6 +928,8 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Make array of number of components ordered by perturbation id for tuple of
+  ! tuples of perturbations
   function get_ncarray(total_order, num_p_tuples, p_tuples)
 
     implicit none
@@ -1012,7 +954,7 @@ module rsp_indices_and_addressing
   end function
 
 
-  ! Find out if kn rules say that this term should be skipped
+  ! Find out if kn rules dictate that this term should be skipped
   function kn_skip(n_perturbations, pertid, kn)
 
     implicit none
@@ -1052,7 +994,9 @@ module rsp_indices_and_addressing
 
   end function
 
-
+  ! Get subset of number of components for only perturbation ids for
+  ! a tuple of perturbation tuples (other positions get value 1)
+  ! Unsure if still in use, maybe remove
   function nc_only(total_order, thisorder, num_p_tuples, p_tuples, ncarray)
 
     implicit none
@@ -1074,7 +1018,9 @@ module rsp_indices_and_addressing
 
   end function
 
-
+  ! Get subset of number of components for only perturbation ids for
+  ! a tuple of perturbation tuples
+  ! Unsure if still in use, maybe remove 
   function nc_onlysmall(total_order, thisorder, num_p_tuples, p_tuples, ncarray)
 
     implicit none
@@ -1097,7 +1043,7 @@ module rsp_indices_and_addressing
 
   end function
 
-
+  ! Make indices for perturbation collections described by number of components
   recursive subroutine make_indices(tot_outer, lvl, ncarray, offset, outer_indices)
 
     implicit none
@@ -1138,6 +1084,9 @@ module rsp_indices_and_addressing
   end subroutine
 
 
+  ! Make array to tell which position perturbation with a given ID is in
+  ! Unused entries get value 0
+  ! Unsure if still in use, maybe remove
   function make_outerwhichpert(total_num_perturbations, num_p_tuples, p_tuples)
 
     implicit none
@@ -1165,7 +1114,8 @@ module rsp_indices_and_addressing
 
   end function
 
-
+  ! Make array to tell which position perturbation with a given ID is in
+  ! Unsure if still in use, maybe remove
   function get_pidoutersmall(totouter, len_outer, o_orders)
 
     implicit none
@@ -1188,6 +1138,8 @@ module rsp_indices_and_addressing
   end function
 
 
+  ! Sort perturbation dimensions by perturbation ID
+  ! Not sure if this routine still in use, maybe remove
   subroutine sortdimbypid(total_num_perturbations, totouter, pids, &
                           dims, dimsouter, whichs)
 
@@ -1203,7 +1155,6 @@ module rsp_indices_and_addressing
 
     end do
 
-    ! radovan: whichmax was uninitialized, i set it to something
     whichmax = 1
 
     s = totouter
@@ -1241,13 +1192,5 @@ module rsp_indices_and_addressing
     dimsouter = b
 
   end subroutine
-
-!! Written by AJT. Initializes matrix B from A and explicitly zeroes B
-!    subroutine mat_init_like_and_zero(A, B)
-!      type(matrix), intent(in)    :: A
-!      type(matrix), intent(inout) :: B
-!      B = 0*A
-!      call mat_ensure_alloc(B)
-!    end subroutine 
 
 end module

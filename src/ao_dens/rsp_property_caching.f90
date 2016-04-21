@@ -3,16 +3,16 @@
 ! This file is made available under the terms of the
 ! GNU Lesser General Public License version 3.
 
-! Contains routines and functions related to caching of contributions to the
-! response property tensor.
+! Contains routines and functions related to caching of
+! various contributions obtained during the calculation
 
 module rsp_property_caching
 
-  use rsp_field_tuple
-  use rsp_indices_and_addressing
-  use qcmatrix_f
+ use rsp_field_tuple
+ use rsp_indices_and_addressing
+ use qcmatrix_f
 
-  implicit none
+ implicit none
   
  public contrib_cache_initialize
  public contrib_cache_next_element
@@ -35,56 +35,65 @@ module rsp_property_caching
  public prog_incr
  public prog_init
   
- ! Define contrib cache datatype
-
- ! NOTE FEB 2016: SET DEFAULT VALUES FOR ALL NON-ALLOCATE ATTRIBUTES OF CACHE TYPES
-
-  
+ ! Define contrib cache datatypes
+ 
+ ! "Outer" type: can be "independent" or attached to inner
  type contrib_cache_outer
 
    type(contrib_cache_outer), pointer :: next
    logical :: last
    logical :: dummy_entry
+   ! Number of chain rule applications
    integer :: num_dmat
+   ! Perturbation tuples
    type(p_tuple), allocatable, dimension(:) :: p_tuples
 
-   ! Contribution type: 1: Only Pulay n, 3: Only Lagrange, 4: Both Pulay and Lagrange
+   ! Contribution type for two-factor terms: 1: Only Pulay n, 
+   ! 3: Only Lagrange, 4: Both Pulay and Lagrange
    integer :: contrib_type = 0
    
+   ! Choice of n rule for contribution (for use in two-factor terms)
    integer :: n_rule = 0
+   ! Size of contribution data
    integer :: contrib_size = 0
+   ! Perturbation block information
    integer, allocatable, dimension(:) :: nblks_tuple
    integer, allocatable, dimension(:,:) :: blk_sizes
    integer, allocatable, dimension(:,:) :: indices
    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
    integer, allocatable, dimension(:) :: blks_tuple_triang_size
-   type(QcMat), allocatable, dimension(:) :: data_mat ! Fock matrix contribution data
-   complex(8), allocatable, dimension(:) :: data_scal ! Property data    
+   ! Matrix data (if used)
+   type(QcMat), allocatable, dimension(:) :: data_mat 
+   ! Scalar data (if used)
+   complex(8), allocatable, dimension(:) :: data_scal
 
  end type 
 
+ ! "Inner" type: For use in e.g. perturbed Fock and energy-type terms
+ ! Attaches to one or more outer cache instances
  type contrib_cache
 
    type(contrib_cache), pointer :: next
    logical :: last
+   ! Perturbation tuple
    type(p_tuple) :: p_inner
 
+   ! Number of outer cache instances attached to this inner
    integer :: num_outer
+   ! Perturbation block/indices information
    integer :: nblks
    integer, allocatable, dimension(:) :: blk_sizes
    integer :: blks_triang_size
    integer, allocatable, dimension(:,:) :: blk_info
    integer, allocatable, dimension(:,:) :: indices
          
+   ! Pointer to attached outer cache instances
    type(contrib_cache_outer), pointer :: contribs_outer
 
  end type 
 
  
  contains
-
- 
-  
 
     
   ! Initialize progress/restarting framework
@@ -116,6 +125,7 @@ module rsp_property_caching
   ! Check progress counter against restart checkpoint
   ! Return true if checkpoint not passed, false if passed
   ! If optional argument 'lvl' specified, only check progress at that level
+  ! Currently, only 'lvl' style check implemented
   function rs_check(prog_info, rs_info, lvl)
   
     implicit none
@@ -127,10 +137,6 @@ module rsp_property_caching
     
     rs_check = .FALSE.
     rs_past = .FALSE.
-    
-!     write(*,*) 'Restart checker called'
-!     write(*,*) 'Progress', prog_info
-!     write(*,*) 'Restart checkpoint', rs_info
     
     if (present(lvl)) then
     
@@ -160,13 +166,10 @@ module rsp_property_caching
            
     end if
     
-    
-!     write(*,*) 'Restart conditions met?', rs_check
-    
   end function
   
   
-  ! Increment calculation progress counter and store in file
+  ! Increment calculation progress counter at level 'lvl' and store in file
   subroutine prog_incr(prog_info, lvl)
     
     implicit none
@@ -182,19 +185,15 @@ module rsp_property_caching
     
     end do
     
-!     write(*,*) 'Increased progress at level', lvl
-!     write(*,*) 'Progress is now', prog_info
-    
-    
     open(unit=260, file='OPENRSP_RESTART', status='replace', action='write') 
-       write(260,*) prog_info(1)
-       write(260,*) prog_info(2)
-       write(260,*) prog_info(3)
+    write(260,*) prog_info(1)
+    write(260,*) prog_info(2)
+    write(260,*) prog_info(3)
     close(260)
     
   end subroutine
  
- 
+ ! Store array of matrices or scalars in file fname
  subroutine mat_scal_store(array_size, fname, mat, scal, start_pos)
  
    implicit none
@@ -248,7 +247,7 @@ module rsp_property_caching
  
  end subroutine
  
-  
+ ! Retrieve array of matrices or scalars from file fname
  subroutine mat_scal_retrieve(array_size, fname, mat, scal)
  
    implicit none
@@ -289,13 +288,7 @@ module rsp_property_caching
  
  end subroutine
  
- 
- 
- 
- 
-
- 
-    
+ ! Store contribution cache structure (including outer attached instances) in file fname
  subroutine contrib_cache_store(cache, fname)
  
    implicit none
@@ -396,7 +389,7 @@ module rsp_property_caching
  
  end subroutine
  
- 
+ ! Retrieve contribution cache structure (including outer attached instances) from file fname
  subroutine contrib_cache_retrieve(cache, fname)
  
    implicit none
@@ -430,16 +423,6 @@ module rsp_property_caching
    
    ! NOTE: DEALLOCATION/ALLOCATION MAY BE PROBLEMATIC   
     
-!    cache_next => cache
-   
-!    if (allocated(cache)) then
-!    
-!       nullify(cache)
-!       
-!      
-!    end if
-!    
-!    allocate(cache)
    cache_next => cache
    
    call contrib_cache_read_one_inner(cache_next, fname, funit)
@@ -471,26 +454,22 @@ module rsp_property_caching
  
  end subroutine
  
+ ! Wrapper: Get one inner contribution cache instance from file fname
  subroutine contrib_cache_retrieve_one_inner(cache_new, fname, funit)
  
     implicit none
  
     integer :: funit 
     character(*) :: fname
-!     type(contrib_cache), target :: cache
     type(contrib_cache), pointer :: cache_new
  
     allocate(cache_new)
  
     call contrib_cache_read_one_inner(cache_new, fname, funit)
-    
-!     cache%next => cache_new
- 
+
  end subroutine
  
- 
- 
- 
+ ! Read one inner contribution cache instance from file fname
  subroutine contrib_cache_read_one_inner(cache, fname, funit)
  
    implicit none
@@ -548,17 +527,9 @@ module rsp_property_caching
       allocate(cache%indices(size_i, size_j))
       read(funit) cache%indices
       
-           
-         
-      
-   
  end subroutine
  
- 
-
- 
- 
- 
+ ! Wrapper: Store outer type contribution cache element in file fname
  subroutine contrib_cache_outer_store(cache, fname, mat_acc_in)
  
    implicit none
@@ -586,7 +557,7 @@ module rsp_property_caching
  
  end subroutine
  
- 
+ ! Write one outer contribution cache element to file fname
  ! Assumes file 'fname' is already opened with I/O unit 'funit'
  subroutine contrib_cache_outer_put(cache, fname, funit, mat_acc_in)
  
@@ -745,7 +716,7 @@ module rsp_property_caching
  
  end subroutine
  
- 
+ ! Wrapper 1: Get outer contribution cache instance from file fname
  ! Add condition to handle "not from inner"
  subroutine contrib_cache_outer_retrieve(cache, fname, from_inner, funit_in, mat_acc_in)
  
@@ -820,7 +791,7 @@ module rsp_property_caching
  end subroutine
  
  
- 
+ ! Wrapper 2: Get one outer cache element from file fname
  subroutine contrib_cache_retrieve_one_outer(cache, fname, funit, mat_acc_in)
  
    implicit none
@@ -849,7 +820,7 @@ module rsp_property_caching
  
  end subroutine
  
- 
+ ! Read one outer contribution cache element from file fname
  subroutine contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in)
  
    implicit none
@@ -987,8 +958,8 @@ module rsp_property_caching
  end subroutine
  
  
-    
-  
+ ! Cycle outer instances attached to 'current_element' until specified
+ ! element is reached
  subroutine contrib_cache_cycle_outer(current_element, num_p_tuples, p_tuples, &
             next_outer, n_rule)
 
@@ -1025,14 +996,6 @@ module rsp_property_caching
 
          next_outer => contrib_cache_outer_next_element(next_outer)
          
-!          write(*,*) 'Next outer in cycle outer'
-         
-!          do i = 1, size(next_outer%p_tuples)
-!          
-!             write(*,*) 'pid', next_outer%p_tuples(i)%pid
-!          
-!          end do
-
          if (num_p_tuples > 1) then
          
             found = p_tuples_compare(num_p_tuples - 1, next_outer%p_tuples, &
@@ -1044,9 +1007,6 @@ module rsp_property_caching
                                      (/get_emptypert()/))
          
          end if
-
-!          write(*,*) 'Found before n rule comparison?', found
-!          write(*,*) 'n rule requested, present', n_rule, next_outer%n_rule
          
          if (present(n_rule)) then
       
@@ -1075,7 +1035,7 @@ module rsp_property_caching
 
  end subroutine
  
- 
+ ! Cycle contribution cache until first element reached
  function contrib_cache_cycle_first(current_element) result(next_element)
 
    implicit none
@@ -1093,6 +1053,7 @@ module rsp_property_caching
 
  end function
 
+ ! Cycle outer contribution cache element until first element reached
  function contrib_cache_outer_cycle_first(current_element) result(next_element)
 
    implicit none
@@ -1110,6 +1071,7 @@ module rsp_property_caching
 
  end function
  
+ ! Return next element in contribution cache linked list
  function contrib_cache_next_element(current_element) result(next_element)
 
    implicit none
@@ -1121,6 +1083,7 @@ module rsp_property_caching
 
  end function
 
+ ! Return next element in outer contribution cache linked list
  function contrib_cache_outer_next_element(current_element) result(next_element)
 
    implicit none
@@ -1132,7 +1095,7 @@ module rsp_property_caching
 
  end function
  
- 
+  ! Allocate and set up new contribution cache element
   subroutine contrib_cache_allocate(current_element)
 
    implicit none
@@ -1158,7 +1121,8 @@ module rsp_property_caching
    call contrib_cache_outer_allocate(current_element%contribs_outer)
    
  end subroutine
-
+ 
+ ! Allocate and set up new outer contribution cache element
  subroutine contrib_cache_outer_allocate(current_element)
 
     implicit none
@@ -1188,6 +1152,8 @@ module rsp_property_caching
 
   end subroutine
  
+ ! Initialize contribution cache (and associated outer contribution cache)
+ ! as specified by perturbation tuples 'p_tuples'
  subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples, n_rule)
 
    implicit none
@@ -1231,8 +1197,6 @@ module rsp_property_caching
                                               p_tuples(2:num_p_tuples))   
          
       end if
-      
-   
    
    else
    
@@ -1250,13 +1214,13 @@ module rsp_property_caching
          
       end if
       
-
-      
    end if
       
  end subroutine
  
  
+ ! Initialize outer contribution cache as specified by perturbation tuples 'outer_p_tuples'
+ ! 'unperturbed' flag signifies empty perturbation tuple (typically used for 'all inner' case)
  subroutine contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
 
    implicit none
@@ -1310,7 +1274,7 @@ module rsp_property_caching
      
      else
      
-!         write(*,*) 'no external perts'
+     ! Reserved if other treatment necessary for "no external perturbations" case
      
      end if
      
@@ -1336,17 +1300,13 @@ module rsp_property_caching
       
       allocate(new_element%indices(1,1))
       new_element%indices(1,1) = 1 
-     
-      
    
    end if
-   
       
  end subroutine
    
-
    
-
+ ! Add outer contribution cache element to existing linked list
  subroutine contrib_cache_outer_add_element(curr_element, unperturbed, num_dmat, &
             outer_p_tuples, data_size, data_mat, data_scal, n_rule)
 
@@ -1364,8 +1324,6 @@ module rsp_property_caching
    type(Qcmat), optional, dimension(*) :: data_mat
    complex(8), optional, dimension(*) :: data_scal
 
-!    write(*,*) 'Outer add element'
-   
    if (present(n_rule)) then
    
       already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples, n_rule=n_rule)
@@ -1375,8 +1333,6 @@ module rsp_property_caching
       already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)
    
    end if
-   
-!    write(*,*) 'Already?', already
    
    if (already) then
    
@@ -1409,8 +1365,6 @@ module rsp_property_caching
            
          end do
    
-   
-   
       end if
    
       if (present(data_scal)) then
@@ -1419,10 +1373,6 @@ module rsp_property_caching
       
    
    else
-   
-!       write(*,*) 'Not already, unperturbed?', unperturbed
-      
-!       write(*,*) 'n rule present?', present(n_rule)
    
       next_element => curr_element
       allocate(new_element)
@@ -1457,8 +1407,6 @@ module rsp_property_caching
       
       if (present(n_rule)) then
       
-!          write(*,*) 'Making n_rule', n_rule
-      
          new_element%n_rule = n_rule
       
       end if
@@ -1471,6 +1419,7 @@ module rsp_property_caching
       
  end subroutine
  
+ ! Add contribution cache element to existing linked list
  subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples, n_rule)
 
    implicit none
@@ -1488,9 +1437,6 @@ module rsp_property_caching
    ! If cache element for inner perturbations already exists, just add outer
    if (contrib_cache_already_inner(current_element, p_tuples(1))) then
    
-   
-!       write(*,*) 'Already inner'
-   
       next_element => current_element
    
       ! Skip to cache element for this inner
@@ -1502,23 +1448,17 @@ module rsp_property_caching
       
       ! NOTE: AND CONDITION MAY ADD WRONG KIND OF CACHE ELEMENT, REVISIT IF ERROR
       
-!       write(*,*) 'num p tuples in cc add elem', num_p_tuples
-      
       empty_outer = .TRUE.
       
       if (num_p_tuples > 1) then
      
          if (p_tuples(2)%npert > 0) then
          
-!             write(*,*) 'Not empty outer'
-         
             empty_outer = .FALSE.
             next_element%num_outer = next_element%num_outer + 1
      
             if (present(n_rule)) then
                
-!                write(*,*) 'n rule present and is', n_rule
-         
                call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
                     num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule=n_rule)
          
@@ -1540,6 +1480,7 @@ module rsp_property_caching
          call empty_p_tuple(emptypert)
          
          ! MaR: WARNING: CHANGED num_p_tuples ARGUMENT TO 0 BELOW; MAY PRODUCE ERRORS ELSEWHERE
+         ! UPDATE: Looks like it didn't make errors, return here if there are problems anyway
          
          if (present(n_rule)) then
          
@@ -1585,9 +1526,8 @@ module rsp_property_caching
 
  end subroutine
  
- 
- ! MAYBE SOME WORK REMAINING ON THIS FUNCTION
- 
+ ! Check if element (inner + outer combination) as specified by 'p_tuples' (and possible 'n_rule')
+ ! already exists in cache
  function contrib_cache_already(current_element, num_p_tuples, p_tuples, n_rule)
 
    implicit none
@@ -1661,7 +1601,9 @@ module rsp_property_caching
 
  end function
  
-
+ 
+ ! Check if element of outer contribution cache as specified by 'p_tuples_outer'
+ ! (and possible 'n_rule') exists in linked list
  function contrib_cache_already_outer(current_element, num_dmat, p_tuples_outer, n_rule)
 
    implicit none
@@ -1708,6 +1650,8 @@ module rsp_property_caching
 
  end function
 
+ ! Check if contribution cache (inner only) element (as specified by 'p_inner') 
+ ! already exists in linked list 
  function contrib_cache_already_inner(current_element, p_inner)
 
    implicit none
@@ -1739,10 +1683,9 @@ module rsp_property_caching
 
    end do
 
-
  end function
  
-    
+ ! Get data from outer contribution cache element    
  subroutine contrib_cache_getdata_outer(cache, num_p_tuples, p_tuples, &
             from_inner, contrib_size, ind_len, ind_unsorted, hard_offset, mat, mat_sing, &
             scal, n_rule)
@@ -1775,11 +1718,8 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
- 
    
-   
-   
-   
+   ! Offset for two-factor type terms
    if (present(hard_offset)) then
    
       cache_hard_offset = hard_offset
@@ -1790,7 +1730,8 @@ module rsp_property_caching
    
    end if
    
-   
+   ! Remove first tuple from tuple of perturbation tuples if this
+   ! outer cache was attached to an inner cache
    if (from_inner) then
       
       allocate(p_tuples_srch(num_p_tuples - 1))
@@ -1801,6 +1742,7 @@ module rsp_property_caching
          call p1_cloneto_p2(p_tuples(i + 1), p_tuples_srch(i))
       end do
   
+   ! Otherwise, keep entire tuple of tuples
    else
    
       allocate(p_tuples_srch(num_p_tuples))
@@ -1814,6 +1756,7 @@ module rsp_property_caching
    end if
 
    
+   ! Search to find cache element
    p_tuples_srch_ord = p_tuples_standardorder(size(p_tuples_srch), p_tuples_srch)
    
    p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
@@ -1822,17 +1765,6 @@ module rsp_property_caching
       passedlast = 0
       found = .FALSE.
 
-!    write(*,*) 'Outer retrieval, coming from inner?', from_inner
-   
-   
-!    write(*,*) 'p tuples srch ord'
-   
-!    do i = 1, num_p_tuples - inner_rm
-!    
-!       write(*,*) 'D', p_tuples_srch_ord(i)%pid
-!    
-!    end do
-      
    do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
 
    
@@ -1848,17 +1780,6 @@ module rsp_property_caching
             end if
             
          end if
-      
-      
-!       write(*,*) 'Traversing...'
-      
-!       do i = 1, size(next_element_outer%p_tuples)
-!       
-!          write(*,*) 'D', next_element_outer%p_tuples(i)%pid
-!                        
-!       end do
-      
-!       write(*,*) ' '
       
       if (size(next_element_outer%p_tuples) == size(p_tuples_srch_ord)) then
          found = p_tuples_compare(num_p_tuples - inner_rm, next_element_outer%p_tuples, &
@@ -1883,22 +1804,15 @@ module rsp_property_caching
       write(*,*) 'ERROR: Element not found'
       stop
       
-   else
-   
-!       write(*,*) 'FOUND:'
-!       
-!       do i = 1, size(next_element_outer%p_tuples)
-!       
-!          write(*,*) 'D', next_element_outer%p_tuples(i)%pid
-!                        
-!       end do
-   
    end if
    
+   ! If matrix (array) or scalar (array) data requested
+   ! Typical for resp. lower-order Fock and response tensor calls
    if (present(mat) .OR. present(scal)) then
    
       if (found) then
       
+         ! Merge perturbation tuples for indexing
          total_num_perturbations = 0
 
          do i = 1, num_p_tuples
@@ -1935,6 +1849,8 @@ module rsp_property_caching
             end if
      
          end if
+         
+         ! Get block information for indexing
          
          merged_p_tuple = p_tuple_standardorder(merged_p_tuple)
          merged_nblks = get_num_blks(merged_p_tuple)
@@ -1992,6 +1908,7 @@ module rsp_property_caching
 
          end do
 
+         ! Loop over indices, get appropriate offsets and put data in return array
          do i = 1, size(indices, 1)
 
             res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
@@ -2062,10 +1979,13 @@ module rsp_property_caching
 
       end if
 
+   ! If single matrix requested
+   ! Typical for single 'get perturbed S, D, or F' calls
    else if (present(mat_sing)) then
    
     if (p_tuples_srch(1)%npert > 0) then
 
+       ! Get block information for indexing
        nblks = get_num_blks(p_tuples_srch(1))
        
        allocate(blk_sizes_sing(nblks))
@@ -2084,21 +2004,13 @@ module rsp_property_caching
 
     else
 
+       ! If unperturbed, offset is 1
        offset = 1
 
     end if
    
       if (found) then
       
-!          write(*,*) 'Getting single matrix:'
-!       
-!          do i = 1, size(next_element_outer%p_tuples)
-!       
-!             write(*,*) 'D', next_element_outer%p_tuples(i)%pid, next_element_outer%p_tuples(i)%freq
-!                        
-!          end do
-      
-
          call QcMatAEqB(mat_sing, next_element_outer%data_mat(offset + cache_hard_offset))
          
       else
@@ -2111,6 +2023,10 @@ module rsp_property_caching
 
  end subroutine
  
+ ! Get data from contribution cache
+ ! Will search linked list for appropriate inner entry, then
+ ! search associated outer contribution cache linked list
+ ! and retrieve with contrib_cache_getdata_outer
  ! Assumes that p_tuples is in standard order
  subroutine contrib_cache_getdata(cache, num_p_tuples, p_tuples, contrib_size, &
                                   ind_len, ind_unsorted, hard_offset, mat, mat_sing, scal, n_rule)
@@ -2133,6 +2049,7 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
+   ! Hard offset typical for two-factor terms
    if (present(hard_offset)) then
    
       cache_hard_offset = hard_offset
@@ -2144,6 +2061,8 @@ module rsp_property_caching
    end if
    
 
+   ! Search inner cache for entry
+   
    next_element => cache
    passedlast = 0
    found = .FALSE.
@@ -2163,7 +2082,10 @@ module rsp_property_caching
 
    end do
 
-   
+   ! If found, move to search (and retrieve) from outer cache
+   ! Several cases depending on which type of data is requested,
+   ! and whether or not (k,n) rule choice (specified as n in 'n_rule')
+   ! is a discriminating factor in search (the latter typical for two-factor terms)
    if (found) then
    
       if (present(mat)) then

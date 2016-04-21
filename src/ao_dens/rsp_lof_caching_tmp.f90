@@ -5,6 +5,9 @@
 
 ! Contains routines/functions and definitions related to fock_lowerorder datatype
 ! in which (perturbed) overlap, density and Fock matrices are stored.
+!
+! UPDATE (2016): Now defunct after introduction of new, general 
+! 'contribution cache' system
 
 module rsp_lof_caching
 
