@@ -80,6 +80,32 @@ module rsp_general
 
   contains
   
+  ! Main routine called by host program to calculate properties
+  !
+  ! Arguments:
+  !
+  ! n_props: Number of properties (one property may have several frequency configurations)
+  ! np: For each property: Number of perturbations (i.e. the order of each property)
+  ! pert_dims: For each perturbation across all properties: Dimensionality of the perturbation
+  ! pert_first_comp: For each perturbation across all properties: Which is the first component (not in use)
+  ! pert_labels: For each perturbation across all properties: Perturbation label
+  ! n_freq_cfgs: For each property: Number of frequency configurations for that property
+  ! pert_freqs: For each perturbation across all properties and freq. cfgs.: Perturbation frequency
+  ! kn_rules: For each property: Choice of (k,n) truncation rule
+  ! F_unpert, S_unpert, D_unpert: The unperturbed Fock, overlap and density matrices, respectively
+  ! get_rsp_sol: Callback routine for response equation solution
+  ! get_ovl_mat: Callback routine for perturbed overlap matrices
+  ! get_ovl_exp: Callback routine for Pulay S*W type terms
+  ! get_1el_mat: Callback routine for 1-electron perturbed Fock matrix contributions
+  ! get_1el_exp: Callback routine for 1-electron contributions to response properties
+  ! get_2el_mat: Callback routine for 2-electron perturbed Fock matrix contributions
+  ! get_2el_exp: Callback routine for 2-electron contributions to response properties
+  ! get_xc_mat: Callback routine for exchange-correlation contributions to perturbed Fock matrices
+  ! get_xc_exp: Callback routine for exchange-correlation contributions to response properties
+  ! id_output: Output stream identifier
+  ! rsp_tensor: Array to hold the response properties upon calculation
+  ! file_id: Custom filename for printing response properties (currently not in use)
+  
   subroutine openrsp_get_property(n_props, np, pert_dims, pert_first_comp, pert_labels, n_freq_cfgs, pert_freqs, &
                                    kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
@@ -115,16 +141,16 @@ module rsp_general
     integer, dimension(3) :: rs_info
     integer, dimension(3) :: prog_info
     character(30) :: fmt_str
+
+    ! Start progress counter
     
     prog_info = (/0,0,0/)
-    
     call prog_init(rs_info)
-    
     call prog_incr(prog_info, 1)
     
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     sdf_retrieved = .FALSE.
-
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
        write(id_outp,*) ' '
@@ -164,7 +190,6 @@ module rsp_general
     
     end if
     
-    
     call prog_incr(prog_info, 1)
 
     ! Present calculation and initialize perturbation tuple datatypes and
@@ -180,7 +205,6 @@ module rsp_general
        write(id_outp,*) 'Calculating', n_props, 'properties'
     end if
     write(id_outp,*) ' '
-    
    
     k = 1
     
@@ -284,6 +308,7 @@ module rsp_general
     write(id_outp,*) ' '
 
     ! Print results
+    ! This can be done more elegantly by ASCII transformation of integers, but leave as is for now
     
     k = 1
     n = 1
@@ -389,7 +414,7 @@ module rsp_general
 
   end subroutine
    
-  
+  ! Main property calculation routine - Get perturbed F, D, S and then calculate the properties
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                   get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                   get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
@@ -417,6 +442,8 @@ module rsp_general
     emptyp_tuples = (/emptypert, emptypert/)
   
     call prog_incr(prog_info, 1)
+  
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
   
     contrib_retrieved = .FALSE.
     props_retrieved = .FALSE.
@@ -460,6 +487,7 @@ module rsp_general
        
     end if
     
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, 1)
     
@@ -481,7 +509,7 @@ module rsp_general
     
     else
     
-       ! For each property: Recurse to identify HF energy-type contributions, store in cache
+       ! For each property and freq. cfg.: Recurse to identify HF energy-type contributions, store in cache
     
        call contrib_cache_allocate(contribution_cache)
     
@@ -518,10 +546,9 @@ module rsp_general
     end if
 
 
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, 1)
-    
-    
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
@@ -561,7 +588,6 @@ module rsp_general
        cache_next => cache_next%next
        
        if (cache_next%p_inner%npert == 0) then
-!           write(*,*) 'cycling dummy'
           cache_next => cache_next%next
        end if
        
@@ -572,6 +598,7 @@ module rsp_general
           write(*,*) cache_next%p_inner%plab
           write(*,*) ' '
           
+          ! Check if this stage passed previously and if so, then skip execution
           if (rs_check(prog_info, rs_info, lvl=2)) then
           
              write(*,*) ' '
@@ -609,6 +636,8 @@ module rsp_general
     
     end if
     
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
+    
     call prog_incr(prog_info, 1)
    
     if (rs_check(prog_info, rs_info, lvl=1)) then
@@ -627,7 +656,7 @@ module rsp_general
            
     else
     
-       ! For each property: Recurse to identify HF energy-type contributions and 
+       ! For each property and freq. cfg.: Recurse to identify HF energy-type contributions and 
        ! add to the property under consideration
 
        k = 1
@@ -668,10 +697,9 @@ module rsp_general
     
     contrib_retrieved = .FALSE.
     
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
+    
     call prog_incr(prog_info, 1)
-    
-    ! For each property: Recurse to identify two-factor contributions and store in cache
-    
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
@@ -690,6 +718,8 @@ module rsp_general
        end if
            
     else
+    
+       ! For each property and freq. cfg.: Recurse to identify two-factor contributions and store in cache
     
        k  = 1
     
@@ -727,6 +757,8 @@ module rsp_general
        call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
     
     end if
+    
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, 1)
     
@@ -767,7 +799,6 @@ module rsp_general
        cache_next => cache_next%next
        
        if (cache_next%p_inner%npert == 0) then
-!           write(*,*) 'cycling dummy'
           cache_next => cache_next%next
        end if
        
@@ -778,6 +809,7 @@ module rsp_general
           write(*,*) cache_next%p_inner%plab
           write(*,*) ' '
           
+          ! Check if this stage passed previously and if so, then skip execution
           if (rs_check(prog_info, rs_info, lvl=2)) then
           
              write(*,*) ' '
@@ -815,9 +847,8 @@ module rsp_general
        
     end if
 
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
     call prog_incr(prog_info, 1)
-    
-    
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
@@ -835,7 +866,7 @@ module rsp_general
        
     else
     
-       ! For each property: Recurse to identify two-factor contributions and 
+       ! For each property and freq. cfg.: Recurse to identify two-factor contributions and 
        ! add to the property under consideration
        
        k = 1
@@ -896,7 +927,8 @@ module rsp_general
     
   end subroutine
    
-
+   ! Recurse to identify (dryrun == .TRUE.) or assemble (dryrun == .FALSE.) energy-type contributions
+   
    recursive subroutine rsp_energy_recurse(pert, total_num_perturbations, kn, num_p_tuples, &
                                   p_tuples, density_order, D, get_nucpot, get_1el_exp, &
                                   get_t_exp, get_2el_exp, dryrun, cache, p_size, prop)
@@ -1043,7 +1075,6 @@ module rsp_general
              if (dryrun) then
              
                 write(*,*) 'Adding cache element'
-!                 write(*,*) 'num p tuples when adding', num_p_tuples
              
                 do i = 1, num_p_tuples
 
@@ -1138,7 +1169,7 @@ module rsp_general
        
        write(*,*) ' '
   
-  
+       ! If this is the case, then there are no outer perturbations (no chain rule applicateions)
        if (outer_next%num_dmat == 0) then
 
           num_0 = 1
@@ -1148,7 +1179,8 @@ module rsp_general
           
           total_outer_size_1 = total_outer_size_1 + 1
           total_outer_size_2 = total_outer_size_2 + 1
-          
+       
+       ! One chain rule application: No nuc-nuc terms, only 1-el and 2-el terms
        else if (outer_next%num_dmat == 1) then
        
           num_1 = num_1 + 1
@@ -1159,6 +1191,7 @@ module rsp_general
           total_outer_size_1 = total_outer_size_1 + outer_next%blks_tuple_triang_size(1)
           total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1)
        
+       ! Two chain rule applications: Only 2-el terms
        else if (outer_next%num_dmat == 2) then
        
           outer_contract_sizes_1(k) = 0
@@ -1168,10 +1201,6 @@ module rsp_general
           total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1)*outer_next%blks_tuple_triang_size(2)
        
        end if
-   
-
-    
-       
     
        if (outer_next%last) then
     
@@ -1185,12 +1214,9 @@ module rsp_general
     
     end do
  
-    ! Make collapsed contraction sizes array for 1-el call
+    ! Make collapsed contraction sizes array for 1-electron routine call
  
     allocate(outer_contract_sizes_1_coll(num_1))
-    
-!     write(*,*) 'num_1', num_1
-!     write(*,*) 'outer contract sizes 1', outer_contract_sizes_1
     
     k = 1 
      do i = 1, cache%num_outer
@@ -1200,24 +1226,27 @@ module rsp_general
         end if
     end do
     
-    ! Allocate and set up outer
+    ! Allocate and set up perturbed density matrices for contractions
     
     allocate(LHS_dmat_1(sum(outer_contract_sizes_1(:))))
     allocate(LHS_dmat_2(sum(outer_contract_sizes_2(:, 1))))
     allocate(RHS_dmat_2(sum(outer_contract_sizes_2(:, 2))))
     
+    ! 1-el terms
     do i = 1, size(LHS_dmat_1)
     
        call QcMatInit(LHS_dmat_1(i))
     
     end do
     
+    ! LHS perturbed D for 2-el terms
     do i = 1, size(LHS_dmat_2)
     
        call QcMatInit(LHS_dmat_2(i))
     
     end do
     
+    ! RHS perturbed D for 2-el terms
     do i = 1, size(RHS_dmat_2)
     
        call QcMatInit(RHS_dmat_2(i))
@@ -1237,6 +1266,7 @@ module rsp_general
     lhs_ctr_2 = 1
     rhs_ctr_2 = 1
     
+    ! Traverse and fetch matrices
     do while (traverse_end .EQV. .FALSE.)
     
        ! No chain rule applications
@@ -1331,7 +1361,10 @@ module rsp_general
       
        t_matrix_bra = get_emptypert()
        t_matrix_ket = get_emptypert()
-      
+
+       
+! NOTE: T matrix contributions not reinstated yet, to be done later
+!
 !        call rsp_ovlave_t_matrix_2014(get_ovl_exp, cache%p_inner, cache%p_inner%npert, &
 !                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
 !                                 LHS_dmat_1, size(contrib_1), contrib_1)
@@ -1339,8 +1372,6 @@ module rsp_general
     write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
     
     end if
-    
-!     write(*,*) '2-el'
     
     ! Calculate two-electron contributions
     contrib_2 = 0.0
@@ -1350,7 +1381,7 @@ module rsp_general
     
     write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
     
-    ! Traversal: Add nuc-nuc, 1-el and two-el contributions together (put in contrib_2)
+    ! Traversal: Add nuc-nuc, 1-el and two-el contributions together
     
     traverse_end = .FALSE.
     
@@ -1425,7 +1456,7 @@ module rsp_general
           
        else
        
-          
+          ! Set up collective block information for indexing
        
           if (cache%p_inner%npert > 0) then
           
@@ -1469,6 +1500,8 @@ module rsp_general
                 end if
                 
              end do
+       
+             ! Go through elements of data_tmp and store in appropriate cache position
        
              do i = 1, size(outer_next%indices, 1)
           
@@ -1522,7 +1555,7 @@ module rsp_general
     
   end subroutine
 
-  
+   ! Recurse to identify (dryrun == .TRUE.) or assemble (dryrun == .FALSE.) two-factor contributions
    recursive subroutine rsp_twofact_recurse(pert, kn, p12, dryrun, cache, p_size, prop)
 
     implicit none
@@ -1539,6 +1572,7 @@ module rsp_general
     integer, allocatable, dimension(:,:,:) :: blk_info
     complex(8), dimension(p_size) :: prop
     
+    ! Recurse
     if (pert%npert > 0) then
 
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
@@ -1549,6 +1583,7 @@ module rsp_general
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), dryrun, &
        cache, p_size, prop)
 
+    ! If at end of recursion, process
     else
     
        p12(1) = p_tuple_standardorder(p12(1))
@@ -1574,14 +1609,13 @@ module rsp_general
        
        hard_offset = 0
 
+       ! If not skipping
        if (kn_skip(p12(2)%npert, p12(2)%pid, kn) .EQV. .FALSE.) then
 
           if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
 
              if (.NOT.(dryrun)) then
 
-             ! FIXME: CHANGE THIS TO WORK WITH CONTRIBUTION TYPE
-             
                 write(*,*) 'Retrieving Pulay n contribution:'
                 write(*,*) 'S', p12(1)%pid
                 write(*,*) 'W', p12(2)%pid
@@ -1591,6 +1625,8 @@ module rsp_general
                 
              else
              
+                ! If previously identified as Lagrangian type contribution, change flag to
+                ! also include Pulay n contribution
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
                 if (curr_outer%contrib_type == 3) then
                 
@@ -1608,10 +1644,9 @@ module rsp_general
                 write(*,*) 'S', p12(1)%pid
                 write(*,*) 'W', p12(2)%pid
                 
-!                 write(*,*) 'kn rule for cache creation', kn
-                
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
+                ! Flag contribution as Pulay n type
                 curr_outer%contrib_type = 1
              
              else
@@ -1626,6 +1661,7 @@ module rsp_general
 
        end if
        
+       ! Contribution must include perturbation "a" to be eligible to be Lagrangian type
        lag_eligible = .FALSE.
        
        do j = 1, p12(1)%npert
@@ -1638,14 +1674,13 @@ module rsp_general
        
        end do
        
+       ! If not skipping
        if ((kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) .AND. &
            (p12(1)%npert > 0) .AND. lag_eligible) then
 
           if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
 
              if (.NOT.(dryrun)) then
-             
-             ! FIXME: CHANGE THIS TO WORK WITH CONTRIBUTION TYPE
              
                 write(*,*) 'Retrieving Lagrange contributions:'
                 write(*,*) 'A', p12(1)%pid
@@ -1673,6 +1708,8 @@ module rsp_general
             
              else
              
+                ! If previously identified as Pulay n type contribution, change flag to
+                ! also include Lagrangian type contribution
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
                 if (curr_outer%contrib_type == 1) then
                 
@@ -1690,11 +1727,10 @@ module rsp_general
                 write(*,*) 'A', p12(1)%pid
                 write(*,*) 'B', p12(2)%pid
                 
-!                 write(*,*) 'kn rule for cache creation', kn
-                
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
                 
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
+                ! Flag contribution as Lagrangian type
                 curr_outer%contrib_type = 3
              
              else
@@ -1705,8 +1741,6 @@ module rsp_general
              
              end if
           
-
-
           end if
 
        end if 
@@ -1715,7 +1749,7 @@ module rsp_general
 
   end subroutine
   
-  
+  ! Calculate two-factor contributions (Pulay n and Pulay, idempotency and SCFE Lagrangian)
   subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, cache)
 
     implicit none
@@ -1744,7 +1778,7 @@ module rsp_general
     
     external :: get_ovl_exp
     
-    ! Getting unperturbed D for template
+    ! Getting unperturbed D for template use
     
     call QCMatInit(D_unp)
 
@@ -1754,18 +1788,14 @@ module rsp_general
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
     ! Unsure about npert argument
+    ! Update: Seems OK
     call p_tuple_to_external_tuple(cache%p_inner, cache%p_inner%npert, pert_ext)
-
-    
     
     outer_next => cache%contribs_outer
 
-    
-!     write(*,*) 'num outer', cache%num_outer
-
     i_supsize = 0
-    
-    
+
+    ! Size arrays for derivative superstructures
     allocate(o_supsize(cache%num_outer))
     allocate(o_supsize_prime(cache%num_outer))
     allocate(o_size(cache%num_outer))
@@ -1778,8 +1808,6 @@ module rsp_general
 
     allocate(d_struct_inner(i_supsize, 3))
 
-!     write(*,*) 'i supsize', i_supsize
-    
     sstr_incr = 0
     
     call derivative_superstructure(p_tuple_remove_first(cache%p_inner), &
@@ -1788,27 +1816,14 @@ module rsp_general
           i_supsize, sstr_incr, d_struct_inner)  
           
     sstr_incr = 0
-          
+
     
-    ! Traverse outer elements to determine which contributions are Pulay n and/or Lagrange
-    ! Allocate accordingly: One array for Pulay n/Pulay Lagrange combined, one each for last two
-    ! Alternatively, put directly in cache as they are calculated
-    ! Do in turn (later introduce memory management for memory-intensive jobs): 
-    !
-    ! - Make all W matrices
-    ! - Do S * W contraction and store
-    ! - Make all Zeta matrices
-    ! - Make Z in turn, contract and store
-    ! - Make all Lambda matrices
-    ! - Make Y in turn, contract and store
-   
-    ! Traversal: Find number of matrices/terms for contraction
+    ! Traversal: Determine number of matrices/terms for contraction
     
     any_lagrange = .FALSE.
     lagrange_max_n = 0    
     
     traverse_end = .FALSE.
-    
     
     outer_next => contrib_cache_outer_cycle_first(outer_next)
     if (outer_next%dummy_entry) then
@@ -1846,10 +1861,13 @@ module rsp_general
        ! Here and elsewhere: k in kn rule does not matter as long as it 
        ! is > n; it will always > n so used like this
        
+       ! Get derivative superstructure sizes
+       
        o_supsize(k) = derivative_superstructure_getsize(outer_next%p_tuples(1), &
                    (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/))
                    
+       ! FIXME: Change .FALSE. to .TRUE. below since this is a primed term?
        o_supsize_prime(k) = derivative_superstructure_getsize(outer_next%p_tuples(1), &
                    (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/))
@@ -1857,20 +1875,21 @@ module rsp_general
        
        o_size(k) = outer_next%contrib_type * o_triang_size
        
+       ! If contribution includes Pulay n terms, increase size accordingly
        if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
        
           size_pulay_n = size_pulay_n + o_triang_size
-          
-          
-       
+              
        end if
        
+       ! If contribution includes Lagrangian type terms, increase size accordingly
        if (outer_next%contrib_type >= 3) then
        
           size_lagrange = size_lagrange + 3 * o_triang_size
           
           any_lagrange = .TRUE.
           
+          ! Possibly update max n rule for bound in matrix calls
           if (outer_next%n_rule > lagrange_max_n) then
           
              lagrange_max_n = outer_next%n_rule            
@@ -1879,6 +1898,13 @@ module rsp_general
        
        end if
        
+       ! Allocate array for answers
+       ! The data is ordered consecutively in this order (and entries are omitted if not present):
+       ! 1: Pulay n contributions
+       ! 2: Pulay Lagrange contributions
+       ! 3: SCFE Lagrange contributions
+       ! 4: Idempotency Lagrange contributions
+      
        allocate(outer_next%data_scal(o_size(k) * cache%blks_triang_size))
        
        outer_next%data_scal = 0.0
@@ -1902,6 +1928,7 @@ module rsp_general
        outer_next => outer_next%next
     end if
     
+    ! Limited to 20th order - increase if needed
     allocate(which_index_is_pid(20))
     
     ! Get zeta and lambda matrices if applicable
@@ -1911,6 +1938,7 @@ module rsp_general
        allocate(Zeta(cache%blks_triang_size))
     
        ! FIXME: Change to max order of all properties
+       ! Update: May be OK anyway
     
        which_index_is_pid = 0
           
@@ -1922,7 +1950,6 @@ module rsp_general
           
        do i = 1, cache%blks_triang_size
     
-          ! CONTINUE HERE: CREATE INNER INDICES WHEN MAKING CACHE ENTRY (IT IS MISSING NOW)
           call QcMatInit(Lambda(i), D_unp)
           call QcMatInit(Zeta(i), D_unp)
           call QcMatZero(Lambda(i))
@@ -1965,10 +1992,13 @@ module rsp_general
        
     end do
     
+    ! Pulay size is the number of Pulay n contributions + one third of the
+    ! Lagrange type contributions (of which Pulay Lagrange is one of three)
     allocate(contrib_pulay(cache%blks_triang_size* ( size_pulay_n + size_lagrange/3)))
        
     k = 1
     
+    ! Traverse to get W matrices
     do while (traverse_end .EQV. .FALSE.)
   
 !        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
@@ -1992,7 +2022,9 @@ module rsp_general
           end do
           
           sstr_incr = 0
-      
+
+          ! Get derivative superstructures according to whether contribution
+          ! is n or Lagrange
           if(outer_next%p_tuples(1)%npert ==0) then
           
              if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then
@@ -2046,23 +2078,14 @@ module rsp_general
              o_triang_size = size(outer_next%indices, 1)
              
           end if
-            
+
+          ! Calculate matrices
           do j = 1, o_triang_size
-          
           
              select case (outer_next%contrib_type)
              
+             ! Only Pulay n
              case (1)
-             
-!                 write(*,*) 'supsize', o_supsize(k)
-!                 write(*,*) 'size outer ind', size(outer_next%indices(j,:))
-!                 write(*,*) 'outer_next%indices(j,:)', outer_next%indices(j,:)
-!                 write(*,*) 'inner npert', cache%p_inner%npert
-!                 write(*,*) 'outer npert', outer_next%p_tuples(1)%npert
-!                 write(*,*) 'which ind is pid', which_index_is_pid(1:cache%p_inner%npert + &
-!                      outer_next%p_tuples(1)%npert)
-!                 write(*,*) 'o ctr', o_ctr
-!                 write(*,*) 'size of W', size(W)
              
                 call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
                      outer_next%p_tuples(1)%npert, &
@@ -2070,6 +2093,7 @@ module rsp_general
                      outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
                      F, D, S, W(o_ctr))
              
+             ! Only Pulay Lagrange
              case (3)
              
                 call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
@@ -2078,7 +2102,7 @@ module rsp_general
                      outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
                      F, D, S, W(o_ctr))
              
-             
+             ! Both Pulay n and Lagrange
              case (4)
              
                 call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
@@ -2115,7 +2139,7 @@ module rsp_general
     
     end do
     
-    ! Outside traversal: Calculate contributions
+    ! Outside traversal: Calculate all Pulay contributions
     
     contrib_pulay = 0.0
     
@@ -2158,8 +2182,6 @@ module rsp_general
 !        
 !        end do
     
-    
-    
        c_ctr = 0
     
        if (outer_next%p_tuples(1)%npert ==0) then
@@ -2171,8 +2193,8 @@ module rsp_general
           o_triang_size = size(outer_next%indices, 1)
              
        end if
-
        
+       ! Set up block information for indexing
        
        tot_num_pert = cache%p_inner%npert + &
        sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
@@ -2222,59 +2244,62 @@ module rsp_general
         
        ! Store any Pulay n and Lagrange terms
        
-          do i = 1, o_triang_size
+       do i = 1, o_triang_size
           
-             do j = 1, size(cache%indices, 1)
-                
-                if (size(outer_next%p_tuples) > 0) then
-                   if (outer_next%p_tuples(1)%npert > 0) then
-
-                      offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
-                      (/cache%nblks, outer_next%nblks_tuple(1)/), &
-                      (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
-                      blks_tuple_info, &
-                      blk_sizes, &
-                      (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
-                      (/cache%indices(j, :), outer_next%indices(i, :)/))
-                      
-                   else
-                   
-                      offset = j
-                   
-                   end if
-                   
-                end if
-                
-                if (outer_next%contrib_type == 1) then
-                
-                   outer_next%data_scal(offset) = contrib_pulay(j + &
-                   size(cache%indices, 1) * (i - 1) + o_ctr)
-                   c_ctr = c_ctr + 1
-                   
-                else if (outer_next%contrib_type == 3) then
-
-                   outer_next%data_scal(offset) = contrib_pulay(j + &
-                   size(cache%indices, 1) * (i - 1) + o_ctr)
-                   c_ctr = c_ctr + 1
-                   
-                else if (outer_next%contrib_type == 4) then
-                
-                   outer_next%data_scal(offset) = contrib_pulay(j + &
-                   size(cache%indices, 1) * (i - 1) + o_ctr)
-                   
-                   outer_next%data_scal(offset + size(cache%indices, 1) * o_triang_size) = &
-                   contrib_pulay(j + size(cache%indices, 1) * (i - 1) + &
-                   size(cache%indices, 1) * o_triang_size  + o_ctr)
-                   c_ctr = c_ctr + 2
-                
-                
-                end if
-                   
-                
-             end do
+          do j = 1, size(cache%indices, 1)
+               
+             if (size(outer_next%p_tuples) > 0) then
              
+                if (outer_next%p_tuples(1)%npert > 0) then
+
+                   offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
+                   (/cache%nblks, outer_next%nblks_tuple(1)/), &
+                   (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
+                   blks_tuple_info, &
+                   blk_sizes, &
+                   (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
+                   (/cache%indices(j, :), outer_next%indices(i, :)/))
+                      
+                else
+                   
+                   offset = j
+                   
+                end if
+                   
+             end if
+                
+             if (outer_next%contrib_type == 1) then
+                
+                outer_next%data_scal(offset) = contrib_pulay(j + &
+                size(cache%indices, 1) * (i - 1) + o_ctr)
+                c_ctr = c_ctr + 1
+                   
+             else if (outer_next%contrib_type == 3) then
+
+                outer_next%data_scal(offset) = contrib_pulay(j + &
+                size(cache%indices, 1) * (i - 1) + o_ctr)
+                c_ctr = c_ctr + 1
+                   
+             else if (outer_next%contrib_type == 4) then
+                
+                outer_next%data_scal(offset) = contrib_pulay(j + &
+                size(cache%indices, 1) * (i - 1) + o_ctr)
+                   
+                ! Skip one block to store Pulay Lagrange when both Pulay n and Lagrange
+                outer_next%data_scal(offset + size(cache%indices, 1) * o_triang_size) = &
+                contrib_pulay(j + size(cache%indices, 1) * (i - 1) + &
+                size(cache%indices, 1) * o_triang_size  + o_ctr)
+                c_ctr = c_ctr + 2
+                
+                
+             end if
+                      
           end do
-          
+             
+       end do
+
+       ! Increment counters to store idempotency, SCFE terms in correct positions
+       
        c_snap = c_ctr
        o_ctr = o_ctr + c_snap
        
@@ -2304,6 +2329,7 @@ module rsp_general
           
           sstr_incr = 0
           
+          ! Get derivative superstructures
           if(outer_next%p_tuples(1)%npert ==0) then
           
              call derivative_superstructure(get_emptypert(), &
@@ -2320,7 +2346,7 @@ module rsp_general
             
           end if
       
-
+          ! Calculate Y, Z matrices and store
           do i = 1, o_triang_size
 
              call QcMatZero(Y)
@@ -2361,8 +2387,6 @@ module rsp_general
                    
                 end if
                 
-!                 write(*,*) 'offset, c_snap', offset, c_snap
-                
                 call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
                 call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
                 cache%blks_triang_size*o_triang_size + offset))
@@ -2400,7 +2424,7 @@ module rsp_general
     
   end subroutine
 
-  
+  ! Print tensors recursively
   recursive subroutine print_rsp_tensor(npert, lvl, pdim, prop, offset)
 
     implicit none
@@ -2436,6 +2460,7 @@ module rsp_general
 
   end subroutine
 
+  ! Print tensors recursively (non-redundant storage)
   recursive subroutine print_rsp_tensor_tr(lvl, npert, pdim, ind, &
                        nblks, blk_sizes, blk_info, propsize, prop, print_id, &
                        print_id_human)
@@ -2487,7 +2512,7 @@ module rsp_general
 
   end subroutine
 
-
+  ! Print response tensor (non-redundant storage) to stdout
   recursive subroutine print_rsp_tensor_stdout_tr(lvl, npert, pdim, ind, &
                        nblks, blk_sizes, blk_info, propsize, prop)
 
@@ -2532,7 +2557,7 @@ module rsp_general
 
   end subroutine
 
-
+  ! Print response tensor to stdout
   recursive subroutine print_rsp_tensor_stdout(npert, lvl, pdim, prop, offset)
 
     implicit none

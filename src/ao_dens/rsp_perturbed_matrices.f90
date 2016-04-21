@@ -37,6 +37,7 @@ module rsp_perturbed_matrices
 
   contains
 
+  ! Get size of derivative superstructure for perturbed matrices call
   recursive function derivative_superstructure_getsize(pert, kn, &
                      primed, current_derivative_term) result(superstructure_size)
 
@@ -50,6 +51,7 @@ module rsp_perturbed_matrices
 
     superstructure_size = 0
 
+    ! Recurse
     if (pert%npert > 0) then
 
        superstructure_size = superstructure_size + derivative_superstructure_getsize( &
@@ -69,12 +71,9 @@ module rsp_perturbed_matrices
                              p_tuple_extend(current_derivative_term(3), &
                              p_tuple_getone(pert, 1))/))
 
+    ! End of recursion: Determine if term is kept and if so, increment counter
     else
-
-!        write(*,*) 'reached end part', current_derivative_term(1)%npert, &
-!        current_derivative_term(2)%npert, current_derivative_term(3)%npert
-!        write(*,*) 'kn is', kn
-    
+   
        if (primed .EQV. .TRUE.) then
 
           if ( ( ( (current_derivative_term(1)%npert <= kn(2)) .AND.&
@@ -96,16 +95,10 @@ module rsp_perturbed_matrices
                   kn_skip(current_derivative_term(3)%npert, current_derivative_term(3)%pid, kn) ) .eqv. &
                   .FALSE.) then
                   
-!              write(*,*) 'not skipping'
-
              superstructure_size = 1
 
           else
           
-!              write(*,*) 'Skipping:', kn_skip(current_derivative_term(1)%npert, current_derivative_term(1)%pid, kn), &
-!              kn_skip(current_derivative_term(2)%npert, current_derivative_term(2)%pid, kn), &
-!              kn_skip(current_derivative_term(3)%npert, current_derivative_term(3)%pid, kn)
-
              superstructure_size = 0
 
           end if
@@ -116,7 +109,7 @@ module rsp_perturbed_matrices
 
   end function
 
-
+  ! Get derivative superstructure for perturbed matrices call
   recursive subroutine derivative_superstructure(pert, kn, primed, &
                        current_derivative_term, superstructure_size, & 
                        new_element_position, derivative_structure)
@@ -130,6 +123,7 @@ module rsp_perturbed_matrices
     type(p_tuple), dimension(3) :: current_derivative_term
     type(p_tuple), dimension(superstructure_size, 3) :: derivative_structure
 
+    ! Recurse
     if (pert%npert > 0) then
 
        call derivative_superstructure(p_tuple_remove_first(pert), kn, primed, &
@@ -147,6 +141,7 @@ module rsp_perturbed_matrices
             p_tuple_getone(pert, 1))/), superstructure_size, new_element_position, &
             derivative_structure)
 
+    ! End of recursion: Determine if term is kept and if so, store the superstructure element
     else
 
 
@@ -182,8 +177,8 @@ module rsp_perturbed_matrices
   end subroutine
 
 
-
-subroutine rsp_get_matrix_w(superstructure_size, &
+  ! Calculate a perturbed W matrix
+  subroutine rsp_get_matrix_w(superstructure_size, &
            deriv_struct, total_num_perturbations, which_index_is_pid, &
            indices_len, ind, F, D, S, W)
 
@@ -201,8 +196,6 @@ subroutine rsp_get_matrix_w(superstructure_size, &
     call QcMatInit(C)
 
     call QcMatInit(T)
-    
-!     write(*,*) 'Get matrix W was called'
     
     do i = 1, superstructure_size
 
@@ -293,7 +286,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
   end subroutine
 
-
+  ! Calculate a perturbed Y matrix
   subroutine rsp_get_matrix_y(superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S, Y)
@@ -416,7 +409,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
   end subroutine
 
-
+  ! Calculate a perturbed Z matrix
   subroutine rsp_get_matrix_z(superstructure_size, deriv_struct, kn, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S, Z)
@@ -479,7 +472,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
   end subroutine
 
-
+  ! Calculate a perturbed Lambda matrix
   subroutine rsp_get_matrix_lambda(p_tuple_a, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L)
 
@@ -543,7 +536,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
   end subroutine
 
-
+  ! Calculate a perturbed Zeta matrix
   subroutine rsp_get_matrix_zeta(p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
            ind, F, D, S, Zeta)
@@ -727,7 +720,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
   end subroutine
 
-
+  ! Get correct index for perturbed S, D, F matrix retrieval call
   function get_fds_data_index(pert_tuple, total_num_perturbations, which_index_is_pid, &
                               indices_len, indices)
 
@@ -758,7 +751,7 @@ subroutine rsp_get_matrix_w(superstructure_size, &
 
   end function
 
-
+  ! Return the sum of frequencies in perturbation tuple (or zero if unperturbed)
   function frequency_zero_or_sum(pert_tuple)
 
     implicit none
