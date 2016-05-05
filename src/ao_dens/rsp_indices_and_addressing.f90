@@ -46,6 +46,13 @@ module rsp_indices_and_addressing
   public get_pidoutersmall
   public sortdimbypid
   
+  public mem_manager
+  public mem_set_status
+  public mem_incr
+  public mem_decr
+  public mem_enough
+  public mem_exceed
+  
   public QcMatInit
   public QcMatZero
   public QcMatcAB
@@ -56,6 +63,22 @@ module rsp_indices_and_addressing
   public QcMatDst
   public QcMatTraceAB
   public QcMatRAXPY
+  
+  ! Define memory management datatype
+  
+  type mem_manager
+  
+     logical :: calibrate
+     
+     integer :: curr_mat = 0
+     integer :: max_mat = 0
+     integer :: max_recorded_mat = 0
+     integer :: remain = 0
+     integer :: status = 0
+     integer, dimension(3) :: checkpoint = (/0,0,0/)
+            
+  end type
+  
 
   ! Define triangulated index block datatype
 
@@ -69,6 +92,153 @@ module rsp_indices_and_addressing
 
   contains
 
+  ! Memory management routines
+  
+  ! Set result of memory run
+  ! In increasing order of severity:
+  ! 0: Can be run without any restrictions
+  ! 1: Can be run, but only with restrictions
+  ! 2: Can not be run, even with restrictions
+  ! Outcome can always be set to more severe, but never less
+  subroutine mem_set_status(mgr, outcome)
+  
+    implicit none
+    
+    type(mem_manager) :: mgr
+    integer :: outcome
+    
+    if (outcome > mgr%status) then
+    
+       mgr%status = outcome
+    
+    end if  
+  
+  end subroutine
+  
+  
+  ! Increase "matrix in memory" counter
+  ! If optional argument 'n' not specified, increment by 1
+  ! If limit exceeded, mark as failed
+  subroutine mem_incr(mgr, n, p)
+  
+    implicit none
+    
+    type(mem_manager) :: mgr
+    integer :: n
+    integer, dimension(3), optional :: p
+    
+    mgr%curr_mat = mgr%curr_mat + n
+    
+    mgr%remain = mgr%remain - n
+    
+    if (mgr%curr_mat > mgr%max_mat) then
+    
+       ! If limit exceeded, record where it first happened
+       if (present(p) .AND. mgr%status < 2) then
+
+          mgr%checkpoint = p
+          
+       end if
+    
+       call mem_set_status(mgr, 2)
+       
+       write(*,*) 'memory limit exceeded at checkpoint', mgr%checkpoint
+       
+    end if
+    
+    if (mgr%curr_mat > mgr%max_recorded_mat) then
+    
+        mgr%max_recorded_mat = mgr%curr_mat
+    
+        write(*,*) 'new max peak matrix usage:', mgr%max_recorded_mat
+    
+    end if
+    
+    write(*,*) 'mat use increased by', n, ' to', mgr%curr_mat, ' remaining:', mgr%remain
+        
+  end subroutine
+  
+  ! Decrease "matrix in memory" counter
+  ! If optional argument 'n' not specified, decrease by 1
+  subroutine mem_decr(mgr, n)
+  
+    implicit none
+    
+    type(mem_manager) :: mgr
+    integer :: n
+    
+    mgr%curr_mat = mgr%curr_mat - n
+    
+    mgr%remain = mgr%remain + n
+    
+    write(*,*) 'mat use decreased by', n, ' to', mgr%curr_mat, ' remaining:', mgr%remain
+
+  end subroutine
+  
+  ! Is there enough memory left if n more matrices are allocated?
+  function mem_enough(mgr, n)
+  
+    implicit none
+    
+    type(mem_manager) :: mgr
+    integer :: n
+    logical :: mem_enough
+        
+    if (mgr%remain > n) then
+    
+       mem_enough = .TRUE.     
+    
+    else
+    
+       mem_enough = .FALSE.
+    
+    end if
+    
+  end function
+  
+  ! Has the memory limit been exceeded?
+  function mem_exceed(mgr)
+  
+    implicit none
+    
+    type(mem_manager) :: mgr
+    logical :: mem_exceed
+    
+    if (mgr%status == 2) then
+    
+       mem_exceed = .TRUE.
+       
+    else
+    
+       mem_exceed = .FALSE.
+       
+    end if
+    
+    if (mem_exceed) then
+    
+       write(*,*) 'MEMORY EXCEEDED: Current and maximum:', mgr%curr_mat, mgr%max_mat
+       
+    end if
+    
+    
+  end function
+  
+  
+  
+
+  
+  
+ 
+  
+  ! End memory management routines
+  
+  
+  
+  
+  
+  
+  
+  
   ! MaR: QcMatrix adapted routines to be separated into new module
   ! Gao: adds an optional matrix B for initializing the structure of A
   ! Initialize matrix
