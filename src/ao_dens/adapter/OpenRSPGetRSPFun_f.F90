@@ -64,6 +64,8 @@
         use rsp_pert_table
         use rsp_general, only: openrsp_get_property
         implicit none
+        logical :: mem_calibrate
+        integer :: max_mat, mem_result
         integer(kind=C_QINT), value, intent(in) :: num_props
         integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
         integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(sum(len_tuple))
@@ -223,6 +225,8 @@
         !    nullify(ptr_file_tensor)
         !else
         
+            mem_calibrate = .TRUE.
+            max_mat = 4000
         
             call openrsp_get_property(num_props,                                 &
                                            len_tuple,                                 &
@@ -246,7 +250,10 @@
                                            f_callback_RSPXCFunGetMat,                 &
                                            f_callback_RSPXCFunGetExp,                 &
                                            STDOUT,                                    &
-                                           f_rsp_tensor)
+                                           f_rsp_tensor,                              &
+                                           mem_calibrate=mem_calibrate,               &
+                                           max_mat=max_mat,                           &
+                                           mem_result=mem_result)
 
 
         !end if
