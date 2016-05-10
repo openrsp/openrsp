@@ -720,7 +720,8 @@ module rsp_general
           
           else
 
-             call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache_next)
+             call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
+                  cache_next, mem_mgr)
              
              if (mem_exceed(mem_mgr)) then
        
@@ -1240,11 +1241,17 @@ module rsp_general
   end subroutine
 
 
-  subroutine rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, cache)
+  subroutine rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
+             cache, mem_mgr)
 
     implicit none
 
-    logical :: traverse_end
+    type(mem_manager) :: mem_mgr
+    integer :: mctr, mcurr, miter, msize, octr, mem_track_1, mem_track_2, mem_track
+    integer :: dctr, contrib_offset, any_heavy, curr_remain, this_outer_size
+    integer, dimension(3) :: curr_pickup, next_pickup
+    integer, dimension(2) :: wunit_size, wunit_maxsize
+    logical :: traverse_end, intra_pair, mem_done
     integer :: cache_offset, i, j, k, m, n, p, offset
     integer :: id_outp, c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
     integer :: total_outer_size_1, total_outer_size_2
@@ -1257,9 +1264,9 @@ module rsp_general
     type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
     type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, LHS_dmat_2, RHS_dmat_2
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
-    integer, allocatable, dimension(:) :: pert_ext
+    integer, allocatable, dimension(:) :: pert_ext, outer_contract_sizes_2_pair
     integer, allocatable, dimension(:,:) :: outer_contract_sizes_2, blk_sizes
-    complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2, data_tmp
+    complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2, data_tmp, contrib_2_tmp
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
@@ -1273,6 +1280,7 @@ module rsp_general
     
     allocate(outer_contract_sizes_1(cache%num_outer))
     allocate(outer_contract_sizes_2(cache%num_outer,2))
+    allocate(outer_contract_sizes_2_pair(cache%num_outer))
         
    
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
@@ -1333,9 +1341,12 @@ module rsp_general
           outer_contract_sizes_2(k, :) = (/outer_next%blks_tuple_triang_size(1), &
                                          outer_next%blks_tuple_triang_size(2)/)
           
-          total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1)*outer_next%blks_tuple_triang_size(2)
+          total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1) * &
+                                                    outer_next%blks_tuple_triang_size(2)
        
        end if
+       
+       outer_contract_sizes_2_pair(k) = sum(outer_contract_sizes_2(k, :))
     
        if (outer_next%last) then
     
@@ -1361,331 +1372,898 @@ module rsp_general
         end if
     end do
     
-    ! Allocate and set up perturbed density matrices for contractions
-    
-    allocate(LHS_dmat_1(sum(outer_contract_sizes_1(:))))
-    allocate(LHS_dmat_2(sum(outer_contract_sizes_2(:, 1))))
-    allocate(RHS_dmat_2(sum(outer_contract_sizes_2(:, 2))))
-    
-    ! 1-el terms
-    do i = 1, size(LHS_dmat_1)
-    
-       call QcMatInit(LHS_dmat_1(i))
-    
-    end do
-    
-    ! LHS perturbed D for 2-el terms
-    do i = 1, size(LHS_dmat_2)
-    
-       call QcMatInit(LHS_dmat_2(i))
-    
-    end do
-    
-    ! RHS perturbed D for 2-el terms
-    do i = 1, size(RHS_dmat_2)
-    
-       call QcMatInit(RHS_dmat_2(i))
-    
-    end do
-    
-    
-    traverse_end = .FALSE.
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-       
-    k = 1
-    lhs_ctr_1 = 1
-    lhs_ctr_2 = 1
-    rhs_ctr_2 = 1
-    
-    ! Traverse and fetch matrices
-    do while (traverse_end .EQV. .FALSE.)
-    
-       ! No chain rule applications
-       if (outer_next%num_dmat == 0) then
-       
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-               1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_1(lhs_ctr_1))
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-               1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-               1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+        
 
-       ! One chain rule application
-       else if (outer_next%num_dmat == 1) then
-       
-       
-          do m = 1, outer_contract_sizes_1(k) 
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                  1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
-                  mat_sing=LHS_dmat_1(lhs_ctr_1 + m  - 1))
-          end do
-       
-          do m = 1, outer_contract_sizes_2(k, 1) 
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                  1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
-                  mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
-          end do
-          
-          call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-               1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
-       
-       ! Two chain rule applications
-       else if (outer_next%num_dmat == 2) then
-       
-       
-          do m = 1, outer_contract_sizes_2(k, 1) 
-          
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                  1, ind_len=outer_next%p_tuples(1)%npert, &
-                  ind_unsorted=outer_next%indices(1 + &
-                  (m - 1) * outer_next%blks_tuple_triang_size(2), &
-                  1:outer_next%p_tuples(1)%npert), &
-                  mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
-          end do
-          
-          do n = 1, outer_contract_sizes_2(k, 2) 
-          
-             call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
-                  1, ind_len=outer_next%p_tuples(2)%npert, &
-                  ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
-                  outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
-                  mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
-          end do          
-       
-       end if
-   
-       if (outer_next%last) then
-          traverse_end = .TRUE.
-       end if
-
-       lhs_ctr_1 = lhs_ctr_1 + outer_contract_sizes_1(k)
-       lhs_ctr_2 = lhs_ctr_2 + outer_contract_sizes_2(k, 1)
-       rhs_ctr_2 = rhs_ctr_2 + outer_contract_sizes_2(k, 2)
-       k = k + 1
-       
-       outer_next => outer_next%next
     
-    end do
+        
     
     allocate(contrib_0(cache%blks_triang_size))
-    allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
-    allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
+    contrib_0 = 0.0
+    
+    
     
     ! Calculate contributions
     
     ! Calculate nuclear-nuclear repulsion contribution
     if (num_0 > 0) then
     
-       contrib_0 = 0.0
+       
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
        write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
     
     end if
     
-    ! Calculate one-electron contributions
-    if (num_1 > 0) then
+          
+    allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
+    contrib_1 = 0.0
     
-       contrib_1 = 0.0
-       call get_1el_exp(num_pert, pert_ext, total_outer_size_1, &
-                        LHS_dmat_1, size(contrib_1), contrib_1)
-      
-       t_matrix_bra = get_emptypert()
-       t_matrix_ket = get_emptypert()
+    
+    if (mem_enough(mem_mgr, sum(outer_contract_sizes_1(:)))) then
+    
+       ! Possible to run in non-savings mode
+       mem_track = sum(outer_contract_sizes_1(:))
 
+    else if (mem_enough(mem_mgr, 1)) then
+
+       ! Possible to run in savings mode
+       call mem_set_status(mem_mgr, 1)
        
-! NOTE: T matrix contributions not reinstated yet, to be done later
-!
-!        call rsp_ovlave_t_matrix_2014(get_ovl_exp, cache%p_inner, cache%p_inner%npert, &
-!                                 t_matrix_bra, t_matrix_ket, outer_contract_sizes_1_coll, &
-!                                 LHS_dmat_1, size(contrib_1), contrib_1)
+       ! Set maximum number of components to do at the same time
+       mem_track = mem_mgr%remain
+              
+    else
     
-    write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
+       ! Not possible to run; flag it and return
+       call mem_set_status(mem_mgr, 2)
+       return
     
     end if
     
-    ! Calculate two-electron contributions
-    contrib_2 = 0.0
-    call get_2el_exp(num_pert, pert_ext, cache%num_outer, outer_contract_sizes_2(:, 1), LHS_dmat_2, & 
-                     outer_contract_sizes_2(:, 2), RHS_dmat_2, size(contrib_2), contrib_2)
-                       
+    ! Begin memory savings loop 1
     
-    write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
+    mcurr = 1
     
-    ! Traversal: Add nuc-nuc, 1-el and two-el contributions together
+    do while (mcurr <= sum(outer_contract_sizes_1(:)))
     
-    traverse_end = .FALSE.
+       msize = min(mem_track, sum(outer_contract_sizes_1(:)) - mcurr + 1)
     
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-      
-    k = 1
-    
-    c1_ctr = 1
-    c2_ctr = 1
-    
-    
-    do while (traverse_end .EQV. .FALSE.)
-  
-       ! Nuc-nuc, one-el and two-el contribution
-       if (outer_next%num_dmat == 0) then
+       ! Allocate and set up perturbed density matrices for contractions
        
-          allocate(outer_next%data_scal(cache%blks_triang_size))
-          allocate(data_tmp(cache%blks_triang_size))
-
-          ! Factor 0.5 for two-el because no chain rule applications
-          
-          data_tmp = contrib_0
-          data_tmp = data_tmp + &
-          contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
-          data_tmp = data_tmp + &
-          0.5*contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
-
-          c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
-          c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
-
-       ! One-el and two-el contribution
-       else if (outer_next%num_dmat == 1) then
+       call mem_incr(mem_mgr, msize)
        
-          allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
-                   outer_contract_sizes_2(k, 2)))
-          allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
-                   outer_contract_sizes_2(k, 2)))
-                   
-
-          data_tmp = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
-                            outer_contract_sizes_2(k, 1) - 1)
-          
-          data_tmp = data_tmp + &
-          contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
-                            outer_contract_sizes_2(k, 1) - 1)
-
-          c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
-          c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
-                   
-       ! Only two-electron contribution
-       else if (outer_next%num_dmat == 2) then
+       if (.NOT.(mem_mgr%calibrate)) then
        
-          allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
-                   outer_contract_sizes_2(k, 2)))
-          allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
-                   outer_contract_sizes_2(k, 2)))
-                   
-          data_tmp = contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
-                            outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) - 1)
+          allocate(LHS_dmat_1(msize))
        
-          c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
-                   outer_contract_sizes_2(k, 2)
+          do i = 1, msize
+             call QcMatInit(LHS_dmat_1(i))
+          end do
+       
        end if
        
-       if (outer_next%num_dmat == 0) then
+       traverse_end = .FALSE.
        
-       
-          outer_next%data_scal = data_tmp
+       outer_next => contrib_cache_outer_cycle_first(outer_next)
+       if (outer_next%dummy_entry) then
+          outer_next => outer_next%next
+       end if
           
-       else
-       
-          ! Set up collective block information for indexing
-       
-          if (cache%p_inner%npert > 0) then
+       k = 1
+       lhs_ctr_1 = 1
+       mctr = 0
           
-             tot_num_pert = cache%p_inner%npert + &
-             sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
-                   
-             allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
-             allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+       ! Traverse and fetch matrices
+       do while (traverse_end .EQV. .FALSE.)
+       
+       
+          ! No chain rule applications
+          if (outer_next%num_dmat == 0) then
              
-             blks_tuple_info = 0
-             blk_sizes = 0
+             if ((lhs_ctr_1 == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
+             
+                if (.NOT.(mem_mgr%calibrate)) then
+          
+                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_1(mctr + 1))
+                     
+                end if
                 
-             do j = 1, outer_next%num_dmat + 1
-                
-                if (j == 1) then
-                
-                   do m = 1, cache%nblks
-                   
-                      blks_tuple_info(j, m, :) = cache%blk_info(m, :)
-                      
-                   end do
-                   
-                   blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
-                
-                
-                else
-                
-                   do m = 1, outer_next%nblks_tuple(j - 1)
-                
-                      do p = 1, 3
-                   
-                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
-                   
-                      end do
-                
-                   end do
-                   
-                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
-                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                mctr = mctr + 1
+             
+             end if
+    
+          ! One chain rule application
+          else if (outer_next%num_dmat == 1) then
+          
+          
+             do m = 1, outer_contract_sizes_1(k) 
+             
+                if ((lhs_ctr_1 + m - 1 == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
+               
+                   if (.NOT.(mem_mgr%calibrate)) then
+               
+                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+                           1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+                           mat_sing=LHS_dmat_1(mctr + 1))
+                           
+                   end if
+                           
+                   mctr = mctr + 1
                    
                 end if
                 
              end do
-       
-             ! Go through elements of data_tmp and store in appropriate cache position
-       
-             do i = 1, size(outer_next%indices, 1)
           
-                do j = 1, size(cache%indices, 1)
-
-                   offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
-                   cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
-                   (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
-                   (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
-                   blks_tuple_info, &
-                   blk_sizes, &
-                   (/cache%blks_triang_size, &
-                   (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
-                   (/cache%indices(j, :), outer_next%indices(i, :)/))
+          end if
+          
                 
-                   outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
+          
+      
+          if (outer_next%last) then
+             traverse_end = .TRUE.
+          end if
+    
+          lhs_ctr_1 = lhs_ctr_1 + outer_contract_sizes_1(k)
+          k = k + 1
+          
+          outer_next => outer_next%next
+    
+       end do
+       
+       
+       
+       ! Calculate one-electron contributions
+       if (num_1 > 0) then
+       
+          if (.NOT.(mem_mgr%calibrate)) then
+          
+             call get_1el_exp(num_pert, pert_ext, msize, &
+                              LHS_dmat_1, cache%blks_triang_size*msize, &
+                              contrib_1( (mcurr - 1) * cache%blks_triang_size + 1: &
+                                         (mcurr + msize - 1) * cache%blks_triang_size))
+         
+             t_matrix_bra = get_emptypert()
+             t_matrix_ket = get_emptypert()
+   
+          
+      ! NOTE: T matrix contributions not reinstated yet, to be done later
+      !
+      !        call rsp_ovlave_t_matrix_2014(get_ovl_exp, cache%p_inner, cache%p_inner%npert, &
+      !                                 t_matrix_bra, t_matrix_ket, msize, &
+      !                                 LHS_dmat_1, cache%blks_triang_size*msize, &
+      !                                 contrib_1( (mcurr - 1) * cache%blks_triang_size + 1: &
+      !                                 (mcurr + msize - 1) * cache%blks_triang_size)
+       
+             write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
+       
+          end if
+       
+       end if
+       
+
+       mcurr = mcurr + msize
+       
+       if (.NOT.(mem_mgr%calibrate)) then
+       
+          do i = 1, msize
+       
+             call QcMatDst(LHS_dmat_1(i))
+       
+          end do
+       
+          deallocate(LHS_dmat_1)
+          
+       end if
+       
+       call mem_decr(mem_mgr, msize)
+       
+       
+       
+    end do
+       
+    ! End memory savings loop 1
+       
+    
+    allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
+    contrib_2 = 0.0
+    
+    
+    if (mem_enough(mem_mgr, sum(outer_contract_sizes_2(:, 1)) + &
+                            sum(outer_contract_sizes_2(:, 2)))) then
+    
+       ! Possible to run in non-savings mode
+       mem_track = sum(outer_contract_sizes_2(:, 1)) + sum(outer_contract_sizes_2(:, 2))
+
+    elseif (mem_enough(mem_mgr, 2)) then
+
+       ! Possible to run in savings mode
+       call mem_set_status(mem_mgr, 1)
+       
+       ! Set maximum number of components to do at the same time
+       mem_track = mem_mgr%remain
+              
+    else
+    
+       ! Not possible to run; flag it and return
+       call mem_set_status(mem_mgr, 2)
+       return
+    
+    end if
+    
+    
+    ! Begin memory savings loop 2
+    
+    
+    mcurr = 1
+    curr_pickup = (/1,1,1/)
+    contrib_offset = 1
+    
+    
+    do while (.NOT.(mem_done))
+
+       ! Find best set of contraction matrices given memory setup:
+       
+       ! For now, use a relatively straightforward scheme: There are some opportunities to refine, but
+       ! they will likely only result in moderate improvements and will be significantly more elaborate
+       ! Summary: Fill workunit with all contractions for outer pairs until no more pairs can be fit
+       ! If an outer pair does not fit into the workunit, then divide it into workunits and do
+       ! all of them in turn, then move to next outer pair
+       ! Currently no mixing of "full pairs" and divided workunits - there is some room for
+       ! improvement here but it is more difficult to make
+       
+       curr_remain = mem_track
+       
+       intra_pair = .FALSE.
+       
+       wunit_size = (/0,0/)
+   
+       ! If at start of one outer pair (i.e. not currently in a pair separated into workunits)
+       if (.NOT.(intra_pair)) then
+       
+          any_heavy = 0
+   
+          do i = curr_pickup(1), cache%num_outer
+              
+             ! Can the whole pair be done?
+             if (curr_remain >= outer_contract_sizes_2(i, 1) + outer_contract_sizes_2(i, 2)) then
+                          
+                ! If yes, add to workload
+                curr_remain = curr_remain - (outer_contract_sizes_2(i, 1) + &
+                                             outer_contract_sizes_2(i, 2))
+                               
+                next_pickup = (/i+1, 1, 1/)
+                
+                wunit_size(1) = wunit_size(1) + outer_contract_sizes_2(i, 1)
+                wunit_size(2) = wunit_size(2) + outer_contract_sizes_2(i, 2)
+                
+                ! If this was the last pair, mark as "done after this unit ends"
+                if (i == cache%num_outer) then
+                
+                   mem_done = .TRUE.
+                   
+                end if
+                                             
+ 
+             ! If not 
+             else
+             
+                ! If this was not the first pair in the work unit, don't add any 
+                ! more to the unit and proceed
+                if (next_pickup(1) - curr_pickup(1) > 0) then
+                
+                   exit
+                
+                ! If this was the first pair, make a workunit separation setup for this pair and 
+                ! do the first such piece as this workunit
+                else 
+                
+                   intra_pair = .TRUE.
+                
+                   ! Scheme: Divide half the available memory on the LHS contraction matrices
+                   ! and the other half (+ 1 if odd # of matrices available) on the RHS,
+                   ! unless LHS or RHS length is smaller than half; if so, do all of such
+                   ! and give all remaining matrices to the other
+                   
+                   ! If enough for all RHS matrices
+                   if (outer_contract_sizes_2(i,2) < (mem_track/2 + mod(mem_track,2))  ) then
+                   
+                      ! Flag to switch increment handling to "right-heavy" mode
+                      any_heavy = 1
+                   
+                      wunit_maxsize = (/mem_track - outer_contract_sizes_2(i,2), &
+                                     outer_contract_sizes_2(i,2)/)
+                   
+                   ! Otherwise, if enough for all LHS matrices
+                   elseif (outer_contract_sizes_2(i,1) < mem_track/2) then
+                   
+                      ! Flag to switch increment handling to "left-heavy" mode
+                      any_heavy = 2
+                   
+                      wunit_maxsize = (/outer_contract_sizes_2(i,1), &
+                                     mem_track - outer_contract_sizes_2(i,1)/)
+                                     
+                   ! Otherwise, the default "half-and-half" scheme applies
+                   else
+                   
+                      wunit_maxsize = (/mem_track/2, mem_track/2 + mod(mem_track,2)/)
+                   
+                   end if
+                   
+                   
+                   ! Set up next pickup point
+                   
+                   ! If left- or right-heavy
+                   if (any_heavy > 0) then
+             
+                      next_pickup(1) = curr_pickup(1)
+                      next_pickup(4 - any_heavy) = 1
+                      next_pickup(1 + any_heavy) = curr_pickup(1 + any_heavy) + wunit_maxsize(any_heavy)
+          
+                   ! Otherwise, do default handling
+                   else
+                         
+                      next_pickup = (/curr_pickup(1), curr_pickup(2), curr_pickup(3) + wunit_maxsize(2)/)
+             
+                   end if
+                
+                end if
+                
+             end if
+             
+          end do
+          
+       ! If not at start of one outer pair (i.e. if currently in a pair separated into workunits)
+       else
+       
+          wunit_size = wunit_maxsize
+       
+          ! If left- or right-heavy
+          if (any_heavy > 0) then
+             
+             ! If this was the last unit of the pair:
+             if (curr_pickup(any_heavy + 1) + wunit_maxsize(any_heavy) > &
+                 outer_contract_sizes_2(i, any_heavy)) then
+             
+                ! If this was the last unit of the last pair, mark as "done after this unit ends"
+                if (curr_pickup(1) == cache%num_outer) then
+                   mem_done = .TRUE.
+                end if
+                
+                ! Set the next pickup to be the start of the next outer pair
+                next_pickup = (/curr_pickup(1) + 1, 1, 1/)
+                
+                wunit_size(any_heavy) = outer_contract_sizes_2(i, any_heavy) - &
+                                        curr_pickup(any_heavy + 1) + 1
+                
+             ! Otherwise, do only next unit of this pair
+             else
+             
+                next_pickup(1) = curr_pickup(1)
+                next_pickup(4 - any_heavy) = 1
+                next_pickup(1 + any_heavy) = curr_pickup(1 + any_heavy) + wunit_maxsize(any_heavy)
+                
+             end if
+          
+          ! Otherwise, do default handling
+          else
+          
+             ! If this is the last RHS unit of the pair:
+             if (curr_pickup(3) + wunit_maxsize(2) > outer_contract_sizes_2(i,2)) then
+             
+                ! If also the last LHS unit of the pair, then it is the last overall unit of the pair
+                if (curr_pickup(2) + wunit_maxsize(1) > outer_contract_sizes_2(i,1)) then
+                
+                   next_pickup = (/curr_pickup(1) + 1, 1, 1/)
+             
+                   ! If this was the last unit of the last pair, mark as "done after this unit ends"
+                   if (curr_pickup(1) == cache%num_outer) then
+                      mem_done = .TRUE.
+                   end if
+                   
+                ! Otherwise, change to next LHS unit for next iteration
+                else 
+                
+                   next_pickup = (/curr_pickup(1), curr_pickup(2) + wunit_maxsize(1), 1/)
+                
+                   ! If next LHS unit is the last LHS unit, update the sizes for next workunit
+                   ! to make maximum use of memory
+                   if (curr_pickup(2) + 2 * wunit_maxsize(1) > outer_contract_sizes_2(i,1)) then
+                   
+                      wunit_maxsize(1) = outer_contract_sizes_2(i,1) - &
+                                      (curr_pickup(2) + wunit_maxsize(1)) + 1
+                      wunit_maxsize(2) = min(mem_track - wunit_size(1), outer_contract_sizes_2(i,2))
+                      
+                   end if
+          
+                end if
+                
+                wunit_size(2) = outer_contract_sizes_2(i,1) - curr_pickup(2) + 1
+             
+             ! Otherwise, do next RHS unit
+             else
+             
+                next_pickup = (/curr_pickup(1), curr_pickup(2), curr_pickup(3) + wunit_maxsize(2)/)
+             
+             end if
+             
+          end if   
+          
+       end if
+          
+       
+       
+       ! Allocate and set up perturbed density matrices for contractions
+    
+       call mem_incr(mem_mgr, wunit_size(1))
+             
+       if (.NOT. mem_mgr%calibrate) then
+     
+          allocate(LHS_dmat_2(wunit_size(1)))
+       
+          ! LHS perturbed D for 2-el terms
+          do i = 1, size(LHS_dmat_2)
+       
+             call QcMatInit(LHS_dmat_2(i))
+       
+          end do
+          
+       end if
+       
+       call mem_incr(mem_mgr, wunit_size(2))
+       
+       if (.NOT. mem_mgr%calibrate) then
+       
+          allocate(RHS_dmat_2(wunit_size(2)))
+       
+          ! RHS perturbed D for 2-el terms
+          do i = 1, size(RHS_dmat_2)
+       
+             call QcMatInit(RHS_dmat_2(i))
+       
+          end do
+          
+       end if
+           
+       
+       traverse_end = .FALSE.
+       
+       outer_next => contrib_cache_outer_cycle_first(outer_next)
+       if (outer_next%dummy_entry) then
+          outer_next => outer_next%next
+       end if
+          
+       
+       k = 1
+       
+       ! Cycle cache until at correct outer element
+       do i = 1, curr_pickup(1) - 1
+          outer_next => outer_next%next
+          k = k + 1
+       end do
+       
+       
+       
+       lhs_ctr_2 = 1
+       rhs_ctr_2 = 1
+
+       if (.NOT.(intra_pair)) then
+       
+          ! Traverse outer elements and fetch matrices
+          do i = curr_pickup(1), next_pickup(1) - 1
+          
+             if (.NOT.(mem_mgr%calibrate)) then
+          
+                ! No chain rule applications
+                if (outer_next%num_dmat == 0) then
+           
+                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
+                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+   
+                ! One chain rule application
+                else if (outer_next%num_dmat == 1) then
+          
+                   do m = 1, outer_contract_sizes_2(i, 1) 
+                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+                           1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+                           mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
+                   end do
+             
+                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+          
+                ! Two chain rule applications
+                else if (outer_next%num_dmat == 2) then
+            
+                   do m = 1, outer_contract_sizes_2(i, 1) 
+              
+                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+                           1, ind_len=outer_next%p_tuples(1)%npert, &
+                           ind_unsorted=outer_next%indices(1 + &
+                           (m - 1) * outer_next%blks_tuple_triang_size(2), &
+                           1:outer_next%p_tuples(1)%npert), &
+                           mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
+                   end do
+             
+                   do n = 1, outer_contract_sizes_2(i, 2) 
+             
+                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
+                           1, ind_len=outer_next%p_tuples(2)%npert, &
+                           ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
+                           outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
+                           mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
+                   end do          
+          
+                end if
+      
+                lhs_ctr_2 = lhs_ctr_2 + outer_contract_sizes_2(i, 1)
+                rhs_ctr_2 = rhs_ctr_2 + outer_contract_sizes_2(i, 2)
+          
+                outer_next => outer_next%next
+        
+             end if
+        
+          end do
+       
+          this_outer_size = dot_product( &
+          outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 1), &
+          outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2) )
+       
+          if (.NOT.(mem_mgr%calibrate)) then
+       
+             ! Calculate two-electron contributions
+             call get_2el_exp(num_pert, pert_ext, next_pickup(1) - curr_pickup(1) + 1, &
+                  outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 1), LHS_dmat_2, & 
+                  outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2), RHS_dmat_2, &
+                  cache%blks_triang_size*this_outer_size, &               
+                  contrib_2(contrib_offset:contrib_offset + this_outer_size))
+          
+             write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
+          
+          end if
+               
+          contrib_offset = contrib_offset + this_outer_size
+                       
+    
+          
+
+       else
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+          
+             ! No chain rule applications
+             if (outer_next%num_dmat == 0) then
+              
+                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                     1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(1))
+                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                     1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(1))
+      
+             ! One chain rule application
+             else if (outer_next%num_dmat == 1) then
+             
+                dctr = 1
+                
+                do m = curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
+                
+                   call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+                        1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+                        mat_sing=LHS_dmat_2(dctr))
+                        
+                   dctr = dctr + 1
+                        
+                end do
+                
+                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                     1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(1))
+             
+             ! Two chain rule applications
+             else if (outer_next%num_dmat == 2) then
+         
+                dctr = 1
+            
+                do m = 1, curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
+                
+                   call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+                        1, ind_len=outer_next%p_tuples(1)%npert, &
+                        ind_unsorted=outer_next%indices(1 + &
+                        (m - 1) * outer_next%blks_tuple_triang_size(2), &
+                        1:outer_next%p_tuples(1)%npert), &
+                        mat_sing=LHS_dmat_2(dctr))
+                        
+                   dctr = dctr + 1
+                   
+                end do
+                
+                dctr = 1
+                
+                do n = 1, curr_pickup(3), curr_pickup(3) + wunit_size(2) - 1
+                
+                   call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
+                        1, ind_len=outer_next%p_tuples(2)%npert, &
+                        ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
+                        outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
+                        mat_sing=RHS_dmat_2(dctr))
+                        
+                   dctr = dctr + 1
+                   
+                end do
+             
+             end if
+             
+          end if
+
+          ! Make temporary contrib_2 array to hold return values
+          allocate(contrib_2_tmp(cache%blks_triang_size * wunit_size(1) * wunit_size(2)))
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+          
+             ! Calculate two-electron contributions
+             call get_2el_exp(num_pert, pert_ext, 1, &
+                  (/wunit_size(1)/), LHS_dmat_2, & 
+                  (/wunit_size(2)/), RHS_dmat_2, &
+                  cache%blks_triang_size * wunit_size(1) * wunit_size(2), &               
+                  contrib_2_tmp)
+          
+             ! Put temporary array data into contrib_2 in the appropriate places
+          
+             dctr = 0
+          
+             do m = curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
+             
+                do n = curr_pickup(3), curr_pickup(3) + wunit_size(2) - 1
+             
+                   contrib_2(contrib_offset +  &
+                             (m - 1) * outer_contract_sizes_2(k, 2) * cache%blks_triang_size + &
+                             (n - 1) * cache%blks_triang_size : &
+                             contrib_offset + &
+                             (m - 1) * outer_contract_sizes_2(k, 2) * cache%blks_triang_size + &
+                             (n) * cache%blks_triang_size - 1) = &
+                   contrib_2_tmp(cache%blks_triang_size * dctr + 1: &
+                                 cache%blks_triang_size * (dctr + 1))
+             
+                   dctr = dctr + 1
+             
+                end do
+             
+             end do
+          
+          end if
+          
+          ! Increment contribution offset if this was the last workunit of this outer pair
+          if (next_pickup(1) - curr_pickup(1) > 0) then
+          
+             contrib_offset = contrib_offset + cache%blks_triang_size * &
+                              outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) 
+          
+          end if
+          
+          deallocate(contrib_2_tmp)
+          
+          
+          
+       end if
+       
+       
+       
+       ! Deallocate LHS and RHS contraction matrices
+    
+       call mem_decr(mem_mgr, wunit_size(1))
+             
+       if (.NOT. mem_mgr%calibrate) then
+     
+          do i = 1, size(LHS_dmat_2)
+             call QcMatDst(LHS_dmat_2(i))
+          end do
+          
+          deallocate(LHS_dmat_2)
+          
+       end if
+       
+       call mem_decr(mem_mgr, wunit_size(2))
+       
+       if (.NOT. mem_mgr%calibrate) then
+       
+          do i = 1, size(RHS_dmat_2)
+             call QcMatDst(RHS_dmat_2(i))
+          end do
+          
+          deallocate(RHS_dmat_2)
+          
+       end if
+       
+       ! Update pickup point for next iteration
+       curr_pickup = next_pickup
+    
+    
+    end do
+    
+    
+    
+    
+    
+    ! End memory savings loop 2
+    
+    
+    
+    
+    
+    
+    ! Traversal: Add nuc-nuc, 1-el and two-el contributions together
+    
+    if (.NOT.(mem_mgr%calibrate)) then
+     
+       traverse_end = .FALSE.
+     
+       outer_next => contrib_cache_outer_cycle_first(outer_next)
+       if (outer_next%dummy_entry) then
+          outer_next => outer_next%next
+       end if
+       
+       k = 1
+     
+       c1_ctr = 1
+       c2_ctr = 1
+       
+       
+       do while (traverse_end .EQV. .FALSE.)
+     
+          ! Nuc-nuc, one-el and two-el contribution
+          if (outer_next%num_dmat == 0) then
+          
+             allocate(outer_next%data_scal(cache%blks_triang_size))
+             allocate(data_tmp(cache%blks_triang_size))
+       
+             ! Factor 0.5 for two-el because no chain rule applications
+             
+             data_tmp = contrib_0
+             data_tmp = data_tmp + &
+             contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size - 1)
+             data_tmp = data_tmp + &
+             0.5*contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size - 1)
+     
+             c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
+             c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
+     
+          ! One-el and two-el contribution
+          else if (outer_next%num_dmat == 1) then
+          
+             allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                      outer_contract_sizes_2(k, 2)))
+             allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                      outer_contract_sizes_2(k, 2)))
+                      
+    
+             data_tmp = contrib_1(c1_ctr:c1_ctr + cache%blks_triang_size * &
+                               outer_contract_sizes_2(k, 1) - 1)
+             
+             data_tmp = data_tmp + &
+             contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
+                               outer_contract_sizes_2(k, 1) - 1)
+    
+             c1_ctr = c1_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
+             c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
+                      
+          ! Only two-electron contribution
+          else if (outer_next%num_dmat == 2) then
+          
+             allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                      outer_contract_sizes_2(k, 2)))
+             allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                      outer_contract_sizes_2(k, 2)))
+                      
+             data_tmp = contrib_2(c2_ctr:c2_ctr + cache%blks_triang_size * &
+                               outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) - 1)
+          
+             c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+                      outer_contract_sizes_2(k, 2)
+          end if
+          
+          if (outer_next%num_dmat == 0) then
+          
+          
+             outer_next%data_scal = data_tmp
+             
+          else
+       
+             ! Set up collective block information for indexing
+          
+             if (cache%p_inner%npert > 0) then
+             
+                tot_num_pert = cache%p_inner%npert + &
+                sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+                      
+                allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+                allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+             
+                blks_tuple_info = 0
+                blk_sizes = 0
+                   
+                do j = 1, outer_next%num_dmat + 1
+                   
+                   if (j == 1) then
+                   
+                      do m = 1, cache%nblks
+                      
+                         blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+                         
+                      end do
+                      
+                      blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
+                   
+                   
+                   else
+                   
+                      do m = 1, outer_next%nblks_tuple(j - 1)
+                   
+                         do p = 1, 3
+                      
+                            blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                      
+                         end do
+                   
+                      end do
+                   
+                      blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
+                      outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                      
+                   end if
                    
                 end do
           
-             end do
+                ! Go through elements of data_tmp and store in appropriate cache position
+          
+                do i = 1, size(outer_next%indices, 1)
              
-             deallocate(blk_sizes)
-             deallocate(blks_tuple_info)
+                   do j = 1, size(cache%indices, 1)
+      
+                      offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
+                      cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
+                      (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
+                      (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
+                      blks_tuple_info, &
+                      blk_sizes, &
+                      (/cache%blks_triang_size, &
+                      (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
+                      (/cache%indices(j, :), outer_next%indices(i, :)/))
+                   
+                      outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
+                      
+                   end do
+             
+                end do
+                
+                deallocate(blk_sizes)
+                deallocate(blks_tuple_info)
+             
+             else
+             
+                write(*,*) 'ERROR: UNEXPECTED: NO INNER PERTURBATIONS'
+             
           
-          else
-          
-             write(*,*) 'ERROR: UNEXPECTED: NO INNER PERTURBATIONS'
+             end if
           
           
           end if
           
-          
-       end if
+          deallocate(data_tmp)
+      
+          if (outer_next%last) then
        
-       deallocate(data_tmp)
-   
-       if (outer_next%last) then
+             traverse_end = .TRUE.
+       
+          end if
     
-          traverse_end = .TRUE.
-    
-       end if
-    
-       k = k + 1
-    
-       outer_next => outer_next%next
-    
-    end do
-
-        
+          k = k + 1
+       
+          outer_next => outer_next%next
+       
+       end do
+     
+    end if   
+       
     deallocate(outer_contract_sizes_2)
     
   end subroutine
@@ -2063,7 +2641,14 @@ module rsp_general
        outer_next => outer_next%next
     end if
     
+    ! Except for D_unp above, memory management only necessary from here
+    ! May be necessary to split Pulay (n and Lagrange) and idempotency/SCFE Lagrange
+    ! Should be OK to move zeta, lambda calculation to below Pulay contr. calculation
+    ! In this way, it's possible to do to memory management loops (one for Pulay and one for the rest)
+    ! For offsets, store what is currently c_ctr, c_snap scheme as array (make into array for each outer)
+    
     ! Limited to 20th order - increase if needed
+    ! Can cycle outer to find max needed length (inner + outer) if necessary
     allocate(which_index_is_pid(20))
     
     ! Get zeta and lambda matrices if applicable

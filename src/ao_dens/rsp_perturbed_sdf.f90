@@ -786,7 +786,8 @@ module rsp_perturbed_sdf
                 
                    call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
                         contrib_size=1, ind_len=1, ind_unsorted=(/1/), &
-                        mat_sing=LHS_dmat_1(1))
+                        mat_sing=LHS_dmat_1(mctr + 1))
+                        ! Was: mat_sing=LHS_dmat_1(1)), change if problems
                         
                 end if
                      
