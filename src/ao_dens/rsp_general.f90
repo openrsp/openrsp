@@ -2492,11 +2492,17 @@ module rsp_general
     external :: get_ovl_exp
     
     ! Getting unperturbed D for template use
-    
-    call QCMatInit(D_unp)
 
-    call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-         contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
+    call mem_incr(mem_mgr, 1)
+    
+    if (.NOT.(mem_mgr%calibrate)) then
+    
+       call QCMatInit(D_unp)
+
+       call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
+            
+    end if
     
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
@@ -2641,54 +2647,17 @@ module rsp_general
        outer_next => outer_next%next
     end if
     
-    ! Except for D_unp above, memory management only necessary from here
+    ! Memory management only necessary from here
     ! May be necessary to split Pulay (n and Lagrange) and idempotency/SCFE Lagrange
     ! Should be OK to move zeta, lambda calculation to below Pulay contr. calculation
-    ! In this way, it's possible to do to memory management loops (one for Pulay and one for the rest)
+    ! In this way, it's possible to do two memory management loops (one for Pulay and one for the rest)
     ! For offsets, store what is currently c_ctr, c_snap scheme as array (make into array for each outer)
     
     ! Limited to 20th order - increase if needed
     ! Can cycle outer to find max needed length (inner + outer) if necessary
     allocate(which_index_is_pid(20))
     
-    ! Get zeta and lambda matrices if applicable
-    if (any_lagrange) then
-    
-       allocate(Lambda(cache%blks_triang_size))
-       allocate(Zeta(cache%blks_triang_size))
-    
-       ! FIXME: Change to max order of all properties
-       ! Update: May be OK anyway
-    
-       which_index_is_pid = 0
-          
-       do i = 1, cache%p_inner%npert
-          
-          which_index_is_pid(cache%p_inner%pid(i)) = i
-          
-       end do
-          
-       do i = 1, cache%blks_triang_size
-    
-          call QcMatInit(Lambda(i), D_unp)
-          call QcMatInit(Zeta(i), D_unp)
-          call QcMatZero(Lambda(i))
-          call QcMatZero(Zeta(i))
-       
-          call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
-               lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
-               which_index_is_pid(1:maxval(cache%p_inner%pid)), size(cache%indices(i,:)), &
-               cache%indices(i,:), F, D, S, Zeta(i))
-                  
-          call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
-               d_struct_inner, maxval(cache%p_inner%pid), &
-               which_index_is_pid(1:maxval(cache%p_inner%pid)), &
-               size(cache%indices(i,:)), cache%indices(i,:), D, S, Lambda(i))
-    
-       end do
-    
-    
-    end if    
+   
     
     ! Traversal: Make W matrices and store
     
@@ -2869,7 +2838,8 @@ module rsp_general
     
     contrib_pulay = -2.0 * contrib_pulay
     
-    ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
+    
+    ! Traversal: Store Pulay contributions
     
     traverse_end = .FALSE.
     
@@ -2884,10 +2854,6 @@ module rsp_general
     
     end do
 
-    call QcMatInit(Z, D_unp)
-    call QcMatZero(Z)
-    call QcMatInit(Y, D_unp)
-    call QcMatZero(Y)
     
     k = 1
     o_ctr = 0
@@ -3018,23 +2984,169 @@ module rsp_general
              
        end do
 
-       ! Increment counters to store idempotency, SCFE terms in correct positions
+              
+       deallocate(blk_sizes)
+       deallocate(blks_tuple_info)
        
-       c_snap = c_ctr
+       if (outer_next%last) then
+    
+          traverse_end = .TRUE.
+    
+       end if
+       
+       k = k + 1
+       
+       outer_next => outer_next%next
+    
+    end do
+    
+    
+    
+    ! Get zeta and lambda matrices if applicable
+    if (any_lagrange) then
+    
+       allocate(Lambda(cache%blks_triang_size))
+       allocate(Zeta(cache%blks_triang_size))
+    
+       ! FIXME: Change to max order of all properties
+       ! Update: May be OK anyway
+    
+       which_index_is_pid = 0
+          
+       do i = 1, cache%p_inner%npert
+          
+          which_index_is_pid(cache%p_inner%pid(i)) = i
+          
+       end do
+          
+       do i = 1, cache%blks_triang_size
+    
+          call QcMatInit(Lambda(i), D_unp)
+          call QcMatInit(Zeta(i), D_unp)
+          call QcMatZero(Lambda(i))
+          call QcMatZero(Zeta(i))
+       
+          call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
+               lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
+               which_index_is_pid(1:maxval(cache%p_inner%pid)), size(cache%indices(i,:)), &
+               cache%indices(i,:), F, D, S, Zeta(i))
+                  
+          call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
+               d_struct_inner, maxval(cache%p_inner%pid), &
+               which_index_is_pid(1:maxval(cache%p_inner%pid)), &
+               size(cache%indices(i,:)), cache%indices(i,:), D, S, Lambda(i))
+    
+       end do
+    
+    
+    end if    
+    
+    
+    
+    
+    ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
+    
+    traverse_end = .FALSE.
+    
+    outer_next => contrib_cache_outer_cycle_first(outer_next)
+    if (outer_next%dummy_entry) then
+       outer_next => outer_next%next
+    end if
+    
+    call QcMatInit(Z, D_unp)
+    call QcMatZero(Z)
+    call QcMatInit(Y, D_unp)
+    call QcMatZero(Y)
+    
+    k = 1
+    o_ctr = 0
+    
+    do while (traverse_end .EQV. .FALSE.)
+
+!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+!     
+!        do i = 1, outer_next%num_dmat
+!           
+!           write(*,*) 'B', outer_next%p_tuples(i)%pid
+!        
+!        end do
+    
+       c_ctr = 0
+    
+       if (outer_next%p_tuples(1)%npert ==0) then
+          
+          o_triang_size = 1
+          
+       else
+      
+          o_triang_size = size(outer_next%indices, 1)
+             
+       end if
+       
+       ! Set up block information for indexing
+       
+       tot_num_pert = cache%p_inner%npert + &
+       sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+                   
+       allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+       allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+               
+       do j = 1, outer_next%num_dmat + 1
+          
+          if (j == 1) then
+             
+             do m = 1, cache%nblks
+                
+                blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+             
+             end do
+             
+             blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
+          
+          else
+             
+             if (size(outer_next%p_tuples) > 0) then
+                
+                if (outer_next%p_tuples(1)%npert > 0) then
+                   
+                   do m = 1, outer_next%nblks_tuple(j - 1)
+                      
+                      do p = 1, 3
+                         
+                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                      
+                      end do
+                   
+                   end do
+                   
+                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
+                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                
+                end if
+             
+             end if
+          
+          end if
+       
+       end do
+       
+       ! Set up counters to store idempotency, SCFE terms in correct positions
+       
+       if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 3)) then
+       
+          c_snap = o_triang_size * size(cache%indices,1)
+
+       else if (outer_next%contrib_type == 4) then
+
+
+          c_snap = 2 * o_triang_size * size(cache%indices,1)
+                
+       end if
+       
        o_ctr = o_ctr + c_snap
        
        ! Calculate and store idempotency and SCFE terms
        if ((outer_next%contrib_type == 3) .OR. (outer_next%contrib_type == 4)) then
-      
-          if (outer_next%contrib_type == 3) then
-
-             cache_offset = outer_next%blks_tuple_triang_size(1)
-             
-          elseif (outer_next%contrib_type == 4) then
-             
-             cache_offset = 2 * outer_next%blks_tuple_triang_size(1)
-          
-          end if
       
           allocate(d_struct_o(o_supsize_prime(k), 3))
 
@@ -3141,6 +3253,14 @@ module rsp_general
        outer_next => outer_next%next
     
     end do
+    
+    if (.NOT.(mem_mgr%calibrate)) then
+    
+       call QcMatDst(D_unp)
+    
+    end if
+    
+    call mem_decr(mem_mgr, 1)
     
   end subroutine
 
