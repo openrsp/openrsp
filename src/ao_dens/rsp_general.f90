@@ -942,7 +942,7 @@ module rsp_general
           
           else
 
-             call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next)
+             call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next, mem_mgr)
              
              if (mem_exceed(mem_mgr)) then
        
@@ -2463,14 +2463,18 @@ module rsp_general
   end subroutine
   
   ! Calculate two-factor contributions (Pulay n and Pulay, idempotency and SCFE Lagrangian)
-  subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, cache)
+  subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, cache, mem_mgr)
 
     implicit none
+    
+    type(mem_manager) :: mem_mgr
+    logical :: mem_done
+    integer :: mctr, mcurr, msize, mem_track
 
     logical :: traverse_end, any_lagrange
     integer :: cache_offset, i, j, k, m, n, p, c_ctr, c_snap, lagrange_max_n
-    integer :: id_outp, i_supsize, o_triang_size, offset, tot_num_pert
-    integer :: ctr_lagrange, ctr_pulay_n, o_ctr, size_lagrange, size_pulay_n
+    integer :: id_outp, i_supsize, o_triang_size, offset, tot_num_pert, max_outer_npert
+    integer :: o_ctr, size_lagrange, size_pulay_n
     integer :: sstr_incr
     integer, dimension(0) :: nof
     integer, allocatable, dimension(:) :: o_supsize, o_supsize_prime, o_size
@@ -2490,6 +2494,9 @@ module rsp_general
     integer, allocatable, dimension(:) :: pert_ext
     
     external :: get_ovl_exp
+    
+    max_outer_npert = 0
+    
     
     ! Getting unperturbed D for template use
 
@@ -2555,6 +2562,12 @@ module rsp_general
     k = 1
     
     do while (traverse_end .EQV. .FALSE.)
+    
+       if (outer_next%p_tuples(1)%npert > max_outer_npert) then
+       
+          max_outer_npert = outer_next%p_tuples(1)%npert
+       
+       end if
   
        if (outer_next%p_tuples(1)%npert == 0) then
        
@@ -2640,200 +2653,313 @@ module rsp_general
      
     end do
     
+    allocate(which_index_is_pid(cache%p_inner%npert + max_outer_npert))
     
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
     
     ! Memory management only necessary from here
-    ! May be necessary to split Pulay (n and Lagrange) and idempotency/SCFE Lagrange
-    ! Should be OK to move zeta, lambda calculation to below Pulay contr. calculation
-    ! In this way, it's possible to do two memory management loops (one for Pulay and one for the rest)
-    ! For offsets, store what is currently c_ctr, c_snap scheme as array (make into array for each outer)
-    
-    ! Limited to 20th order - increase if needed
-    ! Can cycle outer to find max needed length (inner + outer) if necessary
-    allocate(which_index_is_pid(20))
-    
-   
-    
-    ! Traversal: Make W matrices and store
-    
-    traverse_end = .FALSE.
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
 
-    ctr_pulay_n = 0
-    ctr_lagrange = 0
-    o_ctr = 1
+    if (mem_enough(mem_mgr, size_pulay_n + size_lagrange/3 + 1)) then
     
-    allocate(W(size_pulay_n + size_lagrange/3))
-    
-    do i = 1, size(W)
-    
-       call QcMatInit(W(i), D_unp)
-       call QcMatZero(W(i))
+       ! Possible to run in non-savings mode
+       mem_track = size_pulay_n + size_lagrange/3
        
-    end do
+    elseif (mem_enough(mem_mgr, 5)) then
+    
+       ! Possible to run in savings mode
+       call mem_set_status(mem_mgr, 1)
+       
+       mem_track = mem_mgr%remain - 4
+    
+    else
+    
+       ! Not possible to run; flag it and return
+       call mem_set_status(mem_mgr, 2)
+       return       
+    
+    end if
+    
+    write(*,*) 'Mem status and track for Pulay', mem_mgr%status, mem_track
     
     ! Pulay size is the number of Pulay n contributions + one third of the
     ! Lagrange type contributions (of which Pulay Lagrange is one of three)
-    allocate(contrib_pulay(cache%blks_triang_size* ( size_pulay_n + size_lagrange/3)))
-       
-    k = 1
-    
-    ! Traverse to get W matrices
-    do while (traverse_end .EQV. .FALSE.)
-  
-!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-!     
-!        do i = 1, outer_next%num_dmat
-!           
-!           write(*,*) 'B', outer_next%p_tuples(i)%pid
-!        
-!        end do
-    
-          allocate(d_struct_o(o_supsize(k), 3))
-          allocate(d_struct_o_prime(o_supsize_prime(k), 3))
-
-          
-          which_index_is_pid = 0
-          
-          do j = 1, outer_next%p_tuples(1)%npert
-          
-             which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
-          
-          end do
-          
-          sstr_incr = 0
-
-          ! Get derivative superstructures according to whether contribution
-          ! is n or Lagrange
-          if(outer_next%p_tuples(1)%npert ==0) then
-          
-             if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then
-                    
-                call derivative_superstructure(get_emptypert(), &
-                (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                o_supsize(k), sstr_incr, d_struct_o)
-                
-                sstr_incr = 0
-             
-             end if
-            
-             if (outer_next%contrib_type == 3 .OR. outer_next%contrib_type == 4) then
-             
-                call derivative_superstructure(get_emptypert(), &
-                (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                o_supsize_prime(k), sstr_incr, d_struct_o)
-                
-                sstr_incr = 0
-
-             end if
-             
-             o_triang_size = 1
-          
-          else
-      
-             if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then             
-      
-                call derivative_superstructure(outer_next%p_tuples(1), &
-                (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                o_supsize(k), sstr_incr, d_struct_o)
-                
-                sstr_incr = 0
-             
-             end if
-
-             if (outer_next%contrib_type == 3 .OR. outer_next%contrib_type == 4) then
-             
-                call derivative_superstructure(outer_next%p_tuples(1), &
-                (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                o_supsize_prime(k), sstr_incr, d_struct_o_prime)
-                
-                sstr_incr = 0
-                
-             end if
-
-             o_triang_size = size(outer_next%indices, 1)
-             
-          end if
-
-          ! Calculate matrices
-          do j = 1, o_triang_size
-          
-             select case (outer_next%contrib_type)
-             
-             ! Only Pulay n
-             case (1)
-             
-                call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
-                     outer_next%p_tuples(1)%npert, &
-                     which_index_is_pid(1:cache%p_inner%npert + &
-                     outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
-                     F, D, S, W(o_ctr))
-             
-             ! Only Pulay Lagrange
-             case (3)
-             
-                call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
-                     cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
-                     which_index_is_pid(1:cache%p_inner%npert + &
-                     outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
-                     F, D, S, W(o_ctr))
-             
-             ! Both Pulay n and Lagrange
-             case (4)
-             
-                call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
-                     outer_next%p_tuples(1)%npert, &
-                     which_index_is_pid(1:cache%p_inner%npert + &
-                     outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
-                     F, D, S, W(o_ctr))
-                     
-                call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
-                     cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
-                     which_index_is_pid(1:cache%p_inner%npert + &
-                     outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), outer_next%indices(j,:), &
-                     F, D, S, W(o_ctr + o_triang_size))
-             
-             end select
-                  
-             o_ctr = o_ctr + 1
-       
-          end do
-       
-       
-          deallocate(d_struct_o)
-          deallocate(d_struct_o_prime)
-       
-       if (outer_next%last) then
-    
-          traverse_end = .TRUE.
-    
-       end if
-    
-       k = k + 1
-    
-       outer_next => outer_next%next
-    
-    end do
-    
-    ! Outside traversal: Calculate all Pulay contributions
-    
+    allocate(contrib_pulay(cache%blks_triang_size * (size_pulay_n + size_lagrange/3)))
     contrib_pulay = 0.0
     
-    call get_ovl_exp(0, nof, 0, nof, size(pert_ext), pert_ext, size(W), W, &
-                     size(contrib_pulay), contrib_pulay)
+    ! Begin memory management loop 1
+    
+    mcurr = 1
+    
+    mem_done = .FALSE.
+    
+    do while (.NOT.(mem_done))
+    
+       msize = min(mem_track, size_pulay_n + size_lagrange/3 - mcurr + 1)
+       
+       ! Flag if this is the last memory iteration
+       if (msize + mcurr > size_pulay_n + size_lagrange/3) then
+       
+          mem_done = .TRUE.
+       
+       end if
+    
+       call mem_incr(mem_mgr, msize)
+    
+       if (.NOT.(mem_mgr%calibrate)) then
+     
+          allocate(W(msize))
+       
+          do i = 1, size(W)
+       
+             call QcMatInit(W(i), D_unp)
+             call QcMatZero(W(i))
+          
+          end do
+       
+       end if
+       
+       
+       ! Traversal: Make W matrices and store
+       
+       traverse_end = .FALSE.
+       
+       outer_next => contrib_cache_outer_cycle_first(outer_next)
+       if (outer_next%dummy_entry) then
+          outer_next => outer_next%next
+       end if
+     
+       o_ctr = 1
+       mctr = 0
+       
+       k = 1
+       
+       ! Traverse to get W matrices
+       do while (traverse_end .EQV. .FALSE.)
+     
+   !        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+   !     
+   !        do i = 1, outer_next%num_dmat
+   !           
+   !           write(*,*) 'B', outer_next%p_tuples(i)%pid
+   !        
+   !        end do
+       
+             allocate(d_struct_o(o_supsize(k), 3))
+             allocate(d_struct_o_prime(o_supsize_prime(k), 3))
+   
+             
+             which_index_is_pid = 0
+             
+             do j = 1, outer_next%p_tuples(1)%npert
+             
+                which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
+             
+             end do
+             
+             sstr_incr = 0
+   
+             ! Get derivative superstructures according to whether contribution
+             ! is n or Lagrange
+             if(outer_next%p_tuples(1)%npert ==0) then
+             
+                if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then
+                       
+                   call derivative_superstructure(get_emptypert(), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   o_supsize(k), sstr_incr, d_struct_o)
+                   
+                   sstr_incr = 0
+                
+                end if
+               
+                if (outer_next%contrib_type == 3 .OR. outer_next%contrib_type == 4) then
+                
+                   call derivative_superstructure(get_emptypert(), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   o_supsize_prime(k), sstr_incr, d_struct_o)
+                      
+                   sstr_incr = 0
+      
+                end if
+                
+                o_triang_size = 1
+             
+             else
+         
+                if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then             
+         
+                   call derivative_superstructure(outer_next%p_tuples(1), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   o_supsize(k), sstr_incr, d_struct_o)
+                   
+                   sstr_incr = 0
+                
+                end if
+      
+               if (outer_next%contrib_type == 3 .OR. outer_next%contrib_type == 4) then
+                
+                   call derivative_superstructure(outer_next%p_tuples(1), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   o_supsize_prime(k), sstr_incr, d_struct_o_prime)
+                   
+                   sstr_incr = 0
+                   
+                end if
+     
+                o_triang_size = size(outer_next%indices, 1)
+                
+             end if
+     
+             ! Calculate matrices
+             do j = 1, o_triang_size
+             
+                if ((o_ctr == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
+                
+                   select case (outer_next%contrib_type)
+                
+                   ! Only Pulay n
+                   case (1)
+                
+                      call mem_incr(mem_mgr, 4)
+                
+                      if (.NOT.(mem_mgr%calibrate)) then
+                
+                         call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
+                              outer_next%p_tuples(1)%npert, &
+                              which_index_is_pid(1:cache%p_inner%npert + &
+                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
+                              outer_next%indices(j,:), F, D, S, W(mctr))
+                      
+                      end if
+                           
+                      call mem_decr(mem_mgr, 4)
+                
+                   ! Only Pulay Lagrange
+                   case (3)
+                
+                      call mem_incr(mem_mgr, 4)
+                
+                      if (.NOT.(mem_mgr%calibrate)) then                
+                
+                         call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
+                              cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
+                              which_index_is_pid(1:cache%p_inner%npert + &
+                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
+                              outer_next%indices(j,:), F, D, S, W(mctr))
+                           
+                      end if
+                           
+                      call mem_decr(mem_mgr, 4)                           
+                
+                   ! Both Pulay n and Lagrange (doing Pulay n in first batch)
+                   case (4)
+
+                      call mem_incr(mem_mgr, 4)
+                
+                      if (.NOT.(mem_mgr%calibrate)) then                     
+                   
+                         call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
+                              outer_next%p_tuples(1)%npert, &
+                              which_index_is_pid(1:cache%p_inner%npert + &
+                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
+                              outer_next%indices(j,:), F, D, S, W(mctr))
+                           
+                      end if
+                           
+                      call mem_decr(mem_mgr, 4)                       
+                
+                   end select
+                
+                   mctr = mctr + 1
+                
+                end if
+                     
+                o_ctr = o_ctr + 1
+          
+             end do
+             
+             ! If contribution type is 4, loop to get Pulay Lagrange matrices
+             if (outer_next%contrib_type == 4) then
+             
+                ! Calculate matrices
+                do j = 1, o_triang_size
+             
+                   if ((o_ctr == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
+                   
+                      call mem_incr(mem_mgr, 4)
+                
+                      if (.NOT.(mem_mgr%calibrate)) then   
+                         
+                         call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
+                              cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
+                              which_index_is_pid(1:cache%p_inner%npert + &
+                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
+                              outer_next%indices(j,:), F, D, S, W(mctr))
+                              
+                      end if
+                           
+                      call mem_decr(mem_mgr, 4)                                  
+                  
+                      mctr = mctr + 1
+                
+                   end if
+                     
+                   o_ctr = o_ctr + 1
+           
+                end do
+             
+             end if
+          
+          
+             deallocate(d_struct_o)
+             deallocate(d_struct_o_prime)
+          
+          if (outer_next%last) then
+       
+             traverse_end = .TRUE.
+       
+          end if
+       
+          k = k + 1
+       
+          outer_next => outer_next%next
+       
+       end do
+       
+       ! Outside traversal: Calculate all Pulay contributions
+       
+       if (.NOT.(mem_mgr%calibrate)) then
+       
+          call get_ovl_exp(0, nof, 0, nof, size(pert_ext), pert_ext, size(W), W, &
+                           cache%blks_triang_size * msize, &
+                           contrib_pulay(cache%blks_triang_size * (mcurr - 1) + 1 : &
+                           cache%blks_triang_size * (mcurr - 1 + msize)))
+    
+       end if
+
+       if (.NOT.(mem_mgr%calibrate)) then
+     
+          do i = 1, msize
+       
+             call QcMatDst(W(i))
+          
+          end do
+          
+          deallocate(W)
+       
+       end if
+       
+       call mem_decr(mem_mgr, msize)
+       
+       mcurr = mcurr + msize
+    
+    end do
+    ! End memory management loop 1
+    
+    
     
     
     contrib_pulay = -2.0 * contrib_pulay
@@ -2848,26 +2974,11 @@ module rsp_general
        outer_next => outer_next%next
     end if
     
-    do i = 1, size(W)
-    
-       call QcMatDst(W(i))
-    
-    end do
-
-    
     k = 1
     o_ctr = 0
     
     do while (traverse_end .EQV. .FALSE.)
 
-!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-!     
-!        do i = 1, outer_next%num_dmat
-!           
-!           write(*,*) 'B', outer_next%p_tuples(i)%pid
-!        
-!        end do
-    
        c_ctr = 0
     
        if (outer_next%p_tuples(1)%npert ==0) then
@@ -3000,259 +3111,373 @@ module rsp_general
     
     end do
     
-    
-    
-    ! Get zeta and lambda matrices if applicable
     if (any_lagrange) then
-    
-       allocate(Lambda(cache%blks_triang_size))
-       allocate(Zeta(cache%blks_triang_size))
-    
-       ! FIXME: Change to max order of all properties
-       ! Update: May be OK anyway
-    
-       which_index_is_pid = 0
-          
-       do i = 1, cache%p_inner%npert
-          
-          which_index_is_pid(cache%p_inner%pid(i)) = i
-          
-       end do
-          
-       do i = 1, cache%blks_triang_size
-    
-          call QcMatInit(Lambda(i), D_unp)
-          call QcMatInit(Zeta(i), D_unp)
-          call QcMatZero(Lambda(i))
-          call QcMatZero(Zeta(i))
-       
-          call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
-               lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
-               which_index_is_pid(1:maxval(cache%p_inner%pid)), size(cache%indices(i,:)), &
-               cache%indices(i,:), F, D, S, Zeta(i))
-                  
-          call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
-               d_struct_inner, maxval(cache%p_inner%pid), &
-               which_index_is_pid(1:maxval(cache%p_inner%pid)), &
-               size(cache%indices(i,:)), cache%indices(i,:), D, S, Lambda(i))
-    
-       end do
-    
-    
-    end if    
-    
-    
-    
-    
-    ! Traversal: Store Pulay contributions, calculate/store idempotency/SCFE contributions
-    
-    traverse_end = .FALSE.
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-    
-    call QcMatInit(Z, D_unp)
-    call QcMatZero(Z)
-    call QcMatInit(Y, D_unp)
-    call QcMatZero(Y)
-    
-    k = 1
-    o_ctr = 0
-    
-    do while (traverse_end .EQV. .FALSE.)
-
-!        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-!     
-!        do i = 1, outer_next%num_dmat
-!           
-!           write(*,*) 'B', outer_next%p_tuples(i)%pid
-!        
-!        end do
-    
-       c_ctr = 0
-    
-       if (outer_next%p_tuples(1)%npert ==0) then
-          
-          o_triang_size = 1
-          
-       else
       
-          o_triang_size = size(outer_next%indices, 1)
-             
+       ! Memory management for idempotency and SCFE Lagrange contributions
+       if (mem_enough(mem_mgr, 2*cache%blks_triang_size + 6)) then
+      
+          ! Possible to run in non-savings mode
+          mem_track = cache%blks_triang_size
+          
+       elseif (mem_enough(mem_mgr, 4 + 4)) then
+       
+          ! Possible to run in savings mode
+          call mem_set_status(mem_mgr, 1)
+          
+          mem_track = mem_mgr%remain - 6
+      
+       else
+       
+          ! Not possible to run; flag it and return
+          call mem_set_status(mem_mgr, 2)
+          return       
+       
        end if
        
-       ! Set up block information for indexing
+       write(*,*) 'Mem status and track for Lagrange', mem_mgr%status, mem_track
        
-       tot_num_pert = cache%p_inner%npert + &
-       sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
-                   
-       allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
-       allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
-               
-       do j = 1, outer_next%num_dmat + 1
+       ! Begin memory management loop 2
+       
+       mcurr = 1
+       mem_done = .FALSE.
+       
+       
+       do while (.NOT.(mem_done))
+       
+          msize = min(mem_track, cache%blks_triang_size - mcurr + 1)
           
-          if (j == 1) then
+          ! Flag if this is the last memory iteration
+          if (msize + mcurr > cache%blks_triang_size) then
+       
+             mem_done = .TRUE.
+       
+          end if
+       
+
+          ! FIXME: Change to max order of all properties
+          ! Update: May be OK anyway
+          ! NOTE: Have another look at this part if results are wrong
+      
+          which_index_is_pid = 0
              
-             do m = 1, cache%nblks
-                
-                blks_tuple_info(j, m, :) = cache%blk_info(m, :)
+          do i = 1, cache%p_inner%npert
              
+             which_index_is_pid(cache%p_inner%pid(i)) = i
+             
+          end do
+
+          ! Get zeta and lambda matrices
+          
+          call mem_incr(mem_mgr, msize)
+          call mem_incr(mem_mgr, msize)
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+          
+             allocate(Lambda(msize))
+             allocate(Zeta(msize))
+          
+             do i = 1, msize
+      
+                call QcMatInit(Lambda(i), D_unp)
+                call QcMatInit(Zeta(i), D_unp)
+                call QcMatZero(Lambda(i))
+                call QcMatZero(Zeta(i))
+          
+                call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
+                     lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
+                     which_index_is_pid(1:maxval(cache%p_inner%pid)), &
+                     size(cache%indices(mcurr + i - 1,:)), &
+                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i))
+                     
+                call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
+                     d_struct_inner, maxval(cache%p_inner%pid), &
+                     which_index_is_pid(1:maxval(cache%p_inner%pid)), &
+                     size(cache%indices(mcurr + i - 1,:)), cache%indices(mcurr + i - 1,:), &
+                     D, S, Lambda(i))
+      
              end do
              
-             blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
+          end if
+       
           
-          else
-             
-             if (size(outer_next%p_tuples) > 0) then
-                
-                if (outer_next%p_tuples(1)%npert > 0) then
+         
+         ! CONTINUE HERE: ADAPT TRAVERSAL TO MEMORY MANAGEMENT SCHEME
+         
+          
+         
+         ! Traversal: Calculate/store idempotency/SCFE contributions
+          
+          traverse_end = .FALSE.
+          
+          outer_next => contrib_cache_outer_cycle_first(outer_next)
+          if (outer_next%dummy_entry) then
+             outer_next => outer_next%next
+          end if
+          
+          call mem_incr(mem_mgr, 1)
+          call mem_incr(mem_mgr, 1)
+          
+          if (.NOT.(mem_mgr%calibrate)) then
                    
-                   do m = 1, outer_next%nblks_tuple(j - 1)
-                      
-                      do p = 1, 3
+             call QcMatInit(Z, D_unp)
+             call QcMatZero(Z)
+             call QcMatInit(Y, D_unp)
+             call QcMatZero(Y)
+          
+          end if
+          
+          k = 1
+          o_ctr = 0
+          
+          do while (traverse_end .EQV. .FALSE.)
+      
+      !        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
+      !     
+      !        do i = 1, outer_next%num_dmat
+      !           
+      !           write(*,*) 'B', outer_next%p_tuples(i)%pid
+      !        
+      !        end do
+       
+             c_ctr = 0
+          
+             if (outer_next%p_tuples(1)%npert ==0) then
+                
+                o_triang_size = 1
+               
+             else
+            
+               o_triang_size = size(outer_next%indices, 1)
+                   
+             end if
+             
+             ! Set up block information for indexing
+             
+             tot_num_pert = cache%p_inner%npert + &
+             sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
                          
-                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+             allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
+             allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+                     
+             do j = 1, outer_next%num_dmat + 1
+                
+                if (j == 1) then
+                   
+                   do m = 1, cache%nblks
                       
-                      end do
+                      blks_tuple_info(j, m, :) = cache%blk_info(m, :)
                    
                    end do
                    
-                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
-                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                   blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
+                
+                else
+               
+                   if (size(outer_next%p_tuples) > 0) then
+                      
+                      if (outer_next%p_tuples(1)%npert > 0) then
+                         
+                         do m = 1, outer_next%nblks_tuple(j - 1)
+                           
+                            do p = 1, 3
+                               
+                              blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                            
+                            end do
+                         
+                         end do
+                         
+                         blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
+                         outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                      
+                      end if
+                  
+                   end if
                 
                 end if
+             
+             end do
+             
+             ! Set up counters to store idempotency, SCFE terms in correct positions
+             
+             if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 3)) then
+             
+                c_snap = o_triang_size * size(cache%indices,1)
+      
+             else if (outer_next%contrib_type == 4) then
+      
+                c_snap = 2 * o_triang_size * size(cache%indices,1)
+                      
+             end if
+             
+             o_ctr = o_ctr + c_snap
+            
+             ! Calculate and store idempotency and SCFE terms
+             if ((outer_next%contrib_type == 3) .OR. (outer_next%contrib_type == 4)) then
+           
+                allocate(d_struct_o(o_supsize_prime(k), 3))
+        
+                
+                which_index_is_pid = 0
+                
+                do j = 1, outer_next%p_tuples(1)%npert
+                
+                   which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
+                 
+                end do
+                
+                sstr_incr = 0
+                
+                ! Get derivative superstructures
+                if(outer_next%p_tuples(1)%npert ==0) then
+                
+                   call derivative_superstructure(get_emptypert(), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   o_supsize_prime(k), sstr_incr, d_struct_o)
+                   
+                 else
+            
+                   call derivative_superstructure(outer_next%p_tuples(1), &
+                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   o_supsize_prime(k), sstr_incr, d_struct_o)
+                  
+                end if
+            
+                ! Calculate Y, Z matrices and store
+                do i = 1, o_triang_size
+        
+                   call mem_incr(mem_mgr, 4)
+        
+                   if (.NOT.(mem_mgr%calibrate)) then        
+        
+                      call QcMatZero(Y)
+                      call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, cache%p_inner%npert + &
+                           outer_next%p_tuples(1)%npert, &
+                           which_index_is_pid(1:cache%p_inner%npert + &
+                           outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
+                           F, D, S, Y)
+                           
+                   end if
+                   
+                   call mem_decr(mem_mgr, 4)
+                   
+                   call mem_incr(mem_mgr, 4)
+                           
+                   if (.NOT.(mem_mgr%calibrate)) then
+                   
+                      ! NOTE: Rule choice very likely to give correct exclusion but
+                      ! have another look if something goes wrong
+                      call QcMatZero(Z)
+                      call rsp_get_matrix_z(o_supsize_prime(k), d_struct_o, &
+                           (/outer_next%n_rule, outer_next%n_rule/), cache%p_inner%npert + &
+                           outer_next%p_tuples(1)%npert, &
+                           which_index_is_pid(1:cache%p_inner%npert + &
+                           outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
+                           F, D, S, Z)
+                           
+                   end if
+                  
+                   call mem_decr(mem_mgr,4)
+                                         
+                   do j = mcurr, mcurr + msize - 1
+                 
+                      if (size(outer_next%p_tuples) > 0) then
+                         if (outer_next%p_tuples(1)%npert > 0) then
+        
+                            offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
+                            (/cache%nblks, outer_next%nblks_tuple(1)/), &
+                            (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
+                            blks_tuple_info, &
+                            blk_sizes, &
+                            (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
+                            (/cache%indices(j, :), outer_next%indices(i, :)/))
+                         
+                         else
+                      
+                            offset = j
+                      
+                         end if
+                      
+                      end if
+
+                      if (.NOT.(mem_mgr%calibrate)) then
+                      
+                         call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
+                         call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
+                         cache%blks_triang_size*o_triang_size + offset))
+                   
+                         outer_next%data_scal(c_snap + offset) = &
+                         -2.0 * outer_next%data_scal(c_snap + offset)
+                   
+                         outer_next%data_scal(c_snap + &
+                         cache%blks_triang_size*o_triang_size + offset) = &
+                         -2.0 * outer_next%data_scal(c_snap + &
+                         cache%blks_triang_size*o_triang_size + offset)
+                         
+                      end if
+                
+                   end do
+                     
+                end do
+                
+                deallocate(d_struct_o)
              
              end if
           
-          end if
-       
-       end do
-       
-       ! Set up counters to store idempotency, SCFE terms in correct positions
-       
-       if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 3)) then
-       
-          c_snap = o_triang_size * size(cache%indices,1)
-
-       else if (outer_next%contrib_type == 4) then
-
-
-          c_snap = 2 * o_triang_size * size(cache%indices,1)
-                
-       end if
-       
-       o_ctr = o_ctr + c_snap
-       
-       ! Calculate and store idempotency and SCFE terms
-       if ((outer_next%contrib_type == 3) .OR. (outer_next%contrib_type == 4)) then
-      
-          allocate(d_struct_o(o_supsize_prime(k), 3))
-
+             deallocate(blk_sizes)
+             deallocate(blks_tuple_info)
           
-          which_index_is_pid = 0
-          
-          do j = 1, outer_next%p_tuples(1)%npert
-          
-             which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
-          
+             if (outer_next%last) then
+    
+                traverse_end = .TRUE.
+    
+             end if
+       
+             k = k + 1
+       
+             outer_next => outer_next%next
+
           end do
           
-          sstr_incr = 0
+          if (.NOT.(mem_mgr%calibrate)) then
           
-          ! Get derivative superstructures
-          if(outer_next%p_tuples(1)%npert ==0) then
-          
-             call derivative_superstructure(get_emptypert(), &
-             (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
-             (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-             o_supsize_prime(k), sstr_incr, d_struct_o)
-             
-           else
+             do i = 1, msize
       
-             call derivative_superstructure(outer_next%p_tuples(1), &
-             (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
-             (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-             o_supsize_prime(k), sstr_incr, d_struct_o)
-            
-          end if
-      
-          ! Calculate Y, Z matrices and store
-          do i = 1, o_triang_size
-
-             call QcMatZero(Y)
-             call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, cache%p_inner%npert + &
-                  outer_next%p_tuples(1)%npert, &
-                  which_index_is_pid(1:cache%p_inner%npert + &
-                  outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                  F, D, S, Y)
-             
-             ! NOTE: Rule choice very likely to give correct exclusion but
-             ! have another look if something goes wrong
-             call QcMatZero(Z)
-             call rsp_get_matrix_z(o_supsize_prime(k), d_struct_o, &
-                  (/outer_next%n_rule, outer_next%n_rule/), cache%p_inner%npert + &
-                  outer_next%p_tuples(1)%npert, &
-                  which_index_is_pid(1:cache%p_inner%npert + &
-                  outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                  F, D, S, Z)
-                  
-             do j = 1, cache%blks_triang_size
-           
-                if (size(outer_next%p_tuples) > 0) then
-                   if (outer_next%p_tuples(1)%npert > 0) then
-
-                      offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
-                      (/cache%nblks, outer_next%nblks_tuple(1)/), &
-                      (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
-                      blks_tuple_info, &
-                      blk_sizes, &
-                      (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
-                      (/cache%indices(j, :), outer_next%indices(i, :)/))
-                      
-                   else
-                   
-                      offset = j
-                   
-                   end if
-                   
-                end if
+                call QcMatDst(Lambda(i))
+                call QcMatDst(Zeta(i))
                 
-                call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
-                call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + offset))
-                
-                outer_next%data_scal(c_snap + offset) = &
-                -2.0 * outer_next%data_scal(c_snap + offset)
-                
-                outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + offset) = &
-                -2.0 * outer_next%data_scal(c_snap + &
-                cache%blks_triang_size*o_triang_size + offset)
-             
              end do
-                  
-          end do
-       
-          deallocate(d_struct_o)
+                
+             deallocate(Lambda)
+             deallocate(Zeta)
           
-       end if
-       
-       deallocate(blk_sizes)
-       deallocate(blks_tuple_info)
-       
-       if (outer_next%last) then
+          end if
+          
+          call mem_decr(mem_mgr, msize)
+          call mem_decr(mem_mgr, msize)
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+                   
+             call QcMatDst(Z)
+             call QcMatDst(Y)
+
+          end if
+          
+          call mem_decr(mem_mgr, 1)
+          call mem_decr(mem_mgr, 1)          
+          
+          mcurr = mcurr + msize
+          
+       end do
+       ! End memory management loop 2    
     
-          traverse_end = .TRUE.
     
-       end if
-       
-       k = k + 1
-       
-       outer_next => outer_next%next
     
-    end do
+    end if 
+    
+    
     
     if (.NOT.(mem_mgr%calibrate)) then
     
