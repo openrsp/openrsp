@@ -1718,7 +1718,6 @@ module rsp_property_caching
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
 
-   
    ! Offset for two-factor type terms
    if (present(hard_offset)) then
    
@@ -1973,11 +1972,27 @@ module rsp_property_caching
 
          end do
 
+         deallocate(merged_blk_info)
+         deallocate(blk_sizes)
+         deallocate(blk_sizes_merged)
+         deallocate(indices)
+         deallocate(translated_index)
+         deallocate(pids_in_cache)
+         deallocate(pids_current_contrib)
+         deallocate(pids_merged_pert)
+         deallocate(p_tuples_dimensions)
+         deallocate(p_tuples_dimensions_cacheorder)
+         
+         
       else
 
          write(*,*) 'Failed to retrieve data in contrib_cache_getdata: Element not found'
 
       end if
+      
+      deallocate(p_tuples_srch)
+      deallocate(p_tuples_srch_ord)
+      
 
    ! If single matrix requested
    ! Typical for single 'get perturbed S, D, or F' calls

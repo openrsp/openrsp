@@ -162,17 +162,7 @@ module rsp_general
 
        if (mem_mgr%calibrate) then
        
-          if (present(max_mat)) then
-       
-             mem_mgr%max_mat = max_mat
-             mem_mgr%remain = max_mat
           
-          else
-       
-             write(id_outp,*) 'ERROR: Argument "max_mat" must be given for memory calibration run'
-             stop
-          
-          end if
        
           if (.NOT.(present(mem_result))) then
        
@@ -187,15 +177,20 @@ module rsp_general
     
        mem_mgr%calibrate = .FALSE.
        
-       if (present(max_mat)) then
-       
-          mem_mgr%max_mat = max_mat
-          mem_mgr%remain = max_mat
-          
-       end if
-       
     end if
     
+    
+    if (present(max_mat)) then
+       
+       mem_mgr%max_mat = max_mat
+       mem_mgr%remain = max_mat
+       mem_mgr%limited = .TRUE.
+          
+    else
+       
+       mem_mgr%limited = .FALSE.
+          
+    end if
     
     
 
@@ -654,7 +649,6 @@ module rsp_general
        call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
     
     end if
-
 
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
@@ -1251,7 +1245,7 @@ module rsp_general
     integer :: dctr, contrib_offset, any_heavy, curr_remain, this_outer_size
     integer, dimension(3) :: curr_pickup, next_pickup
     integer, dimension(2) :: wunit_size, wunit_maxsize
-    logical :: traverse_end, intra_pair, mem_done
+    logical :: traverse_end, intra_pair, mem_done, intra_done
     integer :: cache_offset, i, j, k, m, n, p, offset
     integer :: id_outp, c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
     integer :: total_outer_size_1, total_outer_size_2
@@ -1280,8 +1274,6 @@ module rsp_general
     
     allocate(outer_contract_sizes_1(cache%num_outer))
     allocate(outer_contract_sizes_2(cache%num_outer,2))
-    allocate(outer_contract_sizes_2_pair(cache%num_outer))
-        
    
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
     
@@ -1346,8 +1338,6 @@ module rsp_general
        
        end if
        
-       outer_contract_sizes_2_pair(k) = sum(outer_contract_sizes_2(k, :))
-    
        if (outer_next%last) then
     
           traverse_end = .TRUE.
@@ -1427,6 +1417,8 @@ module rsp_general
     do while (mcurr <= sum(outer_contract_sizes_1(:)))
     
        msize = min(mem_track, sum(outer_contract_sizes_1(:)) - mcurr + 1)
+       
+!        write(*,*) 'Memory loop for 1-el: Starting element is', mcurr, 'and block size is', msize
     
        ! Allocate and set up perturbed density matrices for contractions
        
@@ -1568,6 +1560,9 @@ module rsp_general
     allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
     contrib_2 = 0.0
     
+!     write(*,*) 'Remaining matrices', mem_mgr%remain
+!     write(*,*) 'Contraction sizes', sum(outer_contract_sizes_2(:, 1)), sum(outer_contract_sizes_2(:, 2))
+    
     
     if (mem_enough(mem_mgr, sum(outer_contract_sizes_2(:, 1)) + &
                             sum(outer_contract_sizes_2(:, 2)))) then
@@ -1591,17 +1586,23 @@ module rsp_general
     
     end if
     
+!     write(*,*) 'Memory status', mem_mgr%status
+    
     
     ! Begin memory savings loop 2
     
     
     mcurr = 1
     curr_pickup = (/1,1,1/)
+    next_pickup = (/1,1,1/)
     contrib_offset = 1
     
+    mem_done = .FALSE.
+    intra_pair = .FALSE.
+    intra_done = .TRUE.
     
     do while (.NOT.(mem_done))
-
+    
        ! Find best set of contraction matrices given memory setup:
        
        ! For now, use a relatively straightforward scheme: There are some opportunities to refine, but
@@ -1613,21 +1614,24 @@ module rsp_general
        ! improvement here but it is more difficult to make
        
        curr_remain = mem_track
-       
-       intra_pair = .FALSE.
-       
-       wunit_size = (/0,0/)
    
        ! If at start of one outer pair (i.e. not currently in a pair separated into workunits)
        if (.NOT.(intra_pair)) then
        
+          wunit_size = (/0,0/)
+       
           any_heavy = 0
    
           do i = curr_pickup(1), cache%num_outer
+          
+!              write(*,*) 'i is', i
+!              write(*,*) 'sizes:', outer_contract_sizes_2(i, 1), outer_contract_sizes_2(i, 2)
               
              ! Can the whole pair be done?
              if (curr_remain >= outer_contract_sizes_2(i, 1) + outer_contract_sizes_2(i, 2)) then
                           
+!                 write(*,*) 'whole pair possible'
+                        
                 ! If yes, add to workload
                 curr_remain = curr_remain - (outer_contract_sizes_2(i, 1) + &
                                              outer_contract_sizes_2(i, 2))
@@ -1652,13 +1656,18 @@ module rsp_general
                 ! more to the unit and proceed
                 if (next_pickup(1) - curr_pickup(1) > 0) then
                 
+!                    write(*,*) 'Saving remaining work for next pass'
+                
                    exit
                 
                 ! If this was the first pair, make a workunit separation setup for this pair and 
                 ! do the first such piece as this workunit
                 else 
                 
+!                    write(*,*) 'started intra-pair'
+                
                    intra_pair = .TRUE.
+                   intra_done = .FALSE.
                 
                    ! Scheme: Divide half the available memory on the LHS contraction matrices
                    ! and the other half (+ 1 if odd # of matrices available) on the RHS,
@@ -1667,6 +1676,8 @@ module rsp_general
                    
                    ! If enough for all RHS matrices
                    if (outer_contract_sizes_2(i,2) < (mem_track/2 + mod(mem_track,2))  ) then
+                   
+                   
                    
                       ! Flag to switch increment handling to "right-heavy" mode
                       any_heavy = 1
@@ -1691,6 +1702,8 @@ module rsp_general
                    end if
                    
                    
+                   wunit_size = wunit_maxsize
+                   
                    ! Set up next pickup point
                    
                    ! If left- or right-heavy
@@ -1706,6 +1719,8 @@ module rsp_general
                       next_pickup = (/curr_pickup(1), curr_pickup(2), curr_pickup(3) + wunit_maxsize(2)/)
              
                    end if
+                   
+                   exit
                 
                 end if
                 
@@ -1720,20 +1735,24 @@ module rsp_general
        
           ! If left- or right-heavy
           if (any_heavy > 0) then
+          
+!              write(*,*) 'Doing intra-pair handling for heavy-state', any_heavy
              
              ! If this was the last unit of the pair:
              if (curr_pickup(any_heavy + 1) + wunit_maxsize(any_heavy) > &
-                 outer_contract_sizes_2(i, any_heavy)) then
+                 outer_contract_sizes_2(curr_pickup(1), any_heavy)) then
              
                 ! If this was the last unit of the last pair, mark as "done after this unit ends"
                 if (curr_pickup(1) == cache%num_outer) then
                    mem_done = .TRUE.
                 end if
                 
+                intra_done = .TRUE.
+                
                 ! Set the next pickup to be the start of the next outer pair
                 next_pickup = (/curr_pickup(1) + 1, 1, 1/)
                 
-                wunit_size(any_heavy) = outer_contract_sizes_2(i, any_heavy) - &
+                wunit_size(any_heavy) = outer_contract_sizes_2(curr_pickup(1), any_heavy) - &
                                         curr_pickup(any_heavy + 1) + 1
                 
              ! Otherwise, do only next unit of this pair
@@ -1748,21 +1767,34 @@ module rsp_general
           ! Otherwise, do default handling
           else
           
+!              write(*,*) 'Doing default intra-pair handling', wunit_maxsize
+          
              ! If this is the last RHS unit of the pair:
              if (curr_pickup(3) + wunit_maxsize(2) > outer_contract_sizes_2(i,2)) then
              
+!                 write(*,*) 'In last RHS unit of pair'
+             
                 ! If also the last LHS unit of the pair, then it is the last overall unit of the pair
                 if (curr_pickup(2) + wunit_maxsize(1) > outer_contract_sizes_2(i,1)) then
+                
+!                    write(*,*) 'Also in last LHS unit of pair'
+                
+                   intra_done = .TRUE.
                 
                    next_pickup = (/curr_pickup(1) + 1, 1, 1/)
              
                    ! If this was the last unit of the last pair, mark as "done after this unit ends"
                    if (curr_pickup(1) == cache%num_outer) then
+                   
+!                       write(*,*) 'Also in last pair'
+                   
                       mem_done = .TRUE.
                    end if
                    
                 ! Otherwise, change to next LHS unit for next iteration
                 else 
+                
+!                    write(*,*) 'But not last LHS unit of pair'
                 
                    next_pickup = (/curr_pickup(1), curr_pickup(2) + wunit_maxsize(1), 1/)
                 
@@ -1778,7 +1810,7 @@ module rsp_general
           
                 end if
                 
-                wunit_size(2) = outer_contract_sizes_2(i,1) - curr_pickup(2) + 1
+                wunit_size(2) = outer_contract_sizes_2(i,2) - curr_pickup(3) + 1
              
              ! Otherwise, do next RHS unit
              else
@@ -1791,7 +1823,13 @@ module rsp_general
           
        end if
           
-       
+!        write(*,*) 'Memory loop for 2-el'
+!        write(*,*) 'Current pickup is', curr_pickup, 'and next pickup is', next_pickup
+!        write(*,*) 'In intra-pair handling?', intra_pair
+!        if (intra_pair) then
+!            write(*,*) 'Unit size is', wunit_size
+!        end if
+!        write(*,*) ' '
        
        ! Allocate and set up perturbed density matrices for contractions
     
@@ -2077,6 +2115,10 @@ module rsp_general
        ! Update pickup point for next iteration
        curr_pickup = next_pickup
     
+       if (intra_done) then
+          intra_pair = .FALSE.
+          
+       end if
     
     end do
     
@@ -2263,7 +2305,14 @@ module rsp_general
        end do
      
     end if   
-       
+    
+    deallocate(contrib_0)
+    deallocate(contrib_1)
+    deallocate(contrib_2)
+    
+    
+    deallocate(outer_contract_sizes_1_coll)
+    deallocate(outer_contract_sizes_1)
     deallocate(outer_contract_sizes_2)
     
   end subroutine
@@ -2678,12 +2727,11 @@ module rsp_general
     
     end if
     
-    write(*,*) 'Mem status and track for Pulay', mem_mgr%status, mem_track
-    
     ! Pulay size is the number of Pulay n contributions + one third of the
     ! Lagrange type contributions (of which Pulay Lagrange is one of three)
     allocate(contrib_pulay(cache%blks_triang_size * (size_pulay_n + size_lagrange/3)))
     contrib_pulay = 0.0
+
     
     ! Begin memory management loop 1
     
@@ -2693,7 +2741,15 @@ module rsp_general
     
     do while (.NOT.(mem_done))
     
+       
+    
        msize = min(mem_track, size_pulay_n + size_lagrange/3 - mcurr + 1)
+       
+!        if (msize < size_pulay_n + size_lagrange/3) then
+!              
+!           write(*,*) 'Memory loop for Pulay terms: Starting element is', mcurr , 'and block size is', msize
+!        
+!        end if
        
        ! Flag if this is the last memory iteration
        if (msize + mcurr > size_pulay_n + size_lagrange/3) then
@@ -2716,7 +2772,6 @@ module rsp_general
           end do
        
        end if
-       
        
        ! Traversal: Make W matrices and store
        
@@ -2831,7 +2886,7 @@ module rsp_general
                               outer_next%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr))
+                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
                       
                       end if
                            
@@ -2848,7 +2903,7 @@ module rsp_general
                               cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr))
+                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
                            
                       end if
                            
@@ -2865,7 +2920,7 @@ module rsp_general
                               outer_next%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr))
+                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
                            
                       end if
                            
@@ -2897,7 +2952,7 @@ module rsp_general
                               cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr))
+                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
                               
                       end if
                            
@@ -2912,7 +2967,7 @@ module rsp_general
                 end do
              
              end if
-          
+             
           
              deallocate(d_struct_o)
              deallocate(d_struct_o_prime)
@@ -2937,7 +2992,7 @@ module rsp_general
                            cache%blks_triang_size * msize, &
                            contrib_pulay(cache%blks_triang_size * (mcurr - 1) + 1 : &
                            cache%blks_triang_size * (mcurr - 1 + msize)))
-    
+                           
        end if
 
        if (.NOT.(mem_mgr%calibrate)) then
@@ -2960,8 +3015,7 @@ module rsp_general
     ! End memory management loop 1
     
     
-    
-    
+   
     contrib_pulay = -2.0 * contrib_pulay
     
     
@@ -3111,6 +3165,8 @@ module rsp_general
     
     end do
     
+    deallocate(contrib_pulay)
+    
     if (any_lagrange) then
       
        ! Memory management for idempotency and SCFE Lagrange contributions
@@ -3124,7 +3180,7 @@ module rsp_general
           ! Possible to run in savings mode
           call mem_set_status(mem_mgr, 1)
           
-          mem_track = mem_mgr%remain - 6
+          mem_track = (mem_mgr%remain - 6)/2
       
        else
        
@@ -3133,8 +3189,6 @@ module rsp_general
           return       
        
        end if
-       
-       write(*,*) 'Mem status and track for Lagrange', mem_mgr%status, mem_track
        
        ! Begin memory management loop 2
        
@@ -3152,6 +3206,13 @@ module rsp_general
              mem_done = .TRUE.
        
           end if
+       
+          
+!           if (msize < cache%blks_triang_size) then
+!              
+!              write(*,*) 'Memory loop for SCFE/idem.: Starting element:', mcurr , ', block size:', msize
+!         
+!           end if
        
 
           ! FIXME: Change to max order of all properties
@@ -3201,9 +3262,7 @@ module rsp_general
        
           
          
-         ! CONTINUE HERE: ADAPT TRAVERSAL TO MEMORY MANAGEMENT SCHEME
-         
-          
+
          
          ! Traversal: Calculate/store idempotency/SCFE contributions
           
@@ -3474,7 +3533,6 @@ module rsp_general
        ! End memory management loop 2    
     
     
-    
     end if 
     
     
@@ -3486,6 +3544,17 @@ module rsp_general
     end if
     
     call mem_decr(mem_mgr, 1)
+    
+    deallocate(which_index_is_pid)
+    
+    deallocate(d_struct_inner)
+    
+    deallocate(o_supsize)
+    deallocate(o_supsize_prime)
+    deallocate(o_size)
+    
+    
+    
     
   end subroutine
 
