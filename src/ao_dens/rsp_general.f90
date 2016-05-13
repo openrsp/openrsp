@@ -1952,7 +1952,7 @@ module rsp_general
           if (.NOT.(mem_mgr%calibrate)) then
        
              ! Calculate two-electron contributions
-             call get_2el_exp(num_pert, pert_ext, next_pickup(1) - curr_pickup(1) + 1, &
+             call get_2el_exp(num_pert, pert_ext, next_pickup(1) - curr_pickup(1), &
                   outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 1), LHS_dmat_2, & 
                   outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2), RHS_dmat_2, &
                   cache%blks_triang_size*this_outer_size, &               

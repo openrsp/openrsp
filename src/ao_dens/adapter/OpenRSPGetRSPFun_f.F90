@@ -225,7 +225,7 @@
         !    nullify(ptr_file_tensor)
         !else
         
-            mem_calibrate = .TRUE.
+            mem_calibrate = .FALSE.
             max_mat = 120000
         
             call openrsp_get_property(num_props,                                 &
