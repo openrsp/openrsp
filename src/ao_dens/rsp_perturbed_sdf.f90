@@ -564,6 +564,18 @@ module rsp_perturbed_sdf
 
     allocate(outer_contract_sizes_1(cache%num_outer))    
    
+    call mem_incr(mem_mgr, 1)
+   
+    if (.NOT.(mem_mgr%calibrate)) then
+    
+       call QCMatInit(D_unp)
+
+       call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
+
+    end if
+   
+   
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
     traverse_end = .FALSE.
     
@@ -602,7 +614,6 @@ module rsp_perturbed_sdf
           return
           
        end if
-       
        
        call mem_incr(mem_mgr, cache%blks_triang_size*outer_contract_sizes_1(k))
        allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
@@ -677,14 +688,7 @@ module rsp_perturbed_sdf
     
     end if
     
-    if (.NOT.(mem_mgr%calibrate)) then
-    
-       call QCMatInit(D_unp)
 
-       call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
-
-    end if
     
     mcurr = 1
     
@@ -839,7 +843,6 @@ module rsp_perturbed_sdf
                            
        end if
        
-       write(*,*) 'decreasing lhs, msize, size', msize,  size(LHS_dmat_1)
        call mem_decr(mem_mgr, msize)
        
        if (.NOT.(mem_mgr%calibrate)) then
@@ -992,7 +995,7 @@ module rsp_perturbed_sdf
     
    
     
-       call mem_decr(mem_mgr, cache%blks_triang_size)
+       
     
        if (.NOT.(mem_mgr%calibrate)) then
     
@@ -1004,256 +1007,39 @@ module rsp_perturbed_sdf
           
        end if
        
-       call mem_decr(mem_mgr, cache%blks_triang_size*msize)
+       call mem_decr(mem_mgr, cache%blks_triang_size)
+       
+       
        
        if (.NOT.(mem_mgr%calibrate)) then
        
-          do i = 1, size(contrib_0)
-             call QcMatDst(contrib_0(i))
+          do i = 1, size(contrib_1)
+             call QcMatDst(contrib_1(i))
           end do
        
           deallocate(contrib_1)
           
        end if
        
+       call mem_decr(mem_mgr, cache%blks_triang_size*msize)
+       
     end do
        
     deallocate(outer_contract_sizes_1)
     
-    !call mem_decr(mem_mgr, 1)
-    !deallocate(D_unp)
-       
-       
     
-!    Save for reference
+   
+    if (.NOT.(mem_mgr%calibrate)) then
     
-!     ! Initializing data and arrays for external calls
-!     
-!     allocate(LHS_dmat_1(sum(outer_contract_sizes_1)))
-!     
-!     call QCMatInit(D_unp)
-! 
-!     call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-!          contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
-! 
-!     do i = 1, size(LHS_dmat_1)
-!     
-!       call QCMatInit(LHS_dmat_1(i), D_unp)
-!     
-!     end do
-!     
-!     allocate(contrib_0(cache%blks_triang_size))
-!     allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
-!     
-!     
-!     do i = 1, size(contrib_0)
-!       call QCMatInit(contrib_0(i), D_unp)
-!       call QCMatZero(contrib_0(i))
-!     end do
-!     
-!     do i = 1, size(contrib_1)
-!       call QCMatInit(contrib_1(i), D_unp)
-!       call QCMatZero(contrib_1(i))
-!     end do
-! 
-!     ! D_unp could be deallocated here and other matrices used for initialization
-!     
-!     ! Traversal: Get matrices for contraction from cache
-! 
-!     traverse_end = .FALSE.
-!     
-!     outer_next => contrib_cache_outer_cycle_first(outer_next)
-!     if (outer_next%dummy_entry) then
-!        outer_next => outer_next%next
-!     end if
-!        
-!     k = 1
-!     lhs_ctr_1 = 1
-!     
-!     do while (traverse_end .EQV. .FALSE.)
-! 
-!        ! One chain rule application
-!        if (outer_next%num_dmat == 1) then
-!        
-!           do m = 1, outer_contract_sizes_1(k) 
-!           
-!              call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-!                   contrib_size=1, ind_len=1, ind_unsorted=outer_next%indices(m, :), &
-!                   mat_sing=LHS_dmat_1(lhs_ctr_1 + m  - 1))
-! 
-!           end do
-!           
-!        ! No chain rule applications: Contraction matrix is only unperturbed D
-!        elseif(outer_next%num_dmat == 0) then
-!            
-!           call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-!                contrib_size=1, ind_len=1, ind_unsorted=(/1/), &
-!                mat_sing=LHS_dmat_1(1))
-!           
-!        
-!        end if
-!    
-!        if (outer_next%last) then
-!           traverse_end = .TRUE.
-!        end if
-! 
-!        lhs_ctr_1 = lhs_ctr_1 + outer_contract_sizes_1(k)
-!        k = k + 1
-!        
-!        outer_next => outer_next%next
-!     
-!     end do
-!     
-!     ! Calculate contributions
-!     
-!     ! Calculate one-electron contributions
-!     if (num_0 > 0) then
-!     
-!        call get_1el_mat(num_pert, pert_ext, size(contrib_0), contrib_0)
-!       
-!        t_matrix_bra = get_emptypert()
-!        t_matrix_ket = get_emptypert()
-!       
-! ! T matrix terms are not reintroduced yet, skipping for now      
-!       
-! !        call rsp_ovlave_t_matrix(get_ovl_mat, cache%p_inner, cache%p_inner%npert, &
-! !                                 t_matrix_bra, t_matrix_ket, 1, &
-! !                                 D_unp, size(contrib_0), contrib_0)
-!     
-!     end if
-!     
-!     ! Calculate two-electron contributions
-!     call get_2el_mat(num_pert, pert_ext, size(LHS_dmat_1), LHS_dmat_1, &
-!                      size(contrib_1), contrib_1)
-!                        
-!     ! Traversal: Add 1-el and two-el contributions together
-!     
-!     traverse_end = .FALSE.
-!     
-!     outer_next => contrib_cache_outer_cycle_first(outer_next)
-!     if (outer_next%dummy_entry) then
-!        outer_next => outer_next%next
-!     end if
-!       
-!     k = 1
-!     c1_ctr = 1
-!     
-!     do while (traverse_end .EQV. .FALSE.)
-!   
-!        ! One-el and two-el contributions ("all inner contribution")
-!        if (outer_next%num_dmat == 0) then
-!        
-!           ! For "all inner contribution", the data is already ordered correctly
-!           allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
-!           
-!           do i = 1, cache%blks_triang_size*outer_contract_sizes_1(k)
-! 
-!              call QcMatInit(outer_next%data_mat(i), D_unp)
-!              call QcMatZero(outer_next%data_mat(i))
-!              call QcMatkAB(1.0d0, contrib_0(i), contrib_1(c1_ctr + i - 1), outer_next%data_mat(i))
-!           
-!           end do
-!           
-!           c1_ctr = c1_ctr + cache%blks_triang_size
-! 
-!        ! Only two-el contribution
-!        else if (outer_next%num_dmat == 1) then
-!        
-!           allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
-! 
-!           if (cache%p_inner%npert > 0) then
-!           
-!              ! Initialize block information for cache indexing
-!              tot_num_pert = cache%p_inner%npert + &
-!              sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
-!                    
-!              allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
-!              allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
-!              
-!              blks_tuple_info = 0
-!              blk_sizes = 0
-!                 
-!              do j = 1, outer_next%num_dmat + 1
-!                 
-!                 if (j == 1) then
-!                 
-!                    do m = 1, cache%nblks
-!                    
-!                       blks_tuple_info(j, m, :) = cache%blk_info(m, :)
-!                       
-!                    end do
-!                    
-!                    blk_sizes(j, 1:cache%nblks) = cache%blk_sizes
-!                 
-!                 else
-!                 
-!                    do m = 1, outer_next%nblks_tuple(j - 1)
-!                 
-!                       do p = 1, 3
-!                    
-!                          blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
-!                    
-!                       end do
-!                 
-!                    end do
-!                    
-!                    blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
-!                    outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
-!                    
-!                 end if
-!                 
-!              end do
-!        
-!              do i = 1, size(outer_next%indices, 1)
-!           
-!                 do j = 1, size(cache%indices, 1)
-! 
-!                    offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
-!                    cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
-!                    (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
-!                    (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
-!                    blks_tuple_info, &
-!                    blk_sizes, &
-!                    (/cache%blks_triang_size, &
-!                    (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
-!                    (/cache%indices(j, :), outer_next%indices(i, :)/))
-!                 
-!                    ! Store result in cache
-!                    call QcMatInit(outer_next%data_mat(offset), D_unp)
-!                    call QcMatZero(outer_next%data_mat(offset))
-!                    call QcMatRAXPY(1.0d0, contrib_1(c1_ctr + j + size(cache%indices, 1) * (i - 1) - 1), &
-!                    outer_next%data_mat(offset))
-!                 
-!                 end do
-!           
-!              end do
-!              
-!              deallocate(blk_sizes)
-!              deallocate(blks_tuple_info)
-!           
-!           else
-!           
-!              write(*,*) 'ERROR: UNEXPECTED: NO INNER PERTURBATIONS'
-!           
-!           end if
-!           
-!           c1_ctr = c1_ctr + cache%blks_triang_size*outer_contract_sizes_1(k)
-!                    
-!        end if
-!        
-!        if (outer_next%last) then
-!           traverse_end = .TRUE.
-!        end if
-!     
-!        k = k + 1
-!        outer_next => outer_next%next
-!     
-!     end do
-!     
-!     deallocate(outer_contract_sizes_1)
+       call QCMatDst(D_unp)
+
+    end if
     
+    call mem_decr(mem_mgr, 1)
+   
   end subroutine
 
+  
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
   get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_cache, &
@@ -1285,10 +1071,9 @@ module rsp_perturbed_sdf
     type(Qcmat) :: A, B, C, T, U
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat
     
-    
-    ! Requirements are at least 9 * sum(size_i), added safety margins for
-    ! pert. matrix calls etc.
-    if (.NOT.(mem_enough(mem_mgr, 10 * sum(size_i) + 9))) then
+
+    ! May be inaccurate, revisit if problems
+    if (.NOT.(mem_enough(mem_mgr, 8 * sum(size_i) + 9))) then
     
        ! Not possible to run; flag it and return
        call mem_set_status(mem_mgr, 2)
@@ -1359,7 +1144,7 @@ module rsp_perturbed_sdf
           ! Calculate Sp
           call p_tuple_to_external_tuple(pert, npert_ext, pert_ext)
           call get_ovl_mat(0, noc, 0, noc, npert_ext, pert_ext, &
-                        size_i(k), Sp(ind_ctr:ind_ctr + size_i(k) - 1))
+                        size_i(k), Sp)
           
           
           deallocate(pert_ext)
@@ -1398,7 +1183,15 @@ module rsp_perturbed_sdf
     call mem_incr(mem_mgr, 5 * sum(size_i))
 
     
+    
+    
     if (.NOT.(mem_mgr%calibrate)) then    
+    
+       allocate(Dh(sum(size_i)))
+       allocate(Dp(sum(size_i)))
+       allocate(Fp(sum(size_i)))
+       allocate(RHS(sum(size_i)))
+       allocate(X(sum(size_i)))
     
        do i = 1, sum(size_i)
     

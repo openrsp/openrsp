@@ -68,10 +68,11 @@ module rsp_indices_and_addressing
   
   type mem_manager
   
-     logical :: calibrate
+     logical :: calibrate = .FALSE.
+     logical :: limited = .FALSE.
      
      integer :: curr_mat = 0
-     integer :: max_mat = 0
+     integer :: max_mat = 2147483647
      integer :: max_recorded_mat = 0
      integer :: remain = 0
      integer :: status = 0
@@ -131,30 +132,44 @@ module rsp_indices_and_addressing
     
     mgr%remain = mgr%remain - n
     
-    if (mgr%curr_mat > mgr%max_mat) then
-    
-       ! If limit exceeded, record where it first happened
-       if (present(p) .AND. mgr%status < 2) then
-
-          mgr%checkpoint = p
-          
-       end if
-    
-       call mem_set_status(mgr, 2)
-       
-       write(*,*) 'memory limit exceeded at checkpoint', mgr%checkpoint
-       
-    end if
-    
     if (mgr%curr_mat > mgr%max_recorded_mat) then
     
         mgr%max_recorded_mat = mgr%curr_mat
     
-        write(*,*) 'new max peak matrix usage:', mgr%max_recorded_mat
+        write(*,*) ' '
+        write(*,*) 'New peak matrix usage:', mgr%max_recorded_mat
+        write(*,*) ' '
     
     end if
     
-    write(*,*) 'mat use increased by', n, ' to', mgr%curr_mat, ' remaining:', mgr%remain
+    if (mgr%limited) then
+    
+       if (mgr%curr_mat > mgr%max_mat) then
+    
+          ! If limit exceeded, record where it first happened
+          if (present(p) .AND. mgr%status < 2) then
+
+             mgr%checkpoint = p
+          
+          end if
+    
+          call mem_set_status(mgr, 2)
+       
+          write(*,*) 'Memory limit exceeded'
+          
+          if (present(p)) then
+          
+             write(*,*) 'Memory limit was surpassed at checkpoint', mgr%checkpoint
+          
+          end if
+       
+       end if
+       
+    end if
+    
+
+    
+!     write(*,*) 'mat use increased by', n, ' to', mgr%curr_mat, ' remaining:', mgr%remain
         
   end subroutine
   
@@ -171,7 +186,7 @@ module rsp_indices_and_addressing
     
     mgr%remain = mgr%remain + n
     
-    write(*,*) 'mat use decreased by', n, ' to', mgr%curr_mat, ' remaining:', mgr%remain
+!     write(*,*) 'mat use decreased by', n, ' to', mgr%curr_mat, ' remaining:', mgr%remain
 
   end subroutine
   
@@ -183,16 +198,25 @@ module rsp_indices_and_addressing
     type(mem_manager) :: mgr
     integer :: n
     logical :: mem_enough
-        
-    if (mgr%remain > n) then
+
+    if (mgr%limited) then
     
-       mem_enough = .TRUE.     
+       if (mgr%remain > n) then
+    
+          mem_enough = .TRUE.     
+    
+       else
+    
+          mem_enough = .FALSE.
+    
+       end if
     
     else
     
-       mem_enough = .FALSE.
+       mem_enough = .TRUE.
     
     end if
+    
     
   end function
   
@@ -347,7 +371,9 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B
     integer(kind=4) :: ierr  
 
-    ierr = QcMatCreate_f(A)
+! The QcMatCreate_f call seems to leak memory - it may be that it leaves behind any
+! data which was in A already and that data may then become inaccessible to deallocation
+!     ierr = QcMatCreate_f(A)
     ierr = QcMatDuplicate_f(B, COPY_PATTERN_AND_VALUE, A)
     
   end subroutine 

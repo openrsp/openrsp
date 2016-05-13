@@ -226,7 +226,7 @@
         !else
         
             mem_calibrate = .TRUE.
-            max_mat = 4000
+            max_mat = 120000
         
             call openrsp_get_property(num_props,                                 &
                                            len_tuple,                                 &
