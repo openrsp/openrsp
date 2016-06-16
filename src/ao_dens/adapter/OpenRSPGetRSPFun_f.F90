@@ -226,7 +226,9 @@
         !else
         
             mem_calibrate = .FALSE.
-            max_mat = 120000
+            ! MaR: max_mat set to very high number to take matrix limitations out of use
+            ! during development of other features
+            max_mat = 999999999
         
             call openrsp_get_property(num_props,                                 &
                                            len_tuple,                                 &

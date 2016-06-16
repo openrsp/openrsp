@@ -207,6 +207,11 @@ module rsp_general
     
     end if
     
+    ! MaR: Disable restarting functionality during development of other features
+    ! Remove next two lines to reinstate
+    rs_calibrate_save = rs_info
+    rs_info = (/0,0,0/)
+    
     call prog_incr(prog_info, 1)
     
     if (mem_mgr%calibrate) then

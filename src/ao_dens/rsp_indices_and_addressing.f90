@@ -136,9 +136,9 @@ module rsp_indices_and_addressing
     
         mgr%max_recorded_mat = mgr%curr_mat
     
-        write(*,*) ' '
-        write(*,*) 'New peak matrix usage:', mgr%max_recorded_mat
-        write(*,*) ' '
+!         write(*,*) ' '
+!         write(*,*) 'New peak matrix usage:', mgr%max_recorded_mat
+!         write(*,*) ' '
     
     end if
     
@@ -371,9 +371,6 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B
     integer(kind=4) :: ierr  
 
-! The QcMatCreate_f call seems to leak memory - it may be that it leaves behind any
-! data which was in A already and that data may then become inaccessible to deallocation
-!     ierr = QcMatCreate_f(A)
     ierr = QcMatDuplicate_f(B, COPY_PATTERN_AND_VALUE, A)
     
   end subroutine 
