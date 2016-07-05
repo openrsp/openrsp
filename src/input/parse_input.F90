@@ -316,6 +316,108 @@ contains
 !     --------------------------------------------------------------------------
 
 !     --------------------------------------------------------------------------
+      ! DaF: Keywords for residue calculations, mimicing the custom-section
+      ! We use the kn-input from the custom property specification
+
+      ! Determine whether single or double residues are to be calced
+      ! Double residues not yet to be calculated in this framework!
+      if (kw_matches(word, '.RESIDU')) then
+         openrsp_cfg_residues = .true.
+         call kw_read(word, openrsp_cfg_residue_order)
+      end if
+
+      ! Number of perturbations in the corresponding response function
+      if (kw_matches(word, '.RENPER')) then
+         call kw_read(word, openrsp_cfg_residue_n_pert)
+      end if 
+
+      if (kw_matches(word, '.RSPECP')) then
+         allocate (openrsp_cfg_residue_spec_pert(openrsp_cfg_residue_order))
+         do i = 1, openrsp_cfg_residue_order
+           call kw_read(word, openrsp_cfg_residue_spec_pert(i))
+         end do
+      end if
+
+      if (kw_matches(word, '.RSPCIX')) then
+         allocate (openrsp_cfg_residue_spec_index(max(openrsp_cfg_residue_spec_pert(1),&
+               openrsp_cfg_residue_spec_pert(openrsp_cfg_residue_order)),openrsp_cfg_residue_order))
+         openrsp_cfg_residue_spec_index = -99999
+         do i = 1, openrsp_cfg_residue_order
+            call kw_read(word,openrsp_cfg_residue_spec_index(:,i),openrsp_cfg_residue_spec_pert(i))
+         end do
+      end if
+
+      ! Shortcut for TPCD using London orbitals
+      if (kw_matches(word, '.RSTPCD')) then
+         openrsp_cfg_residue_tpcd = .true.
+         openrsp_cfg_residue_n_pert = 3
+         openrsp_cfg_residue_order = 1
+         openrsp_cfg_specify_kn(1)=0
+         openrsp_cfg_specify_kn(2)=2
+         allocate(openrsp_cfg_residue_spec_pert(1))
+         allocate(openrsp_cfg_residue_spec_index(1,1))
+         openrsp_cfg_residue_spec_pert(1) = 1
+         openrsp_cfg_residue_spec_index(1,1) = 3
+      end if
+      
+      ! Shortcut for 3PCD using London orbitals
+      if (kw_matches(word, '.RS3PCD')) then
+         openrsp_cfg_residue_3pcd = .true.
+         openrsp_cfg_residue_n_pert = 4
+         openrsp_cfg_residue_order = 1
+         openrsp_cfg_specify_kn(1)=0
+         openrsp_cfg_specify_kn(2)=3
+         allocate(openrsp_cfg_residue_spec_pert(1))
+         allocate(openrsp_cfg_residue_spec_index(1,1))
+         openrsp_cfg_residue_spec_pert(1) = 1
+         openrsp_cfg_residue_spec_index(1,1) = 4
+      end if
+
+      if (kw_matches(word, '.RESRUL')) then
+         call kw_read(word, openrsp_cfg_specify_kn(1))
+         call kw_read(word, openrsp_cfg_specify_kn(2))
+      end if
+
+
+      ! Read the number of states for which residues are calcd.
+      if (kw_matches(word, '.RSNSTA')) then
+         call kw_read(word, openrsp_cfg_residue_nstates)
+      end if
+
+      ! Read for which states residues are calcd.
+      if (kw_matches(word, '.RESSTA')) then
+         allocate(openrsp_cfg_residue_states(openrsp_cfg_residue_order,openrsp_cfg_residue_nstates))
+         openrsp_cfg_residue_states=-999999
+         do i = 1, openrsp_cfg_residue_order 
+           call kw_read(word, openrsp_cfg_residue_states(i,:))
+           ! Additional modification for double residue of one state, not yet needed
+           if( openrsp_cfg_residue_order.gt.0..and.(openrsp_cfg_residue_order.gt.openrsp_cfg_residue_nstates )) then
+               openrsp_cfg_residue_states(i,openrsp_cfg_residue_nstates)=openrsp_cfg_residue_states(i,1)
+           end if
+         end do
+      end if
+
+      ! Read the corresponding frequencies
+      ! Initialized, postprocessing must follow
+      if (kw_matches(word, '.RESFRQ')) then
+         allocate(openrsp_cfg_residue_freq(openrsp_cfg_residue_n_pert))
+         openrsp_cfg_residue_freq = -9999999.9d9
+          do j = 1, openrsp_cfg_residue_n_pert !- 1
+            call kw_read(word, openrsp_cfg_residue_freq(j))
+          end do
+      end if
+
+      ! Read the corresponding perturbation labels
+      ! Initialized, postprocessing must follow
+      if (kw_matches(word, '.SPPLBR')) then
+         allocate(openrsp_cfg_residue_plab(openrsp_cfg_residue_n_pert))
+         openrsp_cfg_residue_plab = 'XXXX'
+           do j = 1, openrsp_cfg_residue_n_pert
+            call kw_read(word, openrsp_cfg_residue_plab(j))
+           end do
+      end if
+
+!     --------------------------------------------------------------------------
 
       ! OrL: Keyword for Coriolis coupling
 
