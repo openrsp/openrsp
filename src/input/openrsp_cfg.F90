@@ -82,6 +82,23 @@ module openrsp_cfg
    ! (just perform transformation on tensor which was previously calculated and stored in file)
    
    logical :: openrsp_cfg_general_suppress_calc = .false.
+
+   ! DaF: Keywords for the residue functionality
+   logical :: openrsp_cfg_residues = .false.
+   integer :: openrsp_cfg_residue_n_pert = 0
+   integer :: openrsp_cfg_residue_order = 0 
+   integer :: openrsp_cfg_residue_kn(2)= 0
+   integer :: openrsp_cfg_residue_n_states = 0
+    
+   integer, allocatable :: openrsp_cfg_residue_spec_pert(:),openrsp_cfg_residue_spec_index(:)
+   integer, allocatable :: openrsp_cfg_residue_states(:,:)
+   real(8), allocatable :: openrsp_cfg_residue_freq(:)
+   character(4), allocatable :: openrsp_cfg_residue_plab(:)
+
+   ! DaF: Specific shortcuts for TPCD and 3PCD using London orbitals
+   logical :: openrsp_cfg_residue_tpcd = .false.
+   logical :: openrsp_cfg_residue_3pcd = .false.
+
    
 	! OrL: Keyword for Coriolis coupling
 	logical :: openrsp_cfg_general_coriolis = .false.
