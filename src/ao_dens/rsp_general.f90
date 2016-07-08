@@ -513,6 +513,409 @@ module rsp_general
     end if
 
   end subroutine
+  
+  
+  subroutine openrsp_get_residue(n_props, np, pert_dims, pert_first_comp, residue_order, &
+                                   pert_labels, residualization, exenerg, n_freq_cfgs, pert_freqs, &
+                                   kn_rules, F_unpert, S_unpert, D_unpert, X_unpert, get_rsp_sol, get_nucpot, &
+                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                   get_xc_exp, id_outp, rsp_tensor, file_id, &
+                                   mem_calibrate, max_mat, mem_result)
+    implicit none
+
+    logical, optional :: mem_calibrate
+    integer, optional :: max_mat, mem_result
+    type(mem_manager) :: mem_mgr
+    integer(kind=QINT), intent(in) :: n_props, residue_order
+    integer(kind=QINT), dimension(n_props), intent(in) :: np, n_freq_cfgs
+    integer(kind=4), intent(in) :: id_outp
+    integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
+    character(4), dimension(sum(np)), intent(in) :: pert_labels
+    character(256) :: filename
+    integer :: i, j, k, m, n
+    integer :: dum_ind
+    integer, dimension(sum(n_freq_cfgs)) :: prop_sizes, num_blks
+    integer(kind=QINT), intent(in), dimension(n_props) :: kn_rules
+    integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
+    character, optional, dimension(20) :: file_id
+    integer, allocatable, dimension(:) :: blk_sizes
+    integer, allocatable, dimension(:,:) :: blk_info
+    complex(8), dimension(dot_product(np, n_freq_cfgs)), intent(in) :: pert_freqs
+    logical, dimension(np,2) :: pert_dims ! Dimension 2 to be able to treat double residues later on
+    complex(8), dimension(2) :: exenerg ! Dimension 2 to be able to treat double residues later on
+    integer(kind=QINT) num_perts
+    real :: timing_start, timing_end
+    type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
+    external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
+    external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
+    complex(8), dimension(*) :: rsp_tensor
+    type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
+    type(QcMat), dimension(2) :: X_unpert ! dimension 2 as we need a second vector for double residues
+    type(contrib_cache_outer), pointer :: S, D, F
+    integer :: kn(2)
+    logical :: r_exist, sdf_retrieved
+    integer, dimension(3) :: rs_info, rs_calibrate_save
+    integer, dimension(3) :: prog_info
+    character(30) :: fmt_str
+    
+    if (present(mem_calibrate)) then
+    
+       mem_mgr%calibrate = mem_calibrate
+
+       if (mem_mgr%calibrate) then
+       
+          
+       
+          if (.NOT.(present(mem_result))) then
+       
+             write(id_outp,*) 'ERROR: Result holder "mem_result" must be given for memory calibration run'
+             stop
+             
+          end if
+          
+       end if
+          
+    else
+    
+       mem_mgr%calibrate = .FALSE.
+       
+    end if
+    
+    
+    if (present(max_mat)) then
+       
+       mem_mgr%max_mat = max_mat
+       mem_mgr%remain = max_mat
+       mem_mgr%limited = .TRUE.
+          
+    else
+       
+       mem_mgr%limited = .FALSE.
+          
+    end if
+    
+    
+
+    ! Start progress counter
+    
+    prog_info = (/0,0,0/)
+    call prog_init(rs_info)
+    
+    ! Circumvent restarting mechanism for calibration run
+    if (mem_mgr%calibrate) then
+    
+       rs_calibrate_save = rs_info
+       rs_info = (/0,0,0/)
+    
+    end if
+    
+    ! MaR: Disable restarting functionality during development of other features
+    ! Remove next two lines to reinstate
+    rs_calibrate_save = rs_info
+    rs_info = (/0,0,0/)
+    
+    call prog_incr(prog_info, 1)
+    
+    if (mem_mgr%calibrate) then
+       
+       allocate(S)
+       allocate(D)
+       allocate(F)
+       
+       call mem_incr(mem_mgr, 3, p=prog_info)
+    
+    else
+    
+       ! Check if this stage passed previously and if so, then retrieve and skip execution
+    
+       sdf_retrieved = .FALSE.
+       if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+          write(id_outp,*) ' '
+          write(id_outp,*) 'S, D, F initialization stage was completed'
+          write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+          write(id_outp,*) ' '
+    
+          allocate(S)
+          allocate(D)
+          allocate(F)
+    
+          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
+          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
+          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
+       
+         sdf_retrieved = .TRUE.
+      
+       else
+       
+          ! Set up S, D, F data structures
+       
+          call contrib_cache_outer_allocate(S)
+          call contrib_cache_outer_allocate(D)
+          call contrib_cache_outer_allocate(F)
+      
+         call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
+               data_size = 1, data_mat=(/S_unpert/))
+          call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
+               data_size = 1, data_mat=(/D_unpert/))
+          call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
+               data_size = 1, data_mat=(/F_unpert/))
+               
+          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
+         call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
+         call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
+       
+       end if
+       
+    end if
+       
+    call prog_incr(prog_info, 1)
+
+    ! Present calculation and initialize perturbation tuple datatypes and
+    ! associated size/indexing information
+    
+    write(id_outp,*) ' '
+    write(id_outp,*) 'OpenRSP lib called'
+    write(id_outp,*) ' '
+    
+    if (n_props == 1) then
+       write(id_outp,*) 'Calculating one property'
+    else  
+       write(id_outp,*) 'Calculating', n_props, 'properties'
+    end if
+    write(id_outp,*) ' '
+   
+    k = 1
+    
+    do i = 1, n_props
+    
+       write(id_outp,*) 'Property', i, 'is order', np(i)
+       write(id_outp,*) 'The choice of k, n is', kn_rules(i), 'and', np(i) - 1 - kn_rules(i)
+       write(id_outp,*) ' '
+       write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+       write(id_outp,*) 'The perturbation labels are:                          ', pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+       write(id_outp,*) 'Number of frequency configurations:', n_freq_cfgs(i)
+       write(id_outp,*) ' '
+        
+   
+       do j = 1, n_freq_cfgs(i)
+       
+          kn_rule(k, 1) = kn_rules(i)
+          kn_rule(k, 2) = np(i) - 1 - kn_rules(i)
+          
+          if ((kn_rule(k, 1) - kn_rule(k, 2) > 1)) then
+
+             write(id_outp,*) 'ERROR: Invalid choice of (k,n)'
+             write(id_outp,*) 'Valid choices for k are integers between and including 0 and ', (np(i) - 1)/2
+             write(id_outp,*) 'Valid choices of n are such that k + n =', np(i) - 1
+             write(id_outp,*) 'Cannot proceed with calculation: Exiting OpenRSP lib'
+             write(id_outp,*) ' '
+             return
+ 
+          end if
+         
+          p_tuples(k)%npert = np(i)
+          allocate(p_tuples(k)%pdim(np(i)))
+          allocate(p_tuples(k)%plab(np(i)))
+          allocate(p_tuples(k)%pid(np(i)))
+          allocate(p_tuples(k)%freq(np(i)))
+          
+          p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+          p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+          p_tuples(k)%pid = (/(m, m = 1, np(i))/)
+          p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
+          1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + (j)*np(i))
+          
+          ! MaR: NOTE: Here sorting tuples in standard order: Must sort back to get correct order 
+          ! for returned tensor: Original pids will give key to re-sort
+          
+          p_tuples(k) = p_tuple_standardorder(p_tuples(k))
+          p_tuples(k)%pid = (/(m, m = 1, np(i))/)
+       
+          write(id_outp,*) 'Frequency configuration', j
+          write(id_outp,*) ' '
+          write(id_outp,*) 'Frequencies (real part):', (/(real(p_tuples(k)%freq(m)), m = 1, np(i))/)
+          write(id_outp,*) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
+          write(id_outp,*) ' '
+          
+          num_blks(k) = get_num_blks(p_tuples(k))
+       
+          write(*,*) 'Number of blocks:', num_blks(k)
+       
+          allocate(blk_info(num_blks(k), 3))
+          allocate(blk_sizes(num_blks(k)))
+          blk_info = get_blk_info(num_blks(k), p_tuples(k))
+          write(*,*) 'Block info:', blk_info
+          blk_sizes = get_triangular_sizes(num_blks(k), blk_info(1:num_blks(k), 2), &
+                                           blk_info(1:num_blks(k), 3))
+
+          write(*,*) 'Block sizes:', blk_sizes
+                                           
+          prop_sizes(k) = get_triangulated_size(num_blks(k), blk_info)
+          
+          write(*,*) 'Property size:', prop_sizes(k)
+       
+          deallocate(blk_info)
+          deallocate(blk_sizes)
+       
+          k = k + 1
+       
+      
+       end do
+
+              
+    end do
+
+    rsp_tensor(1:sum(prop_sizes)) = 0.0
+    
+    if (.NOT.(mem_exceed(mem_mgr))) then
+    
+       ! Calculate properties
+    
+       write(id_outp,*) 'Starting clock: About to start property calculations'
+       write(id_outp,*) ' '
+
+       call cpu_time(timing_start)
+
+       call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
+                     get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                     get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
+                     id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                     mem_mgr)
+
+       call cpu_time(timing_end)
+
+       write(id_outp,*) 'Clock stopped: Property calculations finished'
+       write(id_outp,*) 'Time spent:',  timing_end - timing_start, ' seconds'
+       write(id_outp,*) ' '
+    
+    end if
+    
+    
+    if (mem_mgr%calibrate) then
+    
+       call mem_decr(mem_mgr, 3)
+       mem_result = mem_mgr%status
+       
+       ! Put back restart information the way it was
+       if (.NOT.(all(rs_calibrate_save == (/0,0,0/)))) then
+          
+          rs_calibrate_save(1) = rs_calibrate_save(1) - 1
+          call prog_incr(rs_calibrate_save, 1)
+          
+       end if
+    
+    else
+    
+       ! Print results
+       ! This can be done more elegantly by ASCII transformation of integers, but leave as is for now
+    
+       k = 1
+       n = 1
+       
+       do i = 1, n_props
+         
+          do j = 1, n_freq_cfgs(i)
+          
+             if (i < 10) then
+                if (j < 10) then
+                   fmt_str = "(A10, I1, A1, I1)"
+                else if (j < 100) then
+                   fmt_str = "(A10, I1, A1, I2)"
+                else if (j < 1000) then
+                   fmt_str = "(A10, I1, A1, I3)"
+                else if (j < 10000) then
+                   fmt_str = "(A10, I1, A1, I4)"
+                else
+                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                   stop
+                end if
+             else if (i < 100) then
+                if (j < 10) then
+                   fmt_str = "(A10, I2, A1, I1)"
+                else if (j < 100) then
+                   fmt_str = "(A10, I2, A1, I2)"
+                else if (j < 1000) then
+                   fmt_str = "(A10, I2, A1, I3)"
+                else if (j < 10000) then
+                   fmt_str = "(A10, I2, A1, I4)"
+                else
+                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                   stop
+                end if
+             else if (i < 1000) then
+                if (j < 10) then
+                   fmt_str = "(A10, I3, A1, I1)"
+                else if (j < 100) then
+                   fmt_str = "(A10, I3, A1, I2)"
+                else if (j < 1000) then
+                   fmt_str = "(A10, I3, A1, I3)"
+                else if (j < 10000) then
+                   fmt_str = "(A10, I3, A1, I4)"
+                else
+                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                   stop
+                end if
+             else if (i < 10000) then
+                if (j < 10) then
+                   fmt_str = "(A10, I4, A1, I1)"
+                else if (j < 100) then
+                   fmt_str = "(A10, I4, A1, I2)"
+                else if (j < 1000) then
+                   fmt_str = "(A10, I4, A1, I3)"
+                else if (j < 10000) then
+                   fmt_str = "(A10, I4, A1, I4)"
+                else
+                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
+                   stop
+                end if
+             else
+                write(*,*) 'File write error: More than 10000 properties breaks filename format string'
+                stop
+             end if
+       
+             
+          
+             write(filename, fmt_str) 'rsp_tensor_', i, '_', j
+             open(unit=260, file=trim(filename), &
+                  status='replace', action='write') 
+             open(unit=261, file=trim(filename) // '_human', &
+                  status='replace', action='write') 
+               
+             allocate(blk_info(num_blks(i), 3))
+             allocate(blk_sizes(num_blks(i)))
+             blk_info = get_blk_info(num_blks(i), p_tuples(k))
+             blk_sizes = get_triangular_sizes(num_blks(i), blk_info(1:num_blks(i), 2), &
+                                              blk_info(1:num_blks(i), 3))
+               
+             call print_rsp_tensor_tr(1, p_tuples(k)%npert, p_tuples(k)%pdim, &
+             (/ (1, m = 1, (p_tuples(k)%npert - 1) ) /), num_blks(i), blk_sizes, &
+             blk_info, prop_sizes(i), rsp_tensor(n:n+prop_sizes(i) - 1), 260, 261)
+       
+             deallocate(blk_info)
+             deallocate(blk_sizes)
+             
+             close(260)
+             close(261)
+                    
+             write(*,*) 'Property', i, j, ' was printed to rsp_tensor'
+             write(*,*) 'Property (formatted print) was printed to rsp_tensor_human'
+          
+             k = k + 1
+             n = n + prop_sizes(i)
+    
+          end do
+       
+       
+       end do
+
+       write(*,*) ' '
+       write(*,*) 'End of print'
+       
+    end if
+
+  end subroutine
    
   ! Main property calculation routine - Get perturbed F, D, S and then calculate the properties
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
