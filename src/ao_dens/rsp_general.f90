@@ -116,12 +116,13 @@ module rsp_general
   ! mem_result: Optional (for mem. calibration mode): Calibration result
   
   subroutine openrsp_get_property(n_props, np, pert_dims, pert_first_comp, &
-                                   pert_labels, n_freq_cfgs, pert_freqs, &
-                                   kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
-                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, id_outp, rsp_tensor, file_id, &
-                                   mem_calibrate, max_mat, mem_result)
+                                  pert_labels, n_freq_cfgs, pert_freqs, &
+                                  kn_rules, F_unpert, S_unpert, D_unpert, &
+                                  get_rsp_sol, get_nucpot, &
+                                  get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                                  get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                  get_xc_exp, id_outp, rsp_tensor, file_id, &
+                                  mem_calibrate, max_mat, mem_result)
     implicit none
 
     logical, optional :: mem_calibrate
@@ -516,12 +517,14 @@ module rsp_general
   
   
   subroutine openrsp_get_residue(n_props, np, pert_dims, pert_first_comp, residue_order, &
-                                   pert_labels, residualization, exenerg, n_freq_cfgs, pert_freqs, &
-                                   kn_rules, F_unpert, S_unpert, D_unpert, X_unpert, get_rsp_sol, get_nucpot, &
-                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, id_outp, rsp_tensor, file_id, &
-                                   mem_calibrate, max_mat, mem_result)
+                                 pert_labels, residue_spec_pert, residue_spec_index, &
+                                 exenerg, n_freq_cfgs, pert_freqs, &
+                                 kn_rules, F_unpert, S_unpert, D_unpert, X_unpert, &
+                                 get_rsp_sol, get_nucpot, &
+                                 get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                                 get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                 get_xc_exp, id_outp, rsp_tensor, file_id, &
+                                 mem_calibrate, max_mat, mem_result)
     implicit none
 
     logical, optional :: mem_calibrate
@@ -532,6 +535,10 @@ module rsp_general
     integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
     character(4), dimension(sum(np)), intent(in) :: pert_labels
+    integer(kind=QINT), intent(in) :: residue_spec_pert(residue_order)
+    integer(kind=QINT), intent(in) :: residue_spec_index(max(residue_spec_pert(1), &
+                                                             residue_spec_pert(residue_order)), &
+                                                         residue_order)
     character(256) :: filename
     integer :: i, j, k, m, n
     integer :: dum_ind
