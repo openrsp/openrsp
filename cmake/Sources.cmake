@@ -55,4 +55,5 @@ set(OPENRSP_AO_DENS_SRCS
     ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_sdf_caching.f90
     ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_pert_table.F90
     ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/openrsp_callback_f.F90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90)
+    ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90
+    ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/OpenRSPGetResidue_f.F90)
