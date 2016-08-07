@@ -117,6 +117,7 @@
         integer(kind=QINT), allocatable :: f_pert_first_comp(:)
         character(4), allocatable :: f_pert_tuple(:)
         integer(kind=QINT), allocatable :: residue_spec_index(:,:)
+        integer(kind=QINT) offset_residue  !offset of residues per excited state
         complex(kind=QREAL) exenerg(2)
         complex(kind=QREAL), allocatable :: f_pert_freqs(:)
         type(QcMat) f_F_unpert(1)
@@ -282,10 +283,14 @@
                                                 kind=QREAL)
                 end do
                 ! gets the excitation energies and eigenvectors
-                ipert = (iext-1)*order_residue
-                exenerg(1:order_residue) = excit_energy(ipert+1:ipert+order_residue)
-                ierr = QcMat_C_F_POINTER(X_unpert(1:order_residue), &
-                                         eigen_vector(ipert+1:ipert+order_residue))
+                offset_residue = (iext-1)*order_residue
+                do ipert = 1, order_residue
+                    exenerg(ipert) = cmplx(excit_energy(offset_residue+ipert), &
+                                           kind=QREAL)
+                end do
+                ierr = QcMat_C_F_POINTER(X_unpert(1:order_residue),     &
+                                         eigen_vector(offset_residue+1: &
+                                                      offset_residue+order_residue))
                 if (ierr/=QSUCCESS) then
                     stop "OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(X)"
                 end if
