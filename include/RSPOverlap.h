@@ -77,14 +77,14 @@ typedef struct {
     QInt *pert_max_orders;          /* allowed maximal order of a perturbation
                                        described by exactly one of these
                                        different labels */
-    QInt *bra_pert_orders;          /* orders of perturbations on the bra center, 
+    QInt *bra_pert_orders;          /* orders of perturbations on the bra center,
                                        only used for callback functions */
     QInt *ket_pert_orders;          /* orders of perturbations on the ket center,
                                        only used for callback functions */
     QInt *oper_pert_orders;         /* orders of perturbations on the overlap operator,
                                        only used for callback functions */
     QcPertInt *pert_labels;         /* all the different perturbation labels */
-    QcPertInt *bra_pert_labels;     /* labels of perturbations on the bra center, 
+    QcPertInt *bra_pert_labels;     /* labels of perturbations on the bra center,
                                        only used for callback functions */
     QcPertInt *ket_pert_labels;     /* labels of perturbations on the ket center,
                                        only used for callback functions */
