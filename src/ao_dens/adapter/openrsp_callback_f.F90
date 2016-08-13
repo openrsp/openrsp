@@ -92,30 +92,30 @@ module openrsp_callback_f
             type(C_PTR), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
             type(C_PTR), intent(in) :: rsp_param(dot_product(num_comps,num_freq_sums))
         end function RSPSolverGetLinearRSPSolution
-        integer(C_INT) function RSPNucHamiltonGetContributions(nuc_hamilton, &
-                                                               len_tuple,    &
-                                                               pert_tuple,   &
-                                                               size_pert,    &
-                                                               val_nuc)      &
+        integer(C_INT) function RSPNucHamiltonGetContributions(nuc_hamilton,   &
+                                                               nuc_len_tuple,  &
+                                                               nuc_pert_tuple, &
+                                                               size_pert,      &
+                                                               val_nuc)        &
             bind(C, name="RSPNucHamiltonGetContributions")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: nuc_hamilton
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: nuc_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_tuple(nuc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: size_pert
             real(kind=C_QREAL), intent(inout) :: val_nuc(2*size_pert)
         end function RSPNucHamiltonGetContributions
-        integer(C_INT) function RSPOverlapGetMat(overlap,        &
-                                                 bra_len_tuple,  &
-                                                 bra_pert_tuple, &
-                                                 ket_len_tuple,  &
-                                                 ket_pert_tuple, &
-                                                 len_tuple,      &
-                                                 pert_tuple,     &
-                                                 num_int,        &
-                                                 val_int)        &
+        integer(C_INT) function RSPOverlapGetMat(overlap,         &
+                                                 bra_len_tuple,   &
+                                                 bra_pert_tuple,  &
+                                                 ket_len_tuple,   &
+                                                 ket_pert_tuple,  &
+                                                 oper_len_tuple,  &
+                                                 oper_pert_tuple, &
+                                                 num_int,         &
+                                                 val_int)         &
             bind(C, name="RSPOverlapGetMat")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
@@ -125,22 +125,22 @@ module openrsp_callback_f
             integer(kind=C_QCPERTINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: ket_len_tuple
             integer(kind=C_QCPERTINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPOverlapGetMat
-        integer(C_INT) function RSPOverlapGetExp(overlap,        &
-                                                 bra_len_tuple,  &
-                                                 bra_pert_tuple, &
-                                                 ket_len_tuple,  &
-                                                 ket_pert_tuple, &
-                                                 len_tuple,      &
-                                                 pert_tuple,     &
-                                                 num_dmat,       &
-                                                 dens_mat,       &
-                                                 num_exp,        &
-                                                 val_exp)        &
+        integer(C_INT) function RSPOverlapGetExp(overlap,         &
+                                                 bra_len_tuple,   &
+                                                 bra_pert_tuple,  &
+                                                 ket_len_tuple,   &
+                                                 ket_pert_tuple,  &
+                                                 oper_len_tuple,  &
+                                                 oper_pert_tuple, &
+                                                 num_dmat,        &
+                                                 dens_mat,        &
+                                                 num_exp,         &
+                                                 val_exp)         &
             bind(C, name="RSPOverlapGetExp")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
@@ -150,97 +150,97 @@ module openrsp_callback_f
             integer(kind=C_QCPERTINT), intent(in) :: bra_pert_tuple(bra_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: ket_len_tuple
             integer(kind=C_QCPERTINT), intent(in) :: ket_pert_tuple(ket_len_tuple)
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_exp
             real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
         end function RSPOverlapGetExp
-        integer(C_INT) function RSPOneOperGetMat(one_oper,   &
-                                                 len_tuple,  &
-                                                 pert_tuple, &
-                                                 num_int,    &
-                                                 val_int)    &
+        integer(C_INT) function RSPOneOperGetMat(one_oper,        &
+                                                 oper_len_tuple,  &
+                                                 oper_pert_tuple, &
+                                                 num_int,         &
+                                                 val_int)         &
             bind(C, name="RSPOneOperGetMat")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: one_oper
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPOneOperGetMat
-        integer(C_INT) function RSPOneOperGetExp(one_oper,   &
-                                                 len_tuple,  &
-                                                 pert_tuple, &
-                                                 num_dmat,   &
-                                                 dens_mat,   &
-                                                 num_exp,    &
-                                                 val_exp)    &
+        integer(C_INT) function RSPOneOperGetExp(one_oper,        &
+                                                 oper_len_tuple,  &
+                                                 oper_pert_tuple, &
+                                                 num_dmat,        &
+                                                 dens_mat,        &
+                                                 num_exp,         &
+                                                 val_exp)         &
             bind(C, name="RSPOneOperGetExp")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: one_oper
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_exp
             real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
         end function RSPOneOperGetExp
-        integer(C_INT) function RSPTwoOperGetMat(two_oper,   &
-                                                 len_tuple,  &
-                                                 pert_tuple, &
-                                                 num_dmat,   &
-                                                 dens_mat,   &
-                                                 num_int,    &
-                                                 val_int)    &
+        integer(C_INT) function RSPTwoOperGetMat(two_oper,        &
+                                                 oper_len_tuple,  &
+                                                 oper_pert_tuple, &
+                                                 num_dmat,        &
+                                                 dens_mat,        &
+                                                 num_int,         &
+                                                 val_int)         &
             bind(C, name="RSPTwoOperGetMat")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: two_oper
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPTwoOperGetMat
-        integer(C_INT) function RSPTwoOperGetExp(one_oper,       &
-                                                 len_tuple,      &
-                                                 pert_tuple,     &
-                                                 len_dmat_tuple, &
-                                                 num_LHS_dmat,   &
-                                                 LHS_dens_mat,   &
-                                                 num_RHS_dmat,   &
-                                                 RHS_dens_mat,   &
-                                                 num_exp,        &
-                                                 val_exp)        &
-            bind(C, name="RSPTwoOperGetExp")   
-            use, intrinsic :: iso_c_binding    
+        integer(C_INT) function RSPTwoOperGetExp(one_oper,        &
+                                                 oper_len_tuple,  &
+                                                 oper_pert_tuple, &
+                                                 dmat_len_tuple,  &
+                                                 num_LHS_dmat,    &
+                                                 LHS_dens_mat,    &
+                                                 num_RHS_dmat,    &
+                                                 RHS_dens_mat,    &
+                                                 num_exp,         &
+                                                 val_exp)         &
+            bind(C, name="RSPTwoOperGetExp")
+            use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: one_oper
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
-            integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
-            integer(kind=C_QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: dmat_len_tuple
+            integer(kind=C_QINT), intent(in) :: num_LHS_dmat(dmat_len_tuple)
             type(C_PTR), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
-            integer(kind=C_QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+            integer(kind=C_QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
             type(C_PTR), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
             integer(kind=C_QINT), value, intent(in) :: num_exp
             real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
         end function RSPTwoOperGetExp
         integer(C_INT) function RSPXCFunGetMat(xc_fun,           &
-                                               len_tuple,        &
-                                               pert_tuple,       &
+                                               xc_len_tuple,     &
+                                               xc_pert_tuple,    &
                                                num_freq_configs, &
-                                               len_dmat_tuple,   &
-                                               idx_dmat_tuple,   &
+                                               dmat_num_tuple,   &
+                                               dmat_idx_tuple,   &
                                                num_dmat,         &
                                                dens_mat,         &
                                                num_int,          &
@@ -250,22 +250,22 @@ module openrsp_callback_f
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: xc_fun
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_freq_configs
-            integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
-            integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+            integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
+            integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPXCFunGetMat
         integer(C_INT) function RSPXCFunGetExp(xc_fun,           &
-                                               len_tuple,        &
-                                               pert_tuple,       &
+                                               xc_len_tuple,     &
+                                               xc_pert_tuple,    &
                                                num_freq_configs, &
-                                               len_dmat_tuple,   &
-                                               idx_dmat_tuple,   &
+                                               dmat_num_tuple,   &
+                                               dmat_idx_tuple,   &
                                                num_dmat,         &
                                                dens_mat,         &
                                                num_exp,          &
@@ -275,11 +275,11 @@ module openrsp_callback_f
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
             type(C_PTR), value, intent(in) :: xc_fun
-            integer(kind=C_QINT), value, intent(in) :: len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(len_tuple)
+            integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_freq_configs
-            integer(kind=C_QINT), value, intent(in) :: len_dmat_tuple
-            integer(kind=C_QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+            integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
+            integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
             type(C_PTR), intent(in) :: dens_mat(num_dmat)
             integer(kind=C_QINT), value, intent(in) :: num_exp
@@ -391,12 +391,12 @@ module openrsp_callback_f
     end subroutine f_callback_RSPSolverGetLinearRSPSolution
 
     ! callback subroutine to get nuclear contributions
-    subroutine f_callback_RSPNucHamiltonGetContributions(len_tuple,  &
-                                                         pert_tuple, &
-                                                         size_pert,  &
+    subroutine f_callback_RSPNucHamiltonGetContributions(nuc_len_tuple,  &
+                                                         nuc_pert_tuple, &
+                                                         size_pert,      &
                                                          val_nuc)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: nuc_len_tuple
+        integer(kind=QcPertInt), intent(in) :: nuc_pert_tuple(nuc_len_tuple)
         integer(kind=QINT), intent(in) :: size_pert
         complex(kind=QREAL), intent(inout) :: val_nuc(size_pert)
         real(kind=QREAL), allocatable :: c_val_nuc(:)
@@ -404,7 +404,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%nuc_hamilton)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, size_pert
+            write(STDOUT,100) "size", nuc_len_tuple, size_pert
 #endif
             allocate(c_val_nuc(2*size_pert), stat=ierr)
             if (ierr/=0) then
@@ -414,8 +414,8 @@ module openrsp_callback_f
             end if
             c_val_nuc = 0.0
             ierr = RSPNucHamiltonGetContributions(ctx_saved%nuc_hamilton, &
-                                                  len_tuple,              &
-                                                  pert_tuple,             &
+                                                  nuc_len_tuple,          &
+                                                  nuc_pert_tuple,         &
                                                   size_pert,              &
                                                   c_val_nuc)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
@@ -429,20 +429,20 @@ module openrsp_callback_f
     end subroutine f_callback_RSPNucHamiltonGetContributions
 
     ! callback subroutine to get (perturbed) overlap integral matrices
-    subroutine f_callback_RSPOverlapGetMat(bra_len_tuple,  &
-                                           bra_pert_tuple, &
-                                           ket_len_tuple,  &
-                                           ket_pert_tuple, &
-                                           len_tuple,      &
-                                           pert_tuple,     &
-                                           num_int,        &
+    subroutine f_callback_RSPOverlapGetMat(bra_len_tuple,   &
+                                           bra_pert_tuple,  &
+                                           ket_len_tuple,   &
+                                           ket_pert_tuple,  &
+                                           oper_len_tuple,  &
+                                           oper_pert_tuple, &
+                                           num_int,         &
                                            val_int)
         integer(kind=QINT), intent(in) :: bra_len_tuple
         integer(kind=QcPertInt), intent(in) :: bra_pert_tuple(bra_len_tuple)
         integer(kind=QINT), intent(in) :: ket_len_tuple
         integer(kind=QcPertInt), intent(in) :: ket_pert_tuple(ket_len_tuple)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
@@ -450,7 +450,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", bra_len_tuple, ket_len_tuple, len_tuple, num_int
+            write(STDOUT,100) "size", bra_len_tuple, ket_len_tuple, oper_len_tuple, num_int
 #endif
             allocate(c_val_int(num_int), stat=ierr)
             if (ierr/=0) then
@@ -464,8 +464,8 @@ module openrsp_callback_f
                                     bra_pert_tuple,    &
                                     ket_len_tuple,     &
                                     ket_pert_tuple,    &
-                                    len_tuple,         &
-                                    pert_tuple,        &
+                                    oper_len_tuple,    &
+                                    oper_pert_tuple,   &
                                     num_int,           &
                                     c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
@@ -478,22 +478,22 @@ module openrsp_callback_f
     end subroutine f_callback_RSPOverlapGetMat
 
     ! callback subroutine to get expectation values of (perturbed) overlap integrals
-    subroutine f_callback_RSPOverlapGetExp(bra_len_tuple,  &
-                                           bra_pert_tuple, &
-                                           ket_len_tuple,  &
-                                           ket_pert_tuple, &
-                                           len_tuple,      &
-                                           pert_tuple,     &
-                                           num_dmat,       &
-                                           dens_mat,       &
-                                           num_exp,        &
+    subroutine f_callback_RSPOverlapGetExp(bra_len_tuple,   &
+                                           bra_pert_tuple,  &
+                                           ket_len_tuple,   &
+                                           ket_pert_tuple,  &
+                                           oper_len_tuple,  &
+                                           oper_pert_tuple, &
+                                           num_dmat,        &
+                                           dens_mat,        &
+                                           num_exp,         &
                                            val_exp)
         integer(kind=QINT), intent(in) :: bra_len_tuple
         integer(kind=QcPertInt), intent(in) :: bra_pert_tuple(bra_len_tuple)
         integer(kind=QINT), intent(in) :: ket_len_tuple
         integer(kind=QcPertInt), intent(in) :: ket_pert_tuple(ket_len_tuple)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_exp
@@ -504,7 +504,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", bra_len_tuple, ket_len_tuple, len_tuple, num_dmat, num_exp
+            write(STDOUT,100) "size", bra_len_tuple, ket_len_tuple, oper_len_tuple, num_dmat, num_exp
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
             if (ierr/=0) then
@@ -524,13 +524,12 @@ module openrsp_callback_f
                                     bra_pert_tuple,    &
                                     ket_len_tuple,     &
                                     ket_pert_tuple,    &
-                                    len_tuple,         &
-                                    pert_tuple,        &
+                                    oper_len_tuple,    &
+                                    oper_pert_tuple,   &
                                     num_dmat,          &
                                     c_dens_mat,        &
                                     num_exp,           &
                                     c_val_exp)
-!             write(*,*) 'back from ovl call'
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
                 val_exp(ival) = val_exp(ival) &
@@ -542,17 +541,16 @@ module openrsp_callback_f
             deallocate(c_dens_mat)
             deallocate(c_val_exp)
         end if
-!         write(*,*) 'about to return from ovlgetexp'
 100     format("f_callback_RSPOverlapGetExp>> ",A,5I12)
     end subroutine f_callback_RSPOverlapGetExp
 
     ! callback subroutine to get (perturbed) one-electron integral matrices
-    subroutine f_callback_RSPOneOperGetMat(len_tuple,  &
-                                           pert_tuple, &
-                                           num_int,    &
+    subroutine f_callback_RSPOneOperGetMat(oper_len_tuple,  &
+                                           oper_pert_tuple, &
+                                           num_int,         &
                                            val_int)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
         integer(kind=QINT), intent(in) :: num_int
         type(QcMat), intent(inout) :: val_int(num_int)
         type(C_PTR), allocatable :: c_val_int(:)
@@ -560,7 +558,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, num_int
+            write(STDOUT,100) "size", oper_len_tuple, num_int
 #endif
             allocate(c_val_int(num_int), stat=ierr)
             if (ierr/=0) then
@@ -570,8 +568,8 @@ module openrsp_callback_f
             ierr = QcMat_C_LOC(A=val_int, c_A=c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             ierr = RSPOneOperGetMat(ctx_saved%one_oper, &
-                                    len_tuple,          &
-                                    pert_tuple,         &
+                                    oper_len_tuple,     &
+                                    oper_pert_tuple,    &
                                     num_int,            &
                                     c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
@@ -584,14 +582,14 @@ module openrsp_callback_f
     end subroutine f_callback_RSPOneOperGetMat
 
     ! callback subroutine to get expectation values of (perturbed) one-electron integrals
-    subroutine f_callback_RSPOneOperGetExp(len_tuple,  &
-                                           pert_tuple, &
-                                           num_dmat,   &
-                                           dens_mat,   &
-                                           num_exp,    &
+    subroutine f_callback_RSPOneOperGetExp(oper_len_tuple,  &
+                                           oper_pert_tuple, &
+                                           num_dmat,        &
+                                           dens_mat,        &
+                                           num_exp,         &
                                            val_exp)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_exp
@@ -602,7 +600,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, num_dmat, num_exp
+            write(STDOUT,100) "size", oper_len_tuple, num_dmat, num_exp
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
             if (ierr/=0) then
@@ -618,8 +616,8 @@ module openrsp_callback_f
             end if
             c_val_exp = 0.0
             ierr = RSPOneOperGetExp(ctx_saved%one_oper, &
-                                    len_tuple,          &
-                                    pert_tuple,         &
+                                    oper_len_tuple,     &
+                                    oper_pert_tuple,    &
                                     num_dmat,           &
                                     c_dens_mat,         &
                                     num_exp,            &
@@ -639,14 +637,14 @@ module openrsp_callback_f
     end subroutine f_callback_RSPOneOperGetExp
 
     ! callback subroutine to get (perturbed) two-electron integral matrices
-    subroutine f_callback_RSPTwoOperGetMat(len_tuple,  &
-                                           pert_tuple, &
-                                           num_dmat,   &
-                                           dens_mat,   &
-                                           num_int,    &
+    subroutine f_callback_RSPTwoOperGetMat(oper_len_tuple,  &
+                                           oper_pert_tuple, &
+                                           num_dmat,        &
+                                           dens_mat,        &
+                                           num_int,         &
                                            val_int)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_int
@@ -657,7 +655,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, num_dmat, num_int
+            write(STDOUT,100) "size", oper_len_tuple, num_dmat, num_int
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
             if (ierr/=0) then
@@ -675,8 +673,8 @@ module openrsp_callback_f
             ierr = QcMat_C_LOC(A=val_int, c_A=c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             ierr = RSPTwoOperGetMat(ctx_saved%two_oper, &
-                                    len_tuple,          &
-                                    pert_tuple,         &
+                                    oper_len_tuple,     &
+                                    oper_pert_tuple,    &
                                     num_dmat,           &
                                     c_dens_mat,         &
                                     num_int,            &
@@ -695,21 +693,21 @@ module openrsp_callback_f
     end subroutine f_callback_RSPTwoOperGetMat
 
     ! callback subroutine to get expectation values of (perturbed) two-electron integrals
-    subroutine f_callback_RSPTwoOperGetExp(len_tuple,      &
-                                           pert_tuple,     &
-                                           len_dmat_tuple, &
-                                           num_LHS_dmat,   &
-                                           LHS_dens_mat,   &
-                                           num_RHS_dmat,   &
-                                           RHS_dens_mat,   &
-                                           num_exp,        &
+    subroutine f_callback_RSPTwoOperGetExp(oper_len_tuple,  &
+                                           oper_pert_tuple, &
+                                           dmat_len_tuple,  &
+                                           num_LHS_dmat,    &
+                                           LHS_dens_mat,    &
+                                           num_RHS_dmat,    &
+                                           RHS_dens_mat,    &
+                                           num_exp,         &
                                            val_exp)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
-        integer(kind=QINT), intent(in) :: len_dmat_tuple
-        integer(kind=QINT), intent(in) :: num_LHS_dmat(len_dmat_tuple)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
+        integer(kind=QINT), intent(in) :: dmat_len_tuple
+        integer(kind=QINT), intent(in) :: num_LHS_dmat(dmat_len_tuple)
         type(QcMat), intent(in) :: LHS_dens_mat(sum(num_LHS_dmat))
-        integer(kind=QINT), intent(in) :: num_RHS_dmat(len_dmat_tuple)
+        integer(kind=QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
         type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
         integer(kind=QINT), intent(in) :: num_exp
         complex(kind=QREAL), intent(inout) :: val_exp(num_exp)
@@ -720,7 +718,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, sum(num_LHS_dmat), sum(num_RHS_dmat), num_exp
+            write(STDOUT,100) "size", oper_len_tuple, sum(num_LHS_dmat), sum(num_RHS_dmat), num_exp
 #endif
             allocate(c_LHS_dens_mat(sum(num_LHS_dmat)), stat=ierr)
             if (ierr/=0) then
@@ -745,9 +743,9 @@ module openrsp_callback_f
             end if
             c_val_exp = 0.0
             ierr = RSPTwoOperGetExp(ctx_saved%two_oper, &
-                                    len_tuple,          &
-                                    pert_tuple,         &
-                                    len_dmat_tuple,     &
+                                    oper_len_tuple,     &
+                                    oper_pert_tuple,    &
+                                    dmat_len_tuple,     &
                                     num_LHS_dmat,       &
                                     c_LHS_dens_mat,     &
                                     num_RHS_dmat,       &
@@ -773,20 +771,20 @@ module openrsp_callback_f
     end subroutine f_callback_RSPTwoOperGetExp
 
     ! callback subroutine to get (perturbed) exchange-correlation functional matrices
-    subroutine f_callback_RSPXCFunGetMat(len_tuple,        &
-                                         pert_tuple,       &
+    subroutine f_callback_RSPXCFunGetMat(xc_len_tuple,     &
+                                         xc_pert_tuple,    &
                                          num_freq_configs, &
-                                         len_dmat_tuple,   &
-                                         idx_dmat_tuple,   &
+                                         dmat_num_tuple,   &
+                                         dmat_idx_tuple,   &
                                          num_dmat,         &
                                          dens_mat,         &
                                          num_int,          &
                                          val_int)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: xc_len_tuple
+        integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
         integer(kind=QINT), intent(in) :: num_freq_configs
-        integer(kind=QINT), intent(in) :: len_dmat_tuple
-        integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+        integer(kind=QINT), intent(in) :: dmat_num_tuple
+        integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_int
@@ -797,7 +795,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%xc_fun)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, num_dmat, num_int
+            write(STDOUT,100) "size", xc_len_tuple, num_dmat, num_int
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
             if (ierr/=0) then
@@ -815,11 +813,11 @@ module openrsp_callback_f
             ierr = QcMat_C_LOC(A=val_int, c_A=c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             ierr = RSPXCFunGetMat(ctx_saved%xc_fun, &
-                                  len_tuple,        &
-                                  pert_tuple,       &
+                                  xc_len_tuple,     &
+                                  xc_pert_tuple,    &
                                   num_freq_configs, &
-                                  len_dmat_tuple,   &
-                                  idx_dmat_tuple,   &
+                                  dmat_num_tuple,   &
+                                  dmat_idx_tuple,   &
                                   num_dmat,         &
                                   c_dens_mat,       &
                                   num_int,          &
@@ -838,20 +836,20 @@ module openrsp_callback_f
     end subroutine f_callback_RSPXCFunGetMat
 
     ! callback subroutine to get expectation values of (perturbed) exchange-correlation functional
-    subroutine f_callback_RSPXCFunGetExp(len_tuple,        &
-                                         pert_tuple,       &
+    subroutine f_callback_RSPXCFunGetExp(xc_len_tuple,     &
+                                         xc_pert_tuple,    &
                                          num_freq_configs, &
-                                         len_dmat_tuple,   &
-                                         idx_dmat_tuple,   &
+                                         dmat_num_tuple,   &
+                                         dmat_idx_tuple,   &
                                          num_dmat,         &
                                          dens_mat,         &
                                          num_exp,          &
                                          val_exp)
-        integer(kind=QINT), intent(in) :: len_tuple
-        integer(kind=QcPertInt), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=QINT), intent(in) :: xc_len_tuple
+        integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
         integer(kind=QINT), intent(in) :: num_freq_configs
-        integer(kind=QINT), intent(in) :: len_dmat_tuple
-        integer(kind=QINT), intent(in) :: idx_dmat_tuple(len_dmat_tuple)
+        integer(kind=QINT), intent(in) :: dmat_num_tuple
+        integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
         type(QcMat), intent(in) :: dens_mat(num_dmat)
         integer(kind=QINT), intent(in) :: num_exp
@@ -862,7 +860,7 @@ module openrsp_callback_f
         integer(kind=4) ierr
         if (c_associated(ctx_saved%xc_fun)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", len_tuple, num_dmat, num_exp
+            write(STDOUT,100) "size", xc_len_tuple, num_dmat, num_exp
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
             if (ierr/=0) then
@@ -879,11 +877,11 @@ module openrsp_callback_f
             end if
             c_val_exp = 0.0
             ierr = RSPXCFunGetExp(ctx_saved%xc_fun, &
-                                  len_tuple,        &
-                                  pert_tuple,       &
+                                  xc_len_tuple,     &
+                                  xc_pert_tuple,    &
                                   num_freq_configs, &
-                                  len_dmat_tuple,   &
-                                  idx_dmat_tuple,   &
+                                  dmat_num_tuple,   &
+                                  dmat_idx_tuple,   &
                                   num_dmat,         &
                                   c_dens_mat,       &
                                   num_exp,          &
