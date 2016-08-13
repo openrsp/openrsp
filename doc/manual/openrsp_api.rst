@@ -34,15 +34,15 @@ Functions of OpenRSP API (C version)
    :vartype open_rsp: OpenRSP\* (struct\*)
    :rtype: QErrorCode (error information)
 
-.. c:function:: QErrorCode OpenRSPSetWaveFunction(open_rsp, elec_wav_type)
-
-   Sets the (electronic) wave function.
-
-   :var open_rsp: context of response theory calculations
-   :vartype open_rsp: OpenRSP\*
-   :param elec_wav_type: the type of (electronic) wave function
-   :type elec_wav_type: ElecWavType (enum)
-   :rtype: QErrorCode
+.. .. c:function:: QErrorCode OpenRSPSetWaveFunction(open_rsp, elec_wav_type)
+.. 
+..    Sets the (electronic) wave function.
+.. 
+..    :var open_rsp: context of response theory calculations
+..    :vartype open_rsp: OpenRSP\*
+..    :param elec_wav_type: the type of (electronic) wave function
+..    :type elec_wav_type: ElecWavType (enum)
+..    :rtype: QErrorCode
 
 .. c:function:: QErrorCode OpenRSPSetLinearRSPSolver(open_rsp, user_ctx, get_linear_rsp_solution)
 
@@ -52,166 +52,171 @@ Functions of OpenRSP API (C version)
    :vartype open_rsp: OpenRSP\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_linear_rsp_solution: user specified function of linear
+   :param get_linear_rsp_solution: user-specified callback function of linear
        response equation solver, see the callback function
        :c:func:`get_linear_rsp_solution`
    :type get_linear_rsp_solution: GetLinearRSPSolution (function
        pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. Host programs will call OpenRSP by sending the excited states, so that we
-   do not need the function OpenRSPSetRSPEigenSolver
-.. .. c:function:: QErrorCode OpenRSPSetRSPEigenSolver(open_rsp, user_ctx, get_rsp_eigen_solution)
- 
-    Sets the context of response eigenvalue solver.
- 
-    :var open_rsp: context of response theory calculations
-    :vartype open_rsp: OpenRSP\*
-    :param user_ctx: user-defined callback function context
-    :type user_ctx: QVoid\*
-    :param get_rsp_eigen_solution: user specified function of response
-        eigenvalue equation solver, see the callback function
-        :c:func:`get_rsp_eigen_solution`
-    :type get_rsp_eigen_solution: GetRSPEigenSolution (function
-        pointer QVoid (\*)(...))
-    :rtype: QErrorCode
-
-.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_concatenation)
+.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert_lab, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_concatenation)
 
    Sets all different perturbation labels involved in response theory calculations.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of all *different* perturbation labels involved
+   :param num_pert_lab: number of all *different* perturbation labels involved
        in calculations
-   :type num_pert: QInt
-   :param pert_labels: all *different* perturbation labels involved
-   :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed order of each perturbation (label)
+   :type num_pert_lab: QInt
+   :param pert_labels: all the *different* perturbation labels involved
+   :type pert_labels: QcPertInt\*
+   :param pert_max_orders: allowed maximal order of a perturbation described by
+       exactly one of the above different labels
    :type pert_max_orders: QInt\*
-   :param pert_num_comps: number of components of each perturbation (label) up to
-       its maximum order, size is the sum of ``pert_max_orders``
+   :param pert_num_comps: number of components of a perturbation described by
+       exactly one of the above different labels, up to the allowed maximal
+       order, size is therefore the sum of ``pert_max_orders``
    :type pert_num_comps: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_pert_concatenation: user specified function for getting the
-       ranks of components of sub-perturbation tuples (with same perturbation
-       label) for given components of the corresponding concatenated perturbation
-       tuple
+   :param get_pert_concatenation: user specified function for getting the ranks
+       of components of sub-perturbation tuples (with the same perturbation
+       label) for given components of the corresponding concatenated
+       perturbation tuple
    :type get_pert_concatenation: GetPertCat (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. *FIXME: get_pert_comp and get_pert_rank to be discussed and implemented*
+.. *FIXME: get_pert_concatenation to be discussed and implemented*
 
-.. c:function:: QErrorCode OpenRSPSetPDBS(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_overlap_mat, get_overlap_exp)
+.. c:function:: QErrorCode OpenRSPSetOverlap(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_overlap_mat, get_overlap_exp)
 
-   Sets the context of perturbation dependent basis sets.
+   Sets the overlap operator.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of *different* perturbation labels that can
-       act as perturbations on the basis sets
-   :type num_pert: QInt
-   :param pert_labels: all the *different* perturbation labels
-   :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed order of each perturbation (label)
+   :param num_pert_lab: number of all *different* perturbation labels that can
+       act on the overlap operator
+   :type num_pert_lab: QInt
+   :param pert_labels: all the *different* perturbation labels involved
+   :type pert_labels: QcPertInt\*
+   :param pert_max_orders: allowed maximal order of a perturbation described by
+       exactly one of the above different labels
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_overlap_mat: user specified function for getting overlap
-       integrals, see the callback function :c:func:`get_overlap_mat`
+   :param get_overlap_mat: user-specified callback function to calculate
+       integral matrices of overlap operator as well as its derivatives with
+       respect to different perturbations, see the callback function
+       :c:func:`get_overlap_mat`
    :type get_overlap_mat: GetOverlapMat (function pointer QVoid (\*)(...))
-   :param get_overlap_exp: user specified function for getting expectation
-       values of overlap integrals, see the callback function
+   :param get_overlap_exp: user-specified callback function to calculate
+       expectation values of overlap operator as well as its derivatives with
+       respect to different perturbations, see the callback function
        :c:func:`get_overlap_exp`
    :type get_overlap_exp: GetOverlapExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPAddOneOper(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_one_oper_mat, get_one_oper_exp)
+.. c:function:: QErrorCode OpenRSPAddOneOper(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_one_oper_mat, get_one_oper_exp)
 
    Adds a one-electron operator to the Hamiltonian.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of *different* perturbation labels that can
-       act as perturbations on the one-electron operator
-   :type num_pert: QInt
-   :param pert_labels: all the *different* perturbation labels
-   :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed order of each perturbation (label)
+   :param num_pert_lab: number of all *different* perturbation labels that can
+       act on the one-electron operator
+   :type num_pert_lab: QInt
+   :param pert_labels: all the *different* perturbation labels involved
+   :type pert_labels: QcPertInt\*
+   :param pert_max_orders: allowed maximal order of a perturbation described by
+       exactly one of the above different labels
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_one_oper_mat: user specified function for getting integral matrices,
-       see the callback function :c:func:`get_one_oper_mat`
+   :param get_one_oper_mat: user-specified callback function to calculate
+       integral matrices of one-electron operator as well as its derivatives
+       with respect to different perturbations, see the callback function
+       :c:func:`get_one_oper_mat`
    :type get_one_oper_mat: GetOneOperMat (function pointer QVoid (\*)(...))
-   :param get_one_oper_exp: user specified function for getting expectation values,
-       see the callback function :c:func:`get_one_oper_exp`
+   :param get_one_oper_exp: user-specified callback function to calculate
+       expectation values of one-electron operator as well as its derivatives
+       with respect to different perturbations, see the callback function
+       :c:func:`get_one_oper_exp`
    :type get_one_oper_exp: GetOneOperExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPAddTwoOper(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_two_oper_mat, get_two_oper_exp)
+.. c:function:: QErrorCode OpenRSPAddTwoOper(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_two_oper_mat, get_two_oper_exp)
 
    Adds a two-electron operator to the Hamiltonian.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of *different* perturbation labels that can
-       act as perturbations on the two-electron operator
+   :param num_pert_lab: number of all *different* perturbation labels that can
+       act on the two-electron operator
    :type num_pert: QInt
-   :param pert_labels: all the *different* perturbation labels
-   :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed order of each perturbation (label)
+   :param pert_labels: all the *different* perturbation labels involved
+   :type pert_labels: QcPertInt\*
+   :param pert_max_orders: allowed maximal order of a perturbation described by
+       exactly one of the above different labels
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_two_oper_mat: user specified function for getting integral matrices,
-       see the callback function :c:func:`get_two_oper_mat`
+   :param get_two_oper_mat: user-specified callback function to calculate
+       integral matrices of two-electron operator as well as its derivatives
+       with respect to different perturbations, see the callback function
+       :c:func:`get_two_oper_mat`
    :type get_two_oper_mat: GetTwoOperMat (function pointer QVoid (\*)(...))
-   :param get_two_oper_exp: user specified function for getting expectation values,
-       see the callback function :c:func:`get_two_oper_exp`
+   :param get_two_oper_exp: user-specified callback function to calculate
+       expectation values of two-electron operator as well as its derivatives
+       with respect to different perturbations, see the callback function
+       :c:func:`get_two_oper_exp`
    :type get_two_oper_exp: GetTwoOperExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPAddXCFun(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_xc_fun_mat, get_xc_fun_exp)
+.. c:function:: QErrorCode OpenRSPAddXCFun(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_xc_fun_mat, get_xc_fun_exp)
 
    Adds an exchange-correlation (XC) functional to the Hamiltonian.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of *different* perturbation labels that can
-       act as perturbations on the XC functional
-   :type num_pert: QInt
-   :param pert_labels: all the *different* perturbation labels
-   :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed order of each perturbation (label)
+   :param num_pert_lab: number of all *different* perturbation labels that can
+       act on the XC functional
+   :type num_pert_lab: QInt
+   :param pert_labels: all the *different* perturbation labels involved
+   :type pert_labels: QcPertInt\*
+   :param pert_max_orders: allowed maximal order of a perturbation described by
+       exactly one of the above different labels
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_xc_fun_mat: user specified function for getting integral matrices,
-       see the callback function :c:func:`get_xc_fun_mat`
+   :param get_xc_fun_mat: user-specified callback function to calculate
+       integral matrices of XC functional as well as its derivatives with
+       respect to different perturbations, see the callback function
+       :c:func:`get_xc_fun_mat`
    :type get_xc_fun_mat: GetXCFunMat (function pointer QVoid (\*)(...))
-   :param get_xc_fun_exp: user specified function for getting expectation values,
-       see the callback function :c:func:`get_xc_fun_exp`
+   :param get_xc_fun_exp: user-specified callback function to calculate
+       expectation values of XC functional as well as its derivatives with
+       respect to different perturbations, see the callback function
+       :c:func:`get_xc_fun_exp`
    :type get_xc_fun_exp: GetXCFunExp (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPSetNucContributions(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib, num_atoms)
+.. c:function:: QErrorCode OpenRSPSetNucHamilton(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib, num_atoms)
 
    Sets the nuclear contributions to the Hamiltonian.
 
    :var open_rsp: context of response theory calculations
    :vartype open_rsp: OpenRSP\*
-   :param num_pert: number of *different* perturbation labels that can
-       act as perturbations on the nuclear Hamiltonian
-   :type num_pert: QInt
-   :param pert_labels: all the *different* perturbation labels
-   :type pert_labels: QInt\*
-   :param pert_max_orders: maximum allowed order of each perturbation (label)
+   :param num_pert_lab: number of all *different* perturbation labels that can
+       act on the nuclear Hamiltonian
+   :type num_pert_lab: QInt
+   :param pert_labels: all the *different* perturbation labels involved
+   :type pert_labels: QcPertInt\*
+   :param pert_max_orders: allowed maximal order of a perturbation described by
+       exactly one of the above different labels
    :type pert_max_orders: QInt\*
    :param user_ctx: user-defined callback function context
    :type user_ctx: QVoid\*
-   :param get_nuc_contrib: user specified function for getting the nuclear
+   :param get_nuc_contrib: user-specified function to calculate nuclear
        contributions, see the callback function :c:func:`get_nuc_contrib`
    :type get_nuc_contrib: GetNucContrib (function pointer QVoid (\*)(...))
    :rtype: QErrorCode
@@ -264,14 +269,14 @@ Functions of OpenRSP API (C version)
    :vartype open_rsp: OpenRSP\*
    :rtype: QErrorCode
 
-.. c:function:: QErrorCode OpenRSPWrite(open_rsp, file_name)
+.. c:function:: QErrorCode OpenRSPWrite(open_rsp, fp_rsp)
 
    Writes the context of response theory calculations.
 
    :param open_rsp: context of response theory calculations
    :type open_rsp: OpenRSP\*
-   :param file_name: the name of the file
-   :type file_name: QChar\*
+   :param fp_rsp: file pointer
+   :type fp_rsp: FILE\*
    :rtype: QErrorCode
 
 .. c:function:: QErrorCode OpenRSPGetRSPFun(open_rsp, ref_ham, ref_state, ref_overlap, num_props, len_tuple, pert_tuple, num_freq_configs, pert_freqs, kn_rules, size_rsp_funs, rsp_funs)
@@ -294,7 +299,7 @@ Functions of OpenRSP API (C version)
    :param pert_tuple: ordered list of perturbation labels (perturbation
        tuple) for each property, size is ``sum(len_tuple)``, the first
        label of each property is the perturbation :math:`a`
-   :type pert_tuple: QInt\*
+   :type pert_tuple: QcPertInt\*
    :param num_freq_configs: number of different frequency configurations
        for each property, size is ``num_props``
    :type num_freq_configs: QInt\*
@@ -367,7 +372,7 @@ Functions of OpenRSP API (C version)
    :param pert_tuple: ordered list of perturbation labels (perturbation
        tuple) for each property, size is ``sum(len_tuple)``, the first
        label of each property is the perturbation :math:`a`
-   :type pert_tuple: QInt\*
+   :type pert_tuple: QcPertInt\*
    :param residue_num_pert: for each property and each excitation energy
        in the tuple, the number of perturbation labels whose sum of
        frequencies equals to that excitation energy, size is ``order_residue``
