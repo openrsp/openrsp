@@ -22,25 +22,26 @@ CMake
 -----
 
 For the time being, only CMake could be used to compile OpenRSP. In general,
-OpenRSP should be compiled together with the host programs. See for example
-the Dalton program (``qcmatrix`` branch).
+OpenRSP should be compiled together with the host programs. See for example the
+Dalton program (``qcmatrix`` branch).
 
-You could also compile OpenRSP alone to be familiar with how it works. But
-no real calculations will be performed, all the callback functions in the
-OpenRSP unit testing only return pre-defined data or read data from file.
-Let us assume that you want to compile the library in directory ``build``,
-you could invoke the following commands::
+You could also compile OpenRSP alone to be familiar with how it works. But no
+real calculations will be performed, all the callback functions in the OpenRSP
+unit testing only return pre-defined data or read data from file. Let us
+assume that you want to compile the library in directory ``build``, you could
+invoke the following commands::
 
     mkdir build
     cd build
     ccmake ..
     make
 
-During the step ``ccmake``, you need to set some parameters appropriately
-for the compilation. For instance, if you enable ``OPENRSP_TEST_EXECUTABLE``, some
+During the step ``ccmake``, you need to set some parameters appropriately for
+the compilation. For instance, if you enable ``OPENRSP_TEST_EXECUTABLE``, some
 executables for the test suite will be built and can run after compilation. So
-that you are able to check if OpenRSP has been successfully compiled. A detailed
-list of the parameters controlling the compilation is given in the following table:
+that you are able to check if OpenRSP has been successfully compiled. A
+detailed list of the parameters controlling the compilation is given in the
+following table:
 
 .. tabularcolumns:: |L|p{0.5\textwidth}|L|
 .. list-table:: OpenRSP CMake parameters

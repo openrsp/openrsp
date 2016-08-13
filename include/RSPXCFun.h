@@ -125,3 +125,4 @@ extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
 extern QErrorCode RSPXCFunDestroy(RSPXCFun**);
 
 #endif
+
