@@ -101,6 +101,22 @@ Perturbation tuple
   perturbations, in which the number of times a label (with the same frequency)
   appears is the order of the corresponding perturbation.
 
+Category of perturbation frequencies
+  We use different integers for distinguishing different values of frequencies
+  within a frequency configuration. The category arrary is determined by:
+
+  #. For each frequency configuration, we start at the first perturbation and
+     let its frequency value be designated number 1, then
+  #. For the next perturbation,
+
+     #. If its frequency value corresponds to a frequency value encountered
+        previously in this frequency, then use the same designation as for that
+        previously encountered frequency value, or
+     #. If its frequency value has not been encountered before, then let that
+        frequency value be designated with the first unused number;
+  #. Continue like this until the end of the perturbation tuple;
+  #. Start the numbering over again at the next frequency configuration.
+
 Canonical order
   #. In OpenRSP, all perturbation tuples are canonically orderd according
      to the argument ``pert_tuple`` in the API :c:func:`OpenRSPGetRSPFun`
