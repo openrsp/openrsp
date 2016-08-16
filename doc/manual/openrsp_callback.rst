@@ -341,7 +341,7 @@ functions are given as follows.
    :vartype val_exp: QReal\*
    :rtype: QVoid
 
-.. c:function:: QVoid get_xc_fun_mat(xc_len_tuple, xc_pert_tuple, num_freq_configs, dmat_num_tuple, dmat_idx_tuple, num_dmat, dens_mat, user_ctx, num_int, val_int)
+.. c:function:: QVoid get_xc_fun_mat(xc_len_tuple, xc_pert_tuple, num_freq_configs, pert_freq_category, dmat_num_tuple, dmat_idx_tuple, num_dmat, dens_mat, user_ctx, num_int, val_int)
 
    User-specified function for calculating integral matrices of the XC
    functional and its derivatives, the second last argument for the function
@@ -355,6 +355,16 @@ functions are given as follows.
    :param num_freq_configs: the number of different frequency configurations to
        be considered for the perturbation tuple specified by ``xc_pert_tuple``
    :type num_freq_configs: QInt
+   :param pert_freq_category: category of perturbation frequencies, size is
+       ``[num_freq_configs][xc_len_tuple]``. Take :math:`\mathcal{E}^{gfff}` as an
+       example, suppose we have four different frequency configurations:
+       "0.0,0.0,0.0,0.0" (:math:`3N\times 10` unique elements),
+       "0.0,-0.2,0.1,0.1" (:math:`3N\times 18` unique elements),
+       "0.0,-0,3,0.1,0.2" (:math:`3N\times 27` unique elements) and
+       "0.0,-0.1,0.1,0.0" (:math:`3N\times 27` unique elements), the
+       ``pert_freq_category`` argument would then be ``(1,1,1,1, 1,2,3,3,
+       1,2,3,4, 1,2,3,1)``.
+   :type pert_freq_category: QInt\*
    :param dmat_num_tuple: the number of different perturbation tuples of the
        AO based density matrices passed; for instance, the complete density
        matrix perturbation tuples (canonically ordered) for a property
@@ -401,7 +411,7 @@ functions are given as follows.
    :vartype val_int: QcMat\*[]
    :rtype: QVoid
 
-.. c:function:: QVoid get_xc_fun_exp(xc_len_tuple, xc_pert_tuple, num_freq_configs, dmat_num_tuple, dmat_idx_tuple, num_dmat, dens_mat, user_ctx, num_exp, val_exp)
+.. c:function:: QVoid get_xc_fun_exp(xc_len_tuple, xc_pert_tuple, num_freq_configs, pert_freq_category, dmat_num_tuple, dmat_idx_tuple, num_dmat, dens_mat, user_ctx, num_exp, val_exp)
 
    User-specified function for calculating expectation values of the XC
    functional and its derivatives, the last argument for the function
@@ -415,6 +425,9 @@ functions are given as follows.
    :param num_freq_configs: the number of different frequency configurations to
        be considered for the perturbation tuple specified by ``xc_pert_tuple``
    :type num_freq_configs: QInt
+   :param pert_freq_category: category of perturbation frequencies, size is
+       ``[num_freq_configs][xc_len_tuple]``.
+   :type pert_freq_category: QInt\*
    :param dmat_num_tuple: the number of different perturbation tuples of the
        AO based density matrices passed
    :type dmat_num_tuple: QInt
