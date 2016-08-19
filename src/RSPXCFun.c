@@ -329,6 +329,9 @@ QErrorCode RSPXCFunWrite(RSPXCFun *xc_fun, FILE *fp_xc)
        The number of different frequency configurations to be considered for
        the perturbation tuple
      </param>
+     <param name='pert_freq_category' direction='in'>
+       Category of perturbation frequencies
+     </param>
      <param name='dmat_num_tuple' direction='in'>
        The number of different perturbation tuples of the atomic orbital (AO)
        based density matrices passed
@@ -356,6 +359,7 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
                           const QInt xc_len_tuple,
                           const QcPertInt *xc_pert_tuple,
                           const QInt num_freq_configs,
+                          const QInt *pert_freq_category,
                           const QInt dmat_num_tuple,
                           const QInt *dmat_idx_tuple,
                           const QInt num_dmat,
@@ -383,6 +387,7 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
             cur_xc->get_xc_fun_mat(cur_xc->xc_len_tuple,
                                    cur_xc->xc_pert_tuple,
                                    num_freq_configs,
+                                   pert_freq_category,
                                    dmat_num_tuple,
                                    dmat_idx_tuple,
                                    num_dmat,
@@ -417,6 +422,9 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
        The number of different frequency configurations to be considered for
        the perturbation tuple
      </param>
+     <param name='pert_freq_category' direction='in'>
+       Category of perturbation frequencies
+     </param>
      <param name='dmat_num_tuple' direction='in'>
        The number of different perturbation tuples of the atomic orbital (AO)
        based density matrices passed
@@ -444,6 +452,7 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
                           const QInt xc_len_tuple,
                           const QcPertInt *xc_pert_tuple,
                           const QInt num_freq_configs,
+                          const QInt *pert_freq_category,
                           const QInt dmat_num_tuple,
                           const QInt *dmat_idx_tuple,
                           const QInt num_dmat,
@@ -471,6 +480,7 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
             cur_xc->get_xc_fun_exp(cur_xc->xc_len_tuple,
                                    cur_xc->xc_pert_tuple,
                                    num_freq_configs,
+                                   pert_freq_category,
                                    dmat_num_tuple,
                                    dmat_idx_tuple,
                                    num_dmat,
