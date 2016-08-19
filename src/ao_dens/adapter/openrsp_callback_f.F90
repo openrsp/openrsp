@@ -235,16 +235,17 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: num_exp
             real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
         end function RSPTwoOperGetExp
-        integer(C_INT) function RSPXCFunGetMat(xc_fun,           &
-                                               xc_len_tuple,     &
-                                               xc_pert_tuple,    &
-                                               num_freq_configs, &
-                                               dmat_num_tuple,   &
-                                               dmat_idx_tuple,   &
-                                               num_dmat,         &
-                                               dens_mat,         &
-                                               num_int,          &
-                                               val_int)          &
+        integer(C_INT) function RSPXCFunGetMat(xc_fun,             &
+                                               xc_len_tuple,       &
+                                               xc_pert_tuple,      &
+                                               num_freq_configs,   &
+                                               pert_freq_category, &
+                                               dmat_num_tuple,     &
+                                               dmat_idx_tuple,     &
+                                               num_dmat,           &
+                                               dens_mat,           &
+                                               num_int,            &
+                                               val_int)            &
             bind(C, name="RSPXCFunGetMat")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
@@ -253,6 +254,8 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
             integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+            integer(kind=C_QINT), intent(in) :: &
+                pert_freq_category(num_freq_configs*xc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
             integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
@@ -260,16 +263,17 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: num_int
             type(C_PTR), intent(in) :: val_int(num_int)
         end function RSPXCFunGetMat
-        integer(C_INT) function RSPXCFunGetExp(xc_fun,           &
-                                               xc_len_tuple,     &
-                                               xc_pert_tuple,    &
-                                               num_freq_configs, &
-                                               dmat_num_tuple,   &
-                                               dmat_idx_tuple,   &
-                                               num_dmat,         &
-                                               dens_mat,         &
-                                               num_exp,          &
-                                               val_exp)          &
+        integer(C_INT) function RSPXCFunGetExp(xc_fun,             &
+                                               xc_len_tuple,       &
+                                               xc_pert_tuple,      &
+                                               num_freq_configs,   &
+                                               pert_freq_category, &
+                                               dmat_num_tuple,     &
+                                               dmat_idx_tuple,     &
+                                               num_dmat,           &
+                                               dens_mat,           &
+                                               num_exp,            &
+                                               val_exp)            &
             bind(C, name="RSPXCFunGetExp")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
@@ -278,6 +282,8 @@ module openrsp_callback_f
             integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
             integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+            integer(kind=C_QINT), intent(in) :: &
+                pert_freq_category(num_freq_configs*xc_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
             integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
             integer(kind=C_QINT), value, intent(in) :: num_dmat
@@ -771,18 +777,21 @@ module openrsp_callback_f
     end subroutine f_callback_RSPTwoOperGetExp
 
     ! callback subroutine to get (perturbed) exchange-correlation functional matrices
-    subroutine f_callback_RSPXCFunGetMat(xc_len_tuple,     &
-                                         xc_pert_tuple,    &
-                                         num_freq_configs, &
-                                         dmat_num_tuple,   &
-                                         dmat_idx_tuple,   &
-                                         num_dmat,         &
-                                         dens_mat,         &
-                                         num_int,          &
+    subroutine f_callback_RSPXCFunGetMat(xc_len_tuple,       &
+                                         xc_pert_tuple,      &
+                                         num_freq_configs,   &
+                                         pert_freq_category, &
+                                         dmat_num_tuple,     &
+                                         dmat_idx_tuple,     &
+                                         num_dmat,           &
+                                         dens_mat,           &
+                                         num_int,            &
                                          val_int)
         integer(kind=QINT), intent(in) :: xc_len_tuple
         integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
         integer(kind=QINT), intent(in) :: num_freq_configs
+        integer(kind=QINT), intent(in) :: &
+            pert_freq_category(num_freq_configs*xc_len_tuple)
         integer(kind=QINT), intent(in) :: dmat_num_tuple
         integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
@@ -812,15 +821,16 @@ module openrsp_callback_f
             end if
             ierr = QcMat_C_LOC(A=val_int, c_A=c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
-            ierr = RSPXCFunGetMat(ctx_saved%xc_fun, &
-                                  xc_len_tuple,     &
-                                  xc_pert_tuple,    &
-                                  num_freq_configs, &
-                                  dmat_num_tuple,   &
-                                  dmat_idx_tuple,   &
-                                  num_dmat,         &
-                                  c_dens_mat,       &
-                                  num_int,          &
+            ierr = RSPXCFunGetMat(ctx_saved%xc_fun,   &
+                                  xc_len_tuple,       &
+                                  xc_pert_tuple,      &
+                                  num_freq_configs,   &
+                                  pert_freq_category, &
+                                  dmat_num_tuple,     &
+                                  dmat_idx_tuple,     &
+                                  num_dmat,           &
+                                  c_dens_mat,         &
+                                  num_int,            &
                                   c_val_int)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do imat = 1, num_dmat
@@ -836,18 +846,21 @@ module openrsp_callback_f
     end subroutine f_callback_RSPXCFunGetMat
 
     ! callback subroutine to get expectation values of (perturbed) exchange-correlation functional
-    subroutine f_callback_RSPXCFunGetExp(xc_len_tuple,     &
-                                         xc_pert_tuple,    &
-                                         num_freq_configs, &
-                                         dmat_num_tuple,   &
-                                         dmat_idx_tuple,   &
-                                         num_dmat,         &
-                                         dens_mat,         &
-                                         num_exp,          &
+    subroutine f_callback_RSPXCFunGetExp(xc_len_tuple,       &
+                                         xc_pert_tuple,      &
+                                         num_freq_configs,   &
+                                         pert_freq_category, &
+                                         dmat_num_tuple,     &
+                                         dmat_idx_tuple,     &
+                                         num_dmat,           &
+                                         dens_mat,           &
+                                         num_exp,            &
                                          val_exp)
         integer(kind=QINT), intent(in) :: xc_len_tuple
         integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
         integer(kind=QINT), intent(in) :: num_freq_configs
+        integer(kind=QINT), intent(in) :: &
+            pert_freq_category(num_freq_configs*xc_len_tuple)
         integer(kind=QINT), intent(in) :: dmat_num_tuple
         integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
         integer(kind=QINT), intent(in) :: num_dmat
@@ -876,15 +889,16 @@ module openrsp_callback_f
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
             c_val_exp = 0.0
-            ierr = RSPXCFunGetExp(ctx_saved%xc_fun, &
-                                  xc_len_tuple,     &
-                                  xc_pert_tuple,    &
-                                  num_freq_configs, &
-                                  dmat_num_tuple,   &
-                                  dmat_idx_tuple,   &
-                                  num_dmat,         &
-                                  c_dens_mat,       &
-                                  num_exp,          &
+            ierr = RSPXCFunGetExp(ctx_saved%xc_fun,   &
+                                  xc_len_tuple,       &
+                                  xc_pert_tuple,      &
+                                  num_freq_configs,   &
+                                  pert_freq_category, &
+                                  dmat_num_tuple,     &
+                                  dmat_idx_tuple,     &
+                                  num_dmat,           &
+                                  c_dens_mat,         &
+                                  num_exp,            &
                                   c_val_exp)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, num_exp
