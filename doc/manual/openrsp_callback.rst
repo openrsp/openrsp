@@ -351,7 +351,7 @@ functions are given as follows.
    :type xc_len_tuple: QInt
    :param xc_pert_tuple: perturbation tuple on the XC functional, size is
        ``xc_len_tuple``
-   :type xc_pert_tuple: QInt\*
+   :type xc_pert_tuple: QcPertInt\*
    :param num_freq_configs: the number of different frequency configurations to
        be considered for the perturbation tuple specified by ``xc_pert_tuple``
    :type num_freq_configs: QInt
@@ -370,8 +370,8 @@ functions are given as follows.
        matrix perturbation tuples (canonically ordered) for a property
        :math:`\mathcal{E}^{abc}` (i.e. the perturbation tuple ``xc_pert_tuple``
        is ``abc``) are (:math:`\boldsymbol{D}`, :math:`\boldsymbol{D}^{a}`,
-       :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`,
-       :math:`\boldsymbol{D}^{ab}`, :math:`\boldsymbol{D}^{ac}`,
+       :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{ab}`,
+       :math:`\boldsymbol{D}^{c}`, :math:`\boldsymbol{D}^{ac}`,
        :math:`\boldsymbol{D}^{bc}`), and with the :math:`(0,2)` rule, the
        relevant density matrix perturbation tuples become (:math:`\boldsymbol{D}`,
        :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`,
@@ -382,7 +382,7 @@ functions are given as follows.
        the above example, the density matrix perturbation tuples passed are
        (:math:`\boldsymbol{D}`, :math:`\boldsymbol{D}^{b}`,
        :math:`\boldsymbol{D}^{c}`, :math:`\boldsymbol{D}^{bc}`) and their
-       associated indices ``dmat_idx_tuple`` is ``{1, 3, 4, 7}`` because these
+       associated indices ``dmat_idx_tuple`` is ``{1, 3, 5, 7}`` because these
        numbers correspond to the positions of the ":math:`(k,n)`-surviving"
        perturbation tuples in the canonically ordered complete density matrix
        perturbation tuples
@@ -421,7 +421,7 @@ functions are given as follows.
    :type xc_len_tuple: QInt
    :param xc_pert_tuple: perturbation tuple on the XC functional, size is
        ``xc_len_tuple``
-   :type xc_pert_tuple: QInt\*
+   :type xc_pert_tuple: QcPertInt\*
    :param num_freq_configs: the number of different frequency configurations to
        be considered for the perturbation tuple specified by ``xc_pert_tuple``
    :type num_freq_configs: QInt

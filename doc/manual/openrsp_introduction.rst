@@ -126,9 +126,19 @@ Canonical order
      to arrange all perturbation tuples inside and sent to the callback functions.
   #. Moreover, a collection of several perturbation tuples will also follow
      the canonical order. For instance, a collection of all possible perturbation
-     tuples of labels :math:`a,b,c` are :math:`(0,a,b,c,ab,ac,bc,abc)`, where
+     tuples of labels :math:`a,b,c,d` are
+     :math:`(0,a,b,ab,c,ac,bc,abc,d,ad,bd,abd,cd,acd,bcd,abcd)`, where
      :math:`0` means unperturbed quantities that is always the first one
      in the collection.
+
+     The rules for generating the above collection are:
+
+     #. When taking a new perturbation into consideration, always do so in
+        alphabetical order (and begin with the empty set);
+     #. When taking a new perturbation is taken into consideration, the new
+        subsets are created by making the union of all previous subsets
+        (including the empty set) and the new perturbation (putting the new
+        perturbation at the end).
 
 Perturbation :math:`a`
   The first perturbation label in the tuple sent to OpenRSP APIs
@@ -167,7 +177,7 @@ Perturbation addressing
      stand for the components of the first order of the perturbation
      :math:`b`.
   #. The notation for a collection of perturbation tuples (still in a
-     one-dimensional array) is ``{1,[a],[b],[c],[a][b],[a][c],[b][c],[a][b][c]}``
-     for :math:`(0,a,b,c,ab,ac,bc,abc)`, where as aforementioned the
+     one-dimensional array) is ``{1,[a],[b],[a][b],[c],[a][c],[b][c],[a][b][c]}``
+     for :math:`(0,a,b,ab,c,ac,bc,abc)`, where as aforementioned the
      first one is the unperturbed quantities.
 
