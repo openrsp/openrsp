@@ -33,14 +33,16 @@ Files and Directories of OpenRSP
 
 #. ``setup.py``: Python setup script.
 
-#. ``src``: Source codes.
+#. ``src``: Source codes (generated from ``web/*.nw``).
 
    #. ``ao_dens``: atomic orbital density-matrix based response theory.
 
-   #. ``fortran``: Fortran 2003 APIs.
+   #. ``fortran``: Fortran 2003 APIs (generated from ``web/*.nw``).
 
 #. ``tests``: Source codes of OpenRSP test suite.
 
    #. ``fortran``: Source codes of Fortran test suite.
 
 #. ``TODO.rst``: Todo list.
+
+#. ``web``: WEB files of literate programming.
