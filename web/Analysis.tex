@@ -248,6 +248,24 @@ convention:
     $b$---$(\omega_{a},\omega_{b_{1}},\omega_{b_{2}},\omega_{c})$ define
     different perturbations $a_{\omega_{a}}^{1}$, $b_{\omega_{b_{1}}}^{1}$,
     $b_{\omega_{b_{2}}}^{1}$ and $c_{\omega_{c}}^{1}$.
+  \item[Category of perturbation frequencies] We use different integers for
+    distinguishing different values of frequencies within a frequency
+    configuration. The category arrary is determined by:
+    \begin{enumerate}
+      \item For each frequency configuration, we start at the first
+        perturbation and let its frequency value be designated number 1, then
+      \item For the next perturbation,
+        \begin{enumerate}
+          \item If its frequency value corresponds to a frequency value
+            encountered previously in this frequency, then use the same
+            designation as for that previously encountered frequency value, or
+          \item If its frequency value has not been encountered before, then
+            let that frequency value be designated with the first unused
+            number;
+        \end{enumerate}
+      \item Continue like this until the end of the perturbation tuple;
+      \item Start the numbering over again at the next frequency configuration.
+    \end{enumerate}
   \item[Canonical order]~
     \begin{enumerate}
       \item In \LibName, all perturbation tuples are canonically orderd
@@ -259,9 +277,9 @@ convention:
         tuples inside and sent to the callback functions.
       \item Moreover, a collection of several perturbation tuples will also
         follow the canonical order. For instance, a collection of all possible
-        perturbation tuples of labels $a,b,c$ are $(0,a,b,c,ab,ac,bc,abc)$,
-        where $0$ means unperturbed quantities that is always the first one
-        in the collection.
+        perturbation tuples of labels $a,b,c,d$ are
+        $(0,a,b,ab,c,ac,bc,abc,d,ad,bd,abd,cd,acd,bcd,abcd)$, where $0$ means
+        unperturbed quantities that is always the first one in the collection.
     \end{enumerate}
   \item[Perturbation $a$] The first perturbation label in the tuple sent to
     \LibName APIs \texttt{OpenRSPGetRSPFun()} or \texttt{OpenRSPGetResidue()},
@@ -301,8 +319,8 @@ convention:
         perturbation $b$.
       \item The notation for a collection of perturbation tuples (still in a
         one-dimensional array) is
-        \texttt{\{1,[a],[b],[c],[a][b],[a][c],[b][c],[a][b][c]\}}
-        for $(0,a,b,c,ab,ac,bc,abc)$, where as aforementioned the first one
+        \texttt{\{1,[a],[b],[a][b],[c],[a][c],[b][c],[a][b][c]\}}
+        for $(0,a,b,ab,c,ac,bc,abc)$, where as aforementioned the first one
         is the unperturbed quantities.
     \end{enumerate}
 \end{description}

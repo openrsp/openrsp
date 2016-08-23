@@ -20,5 +20,3 @@ Limitations of OpenRSP
 #. OpenRSPSetWaveFunction(): will implement or change in the future.
 
 #. OpenRSPSetPerturbations(): will implement or change in the future.
-
-.. #. OpenRSPSetRSPEigenSolver(): will implement or change in the future.

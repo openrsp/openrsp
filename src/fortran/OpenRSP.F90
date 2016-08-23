@@ -951,24 +951,27 @@ module OpenRSP_f
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_xc_fun_mat(xc_len_tuple,     &
-                                      xc_pert_tuple,    &
-                                      num_freq_configs, &
-                                      dmat_num_tuple,   &
-                                      dmat_idx_tuple,   &
-                                      num_dmat,         &
-                                      dens_mat,         &
+            subroutine get_xc_fun_mat(xc_len_tuple,       &
+                                      xc_pert_tuple,      &
+                                      num_freq_configs,   &
+                                      pert_freq_category, &
+                                      dmat_num_tuple,     &
+                                      dmat_idx_tuple,     &
+                                      num_dmat,           &
+                                      dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      len_ctx,          &
-                                      user_ctx,         &
+                                      len_ctx,            &
+                                      user_ctx,           &
 #endif
-                                      num_int,          &
+                                      num_int,            &
                                       val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: xc_len_tuple
                 integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
                 integer(kind=QINT), intent(in) :: num_freq_configs
+                integer(kind=QINT), intent(in) :: &
+                    pert_freq_category(num_freq_configs*xc_len_tuple)
                 integer(kind=QINT), intent(in) :: dmat_num_tuple
                 integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
                 integer(kind=QINT), intent(in) :: num_dmat
@@ -980,24 +983,27 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_xc_fun_mat
-            subroutine get_xc_fun_exp(xc_len_tuple,     &
-                                      xc_pert_tuple,    &
-                                      num_freq_configs, &
-                                      dmat_num_tuple,   &
-                                      dmat_idx_tuple,   &
-                                      num_dmat,         &
-                                      dens_mat,         &
+            subroutine get_xc_fun_exp(xc_len_tuple,       &
+                                      xc_pert_tuple,      &
+                                      num_freq_configs,   &
+                                      pert_freq_category, &
+                                      dmat_num_tuple,     &
+                                      dmat_idx_tuple,     &
+                                      num_dmat,           &
+                                      dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      len_ctx,          &
-                                      user_ctx,         &
+                                      len_ctx,            &
+                                      user_ctx,           &
 #endif
-                                      num_exp,          &
+                                      num_exp,            &
                                       val_exp)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: xc_len_tuple
                 integer(kind=QcPertInt), intent(in) :: xc_pert_tuple(xc_len_tuple)
                 integer(kind=QINT), intent(in) :: num_freq_configs
+                integer(kind=QINT), intent(in) :: &
+                    pert_freq_category(num_freq_configs*xc_len_tuple)
                 integer(kind=QINT), intent(in) :: dmat_num_tuple
                 integer(kind=QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
                 integer(kind=QINT), intent(in) :: num_dmat
@@ -1009,22 +1015,25 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(num_exp)
             end subroutine get_xc_fun_exp
-            subroutine RSPXCFunGetMat_f(xc_len_tuple,     &
-                                        xc_pert_tuple,    &
-                                        num_freq_configs, &
-                                        dmat_num_tuple,   &
-                                        dmat_idx_tuple,   &
-                                        num_dmat,         &
-                                        dens_mat,         &
-                                        user_ctx,         &
-                                        num_int,          &
-                                        val_int)          &
+            subroutine RSPXCFunGetMat_f(xc_len_tuple,       &
+                                        xc_pert_tuple,      &
+                                        num_freq_configs,   &
+                                        pert_freq_category, &
+                                        dmat_num_tuple,     &
+                                        dmat_idx_tuple,     &
+                                        num_dmat,           &
+                                        dens_mat,           &
+                                        user_ctx,           &
+                                        num_int,            &
+                                        val_int)            &
                 bind(C, name="RSPXCFunGetMat_f")
                 use, intrinsic :: iso_c_binding
                 use RSPPertBasicTypes_f, only: C_QCPERTINT
                 integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
                 integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
                 integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+                integer(kind=C_QINT), intent(in) :: &
+                    pert_freq_category(num_freq_configs*xc_len_tuple)
                 integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
                 integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
                 integer(kind=C_QINT), value, intent(in) :: num_dmat
@@ -1033,22 +1042,25 @@ module OpenRSP_f
                 integer(kind=C_QINT), value, intent(in) :: num_int
                 type(C_PTR), intent(inout) :: val_int(num_int)
             end subroutine RSPXCFunGetMat_f
-            subroutine RSPXCFunGetExp_f(xc_len_tuple,     &
-                                        xc_pert_tuple,    &
-                                        num_freq_configs, &
-                                        dmat_num_tuple,   &
-                                        dmat_idx_tuple,   &
-                                        num_dmat,         &
-                                        dens_mat,         &
-                                        user_ctx,         &
-                                        num_exp,          &
-                                        val_exp)          &
+            subroutine RSPXCFunGetExp_f(xc_len_tuple,       &
+                                        xc_pert_tuple,      &
+                                        num_freq_configs,   &
+                                        pert_freq_category, &
+                                        dmat_num_tuple,     &
+                                        dmat_idx_tuple,     &
+                                        num_dmat,           &
+                                        dens_mat,           &
+                                        user_ctx,           &
+                                        num_exp,            &
+                                        val_exp)            &
                 bind(C, name="RSPXCFunGetExp_f")
                 use, intrinsic :: iso_c_binding
                 use RSPPertBasicTypes_f, only: C_QCPERTINT
                 integer(kind=C_QINT), value, intent(in) :: xc_len_tuple
                 integer(kind=C_QCPERTINT), intent(in) :: xc_pert_tuple(xc_len_tuple)
                 integer(kind=C_QINT), value, intent(in) :: num_freq_configs
+                integer(kind=C_QINT), intent(in) :: &
+                    pert_freq_category(num_freq_configs*xc_len_tuple)
                 integer(kind=C_QINT), value, intent(in) :: dmat_num_tuple
                 integer(kind=C_QINT), intent(in) :: dmat_idx_tuple(dmat_num_tuple)
                 integer(kind=C_QINT), value, intent(in) :: num_dmat

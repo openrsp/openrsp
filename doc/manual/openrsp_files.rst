@@ -3,7 +3,7 @@
 Files and Directories of OpenRSP
 ================================
 
-#. ``AUTHORS``: Author information.
+#. ``AUTHORS.rst``: Author information.
 
 #. ``ChangeLog``: Changes made.
 
@@ -15,54 +15,34 @@ Files and Directories of OpenRSP
 
 #. ``include``: Header files.
 
-    #. ``eom``: Header files of equation of motion of wave function.
-
-    #. ``hamiltonian``: Header files of operators in Hamiltonian.
-
-    #. ``openrsp.h``: Header file of OpenRSP C APIs.
-
-    #. ``tests``: Header files of test suite.
-
-#. ``INSTALL``: Installation instruction.
+#. ``INSTALL.rst``: Installation instruction.
 
 #. ``MANIFEST.in``: Python manifest template for source distribution.
 
-#. ``NEWS``: List of user-visible changes.
+#. ``NEWS.rst``: List of user-visible changes.
 
-#. ``PKG-INFO``: PKG-INFO metadata file.
+#. ``PKG-INFO.yml``: PKG-INFO metadata file.
 
 #. ``openrsp.bib``: OpenRSP citation.
 
 #. ``README.rst``: A very important file ;-).
 
-#. ``RULES``: Rules for contribution.
+#. ``RULES.rst``: Rules for contribution.
 
 #. ``setup.cfg``: Python setup configuration file.
 
 #. ``setup.py``: Python setup script.
 
-#. ``src``: Source codes.
+#. ``src``: Source codes (generated from ``web/*.nw``).
 
    #. ``ao_dens``: atomic orbital density-matrix based response theory.
 
-   #. ``f03``: Fortran 2003 APIs.
-
-   #. ``nuc_contrib``: Source codes of nuclear Hamiltonian contributions.
-
-   #. ``one_oper``: Source codes of one-electron operators.
-
-   #. ``overlap``: Source codes of overlap integrals.
-
-   #. ``solver``: Source codes of linear response equation solver.
-
-   #. ``two_oper``: Source codes of two-electron operators.
-
-   #. ``xc_fun``: Source codes of exchange-correlation functionals.
+   #. ``fortran``: Fortran 2003 APIs (generated from ``web/*.nw``).
 
 #. ``tests``: Source codes of OpenRSP test suite.
 
-   #. ``C``: Source codes of C test suite.
+   #. ``fortran``: Source codes of Fortran test suite.
 
-   #. ``f90``: Source codes of Fortran test suite.
+#. ``TODO.rst``: Todo list.
 
-#. ``TODO``: Todo list.
+#. ``web``: WEB files of literate programming.
