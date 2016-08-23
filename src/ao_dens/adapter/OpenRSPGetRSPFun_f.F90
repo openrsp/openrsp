@@ -179,6 +179,8 @@
                             xc_fun)
         ! allocates memory for the results
         allocate(f_rsp_tensor(property_size), stat=ierr)
+        
+        write(*,*) 'property size', property_size
         if (ierr/=0) then
             write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> property_size", property_size
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_tensor"
