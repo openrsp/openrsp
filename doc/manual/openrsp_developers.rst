@@ -3,6 +3,8 @@
 OpenRSP for Developers
 ======================
 
+*FIXME: this chapter will be removed and its contents will be in the OpenRSP developer manual.*
+
 In this chapter, we will discuss the idea behind the implementation, that
 will be useful for further development and maintenance, and be useful for
 new developers to understand the library and to start their work on top
@@ -133,20 +135,19 @@ CC based response theories, by developing a set of symbolic computation
 functions that will be used by response theory codes to get molecular
 properties still in a recursive and analytical manner.
 
-These symbolic computation functions will be implemented in ``src/symbolic``
-using the literate programming approach (using the ``CWEB`` system). In
-this way, I can describe the idea of implementation and the real codes
-at the same time. After becoming familar with the literate programming
-approach, it is actually, in my opinion, an efficient way for methodology
-development.
+These symbolic computation functions will be implemented using the literate
+programming approach. In this way, I can describe the idea of implementation
+and the real codes at the same time. After becoming familar with the literate
+programming approach, it is actually, in my opinion, an efficient way for
+methodology development.
 
-The documentation of these symbolic computation functions can be generated
-from the ``*.w`` files in ``src/symbolic`` using ``cweave``. Actually, the
-source codes (``*.c``) can also be generated from the ``*.w`` files using
-``ctangle``, but I think it could be better that we keep the generated C
-codes in the OpenRSP repository and release with OpenRSP. Because releasing
-only the ``*.w`` files will impose further requirements for the users, they
-will have to install the ``CWEB`` system.
+The documentation of these symbolic computation functions can be generated from
+the ``*.nw`` files in the directory ``web``. Actually, the source codes
+(``src/*.c``) can also be generated from the ``*.nw`` files, but I think it
+could be better that we keep the generated C codes in the OpenRSP repository
+and release with OpenRSP. Because releasing only the ``*.nw`` files will impose
+further requirements for the users, they will have to install some software for
+literate programming.
 
 .. _openrsp-c-support-perturbations:
 
@@ -162,15 +163,15 @@ integrals, non-zero high order (:math:`\ge 5`) geometric derivatives are only
 those with at most four differentiated centers.
 
 To take all the above information into account in OpenRSP will make it so
-complicated and not necessary, because response theory actually does not
-depend on the detailed knowledge of different perturbations. In particular,
-when all the (perturbed) integrals and expectation values are computed by
-the host program's callback functions, the detailed information of perturbations,
-i.e. the number of components and how they are arranged in memory can be
-hidden from OpenRSP.
+complicated and not necessary, because response theory actually does not depend
+on the detailed knowledge of different perturbations. In particular, when all
+the (perturbed) integrals and expectation values are computed by the host
+program's callback functions, the detailed information of perturbations, i.e.
+the number of components and how they are arranged in memory can be hidden from
+OpenRSP.
 
-The former can be easily solved by sending the number of components of
-each perturbation (label) up to its maximum order to the OpenRSP API
+The former can be easily solved by sending the number of components of each
+perturbation (label) up to its maximum order to the OpenRSP API
 :c:func:`OpenRSPSetPerturbations`.
 
 The latter can be important for OpenRSP, for instance, when the higher order
@@ -189,7 +190,7 @@ be constructed from the first order ones in the redundant format:
 * :math:`z+z\rightarrow zz,\hspace*{2em}2+2\rightarrow 8`,
 
 where we have ranked different components in zero-based numbering (numbers on
-the right).  However, the ranks can be different in different host programs. To
+the right). However, the ranks can be different in different host programs. To
 solve this problem, i.e., the mapping relationship of lower and higher order
 derivatives with respect to **one perturbation** [#]_, we ask for a callback
 function :c:func:`get_pert_concatenation` from host programs, which is the last
@@ -199,27 +200,25 @@ argument of the API :c:func:`OpenRSPSetPerturbations`.
        components of higher order derivatives of different perturbations
        are simply the direct product of components of lower order derivatives.
 
-This callback function is used by OpenRSP to get the ranks of components
-of *sub-perturbation tuples with same perturbation label* (lower order
-derivatives with respect to one perturbation) for given components of
-the corresponding *concatenated perturbation tuple* (higher order derivatives).
-
-Functions of the perturbation free scheme are implemented in ``src/perturbation``.
+This callback function is used by OpenRSP to get the ranks of components of
+*sub-perturbation tuples with same perturbation label* (lower order derivatives
+with respect to one perturbation) for given components of the corresponding
+*concatenated perturbation tuple* (higher order derivatives).
 
 .. _openrsp-c-support-Hamiltonian:
 
 Electronic and Nuclear Hamiltonian
 ----------------------------------
 
-As aforementioned, the ingradients of electronic and nuclear Hamiltonian
-are sent to OpenRSP, and (perturbed) integrals and expectation values will
-be computed by the callback functions of host programs. These include:
+As aforementioned, the ingradients of electronic and nuclear Hamiltonian are
+sent to OpenRSP, and (perturbed) integrals and expectation values will be
+computed by the callback functions of host programs. These include:
 
-#. overlap integrals (source codes ``src/overlap``),
-#. one-electron operators (source codes ``src/one_oper``),
-#. two-electron operators (source codes ``src/two_oper``),
-#. exchange-correlation functionals (source codes ``src/xc_fun``),
-#. nuclear Hamiltonian (source codes ``src/nuc_contrib``),
+#. overlap integrals (source codes ``web/RSPOverlap.nw``),
+#. one-electron operators (source codes ``web/RSPOneOper.nw``),
+#. two-electron operators (source codes ``web/RSPTwoOper.nw``),
+#. exchange-correlation functionals (source codes ``web/RSPXCFun.nw``),
+#. nuclear Hamiltonian (source codes ``web/RSPNucHamilton.nw``),
 
 where the source codes save the callback functions as function pointers in
 different C ``struct``, and take care the invoking of these callback functions
@@ -227,8 +226,8 @@ during calculations.
 
 Different from the overlap integrals and nuclear Hamiltonian, the one- and
 two-electron operators and XC functionals are saved in three different linked
-lists in OpenRSP, in which each node corresponds to an operator. This makes
-it possible for host programs to add different callback functions for different
+lists in OpenRSP, in which each node corresponds to an operator. This makes it
+possible for host programs to add different callback functions for different
 operators, if they do not want to or can not provide OpenRSP a general callback
 function.
 
@@ -240,16 +239,17 @@ Response Equation Solver
 Similar to overlap integrals and nuclear Hamiltonian, the callback function of
 a linear response equation solver is saved as a function pointer in a C ``struct``
 in OpenRSP. That will be invoked by OpenRSP for obtaining response parameters,
-and the source codes related to the solver are in ``src/solver``.
+and the source codes related to the solver are in ``web/RSPSolver.nw``.
 
 OpenRSP will send multiple RHS vectors (or matrices) to the solver, for several
 frequency sums on the left hand side of the linear response equation and for
 several derivatives with respect to (different) perturbations.
 
 Notice that it would be more common and help the convergence to calculate
-several frequencies for the same perturbation, than the other way around. So the
-RHS matrices and response parameters are arranged as ``[size_pert][num_freq_sums]``
-in the callback function :c:func:`get_linear_rsp_solution`.
+several frequencies for the same perturbation, than the other way around. So
+the RHS matrices and response parameters are arranged as
+``[num_comps][num_freq_sums]`` in the callback function
+:c:func:`get_linear_rsp_solution`.
 
 .. _section-openrsp-Fortran-APIs:
 
@@ -258,8 +258,8 @@ Implementation of Fortran APIs
 
 OpenRSP APIs that host programs will use to talk to OpenRSP are written in C
 language, with Fortran support by using Fortran 2003 language. The source codes
-are in ``src/f03``, and the framework of OpenRSP used in a Fortran host program
-is shown in the following figure:
+are in ``web/FortranAPIs.nw``, and the framework of OpenRSP used in a Fortran
+host program is shown in the following figure:
 
 .. figure:: /_static/OpenRSP_Fortran_API.pdf
    :scale: 100 %
@@ -276,33 +276,37 @@ Fortran API ``OpenRSPAddOneOper_f()``::
 
     function OpenRSPAddOneOper_f(...)
         interface
-            subroutine get_one_oper_mat(len_tuple,  &
-                                        pert_tuple, &
-                                        num_int,    &
+            subroutine get_one_oper_mat(oper_num_pert,    &
+                                        oper_pert_labels, &
+                                        oper_pert_orders, &
+                                        num_int,          &
                                         val_int)
                 use qcmatrix_f, only: QINT,QREAL,QcMat
-                integer(kind=QINT), intent(in) :: len_tuple
-                integer(kind=QINT), intent(in) :: pert_tuple(len_tuple)
+                integer(kind=QINT), intent(in) :: oper_num_pert
+                integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+                integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
             end subroutine get_one_oper_mat
         end interface
     end function OpenRSPAddOneOper_f
 
-But "OpenRSP C support" codes can not call this subroutine :c:func:`get_one_oper_mat`
-directly, because the ``type(QcMat)`` can not be sent from a C function to
-a Fortran subroutine directly. Instead, another "OpenRSP Fortran support"
-subroutine is implemented in OpenRSP that will be called by the
-"OpenRSP C support" codes::
+But "OpenRSP C support" codes can not call this subroutine
+:c:func:`get_one_oper_mat` directly, because the ``type(QcMat)`` can not be
+sent from a C function to a Fortran subroutine directly. Instead, another
+"OpenRSP Fortran support" subroutine is implemented in OpenRSP that will be
+called by the "OpenRSP C support" codes::
 
-    subroutine RSPOneOperGetMat_f(len_tuple,  &
-                                  pert_tuple, &
-                                  user_ctx,   &
-                                  num_int,    &
-                                  val_int)    &
+    subroutine RSPOneOperGetMat_f(oper_num_pert,    &
+                                  oper_pert_labels, &
+                                  oper_pert_orders, &
+                                  user_ctx,         &
+                                  num_int,          &
+                                  val_int)          &
         bind(C, name="RSPOneOperGetMat_f")
-        integer(kind=C_QINT), value, intent(in) :: len_tuple
-        integer(kind=C_QINT), intent(in) :: pert_tuple(len_tuple)
+        integer(kind=C_QINT), value, intent(in) :: oper_num_pert
+        integer(kind=C_QCPERTINT), intent(in) :: oper_pert_labels(oper_num_pert)
+        integer(kind=C_QINT), intent(in) :: oper_pert_orders(oper_num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_int
         type(C_PTR), intent(inout) :: val_int(num_int)
@@ -317,8 +321,9 @@ subroutine is implemented in OpenRSP that will be called by the
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, one_oper_fun)
         ! invokes Fortran callback subroutine to calculate the integral matrices
-        call one_oper_fun%get_one_oper_mat(len_tuple,             &
-                                           pert_tuple,            &
+        call one_oper_fun%get_one_oper_mat(oper_num_pert,         &
+                                           oper_pert_labels,      &
+                                           oper_pert_orders,      &
                                            ... ...,               &
                                            num_int,               &
                                            f_val_int)
@@ -339,16 +344,16 @@ pointers ``val_int``).
 
 The procedure when doing a callback of Fortran subroutine can be summarized as:
 
-"OpenRSP response" codes (Fortran) :math:`\Rightarrow` "OpenRSP C support" codes
-:math:`\Rightarrow` "OpenRSP Fortran support" subroutine ``RSPOneOperGetMat_f()``
-:math:`\Rightarrow` :c:func:`get_one_oper_mat`
+"OpenRSP response" codes (Fortran) :math:`\Rightarrow` "OpenRSP C support"
+codes :math:`\Rightarrow` "OpenRSP Fortran support" subroutine
+``RSPOneOperGetMat_f()`` :math:`\Rightarrow` :c:func:`get_one_oper_mat`
 
 One can also notice that, the argument ``num_int`` is needed in the
 ``interface`` of ``OpenRSPAddOneOper_f()`` and the subroutine
-``RSPOneOperGetMat_f()``, and "OpenRSP C support" codes also need to pass ``num_int``
-to ``RSPOneOperGetMat_f()`` (from C function to Fortran subroutine). Therefore,
-these arguments for the dimension of arrays have to be passed although they are
-over complete.
+``RSPOneOperGetMat_f()``, and "OpenRSP C support" codes also need to pass
+``num_int`` to ``RSPOneOperGetMat_f()`` (from C function to Fortran
+subroutine). Therefore, these arguments for the dimension of arrays have to be
+passed although they are over complete.
 
 Technical Issues in OpenRSP
 ---------------------------
@@ -361,15 +366,15 @@ Technical Issues in OpenRSP
 
    *FIXME: in OpenRSP Fortran APIs, we should choose complex numbers, right? Because Fortran support complex numbers.*
 
-#. We can simply add the following into ``openrsp.h``, to make OpenRSP be
-   called by C++ programs::
+#. We can simply add the following into ``include/OpenRSP.h``, to make OpenRSP
+   be called by C++ programs::
 
      #ifdef __cplusplus
      extern "C" {
      #endif
-     
+
      ... ...
-     
+
      #ifdef __cplusplus
      }
      #endif

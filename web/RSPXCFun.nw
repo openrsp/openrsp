@@ -96,6 +96,7 @@ matrices and expectation values of an XC functional and its derivatives.
 typedef void (*GetXCFunMat)(const QInt,
                             const QcPertInt*,
                             const QInt,
+                            const QInt*,
                             const QInt,
                             const QInt*,
                             const QInt,
@@ -108,6 +109,7 @@ typedef void (*GetXCFunMat)(const QInt,
 typedef void (*GetXCFunExp)(const QInt,
                             const QcPertInt*,
                             const QInt,
+                            const QInt*,
                             const QInt,
                             const QInt*,
                             const QInt,
@@ -131,8 +133,8 @@ property $\mathcal{E}^{abc}$ (i.e. the perturbation tuple [[xc_pert_tuple]] is
 [[abc]]) are
 \begin{equation}
   \label{eq-xcfun-callback-dmat}
-  (\boldsymbol{D},\boldsymbol{D}^{a},\boldsymbol{D}^{b},\boldsymbol{D}^{c}, %
-  \boldsymbol{D}^{ab},\boldsymbol{D}^{ac},\boldsymbol{D}^{bc}),
+  (\boldsymbol{D},\boldsymbol{D}^{a},\boldsymbol{D}^{b},\boldsymbol{D}^{ab}, %
+  \boldsymbol{D}^{c},\boldsymbol{D}^{ac},\boldsymbol{D}^{bc}),
 \end{equation}
 and with the $(0,2)$ rule, the relevant density matrix perturbation tuples
 become
@@ -148,7 +150,7 @@ We then need to give the indices of the density matrix perturbation tuples
 passed (canonically ordered), whose size is [[dmat_num_tuple]]. Sticking with
 the above example, the density matrix perturbation tuples passed as
 Eq.~(\ref{eq-xcfun-callback-dmat-kn-rule}) have their associated indices
-[[dmat_idx_tuple]] as [[{1,3,4,7}]], because these numbers correspond to the
+[[dmat_idx_tuple]] as [[{1,3,5,7}]], because these numbers correspond to the
 positions of the ``$(k,n)$-surviving'' perturbation tuples in the canonically
 ordered complete density matrix perturbation
 tuples~(\ref{eq-xcfun-callback-dmat}).
@@ -230,6 +232,7 @@ extern QErrorCode RSPXCFunGetMat(RSPXCFun*,
                                  const QInt,
                                  const QcPertInt*,
                                  const QInt,
+                                 const QInt*,
                                  const QInt,
                                  const QInt*,
                                  const QInt,
@@ -240,6 +243,7 @@ extern QErrorCode RSPXCFunGetExp(RSPXCFun*,
                                  const QInt,
                                  const QcPertInt*,
                                  const QInt,
+                                 const QInt*,
                                  const QInt,
                                  const QInt*,
                                  const QInt,
@@ -565,6 +569,9 @@ QErrorCode RSPXCFunWrite(RSPXCFun *xc_fun, FILE *fp_xc)
        The number of different frequency configurations to be considered for
        the perturbation tuple
      </param>
+     <param name='pert_freq_category' direction='in'>
+       Category of perturbation frequencies
+     </param>
      <param name='dmat_num_tuple' direction='in'>
        The number of different perturbation tuples of the atomic orbital (AO)
        based density matrices passed
@@ -592,6 +599,7 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
                           const QInt xc_len_tuple,
                           const QcPertInt *xc_pert_tuple,
                           const QInt num_freq_configs,
+                          const QInt *pert_freq_category,
                           const QInt dmat_num_tuple,
                           const QInt *dmat_idx_tuple,
                           const QInt num_dmat,
@@ -619,6 +627,7 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
             cur_xc->get_xc_fun_mat(cur_xc->xc_len_tuple,
                                    cur_xc->xc_pert_tuple,
                                    num_freq_configs,
+                                   pert_freq_category,
                                    dmat_num_tuple,
                                    dmat_idx_tuple,
                                    num_dmat,
@@ -653,6 +662,9 @@ QErrorCode RSPXCFunGetMat(RSPXCFun *xc_fun,
        The number of different frequency configurations to be considered for
        the perturbation tuple
      </param>
+     <param name='pert_freq_category' direction='in'>
+       Category of perturbation frequencies
+     </param>
      <param name='dmat_num_tuple' direction='in'>
        The number of different perturbation tuples of the atomic orbital (AO)
        based density matrices passed
@@ -680,6 +692,7 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
                           const QInt xc_len_tuple,
                           const QcPertInt *xc_pert_tuple,
                           const QInt num_freq_configs,
+                          const QInt *pert_freq_category,
                           const QInt dmat_num_tuple,
                           const QInt *dmat_idx_tuple,
                           const QInt num_dmat,
@@ -707,6 +720,7 @@ QErrorCode RSPXCFunGetExp(RSPXCFun *xc_fun,
             cur_xc->get_xc_fun_exp(cur_xc->xc_len_tuple,
                                    cur_xc->xc_pert_tuple,
                                    num_freq_configs,
+                                   pert_freq_category,
                                    dmat_num_tuple,
                                    dmat_idx_tuple,
                                    num_dmat,
