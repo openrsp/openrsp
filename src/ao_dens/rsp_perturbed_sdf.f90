@@ -11,6 +11,7 @@ module rsp_perturbed_sdf
   use rsp_perturbed_matrices
   use rsp_property_caching
   use qcmatrix_f
+  use rsp_general, only: rsp_xc_wrapper
   
   implicit none
 
@@ -245,7 +246,8 @@ module rsp_perturbed_sdf
        
                 o_size = 0
                 
-                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next, o_size, mem_mgr)
+                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, &
+                                       lof_next, o_size, mem_mgr)
                 
                 if (mem_exceed(mem_mgr)) then
                 
@@ -298,7 +300,7 @@ module rsp_perturbed_sdf
        
           ! Calculate all perturbed S, D, F at this order
           call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
-               get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_next, &
+               get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_next, &
                rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
                
           if (mem_exceed(mem_mgr)) then
@@ -1042,7 +1044,7 @@ module rsp_perturbed_sdf
   
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
-  get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_cache, &
+  get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_cache, &
   rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
   
     implicit none
@@ -1069,7 +1071,7 @@ module rsp_perturbed_sdf
     type(contrib_cache_outer), pointer :: cache_outer_next
     type(Qcmat), allocatable, dimension(:) :: Dh, Dp, Fp, Sp, RHS, X
     type(Qcmat) :: A, B, C, T, U
-    external :: get_rsp_sol, get_ovl_mat,  get_2el_mat
+    external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
     
 
     ! May be inaccurate, revisit if problems
@@ -1255,6 +1257,14 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(pert, pert%npert, &
                                1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                                Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+                               
+          ! XC call should go here
+          
+          ! Currently only one freq. configuration
+          ! The (k,n) rule argument is adapted for the Fock contribution case
+          call rsp_xc_wrapper(1, (/pert/), (/pert%npert - 1, pert%npert - 1/), D, get_xc_mat, &
+                                size_i(k), mem_mgr, fock=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+          
        
        end if
        
@@ -1388,6 +1398,8 @@ module rsp_perturbed_sdf
        ! Outside traversal:
        ! Complete Fp using Dp
        call get_2el_mat(0, noc, sum(size_i), Dp, sum(size_i), Fp)
+       
+       ! Insert XC call here
     
     end if
     
@@ -1687,6 +1699,8 @@ module rsp_perturbed_sdf
        
                 call get_2el_mat(0, noc, last - first + 1, Dh(first:last), &
                      last - first + 1, Fp(first:last))
+                     
+                     ! Insert XC call here
                         
              end if
              
@@ -1695,6 +1709,8 @@ module rsp_perturbed_sdf
        else
           
           call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
+          
+          ! Insert XC call here
        
        end if
 
