@@ -146,7 +146,11 @@ module rsp_field_tuple
 
     do i = 1, pert%npert
     
-       if (pert%plab(i) == 'GEO ') then
+       if (pert%plab(i) == 'NULL') then
+       
+          perturbations(i) = 0
+    
+       else if (pert%plab(i) == 'GEO ') then
        
           perturbations(i) = 1
        

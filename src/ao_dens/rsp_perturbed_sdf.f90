@@ -1063,7 +1063,7 @@ module rsp_perturbed_sdf
     integer, dimension(num_outer) :: size_i
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
-    type(p_tuple) :: pert
+    type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(contrib_cache) :: lof_cache
     type(contrib_cache_outer), target :: cache_outer
@@ -1074,6 +1074,20 @@ module rsp_perturbed_sdf
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
     
 
+    ! Set up null perturbation for XC use
+    
+    pert_xc_null%npert = 1
+    allocate(pert_xc_null%pdim(1))
+    allocate(pert_xc_null%plab(1))
+    allocate(pert_xc_null%freq(1))
+    allocate(pert_xc_null%pid(1))
+    
+    pert_xc_null%plab(1) = 'NULL'
+    pert_xc_null%freq(1) = 0.0
+    pert_xc_null%pid(1) = 1
+    
+    
+    
     ! May be inaccurate, revisit if problems
     if (.NOT.(mem_enough(mem_mgr, 8 * sum(size_i) + 9))) then
     
@@ -1262,7 +1276,7 @@ module rsp_perturbed_sdf
           
           ! Currently only one freq. configuration
           ! The (k,n) rule argument is adapted for the Fock contribution case
-          call rsp_xc_wrapper(1, (/pert/), (/pert%npert - 1, pert%npert - 1/), D, get_xc_mat, &
+          call rsp_xc_wrapper(1, (/pert/), (/pert%npert, pert%npert/), D, get_xc_mat, &
                                 size_i(k), mem_mgr, fock=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
           
        
@@ -1399,7 +1413,13 @@ module rsp_perturbed_sdf
        ! Complete Fp using Dp
        call get_2el_mat(0, noc, sum(size_i), Dp, sum(size_i), Fp)
        
-       ! Insert XC call here
+     
+       ! Set up null perturbation dimensionality
+       pert_xc_null%pdim(1) = sum(size_i)
+    
+       call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+                                sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
+    
     
     end if
     
@@ -1682,39 +1702,52 @@ module rsp_perturbed_sdf
     ! Outside traversal
     ! Calculate Fh for all components using Dh
     
-    if (.NOT.(mem_mgr%calibrate)) then
+    ! Kept for possible reintroduction: Call for subset of all contributions
     
-       ! Currently limiting number of simultaneous calls
-       ! Will later be tuned according to memory requirements
-       k = 65536
-       
-       if (size(Dh) > k) then
-
-          do i = 1, size(Dh)/k + 1
-          
-             if (.NOT.((i - 1) *k >= size(Dh))) then
-       
-                first = (i - 1) * k + 1
-                last = min(i * k, size(Dh))
-       
-                call get_2el_mat(0, noc, last - first + 1, Dh(first:last), &
-                     last - first + 1, Fp(first:last))
-                     
-                     ! Insert XC call here
-                        
-             end if
-             
-          end do
-       
-       else
+!     if (.NOT.(mem_mgr%calibrate)) then
+!     
+!        ! Currently limiting number of simultaneous calls
+!        ! Will later be tuned according to memory requirements
+!        k = 65536
+!        
+!        if (size(Dh) > k) then
+! 
+!           do i = 1, size(Dh)/k + 1
+!           
+!              if (.NOT.((i - 1) *k >= size(Dh))) then
+!        
+!                 first = (i - 1) * k + 1
+!                 last = min(i * k, size(Dh))
+!        
+!                 call get_2el_mat(0, noc, last - first + 1, Dh(first:last), &
+!                      last - first + 1, Fp(first:last))
+!                      
+!                 ! Set up null perturbation dimensionality
+!                 pert_xc_null%pdim(1) = last - first + 1
+!                 
+!                 call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+!                                     last - first + 1, mem_mgr, &
+!                                     null_dmat=Dh(first:last), fock=Fp(first:last))
+!     
+!                 
+!                         
+!              end if
+!              
+!           end do
+!        
+!        else
           
           call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
           
-          ! Insert XC call here
+          ! Set up null perturbation dimensionality
+          pert_xc_null%pdim(1) = sum(size_i)
+                
+          call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+                                    sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
        
-       end if
-
-    end if
+!        end if
+! 
+!     end if
     
     ind_ctr = 1
     k = 1
@@ -1866,7 +1899,7 @@ module rsp_perturbed_sdf
   
   
   subroutine rsp_xc_wrapper(n_freq_cfgs, pert, kn, D, get_xc, &
-                                prop_size_total, mem_mgr, fock, prop)
+                                prop_size_total, mem_mgr, null_dmat, fock, prop)
   
     implicit none
     
@@ -1884,21 +1917,102 @@ module rsp_perturbed_sdf
     type(contrib_cache_outer), intent(in) :: D
     integer,       intent(in) :: prop_size_total
     type(QcMat), optional, dimension(prop_size_total) :: fock
+    type(QcMat), optional, dimension(prop_size_total) :: null_dmat
     complex(8), optional, dimension(prop_size_total) :: prop
     logical :: srch_fin
     external :: get_xc
     
-    ! NOTE: Prop size not necessarily equal for different freq configs: Fix or
-    ! possibly treat here instead of inside external routine
+
+    ! Special handling for null perturbation case
     
-    ! MaR: It seems to hold generally that dmat_length is 2**npert - 1 
-    ! even though I can't prove it
+    if (pert(1)%npert == 1) then
+    
+       if (pert(1)%plab(1) == 'NULL') then
+       
+          write(*,*) 'Special case: null treatment'
+          
+          call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+    
+             ! Allocate dmat holder array to counter size
+             allocate(dmat_total_array(prop_size_total + 1))
+       
+             call mem_incr(mem_mgr, prop_size_total + 1)
+
+          end if
+    
+          ! Make the unperturbed D the first elements of the dmat holder array
+    
+          if (.NOT.(mem_mgr%calibrate)) then
+
+             if (present(null_dmat)) then
+          
+                call QCMatInit(dmat_total_array(1))
+
+                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                     contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=dmat_total_array(1))
+                  
+                do i = 1, prop_size_total
+             
+                   call QCMatInit(dmat_total_array(i + 1))
+                   call QcMatAEqB(dmat_total_array(i + 1), null_dmat(i))
+             
+                end do
+
+             else
+             
+                write(*,*) 'ERROR: Null density matrices required but not present'
+                
+             end if
+
+          end if
+          
+          
+          if (.NOT.(n_freq_cfgs == 1)) then
+          
+             write(*,*) 'ERROR: Null treatment needs only one freq cfg, currently', n_freq_cfgs
+          
+          else
+          
+!              call get_xc(pert(1)%npert, pert_ext, 1, (/1/), &
+!                   2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
+                  
+          end if
+          
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+    
+             do i = 1, prop_size_total + 1
+    
+                call QcMatDst(dmat_total_array(i))
+    
+             end do
+    
+             deallocate(dmat_total_array)
+       
+          end if
+    
+          call mem_decr(mem_mgr, prop_size_total + 1)
+          
+          return
+       
+       end if
+    
+    end if
+    
+    
+    
+
     
     if (present(fock)) then
     
-       dmat_length = 2**pert(1)%npert - 1
+       dmat_length = 2**pert(1)%npert
     
     elseif (present(prop)) then
+    
+       ! MaR: It seems to hold generally in this case that dmat_length is 2**npert - 1 
+       ! even though I can't prove it
     
        dmat_length = 2**(pert(1)%npert - 1)
     
@@ -2029,8 +2143,6 @@ module rsp_perturbed_sdf
     
     ! Make the unperturbed D the first elements of the dmat holder array
     
-    call mem_incr(mem_mgr, 1)
-   
     if (.NOT.(mem_mgr%calibrate)) then
     
        call QCMatInit(dmat_total_array(1))
