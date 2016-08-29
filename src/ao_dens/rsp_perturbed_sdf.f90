@@ -15,6 +15,7 @@ module rsp_perturbed_sdf
   implicit none
 
   public rsp_fds
+  public rsp_xc_wrapper
 
   private
 
@@ -245,7 +246,8 @@ module rsp_perturbed_sdf
        
                 o_size = 0
                 
-                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, lof_next, o_size, mem_mgr)
+                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, &
+                                       lof_next, o_size, mem_mgr)
                 
                 if (mem_exceed(mem_mgr)) then
                 
@@ -298,7 +300,7 @@ module rsp_perturbed_sdf
        
           ! Calculate all perturbed S, D, F at this order
           call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
-               get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_next, &
+               get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_next, &
                rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
                
           if (mem_exceed(mem_mgr)) then
@@ -1042,7 +1044,7 @@ module rsp_perturbed_sdf
   
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
-  get_rsp_sol, get_ovl_mat, get_2el_mat, F, D, S, lof_cache, &
+  get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_cache, &
   rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
   
     implicit none
@@ -1061,7 +1063,7 @@ module rsp_perturbed_sdf
     integer, dimension(num_outer) :: size_i
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
-    type(p_tuple) :: pert
+    type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(contrib_cache) :: lof_cache
     type(contrib_cache_outer), target :: cache_outer
@@ -1069,9 +1071,23 @@ module rsp_perturbed_sdf
     type(contrib_cache_outer), pointer :: cache_outer_next
     type(Qcmat), allocatable, dimension(:) :: Dh, Dp, Fp, Sp, RHS, X
     type(Qcmat) :: A, B, C, T, U
-    external :: get_rsp_sol, get_ovl_mat,  get_2el_mat
+    external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
     
 
+    ! Set up null perturbation for XC use
+    
+    pert_xc_null%npert = 1
+    allocate(pert_xc_null%pdim(1))
+    allocate(pert_xc_null%plab(1))
+    allocate(pert_xc_null%freq(1))
+    allocate(pert_xc_null%pid(1))
+    
+    pert_xc_null%plab(1) = 'NULL'
+    pert_xc_null%freq(1) = 0.0
+    pert_xc_null%pid(1) = 1
+    
+    
+    
     ! May be inaccurate, revisit if problems
     if (.NOT.(mem_enough(mem_mgr, 8 * sum(size_i) + 9))) then
     
@@ -1255,6 +1271,14 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(pert, pert%npert, &
                                1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                                Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+                               
+          ! XC call should go here
+          
+          ! Currently only one freq. configuration
+          ! The (k,n) rule argument is adapted for the Fock contribution case
+          call rsp_xc_wrapper(1, (/pert/), (/pert%npert, pert%npert/), D, get_xc_mat, &
+                                size_i(k), mem_mgr, fock=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+          
        
        end if
        
@@ -1388,6 +1412,14 @@ module rsp_perturbed_sdf
        ! Outside traversal:
        ! Complete Fp using Dp
        call get_2el_mat(0, noc, sum(size_i), Dp, sum(size_i), Fp)
+       
+     
+       ! Set up null perturbation dimensionality
+       pert_xc_null%pdim(1) = sum(size_i)
+    
+       call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+                                sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
+    
     
     end if
     
@@ -1670,35 +1702,52 @@ module rsp_perturbed_sdf
     ! Outside traversal
     ! Calculate Fh for all components using Dh
     
-    if (.NOT.(mem_mgr%calibrate)) then
+    ! Kept for possible reintroduction: Call for subset of all contributions
     
-       ! Currently limiting number of simultaneous calls
-       ! Will later be tuned according to memory requirements
-       k = 65536
-       
-       if (size(Dh) > k) then
-
-          do i = 1, size(Dh)/k + 1
-          
-             if (.NOT.((i - 1) *k >= size(Dh))) then
-       
-                first = (i - 1) * k + 1
-                last = min(i * k, size(Dh))
-       
-                call get_2el_mat(0, noc, last - first + 1, Dh(first:last), &
-                     last - first + 1, Fp(first:last))
-                        
-             end if
-             
-          end do
-       
-       else
+!     if (.NOT.(mem_mgr%calibrate)) then
+!     
+!        ! Currently limiting number of simultaneous calls
+!        ! Will later be tuned according to memory requirements
+!        k = 65536
+!        
+!        if (size(Dh) > k) then
+! 
+!           do i = 1, size(Dh)/k + 1
+!           
+!              if (.NOT.((i - 1) *k >= size(Dh))) then
+!        
+!                 first = (i - 1) * k + 1
+!                 last = min(i * k, size(Dh))
+!        
+!                 call get_2el_mat(0, noc, last - first + 1, Dh(first:last), &
+!                      last - first + 1, Fp(first:last))
+!                      
+!                 ! Set up null perturbation dimensionality
+!                 pert_xc_null%pdim(1) = last - first + 1
+!                 
+!                 call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+!                                     last - first + 1, mem_mgr, &
+!                                     null_dmat=Dh(first:last), fock=Fp(first:last))
+!     
+!                 
+!                         
+!              end if
+!              
+!           end do
+!        
+!        else
           
           call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
+          
+          ! Set up null perturbation dimensionality
+          pert_xc_null%pdim(1) = sum(size_i)
+                
+          call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+                                    sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
        
-       end if
-
-    end if
+!        end if
+! 
+!     end if
     
     ind_ctr = 1
     k = 1
@@ -1759,5 +1808,465 @@ module rsp_perturbed_sdf
     
     
   end subroutine
+  
+  
+  ! NEW: XC handling
+  
+  recursive subroutine rsp_xcave_setup_dmat_perts(pert,           &
+                                                   sofar,          &
+                                                   kn,             &
+                                                   rec_prog,       &
+                                                   enc_len,        &
+                                                   dmat_tuple_len, &
+                                                   pert_ids,       &
+                                                   enc_perts,      &
+                                                   dmat_perts)
+  
+  
+    implicit none
+  
+    type(p_tuple), intent(in) :: pert
+    integer,       intent(in) :: kn(2)
+    integer,       intent(in) :: enc_len
+    integer,       intent(in) :: dmat_tuple_len
+    type(p_tuple), intent(in) :: enc_perts(enc_len)
+    type(p_tuple), intent(in) :: dmat_perts(dmat_tuple_len)
+    integer, intent(inout) :: sofar
+    integer, intent(inout) :: rec_prog
+    integer, intent(inout) :: pert_ids(dmat_tuple_len)
+    integer       :: i
+    integer       :: j
+    logical       :: dmat_already
+    type(p_tuple) :: psub(pert%npert)
+
+      dmat_already = .false.
+
+      ! unless at final recursion level, recurse further
+      ! make all size (n - 1) subsets of the perturbations and recurse
+      ! then (at final recursion level) get perturbed F, D, S
+      if (pert%npert > 1) then
+
+         call make_p_tuple_subset(pert, psub)
+
+         do i = size(psub), 1, -1
+
+            dmat_already = .false.
+            do j = 1, sofar
+               if (psub(i)%npert == dmat_perts(j)%npert) then
+                  if (pid_compare(psub(i)%npert, psub(i)%pid, dmat_perts(j)%pid)) then
+                     dmat_already = .true.
+                  end if
+               end if
+            end do
+
+            if (.not. dmat_already) then
+               call rsp_xcave_setup_dmat_perts(psub(i),        &
+                                               sofar,          &
+                                               kn,             &
+                                               rec_prog,       &
+                                               enc_len,        &
+                                               dmat_tuple_len, &
+                                               pert_ids,       &
+                                               enc_perts,      &
+                                               dmat_perts)
+            end if
+         end do
+      end if
+
+      dmat_already = .false.
+      do j = 1, rec_prog
+         if (pert%npert == enc_perts(j)%npert) then
+            if (pid_compare(pert%npert, pert%pid, enc_perts(j)%pid)) then
+               dmat_already = .true.
+            end if
+         end if
+      end do
+
+      if (.not. dmat_already) then
+         rec_prog = rec_prog + 1
+         call p1_cloneto_p2(pert, enc_perts(rec_prog))
+
+         if (.not. kn_skip(pert%npert, pert%pid, kn)) then
+            sofar = sofar + 1
+            call p1_cloneto_p2(pert, dmat_perts(sofar))
+            pert_ids(sofar) = rec_prog + 1
+         end if
+      end if
+
+   end subroutine
+  
+  
+  
+  
+  subroutine rsp_xc_wrapper(n_freq_cfgs, pert, kn, D, get_xc, &
+                                prop_size_total, mem_mgr, null_dmat, fock, prop)
+  
+    implicit none
+    
+    type(mem_manager) :: mem_mgr
+    integer :: n_freq_cfgs, i, j, k, m, dmat_array_ctr, rec_prog, triang_size
+    integer :: dmat_length, dmat_total_size, enc_length, ind_dmat_perts, num_blks
+    type(p_tuple) :: emptypert
+    type(p_tuple), dimension(n_freq_cfgs), intent(in) :: pert
+    type(p_tuple), dimension(:), allocatable :: dmat_perts, enc_perts
+    integer, dimension(:), allocatable :: pert_ids, dmat_tuple_sizes, blk_sizes
+    integer, dimension(:), allocatable :: pert_freq_category, pert_ext
+    integer, dimension(:,:), allocatable ::  blk_info, curr_dmat_indices
+    integer,       intent(in) :: kn(2)
+    type(QcMat), dimension(:), allocatable :: dmat_total_array
+    type(contrib_cache_outer), intent(in) :: D
+    integer,       intent(in) :: prop_size_total
+    type(QcMat), optional, dimension(prop_size_total) :: fock
+    type(QcMat), optional, dimension(prop_size_total) :: null_dmat
+    complex(8), optional, dimension(prop_size_total) :: prop
+    logical :: srch_fin
+    external :: get_xc
+    
+
+    ! Special handling for null perturbation case
+    
+    if (pert(1)%npert == 1) then
+    
+       if (pert(1)%plab(1) == 'NULL') then
+       
+          write(*,*) 'Special case: null treatment'
+          
+          call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+    
+             ! Allocate dmat holder array to counter size
+             allocate(dmat_total_array(prop_size_total + 1))
+       
+             call mem_incr(mem_mgr, prop_size_total + 1)
+
+          end if
+    
+          ! Make the unperturbed D the first elements of the dmat holder array
+    
+          if (.NOT.(mem_mgr%calibrate)) then
+
+             if (present(null_dmat)) then
+          
+                call QCMatInit(dmat_total_array(1))
+
+                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                     contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=dmat_total_array(1))
+                  
+                do i = 1, prop_size_total
+             
+                   call QCMatInit(dmat_total_array(i + 1))
+                   call QcMatAEqB(dmat_total_array(i + 1), null_dmat(i))
+             
+                end do
+
+             else
+             
+                write(*,*) 'ERROR: Null density matrices required but not present'
+                
+             end if
+
+          end if
+          
+          
+          if (.NOT.(n_freq_cfgs == 1)) then
+          
+             write(*,*) 'ERROR: Null treatment needs only one freq cfg, currently', n_freq_cfgs
+          
+          else
+          
+!              call get_xc(pert(1)%npert, pert_ext, 1, (/1/), &
+!                   2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
+                  
+          end if
+          
+          
+          if (.NOT.(mem_mgr%calibrate)) then
+    
+             do i = 1, prop_size_total + 1
+    
+                call QcMatDst(dmat_total_array(i))
+    
+             end do
+    
+             deallocate(dmat_total_array)
+       
+          end if
+    
+          call mem_decr(mem_mgr, prop_size_total + 1)
+          
+          return
+       
+       end if
+    
+    end if
+    
+    
+    
+
+    
+    if (present(fock)) then
+    
+       dmat_length = 2**pert(1)%npert
+    
+    elseif (present(prop)) then
+    
+       ! MaR: It seems to hold generally in this case that dmat_length is 2**npert - 1 
+       ! even though I can't prove it
+    
+       dmat_length = 2**(pert(1)%npert - 1)
+    
+    end if
+    
+    
+    write(*,*) 'xc dmatlen', dmat_length
+    
+    enc_length  = 2**pert(1)%npert
+    
+    allocate(dmat_perts(dmat_length))
+    allocate(enc_perts(enc_length))
+    allocate(pert_ids(dmat_length))
+    allocate(dmat_tuple_sizes(dmat_length))
+    
+    emptypert = get_emptypert()
+    call p1_cloneto_p2(emptypert, dmat_perts(1))
+    
+
+    
+    
+    pert_ids(1) = 1
+    ind_dmat_perts = 1
+    rec_prog = 0
+
+    call rsp_xcave_setup_dmat_perts(pert(1),        &
+                                    ind_dmat_perts, &
+                                    kn,             &
+                                    rec_prog,       &
+                                    enc_length,     &
+                                    dmat_length,    &
+                                    pert_ids,       &
+                                    enc_perts,      &
+                                    dmat_perts)
+    
+    
+    allocate(pert_freq_category(pert(1)%npert * n_freq_cfgs))
+    
+    ! For each freq config in the original perturbation tuple:
+    ! Make "frequency equality array"
+    
+    do i = 1, n_freq_cfgs
+    
+       m = 1
+    
+       do j = 1, pert(1)%npert
+       
+          srch_fin = .FALSE.
+       
+          do k = 1, j - 1
+          
+             if (.NOT.(srch_fin)) then
+          
+                if (pert(i)%freq(k) == pert(i)%freq(j)) then
+             
+                   pert_freq_category((i - 1) * pert(1)%npert + j) = &
+                   pert_freq_category((i - 1) * pert(1)%npert + k)
+                   
+                   srch_fin = .TRUE.
+                   
+                end if
+             
+             end if
+             
+          end do
+          
+          if (.NOT.(srch_fin)) then
+          
+             pert_freq_category((i - 1) * pert(1)%npert + j) = m
+             m = m + 1
+          
+          end if
+       
+       
+       end do
+    
+    end do
+    
+    dmat_total_size = 1
+    
+    ! For each perturbation subset in dmat_perts:
+    
+    do i = 1, dmat_length
+    
+       ! For each freq config:
+              
+       do j = 1, n_freq_cfgs
+       
+          ! Dress dmat pert tuple with freqs from present freq config
+          do k = 1, dmat_perts(i)%npert
+          
+             write(*,*) 'dmat freq', dmat_perts(i)%freq
+          
+             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+          
+          end do
+          
+          num_blks = get_num_blks(dmat_perts(i))
+       
+          allocate(blk_info(num_blks, 3))
+          allocate(blk_sizes(num_blks))
+          blk_info = get_blk_info(num_blks, dmat_perts(i))
+
+          ! Get size and add to counter                                           
+          dmat_total_size = dmat_total_size + get_triangulated_size(num_blks, blk_info)
+          
+          deallocate(blk_info)
+          deallocate(blk_sizes)
+       
+       
+       
+    
+       end do
+    
+    
+    
+    end do
+    
+    if (.NOT.(mem_mgr%calibrate)) then
+    
+       ! Allocate dmat holder array to counter size
+       allocate(dmat_total_array(dmat_total_size))
+       
+       call mem_incr(mem_mgr, dmat_total_size)
+
+    end if
+    
+    
+    ! Make the unperturbed D the first elements of the dmat holder array
+    
+    if (.NOT.(mem_mgr%calibrate)) then
+    
+       call QCMatInit(dmat_total_array(1))
+
+       call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=dmat_total_array(1))
+
+    end if
+    
+        
+    dmat_array_ctr = 1
+        
+    
+    ! For each perturbation subset in dmat_perts:
+   
+    do i = 1, dmat_length
+    
+       ! For each freq config:
+              
+       do j = 1, n_freq_cfgs
+       
+          ! Dress dmat pert tuple with freqs from present freq config
+          do k = 1, dmat_perts(i)%npert
+          
+             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+          
+          end do
+          
+          num_blks = get_num_blks(dmat_perts(i))
+       
+          allocate(blk_info(num_blks, 3))
+          allocate(blk_sizes(num_blks))
+          blk_info = get_blk_info(num_blks, dmat_perts(i))
+          triang_size = get_triangulated_size(num_blks, blk_info)
+
+
+          ! Allocate and make indices
+          allocate(curr_dmat_indices(triang_size, dmat_perts(i)%npert))
+          
+          call make_triangulated_indices(num_blks, blk_info, triang_size, curr_dmat_indices)
+          
+          ! Fill dmat holder array with appropriate matrices
+          do k = 1, size(curr_dmat_indices,1)
+          
+             dmat_array_ctr = dmat_array_ctr + 1
+             
+             if (.NOT.(mem_mgr%calibrate)) then
+             
+                call QCMatInit(dmat_total_array(dmat_array_ctr))
+           
+                call contrib_cache_getdata_outer(D, 1, (/dmat_perts(i)/), .FALSE., &
+                              1, ind_len=size(curr_dmat_indices, 2), &
+                              ind_unsorted=curr_dmat_indices(k, :), &
+                              mat_sing=dmat_total_array(dmat_array_ctr))
+                              
+             end if
+          
+          
+          end do
+          
+          deallocate(curr_dmat_indices)
+          
+          deallocate(blk_info)
+          deallocate(blk_sizes)
+    
+       end do
+    
+    end do
+
+
+    ! Get perturbation tuple in external representation
+    call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)
+    
+    write(*,*) 'XC wrapper argument summary:'
+    
+    write(*,*) 'pert(1)%npert', pert(1)%npert
+    write(*,*) 'pert_ext', pert_ext
+    write(*,*) 'n_freq_cfgs', n_freq_cfgs
+    write(*,*) 'pert freq category', pert_freq_category
+    
+    write(*,*) 'dmat_length', dmat_length
+    write(*,*) 'pert_ids', pert_ids
+    write(*,*) 'dmat_total_size', dmat_total_size
+    write(*,*) 'prop_size_total', prop_size_total
+    
+    ! Invoke callback routine
+    
+    if (present(fock)) then
+    
+!        call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
+!             dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, fock)
+
+    elseif (present(prop)) then
+    
+!     call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
+!          dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, prop)
+    
+    
+    end if
+    
+    
+    if (.NOT.(mem_mgr%calibrate)) then
+    
+       do i = 1, dmat_total_size
+    
+          call QcMatDst(dmat_total_array(i))
+    
+       end do
+    
+       deallocate(dmat_total_array)
+       
+    end if
+    
+    
+    call mem_decr(mem_mgr, dmat_total_size)
+        
+    deallocate(pert_freq_category)
+    
+  
+  end subroutine
+  
+  
+  
+  
+  ! END NEW: XC handling
   
   end module

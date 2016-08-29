@@ -754,6 +754,30 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     return QSUCCESS;
 }
 
+void OpenRSPGetResidue_f(const QInt num_props,
+                         const QInt *len_tuple,
+                         const QcPertInt *pert_tuple,
+                         const QInt *residue_num_pert,
+                         const QInt *residue_idx_pert,
+                         const QInt *num_freq_configs,
+                         const QReal *pert_freqs,
+                         const QInt *kn_rules,
+                         const QcMat *ref_ham,
+                         const QcMat *ref_overlap,
+                         const QcMat *ref_state,
+                         const QInt order_residue,
+                         const QInt num_excit,
+                         const QReal *excit_energy,
+                         QcMat *eigen_vector[],
+                         RSPSolver *rsp_solver,
+                         RSPNucHamilton *nuc_hamilton,
+                         RSPOverlap *overlap,
+                         RSPOneOper *one_oper,
+                         RSPTwoOper *two_oper,
+                         RSPXCFun *xc_fun,
+                         const QInt size_residues,
+                         QReal *residues);
+
 /*@% \brief gets the residues for given perturbations
      \author Bin Gao
      \date 2014-07-31
@@ -828,6 +852,30 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
     //switch (open_rsp->elec_wav_type) {
     ///* density matrix-based response theory */
     //case ELEC_AO_D_MATRIX:
+        OpenRSPGetResidue_f(num_props,
+                            len_tuple,
+                            pert_tuple,
+                            residue_num_pert,
+                            residue_idx_pert,
+                            num_freq_configs,
+                            pert_freqs,
+                            kn_rules,
+                            ref_ham,
+                            ref_overlap,
+                            ref_state,
+                            order_residue,
+                            num_excit,
+                            excit_energy,
+                            eigen_vector,
+                            open_rsp->rsp_solver,
+                            open_rsp->nuc_hamilton,
+                            open_rsp->overlap,
+                            open_rsp->one_oper,
+                            open_rsp->two_oper,
+                            open_rsp->xc_fun,
+                            //id_outp,
+                            size_residues,
+                            residues);
     //    break;
     ///* molecular orbital (MO) coefficient matrix-based response theory */
     //case ELEC_MO_C_MATRIX:
