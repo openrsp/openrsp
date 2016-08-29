@@ -259,10 +259,6 @@ module rsp_indices_and_addressing
   
   
   
-  
-  
-  
-  
   ! MaR: QcMatrix adapted routines to be separated into new module
   ! Gao: adds an optional matrix B for initializing the structure of A
   ! Initialize matrix
