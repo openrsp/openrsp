@@ -482,15 +482,15 @@ module rsp_general
              open(unit=261, file=trim(filename) // '_human', &
                   status='replace', action='write') 
                
-             allocate(blk_info(num_blks(i), 3))
-             allocate(blk_sizes(num_blks(i)))
-             blk_info = get_blk_info(num_blks(i), p_tuples(k))
-             blk_sizes = get_triangular_sizes(num_blks(i), blk_info(1:num_blks(i), 2), &
-                                              blk_info(1:num_blks(i), 3))
+             allocate(blk_info(num_blks(k), 3))
+             allocate(blk_sizes(num_blks(k)))
+             blk_info = get_blk_info(num_blks(k), p_tuples(k))
+             blk_sizes = get_triangular_sizes(num_blks(k), blk_info(1:num_blks(k), 2), &
+                                              blk_info(1:num_blks(k), 3))
                
              call print_rsp_tensor_tr(1, p_tuples(k)%npert, p_tuples(k)%pdim, &
-             (/ (1, m = 1, (p_tuples(k)%npert - 1) ) /), num_blks(i), blk_sizes, &
-             blk_info, prop_sizes(i), rsp_tensor(n:n+prop_sizes(i) - 1), 260, 261)
+             (/ (1, m = 1, (p_tuples(k)%npert - 1) ) /), num_blks(k), blk_sizes, &
+             blk_info, prop_sizes(k), rsp_tensor(n:n+prop_sizes(k) - 1), 260, 261)
        
              deallocate(blk_info)
              deallocate(blk_sizes)
@@ -498,11 +498,11 @@ module rsp_general
              close(260)
              close(261)
                     
-             write(*,*) 'Property', i, j, ' was printed to rsp_tensor'
-             write(*,*) 'Property (formatted print) was printed to rsp_tensor_human'
+             write(*,*) 'Property', i, j, ' was printed to rsp_tensor file', i, j
+             write(*,*) 'Property (formatted print) was printed to rsp_tensor_human file' , i, j
           
+             n = n + prop_sizes(k)
              k = k + 1
-             n = n + prop_sizes(i)
     
           end do
        

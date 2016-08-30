@@ -12,6 +12,9 @@ module rsp_perturbed_sdf
   use rsp_property_caching
   use qcmatrix_f
   
+  ! MaR: Temporary inclusion for debugging
+  use ls_openrsp_callback, only: ls_openrsp_xc_mat, ls_openrsp_xc_exp
+  
   implicit none
 
   public rsp_fds
@@ -1919,6 +1922,7 @@ module rsp_perturbed_sdf
     type(QcMat), optional, dimension(prop_size_total) :: fock
     type(QcMat), optional, dimension(prop_size_total) :: null_dmat
     complex(8), optional, dimension(prop_size_total) :: prop
+    real(8), dimension(prop_size_total) :: prop_dummy
     logical :: srch_fin
     external :: get_xc
     
@@ -1975,8 +1979,14 @@ module rsp_perturbed_sdf
           
           else
           
+             ! MaR: TEMPORARY: NAMED CALLS FOR TESTING
+             call ls_openrsp_xc_mat(pert(1)%npert, pert_ext, 1, (/1/), &
+             2, (/1, 2/), prop_size_total + 1, dmat_total_array, 1, 'A', prop_size_total, fock)
+          
+          
+          
 !              call get_xc(pert(1)%npert, pert_ext, 1, (/1/), &
-!                   2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
+!                  2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
                   
           end if
           
@@ -2018,8 +2028,6 @@ module rsp_perturbed_sdf
     
     end if
     
-    
-    write(*,*) 'xc dmatlen', dmat_length
     
     enc_length  = 2**pert(1)%npert
     
@@ -2095,7 +2103,7 @@ module rsp_perturbed_sdf
     
     ! For each perturbation subset in dmat_perts:
     
-    do i = 1, dmat_length
+    do i = 2, dmat_length
     
        ! For each freq config:
               
@@ -2103,8 +2111,6 @@ module rsp_perturbed_sdf
        
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
-          
-             write(*,*) 'dmat freq', dmat_perts(i)%freq
           
              dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
           
@@ -2158,7 +2164,7 @@ module rsp_perturbed_sdf
     
     ! For each perturbation subset in dmat_perts:
    
-    do i = 1, dmat_length
+    do i = 2, dmat_length
     
        ! For each freq config:
               
@@ -2235,11 +2241,20 @@ module rsp_perturbed_sdf
 !        call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
 !             dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, fock)
 
+
+       ! MaR: TEMPORARY: NAMED CALLS FOR TESTING
+       call ls_openrsp_xc_mat(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
+            dmat_length, pert_ids, dmat_total_size, dmat_total_array, 1, 'A', prop_size_total, fock)
+
     elseif (present(prop)) then
     
 !     call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
 !          dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, prop)
-    
+
+      ! MaR: TEMPORARY: NAMED CALLS FOR TESTING
+      call ls_openrsp_xc_exp(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
+           dmat_length, pert_ids, dmat_total_size, dmat_total_array, 1, 'A', prop_size_total, prop_dummy)
+
     
     end if
     
@@ -2247,7 +2262,7 @@ module rsp_perturbed_sdf
     if (.NOT.(mem_mgr%calibrate)) then
     
        do i = 1, dmat_total_size
-    
+
           call QcMatDst(dmat_total_array(i))
     
        end do
@@ -2255,7 +2270,6 @@ module rsp_perturbed_sdf
        deallocate(dmat_total_array)
        
     end if
-    
     
     call mem_decr(mem_mgr, dmat_total_size)
         
