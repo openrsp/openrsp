@@ -12,9 +12,6 @@ module rsp_perturbed_sdf
   use rsp_property_caching
   use qcmatrix_f
   
-  ! MaR: Temporary inclusion for debugging
-  use ls_openrsp_callback, only: ls_openrsp_xc_mat, ls_openrsp_xc_exp
-  
   implicit none
 
   public rsp_fds
@@ -1979,14 +1976,8 @@ module rsp_perturbed_sdf
           
           else
           
-             ! MaR: TEMPORARY: NAMED CALLS FOR TESTING
-             call ls_openrsp_xc_mat(pert(1)%npert, pert_ext, 1, (/1/), &
-             2, (/1, 2/), prop_size_total + 1, dmat_total_array, 1, 'A', prop_size_total, fock)
-          
-          
-          
-!              call get_xc(pert(1)%npert, pert_ext, 1, (/1/), &
-!                  2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
+             call get_xc(pert(1)%npert, pert_ext, 1, (/1/), &
+                 2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
                   
           end if
           
@@ -2238,24 +2229,15 @@ module rsp_perturbed_sdf
     
     if (present(fock)) then
     
-!        call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
-!             dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, fock)
+       call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
+            dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, fock)
 
-
-       ! MaR: TEMPORARY: NAMED CALLS FOR TESTING
-       call ls_openrsp_xc_mat(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
-            dmat_length, pert_ids, dmat_total_size, dmat_total_array, 1, 'A', prop_size_total, fock)
 
     elseif (present(prop)) then
     
-!     call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
-!          dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, prop)
+       call get_xc(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
+            dmat_length, pert_ids, dmat_total_size, dmat_total_array, prop_size_total, prop)
 
-      ! MaR: TEMPORARY: NAMED CALLS FOR TESTING
-      call ls_openrsp_xc_exp(pert(1)%npert, pert_ext, n_freq_cfgs, pert_freq_category, &
-           dmat_length, pert_ids, dmat_total_size, dmat_total_array, 1, 'A', prop_size_total, prop_dummy)
-
-    
     end if
     
     
