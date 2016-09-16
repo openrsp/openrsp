@@ -158,6 +158,10 @@ module rsp_general
     integer, dimension(3) :: prog_info
     character(30) :: fmt_str
     
+    integer, allocatable, dimension(:,:) :: indices
+    real :: write_threshold
+    integer :: p
+    
     if (present(mem_calibrate)) then
     
        mem_mgr%calibrate = mem_calibrate
@@ -406,6 +410,143 @@ module rsp_general
        end if
     
     else
+    
+       ! BEGIN NEW CODE: Print tensors to standardized output file
+       ! NOTE: This routine is placed here due to access to index/addressing routines
+       ! Should be moved to API level once index/addressing routines are abstracted
+       
+       open(unit=260, file='rsp_tensor', status='replace', action='write') 
+       
+       write(260,*) 'VERSION'
+       write(260,*) '1'
+       write(260,*) 'NUM_PROPERTIES'
+       write(260,*) n_props
+
+       ! NOTE: TENSOR ELEMENTS WITH ABSOLUTE VALUE BELOW THIS VALUE WILL NOT BE OUTPUT
+       write_threshold = 1.0e-10
+       
+       
+       k = 1
+       p = 0
+       
+       do i = 1, n_props
+       
+          write(260,*) 'NEW_PROPERTY'
+          write(260,*) 'ORDER'
+          write(260,*) p_tuples(k)%npert
+          write(260,*) 'NUM_FREQ_CFGS'
+          write(260,*) n_freq_cfgs(i)
+          
+          write(260,*) 'OPERATORS'
+          do j = 1, p_tuples(k)%npert
+          
+             write(260,*) p_tuples(k)%plab(j)          
+          
+          end do
+          
+          
+          write(260,*) 'NUM COMPONENTS'
+          do j = 1, p_tuples(k)%npert
+          
+             write(260,*) p_tuples(k)%pdim(j)          
+          
+          end do
+         
+          write(260,*) 'FREQUENCIES'
+          
+         
+          do j = 1, n_freq_cfgs(i)
+          
+             write(260,*) 'CONFIGURATION'
+             
+             do n = 1, p_tuples(k)%npert
+             
+                write(260,*) real(p_tuples(k)%freq(n))
+             
+             end do
+             
+         
+          
+             k = k + 1
+         
+          end do
+          
+          k = k - n_freq_cfgs(i)
+         
+          write(260,*) 'VALUES'
+         
+         ! FIXME: SOMETHING MAY BE OFF ABOUT THE INDICES: NOT ALL VALUES OF THE LAST PROPERTY ARE WRITTEN
+         
+          do j = 1, n_freq_cfgs(i)
+          
+             write(260,*) 'CONFIGURATION'
+             
+            
+
+             
+             ! Get indices, write index-value pairs
+             allocate(blk_info(num_blks(k), 3))
+             allocate(blk_sizes(num_blks(k)))
+             blk_info = get_blk_info(num_blks(k), p_tuples(k))
+
+             blk_sizes = get_triangular_sizes(num_blks(k), blk_info(1:num_blks(k), 2), &
+                                              blk_info(1:num_blks(k), 3))
+
+             
+             allocate(indices(product(blk_sizes), sum(blk_info(:,2))))
+             
+             call make_triangulated_indices(num_blks(k), blk_info, &
+                  product(blk_sizes), indices)
+                  
+                  
+             do n = 1, size(indices, 1)
+             
+             
+                if (abs(real(rsp_tensor(p + n))) > write_threshold) then
+                
+                   write(260,*) indices(n,:)
+                   write(260,*) real(rsp_tensor(p + n))
+                
+                end if
+             
+             
+             end do
+                  
+             
+             
+             
+             deallocate(indices)
+       
+             deallocate(blk_info)
+             deallocate(blk_sizes)
+             
+
+             p = p + prop_sizes(k)
+          
+             k = k + 1
+             
+          
+          end do
+          
+       end do
+       
+       
+       
+       
+       
+       
+       close(260)
+       
+       
+       
+       
+       ! END NEW CODE
+       
+
+    
+    
+    
+    
     
        ! Print results
        ! This can be done more elegantly by ASCII transformation of integers, but leave as is for now
