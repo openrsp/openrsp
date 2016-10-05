@@ -59,7 +59,7 @@ module rsp_field_tuple
      integer, allocatable, dimension(:) :: pid ! Pert. ID - for k,n rule evaluations
      complex(8), allocatable, dimension(:) :: freq ! Frequencies of perturbations
      integer, allocatable, dimension(:) :: states ! indices of states involved
-     complex(8), allocatable, dimension(:) :: freq,exenerg ! Frequencies of perturbations
+     complex(8), allocatable, dimension(:) :: exenerg ! Excitation energies (for residues) 
      logical, allocatable, dimension(:,:) :: part_of_residue
      ! Add other perturbation identification info as needed
 
@@ -416,7 +416,7 @@ module rsp_field_tuple
     implicit none
 
     type(p_tuple) :: pert, ext, p_tuple_extend
-    integer :: i
+    integer :: i, j
 
     allocate(p_tuple_extend%pdim(pert%npert + 1))
     allocate(p_tuple_extend%plab(pert%npert + 1))
@@ -638,6 +638,7 @@ end if
     implicit none
 
     type(p_tuple) :: p1, p2, merge_p_tuple
+    integer :: i
 
     allocate(merge_p_tuple%pdim(p1%npert + p2%npert))
     allocate(merge_p_tuple%plab(p1%npert + p2%npert))
@@ -1047,7 +1048,6 @@ end if
             p_tuple_st%part_of_residue(new_minimum,1:do_residues) = p_tuple_st%part_of_residue(i,1:do_residues)
             p_tuple_st%part_of_residue(i,1:do_residues) = temporary_part_of_residue(1:do_residues)
           end if
-i
 
        end do
 
