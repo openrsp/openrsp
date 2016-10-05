@@ -517,7 +517,7 @@ module rsp_general
   
   subroutine openrsp_get_residue(n_props, np, pert_dims, pert_first_comp, residue_order, &
                                    pert_labels, residualization, exenerg, n_freq_cfgs, pert_freqs, &
-                                   kn_rules, F_unpert, S_unpert, D_unpert, X_unpert, get_rsp_sol, get_nucpot, &
+                                   kn_rules, F_unpert, S_unpert, D_unpert, Xf_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
                                    get_xc_exp, id_outp, rsp_tensor, file_id, &
@@ -538,11 +538,13 @@ module rsp_general
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes, num_blks
     integer(kind=QINT), intent(in), dimension(n_props) :: kn_rules
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
+    logical :: lfreq_match
     character, optional, dimension(20) :: file_id
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
     complex(8), dimension(dot_product(np, n_freq_cfgs)), intent(in) :: pert_freqs
     logical, dimension(np,2) :: pert_dims ! Dimension 2 to be able to treat double residues later on
+    integer :: residualization
     complex(8), dimension(2) :: exenerg ! Dimension 2 to be able to treat double residues later on
     integer(kind=QINT) num_perts
     real :: timing_start, timing_end
@@ -551,8 +553,8 @@ module rsp_general
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
-    type(QcMat), dimension(2) :: X_unpert ! dimension 2 as we need a second vector for double residues
-    type(contrib_cache_outer), pointer :: S, D, F
+    type(QcMat), dimension(2) :: Xf_unpert ! dimension 2 as we need a second vector for double residues
+    type(contrib_cache_outer), pointer :: S, D, F, Xf
     integer :: kn(2)
     logical :: r_exist, sdf_retrieved
     integer, dimension(3) :: rs_info, rs_calibrate_save
@@ -622,7 +624,8 @@ module rsp_general
        allocate(S)
        allocate(D)
        allocate(F)
-       
+       allocate(Xf) 
+      
        call mem_incr(mem_mgr, 3, p=prog_info)
     
     else
@@ -633,18 +636,20 @@ module rsp_general
        if (rs_check(prog_info, rs_info, lvl=1)) then
     
           write(id_outp,*) ' '
-          write(id_outp,*) 'S, D, F initialization stage was completed'
+          write(id_outp,*) 'S, D, Fi, Xf initialization stage was completed'
           write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
           write(id_outp,*) ' '
     
           allocate(S)
           allocate(D)
           allocate(F)
+          allocate(Xf)
     
           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
-       
+          call contrib_cache_outer_retrieve(F, 'OPENRSP_Xf_CACHE', .FALSE., 260)       
+
          sdf_retrieved = .TRUE.
       
        else
@@ -654,18 +659,23 @@ module rsp_general
           call contrib_cache_outer_allocate(S)
           call contrib_cache_outer_allocate(D)
           call contrib_cache_outer_allocate(F)
+          call contrib_cache_outer_allocate(Xf)
       
          call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
                data_size = 1, data_mat=(/S_unpert/))
-          call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
+         call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
                data_size = 1, data_mat=(/D_unpert/))
-          call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
+         call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
                data_size = 1, data_mat=(/F_unpert/))
+         call contrib_cache_outer_add_element(Xf, .FALSE., 1, (/get_emptypert()/), &
+               data_size = 1, data_mat=(/Xf_unpert/))
+
                
-          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
+         call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
          call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
-       
+         call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE')      
+ 
        end if
        
     end if
@@ -676,13 +686,13 @@ module rsp_general
     ! associated size/indexing information
     
     write(id_outp,*) ' '
-    write(id_outp,*) 'OpenRSP lib called'
+    write(id_outp,*) 'OpenRSP lib called for single residue calculaton'
     write(id_outp,*) ' '
     
     if (n_props == 1) then
-       write(id_outp,*) 'Calculating one property'
+       write(id_outp,*) 'Calculating one residue'
     else  
-       write(id_outp,*) 'Calculating', n_props, 'properties'
+       write(id_outp,*) 'Calculating', n_props, 'residues'
     end if
     write(id_outp,*) ' '
    
@@ -696,6 +706,7 @@ module rsp_general
        write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
        write(id_outp,*) 'The perturbation labels are:                          ', pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
        write(id_outp,*) 'Number of frequency configurations:', n_freq_cfgs(i)
+       write(id_outp,*) 'Note that this is a characterization of the fundamental wave function with one perturbation being residualized!'
        write(id_outp,*) ' '
         
    
@@ -720,12 +731,34 @@ module rsp_general
           allocate(p_tuples(k)%plab(np(i)))
           allocate(p_tuples(k)%pid(np(i)))
           allocate(p_tuples(k)%freq(np(i)))
-          
+
+          ! DaF: Initialization of residue-relevant parts of the perturbation tuple:
+          allocate(p_tuples(k)%part_of_residue(n_pert))
+          allocate(p_tuples(k)%exenerg(1))
+          p_tuples%do_residues = residue_order
+          p_tuples(k)%part_of_residue = .false.
+          ! DaF: So far we only accept residualizations for single states, not for frequency sums
+          p_tuples(k)%part_of_residue(residualization) = .true.
+          ! DaF: As we only treat single residues here, we only need one excited state
+          p_tuples(k)%exenerg(1) = exenerg(1)         
+ 
+          ! DaF: Preliminary quit: Ignore higher than double residues
+          if(residue_order.gt.1) call quit('Error in openrsp: Only double residues so far!')
+        
           p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
           p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
           1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + (j)*np(i))
+
+          ! DaF: Does the residualized perturbation have a proper frequency?
+          lfreq_match = .false.
+          do l = 1, p_tuples(k)%n_pert
+             if (dabs(dabs(p_tuples(k)%exenerg(1)) - dabs(p_tuples(k)%freq(l))).gt.xtiny) then
+               lfreq_match = .true.
+             end if
+          end do
+          if (.not.lfreq_match) call quit ('Inconsistent frequencies for residue in openrsp!')
           
           ! MaR: NOTE: Here sorting tuples in standard order: Must sort back to get correct order 
           ! for returned tensor: Original pids will give key to re-sort
@@ -762,10 +795,10 @@ module rsp_general
           k = k + 1
        
       
-       end do
+       end do ! loop over j, frequencies
 
               
-    end do
+    end do ! loop over i, n_props
 
     rsp_tensor(1:sum(prop_sizes)) = 0.0
     
