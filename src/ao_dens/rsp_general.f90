@@ -42,7 +42,8 @@ module rsp_general
                                     rsp_get_matrix_z,             &
                                     rsp_get_matrix_w,             &
                                     rsp_get_matrix_y
-  use rsp_perturbed_sdf, only: rsp_fds
+  use rsp_perturbed_sdf, only: rsp_fds, &
+                               rsp_xc_wrapper
   use rsp_property_caching, only: contrib_cache_outer,                 &
                                   contrib_cache,                       &
                                   contrib_cache_initialize,            &
@@ -78,6 +79,7 @@ module rsp_general
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
+  public rsp_xc_wrapper
 
   private
 
@@ -116,12 +118,13 @@ module rsp_general
   ! mem_result: Optional (for mem. calibration mode): Calibration result
   
   subroutine openrsp_get_property(n_props, np, pert_dims, pert_first_comp, &
-                                   pert_labels, n_freq_cfgs, pert_freqs, &
-                                   kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
-                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, id_outp, rsp_tensor, file_id, &
-                                   mem_calibrate, max_mat, mem_result)
+                                  pert_labels, n_freq_cfgs, pert_freqs, &
+                                  kn_rules, F_unpert, S_unpert, D_unpert, &
+                                  get_rsp_sol, get_nucpot, &
+                                  get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                                  get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                  get_xc_exp, id_outp, rsp_tensor, file_id, &
+                                  mem_calibrate, max_mat, mem_result)
     implicit none
 
     logical, optional :: mem_calibrate
@@ -516,12 +519,14 @@ module rsp_general
   
   
   subroutine openrsp_get_residue(n_props, np, pert_dims, pert_first_comp, residue_order, &
-                                   pert_labels, residualization, exenerg, n_freq_cfgs, pert_freqs, &
-                                   kn_rules, F_unpert, S_unpert, D_unpert, Xf_unpert, get_rsp_sol, get_nucpot, &
-                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, id_outp, rsp_tensor, file_id, &
-                                   mem_calibrate, max_mat, mem_result)
+                                 pert_labels, residue_spec_pert, residue_spec_index, &
+                                 exenerg, n_freq_cfgs, pert_freqs, &
+                                 kn_rules, F_unpert, S_unpert, D_unpert, Xf_unpert, &
+                                 get_rsp_sol, get_nucpot, &
+                                 get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                                 get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                 get_xc_exp, id_outp, rsp_tensor, file_id, &
+                                 mem_calibrate, max_mat, mem_result)
     implicit none
 
     logical, optional :: mem_calibrate
@@ -532,6 +537,10 @@ module rsp_general
     integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
     character(4), dimension(sum(np)), intent(in) :: pert_labels
+    integer(kind=QINT), intent(in) :: residue_spec_pert(residue_order)
+    integer(kind=QINT), intent(in) :: residue_spec_index(max(residue_spec_pert(1), &
+                                                             residue_spec_pert(residue_order)), &
+                                                         residue_order)
     character(256) :: filename
     integer :: i, j, k, m, n
     integer :: dum_ind
@@ -1252,6 +1261,74 @@ module rsp_general
     deallocate(contribution_cache)
     
     contrib_retrieved = .FALSE.
+    
+    
+    ! NEW: XC contribution
+    
+    
+    ! Check if this stage passed previously and if so, then retrieve and skip execution
+    
+    call prog_incr(prog_info, 1)
+   
+    if (rs_check(prog_info, rs_info, lvl=1)) then
+    
+       write(id_outp,*) ' '
+       write(id_outp,*) 'XC contributions were completed'
+       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
+       write(id_outp,*) ' '
+       
+       if (.NOT.(props_retrieved)) then
+       
+          call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+          props_retrieved = .TRUE.
+          
+       end if
+           
+    else
+    
+       if (.NOT.(mem_mgr%calibrate)) then
+    
+          ! For each property: Set up XC contribution calculation, calculate and 
+          ! add to the property under consideration
+   
+          k = 1
+    
+          do i = 1, n_props
+    
+             write(id_outp,*) ' '
+             write(id_outp,*) 'Calculating XC contributions'
+             write(id_outp,*) ' '
+
+             call cpu_time(time_start)
+             call rsp_xc_wrapper(n_freq_cfgs(i), p_tuples(k:k+n_freq_cfgs(i)-1), kn_rule(k,:), &
+                  D, get_xc_exp, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1) - 1), mem_mgr, &
+                  prop=props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1 : &
+                        sum(prop_sizes(1:k+n_freq_cfgs(i) - 1) - 1)))
+             call cpu_time(time_end)
+
+             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
+             write(id_outp,*) 'Finished calculating XC contributions'
+             write(id_outp,*) ' '
+
+!              write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+!              min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
+          
+             k = k + n_freq_cfgs(i)
+       
+          end do
+       
+          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+       
+       end if
+
+    end if
+    
+    
+    
+    ! END NEW: XC contribution
+    
+    
+    
     
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
@@ -3998,6 +4075,11 @@ module rsp_general
     
     
   end subroutine
+  
+  
+  
+  
+  
 
   ! Print tensors recursively
   recursive subroutine print_rsp_tensor(npert, lvl, pdim, prop, offset)

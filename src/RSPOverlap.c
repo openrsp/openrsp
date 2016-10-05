@@ -52,7 +52,7 @@
        overlap operator and its derivatives
      </param>
      <param name='get_overlap_exp' direction='in'>
-       User-specified function for calculating expectation values of the 
+       User-specified function for calculating expectation values of the
        overlap operator and its derivatives
      </param>
      <return>Error information</return>
