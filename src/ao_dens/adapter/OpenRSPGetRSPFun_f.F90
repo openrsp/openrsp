@@ -45,10 +45,10 @@
                                   two_oper,         &
                                   xc_fun,           &
                                   !id_outp,          &
-                                  property_size,    &
-                                  rsp_tensor)       &
+                                  size_rsp_funs,    &
+                                  rsp_funs)         &
                                   !len_file_tensor,  &
-                                  !file_rsp_tensor)  &
+                                  !file_rsp_funs)  &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
         use qcmatrix_f!, only: QINT,              &
@@ -92,10 +92,10 @@
             end function RSPNucHamiltonGetNumAtoms
         end interface
         !integer, intent(in) :: id_outp
-        integer(kind=C_QINT), value, intent(in) :: property_size
-        real(kind=C_QREAL), intent(out) :: rsp_tensor(2*property_size)
+        integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
+        real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         !integer(kind=C_QINT), value, intent(in) :: len_file_tensor
-        !type(C_PTR), value, intent(in) :: file_rsp_tensor
+        !type(C_PTR), value, intent(in) :: file_rsp_funs
         ! local variables for converting C arguments to Fortran ones
         integer(kind=4), parameter :: STDOUT = 6
         integer(kind=QINT) num_coord
@@ -107,7 +107,7 @@
         type(QcMat) f_F_unpert(1)
         type(QcMat) f_S_unpert(1)
         type(QcMat) f_D_unpert(1)
-        complex(kind=QREAL), allocatable :: f_rsp_tensor(:)
+        complex(kind=QREAL), allocatable :: f_rsp_funs(:)
         !character(kind=C_CHAR), pointer :: ptr_file_tensor(:)
         !character, allocatable :: f_file_tensor(:)
         integer(kind=QINT) ipert, jpert
@@ -123,17 +123,17 @@
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
+            write(STDOUT,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims"
         end if
         allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
+            write(STDOUT,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp"
         end if
         allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
+            write(STDOUT,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple"
         end if
         do ipert = 1, num_all_pert
@@ -149,12 +149,12 @@
             f_pert_tuple(ipert) = CHAR_PERT_TABLE(pert_tuple(ipert))
         end do
         ! gets the frequencies of perturbations
-        allocate(f_pert_freqs(size(pert_freqs)), stat=ierr)
+        allocate(f_pert_freqs(size(pert_freqs)/2), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)
+            write(STDOUT,100) "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)/2
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs"
         end if
-        do ipert = 1, size(pert_freqs)/2
+        do ipert = 1, size(f_pert_freqs)
             f_pert_freqs(ipert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
         end do
         ! gets the matrices
@@ -178,22 +178,22 @@
                             two_oper,     &
                             xc_fun)
         ! allocates memory for the results
-        allocate(f_rsp_tensor(property_size), stat=ierr)
+        allocate(f_rsp_funs(size_rsp_funs), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "OpenRSPGetRSPFun_f>> property_size", property_size
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_tensor"
+            write(STDOUT,100) "OpenRSPGetRSPFun_f>> size_rsp_funs", size_rsp_funs
+            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_funs"
         end if
-        f_rsp_tensor = 0.0
+        f_rsp_funs = 0.0
         !! gets the file name of results
-        !if (c_associated(file_rsp_tensor)) then
-        !    call c_f_pointer(file_rsp_tensor, ptr_file_tensor, [len_file_tensor])
+        !if (c_associated(file_rsp_funs)) then
+        !    call c_f_pointer(file_rsp_funs, ptr_file_tensor, [len_file_tensor])
         !    allocate(f_file_tensor(len_file_tensor), stat=ierr)
         !    if (ierr/=0) then
-        !        write(6,"(A,I8)") "OpenRSPGetRSPFun_f>> len_file_tensor", len_file_tensor
+        !        write(6,100) "OpenRSPGetRSPFun_f>> len_file_tensor", len_file_tensor
         !        stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_file_tensor"
         !    end if
         !    do ipert = 1_QINT, len_file_tensor
-        !        f_file_tensor(ipert) = ptr_rsp_tensor(ipert)(1:1)
+        !        f_file_tensor(ipert) = ptr_rsp_funs(ipert)(1:1)
         !    end do
         !    ! gets the properties
         !    call openrsp_get_property_2014(num_props,                                 &
@@ -218,7 +218,7 @@
         !                                   f_callback_RSPXCFunGetMat,                 &
         !                                   f_callback_RSPXCFunGetExp,                 &
         !                                   STDOUT,                                    &
-        !                                   f_rsp_tensor,                              &
+        !                                   f_rsp_funs,                                &
         !                                   f_file_tensor)
         !    ! cleans up
         !    deallocate(f_file_tensor)
@@ -231,41 +231,41 @@
             max_mat = 999999999
         
             call openrsp_get_property(num_props,                                 &
-                                           len_tuple,                                 &
-                                           f_pert_dims,                               &
-                                           f_pert_first_comp,                         &
-                                           f_pert_tuple,                              &
-                                           num_freq_configs,                          &
-                                           f_pert_freqs,                              &
-                                           kn_rules,                                  &
-                                           f_F_unpert(1),                             &
-                                           f_S_unpert(1),                             &
-                                           f_D_unpert(1),                             &
-                                           f_callback_RSPSolverGetLinearRSPSolution,  &
-                                           f_callback_RSPNucHamiltonGetContributions, &
-                                           f_callback_RSPOverlapGetMat,               &
-                                           f_callback_RSPOverlapGetExp,               &
-                                           f_callback_RSPOneOperGetMat,               &
-                                           f_callback_RSPOneOperGetExp,               &
-                                           f_callback_RSPTwoOperGetMat,               &
-                                           f_callback_RSPTwoOperGetExp,               &
-                                           f_callback_RSPXCFunGetMat,                 &
-                                           f_callback_RSPXCFunGetExp,                 &
-                                           STDOUT,                                    &
-                                           f_rsp_tensor,                              &
-                                           mem_calibrate=mem_calibrate,               &
-                                           max_mat=max_mat,                           &
-                                           mem_result=mem_result)
+                                      len_tuple,                                 &
+                                      f_pert_dims,                               &
+                                      f_pert_first_comp,                         &
+                                      f_pert_tuple,                              &
+                                      num_freq_configs,                          &
+                                      f_pert_freqs,                              &
+                                      kn_rules,                                  &
+                                      f_F_unpert(1),                             &
+                                      f_S_unpert(1),                             &
+                                      f_D_unpert(1),                             &
+                                      f_callback_RSPSolverGetLinearRSPSolution,  &
+                                      f_callback_RSPNucHamiltonGetContributions, &
+                                      f_callback_RSPOverlapGetMat,               &
+                                      f_callback_RSPOverlapGetExp,               &
+                                      f_callback_RSPOneOperGetMat,               &
+                                      f_callback_RSPOneOperGetExp,               &
+                                      f_callback_RSPTwoOperGetMat,               &
+                                      f_callback_RSPTwoOperGetExp,               &
+                                      f_callback_RSPXCFunGetMat,                 &
+                                      f_callback_RSPXCFunGetExp,                 &
+                                      STDOUT,                                    &
+                                      f_rsp_funs,                                &
+                                      mem_calibrate=mem_calibrate,               &
+                                      max_mat=max_mat,                           &
+                                      mem_result=mem_result)
 
 
         !end if
         ! assigns the results
         jpert = 0
-        do ipert = 1, property_size
+        do ipert = 1, size_rsp_funs
             jpert = jpert+1
-            rsp_tensor(jpert) = real(f_rsp_tensor(ipert))
+            rsp_funs(jpert) = real(f_rsp_funs(ipert))
             jpert = jpert+1
-            rsp_tensor(jpert) = aimag(f_rsp_tensor(ipert))
+            rsp_funs(jpert) = aimag(f_rsp_funs(ipert))
         end do
         ! cleans up
         ierr = QcMat_C_NULL_PTR(A=f_F_unpert)
@@ -285,6 +285,7 @@
         deallocate(f_pert_tuple)
         deallocate(f_pert_freqs)
         call RSP_CTX_Destroy()
-        deallocate(f_rsp_tensor)
+        deallocate(f_rsp_funs)
         return
+100     format(A,50I8)
     end subroutine OpenRSPGetRSPFun_f
