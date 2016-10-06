@@ -24,7 +24,7 @@ module rsp_perturbed_sdf
   ! Main routine for managing calculation of perturbed Fock, density and overlap matrices
   subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
                                get_1el_mat, get_2el_mat, get_xc_mat, dryrun, id_outp, &
-                               prog_info, rs_info, sdf_retrieved, mem_mgr)
+                               prog_info, rs_info, sdf_retrieved, mem_mgr,Xf)
 
     implicit none
 
@@ -40,6 +40,7 @@ module rsp_perturbed_sdf
     integer, allocatable, dimension(:) :: size_i
     type(QcMat) :: Fp_dum
     type(contrib_cache_outer) :: F, D, S
+    type(contrib_cache_outer), optional :: Xf
     type(contrib_cache), pointer :: cache
     type(contrib_cache), pointer :: cache_next, lof_cache, lof_next
     type(contrib_cache_outer), pointer :: cache_outer_next, lof_outer_next
@@ -47,6 +48,11 @@ module rsp_perturbed_sdf
 
     max_order = max(maxval(kn_rule(:, 1)), maxval(kn_rule(:, 2)))
     max_npert = maxval((/(p_tuples(i)%npert, i = 1, sum(n_freq_cfgs))/))
+
+    ! Make sure that Xf vectors are present in residue calculations
+    if (.not.present(Xf).and.p_tuples(1)%do_residues.eq.0) then
+      stop 'Residue calculation needs Xf vectors in rsp_fds!'
+    end if
 
     ! Make dummy perturbation tuples to head cache to identify by perturbation order: Identifier is frequencies
     allocate(p_dummy_orders(max_npert))
@@ -398,7 +404,7 @@ module rsp_perturbed_sdf
 
     ! fp_size and Fp are dummy if this is a dryrun
     
-    logical :: density_order_skip, dryrun
+    logical :: density_order_skip, residue_skip, dryrun
     type(p_tuple) :: pert
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations
     integer :: fp_size
@@ -465,6 +471,9 @@ module rsp_perturbed_sdf
 
        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
        density_order_skip = .FALSE.
+       residue_skip = .FALSE.
+
+       if (p_tuples(1)%part_of_residue) residue_skip = .TRUE.
 
        do i = 2, num_p_tuples
 
@@ -476,7 +485,8 @@ module rsp_perturbed_sdf
 
        end do
       
-       if (density_order_skip .EQV. .FALSE.) then
+       if ( (density_order_skip .EQV. .FALSE.).AND.
+            (residue_skip .EQV. .FALSE.) ) then
        
           if (contrib_cache_already(fock_lowerorder_cache, &
           num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples))) then
