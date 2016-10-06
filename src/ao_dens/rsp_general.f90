@@ -555,7 +555,7 @@ module rsp_general
     complex(8), dimension(dot_product(np, n_freq_cfgs)), intent(in) :: pert_freqs
 !    logical, dimension(np,2) :: pert_dims ! Dimension 2 to be able to treat double residues later on
     integer :: residualization
-    complex(8), dimension(2) :: exenerg ! Dimension 2 to be able to treat double residues later on
+    complex(8), dimension(*) :: exenerg
     integer(kind=QINT) num_perts
     real :: timing_start, timing_end
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
@@ -563,7 +563,7 @@ module rsp_general
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
-    type(QcMat), dimension(2) :: Xf_unpert ! dimension 2 as we need a second vector for double residues
+    type(QcMat), dimension(*) :: Xf_unpert 
     type(contrib_cache_outer), pointer :: S, D, F, Xf
     integer :: kn(2)
     logical :: r_exist, sdf_retrieved
@@ -659,9 +659,9 @@ module rsp_general
           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
-          call contrib_cache_outer_retrieve(F, 'OPENRSP_Xf_CACHE', .FALSE., 260)       
+          call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE., 260)       
 
-         sdf_retrieved = .TRUE.
+          sdf_retrieved = .TRUE.
       
        else
        
