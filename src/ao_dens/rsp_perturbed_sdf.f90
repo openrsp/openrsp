@@ -473,7 +473,7 @@ module rsp_perturbed_sdf
        density_order_skip = .FALSE.
        residue_skip = .FALSE.
 
-       if (p_tuples(1)%part_of_residue) residue_skip = .TRUE.
+       if (find_residue_info(p_tuples(1))) residue_skip = .TRUE.
 
        do i = 2, num_p_tuples
 
@@ -485,7 +485,7 @@ module rsp_perturbed_sdf
 
        end do
       
-       if ( (density_order_skip .EQV. .FALSE.).AND.
+       if ( (density_order_skip .EQV. .FALSE.).AND. &
             (residue_skip .EQV. .FALSE.) ) then
        
           if (contrib_cache_already(fock_lowerorder_cache, &
