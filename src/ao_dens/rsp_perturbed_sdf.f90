@@ -22,7 +22,7 @@ module rsp_perturbed_sdf
   contains
     
   ! Main routine for managing calculation of perturbed Fock, density and overlap matrices
-  recursive subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
+  subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
                                get_1el_mat, get_2el_mat, get_xc_mat, dryrun, id_outp, &
                                prog_info, rs_info, sdf_retrieved, mem_mgr)
 
