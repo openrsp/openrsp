@@ -215,7 +215,7 @@
         end if
         ! sets the context of callback functions
         call RSP_CTX_Create(rsp_solver,   &
-                            nuc_hamilton, &
+                            c_null_ptr,   &
                             overlap,      &
                             one_oper,     &
                             two_oper,     &
@@ -313,6 +313,7 @@
                                          f_D_unpert(1),                              &
                                          X_unpert,                                   &
                                          f_callback_RSPSolverGetLinearRSPSolution,   &
+                                         f_callback_RSPNucHamiltonGetContributions,  &
                                          f_callback_RSPOverlapGetMat,                &
                                          f_callback_RSPOverlapGetExp,                &
                                          f_callback_RSPOneOperGetMat,                &

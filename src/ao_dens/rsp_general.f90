@@ -76,6 +76,7 @@ module rsp_general
   implicit none
 
   public openrsp_get_property
+  public openrsp_get_residue
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
@@ -542,7 +543,7 @@ module rsp_general
                                                              residue_spec_pert(residue_order)), &
                                                          residue_order)
     character(256) :: filename
-    integer :: i, j, k, m, n
+    integer :: i, j, k, l, m, n
     integer :: dum_ind
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes, num_blks
     integer(kind=QINT), intent(in), dimension(n_props) :: kn_rules
@@ -552,13 +553,13 @@ module rsp_general
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
     complex(8), dimension(dot_product(np, n_freq_cfgs)), intent(in) :: pert_freqs
-    logical, dimension(np,2) :: pert_dims ! Dimension 2 to be able to treat double residues later on
+!    logical, dimension(np,2) :: pert_dims ! Dimension 2 to be able to treat double residues later on
     integer :: residualization
     complex(8), dimension(2) :: exenerg ! Dimension 2 to be able to treat double residues later on
     integer(kind=QINT) num_perts
     real :: timing_start, timing_end
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
-    external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
+    external :: get_rsp_sol, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, get_nucpot
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
@@ -569,6 +570,7 @@ module rsp_general
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
     character(30) :: fmt_str
+    real, parameter :: xtiny=1.0d-8
     
     if (present(mem_calibrate)) then
     
@@ -715,7 +717,7 @@ module rsp_general
        write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
        write(id_outp,*) 'The perturbation labels are:                          ', pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
        write(id_outp,*) 'Number of frequency configurations:', n_freq_cfgs(i)
-       write(id_outp,*) 'Note that this is a characterization of the fundamental wave function with one perturbation being residualized!'
+       write(id_outp,*) 'Note that this is a characterization of the rsp. function with one perturbation being residualized!'
        write(id_outp,*) ' '
         
    
@@ -742,17 +744,17 @@ module rsp_general
           allocate(p_tuples(k)%freq(np(i)))
 
           ! DaF: Initialization of residue-relevant parts of the perturbation tuple:
-          allocate(p_tuples(k)%part_of_residue(n_pert))
+          allocate(p_tuples(k)%part_of_residue(p_tuples(k)%npert,1))
           allocate(p_tuples(k)%exenerg(1))
           p_tuples%do_residues = residue_order
           p_tuples(k)%part_of_residue = .false.
           ! DaF: So far we only accept residualizations for single states, not for frequency sums
-          p_tuples(k)%part_of_residue(residualization) = .true.
+          p_tuples(k)%part_of_residue(residualization,1) = .true.
           ! DaF: As we only treat single residues here, we only need one excited state
           p_tuples(k)%exenerg(1) = exenerg(1)         
  
           ! DaF: Preliminary quit: Ignore higher than double residues
-          if(residue_order.gt.1) call quit('Error in openrsp: Only double residues so far!')
+          if(residue_order.gt.1) stop 'Error in openrsp: Only double residues so far!'
         
           p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
@@ -762,12 +764,12 @@ module rsp_general
 
           ! DaF: Does the residualized perturbation have a proper frequency?
           lfreq_match = .false.
-          do l = 1, p_tuples(k)%n_pert
-             if (dabs(dabs(p_tuples(k)%exenerg(1)) - dabs(p_tuples(k)%freq(l))).gt.xtiny) then
+          do l = 1, p_tuples(k)%npert
+             if (dabs(dabs(dble(p_tuples(k)%exenerg(1))) - dabs(dble(p_tuples(k)%freq(l)))).gt.xtiny) then
                lfreq_match = .true.
              end if
           end do
-          if (.not.lfreq_match) call quit ('Inconsistent frequencies for residue in openrsp!')
+          if (.not.lfreq_match) stop 'Inconsistent frequencies for residue in openrsp!'
           
           ! MaR: NOTE: Here sorting tuples in standard order: Must sort back to get correct order 
           ! for returned tensor: Original pids will give key to re-sort
