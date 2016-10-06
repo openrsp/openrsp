@@ -231,6 +231,8 @@
             ! MaR: max_mat set to very high number to take matrix limitations out of use
             ! during development of other features
             max_mat = 999999999
+            
+            ! MaR: Note that f_callback_RSPOUTPUT_PLACEHOLDER is an output callback placeholder 
         
             call openrsp_get_property(num_props,                                 &
                                            len_tuple,                                 &
@@ -253,6 +255,7 @@
                                            f_callback_RSPTwoOperGetExp,               &
                                            f_callback_RSPXCFunGetMat,                 &
                                            f_callback_RSPXCFunGetExp,                 &
+                                           f_callback_RSPOUTPUT_PLACEHOLDER,          &
                                            STDOUT,                                    &
                                            f_rsp_tensor,                              &
                                            mem_calibrate=mem_calibrate,               &
