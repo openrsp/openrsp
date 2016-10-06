@@ -155,11 +155,11 @@ module rsp_indices_and_addressing
     
           call mem_set_status(mgr, 2)
        
-          write(*,*) 'Memory limit exceeded'
+!           write(*,*) 'Memory limit exceeded'
           
           if (present(p)) then
           
-             write(*,*) 'Memory limit was surpassed at checkpoint', mgr%checkpoint
+!              write(*,*) 'Memory limit was surpassed at checkpoint', mgr%checkpoint
           
           end if
        
@@ -240,7 +240,7 @@ module rsp_indices_and_addressing
     
     if (mem_exceed) then
     
-       write(*,*) 'MEMORY EXCEEDED: Current and maximum:', mgr%curr_mat, mgr%max_mat
+!        write(*,*) 'MEMORY EXCEEDED: Current and maximum:', mgr%curr_mat, mgr%max_mat
        
     end if
     

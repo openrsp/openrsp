@@ -23,7 +23,7 @@ module rsp_perturbed_sdf
     
   ! Main routine for managing calculation of perturbed Fock, density and overlap matrices
   recursive subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
-                               get_1el_mat, get_2el_mat, get_xc_mat, dryrun, id_outp, &
+                               get_1el_mat, get_2el_mat, get_xc_mat, out_print, dryrun, id_outp, &
                                prog_info, rs_info, sdf_retrieved, mem_mgr)
 
     implicit none
@@ -44,6 +44,9 @@ module rsp_perturbed_sdf
     type(contrib_cache), pointer :: cache_next, lof_cache, lof_next
     type(contrib_cache_outer), pointer :: cache_outer_next, lof_outer_next
     external :: get_rsp_sol, get_ovl_mat, get_1el_mat,  get_2el_mat, get_xc_mat
+    
+    external :: out_print
+    character(len=2047) :: out_str
 
     max_order = max(maxval(kn_rule(:, 1)), maxval(kn_rule(:, 2)))
     max_npert = maxval((/(p_tuples(i)%npert, i = 1, sum(n_freq_cfgs))/))
@@ -68,11 +71,15 @@ module rsp_perturbed_sdf
         
     if (rs_check(prog_info, rs_info, lvl=2)) then
           
-       write(*,*) ' '
-       write(*,*) 'SDF identification was completed in previous'
-       write(*,*) 'invocation: Passing to next stage of calculation'
-       write(*,*) ' '
-       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'SDF identification was completed in previous'
+       call out_print(out_str, 1)
+       write(out_str, *) 'invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+          
        allocate(cache)
        call contrib_cache_retrieve(cache, 'OPENRSP_FDS_ID')
        lof_retrieved = .TRUE.
@@ -86,7 +93,7 @@ module rsp_perturbed_sdf
        do i = 1, n_props
           do j = 1, n_freq_cfgs(i)
        
-             call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, id_outp)
+             call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, out_print)
              k = k + 1
        
           end do
@@ -146,11 +153,15 @@ module rsp_perturbed_sdf
        ! Check if this stage passed previously and if so, then retrieve and skip execution       
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
-          write(*,*) ' '
-          write(*,*) 'LOF identification at order', i, 'was completed'
-          write(*,*) 'in previous invocation: Passing to next stage of calculation'
-          write(*,*) ' '
-          
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          write(out_str, *) 'Lower-order Fock matrix contribution identification at order', i
+          call out_print(out_str, 1)
+          write(out_str, *) 'was completed in previous invocation: Passing to next stage of calculation'
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+       
           if (.NOT.(lof_retrieved)) then
           
              allocate(lof_cache)
@@ -178,7 +189,8 @@ module rsp_perturbed_sdf
              ! Recurse to identify lower-order Fock matrix contributions
              ! The p_tuples attribute should always be length 1 here, so OK to take the first element
              call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
-                                         1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))
+                                         1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/), &
+                                         out_print)
        
              
              termination = cache_outer_next%last
@@ -195,11 +207,15 @@ module rsp_perturbed_sdf
        
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
-          write(*,*) ' '
-          write(*,*) 'LOF calculation at order', i, 'was completed'
-          write(*,*) 'in previous invocation: Passing to next stage of calculation'
-          write(*,*) ' '
-          
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          write(out_str, *) 'Lower-order Fock matrix contribution calculation at order', i
+          call out_print(out_str, 1)
+          write(out_str, *) 'was completed in previous invocation: Passing to next stage of calculation'
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+                    
           if (.NOT.(lof_retrieved)) then
           
              allocate(lof_cache)
@@ -232,12 +248,16 @@ module rsp_perturbed_sdf
        
              ! Check if this stage passed previously and if so, then retrieve and skip execution
              if (rs_check(prog_info, rs_info, lvl=3)) then
+             
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
+                write(out_str, *) 'Lower-order Fock matrix contribution calculation at order', i, 'inside traversal'
+                call out_print(out_str, 1)
+                write(out_str, *) 'was completed in previous invocation: Passing to next stage of calculation'
+                call out_print(out_str, 1)
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
           
-                write(*,*) ' '
-                write(*,*) 'LOF calculation at order', i, ' inside traversal was completed'
-                write(*,*) 'in previous invocation: Passing to next stage of calculation'
-                write(*,*) ' '
-                
                 ! Note: No cache retrieval here: In order to get to this position, the
                 ! cache would already have been retrieved
           
@@ -246,7 +266,7 @@ module rsp_perturbed_sdf
        
                 o_size = 0
                 
-                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, &
+                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, &
                                        lof_next, o_size, mem_mgr)
                 
                 if (mem_exceed(mem_mgr)) then
@@ -281,10 +301,14 @@ module rsp_perturbed_sdf
        
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
-          write(*,*) ' '
-          write(*,*) 'SDF calculation at order', i, 'was completed'
-          write(*,*) 'in previous invocation: Passing to next stage of calculation'
-          write(*,*) ' '
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          write(out_str, *) 'Perturbed S, D, F calculation at order', i, 'was completed'
+          call out_print(out_str, 1)
+          write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
           
           if (.NOT.(sdf_retrieved)) then
           
@@ -298,9 +322,15 @@ module rsp_perturbed_sdf
        
        else
        
+          write(out_str, *) 'Calculating perturbed S, D, F at order', i
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+       
+       
           ! Calculate all perturbed S, D, F at this order
           call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
-               get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_next, &
+               get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, lof_next, &
                rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
                
           if (mem_exceed(mem_mgr)) then
@@ -330,7 +360,7 @@ module rsp_perturbed_sdf
   end subroutine
 
   ! Recursive routine to identify necessary perturbed F, D, S
-  recursive subroutine rsp_fds_recurse(pert, kn, max_npert, p_dummy_orders, contribution_cache, id_outp)
+  recursive subroutine rsp_fds_recurse(pert, kn, max_npert, p_dummy_orders, contribution_cache, out_print)
 
     implicit none
 
@@ -339,8 +369,11 @@ module rsp_perturbed_sdf
     type(p_tuple), dimension(pert%npert) :: psub
     type(p_tuple), dimension(max_npert) :: p_dummy_orders
     integer, dimension(2) :: kn
-    integer :: i, j, k, id_outp
+    integer :: i, j, k
     type(contrib_cache) :: contribution_cache
+    
+    external :: out_print
+    character(len=2047) :: out_str
     
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
@@ -353,7 +386,7 @@ module rsp_perturbed_sdf
           if (contrib_cache_already(contribution_cache, 2, (/p_dummy_orders(psub(i)%npert), &
                               p_tuple_standardorder(psub(i))/)) .eqv. .FALSE.) then
 
-             call rsp_fds_recurse(psub(i), kn, max_npert, p_dummy_orders, contribution_cache, id_outp)
+             call rsp_fds_recurse(psub(i), kn, max_npert, p_dummy_orders, contribution_cache, out_print)
 
           end if
 
@@ -367,10 +400,12 @@ module rsp_perturbed_sdf
          
        if (kn_skip(pert%npert, pert%pid, kn) .eqv. .FALSE.) then
 
-          write(id_outp,*) 'Identified necessary ovlint/fock/density with labels ', pert%plab, &
-                     ' and perturbation id ', pert%pid, ' with frequencies (real part)', &
-                     real(pert%freq)
-          write(id_outp,*) ' '
+          write(out_str, *) 'Identified perturbed S, D, F for calculation with labels ', pert%plab, &
+                            'and perturbation id ', pert%pid, ' with frequencies (real part)', &
+                             real(pert%freq)
+          call out_print(out_str, 2)
+          write(out_str, *) ' '
+          call out_print(out_str, 2)
                  
           k = 1
 
@@ -392,7 +427,7 @@ module rsp_perturbed_sdf
   ! lower-order perturbed Fock matrix terms
   recursive subroutine rsp_lof_recurse(pert, total_num_perturbations, &
                        num_p_tuples, p_tuples, dryrun, fock_lowerorder_cache, &
-                       fp_size, Fp)
+                       fp_size, Fp, out_print)
 
     implicit none
 
@@ -405,6 +440,9 @@ module rsp_perturbed_sdf
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(contrib_cache) :: fock_lowerorder_cache
     type(QcMat), dimension(fp_size) :: Fp
+    
+    external :: out_print
+    character(len=2047) :: out_str
 
     
     ! If perturbation tuple not empty, recurse further
@@ -418,7 +456,7 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
-               dryrun, fock_lowerorder_cache, fp_size, Fp)
+               dryrun, fock_lowerorder_cache, fp_size, Fp, out_print)
 
        else
 
@@ -426,7 +464,7 @@ module rsp_perturbed_sdf
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
                p_tuples(2:size(p_tuples))/), dryrun, fock_lowerorder_cache, &
-               fp_size, Fp)
+               fp_size, Fp, out_print)
 
        end if
     
@@ -444,7 +482,7 @@ module rsp_perturbed_sdf
 
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
-               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp)
+               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp, out_print)
 
        end do
 
@@ -456,7 +494,7 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples + 1, &
                (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
-               fock_lowerorder_cache, fp_size, Fp)
+               fock_lowerorder_cache, fp_size, Fp, out_print)
                
        end if
 
@@ -484,20 +522,31 @@ module rsp_perturbed_sdf
              ! If in cache and not dryrun, then put precalculated data in answer array
              if (.NOT.(dryrun)) then
              
+                write(out_str, *) 'Getting lower-order Fock matrix contribution from cache:'
+                call out_print(out_str, 2)
+             
                 do i = 1, num_p_tuples
+                
                    if (i == 1) then
-                      write(*,*) 'F ', p_tuples(i)%plab
+
+                      write(out_str, *) 'F', p_tuples(i)%plab
+                      call out_print(out_str, 2)
+          
                    else
-                      write(*,*) 'D ', p_tuples(i)%plab
+                   
+                      write(out_str, *) 'D', p_tuples(i)%plab
+                      call out_print(out_str, 2)
+                      
                    end if
+                   
                 end do
              
-                write(*,*) 'Getting lower-order perturbed Fock matrix contribution from cache'
                 call contrib_cache_getdata(fock_lowerorder_cache, num_p_tuples, p_tuples, &
                 contrib_size=fp_size, ind_len=0, mat=Fp)
              
-!                 write(*,*) 'Got contribution'
-             
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
+
              end if   
           
           else
@@ -506,23 +555,35 @@ module rsp_perturbed_sdf
              ! for later calculation upon traversal
              if (dryrun) then
           
-                write(*,*) 'Identified lower-order perturbed Fock matrix contribution'
-
+                write(out_str, *) 'Adding newly identified lower-order perturbed Fock matrix contribution to cache:'
+                call out_print(out_str, 2)
+                
                 do i = 1, num_p_tuples
+                   
                    if (i == 1) then
-                      write(*,*) 'F', p_tuples(i)%pid
+                   
+                      write(out_str, *) 'F', p_tuples(i)%plab
+                      call out_print(out_str, 2)
+                   
                    else
-                      write(*,*) 'D', p_tuples(i)%pid
+                   
+                      write(out_str, *) 'D', p_tuples(i)%plab
+                      call out_print(out_str, 2)
+                  
                    end if
                 end do
+                
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
                 
                 call contrib_cache_add_element(fock_lowerorder_cache, num_p_tuples, &
                      p_tuples_standardorder(num_p_tuples, p_tuples))
                 
              else
              
-                write(*,*) 'ERROR: Wanted lower-order perturbed Fock matrix contribution but it was not in cache'
-                
+                write(out_str, *) 'ERROR: Wanted lower-order perturbed Fock matrix contribution but it was not in cache'
+                call out_print(out_str, 0)
+             
              end if
           
           end if
@@ -534,7 +595,7 @@ module rsp_perturbed_sdf
   end subroutine
   
   ! Calculate lower-order Fock contributions for a given inner perturbation tuple
-  subroutine rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, cache, &
+  subroutine rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, cache, &
                                total_outer_size_1, mem_mgr)
 
     implicit none
@@ -559,7 +620,13 @@ module rsp_perturbed_sdf
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info
     external :: get_1el_mat, get_ovl_mat, get_2el_mat
     
-    write(*,*) 'Calculating lower-order Fock matrix contribution for inner tuple', cache%p_inner%plab
+    external :: out_print
+    character(len=2047) :: out_str
+    
+    write(out_str, *) 'Calculating lower-order Fock matrix contribution for inner tuple', cache%p_inner%plab
+    call out_print(out_str, 1)
+    write(out_str, *) ' '
+    call out_print(out_str, 1)
     
     call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
     outer_next => cache%contribs_outer
@@ -634,19 +701,25 @@ module rsp_perturbed_sdf
    
        if (outer_next%num_dmat == 0) then
        
-          write(*,*) 'All inner contribution'
- 
+          write(out_str, *) 'All inner contribution'
+          call out_print(out_str, 1)
+          
        else
-       
-          write(*,*) 'Outer contribution:'
+          
+          write(out_str, *) 'Outer contribution:'
+          call out_print(out_str, 1)
           
        end if
        
        do i = 1, outer_next%num_dmat
           
-          write(*,*) 'D ', outer_next%p_tuples(i)%plab
+          write(out_str, *) 'D', outer_next%p_tuples(i)%plab
+          call out_print(out_str, 1)
        
        end do
+       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
     
        if (outer_next%last) then
     
@@ -820,6 +893,11 @@ module rsp_perturbed_sdf
        if (num_0 > 0) then
        
           if (.NOT.(mem_mgr%calibrate)) then
+          
+             write(out_str, *) 'Calculating density matrix-independent contribution'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
        
              call get_1el_mat(num_pert, pert_ext, size(contrib_0), contrib_0)
              
@@ -839,6 +917,11 @@ module rsp_perturbed_sdf
        ! Calculate two-electron contributions
        
        if (.NOT.(mem_mgr%calibrate)) then
+       
+          write(out_str, *) 'Calculating first-order density matrix-dependent contribution'
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
        
           call get_2el_mat(num_pert, pert_ext, size(LHS_dmat_1), LHS_dmat_1, &
                            size(contrib_1), contrib_1)
@@ -1044,8 +1127,8 @@ module rsp_perturbed_sdf
   
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
-  get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_cache, &
-  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
+  get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, &
+  lof_cache, rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
   
     implicit none
     
@@ -1072,6 +1155,15 @@ module rsp_perturbed_sdf
     type(Qcmat), allocatable, dimension(:) :: Dh, Dp, Fp, Sp, RHS, X
     type(Qcmat) :: A, B, C, T, U
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
+    
+    external :: out_print
+    character(len=2047) :: out_str
+
+    write(out_str, *) 'Number of different perturbation tuples at this order:', cache%num_outer
+    call out_print(out_str, 1)
+    
+    write(out_str, *) ' '
+    call out_print(out_str, 1)
     
 
     ! Set up null perturbation for XC use
@@ -1155,7 +1247,14 @@ module rsp_perturbed_sdf
      
           end do
        
-     
+
+          write(out_str, *) 'Calculating perturbed overlap matrix for perturbation tuple with labels'
+          call out_print(out_str, 1)
+          write(out_str, *) pert%plab
+          call out_print(out_str, 1)
+          write(out_str, *) ''
+          call out_print(out_str, 1)
+       
           ! For each cache element:
           ! Calculate Sp
           call p_tuple_to_external_tuple(pert, npert_ext, pert_ext)
@@ -1243,6 +1342,8 @@ module rsp_perturbed_sdf
     termination = .FALSE.
     
     do while(.NOT.(termination))
+    
+    
 
        pert = cache_outer_next%p_tuples(1)
        
@@ -1263,6 +1364,14 @@ module rsp_perturbed_sdf
        
        if (.NOT.(mem_mgr%calibrate)) then
        
+          write(out_str, *) 'Getting lower-order Fock matrix terms for perturbation tuple with labels'
+          call out_print(out_str, 1)
+          write(out_str, *) pert%plab
+          call out_print(out_str, 1)
+          write(out_str, *) ''
+          call out_print(out_str, 1)
+       
+       
           call contrib_cache_outer_add_element(D, .FALSE., 1, & 
                (/pert/), data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
       
@@ -1274,9 +1383,19 @@ module rsp_perturbed_sdf
                                
           ! XC call should go here
           
+          write(out_str, *) 'Calculating intermediate exchange-correlation contributions'
+          call out_print(out_str, 1)
+          write(out_str, *) 'to perturbed Fock matrix for perturbation tuple with labels'
+          call out_print(out_str, 1)
+          write(out_str, *) pert%plab
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          
+          
           ! Currently only one freq. configuration
           ! The (k,n) rule argument is adapted for the Fock contribution case
-          call rsp_xc_wrapper(1, (/pert/), (/pert%npert, pert%npert/), D, get_xc_mat, &
+          call rsp_xc_wrapper(1, (/pert/), (/pert%npert, pert%npert/), D, get_xc_mat, out_print, &
                                 size_i(k), mem_mgr, fock=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
           
        
@@ -1406,7 +1525,12 @@ module rsp_perturbed_sdf
 !        end do
 !   
 !     else
-    
+
+    write(out_str, *) 'Calculating particular contribution remainders'
+    call out_print(out_str, 1)
+    write(out_str, *) ''
+    call out_print(out_str, 1)
+   
     if (.NOT.(mem_mgr%calibrate)) then
     
        ! Outside traversal:
@@ -1417,7 +1541,7 @@ module rsp_perturbed_sdf
        ! Set up null perturbation dimensionality
        pert_xc_null%pdim(1) = sum(size_i)
     
-       call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+       call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, out_print, &
                                 sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
     
     
@@ -1535,7 +1659,7 @@ module rsp_perturbed_sdf
     termination = .FALSE.
     do while(.NOT.(termination))
 
-       write(*,*) 'Frequency sum:', freq_sums(k)
+       
     
        if (size_i(k) > m) then
     
@@ -1548,26 +1672,36 @@ module rsp_perturbed_sdf
                 
                 if (rs_check(prog_info, rs_info, lvl=3)) then
                 
-                   write(*,*) ' '
-                   write(*,*) 'RSP eqn solution batch was completed'
-                   write(*,*) 'in previous invocation: Passing to next stage of calculation'
-                   write(*,*) ' '
-          
+                   write(out_str, *) 'Response equation solution batch was completed'
+                   call out_print(out_str, 1)
+                   write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+                   call out_print(out_str, 1)
+                   write(out_str, *) ' '
+                   call out_print(out_str, 1)
+                   
                    if (.NOT.(rsp_eqn_retrieved)) then
                    
-                      write(*,*) 'Retrieving RSP eqn solutions from disk'
-                      write(*,*) ' '
-          
+                      write(out_str, *) 'Retrieving response equation solutions from storage'
+                      call out_print(out_str, 2)
+                      write(out_str, *) ' '
+                      call out_print(out_str, 2)
+                   
                       call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
                       rsp_eqn_retrieved = .TRUE.
                       
-                      write(*,*) 'Finished retrieval'
              
                    end if
 
                 else
 
                    if (.NOT.(mem_mgr%calibrate)) then
+                   
+                      write(out_str, *) 'Solving response equations'
+                      call out_print(out_str, 1)
+                      write(out_str, *) 'Frequency sum:', freq_sums(k)
+                      call out_print(out_str, 2)
+                      write(out_str, *) ' '
+                      call out_print(out_str, 1)
                    
                       call get_rsp_sol(1,                                    &
                                        (/last-first+1/),                     &
@@ -1594,11 +1728,13 @@ module rsp_perturbed_sdf
        
           ! Check if this stage passed previously and if so, then retrieve and skip execution
           if (rs_check(prog_info, rs_info, lvl=3)) then
-                
-             write(*,*) ' '
-             write(*,*) 'RSP eqn solution batch was completed'
-             write(*,*) 'in previous invocation: Passing to next stage of calculation'
-             write(*,*) ' '
+          
+             write(out_str, *) 'Response equation solution batch was completed'
+             call out_print(out_str, 1)
+             write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
          
              if (.NOT.(rsp_eqn_retrieved)) then
           
@@ -1610,6 +1746,11 @@ module rsp_perturbed_sdf
           else
        
              if (.NOT.(mem_mgr%calibrate)) then
+             
+                write(out_str, *) 'Solving response equations'
+                call out_print(out_str, 1)
+                write(out_str, *) ''
+                call out_print(out_str, 1)
        
                 call get_rsp_sol(1,                                    &
                                  (/size_i(k)/),                        &
@@ -1725,7 +1866,7 @@ module rsp_perturbed_sdf
 !                 ! Set up null perturbation dimensionality
 !                 pert_xc_null%pdim(1) = last - first + 1
 !                 
-!                 call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
+!                 call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, out_print, &
 !                                     last - first + 1, mem_mgr, &
 !                                     null_dmat=Dh(first:last), fock=Fp(first:last))
 !     
@@ -1736,14 +1877,19 @@ module rsp_perturbed_sdf
 !           end do
 !        
 !        else
+
+    write(out_str, *) 'Calculating homogeneous contribution remainders'
+    call out_print(out_str, 1)
+    write(out_str, *) ''
+    call out_print(out_str, 1)
+
+    call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
           
-          call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
-          
-          ! Set up null perturbation dimensionality
-          pert_xc_null%pdim(1) = sum(size_i)
+    ! Set up null perturbation dimensionality
+    pert_xc_null%pdim(1) = sum(size_i)
                 
-          call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, &
-                                    sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
+    call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), D, get_xc_mat, out_print, &
+                             sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
        
 !        end if
 ! 
@@ -1898,7 +2044,7 @@ module rsp_perturbed_sdf
   
   
   
-  subroutine rsp_xc_wrapper(n_freq_cfgs, pert, kn, D, get_xc, &
+  subroutine rsp_xc_wrapper(n_freq_cfgs, pert, kn, D, get_xc, out_print, &
                                 prop_size_total, mem_mgr, null_dmat, fock, prop)
   
     implicit none
@@ -1923,6 +2069,9 @@ module rsp_perturbed_sdf
     logical :: srch_fin
     external :: get_xc
     
+    external :: out_print
+    character(len=2047) :: out_str
+    
 
     ! Special handling for null perturbation case
     
@@ -1930,8 +2079,11 @@ module rsp_perturbed_sdf
     
        if (pert(1)%plab(1) == 'NULL') then
        
-          write(*,*) 'Special case: null treatment'
+          write(out_str, *) 'XC wrapper: Null treatment'
+          call out_print(out_str, 3)
           
+          
+
           call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)
           
           if (.NOT.(mem_mgr%calibrate)) then
@@ -1963,7 +2115,8 @@ module rsp_perturbed_sdf
 
              else
              
-                write(*,*) 'ERROR: Null density matrices required but not present'
+                write(out_str, *) 'ERROR: Null density matrices required but not present'
+                call out_print(out_str, 3)
                 
              end if
 
@@ -1972,7 +2125,8 @@ module rsp_perturbed_sdf
           
           if (.NOT.(n_freq_cfgs == 1)) then
           
-             write(*,*) 'ERROR: Null treatment needs only one freq cfg, currently', n_freq_cfgs
+             write(out_str, *) 'ERROR: Null treatment needs only one freq cfg, currently', n_freq_cfgs
+             call out_print(out_str, 3)
           
           else
           
@@ -2213,18 +2367,25 @@ module rsp_perturbed_sdf
     ! Get perturbation tuple in external representation
     call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)
     
-    write(*,*) 'XC wrapper argument summary:'
-    
-    write(*,*) 'pert(1)%npert', pert(1)%npert
-    write(*,*) 'pert_ext', pert_ext
-    write(*,*) 'n_freq_cfgs', n_freq_cfgs
-    write(*,*) 'pert freq category', pert_freq_category
-    
-    write(*,*) 'dmat_length', dmat_length
-    write(*,*) 'pert_ids', pert_ids
-    write(*,*) 'dmat_total_size', dmat_total_size
-    write(*,*) 'prop_size_total', prop_size_total
-    
+       write(out_str, *) 'XC wrapper argument summary:'
+       call out_print(out_str, 3)
+       write(out_str, *) 'pert(1)%npert', pert(1)%npert
+       call out_print(out_str, 3)
+       write(out_str, *) 'pert_ext', pert_ext
+       call out_print(out_str, 3)
+       write(out_str, *) 'n_freq_cfgs', n_freq_cfgs
+       call out_print(out_str, 3)
+       write(out_str, *) 'pert freq category', pert_freq_category
+       call out_print(out_str, 3)
+       write(out_str, *) 'dmat_length', dmat_length
+       call out_print(out_str, 3)
+       write(out_str, *) 'pert_ids', pert_ids
+       call out_print(out_str, 3)
+       write(out_str, *) 'dmat_total_size', dmat_total_size
+       call out_print(out_str, 3)
+       write(out_str, *) 'prop_size_total', prop_size_total
+       call out_print(out_str, 3)
+           
     ! Invoke callback routine
     
     if (present(fock)) then
