@@ -184,7 +184,8 @@ module rsp_perturbed_sdf
              ! Recurse to identify lower-order Fock matrix contributions
              ! The p_tuples attribute should always be length 1 here, so OK to take the first element
              call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
-                                         1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/))
+                                         1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/), &
+                                         residue_select)
        
              
              termination = cache_outer_next%last
@@ -398,13 +399,13 @@ module rsp_perturbed_sdf
   ! lower-order perturbed Fock matrix terms
   recursive subroutine rsp_lof_recurse(pert, total_num_perturbations, &
                        num_p_tuples, p_tuples, dryrun, fock_lowerorder_cache, &
-                       fp_size, Fp)
+                       fp_size, Fp, residue_select)
 
     implicit none
 
     ! fp_size and Fp are dummy if this is a dryrun
     
-    logical :: density_order_skip, residue_skip, dryrun
+    logical :: density_order_skip, residue_skip, dryrun, residue_select
     type(p_tuple) :: pert
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations
     integer :: fp_size
@@ -424,7 +425,7 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
-               dryrun, fock_lowerorder_cache, fp_size, Fp)
+               dryrun, fock_lowerorder_cache, fp_size, Fp,residue_select)
 
        else
 
@@ -432,7 +433,7 @@ module rsp_perturbed_sdf
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
                p_tuples(2:size(p_tuples))/), dryrun, fock_lowerorder_cache, &
-               fp_size, Fp)
+               fp_size, Fp,residue_select)
 
        end if
     
@@ -450,7 +451,8 @@ module rsp_perturbed_sdf
 
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
-               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp)
+               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp,
+               residue_select)
 
        end do
 
@@ -462,7 +464,7 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples + 1, &
                (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
-               fock_lowerorder_cache, fp_size, Fp)
+               fock_lowerorder_cache, fp_size, Fp,residue_select)
                
        end if
 
@@ -473,7 +475,7 @@ module rsp_perturbed_sdf
        density_order_skip = .FALSE.
        residue_skip = .FALSE.
 
-       if (find_residue_info(p_tuples(1))) residue_skip = .TRUE.
+       if (residue_select.and.find_residue_info(p_tuples(1))) residue_skip = .TRUE.
 
        do i = 2, num_p_tuples
 
