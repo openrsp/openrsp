@@ -289,10 +289,11 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Y matrix
   subroutine rsp_get_matrix_y(superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Y)
+           ind, F, D, S, Y, select_terms)
 
     implicit none
 
+    logical :: select_terms, calc_contrib
     integer :: i, total_num_perturbations, superstructure_size, indices_len, j
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
@@ -307,6 +308,12 @@ module rsp_perturbed_matrices
     call QcMatInit(T)
     
     do i = 1, superstructure_size
+
+       if (.not.select_terms) then
+         calc_contrib = .true.
+       else 
+         calc_contrib = .not.find_residue_info(deriv_struct(i,3))
+       end if
             
        call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -319,20 +326,36 @@ module rsp_perturbed_matrices
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
 !        Y = Y + A*B*C
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Y)
+       if (calc_contrib) then
+         call QcMatkABC(1.0d0, A, B, C, T)
+         call QcMatRAXPY(1.0d0, T, Y)
+       end if
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
-               
+             
+          if (.not.select_terms) then 
+            calc_contrib = .true.
+          else
+            calc_contrib = .not.(find_residue_info(deriv_struct(i,1)).or.find_residue_info(deriv_struct(i,3)))
+          end if
+  
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)
 
 !           Y = Y - frequency_zero_or_sum(deriv_struct(i,2)) * A * B * C
 
-          call QcMatcABC(-1.0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
+          if (calc_contrib) then
+            call QcMatcABC(-1.0 * frequency_zero_or_sum(deriv_struct(i,2)), A, B, C, T)
+            call QcMatRAXPY(1.0d0, T, Y)
+          end if
           
+       end if
+
+       if (.not.select_terms) then
+          calc_contrib = .true.
+       else 
+          calc_contrib = .not.find_residue_info(deriv_struct(i,1))
        end if
 
        call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
@@ -344,8 +367,16 @@ module rsp_perturbed_matrices
                        
 
 !        Y = Y - A * B * C
-       call QcMatkABC(-1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Y)
+       if (calc_contrib) then 
+         call QcMatkABC(-1.0d0, A, B, C, T)
+         call QcMatRAXPY(1.0d0, T, Y)
+       end if
+
+       if (select_terms) then
+         calc_contrib = .true.
+       else
+         calc_contrib = .not.(find_residue_info(deriv_struct(i,1)).or.find_residue_info(deriv_struct(i,3)))
+       end if
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -363,10 +394,11 @@ module rsp_perturbed_matrices
 !           Y = Y + ((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
 !                                     frequency_zero_or_sum(deriv_struct(i,3))) * A * B * C
                                     
-          call QcMatcABC(((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
+          if (calc_contrib) then
+            call QcMatcABC(((-1.0)/(2.0)) * (frequency_zero_or_sum(deriv_struct(i,1)) + &
                                     frequency_zero_or_sum(deriv_struct(i,3))), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
-
+            call QcMatRAXPY(1.0d0, T, Y)
+          end if
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -379,9 +411,10 @@ module rsp_perturbed_matrices
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
 
 !           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)) * A * B * C
-          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
-
+          if (calc_contrib) then 
+            call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,1)), A, B, C, T)
+            call QcMatRAXPY(1.0d0, T, Y)
+          end if
 
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
@@ -394,8 +427,10 @@ module rsp_perturbed_matrices
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
                
 !           Y = Y + ((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)) * A * B * C
-          call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
-          call QcMatRAXPY(1.0d0, T, Y)
+          if (calc_contrib) then
+            call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
+            call QcMatRAXPY(1.0d0, T, Y)
+          end if
 
        end if
 
@@ -412,10 +447,11 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Z matrix
   subroutine rsp_get_matrix_z(superstructure_size, deriv_struct, kn, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Z)
+           ind, F, D, S, Z, select_terms)
 
     implicit none
 
+    logical :: select_terms, calc_contrib
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     type(p_tuple) :: merged_p_tuple
@@ -430,6 +466,12 @@ module rsp_perturbed_matrices
     call QcMatInit(C)
 
     call QcMatInit(T)
+ 
+    if (.not.select_terms) then
+      calc_contrib = .true.
+    else
+      calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+    end if
 
     do i = 1, superstructure_size
             
@@ -444,8 +486,10 @@ module rsp_perturbed_matrices
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)
             
 !        Z = Z + A*B*C
-       call QcMatkABC(1.0d0, A, B, C, T)
-       call QcMatRAXPY(1.0d0, T, Z)
+       if (calc_contrib) then 
+         call QcMatkABC(1.0d0, A, B, C, T)
+         call QcMatRAXPY(1.0d0, T, Z)
+       end if
 
     end do
 
