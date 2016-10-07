@@ -122,7 +122,7 @@ module rsp_general
                                    kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
                                    get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                    get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, outp_printer, id_outp, rsp_tensor, file_id, &
+                                   get_xc_exp, out_print, id_outp, rsp_tensor, file_id, &
                                    mem_calibrate, max_mat, mem_result)
     implicit none
 
