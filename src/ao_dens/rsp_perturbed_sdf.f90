@@ -34,6 +34,7 @@ module rsp_perturbed_sdf
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), allocatable, dimension(:) :: p_dummy_orders
     logical :: termination, dryrun, lof_retrieved, sdf_retrieved, rsp_eqn_retrieved, traverse_end
+    logical :: residue_select
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     integer :: i, j, k, id_outp, max_order, max_npert, o_size, lof_mem_total
@@ -180,7 +181,11 @@ module rsp_perturbed_sdf
           ! Traverse all elements of outer cache of present cache element
           termination = .FALSE.
           do while(.NOT.(termination))
-       
+
+             residue_select = .false.
+             residue_select = .not.find_complete_residualization(cache_outer_next%p_tuples(1)) &
+                     .and.find_residue_info(cache_outer_next%p_tuples(1))
+
              ! Recurse to identify lower-order Fock matrix contributions
              ! The p_tuples attribute should always be length 1 here, so OK to take the first element
              call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
@@ -451,7 +456,7 @@ module rsp_perturbed_sdf
 
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
-               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp,
+               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp,&
                residue_select)
 
        end do
@@ -1296,7 +1301,7 @@ module rsp_perturbed_sdf
             
           call rsp_lof_recurse(pert, pert%npert, &
                                1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
-                               Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+                               Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1),residue_select=residue_select)
                                
           ! XC call should go here
           
