@@ -1590,6 +1590,7 @@ module rsp_general
     integer, dimension(2) :: kn
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, id_outp
     integer :: p_size
+    logical :: residue_skip
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(contrib_cache_outer) :: D
     type(contrib_cache), target :: cache
@@ -1669,6 +1670,7 @@ module rsp_general
        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
     
        e_knskip = .FALSE.
+       residue_skip = do_residues.and.find_residue_info(p_tuples(1))
 
        do i = 1, num_p_tuples
  
@@ -1679,6 +1681,7 @@ module rsp_general
                 e_knskip = .TRUE.
 
              end if
+
           
           elseif (i == 1) then
           
@@ -1689,7 +1692,7 @@ module rsp_general
        end do
 
 
-       if (e_knskip .EQV. .FALSE.) then
+       if ((e_knskip .EQV. .FALSE.) .AND. (residue_skip .EQV. .FALSE.)) then
        
           if (contrib_cache_already(cache, num_p_tuples, p_tuples)) then
           
