@@ -3936,7 +3936,7 @@ module rsp_general
                            outer_next%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
                            outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Y)
+                           F, D, S, Y,.false.)
                            
                    end if
                    
@@ -3954,7 +3954,7 @@ module rsp_general
                            outer_next%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
                            outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Z)
+                           F, D, S, Z,.false.)
                            
                    end if
                   

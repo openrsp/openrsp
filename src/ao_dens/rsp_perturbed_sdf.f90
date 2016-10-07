@@ -307,7 +307,7 @@ module rsp_perturbed_sdf
           ! Calculate all perturbed S, D, F at this order
           call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
                get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_next, &
-               rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
+               rsp_eqn_retrieved, prog_info, rs_info, mem_mgr,Xf)
                
           if (mem_exceed(mem_mgr)) then
                 
@@ -1055,16 +1055,16 @@ module rsp_perturbed_sdf
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
   get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, F, D, S, lof_cache, &
-  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
+  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr, Xf)
   
     implicit none
     
     type(mem_manager) :: mem_mgr
     integer :: mctr, mcurr, miter, msize, octr, mem_track
-    logical :: termination, rsp_eqn_retrieved
+    logical :: termination, rsp_eqn_retrieved, residue_select
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
     integer :: i, j, k, m, w, nblks
-    integer :: first, last
+    integer :: first, last, ierr
     integer, dimension(0) :: noc
     integer, dimension(3) :: prog_info, rs_info
     integer, allocatable, dimension(:) :: pert_ext, blk_sizes, ind
@@ -1073,16 +1073,25 @@ module rsp_perturbed_sdf
     integer, dimension(num_outer) :: size_i
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
+    real(8), parameter :: xtiny=1.0d-8
     type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
     type(contrib_cache) :: lof_cache
     type(contrib_cache_outer), target :: cache_outer
     type(contrib_cache_outer) :: F, D, S
+    type(contrib_cache_outer), optional :: Xf
     type(contrib_cache_outer), pointer :: cache_outer_next
-    type(Qcmat), allocatable, dimension(:) :: Dh, Dp, Fp, Sp, RHS, X
+    type(Qcmat), allocatable, dimension(:) :: Dh, Dp, Fp, Sp, RHS, X, Xx
     type(Qcmat) :: A, B, C, T, U
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
-    
+
+    ! Is Xf present for a residue calculation?
+    if (present(Xf).and.pert%do_residues.eq.0) then
+     stop 'Xf needed in get_fds for residue calculation!'
+    end if
+
+    ! Do we treat a perturbation which requires residue selection of terms?
+    residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)    
 
     ! Set up null perturbation for XC use
     
@@ -1119,6 +1128,7 @@ module rsp_perturbed_sdf
        call QcMatInit(C)
        call QcMatInit(T)
        call QcMatInit(U)
+       if (pert%do_residues.gt.0) call QcMatInit(Xx(1))
     
        call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
        ind_len=1, ind_unsorted=(/1/), mat_sing=A)
@@ -1126,6 +1136,10 @@ module rsp_perturbed_sdf
        ind_len=1, ind_unsorted=(/1/), mat_sing=B)
        call contrib_cache_getdata_outer(F, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
        ind_len=1, ind_unsorted=(/1/), mat_sing=C)
+       if (pert%do_residues.gt.0) then
+         call contrib_cache_getdata_outer(Xf, 1, (/get_emptypert()/), .FALSE., contrib_size=1, &
+            ind_len=1, ind_unsorted=(/1/), mat_sing=Xx(1))
+       end if
     
     end if
     
@@ -1333,7 +1347,7 @@ module rsp_perturbed_sdf
              call rsp_get_matrix_z(superstructure_size, derivative_structure, &
                   (/pert%npert,pert%npert/), pert%npert, &
                   (/ (m, m = 1, pert%npert) /), pert%npert, &
-                  ind, F, D, S, Dp(ind_ctr + j - 1))
+                  ind, F, D, S, Dp(ind_ctr + j - 1),residue_select)
                   
           end if
           
@@ -1497,7 +1511,7 @@ module rsp_perturbed_sdf
           
              call rsp_get_matrix_y(superstructure_size, derivative_structure, &
                    pert%npert, (/ (m, m = 1, pert%npert) /), &
-                  pert%npert, ind, F, D, S, RHS(ind_ctr + j - 1))
+                  pert%npert, ind, F, D, S, RHS(ind_ctr + j - 1),residue_select)
                   
           end if        
                   
@@ -1546,8 +1560,10 @@ module rsp_perturbed_sdf
     do while(.NOT.(termination))
 
        write(*,*) 'Frequency sum:', freq_sums(k)
+
+       if ((dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).gt.xtiny) then
     
-       if (size_i(k) > m) then
+        if (size_i(k) > m) then
     
           do i = 1, size_i(k)/m + 1
     
@@ -1600,7 +1616,7 @@ module rsp_perturbed_sdf
        
           end do
        
-       else
+        else
        
           ! Check if this stage passed previously and if so, then retrieve and skip execution
           if (rs_check(prog_info, rs_info, lvl=3)) then
@@ -1639,6 +1655,16 @@ module rsp_perturbed_sdf
           
           
     
+        end if
+
+       else
+  
+        ! DaF: Replace LES solution by contraction for residualized perturbations
+        ! DaF: This is only for debugging! In principle we replace X by Xx.  
+        do i = 1, size_i(k) 
+           ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+1))
+        end do
+
        end if
     
        ind_ctr = ind_ctr + size_i(k)
@@ -1777,7 +1803,12 @@ module rsp_perturbed_sdf
           pert = cache_outer_next%p_tuples(1)
          
           do j = 1, size_i(k)
+           ! DaF: Residue case: Leave alone the Dp part
+           if ((dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).gt.xtiny) then
+             ierr = QcMatDuplicate_f(Dh(ind_ctr + j - 1),COPY_PATTERN_AND_VALUE,Dp(ind_ctr + j -1))
+           else
              call QcMatRAXPY(1.0d0, Dh(ind_ctr + j - 1), Dp(ind_ctr + j - 1))
+           end if
           end do
        
           call contrib_cache_outer_add_element(F, .FALSE., 1, & 
