@@ -571,7 +571,7 @@ module rsp_general
     integer, dimension(3) :: prog_info
     character(30) :: fmt_str
     real, parameter :: xtiny=1.0d-8
-    
+   
     if (present(mem_calibrate)) then
     
        mem_mgr%calibrate = mem_calibrate
@@ -579,7 +579,6 @@ module rsp_general
        if (mem_mgr%calibrate) then
        
           
-       
           if (.NOT.(present(mem_result))) then
        
              write(id_outp,*) 'ERROR: Result holder "mem_result" must be given for memory calibration run'
@@ -1670,7 +1669,7 @@ module rsp_general
        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
     
        e_knskip = .FALSE.
-       residue_skip = do_residues.and.find_residue_info(p_tuples(1))
+       residue_skip = (pert%do_residues.gt.0).and.find_residue_info(p_tuples(1))
 
        do i = 1, num_p_tuples
  
