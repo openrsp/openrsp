@@ -84,8 +84,8 @@
         type(C_PTR), value, intent(in) :: F_unpert
         type(C_PTR), value, intent(in) :: S_unpert
         type(C_PTR), value, intent(in) :: D_unpert
-        integer(kind=C_QINT), intent(in) :: order_residue
-        integer(kind=C_QINT), intent(in) :: num_excit
+        integer(kind=C_QINT), value, intent(in) :: order_residue
+        integer(kind=C_QINT), value, intent(in) :: num_excit
         real(kind=C_QREAL), intent(in) :: excit_energy(order_residue*num_excit)
         type(C_PTR), intent(in) :: eigen_vector(order_residue*num_excit)
         type(C_PTR), value, intent(in) :: rsp_solver
