@@ -745,13 +745,15 @@ module rsp_general
           ! DaF: Initialization of residue-relevant parts of the perturbation tuple:
           allocate(p_tuples(k)%part_of_residue(p_tuples(k)%npert,1))
           allocate(p_tuples(k)%exenerg(1))
+          allocate(p_tuples(k)%states(residue_order))
           p_tuples%do_residues = residue_order
           p_tuples(k)%part_of_residue = .false.
           ! DaF: So far we only accept residualizations for single states, not for frequency sums
           p_tuples(k)%part_of_residue(residualization,1) = .true.
           ! DaF: As we only treat single residues here, we only need one excited state
-          p_tuples(k)%exenerg(1) = exenerg(1)         
- 
+          p_tuples(k)%exenerg(1) = exenerg(1)
+          p_tuples(k)%states(1) = residualization   
+
           ! DaF: Preliminary quit: Ignore higher than double residues
           if(residue_order.gt.1) stop 'Error in openrsp: Only double residues so far!'
         
