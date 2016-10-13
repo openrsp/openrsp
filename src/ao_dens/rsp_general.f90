@@ -743,17 +743,21 @@ module rsp_general
           allocate(p_tuples(k)%freq(np(i)))
 
           ! DaF: Initialization of residue-relevant parts of the perturbation tuple:
-          allocate(p_tuples(k)%part_of_residue(p_tuples(k)%npert,1))
-          allocate(p_tuples(k)%exenerg(1))
+          allocate(p_tuples(k)%part_of_residue(p_tuples(k)%npert,residue_order))
+          allocate(p_tuples(k)%exenerg(residue_order))
           allocate(p_tuples(k)%states(residue_order))
           p_tuples%do_residues = residue_order
           p_tuples(k)%part_of_residue = .false.
           ! DaF: So far we only accept residualizations for single states, not for frequency sums
-          p_tuples(k)%part_of_residue(residualization,1) = .true.
+          ! Loop over the number of perturbations which contribute to residualization.
+          do m = 1, residue_order
+            p_tuples(k)%exenerg(m) = exenerg(m)
+            p_tuples(k)%states(m) = residualization   
+            do l = 1, max(residue_spec_pert(1),residue_spec_pert(residue_order))
+              p_tuples(k)%part_of_residue(residue_spec_index(l,m),m) = .true.
+            end do
+          end do
           ! DaF: As we only treat single residues here, we only need one excited state
-          p_tuples(k)%exenerg(1) = exenerg(1)
-          p_tuples(k)%states(1) = residualization   
-
           ! DaF: Preliminary quit: Ignore higher than double residues
           if(residue_order.gt.1) stop 'Error in openrsp: Only double residues so far!'
         
@@ -783,7 +787,7 @@ module rsp_general
           write(id_outp,*) 'Frequencies (real part):', (/(real(p_tuples(k)%freq(m)), m = 1, np(i))/)
           write(id_outp,*) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
           write(id_outp,*) ' '
-          
+
           num_blks(k) = get_num_blks(p_tuples(k))
        
           write(*,*) 'Number of blocks:', num_blks(k)
@@ -827,7 +831,7 @@ module rsp_general
                      get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                      get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
                      id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
-                     mem_mgr)
+                     mem_mgr,Xf)
 
        call cpu_time(timing_end)
 
@@ -967,7 +971,7 @@ module rsp_general
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                       get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
                       id_outp, prop_sizes, props, prog_info, rs_info, sdf_retrieved, &
-                      mem_mgr)
+                      mem_mgr,Xf)
 
     implicit none
 
@@ -986,6 +990,7 @@ module rsp_general
     complex(8), dimension(*) :: props
     type(contrib_cache), pointer :: contribution_cache, cache_next
     type(contrib_cache_outer) :: F, D, S
+    type(contrib_cache_outer), optional :: Xf
     
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
@@ -1026,7 +1031,7 @@ module rsp_general
        call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                     get_rsp_sol, get_ovl_mat, get_1el_mat, &
                     get_2el_mat, get_xc_mat, .TRUE., id_outp, &
-                    prog_info, rs_info, sdf_retrieved, mem_mgr)
+                    prog_info, rs_info, sdf_retrieved, mem_mgr,Xf)
                     
        call cpu_time(time_end)
 
