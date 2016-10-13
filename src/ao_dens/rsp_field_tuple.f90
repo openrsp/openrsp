@@ -495,6 +495,12 @@ end if
     allocate(p_tuple_remove_first%plab(pert%npert - 1))
     allocate(p_tuple_remove_first%pid(pert%npert - 1))
     allocate(p_tuple_remove_first%freq(pert%npert - 1))
+    if (pert%do_residues.gt.0) then
+
+      allocate(p_tuple_remove_first%part_of_residue(pert%npert - 1,pert%do_residues))
+      p_tuple_remove_first%part_of_residue = .false.
+
+    end if
 
     if (pert%npert > 1) then
 
@@ -503,6 +509,10 @@ end if
        p_tuple_remove_first%plab = (/pert%plab(2:pert%npert)/)
        p_tuple_remove_first%pid = (/pert%pid(2:pert%npert)/)
        p_tuple_remove_first%freq = (/pert%freq(2:pert%npert)/)
+       if(pert%do_residues.gt.0) then 
+         p_tuple_remove_first%part_of_residue(:,1) = (/pert%part_of_residue(2:pert%npert,1)/)
+         p_tuple_remove_first%part_of_residue(:,pert%do_residues) = (/pert%part_of_residue(2:pert%npert,pert%do_residues)/)
+       end if
 
     else
 
@@ -512,6 +522,12 @@ end if
        p_tuple_remove_first%pid = (/0/)
        p_tuple_remove_first%freq = (/0.0/)
 
+    end if
+
+    if (pert%do_residues.gt.0) then
+
+       call p_tuple_add_stateinfo(p_tuple_remove_first,pert)
+  
     end if
 
   end function
@@ -649,6 +665,7 @@ end if
 
     if (merge_p_tuple%do_residues.gt.0) then
       allocate(merge_p_tuple%part_of_residue(p1%npert+p2%npert,merge_p_tuple%do_residues))
+      merge_p_tuple%part_of_residue = .false.
     end if
 
     ! NOTE (MaR): ARE THESE CASE DISTINCTIONS UNNECESSARY? CONSIDER REWRITE.

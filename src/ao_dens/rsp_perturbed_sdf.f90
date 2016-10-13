@@ -92,7 +92,7 @@ module rsp_perturbed_sdf
        k = 1 
        do i = 1, n_props
           do j = 1, n_freq_cfgs(i)
-       
+
              call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, id_outp)
              k = k + 1
        
@@ -191,11 +191,11 @@ module rsp_perturbed_sdf
              call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
                                          1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/), &
                                          residue_select)
-       
+
              
              termination = cache_outer_next%last
              cache_outer_next => cache_outer_next%next
-          
+         
           end do
           
           call contrib_cache_store(lof_cache, 'OPENRSP_LOF_CACHE')
@@ -215,7 +215,7 @@ module rsp_perturbed_sdf
           if (.NOT.(lof_retrieved)) then
           
              allocate(lof_cache)
-          
+         
              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
              lof_next => lof_cache
              lof_retrieved = .TRUE.
@@ -226,7 +226,7 @@ module rsp_perturbed_sdf
        else
        
           lof_next => lof_cache
-       
+      
           ! Cycle lower-order Fock cache until at start
           do while(.NOT.(lof_next%last))
              lof_next => lof_next%next
@@ -236,7 +236,7 @@ module rsp_perturbed_sdf
 !             write(*,*) 'cycling dummy'
              lof_next => lof_next%next
           end if
-          
+
        
           ! Traverse lower-order Fock cache and precalculate elements
           termination = .FALSE.
@@ -257,10 +257,8 @@ module rsp_perturbed_sdf
        
        
                 o_size = 0
-                
                 call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, &
                                        lof_next, o_size, mem_mgr)
-                
                 if (mem_exceed(mem_mgr)) then
                 
                    return
@@ -287,7 +285,8 @@ module rsp_perturbed_sdf
           
        
        end if
-       
+
+      
        ! Check if this stage passed previously and if so, then retrieve and skip execution
        call prog_incr(prog_info, 2)
        
@@ -353,7 +352,7 @@ module rsp_perturbed_sdf
     integer, dimension(2) :: kn
     integer :: i, j, k, id_outp
     type(contrib_cache) :: contribution_cache
-    
+   
     ! Unless at final recursion level, recurse further
     ! Make all size (n - 1) subsets of the perturbations and recurse
     if (pert%npert > 1) then
@@ -1080,6 +1079,7 @@ module rsp_perturbed_sdf
     integer, dimension(num_outer) :: size_i
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
+    complex(8) :: xrtm
     real(8), parameter :: xtiny=1.0d-8
     type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
@@ -1092,10 +1092,6 @@ module rsp_perturbed_sdf
     type(Qcmat) :: A, B, C, T, U
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
 
-    ! Is Xf present for a residue calculation?
-    if (present(Xf).and.pert%do_residues.eq.0) then
-     stop 'Xf needed in get_fds for residue calculation!'
-    end if
 
     ! Do we treat a perturbation which requires residue selection of terms?
     residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)    
@@ -1127,7 +1123,7 @@ module rsp_perturbed_sdf
     ! Initialize matrices
 
     call mem_incr(mem_mgr, 5)
-    
+   
     if (.NOT.(mem_mgr%calibrate)) then
     
        call QcMatInit(A)
@@ -1135,7 +1131,6 @@ module rsp_perturbed_sdf
        call QcMatInit(C)
        call QcMatInit(T)
        call QcMatInit(U)
-       if (pert%do_residues.gt.0) call QcMatInit(Xx(1))
     
        call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
        ind_len=1, ind_unsorted=(/1/), mat_sing=A)
@@ -1143,15 +1138,11 @@ module rsp_perturbed_sdf
        ind_len=1, ind_unsorted=(/1/), mat_sing=B)
        call contrib_cache_getdata_outer(F, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
        ind_len=1, ind_unsorted=(/1/), mat_sing=C)
-       if (pert%do_residues.gt.0) then
-         call contrib_cache_getdata_outer(Xf, 1, (/get_emptypert()/), .FALSE., contrib_size=1, &
-            ind_len=1, ind_unsorted=(/1/), mat_sing=Xx(1))
-       end if
     
     end if
     
     cache_outer_next => cache_outer
-    
+   
     
     
     
@@ -1161,7 +1152,17 @@ module rsp_perturbed_sdf
     if (cache_outer_next%dummy_entry) then
              cache_outer_next => cache_outer_next%next
     end if
+    if (cache_outer_next%p_tuples(1)%do_residues.gt.0) then
  
+          ! Is Xf present for a residue calculation?
+          if (.not.present(Xf)) stop 'Xf needed in rsp_sdf_calculate!'
+          allocate(Xx(1))
+          call QcMatInit(Xx(1))
+          call contrib_cache_getdata_outer(Xf, 1, (/get_emptypert()/), .FALSE., contrib_size=1, &
+          ind_len=1, ind_unsorted=(/1/), mat_sing=Xx(1))
+
+    end if
+
  
  
     ! Traverse cache elements and calculate pertubed S
@@ -1568,7 +1569,7 @@ module rsp_perturbed_sdf
 
        write(*,*) 'Frequency sum:', freq_sums(k)
 
-       if ((dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).gt.xtiny) then
+       if ((dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny) then
     
         if (size_i(k) > m) then
     
@@ -1668,8 +1669,10 @@ module rsp_perturbed_sdf
   
         ! DaF: Replace LES solution by contraction for residualized perturbations
         ! DaF: This is only for debugging! In principle we replace X by Xx.  
-        do i = 1, size_i(k) 
-           ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+1))
+        do i = 1, size_i(k)
+           ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+size_i(k)-1))
+           call QcMatTraceAB(Xx(1),RHS(ind_ctr+size_i(k)-1),xrtm)
+           write(*,*)'xrtm=',xrtm
         end do
 
        end if
@@ -1849,7 +1852,11 @@ module rsp_perturbed_sdf
        call QcMatDst(C)
        call QcMatDst(T)
        call QcMatDst(U)
-    
+       if (cache_outer%p_tuples(1)%do_residues.gt.0) then
+        call QcMatDst(Xx(1))
+        deallocate(Xx)   
+       end if
+ 
     end if
     
     call mem_decr(mem_mgr, 3 * sum(size_i) + 5)
