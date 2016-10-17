@@ -610,7 +610,7 @@ module rsp_general
     type(contrib_cache_outer) :: F, D, S
     
     external :: out_print
-    character(len=2047) :: out_str
+    character(len=1048576) :: out_str
     
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
@@ -1539,7 +1539,7 @@ module rsp_general
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     
     external :: out_print
-    character(len=2047) :: out_str
+    character(len=1048576) :: out_str
     
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
