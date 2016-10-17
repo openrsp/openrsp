@@ -29,6 +29,26 @@
 ! data types between C/Fortran
 #include "api/qcmatrix_c_type.h"
 
+
+    ! Placeholder routine awaiting API update
+    subroutine f_callback_RSPOUTPUT_PLACEHOLDER(out_str, lvl)
+    
+      implicit none
+    
+      integer :: lvl
+      character(*) :: out_str
+       
+      if (lvl <= 2) then
+       
+         write(*,*) trim(out_str)
+       
+      end if
+    
+    
+    
+    end subroutine
+
+
     subroutine OpenRSPGetRSPFun_f(num_props,        &
                                   len_tuple,        &
                                   pert_tuple,       &
@@ -112,6 +132,9 @@
         !character, allocatable :: f_file_tensor(:)
         integer(kind=QINT) ipert, jpert
         integer(kind=4) ierr
+        
+        external :: f_callback_RSPOUTPUT_PLACEHOLDER
+        
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then

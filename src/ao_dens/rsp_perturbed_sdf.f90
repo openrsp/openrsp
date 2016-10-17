@@ -1159,7 +1159,7 @@ module rsp_perturbed_sdf
     external :: out_print
     character(len=2047) :: out_str
 
-    write(out_str, *) 'Number of different perturbation tuples at this order:', cache%num_outer
+    write(out_str, *) 'Number of different perturbation tuples at this order:', num_outer
     call out_print(out_str, 1)
     
     write(out_str, *) ' '
@@ -1379,7 +1379,7 @@ module rsp_perturbed_sdf
             
           call rsp_lof_recurse(pert, pert%npert, &
                                1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
-                               Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
+                               Fp(ind_ctr:ind_ctr + size_i(k) - 1), out_print)
                                
           ! XC call should go here
           
