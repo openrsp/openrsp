@@ -314,7 +314,7 @@ module rsp_perturbed_matrices
        else 
          calc_contrib = .not.find_residue_info(deriv_struct(i,3))
        end if
-            
+
        call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)             
@@ -338,7 +338,6 @@ module rsp_perturbed_matrices
           else
             calc_contrib = .not.(find_residue_info(deriv_struct(i,1)).or.find_residue_info(deriv_struct(i,3)))
           end if
-  
           call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)
@@ -357,7 +356,6 @@ module rsp_perturbed_matrices
        else 
           calc_contrib = .not.find_residue_info(deriv_struct(i,1))
        end if
-
        call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
@@ -372,12 +370,11 @@ module rsp_perturbed_matrices
          call QcMatRAXPY(1.0d0, T, Y)
        end if
 
-       if (select_terms) then
+       if (.not.select_terms) then
          calc_contrib = .true.
        else
          calc_contrib = .not.(find_residue_info(deriv_struct(i,1)).or.find_residue_info(deriv_struct(i,3)))
        end if
-
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
           ! MaR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT 
@@ -467,14 +464,15 @@ module rsp_perturbed_matrices
 
     call QcMatInit(T)
  
-    if (.not.select_terms) then
-      calc_contrib = .true.
-    else
-      calc_contrib = .not.find_residue_info(deriv_struct(i,2))
-    end if
 
     do i = 1, superstructure_size
-            
+
+       if (.not.select_terms) then
+         calc_contrib = .true.
+       else
+         calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+       end if
+
        call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 

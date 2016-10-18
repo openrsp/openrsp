@@ -95,7 +95,7 @@ module rsp_perturbed_sdf
 
              call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, id_outp)
              k = k + 1
-       
+
           end do
        end do
 
@@ -1093,8 +1093,6 @@ module rsp_perturbed_sdf
     external :: get_rsp_sol, get_ovl_mat,  get_2el_mat, get_xc_mat
 
 
-    ! Do we treat a perturbation which requires residue selection of terms?
-    residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)    
 
     ! Set up null perturbation for XC use
     
@@ -1288,7 +1286,9 @@ module rsp_perturbed_sdf
        allocate(blk_sizes(pert%npert))
        blk_info = get_blk_info(nblks, pert)
        blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
-    
+       ! Do we treat a perturbation which requires residue selection of terms?
+       residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)
+ 
        ! Add the initialized Dp to cache
        
        call mem_incr(mem_mgr, size_i(k))
@@ -1297,9 +1297,9 @@ module rsp_perturbed_sdf
        
           call contrib_cache_outer_add_element(D, .FALSE., 1, & 
                (/pert/), data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
-      
+
           ! Assemble Fp (lower-order) for all components and add to cache
-            
+  
           call rsp_lof_recurse(pert, pert%npert, &
                                1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                                Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1),residue_select=residue_select)
@@ -1338,7 +1338,7 @@ module rsp_perturbed_sdf
        
        call derivative_superstructure(pert, &
             (/pert%npert, pert%npert/), .FALSE., &
-            (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+            (/get_emptypert(pert), get_emptypert(pert), get_emptypert(pert)/), &
             superstructure_size, sstr_incr, derivative_structure)
       
        call make_triangulated_indices(nblks, blk_info, size_i(k), indices)
@@ -1351,7 +1351,7 @@ module rsp_perturbed_sdf
           call mem_incr(mem_mgr, 4)
           
           if (.NOT.(mem_mgr%calibrate)) then
-          
+
              call rsp_get_matrix_z(superstructure_size, derivative_structure, &
                   (/pert%npert,pert%npert/), pert%npert, &
                   (/ (m, m = 1, pert%npert) /), pert%npert, &
@@ -1472,7 +1472,9 @@ module rsp_perturbed_sdf
     do while(.NOT.(termination))
 
        pert = cache_outer_next%p_tuples(1)
-    
+       ! Do we treat a perturbation which requires residue selection of terms?
+       residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)
+
        ! Set up block info
        nblks = get_num_blks(pert)
 
@@ -1504,7 +1506,7 @@ module rsp_perturbed_sdf
        
        call derivative_superstructure(pert, &
             (/pert%npert, pert%npert/), .FALSE., &
-            (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+            (/get_emptypert(pert), get_emptypert(pert), get_emptypert(pert)/), &
             superstructure_size, sstr_incr, derivative_structure)
       
        call make_triangulated_indices(nblks, blk_info, size_i(k), indices)
@@ -1516,7 +1518,7 @@ module rsp_perturbed_sdf
           
           call mem_incr(mem_mgr, 4)
           if (.NOT.(mem_mgr%calibrate)) then
-          
+    
              call rsp_get_matrix_y(superstructure_size, derivative_structure, &
                    pert%npert, (/ (m, m = 1, pert%npert) /), &
                   pert%npert, ind, F, D, S, RHS(ind_ctr + j - 1),residue_select)
@@ -1609,7 +1611,7 @@ module rsp_perturbed_sdf
                                        dcmplx(real((/freq_sums(k)/)),0.0d0), &
                                        RHS(ind_ctr+first-1:ind_ctr+last-1),  &
                                        X(ind_ctr+first-1:ind_ctr+last-1))
-                   
+                  
                       call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
                            mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
                     
@@ -1669,9 +1671,14 @@ module rsp_perturbed_sdf
   
         ! DaF: Replace LES solution by contraction for residualized perturbations
         ! DaF: This is only for debugging! In principle we replace X by Xx.  
-        do i = 1, size_i(k)
+        do i = 1, size(RHS)
+!DaF 
+           write(*,*)'size RHS:',size(RHS)
+           write(*,*)'ind_ctr=',ind_ctr
+           write(*,*)'index=',ind_ctr+size_i(i)
+!DaF
            ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+size_i(k)-1))
-           call QcMatTraceAB(Xx(1),RHS(ind_ctr+size_i(k)-1),xrtm)
+           call QcMatTraceAB(Xx(1),RHS(i),xrtm)
            write(*,*)'xrtm=',xrtm
         end do
 
