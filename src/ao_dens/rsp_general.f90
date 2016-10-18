@@ -752,7 +752,8 @@ module rsp_general
           ! Loop over the number of perturbations which contribute to residualization.
           do m = 1, residue_order
             p_tuples(k)%exenerg(m) = exenerg(m)
-            p_tuples(k)%states(m) = residualization   
+            p_tuples(k)%states(m) = residualization  
+
             do l = 1, max(residue_spec_pert(1),residue_spec_pert(residue_order))
               p_tuples(k)%part_of_residue(residue_spec_index(l,m),m) = .true.
             end do
@@ -778,10 +779,10 @@ module rsp_general
           
           ! MaR: NOTE: Here sorting tuples in standard order: Must sort back to get correct order 
           ! for returned tensor: Original pids will give key to re-sort
-          
+        
           p_tuples(k) = p_tuple_standardorder(p_tuples(k))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
-       
+     
           write(id_outp,*) 'Frequency configuration', j
           write(id_outp,*) ' '
           write(id_outp,*) 'Frequencies (real part):', (/(real(p_tuples(k)%freq(m)), m = 1, np(i))/)
@@ -994,7 +995,7 @@ module rsp_general
     
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
-  
+
     call prog_incr(prog_info, 1)
   
     ! Check if this stage passed previously and if so, then retrieve and skip execution
@@ -1159,7 +1160,10 @@ module rsp_general
           write(*,*) 'Calculating contribution for inner perturbation tuple'
           write(*,*) cache_next%p_inner%plab
           write(*,*) ' '
-          
+         
+!DaF
+          if(cache_next%p_inner%plab(1).eq.'NUTN') stop 'empty perturbation in rsp_general!'
+!DaF 
           ! Check if this stage passed previously and if so, then skip execution
           if (rs_check(prog_info, rs_info, lvl=2)) then
           
