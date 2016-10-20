@@ -1067,7 +1067,7 @@ module rsp_perturbed_sdf
     
     type(mem_manager) :: mem_mgr
     integer :: mctr, mcurr, miter, msize, octr, mem_track
-    logical :: termination, rsp_eqn_retrieved, residue_select
+    logical :: termination, rsp_eqn_retrieved, residue_select, residualization
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
     integer :: i, j, k, m, w, nblks
     integer :: first, last, ierr
@@ -1356,7 +1356,7 @@ module rsp_perturbed_sdf
                   (/pert%npert,pert%npert/), pert%npert, &
                   (/ (m, m = 1, pert%npert) /), pert%npert, &
                   ind, F, D, S, Dp(ind_ctr + j - 1),residue_select)
-                  
+
           end if
           
           call mem_decr(mem_mgr, 4)               
@@ -1568,11 +1568,8 @@ module rsp_perturbed_sdf
     ! frequency sum is the same
     termination = .FALSE.
     do while(.NOT.(termination))
+       residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
 
-       write(*,*) 'Frequency sum:', freq_sums(k)
-
-       if ((dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny) then
-    
         if (size_i(k) > m) then
     
           do i = 1, size_i(k)/m + 1
@@ -1604,15 +1601,31 @@ module rsp_perturbed_sdf
                 else
 
                    if (.NOT.(mem_mgr%calibrate)) then
-                   
+                  
+                     if (.not.residualization) then
+
                       call get_rsp_sol(1,                                    &
                                        (/last-first+1/),                     &
                                        (/1/),                                &
                                        dcmplx(real((/freq_sums(k)/)),0.0d0), &
                                        RHS(ind_ctr+first-1:ind_ctr+last-1),  &
                                        X(ind_ctr+first-1:ind_ctr+last-1))
+
+                     else
+
+                      ! DaF: Replace LES solution by contraction for residualized perturbations
+                      ! DaF: This is only for debugging! In principle we replace X by Xx.  
+                      do j = first, last
+
+                        ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+j-1))                                                
+                        call QcMatTraceAB(RHS(ind_ctr+j-1),Xx(1),xrtm)                                                                                        
+                        write(*,*)'xrtm=',xrtm
+
+                      end do
+  
+                     end if
                   
-                      call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
+                     call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
                            mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
                     
                     end if
@@ -1647,6 +1660,7 @@ module rsp_perturbed_sdf
        
              if (.NOT.(mem_mgr%calibrate)) then
        
+                if (residualization) stop 'No residualization yet for 2nd solver call in rsp_sdf_calc'
                 call get_rsp_sol(1,                                    &
                                  (/size_i(k)/),                        &
                                  (/1/),                                &
@@ -1666,24 +1680,7 @@ module rsp_perturbed_sdf
           
     
         end if
-
-       else
   
-        ! DaF: Replace LES solution by contraction for residualized perturbations
-        ! DaF: This is only for debugging! In principle we replace X by Xx.  
-        do i = 1, size(RHS)
-!DaF 
-           write(*,*)'size RHS:',size(RHS)
-           write(*,*)'ind_ctr=',ind_ctr
-           write(*,*)'index=',ind_ctr+size_i(i)
-!DaF
-           ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+size_i(k)-1))
-           call QcMatTraceAB(Xx(1),RHS(i),xrtm)
-           write(*,*)'xrtm=',xrtm
-        end do
-
-       end if
-    
        ind_ctr = ind_ctr + size_i(k)
        k = k + 1
     

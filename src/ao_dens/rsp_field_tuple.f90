@@ -810,17 +810,20 @@ end if
   end function
 
   ! Make emptypert into an empty perturbation tuple
-  subroutine empty_p_tuple(emptypert)
+  subroutine empty_p_tuple(emptypert,template)
 
     implicit none
 
       type(p_tuple) :: emptypert
+      type(p_tuple), optional :: template
 
+      if(present(template)) call p_tuple_add_stateinfo(emptypert,template)
       emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
       allocate(emptypert%freq(0))
+      if(emptypert%do_residues.gt.0) allocate(emptypert%part_of_residue(0,emptypert%do_residues))
 
   end subroutine
 
