@@ -1618,7 +1618,7 @@ module rsp_perturbed_sdf
                       do j = first, last
 
                         ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+j-1))                                                
-                        call QcMatTraceAB(RHS(ind_ctr+j-1),Xx(1),xrtm)                                                                                        
+                        call QcMatTraceATrB(RHS(ind_ctr+j-1),Xx(1),xrtm)                                                                                        
                         write(*,*)'xrtm=',xrtm
 
                       end do

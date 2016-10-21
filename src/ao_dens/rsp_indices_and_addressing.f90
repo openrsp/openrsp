@@ -62,6 +62,7 @@ module rsp_indices_and_addressing
   public QcMatAEqB
   public QcMatDst
   public QcMatTraceAB
+  public QcMatTraceATrB
   public QcMatRAXPY
   
   ! Define memory management datatype
@@ -402,6 +403,27 @@ module rsp_indices_and_addressing
     t = cmplx(t_ans(1), t_ans(2))
   
   end subroutine
+
+  ! Get trace of matrix product with transposed B
+  subroutine QcMatTraceATrB(A, B, t)
+
+    implicit none
+
+    type(QcMat) :: A, B
+    complex(8) :: t
+    real(8), dimension(2) :: t_ans
+    integer(kind=4) :: ierr
+    integer(kind=QINT) dim_block_a, dim_block_b
+
+    ierr = QcMatGetDimBlock_f(A, dim_block_a)
+    ierr = QcMatGetDimBlock_f(A, dim_block_b)
+    ierr = QcMatGetMatProdTrace_f(A, B, MAT_TRANSPOSE, dim_block_a, t_ans)
+
+    ! What is dimension of answer?
+    t = cmplx(t_ans(1), t_ans(2))
+
+  end subroutine
+
   
   ! Compute B = kA + B (k real)
   subroutine QcMatRAXPY(k, A, B)
