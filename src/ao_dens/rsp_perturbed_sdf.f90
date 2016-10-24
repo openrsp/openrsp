@@ -1299,11 +1299,11 @@ module rsp_perturbed_sdf
                (/pert/), data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
 
           ! Assemble Fp (lower-order) for all components and add to cache
-  
+ 
           call rsp_lof_recurse(pert, pert%npert, &
                                1, (/get_emptypert()/), .FALSE., lof_cache, size_i(k), &
                                Fp=Fp(ind_ctr:ind_ctr + size_i(k) - 1),residue_select=residue_select)
-                               
+
           ! XC call should go here
           
           ! Currently only one freq. configuration
@@ -1488,7 +1488,7 @@ module rsp_perturbed_sdf
          ! Add the completed Fp to cache
            call contrib_cache_outer_add_element(F, .FALSE., 1, & 
                (/pert/), data_size = size_i(k),  data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
-       
+      
        end if
        
        ! Construct right-hand side for all components
@@ -1620,6 +1620,8 @@ module rsp_perturbed_sdf
                         ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+j-1))                                                
                         call QcMatTraceATrB(RHS(ind_ctr+j-1),Xx(1),xrtm)                                                                                        
                         write(*,*)'xrtm=',xrtm
+                        write(*,*)'Nullifying Fp!'
+                        call QcMatZero(Fp(ind_ctr+j-1))
 
                       end do
   
@@ -1815,10 +1817,11 @@ module rsp_perturbed_sdf
        do while(.NOT.(termination))
 
           pert = cache_outer_next%p_tuples(1)
+          residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
          
           do j = 1, size_i(k)
            ! DaF: Residue case: Leave alone the Dp part
-           if ((dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).gt.xtiny) then
+           if (residualization) then
              ierr = QcMatDuplicate_f(Dh(ind_ctr + j - 1),COPY_PATTERN_AND_VALUE,Dp(ind_ctr + j -1))
            else
              call QcMatRAXPY(1.0d0, Dh(ind_ctr + j - 1), Dp(ind_ctr + j - 1))
