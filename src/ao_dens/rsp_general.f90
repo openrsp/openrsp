@@ -3053,7 +3053,7 @@ module rsp_general
     logical :: mem_done
     integer :: mctr, mcurr, msize, mem_track
 
-    logical :: traverse_end, any_lagrange
+    logical :: traverse_end, any_lagrange, select_terms
     integer :: cache_offset, i, j, k, m, n, p, c_ctr, c_snap, lagrange_max_n
     integer :: id_outp, i_supsize, o_triang_size, offset, tot_num_pert, max_outer_npert
     integer :: o_ctr, size_lagrange, size_pulay_n
@@ -3776,6 +3776,8 @@ module rsp_general
                 call QcMatInit(Zeta(i), D_unp)
                 call QcMatZero(Lambda(i))
                 call QcMatZero(Zeta(i))
+
+                select_terms = found_residue_info(p_tuple_getone(cache%p_inner,1))
           
                 call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
                      lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
@@ -3787,7 +3789,7 @@ module rsp_general
                      d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), cache%indices(mcurr + i - 1,:), &
-                     D, S, Lambda(i))
+                     D, S, Lambda(i),select_terms)
       
              end do
              
