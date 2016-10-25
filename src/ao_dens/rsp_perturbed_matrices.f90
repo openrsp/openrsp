@@ -520,7 +520,8 @@ module rsp_perturbed_matrices
 
   ! Calculate a perturbed Lambda matrix
   subroutine rsp_get_matrix_lambda(p_tuple_a, superstructure_size, deriv_struct, &
-           total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L)
+           total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L,&
+           select_terms)
 
     implicit none
 
@@ -531,6 +532,7 @@ module rsp_perturbed_matrices
     integer, dimension(indices_len) :: ind
     type(contrib_cache_outer) :: D, S
     type(QcMat) :: L, A, B, C, T
+    logical :: calc_contrib, select_terms
 
     call QcMatInit(A)
     call QcMatInit(B)
@@ -538,7 +540,14 @@ module rsp_perturbed_matrices
 
     call QcMatInit(T)
 
+    calc_contrib = .true.
+
     do i = 1, superstructure_size
+
+      if (select_terms) calc_contrib = .not.found_residue_info(deriv_struct(i,2))
+
+      if (calc_contrib) then
+      
 
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
@@ -570,6 +579,8 @@ module rsp_perturbed_matrices
 
        call p_tuple_deallocate(merged_A)
        call p_tuple_deallocate(merged_B)
+
+      end if ! calc_contrib
        
     end do
     
