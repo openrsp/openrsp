@@ -215,7 +215,7 @@ module rsp_perturbed_matrices
        call QcMatRAXPY(1.0d0, T, W)
             
 
-       calc_contrib = .not.found_residue_info(deriv_struct(i,2))
+       calc_contrib = .not.find_residue_info(deriv_struct(i,2))
 
        if (calc_contrib) then
          if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
@@ -544,7 +544,7 @@ module rsp_perturbed_matrices
 
     do i = 1, superstructure_size
 
-      if (select_terms) calc_contrib = .not.found_residue_info(deriv_struct(i,2))
+      if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,2))
 
       if (calc_contrib) then
       
@@ -596,7 +596,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Zeta matrix
   subroutine rsp_get_matrix_zeta(p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Zeta)
+           ind, F, D, S, Zeta, select_terms)
 
     implicit none
 
@@ -608,14 +608,21 @@ module rsp_perturbed_matrices
     integer, dimension(indices_len) :: ind
     type(contrib_cache_outer) :: F, D, S
     type(QcMat) :: Zeta, A, B, C, T
+    logical :: calc_contrib,select_terms
 
     call QcMatInit(A)
     call QcMatInit(B)
     call QcMatInit(C)
 
     call QcMatInit(T)
+    
+    calc_contrib = .true.
 
     do i = 1, superstructure_size
+
+     if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,3))
+
+     if (calc_contrib) then     
     
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
@@ -633,7 +640,13 @@ module rsp_perturbed_matrices
 !        Zeta = Zeta + A * B * C
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Zeta)   
-       
+
+     end if
+     
+     if (select_terms) calc_contrib = .not.find_residue_info(merged_B)
+
+     if (select_terms) then
+ 
        call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)          
@@ -645,6 +658,12 @@ module rsp_perturbed_matrices
 
        call QcMatkABC(-1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Zeta)   
+
+     end if
+
+     if (select_terms) calc_contrib = find_residue_info(deriv_struct(i,2))
+
+     if (calc_contrib) then
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
@@ -683,6 +702,12 @@ module rsp_perturbed_matrices
 
        end if
 
+     end if
+
+     if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,1))
+
+     if (calc_contrib) then
+
        call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
@@ -696,6 +721,12 @@ module rsp_perturbed_matrices
 !        Zeta = Zeta +  A * B * C
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, Zeta)  
+
+     end if
+
+     if (select_terms) calc_contrib = .not.find_residue_info(merged_A) 
+
+      if (calc_contrib) then
                  
        call contrib_cache_getdata_outer(S, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
@@ -707,6 +738,12 @@ module rsp_perturbed_matrices
 !        Zeta = Zeta - A * B * C
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(-1.0d0, T, Zeta)  
+
+      end if
+
+      if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+
+      if (calc_contrib) then
 
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
@@ -744,6 +781,8 @@ module rsp_perturbed_matrices
           call QcMatRAXPY(1.0d0, T, Zeta) 
 
        end if
+
+      end if
 
        call p_tuple_deallocate(merged_A)
        call p_tuple_deallocate(merged_B)

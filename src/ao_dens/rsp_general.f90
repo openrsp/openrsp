@@ -3777,13 +3777,13 @@ module rsp_general
                 call QcMatZero(Lambda(i))
                 call QcMatZero(Zeta(i))
 
-                select_terms = found_residue_info(p_tuple_getone(cache%p_inner,1))
+                select_terms = find_residue_info(p_tuple_getone(cache%p_inner,1))
           
                 call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
                      lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), &
-                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i))
+                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i),select_terms)
                      
                 call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
                      d_struct_inner, maxval(cache%p_inner%pid), &
