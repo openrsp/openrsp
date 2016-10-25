@@ -190,6 +190,7 @@ module rsp_perturbed_matrices
     integer, dimension(indices_len) :: ind
     type(contrib_cache_outer) :: F, D, S
     type(QcMat) :: W, A, B, C, T
+    logical :: calc_contrib
 
     call QcMatInit(A)
     call QcMatInit(B)
@@ -214,9 +215,11 @@ module rsp_perturbed_matrices
        call QcMatRAXPY(1.0d0, T, W)
             
 
+       calc_contrib = .not.found_residue_info(deriv_struct(i,2))
 
-       if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-           .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+       if (calc_contrib) then
+         if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+             .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
           call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -237,8 +240,8 @@ module rsp_perturbed_matrices
           call QcMatRAXPY(1.0d0, T, W)
                
          
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
+         elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
+                      (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
           call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -257,8 +260,8 @@ module rsp_perturbed_matrices
                
 
 
-       elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
-                    (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
+         elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
+                      (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
                
           call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
@@ -275,7 +278,8 @@ module rsp_perturbed_matrices
           call QcMatcABC(((-1.0)/(2.0)) * frequency_zero_or_sum(deriv_struct(i,3)), A, B, C, T)
           call QcMatRAXPY(1.0d0, T, W)   
           
-       end if
+         end if
+       end if !calc_contrib
 
     end do
 
