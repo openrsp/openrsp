@@ -50,10 +50,10 @@ module rsp_perturbed_sdf
     max_order = max(maxval(kn_rule(:, 1)), maxval(kn_rule(:, 2)))
     max_npert = maxval((/(p_tuples(i)%npert, i = 1, sum(n_freq_cfgs))/))
 
-    ! Make sure that Xf vectors are present in residue calculations
-    if (.not.present(Xf).and.p_tuples(1)%do_residues.eq.0) then
-      stop 'Residue calculation needs Xf vectors in rsp_fds!'
-    end if
+!   ! Make sure that Xf vectors are present in residue calculations
+!   if (.not.present(Xf).and.p_tuples(1)%do_residues.eq.0) then
+!     stop 'Residue calculation needs Xf vectors in rsp_fds!'
+!   end if
 
     ! Make dummy perturbation tuples to head cache to identify by perturbation order: Identifier is frequencies
     allocate(p_dummy_orders(max_npert))
@@ -1568,7 +1568,11 @@ module rsp_perturbed_sdf
     ! frequency sum is the same
     termination = .FALSE.
     do while(.NOT.(termination))
-       residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+        if(pert%do_residues.gt.0) then       
+          residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+        else
+          residualization = .false.
+        end if
 
         if (size_i(k) > m) then
     
@@ -1817,7 +1821,11 @@ module rsp_perturbed_sdf
        do while(.NOT.(termination))
 
           pert = cache_outer_next%p_tuples(1)
-          residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+          if (pert%do_residues.gt.0) then 
+           residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+          else
+           residualization = .false.
+          end if
          
           do j = 1, size_i(k)
            ! DaF: Residue case: Leave alone the Dp part
