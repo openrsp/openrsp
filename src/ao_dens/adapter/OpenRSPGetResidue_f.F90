@@ -131,6 +131,9 @@
         integer(kind=QINT) ipert, jpert
         integer(kind=QINT) iext
         integer(kind=4) ierr
+
+        external :: f_callback_RSPOUTPUT_PLACEHOLDER
+
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
@@ -322,6 +325,7 @@
                                          f_callback_RSPTwoOperGetExp,                &
                                          f_callback_RSPXCFunGetMat,                  &
                                          f_callback_RSPXCFunGetExp,                  &
+                                         f_callback_RSPOUTPUT_PLACEHOLDER,           &
                                          STDOUT,                                     &
                                          f_residues(ipert+1:ipert+resize_per_excit), &
                                          mem_calibrate=mem_calibrate,                &

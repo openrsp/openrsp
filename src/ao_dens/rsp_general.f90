@@ -119,13 +119,12 @@ module rsp_general
   ! mem_result: Optional (for mem. calibration mode): Calibration result
   
   subroutine openrsp_get_property(n_props, np, pert_dims, pert_first_comp, &
-                                  pert_labels, n_freq_cfgs, pert_freqs, &
-                                  kn_rules, F_unpert, S_unpert, D_unpert, &
-                                  get_rsp_sol, get_nucpot, &
-                                  get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                  get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                  get_xc_exp, id_outp, rsp_tensor, file_id, &
-                                  mem_calibrate, max_mat, mem_result)
+                                   pert_labels, n_freq_cfgs, pert_freqs, &
+                                   kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
+                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
+                                   get_xc_exp, out_print, id_outp, rsp_tensor, file_id, &
+                                   mem_calibrate, max_mat, mem_result)
     implicit none
 
     logical, optional :: mem_calibrate
@@ -160,18 +159,26 @@ module rsp_general
     integer, dimension(3) :: prog_info
     character(30) :: fmt_str
     
+    integer, allocatable, dimension(:,:) :: indices
+    real :: write_threshold
+    integer :: p
+    
+    external :: out_print
+    character(len=2047) :: out_str
+    
+    
     if (present(mem_calibrate)) then
     
        mem_mgr%calibrate = mem_calibrate
 
        if (mem_mgr%calibrate) then
        
-          
-       
           if (.NOT.(present(mem_result))) then
-       
-             write(id_outp,*) 'ERROR: Result holder "mem_result" must be given for memory calibration run'
-             stop
+
+             write(out_str, *) 'ERROR: Result holder "mem_result" must be given for memory calibration run'
+             call out_print(out_str, 0)
+
+             return
              
           end if
           
@@ -216,90 +223,52 @@ module rsp_general
     rs_calibrate_save = rs_info
     rs_info = (/0,0,0/)
     
-    call prog_incr(prog_info, 1)
     
-    if (mem_mgr%calibrate) then
-       
-       allocate(S)
-       allocate(D)
-       allocate(F)
-       
-       call mem_incr(mem_mgr, 3, p=prog_info)
-    
-    else
-    
-       ! Check if this stage passed previously and if so, then retrieve and skip execution
-    
-       sdf_retrieved = .FALSE.
-       if (rs_check(prog_info, rs_info, lvl=1)) then
-    
-          write(id_outp,*) ' '
-          write(id_outp,*) 'S, D, F initialization stage was completed'
-          write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-          write(id_outp,*) ' '
-    
-          allocate(S)
-          allocate(D)
-          allocate(F)
-    
-          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
-          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
-          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
-       
-         sdf_retrieved = .TRUE.
-      
-       else
-       
-          ! Set up S, D, F data structures
-       
-          call contrib_cache_outer_allocate(S)
-          call contrib_cache_outer_allocate(D)
-          call contrib_cache_outer_allocate(F)
-      
-         call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
-               data_size = 1, data_mat=(/S_unpert/))
-          call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
-               data_size = 1, data_mat=(/D_unpert/))
-          call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
-               data_size = 1, data_mat=(/F_unpert/))
-               
-          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
-         call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
-         call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
-       
-       end if
-       
-    end if
-       
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, 1)       
 
     ! Present calculation and initialize perturbation tuple datatypes and
     ! associated size/indexing information
+
+    write(out_str, *) ' '
+    call out_print(out_str, 1)
+    write(out_str, *) 'OpenRSP library called'
+    call out_print(out_str, 1)
+    write(out_str, *) ' '
+    call out_print(out_str, 1)
     
-    write(id_outp,*) ' '
-    write(id_outp,*) 'OpenRSP lib called'
-    write(id_outp,*) ' '
     
     if (n_props == 1) then
-       write(id_outp,*) 'Calculating one property'
+       write(out_str, *) 'Calculating one property'
+       call out_print(out_str, 1)
     else  
-       write(id_outp,*) 'Calculating', n_props, 'properties'
+       write(out_str, *) 'Calculating', n_props, 'properties'
+       call out_print(out_str, 1)
     end if
-    write(id_outp,*) ' '
+
+    write(out_str, *) ' '
+    call out_print(out_str, 1)
    
     k = 1
     
     do i = 1, n_props
+
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Property', i, 'is order', np(i)
+       call out_print(out_str, 1)
+       write(out_str, *) 'The choice of k, n is', kn_rules(i), 'and', np(i) - 1 - kn_rules(i)
+       call out_print(out_str, 1)
+       write(out_str, *) 'The number of components for each perturbation is: ', &
+                         pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+       call out_print(out_str, 1)
+       write(out_str, *) 'The perturbation labels are: ', pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
+       call out_print(out_str, 1)
+       write(out_str, *) 'Number of frequency configurations:', n_freq_cfgs(i)
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       
     
-       write(id_outp,*) 'Property', i, 'is order', np(i)
-       write(id_outp,*) 'The choice of k, n is', kn_rules(i), 'and', np(i) - 1 - kn_rules(i)
-       write(id_outp,*) ' '
-       write(id_outp,*) 'The number of components for each perturbation is:    ', pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
-       write(id_outp,*) 'The perturbation labels are:                          ', pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
-       write(id_outp,*) 'Number of frequency configurations:', n_freq_cfgs(i)
-       write(id_outp,*) ' '
-        
-   
        do j = 1, n_freq_cfgs(i)
        
           kn_rule(k, 1) = kn_rules(i)
@@ -307,11 +276,15 @@ module rsp_general
           
           if ((kn_rule(k, 1) - kn_rule(k, 2) > 1)) then
 
-             write(id_outp,*) 'ERROR: Invalid choice of (k,n)'
-             write(id_outp,*) 'Valid choices for k are integers between and including 0 and ', (np(i) - 1)/2
-             write(id_outp,*) 'Valid choices of n are such that k + n =', np(i) - 1
-             write(id_outp,*) 'Cannot proceed with calculation: Exiting OpenRSP lib'
-             write(id_outp,*) ' '
+             write(out_str, *) 'ERROR: Invalid choice of (k,n)'
+             call out_print(out_str, 0)
+             write(out_str, *) 'Valid choices for k are integers between and including 0 and ', (np(i) - 1)/2
+             call out_print(out_str, 0)
+             write(out_str, *) 'Valid choices of n are such that k + n =', np(i) - 1
+             call out_print(out_str, 0)
+             write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP lib'
+             call out_print(out_str, 0)
+                          
              return
  
           end if
@@ -334,29 +307,41 @@ module rsp_general
           p_tuples(k) = p_tuple_standardorder(p_tuples(k))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
        
-          write(id_outp,*) 'Frequency configuration', j
-          write(id_outp,*) ' '
-          write(id_outp,*) 'Frequencies (real part):', (/(real(p_tuples(k)%freq(m)), m = 1, np(i))/)
-          write(id_outp,*) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
-          write(id_outp,*) ' '
-          
+          write(out_str, *) 'Frequency configuration', j
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          write(out_str, *) 'Frequencies (real part):', (/(real(p_tuples(k)%freq(m)), m = 1, np(i))/)
+          call out_print(out_str, 1)
+          write(out_str, *) 'Frequencies (imag. part):', (/(aimag(p_tuples(k)%freq(m)), m = 1, np(i))/)
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+       
+                    
           num_blks(k) = get_num_blks(p_tuples(k))
        
-          write(*,*) 'Number of blocks:', num_blks(k)
+          write(out_str, *) 'Number of blocks:', num_blks(k)
+          call out_print(out_str, 2)
        
           allocate(blk_info(num_blks(k), 3))
           allocate(blk_sizes(num_blks(k)))
           blk_info = get_blk_info(num_blks(k), p_tuples(k))
-          write(*,*) 'Block info:', blk_info
+          
+          write(out_str, *) 'Block info:', blk_info
+          call out_print(out_str, 2)
+          
           blk_sizes = get_triangular_sizes(num_blks(k), blk_info(1:num_blks(k), 2), &
                                            blk_info(1:num_blks(k), 3))
 
-          write(*,*) 'Block sizes:', blk_sizes
-                                           
+          write(out_str, *) 'Block sizes:', blk_sizes
+          call out_print(out_str, 2)
+          
           prop_sizes(k) = get_triangulated_size(num_blks(k), blk_info)
           
-          write(*,*) 'Property size:', prop_sizes(k)
-       
+          write(out_str, *) 'Property size for this frequency configuration:', prop_sizes(k)
+          call out_print(out_str, 1)
+          
           deallocate(blk_info)
           deallocate(blk_sizes)
        
@@ -368,29 +353,98 @@ module rsp_general
               
     end do
 
+    
+    
+    
+    
+    call prog_incr(prog_info, 1)
+    
+    if (mem_mgr%calibrate) then
+       
+       allocate(S)
+       allocate(D)
+       allocate(F)
+       
+       call mem_incr(mem_mgr, 3, p=prog_info)
+    
+    else
+    
+       ! Check if this stage passed previously and if so, then retrieve and skip execution
+    
+       sdf_retrieved = .FALSE.
+       if (rs_check(prog_info, rs_info, lvl=1)) then
+
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          write(out_str, *) 'S, D, F initialization stage was completed'
+          call out_print(out_str, 1)
+          write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+
+          allocate(S)
+          allocate(D)
+          allocate(F)
+    
+          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
+          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
+          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
+       
+          sdf_retrieved = .TRUE.
+      
+       else
+       
+          ! Set up S, D, F data structures
+       
+         call contrib_cache_outer_allocate(S)
+         call contrib_cache_outer_allocate(D)
+         call contrib_cache_outer_allocate(F)
+      
+         call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
+              data_size = 1, data_mat=(/S_unpert/))
+         call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
+              data_size = 1, data_mat=(/D_unpert/))
+         call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
+              data_size = 1, data_mat=(/F_unpert/))
+               
+         call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
+         call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
+         call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
+       
+       end if
+       
+    end if
+    
+    
     rsp_tensor(1:sum(prop_sizes)) = 0.0
     
     if (.NOT.(mem_exceed(mem_mgr))) then
     
        ! Calculate properties
-    
-       write(id_outp,*) 'Starting clock: About to start property calculations'
-       write(id_outp,*) ' '
 
+       write(out_str, *) 'Starting clock: About to start property calculations'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       
        call cpu_time(timing_start)
 
        call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                      get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                     get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
+                     get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                      id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
                      mem_mgr)
 
        call cpu_time(timing_end)
 
-       write(id_outp,*) 'Clock stopped: Property calculations finished'
-       write(id_outp,*) 'Time spent:',  timing_end - timing_start, ' seconds'
-       write(id_outp,*) ' '
-    
+       write(out_str, *) 'Clock stopped: Property calculations finished'
+       call out_print(out_str, 1)
+       write(out_str, *) 'Time spent:',  timing_end - timing_start, ' seconds'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+   
     end if
     
     
@@ -409,112 +463,125 @@ module rsp_general
     
     else
     
-       ! Print results
-       ! This can be done more elegantly by ASCII transformation of integers, but leave as is for now
     
+       write(out_str, *) 'Writing response tensors to file'
+       call out_print(out_str, 2)
+    
+       ! Print tensors to standardized output file
+       ! NOTE: This routine is placed here due to access to index/addressing routines
+       ! Should be moved to API level once index/addressing routines are abstracted
+       
+       open(unit=260, file='rsp_tensor', status='replace', action='write') 
+       
+       write(260,*) 'VERSION'
+       write(260,*) '1'
+       write(260,*) 'NUM_PROPERTIES'
+       write(260,*) n_props
+
+       ! NOTE: TENSOR ELEMENTS WITH ABSOLUTE VALUE BELOW THIS VALUE WILL NOT BE OUTPUT
+       write_threshold = 1.0e-10
+       
+       
        k = 1
-       n = 1
+       p = 0
        
        do i = 1, n_props
+       
+          write(260,*) 'NEW_PROPERTY'
+          write(260,*) 'ORDER'
+          write(260,*) p_tuples(k)%npert
+          write(260,*) 'NUM_FREQ_CFGS'
+          write(260,*) n_freq_cfgs(i)
+          
+          write(260,*) 'OPERATORS'
+          do j = 1, p_tuples(k)%npert
+          
+             write(260,*) p_tuples(k)%plab(j)          
+          
+          end do
+          
+          
+          write(260,*) 'NUM COMPONENTS'
+          do j = 1, p_tuples(k)%npert
+          
+             write(260,*) p_tuples(k)%pdim(j)          
+          
+          end do
+         
+          write(260,*) 'FREQUENCIES'
+          
          
           do j = 1, n_freq_cfgs(i)
           
-             if (i < 10) then
-                if (j < 10) then
-                   fmt_str = "(A10, I1, A1, I1)"
-                else if (j < 100) then
-                   fmt_str = "(A10, I1, A1, I2)"
-                else if (j < 1000) then
-                   fmt_str = "(A10, I1, A1, I3)"
-                else if (j < 10000) then
-                   fmt_str = "(A10, I1, A1, I4)"
-                else
-                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
-                   stop
-                end if
-             else if (i < 100) then
-                if (j < 10) then
-                   fmt_str = "(A10, I2, A1, I1)"
-                else if (j < 100) then
-                   fmt_str = "(A10, I2, A1, I2)"
-                else if (j < 1000) then
-                   fmt_str = "(A10, I2, A1, I3)"
-                else if (j < 10000) then
-                   fmt_str = "(A10, I2, A1, I4)"
-                else
-                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
-                   stop
-                end if
-             else if (i < 1000) then
-                if (j < 10) then
-                   fmt_str = "(A10, I3, A1, I1)"
-                else if (j < 100) then
-                   fmt_str = "(A10, I3, A1, I2)"
-                else if (j < 1000) then
-                   fmt_str = "(A10, I3, A1, I3)"
-                else if (j < 10000) then
-                   fmt_str = "(A10, I3, A1, I4)"
-                else
-                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
-                   stop
-                end if
-             else if (i < 10000) then
-                if (j < 10) then
-                   fmt_str = "(A10, I4, A1, I1)"
-                else if (j < 100) then
-                   fmt_str = "(A10, I4, A1, I2)"
-                else if (j < 1000) then
-                   fmt_str = "(A10, I4, A1, I3)"
-                else if (j < 10000) then
-                   fmt_str = "(A10, I4, A1, I4)"
-                else
-                   write(*,*) 'File write error: More than 10000 freq. cfgs. breaks filename format string'
-                   stop
-                end if
-             else
-                write(*,*) 'File write error: More than 10000 properties breaks filename format string'
-                stop
-             end if
-       
+             write(260,*) 'CONFIGURATION'
              
+             do n = 1, p_tuples(k)%npert
+             
+                write(260,*) real(p_tuples(k)%freq(n))
+             
+             end do
+             
+         
           
-             write(filename, fmt_str) 'rsp_tensor_', i, '_', j
-             open(unit=260, file=trim(filename), &
-                  status='replace', action='write') 
-             open(unit=261, file=trim(filename) // '_human', &
-                  status='replace', action='write') 
-               
-             allocate(blk_info(num_blks(i), 3))
-             allocate(blk_sizes(num_blks(i)))
-             blk_info = get_blk_info(num_blks(i), p_tuples(k))
-             blk_sizes = get_triangular_sizes(num_blks(i), blk_info(1:num_blks(i), 2), &
-                                              blk_info(1:num_blks(i), 3))
-               
-             call print_rsp_tensor_tr(1, p_tuples(k)%npert, p_tuples(k)%pdim, &
-             (/ (1, m = 1, (p_tuples(k)%npert - 1) ) /), num_blks(i), blk_sizes, &
-             blk_info, prop_sizes(i), rsp_tensor(n:n+prop_sizes(i) - 1), 260, 261)
-       
+             k = k + 1
+         
+          end do
+          
+          k = k - n_freq_cfgs(i)
+         
+          write(260,*) 'VALUES'
+         
+         ! FIXME: SOMETHING MAY BE OFF ABOUT THE INDICES: NOT ALL VALUES OF THE LAST PROPERTY ARE WRITTEN
+         
+          do j = 1, n_freq_cfgs(i)
+          
+             write(260,*) 'CONFIGURATION'
+             
+             ! Get indices, write index-value pairs
+             allocate(blk_info(num_blks(k), 3))
+             allocate(blk_sizes(num_blks(k)))
+             blk_info = get_blk_info(num_blks(k), p_tuples(k))
+
+             blk_sizes = get_triangular_sizes(num_blks(k), blk_info(1:num_blks(k), 2), &
+                                              blk_info(1:num_blks(k), 3))
+
+             
+             allocate(indices(product(blk_sizes), sum(blk_info(:,2))))
+             
+             call make_triangulated_indices(num_blks(k), blk_info, &
+                  product(blk_sizes), indices)
+                  
+                  
+             do n = 1, size(indices, 1)
+             
+             
+                if (abs(real(rsp_tensor(p + n))) > write_threshold) then
+                
+                   write(260,*) indices(n,:)
+                   write(260,*) real(rsp_tensor(p + n))
+                
+                end if
+             
+             
+             end do
+             
+             deallocate(indices)
              deallocate(blk_info)
              deallocate(blk_sizes)
              
-             close(260)
-             close(261)
-                    
-             write(*,*) 'Property', i, j, ' was printed to rsp_tensor'
-             write(*,*) 'Property (formatted print) was printed to rsp_tensor_human'
-          
+             p = p + prop_sizes(k)
              k = k + 1
-             n = n + prop_sizes(i)
-    
+          
           end do
-       
-       
+          
        end do
-
-       write(*,*) ' '
-       write(*,*) 'End of print'
+       
+       close(260)
        
     end if
+    
+    write(out_str, *) 'OpenRSP library: Normal termination, returning...'
+    call out_print(out_str, 1)
 
   end subroutine
   
@@ -526,7 +593,7 @@ module rsp_general
                                  get_rsp_sol, get_nucpot, &
                                  get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                                  get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                 get_xc_exp, id_outp, rsp_tensor, file_id, &
+                                 get_xc_exp, out_print, id_outp, rsp_tensor, file_id, &
                                  mem_calibrate, max_mat, mem_result)
     implicit none
 
@@ -561,6 +628,7 @@ module rsp_general
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     external :: get_rsp_sol, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, get_nucpot
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
+    external :: out_print
     complex(8), dimension(*) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
     type(QcMat), dimension(*) :: Xf_unpert 
@@ -830,7 +898,7 @@ module rsp_general
 
        call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                      get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                     get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
+                     get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                      id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
                      mem_mgr,Xf)
 
@@ -970,7 +1038,7 @@ module rsp_general
   ! Main property calculation routine - Get perturbed F, D, S and then calculate the properties
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                      get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, &
+                      get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                       id_outp, prop_sizes, props, prog_info, rs_info, sdf_retrieved, &
                       mem_mgr,Xf)
 
@@ -993,6 +1061,9 @@ module rsp_general
     type(contrib_cache_outer) :: F, D, S
     type(contrib_cache_outer), optional :: Xf
     
+    external :: out_print
+    character(len=1048576) :: out_str
+    
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
 
@@ -1005,10 +1076,14 @@ module rsp_general
   
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Perturbed overlap/density/Fock matrix stage was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Perturbed overlap/density/Fock matrix stage was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
        
        if(.NOT.(sdf_retrieved)) then
        
@@ -1023,31 +1098,37 @@ module rsp_general
   
        ! Get all necessary F, D, S derivatives
      
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Calculating perturbed overlap/density/Fock matrices'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Calculating perturbed overlap/density/Fock matrices'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
 
        call cpu_time(time_start)
         
        call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                     get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                    get_2el_mat, get_xc_mat, .TRUE., id_outp, &
+                    get_2el_mat, get_xc_mat, out_print, .TRUE., id_outp, &
                     prog_info, rs_info, sdf_retrieved, mem_mgr,Xf)
                     
        call cpu_time(time_end)
-
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished calculation of perturbed overlap/density/Fock matrices'
-       write(id_outp,*) ' '
+       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Finished calculation of perturbed overlap/density/Fock matrices'
+       call out_print(out_str, 1)
+       write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       
        
        if (mem_exceed(mem_mgr)) then
        
           return
           
        end if
-          
-      
-       
        
     end if
     
@@ -1057,11 +1138,15 @@ module rsp_general
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'HF energy-type contribution identification was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
-       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'HF energy-type contribution identification was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+    
        if (.NOT.(contrib_retrieved)) then
        
           allocate(contribution_cache)
@@ -1083,21 +1168,30 @@ module rsp_general
     
           do j = 1, n_freq_cfgs(i)
        
-             write(id_outp,*) ' '
-             write(id_outp,*) 'Identifying HF-energy type contributions'
-             write(id_outp,*) ' '
+             
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Identifying HF-energy type contributions'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
 
              call cpu_time(time_start)
              call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
-                  0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .TRUE., &
+                  0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .TRUE., &
                   contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
              call cpu_time(time_end)
 
-             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-             write(id_outp,*) 'Finished identifying HF energy-type contributions'
-             write(id_outp,*) ' '
-          
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Finished identifying HF energy-type contributions'
+             call out_print(out_str, 1)
+             write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             
              k = k + 1
        
           end do
@@ -1115,10 +1209,14 @@ module rsp_general
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'HF energy-type contribution calculation was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'HF energy-type contribution calculation was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
        
        if (.NOT.(contrib_retrieved)) then
        
@@ -1133,9 +1231,12 @@ module rsp_general
     
        ! Calculate all identified contributions and store in cache
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Calculating HF-energy type contributions'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Calculating HF-energy type contributions'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
     
        call cpu_time(time_start)
     
@@ -1157,19 +1258,23 @@ module rsp_general
        ! Traverse linked list and calculate
        do while (traverse_end .eqv. .FALSE.)
        
-          write(*,*) 'Calculating contribution for inner perturbation tuple'
-          write(*,*) cache_next%p_inner%plab
-          write(*,*) ' '
-         
-!DaF
           if(cache_next%p_inner%plab(1).eq.'NUTN') stop 'empty perturbation in rsp_general!'
-!DaF 
+          write(out_str, *) 'Calculating contribution for inner perturbation tuple with labels:'
+          call out_print(out_str, 1)
+          write(out_str, *) cache_next%p_inner%plab
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+       
           ! Check if this stage passed previously and if so, then skip execution
           if (rs_check(prog_info, rs_info, lvl=2)) then
           
-             write(*,*) ' '
-             write(*,*) 'Calculation was completed in previous invocation: Passing to next stage'
-             write(*,*) ' '
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Calculation was completed in previous invocation: Passing to next stage'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
                 
              ! Note: No cache retrieval here: In order to get to this position, the
              ! cache would already have been retrieved
@@ -1177,7 +1282,7 @@ module rsp_general
           else
 
              call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
-                  cache_next, mem_mgr)
+                  out_print, cache_next, mem_mgr)
              
              if (mem_exceed(mem_mgr)) then
        
@@ -1201,9 +1306,14 @@ module rsp_general
 
        call cpu_time(time_end)
 
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished calculating HF energy-type contributions'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Finished calculating HF energy-type contributions'
+       call out_print(out_str, 1)
+       write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
        
        call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
     
@@ -1215,11 +1325,15 @@ module rsp_general
    
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'HF energy-type contribution assembly was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
-       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'HF energy-type contribution assembly was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+    
        if (.NOT.(props_retrieved)) then
        
           call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
@@ -1240,24 +1354,33 @@ module rsp_general
     
              do j = 1, n_freq_cfgs(i)
 
-                write(id_outp,*) ' '
-                write(id_outp,*) 'Assembling HF-energy type contributions'
-                write(id_outp,*) ' '
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
+                write(out_str, *) 'Assembling HF-energy type contributions'
+                call out_print(out_str, 1)
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
 
                 call cpu_time(time_start)
                 call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
-                     0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, .FALSE., &
+                     0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .FALSE., &
                      contribution_cache, prop_sizes(k), &
                      props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
                 call cpu_time(time_end)
+                
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
+                write(out_str, *) 'Finished assembling HF energy-type contributions'
+                call out_print(out_str, 1)
+                write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+                call out_print(out_str, 1)
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
 
-                write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-                write(id_outp,*) 'Finished assembling HF energy-type contributions'
-                write(id_outp,*) ' '
-
-                write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+                write(out_str, *) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
                 min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
-          
+                call out_print(out_str, 2)
+                
                 k = k + 1
        
              end do
@@ -1284,11 +1407,15 @@ module rsp_general
    
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'XC contributions were completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
-       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'XC contributions were completed in previous invocation:'
+       call out_print(out_str, 1)
+       write(out_str, *) 'Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+           
        if (.NOT.(props_retrieved)) then
        
           call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
@@ -1306,25 +1433,35 @@ module rsp_general
           k = 1
     
           do i = 1, n_props
-    
-             write(id_outp,*) ' '
-             write(id_outp,*) 'Calculating XC contributions'
-             write(id_outp,*) ' '
+          
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Calculating XC contributions'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
 
              call cpu_time(time_start)
              call rsp_xc_wrapper(n_freq_cfgs(i), p_tuples(k:k+n_freq_cfgs(i)-1), kn_rule(k,:), &
-                  D, get_xc_exp, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1) - 1), mem_mgr, &
+                  D, get_xc_exp, out_print, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1) - 1), mem_mgr, &
                   prop=props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1 : &
                         sum(prop_sizes(1:k+n_freq_cfgs(i) - 1) - 1)))
              call cpu_time(time_end)
 
-             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-             write(id_outp,*) 'Finished calculating XC contributions'
-             write(id_outp,*) ' '
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Finished calculating XC contributions'
+             call out_print(out_str, 1)
+             write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
 
-!              write(*,*) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-!              min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
-          
+             
+             write(out_str, *) 'Property sample', props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+             min(sum(prop_sizes(1:k)) - prop_sizes(k) + 100, sum(prop_sizes(1:k))))
+             call out_print(out_str, 2)
+             
              k = k + n_freq_cfgs(i)
        
           end do
@@ -1348,11 +1485,15 @@ module rsp_general
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Two-factor type contribution identification was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
-       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Two-factor type contribution identification was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+    
        if (.NOT.(contrib_retrieved)) then
        
           allocate(contribution_cache)
@@ -1374,25 +1515,31 @@ module rsp_general
     
           do j = 1, n_freq_cfgs(i)
           
-             write(*,*) 'This kn rule', kn_rule(k,:)
-       
-             write(id_outp,*) ' '
-             write(id_outp,*) 'Identifying two-factor contributions'
-             write(id_outp,*) ' '
-
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Identifying two-factor contributions'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+          
              call cpu_time(time_start)
           
              call rsp_twofact_recurse(p_tuples(k), &
-                  kn_rule(k,:), (/emptypert, emptypert/), &
+                  kn_rule(k,:), (/emptypert, emptypert/), out_print, &
                   .TRUE., contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
              call cpu_time(time_end)
 
-             write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-             write(id_outp,*) 'Finished identifying two-factor contributions'
-             write(id_outp,*) ' '
-          
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Finished identifying two-factor contributions'
+             call out_print(out_str, 1)
+             write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             
              k = k + 1
        
           end do
@@ -1409,10 +1556,14 @@ module rsp_general
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Two-factor type contribution calculation was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Two-factor type contribution calculation was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
        
        if (.NOT.(contrib_retrieved)) then
        
@@ -1426,10 +1577,13 @@ module rsp_general
        
     else
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Calculating two-factor contributions'
-       write(id_outp,*) ' '
-    
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Calculating two-factor contributions'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+
        call cpu_time(time_start)
     
        traverse_end = .FALSE.
@@ -1450,23 +1604,31 @@ module rsp_general
        ! Traverse linked list and calculate
        do while (traverse_end .eqv. .FALSE.)
        
-          write(*,*) 'Calculating contribution for factor 1 tuple'
-          write(*,*) cache_next%p_inner%plab
-          write(*,*) ' '
-          
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+          write(out_str, *) 'Calculating contribution for factor 1 tuple perturbation labels:'
+          call out_print(out_str, 1)
+          write(out_str, *) cache_next%p_inner%plab
+          call out_print(out_str, 1)
+          write(out_str, *) ' '
+          call out_print(out_str, 1)
+       
           ! Check if this stage passed previously and if so, then skip execution
           if (rs_check(prog_info, rs_info, lvl=2)) then
+             
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+             write(out_str, *) 'Calculation was completed in previous invocation: Passing to next stage'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
           
-             write(*,*) ' '
-             write(*,*) 'Calculation was completed in previous invocation: Passing to next stage'
-             write(*,*) ' '
-                
              ! Note: No cache retrieval here: In order to get to this position, the
              ! cache would already have been retrieved
           
           else
 
-             call rsp_twofact_calculate(S, D, F, get_ovl_exp, cache_next, mem_mgr)
+             call rsp_twofact_calculate(S, D, F, get_ovl_exp, out_print, cache_next, mem_mgr)
              
              if (mem_exceed(mem_mgr)) then
        
@@ -1490,9 +1652,14 @@ module rsp_general
 
        call cpu_time(time_end)
 
-       write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-       write(id_outp,*) 'Finished calculating two-factor contributions'
-       write(id_outp,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Finished calculating two-factor contributions'
+       call out_print(out_str, 1)
+       write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
        
        call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
        
@@ -1503,11 +1670,15 @@ module rsp_general
     
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
-       write(id_outp,*) ' '
-       write(id_outp,*) 'Two-factor type contribution assembly was completed'
-       write(id_outp,*) 'in previous invocation: Passing to next stage of calculation'
-       write(id_outp,*) ' '
-       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       write(out_str, *) 'Two-factor type contribution assembly was completed'
+       call out_print(out_str, 1)
+       write(out_str, *) 'in previous invocation: Passing to next stage of calculation'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+    
        if (.NOT.(props_retrieved)) then
        
           call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
@@ -1528,22 +1699,31 @@ module rsp_general
     
              do j = 1, n_freq_cfgs(i)
 
-                write(id_outp,*) ' '
-                write(id_outp,*) 'Assembling two-factor contributions'
-                write(id_outp,*) ' '
-   
+             
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
+                write(out_str, *) 'Assembling two-factor contributions'
+                call out_print(out_str, 1)
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
+                
                 call cpu_time(time_start)
           
                 call rsp_twofact_recurse(p_tuples(k), &
-                     kn_rule(k,:), (/emptypert, emptypert/), &
+                     kn_rule(k,:), (/emptypert, emptypert/), out_print, &
                      .FALSE., contribution_cache, prop_sizes(k), &
                      props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
                 call cpu_time(time_end)
-
-                write(id_outp,*) 'Time spent:', time_end - time_start, 'seconds'
-                write(id_outp,*) 'Finished assembling two-factor contributions'
-                write(id_outp,*) ' '
+                
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
+                write(out_str, *) 'Finished assembling two-factor contributions'
+                call out_print(out_str, 1)
+                write(out_str, *) 'Time spent:', time_end - time_start, 'seconds'
+                call out_print(out_str, 1)
+                write(out_str, *) ' '
+                call out_print(out_str, 1)
 
                 k = k + 1
           
@@ -1568,11 +1748,15 @@ module rsp_general
     
           do j = 1, n_freq_cfgs(i)
           
-             write(*,*) 'Property', i, ', freq. config', j
-             write(*,*) props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-                              sum(prop_sizes(1:k)))
-             write(*,*) ' '
-          
+             write(out_str, *) ' '
+             call out_print(out_str, 2)
+             write(out_str, *) 'Property', i, ', freq. config', j
+             call out_print(out_str, 2)
+             write(out_str, *) props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+                               sum(prop_sizes(1:k)))
+             call out_print(out_str, 2)
+             write(out_str, *) ' '
+             call out_print(out_str, 2)
           
              k = k + 1
           
@@ -1591,7 +1775,7 @@ module rsp_general
    
    recursive subroutine rsp_energy_recurse(pert, total_num_perturbations, kn, num_p_tuples, &
                                   p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                                  get_t_exp, get_2el_exp, dryrun, cache, p_size, prop)
+                                  get_t_exp, get_2el_exp, out_print, dryrun, cache, p_size, prop)
 
     implicit none
 
@@ -1607,6 +1791,9 @@ module rsp_general
     type(contrib_cache), pointer :: cache_next
     complex(8), dimension(p_size), optional :: prop
     external :: get_nucpot, get_1el_exp, get_t_exp, get_2el_exp
+    
+    external :: out_print
+    character(len=2047) :: out_str
 
 
     if (pert%npert >= 1) then
@@ -1619,7 +1806,7 @@ module rsp_general
 
        call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
        kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
-       density_order, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, &
+       density_order, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
        dryrun, cache, p_size=p_size, prop=prop)
 
     else
@@ -1627,7 +1814,7 @@ module rsp_general
        call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations,  &
        kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
        p_tuples(2:size(p_tuples))/), density_order, D,  &
-       get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, &
+       get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
        dryrun, cache, p_size=p_size, prop=prop)
 
     end if
@@ -1652,7 +1839,8 @@ module rsp_general
 
           call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
           kn, num_p_tuples, t_new, density_order + 1, D, &
-          get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, dryrun, cache, p_size=p_size, prop=prop)
+          get_nucpot, get_1el_exp, get_t_exp, get_2el_exp , out_print, &
+          dryrun, cache, p_size=p_size, prop=prop)
 
        end do
 
@@ -1666,7 +1854,7 @@ module rsp_general
 
           call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
           kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
-          density_order + 1, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, &
+          density_order + 1, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
           dryrun, cache, p_size=p_size, prop=prop)
 
        end if
@@ -1707,24 +1895,28 @@ module rsp_general
           if (contrib_cache_already(cache, num_p_tuples, p_tuples)) then
           
              if (.NOT.(dryrun)) then
+             
+                write(out_str, *) 'Cache retrieval: getting contribution'
+                call out_print(out_str, 2)
 
-                write(*,*) 'Cache retrieval: getting contribution'
-                
                 do i = 1, num_p_tuples
 
                    if (i == 1) then
     
-                      write(*,*) 'E', p_tuples(i)%pid
+                      write(out_str, *) 'E', p_tuples(i)%pid
+                      call out_print(out_str, 2)
     
                    else 
-    
-                      write(*,*) 'D', p_tuples(i)%pid
+                   
+                      write(out_str, *) 'D', p_tuples(i)%pid
+                      call out_print(out_str, 2)
                        
                    end if
     
                 end do
 
-                    write(*,*) ''
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
              
                 ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
                 ! THIS CALL (LIKE property_cache_getdata ASSUMES)
@@ -1737,21 +1929,27 @@ module rsp_general
 
              if (dryrun) then
              
-                write(*,*) 'Adding cache element'
+                write(out_str, *) 'Adding newly identified cache element'
+                call out_print(out_str, 2)
              
                 do i = 1, num_p_tuples
 
                    if (i == 1) then
-    
-                      write(*,*) 'E', p_tuples(i)%pid
+                   
+                      write(out_str, *) 'E', p_tuples(i)%pid
+                      call out_print(out_str, 2)
     
                    else 
-    
-                      write(*,*) 'D', p_tuples(i)%pid
+                    
+                      write(out_str, *) 'D', p_tuples(i)%pid
+                      call out_print(out_str, 2)
                        
                    end if
     
                 end do
+                
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
              
              
                 call contrib_cache_add_element(cache, num_p_tuples, &
@@ -1769,7 +1967,7 @@ module rsp_general
 
 
   subroutine rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
-             cache, mem_mgr)
+             out_print, cache, mem_mgr)
 
     implicit none
 
@@ -1796,15 +1994,19 @@ module rsp_general
     complex(8), allocatable, dimension(:) :: contrib_0, contrib_1, contrib_2, data_tmp, contrib_2_tmp
     external :: get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp
     
+    external :: out_print
+    character(len=1048576) :: out_str
+    
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
     call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
     
     outer_next => cache%contribs_outer
     
-    write(*,*) 'Number of outer contributions: ', cache%num_outer
-
+    write(out_str, *) 'Number of outer contributions for this inner tuple:', cache%num_outer
+    call out_print(out_str, 1)
     
+   
     allocate(outer_contract_sizes_1(cache%num_outer))
     allocate(outer_contract_sizes_2(cache%num_outer,2))
    
@@ -1827,15 +2029,19 @@ module rsp_general
     
     do while (traverse_end .EQV. .FALSE.)
   
-       write(*,*) 'Outer contribution:'
-    
-       do i = 1, outer_next%num_dmat
-          
-          write(*,*) 'D', outer_next%p_tuples(i)%pid
+       write(out_str, *) 'Outer contribution', k
+       call out_print(out_str, 1)
        
+       do i = 1, outer_next%num_dmat
+       
+          write(out_str, *) 'D', outer_next%p_tuples(i)%pid
+          call out_print(out_str, 1)
+                 
        end do
        
-       write(*,*) ' '
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+       
   
        ! If this is the case, then there are no outer perturbations (no chain rule applicateions)
        if (outer_next%num_dmat == 0) then
@@ -1894,10 +2100,6 @@ module rsp_general
           k = k + 1
         end if
     end do
-    
-        
-
-    
         
     
     allocate(contrib_0(cache%blks_triang_size))
@@ -1910,14 +2112,19 @@ module rsp_general
     ! Calculate nuclear-nuclear repulsion contribution
     if (num_0 > 0) then
     
+       write(out_str, *) 'Calculating density matrix-independent contribution'
+       call out_print(out_str, 1)
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
+    
        
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
-       write(*,*) 'nucpot contribution: ', contrib_0(1:min(12, size(contrib_0)))
-    
+       write(out_str, *) 'Density matrix-independent contribution:', contrib_0
+       call out_print(out_str, 2)
+       
     end if
-    
-          
+             
     allocate(contrib_1(cache%blks_triang_size*total_outer_size_1))
     contrib_1 = 0.0
     
@@ -2043,6 +2250,11 @@ module rsp_general
        
           if (.NOT.(mem_mgr%calibrate)) then
           
+             write(out_str, *) 'Calculating first-order density matrix-dependent contribution'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+          
              call get_1el_exp(num_pert, pert_ext, msize, &
                               LHS_dmat_1, cache%blks_triang_size*msize, &
                               contrib_1( (mcurr - 1) * cache%blks_triang_size + 1: &
@@ -2060,8 +2272,10 @@ module rsp_general
       !                                 contrib_1( (mcurr - 1) * cache%blks_triang_size + 1: &
       !                                 (mcurr + msize - 1) * cache%blks_triang_size)
        
-             write(*,*) '1-el contribution: ', contrib_1(1:min(12, size(contrib_1)))
        
+             write(out_str, *) 'First-order density matrix-dependent contribution', contrib_1
+             call out_print(out_str, 2)
+              
           end if
        
        end if
@@ -2093,10 +2307,6 @@ module rsp_general
     allocate(contrib_2(cache%blks_triang_size*total_outer_size_2))
     contrib_2 = 0.0
     
-!     write(*,*) 'Remaining matrices', mem_mgr%remain
-!     write(*,*) 'Contraction sizes', sum(outer_contract_sizes_2(:, 1)), sum(outer_contract_sizes_2(:, 2))
-    
-    
     if (mem_enough(mem_mgr, sum(outer_contract_sizes_2(:, 1)) + &
                             sum(outer_contract_sizes_2(:, 2)))) then
     
@@ -2118,8 +2328,6 @@ module rsp_general
        return
     
     end if
-    
-!     write(*,*) 'Memory status', mem_mgr%status
     
     
     ! Begin memory savings loop 2
@@ -2157,14 +2365,9 @@ module rsp_general
    
           do i = curr_pickup(1), cache%num_outer
           
-!              write(*,*) 'i is', i
-!              write(*,*) 'sizes:', outer_contract_sizes_2(i, 1), outer_contract_sizes_2(i, 2)
-              
              ! Can the whole pair be done?
              if (curr_remain >= outer_contract_sizes_2(i, 1) + outer_contract_sizes_2(i, 2)) then
                           
-!                 write(*,*) 'whole pair possible'
-                        
                 ! If yes, add to workload
                 curr_remain = curr_remain - (outer_contract_sizes_2(i, 1) + &
                                              outer_contract_sizes_2(i, 2))
@@ -2189,15 +2392,11 @@ module rsp_general
                 ! more to the unit and proceed
                 if (next_pickup(1) - curr_pickup(1) > 0) then
                 
-!                    write(*,*) 'Saving remaining work for next pass'
-                
                    exit
                 
                 ! If this was the first pair, make a workunit separation setup for this pair and 
                 ! do the first such piece as this workunit
                 else 
-                
-!                    write(*,*) 'started intra-pair'
                 
                    intra_pair = .TRUE.
                    intra_done = .FALSE.
@@ -2269,8 +2468,6 @@ module rsp_general
           ! If left- or right-heavy
           if (any_heavy > 0) then
           
-!              write(*,*) 'Doing intra-pair handling for heavy-state', any_heavy
-             
              ! If this was the last unit of the pair:
              if (curr_pickup(any_heavy + 1) + wunit_maxsize(any_heavy) > &
                  outer_contract_sizes_2(curr_pickup(1), any_heavy)) then
@@ -2300,17 +2497,11 @@ module rsp_general
           ! Otherwise, do default handling
           else
           
-!              write(*,*) 'Doing default intra-pair handling', wunit_maxsize
-          
              ! If this is the last RHS unit of the pair:
              if (curr_pickup(3) + wunit_maxsize(2) > outer_contract_sizes_2(i,2)) then
              
-!                 write(*,*) 'In last RHS unit of pair'
-             
                 ! If also the last LHS unit of the pair, then it is the last overall unit of the pair
                 if (curr_pickup(2) + wunit_maxsize(1) > outer_contract_sizes_2(i,1)) then
-                
-!                    write(*,*) 'Also in last LHS unit of pair'
                 
                    intra_done = .TRUE.
                 
@@ -2319,15 +2510,12 @@ module rsp_general
                    ! If this was the last unit of the last pair, mark as "done after this unit ends"
                    if (curr_pickup(1) == cache%num_outer) then
                    
-!                       write(*,*) 'Also in last pair'
-                   
                       mem_done = .TRUE.
+                      
                    end if
                    
                 ! Otherwise, change to next LHS unit for next iteration
                 else 
-                
-!                    write(*,*) 'But not last LHS unit of pair'
                 
                    next_pickup = (/curr_pickup(1), curr_pickup(2) + wunit_maxsize(1), 1/)
                 
@@ -2355,14 +2543,7 @@ module rsp_general
           end if   
           
        end if
-          
-!        write(*,*) 'Memory loop for 2-el'
-!        write(*,*) 'Current pickup is', curr_pickup, 'and next pickup is', next_pickup
-!        write(*,*) 'In intra-pair handling?', intra_pair
-!        if (intra_pair) then
-!            write(*,*) 'Unit size is', wunit_size
-!        end if
-!        write(*,*) ' '
+
        
        ! Allocate and set up perturbed density matrices for contractions
     
@@ -2483,6 +2664,12 @@ module rsp_general
           outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2) )
        
           if (.NOT.(mem_mgr%calibrate)) then
+          
+             write(out_str, *) 'Calculating second-order density matrix-dependent contribution'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+          
        
              ! Calculate two-electron contributions
              call get_2el_exp(num_pert, pert_ext, next_pickup(1) - curr_pickup(1), &
@@ -2490,9 +2677,10 @@ module rsp_general
                   outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2), RHS_dmat_2, &
                   cache%blks_triang_size*this_outer_size, &               
                   contrib_2(contrib_offset:contrib_offset + this_outer_size))
-          
-             write(*,*) '2-el contribution: ', contrib_2(1:min(12, size(contrib_2)))
-          
+       
+             write(out_str, *) 'Second-order density matrix-dependent contribution', contrib_2
+             call out_print(out_str, 2)
+             
           end if
                
           contrib_offset = contrib_offset + this_outer_size
@@ -2571,12 +2759,21 @@ module rsp_general
           
           if (.NOT.(mem_mgr%calibrate)) then
           
+             write(out_str, *) 'Calculating second-order density matrix-dependent contribution'
+             call out_print(out_str, 1)
+             write(out_str, *) ' '
+             call out_print(out_str, 1)
+          
              ! Calculate two-electron contributions
              call get_2el_exp(num_pert, pert_ext, 1, &
                   (/wunit_size(1)/), LHS_dmat_2, & 
                   (/wunit_size(2)/), RHS_dmat_2, &
                   cache%blks_triang_size * wunit_size(1) * wunit_size(2), &               
                   contrib_2_tmp)
+                  
+             write(out_str, *) 'Second-order density matrix-dependent contribution', contrib_2_tmp
+             call out_print(out_str, 2)
+                  
           
              ! Put temporary array data into contrib_2 in the appropriate places
           
@@ -2815,9 +3012,9 @@ module rsp_general
              
              else
              
-                write(*,*) 'ERROR: UNEXPECTED: NO INNER PERTURBATIONS'
-             
-          
+                write(out_str, *) 'ERROR: Inner perturbation tuple is empty'
+                call out_print(out_str, 0)
+                       
              end if
           
           
@@ -2851,7 +3048,7 @@ module rsp_general
   end subroutine
 
    ! Recurse to identify (dryrun == .TRUE.) or assemble (dryrun == .FALSE.) two-factor contributions
-   recursive subroutine rsp_twofact_recurse(pert, kn, p12, dryrun, cache, p_size, prop)
+   recursive subroutine rsp_twofact_recurse(pert, kn, p12, out_print, dryrun, cache, p_size, prop)
 
     implicit none
 
@@ -2867,15 +3064,18 @@ module rsp_general
     integer, allocatable, dimension(:,:,:) :: blk_info
     complex(8), dimension(p_size) :: prop
     
+    external :: out_print
+    character(len=2047) :: out_str
+    
     ! Recurse
     if (pert%npert > 0) then
 
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
-       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), dryrun, &
+       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), out_print, dryrun, &
        cache, p_size, prop)
        
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
-       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), dryrun, &
+       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), out_print, dryrun, &
        cache, p_size, prop)
 
     ! If at end of recursion, process
@@ -2910,11 +3110,16 @@ module rsp_general
           if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
 
              if (.NOT.(dryrun)) then
-
-                write(*,*) 'Retrieving Pulay n contribution:'
-                write(*,*) 'S', p12(1)%pid
-                write(*,*) 'W', p12(2)%pid
              
+                write(out_str, *) 'Retrieving Pulay n contribution:'
+                call out_print(out_str, 2)
+                write(out_str, *) 'S', p12(1)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) 'W', p12(2)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
+                
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
@@ -2935,10 +3140,15 @@ module rsp_general
           
              if (dryrun) then
              
-                write(*,*) 'Identified Pulay n contribution:'
-                write(*,*) 'S', p12(1)%pid
-                write(*,*) 'W', p12(2)%pid
-                
+                write(out_str, *) 'Adding newly identified Pulay n contribution to cache:'
+                call out_print(out_str, 2)
+                write(out_str, *) 'S', p12(1)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) 'W', p12(2)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
+                             
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
                 call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
                 ! Flag contribution as Pulay n type
@@ -2946,10 +3156,15 @@ module rsp_general
              
              else
              
-                write(*,*) 'ERROR: Expected to find Pulay contribution but it was not present'
-                write(*,*) 'S', p12(1)%pid
-                write(*,*) 'W', p12(2)%pid
-             
+                write(out_str, *) 'ERROR: Expected to find Pulay contribution but it was not present'
+                call out_print(out_str, 0)
+                write(out_str, *) 'S', p12(1)%pid
+                call out_print(out_str, 0)
+                write(out_str, *) 'W', p12(2)%pid
+                call out_print(out_str, 0)
+                write(out_str, *) ' '
+                call out_print(out_str, 0)
+
              end if
 
           end if
@@ -2977,10 +3192,15 @@ module rsp_general
 
              if (.NOT.(dryrun)) then
              
-                write(*,*) 'Retrieving Lagrange contributions:'
-                write(*,*) 'A', p12(1)%pid
-                write(*,*) 'B', p12(2)%pid
-                
+                write(out_str, *) 'Retrieving Lagrange contributions:'
+                call out_print(out_str, 2)
+                write(out_str, *) 'A', p12(1)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) 'B', p12(2)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
+             
                 ! Pulay Lagrange contribution
                 call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
@@ -3018,9 +3238,14 @@ module rsp_general
           
              if (dryrun) then
              
-                write(*,*) 'Identified Lagrange contributions:'
-                write(*,*) 'A', p12(1)%pid
-                write(*,*) 'B', p12(2)%pid
+                write(out_str, *) 'Adding newly identified Lagrange contributions to cache:'
+                call out_print(out_str, 2)
+                write(out_str, *) 'A', p12(1)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) 'B', p12(2)%pid
+                call out_print(out_str, 2)
+                write(out_str, *) ' '
+                call out_print(out_str, 2)
                 
                 call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
                 
@@ -3029,10 +3254,15 @@ module rsp_general
                 curr_outer%contrib_type = 3
              
              else
-             
-                write(*,*) 'ERROR: Expected to find Lagrange contributions but they were not present'
-                write(*,*) 'A', p12(1)%pid
-                write(*,*) 'B', p12(2)%pid
+              
+                write(out_str, *) 'ERROR: Expected to find Lagrange contributions but they were not present'
+                call out_print(out_str, 0)
+                write(out_str, *) 'A', p12(1)%pid
+                call out_print(out_str, 0)
+                write(out_str, *) 'B', p12(2)%pid
+                call out_print(out_str, 0)
+                write(out_str, *) ' '
+                call out_print(out_str, 0)
              
              end if
           
@@ -3045,7 +3275,7 @@ module rsp_general
   end subroutine
   
   ! Calculate two-factor contributions (Pulay n and Pulay, idempotency and SCFE Lagrangian)
-  subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, cache, mem_mgr)
+  subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, out_print, cache, mem_mgr)
 
     implicit none
     
@@ -3077,7 +3307,13 @@ module rsp_general
     
     external :: get_ovl_exp
     
+    external :: out_print
+    character(len=2047) :: out_str
+    
     max_outer_npert = 0
+    
+    write(out_str, *) 'Number of outer contributions for this inner tuple:', cache%num_outer
+    call out_print(out_str, 1)
     
     
     ! Getting unperturbed D for template use
@@ -3162,15 +3398,18 @@ module rsp_general
        end if
   
   
-       write(*,*) 'Outer contribution, type', outer_next%contrib_type
-    
+       write(out_str, *) 'Outer contribution, type', outer_next%contrib_type
+       call out_print(out_str, 1)
+
        do i = 1, outer_next%num_dmat
           
-          write(*,*) 'B', outer_next%p_tuples(i)%plab
-       
+          write(out_str, *) 'B', outer_next%p_tuples(i)%plab
+          call out_print(out_str, 1)
+          
        end do
-    
-       write(*,*) ' '
+       
+       write(out_str, *) ' '
+       call out_print(out_str, 1)
     
        ! Here and elsewhere: k in kn rule does not matter as long as it 
        ! is > n; it will always > n so used like this
@@ -3274,15 +3513,7 @@ module rsp_general
     
     do while (.NOT.(mem_done))
     
-       
-    
        msize = min(mem_track, size_pulay_n + size_lagrange/3 - mcurr + 1)
-       
-!        if (msize < size_pulay_n + size_lagrange/3) then
-!              
-!           write(*,*) 'Memory loop for Pulay terms: Starting element is', mcurr , 'and block size is', msize
-!        
-!        end if
        
        ! Flag if this is the last memory iteration
        if (msize + mcurr > size_pulay_n + size_lagrange/3) then
@@ -3323,17 +3554,8 @@ module rsp_general
        ! Traverse to get W matrices
        do while (traverse_end .EQV. .FALSE.)
      
-   !        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-   !     
-   !        do i = 1, outer_next%num_dmat
-   !           
-   !           write(*,*) 'B', outer_next%p_tuples(i)%pid
-   !        
-   !        end do
-       
              allocate(d_struct_o(o_supsize(k), 3))
              allocate(d_struct_o_prime(o_supsize_prime(k), 3))
-   
              
              which_index_is_pid = 0
              
@@ -3825,14 +4047,6 @@ module rsp_general
           
           do while (traverse_end .EQV. .FALSE.)
       
-      !        write(*,*) 'Outer contribution:'!, outer_next%num_dmat, outer_next%dummy_entry
-      !     
-      !        do i = 1, outer_next%num_dmat
-      !           
-      !           write(*,*) 'B', outer_next%p_tuples(i)%pid
-      !        
-      !        end do
-       
              c_ctr = 0
           
              if (outer_next%p_tuples(1)%npert ==0) then

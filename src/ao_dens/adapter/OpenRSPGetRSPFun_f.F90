@@ -29,6 +29,26 @@
 ! data types between C/Fortran
 #include "api/qcmatrix_c_type.h"
 
+
+    ! Placeholder routine awaiting API update
+    subroutine f_callback_RSPOUTPUT_PLACEHOLDER(out_str, lvl)
+    
+      implicit none
+    
+      integer :: lvl
+      character(*) :: out_str
+       
+      if (lvl <= 2) then
+       
+         write(*,*) trim(out_str)
+       
+      end if
+    
+    
+    
+    end subroutine
+
+
     subroutine OpenRSPGetRSPFun_f(num_props,        &
                                   len_tuple,        &
                                   pert_tuple,       &
@@ -112,6 +132,9 @@
         !character, allocatable :: f_file_tensor(:)
         integer(kind=QINT) ipert, jpert
         integer(kind=4) ierr
+        
+        external :: f_callback_RSPOUTPUT_PLACEHOLDER
+        
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
@@ -229,33 +252,39 @@
             ! MaR: max_mat set to very high number to take matrix limitations out of use
             ! during development of other features
             max_mat = 999999999
+            
+            ! MaR: Note that f_callback_RSPOUTPUT_PLACEHOLDER is an output callback placeholder 
         
             call openrsp_get_property(num_props,                                 &
-                                      len_tuple,                                 &
-                                      f_pert_dims,                               &
-                                      f_pert_first_comp,                         &
-                                      f_pert_tuple,                              &
-                                      num_freq_configs,                          &
-                                      f_pert_freqs,                              &
-                                      kn_rules,                                  &
-                                      f_F_unpert(1),                             &
-                                      f_S_unpert(1),                             &
-                                      f_D_unpert(1),                             &
-                                      f_callback_RSPSolverGetLinearRSPSolution,  &
-                                      f_callback_RSPNucHamiltonGetContributions, &
-                                      f_callback_RSPOverlapGetMat,               &
-                                      f_callback_RSPOverlapGetExp,               &
-                                      f_callback_RSPOneOperGetMat,               &
-                                      f_callback_RSPOneOperGetExp,               &
-                                      f_callback_RSPTwoOperGetMat,               &
-                                      f_callback_RSPTwoOperGetExp,               &
-                                      f_callback_RSPXCFunGetMat,                 &
-                                      f_callback_RSPXCFunGetExp,                 &
-                                      STDOUT,                                    &
-                                      f_rsp_funs,                                &
-                                      mem_calibrate=mem_calibrate,               &
-                                      max_mat=max_mat,                           &
-                                      mem_result=mem_result)
+                                           len_tuple,                                 &
+                                           f_pert_dims,                               &
+                                           f_pert_first_comp,                         &
+                                           f_pert_tuple,                              &
+                                           num_freq_configs,                          &
+                                           f_pert_freqs,                              &
+                                           kn_rules,                                  &
+                                           f_F_unpert(1),                             &
+                                           f_S_unpert(1),                             &
+                                           f_D_unpert(1),                             &
+                                           f_callback_RSPSolverGetLinearRSPSolution,  &
+                                           f_callback_RSPNucHamiltonGetContributions, &
+                                           f_callback_RSPOverlapGetMat,               &
+                                           f_callback_RSPOverlapGetExp,               &
+                                           f_callback_RSPOneOperGetMat,               &
+                                           f_callback_RSPOneOperGetExp,               &
+                                           f_callback_RSPTwoOperGetMat,               &
+                                           f_callback_RSPTwoOperGetExp,               &
+                                           f_callback_RSPXCFunGetMat,                 &
+                                           f_callback_RSPXCFunGetExp,                 &
+                                           f_callback_RSPOUTPUT_PLACEHOLDER,          &
+                                           STDOUT,                                    &
+                                           f_rsp_funs,                                &
+                                           mem_calibrate=mem_calibrate,               &
+                                           max_mat=max_mat,                           &
+                                           mem_result=mem_result)
+                                           
+                                           
+                                           
 
 
         !end if
