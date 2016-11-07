@@ -279,7 +279,7 @@ module rsp_perturbed_matrices
           call QcMatRAXPY(1.0d0, T, W)   
           
          end if
-       end if !calc_contrib
+       end if
 
     end do
 
@@ -293,10 +293,11 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Y matrix
   subroutine rsp_get_matrix_y(superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Y, select_terms)
+           ind, F, D, S, Y, select_terms_arg)
 
     implicit none
 
+    logical, optional :: select_terms_arg
     logical :: select_terms, calc_contrib
     integer :: i, total_num_perturbations, superstructure_size, indices_len, j
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
@@ -310,6 +311,15 @@ module rsp_perturbed_matrices
     call QcMatInit(C)
 
     call QcMatInit(T)
+    
+    select_terms = .FALSE.
+    
+    if (present(select_terms_arg)) then
+    
+       select_terms = select_terms_arg
+    
+    end if
+    
     
     do i = 1, superstructure_size
 
@@ -448,10 +458,11 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Z matrix
   subroutine rsp_get_matrix_z(superstructure_size, deriv_struct, kn, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Z, select_terms)
+           ind, F, D, S, Z, select_terms_arg)
 
     implicit none
 
+    logical, optional :: select_terms_arg
     logical :: select_terms, calc_contrib
     integer :: i, total_num_perturbations, superstructure_size, indices_len
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
@@ -467,6 +478,15 @@ module rsp_perturbed_matrices
     call QcMatInit(C)
 
     call QcMatInit(T)
+ 
+    select_terms = .FALSE.
+    
+    if (present(select_terms_arg)) then
+    
+       select_terms = select_terms_arg
+    
+    end if
+ 
  
 
     do i = 1, superstructure_size
@@ -521,7 +541,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Lambda matrix
   subroutine rsp_get_matrix_lambda(p_tuple_a, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L,&
-           select_terms)
+           select_terms_arg)
 
     implicit none
 
@@ -533,6 +553,7 @@ module rsp_perturbed_matrices
     type(contrib_cache_outer) :: D, S
     type(QcMat) :: L, A, B, C, T
     logical :: calc_contrib, select_terms
+    logical, optional :: select_terms_arg
 
     call QcMatInit(A)
     call QcMatInit(B)
@@ -541,10 +562,24 @@ module rsp_perturbed_matrices
     call QcMatInit(T)
 
     calc_contrib = .true.
+    
+    select_terms = .FALSE.
+    
+    if (present(select_terms_arg)) then
+    
+       select_terms = select_terms_arg
+    
+    end if
+    
 
     do i = 1, superstructure_size
-
-      if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+            
+       if (select_terms) then
+      
+          calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+         
+       end if
+           
 
       if (calc_contrib) then
       
@@ -580,7 +615,7 @@ module rsp_perturbed_matrices
        call p_tuple_deallocate(merged_A)
        call p_tuple_deallocate(merged_B)
 
-      end if ! calc_contrib
+      end if
        
     end do
     
@@ -596,7 +631,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Zeta matrix
   subroutine rsp_get_matrix_zeta(p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Zeta, select_terms)
+           ind, F, D, S, Zeta, select_terms_arg)
 
     implicit none
 
@@ -608,7 +643,8 @@ module rsp_perturbed_matrices
     integer, dimension(indices_len) :: ind
     type(contrib_cache_outer) :: F, D, S
     type(QcMat) :: Zeta, A, B, C, T
-    logical :: calc_contrib,select_terms
+    logical :: calc_contrib, select_terms
+    logical, optional :: select_terms_arg
 
     call QcMatInit(A)
     call QcMatInit(B)
@@ -617,10 +653,22 @@ module rsp_perturbed_matrices
     call QcMatInit(T)
     
     calc_contrib = .true.
+    
+    select_terms = .FALSE.
+    
+    if (present(select_terms_arg)) then
+    
+       select_terms = select_terms_arg
+    
+    end if
 
     do i = 1, superstructure_size
 
-     if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,3))
+     if (select_terms) then 
+     
+        calc_contrib = .not.find_residue_info(deriv_struct(i,3))
+        
+     end if
 
      if (calc_contrib) then     
     
@@ -643,7 +691,11 @@ module rsp_perturbed_matrices
 
      end if
      
-     if (select_terms) calc_contrib = .not.find_residue_info(merged_B)
+     if (select_terms) then
+     
+        calc_contrib = .not.find_residue_info(merged_B)
+        
+     end if
 
      if (select_terms) then
  
@@ -661,7 +713,11 @@ module rsp_perturbed_matrices
 
      end if
 
-     if (select_terms) calc_contrib = find_residue_info(deriv_struct(i,2))
+     if (select_terms) then 
+     
+        calc_contrib = find_residue_info(deriv_struct(i,2))
+        
+     end if
 
      if (calc_contrib) then
 
@@ -704,7 +760,11 @@ module rsp_perturbed_matrices
 
      end if
 
-     if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,1))
+     if (select_terms) then
+     
+        calc_contrib = .not.find_residue_info(deriv_struct(i,1))
+    
+     end if
 
      if (calc_contrib) then
 
@@ -724,7 +784,11 @@ module rsp_perturbed_matrices
 
      end if
 
-     if (select_terms) calc_contrib = .not.find_residue_info(merged_A) 
+     if (select_terms) then 
+     
+        calc_contrib = .not.find_residue_info(merged_A) 
+        
+     end if
 
       if (calc_contrib) then
                  
@@ -741,7 +805,11 @@ module rsp_perturbed_matrices
 
       end if
 
-      if (select_terms) calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+      if (select_terms) then
+      
+         calc_contrib = .not.find_residue_info(deriv_struct(i,2))
+         
+      end if
 
       if (calc_contrib) then
 

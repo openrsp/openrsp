@@ -50,14 +50,16 @@ module rsp_field_tuple
   type p_tuple
 
      integer :: npert
-     integer :: n_pert_res_max=1  ! Max. num. of pert. in residues
-     integer :: n_states=1 ! number of states (for residues only)
-     integer :: do_residues=0 ! Degree of residue to be calced (0: no residue)
+
      integer, allocatable, dimension(:) :: pdim ! Dimensions of perturbations
      character(4), allocatable, dimension(:) :: plab ! Perturbation labels
      integer, allocatable, dimension(:) :: pfcomp ! First component is component #pfcomp
      integer, allocatable, dimension(:) :: pid ! Pert. ID - for k,n rule evaluations
      complex(8), allocatable, dimension(:) :: freq ! Frequencies of perturbations
+     
+     integer :: do_residues=0 ! Degree of residue to be calculated (0: no residue)
+     integer :: n_pert_res_max=1  ! Max. num. of pert. in residues
+     integer :: n_states=1 ! number of states (for residues only)
      integer, allocatable, dimension(:) :: states ! indices of states involved
      complex(8), allocatable, dimension(:) :: exenerg ! Excitation energies (for residues) 
      logical, allocatable, dimension(:,:) :: part_of_residue
@@ -779,13 +781,33 @@ end if
     deallocate(p1%pdim) 
     deallocate(p1%plab)
     deallocate(p1%pid)
+    
     if (allocated(p1%pfcomp)) then
+    
        deallocate(p1%pfcomp)
+       
     end if    
+    
     deallocate(p1%freq)
-    if(allocated(p1%states)) deallocate(p1%states)
-    if(allocated(p1%exenerg)) deallocate(p1%exenerg)
-    if(allocated(p1%part_of_residue)) deallocate(p1%part_of_residue)
+    
+    if (allocated(p1%states)) then
+    
+       deallocate(p1%states)
+       
+    end if
+    
+    if (allocated(p1%exenerg)) then
+       
+       deallocate(p1%exenerg)
+       
+    end if
+    
+    
+    if (allocated(p1%part_of_residue)) then
+    
+       deallocate(p1%part_of_residue)
+       
+    end if
 
     
   end subroutine
@@ -798,13 +820,23 @@ end if
       type(p_tuple), optional :: template
       type(p_tuple) :: emptypert
 
-      if(present(template)) call p_tuple_add_stateinfo(emptypert,template)
+      if (present(template)) then
+      
+         call p_tuple_add_stateinfo(emptypert,template)
+         
+      end if
+      
       emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
       allocate(emptypert%freq(0))
-      if(emptypert%do_residues.gt.0) allocate(emptypert%part_of_residue(0,emptypert%do_residues))
+      
+      if (emptypert%do_residues.gt.0) then
+    
+         allocate(emptypert%part_of_residue(0,emptypert%do_residues))
+         
+      end if
 
 
   end function
@@ -817,13 +849,24 @@ end if
       type(p_tuple) :: emptypert
       type(p_tuple), optional :: template
 
-      if(present(template)) call p_tuple_add_stateinfo(emptypert,template)
+      if (present(template)) then 
+      
+         call p_tuple_add_stateinfo(emptypert,template)
+         
+      end if
+      
       emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
       allocate(emptypert%freq(0))
-      if(emptypert%do_residues.gt.0) allocate(emptypert%part_of_residue(0,emptypert%do_residues))
+      
+      
+      if (emptypert%do_residues.gt.0) then
+      
+         allocate(emptypert%part_of_residue(0,emptypert%do_residues))
+         
+      end if
 
   end subroutine
 

@@ -24,7 +24,7 @@ module rsp_perturbed_sdf
   ! Main routine for managing calculation of perturbed Fock, density and overlap matrices
   subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
                                get_1el_mat, get_2el_mat, get_xc_mat, out_print, dryrun, id_outp, &
-                               prog_info, rs_info, sdf_retrieved, mem_mgr,Xf)
+                               prog_info, rs_info, sdf_retrieved, mem_mgr, Xf)
 
     implicit none
 
@@ -52,11 +52,6 @@ module rsp_perturbed_sdf
 
     max_order = max(maxval(kn_rule(:, 1)), maxval(kn_rule(:, 2)))
     max_npert = maxval((/(p_tuples(i)%npert, i = 1, sum(n_freq_cfgs))/))
-
-!   ! Make sure that Xf vectors are present in residue calculations
-!   if (.not.present(Xf).and.p_tuples(1)%do_residues.eq.0) then
-!     stop 'Residue calculation needs Xf vectors in rsp_fds!'
-!   end if
 
     ! Make dummy perturbation tuples to head cache to identify by perturbation order: Identifier is frequencies
     allocate(p_dummy_orders(max_npert))
@@ -99,6 +94,7 @@ module rsp_perturbed_sdf
        k = 1 
        do i = 1, n_props
           do j = 1, n_freq_cfgs(i)
+          
              call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, out_print)
              k = k + 1
 
@@ -324,10 +320,16 @@ module rsp_perturbed_sdf
              call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
              call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
              call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
-             sdf_retrieved = .TRUE.
-             
+                       
           end if
+          
+          if (present(Xf)) then
        
+             call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+          
+          end if
+          
+          sdf_retrieved = .TRUE.
        
        else
        
@@ -336,11 +338,23 @@ module rsp_perturbed_sdf
           write(out_str, *) ' '
           call out_print(out_str, 1)
        
-       
           ! Calculate all perturbed S, D, F at this order
-          call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
-               get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, lof_next, &
-               rsp_eqn_retrieved, prog_info, rs_info, mem_mgr,Xf)
+       
+          if (present(Xf)) then
+          
+             call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
+                  get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, lof_next, &
+                  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr, Xf=Xf)
+               
+               
+          else
+          
+             call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
+                  get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, lof_next, &
+                  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
+          
+          
+          end if
                
           if (mem_exceed(mem_mgr)) then
                 
@@ -421,7 +435,7 @@ module rsp_perturbed_sdf
              pert%pid(j) = k
              k = k + 1
           end do
-
+          
           call contrib_cache_add_element(contribution_cache, 2, (/p_dummy_orders(pert%npert), &
                                                                   p_tuple_standardorder(pert)/))
 
@@ -1091,9 +1105,6 @@ module rsp_perturbed_sdf
        
        mcurr = mcurr + msize
     
-   
-    
-       
     
        if (.NOT.(mem_mgr%calibrate)) then
     
@@ -1227,9 +1238,6 @@ module rsp_perturbed_sdf
     end if
     
     cache_outer_next => cache_outer
-   
-    
-    
     
     
     ! Cycle to start
@@ -1237,14 +1245,16 @@ module rsp_perturbed_sdf
     if (cache_outer_next%dummy_entry) then
              cache_outer_next => cache_outer_next%next
     end if
+    
     if (cache_outer_next%p_tuples(1)%do_residues.gt.0) then
+         
+         call mem_incr(mem_mgr, 1)
  
-          ! Is Xf present for a residue calculation?
-          if (.not.present(Xf)) stop 'Xf needed in rsp_sdf_calculate!'
+ 
           allocate(Xx(1))
           call QcMatInit(Xx(1))
-          call contrib_cache_getdata_outer(Xf, 1, (/get_emptypert()/), .FALSE., contrib_size=1, &
-          ind_len=1, ind_unsorted=(/1/), mat_sing=Xx(1))
+          call contrib_cache_getdata_outer(Xf, 1, (/get_emptypert()/), .FALSE., contrib_size = 1, &
+          ind_len = 1, ind_unsorted = (/1/), mat_sing = Xx(1))
 
     end if
 
@@ -1368,8 +1378,6 @@ module rsp_perturbed_sdf
     
     do while(.NOT.(termination))
     
-    
-
        pert = cache_outer_next%p_tuples(1)
        
        ! Get frequency sum
@@ -1382,6 +1390,7 @@ module rsp_perturbed_sdf
        allocate(blk_sizes(pert%npert))
        blk_info = get_blk_info(nblks, pert)
        blk_sizes = get_triangular_sizes(nblks, blk_info(:,2), blk_info(:,3))
+       
        ! Do we treat a perturbation which requires residue selection of terms?
        residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)
  
@@ -1469,7 +1478,7 @@ module rsp_perturbed_sdf
              call rsp_get_matrix_z(superstructure_size, derivative_structure, &
                   (/pert%npert,pert%npert/), pert%npert, &
                   (/ (m, m = 1, pert%npert) /), pert%npert, &
-                  ind, F, D, S, Dp(ind_ctr + j - 1),residue_select)
+                  ind, F, D, S, Dp(ind_ctr + j - 1), select_terms_arg=residue_select)
 
           end if
           
@@ -1591,6 +1600,7 @@ module rsp_perturbed_sdf
     do while(.NOT.(termination))
 
        pert = cache_outer_next%p_tuples(1)
+       
        ! Do we treat a perturbation which requires residue selection of terms?
        residue_select = .not.find_complete_residualization(pert).and.find_residue_info(pert)
 
@@ -1639,8 +1649,9 @@ module rsp_perturbed_sdf
           if (.NOT.(mem_mgr%calibrate)) then
     
              call rsp_get_matrix_y(superstructure_size, derivative_structure, &
-                   pert%npert, (/ (m, m = 1, pert%npert) /), &
-                  pert%npert, ind, F, D, S, RHS(ind_ctr + j - 1),residue_select)
+                  pert%npert, (/ (m, m = 1, pert%npert) /), &
+                  pert%npert, ind, F, D, S, RHS(ind_ctr + j - 1), &
+                  select_terms_arg = residue_select)
                   
           end if        
                   
@@ -1687,10 +1698,15 @@ module rsp_perturbed_sdf
     ! frequency sum is the same
     termination = .FALSE.
     do while(.NOT.(termination))
-        if(pert%do_residues.gt.0) then       
-          residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+    
+        if (pert%do_residues.gt.0) then       
+        
+           residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+        
         else
-          residualization = .false.
+        
+           residualization = .false.
+        
         end if
 
         if (size_i(k) > m) then
@@ -1727,41 +1743,43 @@ module rsp_perturbed_sdf
                 else
 
                    if (.NOT.(mem_mgr%calibrate)) then
-                     if (.not.residualization) then
-                      write(out_str, *) 'Solving response equations'
-                      call out_print(out_str, 1)
-                      write(out_str, *) 'Frequency sum:', freq_sums(k)
-                      call out_print(out_str, 2)
-                      write(out_str, *) ' '
-                      call out_print(out_str, 1)
                    
-                      call get_rsp_sol(1,                                    &
-                                       (/last-first+1/),                     &
-                                       (/1/),                                &
-                                       dcmplx(real((/freq_sums(k)/)),0.0d0), &
-                                       RHS(ind_ctr+first-1:ind_ctr+last-1),  &
-                                       X(ind_ctr+first-1:ind_ctr+last-1))
+                      if (.not.residualization) then
+                      
+                         write(out_str, *) 'Solving response equations'
+                         call out_print(out_str, 1)
+                         write(out_str, *) 'Frequency sum:', freq_sums(k)
+                         call out_print(out_str, 2)
+                         write(out_str, *) ' '
+                         call out_print(out_str, 1)
+                   
+                         call get_rsp_sol(1,                                    &
+                                          (/last-first+1/),                     &
+                                          (/1/),                                &
+                                          dcmplx(real((/freq_sums(k)/)),0.0d0), &
+                                          RHS(ind_ctr+first-1:ind_ctr+last-1),  &
+                                          X(ind_ctr+first-1:ind_ctr+last-1))
 
-                     else
+                      else
 
-                      ! DaF: Replace LES solution by contraction for residualized perturbations
-                      ! DaF: This is only for debugging! In principle we replace X by Xx.  
-                      do j = first, last
+                         ! DaF: Replace LES solution by contraction for residualized perturbations
+                         ! DaF: This is only for debugging! In principle we replace X by Xx.  
+                         do j = first, last
 
-                        ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+j-1))                                                
-                        call QcMatTraceATrB(RHS(ind_ctr+j-1),Xx(1),xrtm)                                                                                        
-                        write(*,*)'xrtm=',xrtm
-                        write(*,*)'Nullifying Fp!'
-                        call QcMatZero(Fp(ind_ctr+j-1))
+                            ierr = QcMatDuplicate_f(Xx(1),COPY_PATTERN_AND_VALUE,X(ind_ctr+j-1))                                                
+                            call QcMatTraceATrB(RHS(ind_ctr+j-1),Xx(1),xrtm)                                                                                        
+                            write(*,*)'xrtm=',xrtm
+                            write(*,*)'Nullifying Fp!'
+                            call QcMatZero(Fp(ind_ctr+j-1))
 
-                      end do
+                         end do
   
-                     end if
+                      end if
                   
-                     call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
+                      call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
                            mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
                     
-                    end if
+                   end if
                    
                 end if
                 
@@ -1800,7 +1818,17 @@ module rsp_perturbed_sdf
                 write(out_str, *) ''
                 call out_print(out_str, 1)
        
-                if (residualization) stop 'No residualization yet for 2nd solver call in rsp_sdf_calc'
+                if (residualization) then 
+                
+                   write(out_str, *) 'ERROR: No residualization yet for 2nd solver call in rsp_sdf_calc'
+                   call out_print(out_str, 1)
+                   write(out_str, *) 'Cannot proceed with calculation, halting'
+                   call out_print(out_str, 1)
+                
+                   stop 
+                
+                end if    
+            
                 call get_rsp_sol(1,                                    &
                                  (/size_i(k)/),                        &
                                  (/1/),                                &
@@ -1960,19 +1988,30 @@ module rsp_perturbed_sdf
        do while(.NOT.(termination))
 
           pert = cache_outer_next%p_tuples(1)
+          
           if (pert%do_residues.gt.0) then 
-           residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+          
+             residualization = dabs(dabs(dble(freq_sums(k)))-dabs(dble(pert%exenerg(1)))).lt.xtiny
+             
           else
-           residualization = .false.
+          
+             residualization = .false.
+             
           end if
          
           do j = 1, size_i(k)
-           ! DaF: Residue case: Leave alone the Dp part
-           if (residualization) then
-             ierr = QcMatDuplicate_f(Dh(ind_ctr + j - 1),COPY_PATTERN_AND_VALUE,Dp(ind_ctr + j -1))
-           else
-             call QcMatRAXPY(1.0d0, Dh(ind_ctr + j - 1), Dp(ind_ctr + j - 1))
-           end if
+          
+             ! DaF: Residue case: Leave alone the Dp part
+             if (residualization) then
+             
+                ierr = QcMatDuplicate_f(Dh(ind_ctr + j - 1),COPY_PATTERN_AND_VALUE,Dp(ind_ctr + j -1))
+                
+             else
+             
+                call QcMatRAXPY(1.0d0, Dh(ind_ctr + j - 1), Dp(ind_ctr + j - 1))
+                
+             end if
+             
           end do
        
           call contrib_cache_outer_add_element(F, .FALSE., 1, & 
@@ -2006,9 +2045,15 @@ module rsp_perturbed_sdf
        call QcMatDst(C)
        call QcMatDst(T)
        call QcMatDst(U)
+       
        if (cache_outer%p_tuples(1)%do_residues.gt.0) then
-        call QcMatDst(Xx(1))
-        deallocate(Xx)   
+       
+          call QcMatDst(Xx(1))
+                        
+          deallocate(Xx)   
+        
+          call mem_decr(mem_mgr, 1)
+          
        end if
  
     end if

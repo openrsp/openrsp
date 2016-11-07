@@ -68,7 +68,7 @@
         use RSPPertBasicTypes_f, only: QcPertInt, &
                                        C_QCPERTINT
         use rsp_pert_table
-        use rsp_general, only: openrsp_get_residue
+        use rsp_general, only: openrsp_get_property
         implicit none
         logical :: mem_calibrate
         integer :: max_mat, mem_result
@@ -299,38 +299,40 @@
                 end if
                 ! calculates residues for the current excited state
                 ipert = (iext-1)*resize_per_excit
-                call openrsp_get_residue(num_props,                                  &
-                                         len_tuple,                                  &
-                                         f_pert_dims,                                &
-                                         f_pert_first_comp,                          &
-                                         order_residue,                              &
-                                         f_pert_tuple,                               &
-                                         residue_num_pert,                           &
-                                         residue_spec_index,                         &
-                                         exenerg,                                    &
-                                         num_freq_configs,                           &
-                                         f_pert_freqs,                               &
-                                         kn_rules,                                   &
-                                         f_F_unpert(1),                              &
-                                         f_S_unpert(1),                              &
-                                         f_D_unpert(1),                              &
-                                         X_unpert,                                   &
-                                         f_callback_RSPSolverGetLinearRSPSolution,   &
-                                         f_callback_RSPNucHamiltonGetContributions,  &
-                                         f_callback_RSPOverlapGetMat,                &
-                                         f_callback_RSPOverlapGetExp,                &
-                                         f_callback_RSPOneOperGetMat,                &
-                                         f_callback_RSPOneOperGetExp,                &
-                                         f_callback_RSPTwoOperGetMat,                &
-                                         f_callback_RSPTwoOperGetExp,                &
-                                         f_callback_RSPXCFunGetMat,                  &
-                                         f_callback_RSPXCFunGetExp,                  &
-                                         f_callback_RSPOUTPUT_PLACEHOLDER,           &
-                                         STDOUT,                                     &
-                                         f_residues(ipert+1:ipert+resize_per_excit), &
-                                         mem_calibrate=mem_calibrate,                &
-                                         max_mat=max_mat,                            &
-                                         mem_result=mem_result)
+                call openrsp_get_property(num_props,                                  &
+                                          len_tuple,                                  &
+                                          f_pert_dims,                                &
+                                          f_pert_first_comp,                          &
+                                          f_pert_tuple,                               &
+                                          num_freq_configs,                           &
+                                          f_pert_freqs,                               &
+                                          kn_rules,                                   &
+                                          f_F_unpert(1),                              &
+                                          f_S_unpert(1),                              &
+                                          f_D_unpert(1),                              &
+                                          f_callback_RSPSolverGetLinearRSPSolution,   &
+                                          f_callback_RSPNucHamiltonGetContributions,  &
+                                          f_callback_RSPOverlapGetMat,                &
+                                          f_callback_RSPOverlapGetExp,                &
+                                          f_callback_RSPOneOperGetMat,                &
+                                          f_callback_RSPOneOperGetExp,                &
+                                          f_callback_RSPTwoOperGetMat,                &
+                                          f_callback_RSPTwoOperGetExp,                &
+                                          f_callback_RSPXCFunGetMat,                  &
+                                          f_callback_RSPXCFunGetExp,                  &
+                                          f_callback_RSPOUTPUT_PLACEHOLDER,           &
+                                          STDOUT,                                     &
+                                          resize_per_excit,                           &
+                                          f_residues(ipert+1:ipert+resize_per_excit), &
+                                          order_residue,                              &
+                                          mem_calibrate=mem_calibrate,                &
+                                          max_mat=max_mat,                            &
+                                          mem_result=mem_result,                      &
+                                          residue_spec_pert=residue_num_pert,         &
+                                          size_rsi_1=size(residue_spec_index, 1),     &
+                                          residue_spec_index=residue_spec_index,      &
+                                          exenerg=exenerg,                            &
+                                          Xf_unpert=X_unpert)
             end do
 
         !end if
