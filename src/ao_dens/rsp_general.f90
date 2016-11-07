@@ -76,6 +76,7 @@ module rsp_general
   implicit none
 
   public openrsp_get_property
+!   public openrsp_get_residue
   public print_rsp_tensor
   public print_rsp_tensor_stdout
   public print_rsp_tensor_stdout_tr
@@ -117,53 +118,75 @@ module rsp_general
   ! max_mat_mem: Max # of matrices to be created by OpenRSP
   ! mem_result: Optional (for mem. calibration mode): Calibration result
   
+
   subroutine openrsp_get_property(n_props, np, pert_dims, pert_first_comp, &
-                                   pert_labels, n_freq_cfgs, pert_freqs, &
-                                   kn_rules, F_unpert, S_unpert, D_unpert, get_rsp_sol, get_nucpot, &
-                                   get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                                   get_2el_mat, get_2el_exp, get_xc_mat, & 
-                                   get_xc_exp, out_print, id_outp, rsp_tensor, file_id, &
-                                   mem_calibrate, max_mat, mem_result)
+                                 pert_labels, n_freq_cfgs, pert_freqs, &
+                                 kn_rules, F_unpert, S_unpert, D_unpert, &
+                                 get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, &
+                                 get_1el_mat, get_1el_exp, get_2el_mat, get_2el_exp, &
+                                 get_xc_mat, get_xc_exp, out_print, id_outp, rsp_tensor_size, &
+                                 rsp_tensor, residue_order, file_id, mem_calibrate, max_mat, &
+                                 mem_result, residue_spec_pert, size_rsi_1, residue_spec_index, &
+                                 exenerg, Xf_unpert)
     implicit none
 
-    logical, optional :: mem_calibrate
-    integer, optional :: max_mat, mem_result
-    type(mem_manager) :: mem_mgr
+    
     integer(kind=QINT), intent(in) :: n_props
+    
     integer(kind=QINT), dimension(n_props), intent(in) :: np, n_freq_cfgs
     integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
     character(4), dimension(sum(np)), intent(in) :: pert_labels
+    
     character(256) :: filename
-    integer :: i, j, k, m, n
+    integer :: i, j, k, l, m, n
     integer :: dum_ind
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes, num_blks
     integer(kind=QINT), intent(in), dimension(n_props) :: kn_rules
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
-    character, optional, dimension(20) :: file_id
+    logical :: lfreq_match
+    
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
     complex(8), dimension(dot_product(np, n_freq_cfgs)), intent(in) :: pert_freqs
+    integer :: residualization
+    
     integer(kind=QINT) num_perts
     real :: timing_start, timing_end
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
-    external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
+    external :: get_rsp_sol, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, get_nucpot
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
-    complex(8), dimension(*) :: rsp_tensor
+    external :: out_print
+    character(len=2047) :: out_str
+    integer(kind=QINT), intent(in) :: rsp_tensor_size
+    complex(8), dimension(rsp_tensor_size) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
-    type(contrib_cache_outer), pointer :: S, D, F
+
+    type(contrib_cache_outer), pointer :: S, D, F, Xf
     integer :: kn(2)
     logical :: r_exist, sdf_retrieved
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
     character(30) :: fmt_str
+    real, parameter :: xtiny=1.0d-8
+    
+    integer(kind=QINT), intent(in) :: residue_order
+    
+    character, optional, dimension(20) :: file_id
+    
+    logical, optional :: mem_calibrate
+    integer, optional :: max_mat, mem_result
+    type(mem_manager) :: mem_mgr
+    
+    integer(kind=QINT), intent(in), optional :: residue_spec_pert(residue_order)
+    integer(kind=QINT), intent(in), optional :: size_rsi_1
+    integer(kind=QINT), dimension(*), optional :: residue_spec_index
+    complex(8), dimension(*), optional :: exenerg
+    type(QcMat), optional, dimension(*) :: Xf_unpert 
     
     integer, allocatable, dimension(:,:) :: indices
     real :: write_threshold
     integer :: p
-    
-    external :: out_print
-    character(len=2047) :: out_str
     
     
     if (present(mem_calibrate)) then
@@ -230,8 +253,41 @@ module rsp_general
 
     write(out_str, *) ' '
     call out_print(out_str, 1)
-    write(out_str, *) 'OpenRSP library called'
-    call out_print(out_str, 1)
+    
+    if (residue_order == 0) then
+    
+       write(out_str, *) 'OpenRSP lib called for (non-residue) response property calculation'
+       call out_print(out_str, 1)
+    
+    elseif (residue_order == 1) then
+
+       write(out_str, *) 'OpenRSP lib called for response property single residue calculation'
+       call out_print(out_str, 1)
+    
+    elseif (residue_order == 2) then
+    
+       write(out_str, *) 'ERROR: OpenRSP lib called for double residue calculation'
+       call out_print(out_str, 0)
+       write(out_str, *) 'The only currently supported residues are single residues'
+       call out_print(out_str, 0)
+       write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP library'
+       call out_print(out_str, 0)
+    
+       return
+    
+    else
+    
+       write(out_str, *) 'ERROR: OpenRSP lib called for unsupported order of residue'
+       call out_print(out_str, 0)
+       write(out_str, *) 'The only currently supported residues are single residues'
+       call out_print(out_str, 0)
+       write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP library'
+       call out_print(out_str, 0)
+    
+       return
+    
+    end if
+    
     write(out_str, *) ' '
     call out_print(out_str, 1)
     
@@ -267,6 +323,14 @@ module rsp_general
        write(out_str, *) ' '
        call out_print(out_str, 1)
        
+       
+       if (residue_order > 0) then
+
+          write(out_str, *) 'Note: One perturbation in this tuple plays the role of residue placeholder'
+          call out_print(out_str, 1)
+          
+       end if
+       
     
        do j = 1, n_freq_cfgs(i)
        
@@ -294,11 +358,65 @@ module rsp_general
           allocate(p_tuples(k)%pid(np(i)))
           allocate(p_tuples(k)%freq(np(i)))
           
+          p_tuples%do_residues = residue_order
+          
+          if (residue_order > 0) then
+          
+             ! DaF: Initialization of residue-relevant parts of the perturbation tuple:
+             allocate(p_tuples(k)%part_of_residue(p_tuples(k)%npert,residue_order))
+             allocate(p_tuples(k)%exenerg(residue_order))
+             allocate(p_tuples(k)%states(residue_order))
+             p_tuples(k)%part_of_residue = .false.
+             ! DaF: So far we only accept residue calculation where excitation energies
+             ! match single perturbation frequencies, and not frequency sums
+             ! Loop over the number of perturbations which contribute to residualization
+             do m = 1, residue_order
+                p_tuples(k)%exenerg(m) = exenerg(m)
+                p_tuples(k)%states(m) = residualization  
+
+                do l = 1, max(residue_spec_pert(1),residue_spec_pert(residue_order))
+                
+                   ! MaR: Treating residue_spec_index as collapsed, revisit if ordering issues
+                
+                   p_tuples(k)%part_of_residue(residue_spec_index( &
+                   (m - 1) * max(residue_spec_pert(1),residue_spec_pert(residue_order)) + l ) , m) = .true.
+                   
+                   
+                end do
+             end do
+          
+          end if
+          
           p_tuples(k)%pdim = pert_dims(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%plab = pert_labels(sum(np(1:i)) - np(i) + 1:sum(np(1:i)))
           p_tuples(k)%pid = (/(m, m = 1, np(i))/)
           p_tuples(k)%freq = pert_freqs(dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + &
           1 + (j - 1)*np(i):dot_product(np(1:i), n_freq_cfgs(1:i)) - np(i)*n_freq_cfgs(i) + (j)*np(i))
+          
+          if (residue_order > 0) then
+          
+             ! DaF: Does the residualized perturbation have a proper frequency?
+             lfreq_match = .false.
+             do l = 1, p_tuples(k)%npert
+                if (dabs(dabs(dble(p_tuples(k)%exenerg(1))) - dabs(dble(p_tuples(k)%freq(l)))).gt.xtiny) then
+                   lfreq_match = .true.
+                end if
+             end do
+             
+             if (.not.lfreq_match) then
+             
+                write(out_str, *) 'ERROR: No perturbation frequencies matched excitation energy'
+                call out_print(out_str, 0)
+                write(out_str, *) 'The residue calculation is therefore indeterminate'
+                call out_print(out_str, 0)
+                write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP library'
+                call out_print(out_str, 0)
+
+                return             
+                         
+             end if
+          
+          end if
           
           ! MaR: NOTE: Here sorting tuples in standard order: Must sort back to get correct order 
           ! for returned tensor: Original pids will give key to re-sort
@@ -364,7 +482,13 @@ module rsp_general
        allocate(D)
        allocate(F)
        
-       call mem_incr(mem_mgr, 3, p=prog_info)
+       if (residue_order > 0) then
+       
+          allocate(Xf) 
+          
+       end if
+      
+       call mem_incr(mem_mgr, 3 + residue_order, p=prog_info)
     
     else
     
@@ -386,10 +510,17 @@ module rsp_general
           allocate(D)
           allocate(F)
     
-          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE., 260)
-          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE., 260)
-          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE., 260)
+          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+          
+          if (residue_order > 0) then
        
+             allocate(Xf) 
+             call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+          
+          end if
+          
           sdf_retrieved = .TRUE.
       
        else
@@ -410,6 +541,15 @@ module rsp_general
          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
          call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
+         
+         if (residue_order > 0) then
+       
+             call contrib_cache_outer_allocate(Xf)
+             call contrib_cache_outer_add_element(Xf, .FALSE., 1, (/get_emptypert()/), &
+                  data_size = 1, data_mat=(/Xf_unpert(1)/))
+             call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE')
+          
+          end if
        
        end if
        
@@ -429,11 +569,23 @@ module rsp_general
        
        call cpu_time(timing_start)
 
-       call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
-                     get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
-                     get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                     id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
-                     mem_mgr)
+       if (residue_order > 0) then
+       
+          call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
+                        get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                        get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
+                        id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                        mem_mgr, Xf=Xf)
+                        
+       else
+       
+          call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
+                        get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
+                        get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
+                        id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                        mem_mgr)
+                        
+       end if
 
        call cpu_time(timing_end)
 
@@ -462,6 +614,8 @@ module rsp_general
     
     else
     
+    
+       ! MaR: FIXME: Adapt to include residues
     
        write(out_str, *) 'Writing response tensors to file'
        call out_print(out_str, 2)
@@ -531,6 +685,7 @@ module rsp_general
           write(260,*) 'VALUES'
          
          ! FIXME: SOMETHING MAY BE OFF ABOUT THE INDICES: NOT ALL VALUES OF THE LAST PROPERTY ARE WRITTEN
+         ! MaR: Update: Now likely fixed and above comment was forgotten, keep in case further problems
          
           do j = 1, n_freq_cfgs(i)
           
@@ -583,13 +738,19 @@ module rsp_general
     call out_print(out_str, 1)
 
   end subroutine
+    
+    
+    
+    
+    
+    
    
   ! Main property calculation routine - Get perturbed F, D, S and then calculate the properties
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                       get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                       id_outp, prop_sizes, props, prog_info, rs_info, sdf_retrieved, &
-                      mem_mgr)
+                      mem_mgr, Xf)
 
     implicit none
 
@@ -608,13 +769,14 @@ module rsp_general
     complex(8), dimension(*) :: props
     type(contrib_cache), pointer :: contribution_cache, cache_next
     type(contrib_cache_outer) :: F, D, S
+    type(contrib_cache_outer), optional :: Xf
     
     external :: out_print
     character(len=1048576) :: out_str
     
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
-  
+
     call prog_incr(prog_info, 1)
   
     ! Check if this stage passed previously and if so, then retrieve and skip execution
@@ -638,9 +800,17 @@ module rsp_general
           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
-          sdf_retrieved = .TRUE.
+                 
+       end if
+       
+       
+       if (present(Xf)) then
+       
+          call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
           
        end if
+          
+       sdf_retrieved = .TRUE.
   
     else
   
@@ -654,11 +824,24 @@ module rsp_general
        call out_print(out_str, 1)
 
        call cpu_time(time_start)
-        
-       call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
-                    get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                    get_2el_mat, get_xc_mat, out_print, .TRUE., id_outp, &
-                    prog_info, rs_info, sdf_retrieved, mem_mgr)
+       
+       
+       if (present(Xf)) then
+       
+          call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
+                       get_rsp_sol, get_ovl_mat, get_1el_mat, &
+                       get_2el_mat, get_xc_mat, out_print, .TRUE., id_outp, &
+                       prog_info, rs_info, sdf_retrieved, mem_mgr, Xf=Xf)
+                       
+                       
+       else
+       
+          call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
+                       get_rsp_sol, get_ovl_mat, get_1el_mat, &
+                       get_2el_mat, get_xc_mat, out_print, .TRUE., id_outp, &
+                       prog_info, rs_info, sdf_retrieved, mem_mgr)
+       
+       end if
                     
        call cpu_time(time_end)
        
@@ -806,6 +989,7 @@ module rsp_general
        ! Traverse linked list and calculate
        do while (traverse_end .eqv. .FALSE.)
        
+          if(cache_next%p_inner%plab(1).eq.'NUTN') stop 'empty perturbation in rsp_general!'
           write(out_str, *) 'Calculating contribution for inner perturbation tuple with labels:'
           call out_print(out_str, 1)
           write(out_str, *) cache_next%p_inner%plab
@@ -1331,6 +1515,7 @@ module rsp_general
     integer, dimension(2) :: kn
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations, id_outp
     integer :: p_size
+    logical :: residue_skip
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(contrib_cache_outer) :: D
     type(contrib_cache), target :: cache
@@ -1414,6 +1599,7 @@ module rsp_general
        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
     
        e_knskip = .FALSE.
+       residue_skip = (pert%do_residues.gt.0).and.find_residue_info(p_tuples(1))
 
        do i = 1, num_p_tuples
  
@@ -1424,6 +1610,7 @@ module rsp_general
                 e_knskip = .TRUE.
 
              end if
+
           
           elseif (i == 1) then
           
@@ -1434,7 +1621,7 @@ module rsp_general
        end do
 
 
-       if (e_knskip .EQV. .FALSE.) then
+       if ((e_knskip .EQV. .FALSE.) .AND. (residue_skip .EQV. .FALSE.)) then
        
           if (contrib_cache_already(cache, num_p_tuples, p_tuples)) then
           
@@ -2827,7 +3014,7 @@ module rsp_general
     logical :: mem_done
     integer :: mctr, mcurr, msize, mem_track
 
-    logical :: traverse_end, any_lagrange
+    logical :: traverse_end, any_lagrange, select_terms
     integer :: cache_offset, i, j, k, m, n, p, c_ctr, c_snap, lagrange_max_n
     integer :: id_outp, i_supsize, o_triang_size, offset, tot_num_pert, max_outer_npert
     integer :: o_ctr, size_lagrange, size_pulay_n
@@ -3542,18 +3729,20 @@ module rsp_general
                 call QcMatInit(Zeta(i), D_unp)
                 call QcMatZero(Lambda(i))
                 call QcMatZero(Zeta(i))
+
+                select_terms = find_residue_info(p_tuple_getone(cache%p_inner,1))
           
                 call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
                      lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), &
-                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i))
+                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i),select_terms)
                      
                 call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
                      d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), cache%indices(mcurr + i - 1,:), &
-                     D, S, Lambda(i))
+                     D, S, Lambda(i),select_terms)
       
              end do
              
@@ -3707,7 +3896,7 @@ module rsp_general
                            outer_next%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
                            outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Y)
+                           F, D, S, Y,.false.)
                            
                    end if
                    
@@ -3725,7 +3914,7 @@ module rsp_general
                            outer_next%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
                            outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Z)
+                           F, D, S, Z,.false.)
                            
                    end if
                   
