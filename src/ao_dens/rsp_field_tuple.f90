@@ -15,8 +15,12 @@ module rsp_field_tuple
   public p_tuple_remove_first
   public merge_p_tuple
   public p1_cloneto_p2
+  public p_tuple_add_stateinfo
   public p_tuple_deallocate
   public get_emptypert
+  public recognize_contribution
+  public find_residue_info
+  public find_complete_residualization
   public empty_p_tuple
   public p_tuple_p1_lt_p2
   public p_tuple_standardorder
@@ -46,11 +50,19 @@ module rsp_field_tuple
   type p_tuple
 
      integer :: npert
+
      integer, allocatable, dimension(:) :: pdim ! Dimensions of perturbations
      character(4), allocatable, dimension(:) :: plab ! Perturbation labels
      integer, allocatable, dimension(:) :: pfcomp ! First component is component #pfcomp
      integer, allocatable, dimension(:) :: pid ! Pert. ID - for k,n rule evaluations
      complex(8), allocatable, dimension(:) :: freq ! Frequencies of perturbations
+     
+     integer :: do_residues=0 ! Degree of residue to be calculated (0: no residue)
+     integer :: n_pert_res_max=1  ! Max. num. of pert. in residues
+     integer :: n_states=1 ! number of states (for residues only)
+     integer, allocatable, dimension(:) :: states ! indices of states involved
+     complex(8), allocatable, dimension(:) :: exenerg ! Excitation energies (for residues) 
+     logical, allocatable, dimension(:,:) :: part_of_residue
      ! Add other perturbation identification info as needed
 
   end type
@@ -191,6 +203,10 @@ module rsp_field_tuple
       deallocate(p1%pid)
       if (allocated(p1%pfcomp)) then
          deallocate(p1%pfcomp)
+      end if
+      if (allocated(p1%exenerg)) then
+         deallocate(p1%exenerg)
+         deallocate(p1%part_of_residue)
       end if    
       deallocate(p1%freq)
 
@@ -402,13 +418,16 @@ module rsp_field_tuple
     implicit none
 
     type(p_tuple) :: pert, ext, p_tuple_extend
-    integer :: i
+    integer :: i, j
 
     allocate(p_tuple_extend%pdim(pert%npert + 1))
     allocate(p_tuple_extend%plab(pert%npert + 1))
     allocate(p_tuple_extend%pid(pert%npert + 1))
     allocate(p_tuple_extend%freq(pert%npert + 1))
-
+    call p_tuple_add_stateinfo(p_tuple_extend,pert)
+    if (pert%do_residues.gt.0) then
+      allocate(p_tuple_extend%part_of_residue(pert%npert + 1, pert%do_residues))
+    end if
     if (pert%npert == 0) then
 
        p_tuple_extend%npert = pert%npert + 1
@@ -416,6 +435,10 @@ module rsp_field_tuple
        p_tuple_extend%plab = (/ext%plab(:)/)
        p_tuple_extend%pid = (/ext%pid(:)/)
        p_tuple_extend%freq = (/ext%freq(:)/)
+       if(allocated(p_tuple_extend%part_of_residue)) then
+         p_tuple_extend%part_of_residue(:,:)= ext%part_of_residue(:,:)
+       end if
+
 
     else
 
@@ -424,6 +447,12 @@ module rsp_field_tuple
        p_tuple_extend%plab = (/(pert%plab(i), i = 1, pert%npert), ext%plab(:)/)
        p_tuple_extend%pid = (/(pert%pid(i), i = 1, pert%npert), ext%pid(:)/)
        p_tuple_extend%freq = (/(pert%freq(i), i = 1, pert%npert), ext%freq(:)/)
+       if(allocated(p_tuple_extend%part_of_residue)) then
+          do j = 1, pert%do_residues
+            p_tuple_extend%part_of_residue(:,j) = (/(pert%part_of_residue(i,j), i = 1, pert%npert), &
+                ext%part_of_residue(:,j)/)
+          end do
+       end if
  
 end if
 
@@ -431,23 +460,29 @@ end if
 
 
   ! Get perturbation 'which' from perturbation tuple pert
-  function p_tuple_getone(pert, which)
+  function p_tuple_getone(pert, which, istate)
 
     implicit none
 
     type(p_tuple) :: pert, p_tuple_getone
     integer :: which
+    integer, optional :: istate
 
     allocate(p_tuple_getone%pdim(1))
     allocate(p_tuple_getone%plab(1))
     allocate(p_tuple_getone%pid(1))
     allocate(p_tuple_getone%freq(1))
+    call p_tuple_add_stateinfo(p_tuple_getone,pert)
+    allocate(p_tuple_getone%part_of_residue(1,pert%do_residues))
 
     p_tuple_getone%npert = 1
     p_tuple_getone%pdim = (/pert%pdim(which)/)
     p_tuple_getone%plab = (/pert%plab(which)/)
     p_tuple_getone%pid = (/pert%pid(which)/)
     p_tuple_getone%freq = (/pert%freq(which)/)
+    if(pert%do_residues.gt.0) then
+      p_tuple_getone%part_of_residue(1,1:pert%do_residues) = pert%part_of_residue(which,1:pert%do_residues)
+    end if
 
   end function
 
@@ -462,6 +497,12 @@ end if
     allocate(p_tuple_remove_first%plab(pert%npert - 1))
     allocate(p_tuple_remove_first%pid(pert%npert - 1))
     allocate(p_tuple_remove_first%freq(pert%npert - 1))
+    if (pert%do_residues.gt.0) then
+
+      allocate(p_tuple_remove_first%part_of_residue(pert%npert - 1,pert%do_residues))
+      p_tuple_remove_first%part_of_residue = .false.
+
+    end if
 
     if (pert%npert > 1) then
 
@@ -470,6 +511,10 @@ end if
        p_tuple_remove_first%plab = (/pert%plab(2:pert%npert)/)
        p_tuple_remove_first%pid = (/pert%pid(2:pert%npert)/)
        p_tuple_remove_first%freq = (/pert%freq(2:pert%npert)/)
+       if(pert%do_residues.gt.0) then 
+         p_tuple_remove_first%part_of_residue(:,1) = (/pert%part_of_residue(2:pert%npert,1)/)
+         p_tuple_remove_first%part_of_residue(:,pert%do_residues) = (/pert%part_of_residue(2:pert%npert,pert%do_residues)/)
+       end if
 
     else
 
@@ -481,7 +526,129 @@ end if
 
     end if
 
+    if (pert%do_residues.gt.0) then
+
+       call p_tuple_add_stateinfo(p_tuple_remove_first,pert)
+  
+    end if
+
   end function
+
+  recursive subroutine recognize_exenerg(pert,n,val,idx_preserve,energies,found_count)
+
+  ! Recognizes whether the term descibed on pert depends on the perturbations 
+  ! whose frequency tends to the excitation energy in a residue calculation
+
+    implicit none
+
+    integer found_count,integerout
+    type(p_tuple) pert
+    integer n, idx, i, j, idx_preserve,idx_forward
+    real(8) val, energies(pert%do_residues)
+    real(8), parameter :: xtiny=1.0d-6
+
+    idx = idx_preserve
+    loop: do i= idx, pert%npert - n + 1
+
+        val = val + dble(pert%freq(i))
+        if (n.gt.1) then
+          idx_forward = i+1
+          call recognize_exenerg(pert,n-1,val,idx_forward,energies,found_count)
+        else if (n.eq.1) then
+          do j = 1, pert%do_residues
+            if(energies(j).gt.0) then
+              if (abs(abs(val)-dble(energies(j))).lt.xtiny) then
+                 found_count = found_count + 1
+                 val = 0.0d0
+                 energies(j) = -energies(j)
+              end if
+            end if
+          end do
+        else
+          write(*,*) 'Index error in recognize_exenerg'
+        end if
+        val = 0.0d0
+   end do loop
+
+  end subroutine
+
+  logical function recognize_contribution(pert,n_exenerg)
+
+    integer i,n_exenerg,idx,jdx,found_count
+    type(p_tuple) pert
+    logical found_exenerg(2)
+    real*8 energies(2),val
+
+    if (pert%do_residues.eq.0) then
+       recognize_contribution = .true.
+       return
+    end if
+
+    idx = 1
+    recognize_contribution=.false.
+    energies = -9999.9d9
+    found_count = 0
+    val = 0.0d0
+
+    do jdx = 1, pert%n_states
+       energies(jdx) = pert%exenerg(jdx)
+    end do
+
+    call recognize_exenerg(pert,pert%n_pert_res_max,val,idx,energies,found_count)
+
+    if (found_count .eq. n_exenerg) then
+       recognize_contribution = .true.
+    else
+       recognize_contribution = .false.
+    end if
+    return
+  end function recognize_contribution
+
+  logical function find_residue_info(pert)
+
+    implicit none
+    type(p_tuple) :: pert
+    integer :: i
+
+    find_residue_info=.false.
+    if(pert%do_residues.eq.0) then
+      return
+    end if
+
+    do i = 1, pert%npert
+       if (pert%part_of_residue(i,1).or.pert%part_of_residue(i,pert%do_residues)) then
+          find_residue_info = .true.
+          return
+       end if
+    end do
+    return
+
+  end function find_residue_info
+
+  logical function find_complete_residualization(pert)
+
+    implicit none
+    type(p_tuple) :: pert
+    logical :: lresidue(2)
+    integer :: i,j
+
+    if(pert%do_residues.eq.0) then
+      find_complete_residualization = .false.
+      return
+    end if
+
+    lresidue = .true.
+    do i = 1, pert%npert
+      do j = 1, pert%do_residues
+        lresidue(j) = lresidue(j).and.pert%part_of_residue(i,j)
+      end do
+    end do
+
+    find_complete_residualization = lresidue(1).or.lresidue(pert%do_residues)
+    return
+
+  end function find_complete_residualization
+
   
   ! Return a perturbation tuple which is the merged tuple of tuples p1 and p2
   function merge_p_tuple(p1, p2)
@@ -489,11 +656,19 @@ end if
     implicit none
 
     type(p_tuple) :: p1, p2, merge_p_tuple
+    integer :: i
 
     allocate(merge_p_tuple%pdim(p1%npert + p2%npert))
     allocate(merge_p_tuple%plab(p1%npert + p2%npert))
     allocate(merge_p_tuple%pid(p1%npert + p2%npert))
     allocate(merge_p_tuple%freq(p1%npert + p2%npert))
+
+    call p_tuple_add_stateinfo(merge_p_tuple,p1)
+
+    if (merge_p_tuple%do_residues.gt.0) then
+      allocate(merge_p_tuple%part_of_residue(p1%npert+p2%npert,merge_p_tuple%do_residues))
+      merge_p_tuple%part_of_residue = .false.
+    end if
 
     ! NOTE (MaR): ARE THESE CASE DISTINCTIONS UNNECESSARY? CONSIDER REWRITE.
 
@@ -504,6 +679,9 @@ end if
        merge_p_tuple%plab = (/p1%plab(:), p2%plab(:)/)
        merge_p_tuple%pid = (/p1%pid(:), p2%pid(:)/)
        merge_p_tuple%freq = (/p1%freq(:), p2%freq(:)/)
+       do i = 1, merge_p_tuple%do_residues
+          merge_p_tuple%part_of_residue(:,i) = (/p1%part_of_residue(:,i),p2%part_of_residue(:,i)/)
+       end do
 
     elseif (p1%npert > 0 .AND. p2%npert == 0) then
 
@@ -512,6 +690,10 @@ end if
        merge_p_tuple%plab = p1%plab(:)
        merge_p_tuple%pid = p1%pid(:)
        merge_p_tuple%freq = p1%freq(:)
+       do i = 1, merge_p_tuple%do_residues
+          merge_p_tuple%part_of_residue(:,i) = (/p1%part_of_residue(:,i)/)
+       end do
+
 
     elseif (p1%npert == 0 .AND. p2%npert > 0) then
 
@@ -520,6 +702,10 @@ end if
        merge_p_tuple%plab = p2%plab(:)
        merge_p_tuple%pid = p2%pid(:)
        merge_p_tuple%freq = p2%freq(:)
+       do i = 1, merge_p_tuple%do_residues
+          merge_p_tuple%part_of_residue(:,i) = (/p2%part_of_residue(:,i)/)
+       end do
+
 
     elseif (p1%npert == 0 .AND. p2%npert == 0) then
 
@@ -533,6 +719,30 @@ end if
     end if
 
   end function
+
+  subroutine p_tuple_add_stateinfo(emptytuple,tuple)
+
+    implicit none
+    type(p_tuple) :: emptytuple,tuple
+    integer i
+
+    if (tuple%do_residues.eq.0) then
+       return
+    end if
+
+    emptytuple%n_states = tuple%n_states
+    emptytuple%n_pert_res_max = tuple%n_pert_res_max
+    emptytuple%do_residues = tuple%do_residues
+
+    allocate(emptytuple%states(emptytuple%do_residues))
+    allocate(emptytuple%exenerg(emptytuple%do_residues))
+
+    do i = 1, emptytuple%do_residues
+      emptytuple%states(i)=tuple%states(i)
+      emptytuple%exenerg(i)=tuple%exenerg(i)
+    end do
+
+  end subroutine
 
   ! Take perturbation tuple p1 and clone it into p2
   subroutine p1_cloneto_p2(p1, p2)
@@ -552,6 +762,12 @@ end if
     p2%plab = p1%plab
     p2%pid = p1%pid
     p2%freq = p1%freq
+    call p_tuple_add_stateinfo(p2,p1)
+
+    if (p2%do_residues.gt.0) then
+      allocate(p2%part_of_residue(p2%npert,p2%do_residues))
+      p2%part_of_residue = p1%part_of_residue
+    end if
 
   end subroutine
 
@@ -565,41 +781,92 @@ end if
     deallocate(p1%pdim) 
     deallocate(p1%plab)
     deallocate(p1%pid)
+    
     if (allocated(p1%pfcomp)) then
+    
        deallocate(p1%pfcomp)
+       
     end if    
+    
     deallocate(p1%freq)
+    
+    if (allocated(p1%states)) then
+    
+       deallocate(p1%states)
+       
+    end if
+    
+    if (allocated(p1%exenerg)) then
+       
+       deallocate(p1%exenerg)
+       
+    end if
+    
+    
+    if (allocated(p1%part_of_residue)) then
+    
+       deallocate(p1%part_of_residue)
+       
+    end if
 
     
   end subroutine
 
   ! Return an emtpy perturbation tuple
-  function get_emptypert() result(emptypert)
+  function get_emptypert(template) result(emptypert)
 
     implicit none
 
+      type(p_tuple), optional :: template
       type(p_tuple) :: emptypert
 
+      if (present(template)) then
+      
+         call p_tuple_add_stateinfo(emptypert,template)
+         
+      end if
+      
       emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
       allocate(emptypert%freq(0))
+      
+      if (emptypert%do_residues.gt.0) then
+    
+         allocate(emptypert%part_of_residue(0,emptypert%do_residues))
+         
+      end if
+
 
   end function
 
   ! Make emptypert into an empty perturbation tuple
-  subroutine empty_p_tuple(emptypert)
+  subroutine empty_p_tuple(emptypert,template)
 
     implicit none
 
       type(p_tuple) :: emptypert
+      type(p_tuple), optional :: template
 
+      if (present(template)) then 
+      
+         call p_tuple_add_stateinfo(emptypert,template)
+         
+      end if
+      
       emptypert%npert = 0
       allocate(emptypert%pdim(0))    
       allocate(emptypert%plab(0))
       allocate(emptypert%pid(0))
       allocate(emptypert%freq(0))
+      
+      
+      if (emptypert%do_residues.gt.0) then
+      
+         allocate(emptypert%part_of_residue(0,emptypert%do_residues))
+         
+      end if
 
   end subroutine
 
@@ -706,6 +973,8 @@ end if
     integer :: current_minimum_pdim
     character(4) :: temporary_plab, current_minimum_plab
     complex(8) :: temporary_freq, current_minimum_freq
+    logical :: temporary_part_of_residue(2)
+    integer :: do_residues
 
 
     call p1_cloneto_p2(pert, p_tuple_st)
@@ -773,6 +1042,14 @@ end if
        p_tuple_st%pid(i) = temporary_pid
        p_tuple_st%freq(i) = temporary_freq
 
+       ! Do the exchange also for the residualization information
+       do_residues = p_tuple_st%do_residues
+       if (do_residues.gt.0) then
+         temporary_part_of_residue(1:do_residues) =  p_tuple_st%part_of_residue(new_minimum,1:do_residues)
+         p_tuple_st%part_of_residue(new_minimum,1:do_residues) = p_tuple_st%part_of_residue(i,1:do_residues)
+         p_tuple_st%part_of_residue(i,1:do_residues) = temporary_part_of_residue(1:do_residues)
+       end if
+
        position_in_result = position_in_result + 1
 
     end do
@@ -826,6 +1103,14 @@ end if
           p_tuple_st%plab(i) = temporary_plab
           p_tuple_st%pid(i) = temporary_pid
           p_tuple_st%freq(i) = temporary_freq
+
+          ! Do the exchange also for the residualization information
+          do_residues = p_tuple_st%do_residues
+          if (do_residues.gt.0) then
+            temporary_part_of_residue(1:do_residues) = p_tuple_st%part_of_residue(new_minimum,1:do_residues)
+            p_tuple_st%part_of_residue(new_minimum,1:do_residues) = p_tuple_st%part_of_residue(i,1:do_residues)
+            p_tuple_st%part_of_residue(i,1:do_residues) = temporary_part_of_residue(1:do_residues)
+          end if
 
        end do
 
@@ -926,17 +1211,17 @@ end if
   end function
 
   ! Determine if perturbation label tuples plab1 and plab2 are equivalent
-  function plab_compare(n_perturbations, plab1, plab2)
+  function plab_compare(npert, plab1, plab2)
 
     implicit none
 
     logical :: plab_compare
-    integer :: n_perturbations, i, j
-    character(4) :: plab1(n_perturbations), plab2(n_perturbations)
+    integer :: npert, i, j
+    character(4) :: plab1(npert), plab2(npert)
 
     plab_compare = .TRUE.
 
-    do i = 1, n_perturbations
+    do i = 1, npert
        if (.NOT.(plab1(i) == plab2(i))) then
           plab_compare = .FALSE.
        end if
@@ -1043,6 +1328,10 @@ end if
        allocate(psub(i)%pid(pert%npert - 1))
        allocate(psub(i)%freq(pert%npert - 1))
 
+       call p_tuple_add_stateinfo(psub(i),pert)
+       if (pert%do_residues.gt.0) then
+         allocate(psub(i)%part_of_residue(pert%npert - 1,pert%do_residues))
+       end if
        k = i
        m = 1
 
@@ -1054,6 +1343,9 @@ end if
              psub(i)%plab(m) = pert%plab(j)
              psub(i)%pid(m) = pert%pid(j)
              psub(i)%freq(m) = pert%freq(j)
+             if(pert%do_residues.gt.0) then
+              psub(i)%part_of_residue(m,1:pert%do_residues) = pert%part_of_residue(j,1:pert%do_residues)
+             end if
 
              m = m + 1
 

@@ -301,7 +301,7 @@ module rsp_property_caching
    implicit none
    
    logical :: termination
-   integer :: num_entries, i, j, funit, mat_acc
+   integer :: num_entries, i, j, k, funit, mat_acc
    character(*) :: fname
   
    type(contrib_cache), target :: cache
@@ -361,6 +361,77 @@ module rsp_property_caching
          write(funit) cache_next%p_inner%freq(j)
       
       end do
+      
+      ! MaR: New code for residue handling
+      
+      write(funit) cache_next%p_inner%do_residues
+      write(funit) cache_next%p_inner%n_pert_res_max
+      write(funit) cache_next%p_inner%n_states
+      
+      if (cache_next%p_inner%do_residues > 0) then
+      
+         if (allocated(cache_next%p_inner%states)) then
+         
+            write(funit) .TRUE.
+            write(funit) size(cache_next%p_inner%states)
+         
+            do j = 1, size(cache_next%p_inner%states)
+         
+               write(funit) cache_next%p_inner%states(j)
+               
+            end do
+            
+         else
+         
+            write(funit) .FALSE.
+         
+         end if
+         
+         if (allocated(cache_next%p_inner%exenerg)) then
+         
+            write(funit) .TRUE.
+            write(funit) size(cache_next%p_inner%exenerg)
+         
+            do j = 1, size(cache_next%p_inner%exenerg)
+         
+               write(funit) cache_next%p_inner%exenerg(j)
+               
+            end do
+            
+         else
+         
+            write(funit) .FALSE.
+         
+         end if
+         
+         
+         if (allocated(cache_next%p_inner%part_of_residue)) then
+         
+            write(funit) .TRUE.
+            write(funit) size(cache_next%p_inner%part_of_residue, 1)
+            write(funit) size(cache_next%p_inner%part_of_residue, 2)
+         
+            do j = 1, size(cache_next%p_inner%part_of_residue, 1)
+            
+               do k = 1, size(cache_next%p_inner%part_of_residue, 2)
+         
+                  write(funit) cache_next%p_inner%part_of_residue(j, k)
+                  
+               end do
+               
+            end do
+            
+         else
+         
+            write(funit) .FALSE.
+         
+         end if
+         
+      end if
+      
+      
+      ! End new
+      
       
       write(funit) cache_next%num_outer
       write(funit) cache_next%nblks
@@ -484,6 +555,7 @@ module rsp_property_caching
    integer :: num_entries, i, j, funit
    integer :: size_i, size_j
    character(*) :: fname
+   logical :: alloc_indic
   
    type(contrib_cache), pointer :: cache
    
@@ -514,6 +586,72 @@ module rsp_property_caching
          read(funit) cache%p_inner%freq(j)
       
    end do
+   
+   ! MaR: New code for residue handling
+      
+      read(funit) cache%p_inner%do_residues
+      read(funit) cache%p_inner%n_pert_res_max
+      read(funit) cache%p_inner%n_states
+      
+      if (cache%p_inner%do_residues > 0) then
+      
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            allocate(cache%p_inner%states(size_i))
+         
+            do i = 1, size_i
+         
+               read(funit) cache%p_inner%states(i)
+               
+            end do
+            
+         end if
+         
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            allocate(cache%p_inner%exenerg(size_i))
+         
+            do i = 1, size_i
+         
+               read(funit) cache%p_inner%exenerg(i)
+               
+            end do
+            
+         end if
+         
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            read(funit) size_j
+            allocate(cache%p_inner%part_of_residue(size_i, size_j))
+         
+            do i = 1, size_i
+            
+               do j = 1, size_j
+         
+                  read(funit) cache%p_inner%part_of_residue(i, j)
+               
+               end do
+               
+            end do
+            
+         end if
+         
+      end if
+      
+      
+      ! End new
+   
+   
+   
       
       read(funit) cache%num_outer
       read(funit) cache%nblks
@@ -571,7 +709,7 @@ module rsp_property_caching
    implicit none
    
    logical :: termination
-   integer :: num_entries, i, j, k, mat_scal_none, funit, mat_acc
+   integer :: num_entries, i, j, k, m, mat_scal_none, funit, mat_acc
    integer, optional :: mat_acc_in
    character(*) :: fname
    character(10) :: str_fid
@@ -633,6 +771,78 @@ module rsp_property_caching
          
          end do
          
+      
+      
+         ! MaR: New code for residue handling
+      
+         write(funit) cache_next%p_tuples(j)%do_residues
+         write(funit) cache_next%p_tuples(j)%n_pert_res_max
+         write(funit) cache_next%p_tuples(j)%n_states
+      
+         if (cache_next%p_tuples(j)%do_residues > 0) then
+      
+            if (allocated(cache_next%p_tuples(j)%states)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache_next%p_tuples(j)%states)
+         
+               do k = 1, size(cache_next%p_tuples(j)%states)
+         
+                  write(funit) cache_next%p_tuples(j)%states(k)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+            if (allocated(cache_next%p_tuples(j)%exenerg)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache_next%p_tuples(j)%exenerg)
+         
+               do k = 1, size(cache_next%p_tuples(j)%exenerg)
+         
+                  write(funit) cache_next%p_tuples(j)%exenerg(k)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         
+            if (allocated(cache_next%p_tuples(j)%part_of_residue)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache_next%p_tuples(j)%part_of_residue, 1)
+               write(funit) size(cache_next%p_tuples(j)%part_of_residue, 2)
+         
+               do k = 1, size(cache_next%p_tuples(j)%part_of_residue, 1)
+            
+                  do m = 1, size(cache_next%p_tuples(j)%part_of_residue, 2)
+         
+                     write(funit) cache_next%p_tuples(j)%part_of_residue(k, m)
+                  
+                  end do
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         end if
+      
+      
+      ! End new
+      
       end do
       
    
@@ -833,6 +1043,7 @@ module rsp_property_caching
    implicit none
    
    logical :: from_inner
+   logical :: alloc_indic
    integer :: funit, i, j, k
    integer :: size_i, size_j, size_k
    integer :: mat_scal_none
@@ -853,25 +1064,92 @@ module rsp_property_caching
    read(funit) size_i
    allocate(cache%p_tuples(size_i))
    
-      do j = 1, size(cache%p_tuples)
+   do j = 1, size(cache%p_tuples)
       
-         read(funit) cache%p_tuples(j)%npert
+      read(funit) cache%p_tuples(j)%npert
          
-         allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
-         allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
-         allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
-         allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
          
-         do k = 1, cache%p_tuples(j)%npert
+      do k = 1, cache%p_tuples(j)%npert
          
-            read(funit) cache%p_tuples(j)%pdim(k)
-            read(funit) cache%p_tuples(j)%plab(k)
-            read(funit) cache%p_tuples(j)%pid(k)
-            read(funit) cache%p_tuples(j)%freq(k)
-         
-         end do
+         read(funit) cache%p_tuples(j)%pdim(k)
+         read(funit) cache%p_tuples(j)%plab(k)
+         read(funit) cache%p_tuples(j)%pid(k)
+         read(funit) cache%p_tuples(j)%freq(k)
          
       end do
+         
+   
+      
+      ! MaR: New code for residue handling
+      ! NOTE: Potential size_i conflict - likely no problem 
+      ! but revisit if there are issues
+      
+      read(funit) cache%p_tuples(j)%do_residues
+      read(funit) cache%p_tuples(j)%n_pert_res_max
+      read(funit) cache%p_tuples(j)%n_states
+      
+      if (cache%p_tuples(j)%do_residues > 0) then
+      
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            allocate(cache%p_tuples(j)%states(size_i))
+         
+            do i = 1, size_i
+         
+               read(funit) cache%p_tuples(j)%states(i)
+               
+            end do
+            
+         end if
+         
+         read(funit) alloc_indic
+      
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            allocate(cache%p_tuples(j)%exenerg(size_i))
+         
+            do i = 1, size_i
+         
+               read(funit) cache%p_tuples(j)%exenerg(i)
+               
+            end do
+            
+         end if
+         
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            read(funit) size_j
+            allocate(cache%p_tuples(j)%part_of_residue(size_i, size_j))
+         
+            do i = 1, size_i
+            
+               do k = 1, size_j
+         
+                  read(funit) cache%p_tuples(j)%part_of_residue(i, k)
+               
+               end do
+               
+            end do
+            
+         end if
+         
+      end if
+      
+      
+      ! End new
+      
+   end do   
    
   
    read(funit) cache%last
@@ -1248,6 +1526,7 @@ module rsp_property_caching
      do i = 1, num_dmat
    
         call p1_cloneto_p2(outer_p_tuples(i), new_element%p_tuples(i))
+        
      end do
 
      total_npert = sum((/(outer_p_tuples(i)%npert, i = 1, num_dmat)/))
