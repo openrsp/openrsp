@@ -278,7 +278,9 @@
                                            f_callback_RSPXCFunGetExp,                 &
                                            f_callback_RSPOUTPUT_PLACEHOLDER,          &
                                            STDOUT,                                    &
+                                           size(f_rsp_funs),                          &
                                            f_rsp_funs,                                &
+                                           0,                                         &
                                            mem_calibrate=mem_calibrate,               &
                                            max_mat=max_mat,                           &
                                            mem_result=mem_result)
