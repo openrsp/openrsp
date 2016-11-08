@@ -182,7 +182,6 @@ module rsp_perturbed_sdf
              call contrib_cache_allocate(lof_cache)
              
           end if
-
        
           ! Traverse all elements of outer cache of present cache element
           termination = .FALSE.
@@ -210,6 +209,7 @@ module rsp_perturbed_sdf
        
        ! Check if this stage passed previously and if so, then retrieve and skip execution
        call prog_incr(prog_info, 2)
+       
        
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
@@ -290,19 +290,22 @@ module rsp_perturbed_sdf
              end if
              
              call prog_incr(prog_info, 3)
-                       
+             
              termination = (lof_next%last)
              lof_next => lof_next%next
           
           end do
-          
-          
        
        end if
+       
+       ! Set 'retrieved' flag to false: If retrieved at current order, state should now 
+       ! be as if not restarted (i.e. as if calculated in present run)
+       lof_retrieved = .FALSE.
 
       
        ! Check if this stage passed previously and if so, then retrieve and skip execution
        call prog_incr(prog_info, 2)
+       
        
        if (rs_check(prog_info, rs_info, lvl=2)) then
           
@@ -320,13 +323,13 @@ module rsp_perturbed_sdf
              call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
              call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
              call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
-                       
-          end if
-          
-          if (present(Xf)) then
+             
+             if (present(Xf)) then
        
              call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
           
+             end if
+                       
           end if
           
           sdf_retrieved = .TRUE.
@@ -375,6 +378,9 @@ module rsp_perturbed_sdf
        deallocate(size_i)
        deallocate(lof_cache)
        call mem_decr(mem_mgr, lof_mem_total)
+       
+       call prog_incr(prog_info, 2)
+       
           
     end do
     
@@ -1713,7 +1719,7 @@ module rsp_perturbed_sdf
     
           do i = 1, size_i(k)/m + 1
     
-             if (.NOT.((i - 1) *m >= size_i(k))) then
+             if (.NOT.((i - 1) * m >= size_i(k))) then
     
                 first = (i - 1) * m + 1
                 last = min(i * m, size_i(k))
@@ -1785,7 +1791,6 @@ module rsp_perturbed_sdf
                 
                 call prog_incr(prog_info, 3)
                 
-   
              end if
        
           end do

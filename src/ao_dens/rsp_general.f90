@@ -188,7 +188,6 @@ module rsp_general
     real :: write_threshold
     integer :: p
     
-    
     if (present(mem_calibrate)) then
     
        mem_mgr%calibrate = mem_calibrate
@@ -242,8 +241,8 @@ module rsp_general
     
     ! MaR: Disable restarting functionality during development of other features
     ! Remove next two lines to reinstate
-    rs_calibrate_save = rs_info
-    rs_info = (/0,0,0/)
+!     rs_calibrate_save = rs_info
+!     rs_info = (/0,0,0/)
     
     
     call prog_incr(prog_info, 1)       
@@ -472,8 +471,6 @@ module rsp_general
 
     
     
-    
-    
     call prog_incr(prog_info, 1)
     
     if (mem_mgr%calibrate) then
@@ -555,7 +552,7 @@ module rsp_general
        
     end if
     
-    
+
     rsp_tensor(1:sum(prop_sizes)) = 0.0
     
     if (.NOT.(mem_exceed(mem_mgr))) then
@@ -800,15 +797,17 @@ module rsp_general
           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+          
+          if (present(Xf)) then
+       
+          call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+          
+          end if
                  
        end if
        
        
-       if (present(Xf)) then
        
-          call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
-          
-       end if
           
        sdf_retrieved = .TRUE.
   
@@ -1027,6 +1026,7 @@ module rsp_general
           
           call prog_incr(prog_info, 2)
           
+          
           if (cache_next%last) then
              traverse_end = .TRUE.
           end if
@@ -1053,7 +1053,7 @@ module rsp_general
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, 1)
-   
+    
     if (rs_check(prog_info, rs_info, lvl=1)) then
     
        write(out_str, *) ' '
@@ -1372,6 +1372,7 @@ module rsp_general
           end if
           
           call prog_incr(prog_info, 2)
+          
           
           if (cache_next%last) then
              traverse_end = .TRUE.
@@ -3736,13 +3737,14 @@ module rsp_general
                      lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), &
-                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i),select_terms)
+                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i), &
+                     select_terms_arg = select_terms)
                      
                 call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
                      d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), cache%indices(mcurr + i - 1,:), &
-                     D, S, Lambda(i),select_terms)
+                     D, S, Lambda(i), select_terms_arg = select_terms)
       
              end do
              
@@ -3896,7 +3898,7 @@ module rsp_general
                            outer_next%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
                            outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Y,.false.)
+                           F, D, S, Y, select_terms_arg = .FALSE.)
                            
                    end if
                    
@@ -3914,7 +3916,7 @@ module rsp_general
                            outer_next%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
                            outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Z,.false.)
+                           F, D, S, Z, select_terms_arg = .FALSE.)
                            
                    end if
                   
