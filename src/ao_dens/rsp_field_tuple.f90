@@ -762,6 +762,7 @@ end if
     p2%plab = p1%plab
     p2%pid = p1%pid
     p2%freq = p1%freq
+    p2%do_residues = p1%do_residues
     call p_tuple_add_stateinfo(p2,p1)
 
     if (p2%do_residues.gt.0) then
