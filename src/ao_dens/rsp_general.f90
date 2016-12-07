@@ -1775,7 +1775,7 @@ module rsp_general
        call out_print(out_str, 1)
        
   
-       ! If this is the case, then there are no outer perturbations (no chain rule applicateions)
+       ! If this is the case, then there are no outer perturbations (no chain rule applications)
        if (outer_next%num_dmat == 0) then
 
           num_0 = 1
@@ -1852,7 +1852,8 @@ module rsp_general
        
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
-       write(out_str, *) 'Density matrix-independent contribution:', contrib_0
+       write(out_str, *) 'Density matrix-independent contribution (sample)', &
+       contrib_0(1:min(1000,size(contrib_0)))
        call out_print(out_str, 2)
        
     end if
@@ -2005,7 +2006,8 @@ module rsp_general
       !                                 (mcurr + msize - 1) * cache%blks_triang_size)
        
        
-             write(out_str, *) 'First-order density matrix-dependent contribution', contrib_1
+             write(out_str, *) 'First-order density matrix-dependent contribution (sample)', &
+             contrib_1(1:min(1000,size(contrib_1)))
              call out_print(out_str, 2)
               
           end if
@@ -2410,7 +2412,8 @@ module rsp_general
                   cache%blks_triang_size*this_outer_size, &               
                   contrib_2(contrib_offset:contrib_offset + this_outer_size))
        
-             write(out_str, *) 'Second-order density matrix-dependent contribution', contrib_2
+             write(out_str, *) 'Second-order density matrix-dependent contribution(sample)', &
+             contrib_2(1:min(1000,size(contrib_2)))
              call out_print(out_str, 2)
              
           end if
@@ -2503,7 +2506,8 @@ module rsp_general
                   cache%blks_triang_size * wunit_size(1) * wunit_size(2), &               
                   contrib_2_tmp)
                   
-             write(out_str, *) 'Second-order density matrix-dependent contribution', contrib_2_tmp
+             write(out_str, *) 'Second-order density matrix-dependent contribution (sample)', &
+             contrib_2_tmp(1:min(1000,size(contrib_2_tmp)))
              call out_print(out_str, 2)
                   
           
