@@ -75,6 +75,7 @@
         integer(kind=C_QINT), value, intent(in) :: num_props
         integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
         integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(sum(len_tuple))
+        integer(kind=C_QINT), value, intent(in) :: order_residue
         integer(kind=C_QINT), intent(in) :: residue_num_pert(order_residue*num_props)
         integer(kind=C_QINT), intent(in) :: residue_idx_pert(sum(residue_num_pert))
         integer(kind=C_QINT), intent(in) :: num_freq_configs(num_props)
@@ -84,7 +85,6 @@
         type(C_PTR), value, intent(in) :: F_unpert
         type(C_PTR), value, intent(in) :: S_unpert
         type(C_PTR), value, intent(in) :: D_unpert
-        integer(kind=C_QINT), value, intent(in) :: order_residue
         integer(kind=C_QINT), value, intent(in) :: num_excit
         real(kind=C_QREAL), intent(in) :: excit_energy(order_residue*num_excit)
         type(C_PTR), intent(in) :: eigen_vector(order_residue*num_excit)
