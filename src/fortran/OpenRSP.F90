@@ -607,7 +607,7 @@ module OpenRSP_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
-                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_overlap_exp
             subroutine RSPOverlapGetMat_f(bra_num_pert,     &
                                           bra_pert_labels,  &
@@ -667,7 +667,7 @@ module OpenRSP_f
                 type(C_PTR), intent(in) :: dens_mat(num_dmat)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
-                real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine RSPOverlapGetExp_f
         end interface
         if (associated(open_rsp%overlap_fun)) then
@@ -753,7 +753,7 @@ module OpenRSP_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
-                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_one_oper_exp
             subroutine RSPOneOperGetMat_f(oper_num_pert,    &
                                           oper_pert_labels, &
@@ -789,7 +789,7 @@ module OpenRSP_f
                 type(C_PTR), intent(in) :: dens_mat(num_dmat)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
-                real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine RSPOneOperGetExp_f
         end interface
         type(OneOperList_f), pointer :: cur_one_oper  !current one-electron operator
@@ -895,7 +895,7 @@ module OpenRSP_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
-                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_two_oper_exp
             subroutine RSPTwoOperGetMat_f(oper_num_pert,    &
                                           oper_pert_labels, &
@@ -941,7 +941,7 @@ module OpenRSP_f
                 type(C_PTR), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
-                real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine RSPTwoOperGetExp_f
         end interface
         type(TwoOperList_f), pointer :: cur_two_oper  !current two-electron operator
@@ -1055,7 +1055,7 @@ module OpenRSP_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
-                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_xc_fun_exp
             subroutine RSPXCFunGetMat_f(xc_len_tuple,       &
                                         xc_pert_tuple,      &
@@ -1109,7 +1109,7 @@ module OpenRSP_f
                 type(C_PTR), intent(in) :: dens_mat(num_dmat)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: num_exp
-                real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine RSPXCFunGetExp_f
         end interface
         type(XCFunList_f), pointer :: cur_xc_fun  !current XC functional
@@ -1181,7 +1181,7 @@ module OpenRSP_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
-                real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
+                real(kind=QREAL), intent(inout) :: val_nuc(2*size_pert)
             end subroutine get_nuc_contrib
             subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
                                                         nuc_pert_labels, &
@@ -1197,7 +1197,7 @@ module OpenRSP_f
                 integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: size_pert
-                real(kind=C_QREAL), intent(inout) :: val_nuc(size_pert)
+                real(kind=C_QREAL), intent(inout) :: val_nuc(2*size_pert)
             end subroutine RSPNucHamiltonGetContributions_f
         end interface
         if (associated(open_rsp%nuc_hamilton_fun)) then

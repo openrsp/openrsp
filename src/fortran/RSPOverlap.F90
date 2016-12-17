@@ -110,7 +110,7 @@ module RSPOverlap_f
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: num_exp
-            real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+            real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
         end subroutine OverlapGetExp_f
     end interface
 
@@ -222,7 +222,7 @@ module RSPOverlap_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
-                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_overlap_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -354,7 +354,7 @@ module RSPOverlap_f
         type(C_PTR), intent(in) :: dens_mat(num_dmat)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_exp
-        real(C_QREAL), intent(inout) :: val_exp(num_exp)
+        real(C_QREAL), intent(inout) :: val_exp(2*num_exp)
         type(OverlapFun_f), pointer :: overlap_fun  !context of callback subroutines
         type(QcMat), allocatable :: f_dens_mat(:)    !AO based density matrices
         integer(kind=4) ierr                        !error information
