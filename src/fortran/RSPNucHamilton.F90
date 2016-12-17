@@ -61,7 +61,7 @@ module RSPNucHamilton_f
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: size_pert
-            real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
+            real(kind=QREAL), intent(inout) :: val_nuc(2*size_pert)
         end subroutine NucHamiltonGetContrib_f
     end interface
 
@@ -119,7 +119,7 @@ module RSPNucHamilton_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
-                real(kind=QREAL), intent(inout) :: val_nuc(size_pert)
+                real(kind=QREAL), intent(inout) :: val_nuc(2*size_pert)
             end subroutine get_nuc_contrib
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -155,7 +155,7 @@ module RSPNucHamilton_f
         integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: size_pert
-        real(C_QREAL), intent(inout) :: val_nuc(size_pert)
+        real(C_QREAL), intent(inout) :: val_nuc(2*size_pert)
         type(NucHamiltonFun_f), pointer :: nuc_hamilton_fun  !context of callback subroutine
         ! gets the Fortran callback subroutine
         call c_f_pointer(user_ctx, nuc_hamilton_fun)

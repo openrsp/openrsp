@@ -96,7 +96,7 @@ module RSPTwoOper_f
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: num_exp
-            real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+            real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
         end subroutine TwoOperGetExp_f
     end interface
 
@@ -194,7 +194,7 @@ module RSPTwoOper_f
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
-                real(kind=QREAL), intent(inout) :: val_exp(num_exp)
+                real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_two_oper_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
@@ -322,7 +322,7 @@ module RSPTwoOper_f
         type(C_PTR), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: num_exp
-        real(kind=C_QREAL), intent(inout) :: val_exp(num_exp)
+        real(kind=C_QREAL), intent(inout) :: val_exp(2*num_exp)
         type(TwoOperFun_f), pointer :: two_oper_fun    !context of callback subroutines
         type(QcMat), allocatable :: f_LHS_dens_mat(:)  !LHS AO based density matrices
         type(QcMat), allocatable :: f_RHS_dens_mat(:)  !RHS AO based density matrices
