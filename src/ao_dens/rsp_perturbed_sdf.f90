@@ -1452,6 +1452,24 @@ module rsp_perturbed_sdf
        
        end if
        
+           do i = 1, size(Fp)
+    
+          if (i < 10) then
+             fmt_str = "(A3, I1)"
+          else if (i < 100) then
+             fmt_str = "(A3, I2)"
+          else
+             fmt_str = "(A3, I3)"
+          end if
+          
+          write(mat_str, fmt_str) 'Fp_', i
+          write(*,*) 'i', i
+          write(*,*) 'fname:', mat_str
+          
+          j = QcMatWrite_f(Fp(i), trim(mat_str), ASCII_VIEW)
+    
+    end do
+       
        ! Calculate Dp for all components and add to cache
        
        ! Set up Z matrix calculation

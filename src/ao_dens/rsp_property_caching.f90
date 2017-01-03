@@ -2249,6 +2249,9 @@ module rsp_property_caching
                                cache_hard_offset), mat(res_offset))
                
             else if (present(scal)) then
+            
+               write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
+               write(*,*) 'val', next_element_outer%data_scal(cache_offset + cache_hard_offset)              
 
                scal(res_offset) = &
                scal(res_offset) + &

@@ -2737,6 +2737,11 @@ module rsp_general
                       (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
                       (/cache%indices(j, :), outer_next%indices(i, :)/))
                    
+                      write(*,*) 'Index tuple:', (/cache%indices(j, :), outer_next%indices(i, :)/)
+                      write(*,*) 'Saving element', j + size(cache%indices, 1) * (i - 1), &
+                      'of data in cache element', offset
+                      write(*,*) 'data is',  data_tmp(j + size(cache%indices, 1) * (i - 1))
+                   
                       outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
                       
                    end do
@@ -3948,6 +3953,8 @@ module rsp_general
                       end if
 
                       if (.NOT.(mem_mgr%calibrate)) then
+                      
+                         write(*,*) 'Saving element', j, 'of data in', offset
                       
                          call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
                          call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
