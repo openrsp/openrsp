@@ -697,7 +697,7 @@ module rsp_perturbed_matrices
         
      end if
 
-     if (select_terms) then
+     if (calc_contrib) then
  
        call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
