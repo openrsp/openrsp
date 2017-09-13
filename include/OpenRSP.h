@@ -58,6 +58,7 @@ typedef struct {
     RSPXCFun *xc_fun;              /* XC functionals */
     RSPNucHamilton *nuc_hamilton;  /* nuclear Hamiltonian */
     RSPSolver *rsp_solver;         /* linear response equation solver */
+    QInt io_output;                /* Temporary solution for printing */
 } OpenRSP;
 
 extern QErrorCode OpenRSPCreate(OpenRSP*);
@@ -155,7 +156,8 @@ extern QErrorCode OpenRSPGetResidue(OpenRSP*,
                                     const QInt,
                                     QReal*);
 extern QErrorCode OpenRSPDestroy(OpenRSP*);
-
+/* Temporary solution for printing */
+extern QErrorCode OpenRSPSetUserOutput(OpenRSP*,const QInt);
 
 #endif
 

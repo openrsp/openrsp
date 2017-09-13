@@ -29,26 +29,6 @@
 ! data types between C/Fortran
 #include "api/qcmatrix_c_type.h"
 
-
-    ! Placeholder routine awaiting API update
-    subroutine f_callback_RSPOUTPUT_PLACEHOLDER(out_str, lvl)
-    
-      implicit none
-    
-      integer :: lvl
-      character(*) :: out_str
-       
-      if (lvl <= 2) then
-       
-         write(*,*) trim(out_str)
-       
-      end if
-    
-    
-    
-    end subroutine
-
-
     subroutine OpenRSPGetRSPFun_f(num_props,        &
                                   len_tuple,        &
                                   pert_tuple,       &
@@ -64,7 +44,7 @@
                                   one_oper,         &
                                   two_oper,         &
                                   xc_fun,           &
-                                  !id_outp,          &
+                                  io_output,        &
                                   size_rsp_funs,    &
                                   rsp_funs)         &
                                   !len_file_tensor,  &
@@ -111,13 +91,12 @@
                 integer(kind=C_QINT), intent(out) :: num_atoms
             end function RSPNucHamiltonGetNumAtoms
         end interface
-        !integer, intent(in) :: id_outp
+        integer(kind=C_QINT), value, intent(in) :: io_output
         integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
         real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         !integer(kind=C_QINT), value, intent(in) :: len_file_tensor
         !type(C_PTR), value, intent(in) :: file_rsp_funs
         ! local variables for converting C arguments to Fortran ones
-        integer(kind=4), parameter :: STDOUT = 6
         integer(kind=QINT) num_coord
         integer(kind=QINT) num_all_pert
         integer(kind=QINT), allocatable :: f_pert_dims(:)
@@ -132,9 +111,7 @@
         !character, allocatable :: f_file_tensor(:)
         integer(kind=QINT) ipert, jpert
         integer(kind=4) ierr
-        
-        external :: f_callback_RSPOUTPUT_PLACEHOLDER
-        
+
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
@@ -146,17 +123,17 @@
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
+            write(io_output,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims"
         end if
         allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
+            write(io_output,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp"
         end if
         allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
+            write(io_output,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple"
         end if
         do ipert = 1, num_all_pert
@@ -174,7 +151,7 @@
         ! gets the frequencies of perturbations
         allocate(f_pert_freqs(size(pert_freqs)/2), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)/2
+            write(io_output,100) "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)/2
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs"
         end if
         do ipert = 1, size(f_pert_freqs)
@@ -203,7 +180,7 @@
         ! allocates memory for the results
         allocate(f_rsp_funs(size_rsp_funs), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetRSPFun_f>> size_rsp_funs", size_rsp_funs
+            write(io_output,100) "OpenRSPGetRSPFun_f>> size_rsp_funs", size_rsp_funs
             stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_funs"
         end if
         f_rsp_funs = 0.0
@@ -240,7 +217,7 @@
         !                                   f_callback_RSPTwoOperGetExp,               &
         !                                   f_callback_RSPXCFunGetMat,                 &
         !                                   f_callback_RSPXCFunGetExp,                 &
-        !                                   STDOUT,                                    &
+        !                                   io_output,                                    &
         !                                   f_rsp_funs,                                &
         !                                   f_file_tensor)
         !    ! cleans up
@@ -252,9 +229,8 @@
             ! MaR: max_mat set to very high number to take matrix limitations out of use
             ! during development of other features
             max_mat = 999999999
-            
-            ! MaR: Note that f_callback_RSPOUTPUT_PLACEHOLDER is an output callback placeholder 
-        
+
+            call f_callback_SetUserOutput(io_output)
             call openrsp_get_property(num_props,                                 &
                                            len_tuple,                                 &
                                            f_pert_dims,                               &
@@ -276,17 +252,14 @@
                                            f_callback_RSPTwoOperGetExp,               &
                                            f_callback_RSPXCFunGetMat,                 &
                                            f_callback_RSPXCFunGetExp,                 &
-                                           f_callback_RSPOUTPUT_PLACEHOLDER,          &
-                                           STDOUT,                                    &
+                                           f_callback_UserOutput,                     &
+                                           io_output,                                 &
                                            size(f_rsp_funs),                          &
                                            f_rsp_funs,                                &
                                            0,                                         &
                                            mem_calibrate=mem_calibrate,               &
                                            max_mat=max_mat,                           &
                                            mem_result=mem_result)
-                                           
-                                           
-                                           
 
 
         !end if
