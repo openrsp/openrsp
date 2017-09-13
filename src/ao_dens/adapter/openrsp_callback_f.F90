@@ -47,6 +47,9 @@ module openrsp_callback_f
 
     integer(kind=4), private, parameter :: STDOUT = 6
 
+    ! Temporary solution for printing
+    integer(kind=4), private, save :: IO_USER_OUTPUT = 6
+
     ! type saving C struct's for calling C functions
     type, private :: RSP_CTX
         private
@@ -72,6 +75,9 @@ module openrsp_callback_f
     public :: f_callback_RSPTwoOperGetExp
     public :: f_callback_RSPXCFunGetMat
     public :: f_callback_RSPXCFunGetExp
+
+    public :: f_callback_SetUserOutput
+    public :: f_callback_UserOutput
 
     interface
         integer(C_INT) function RSPSolverGetLinearRSPSolution(rsp_solver,    &
@@ -913,6 +919,32 @@ module openrsp_callback_f
         end if
 100     format("f_callback_RSPXCFunGetExp>> ",A,3I12)
     end subroutine f_callback_RSPXCFunGetExp
+
+    ! Temporary solution for printing
+    subroutine f_callback_SetUserOutput(io_output)
+        integer(kind=4), intent(in) :: io_output
+        IO_USER_OUTPUT = io_output
+    end subroutine f_callback_SetUserOutput
+
+    ! Temporary solution for printing
+    subroutine f_callback_UserOutput(out_str, out_level)
+        character(*), intent(in) :: out_str
+        integer(kind=4), intent(in) :: out_level
+        integer(kind=4), parameter :: OUT_DEBUG = 2
+        integer(kind=4), parameter :: OUT_ERROR = 0
+        select case(out_level)
+        case(OUT_ERROR)
+            call lsquit(trim(out_str), IO_USER_OUTPUT)
+        case default
+            if (out_level<OUT_DEBUG) then
+                write(IO_USER_OUTPUT, "(2A)") "[OUT]-> ", trim(out_str)
+#if defined(OPENRSP_DEBUG)
+            else
+                write(IO_USER_OUTPUT, "(2A)") "[DEBUG]-> ", trim(out_str)
+#endif
+            end if
+        end select
+    end subroutine f_callback_UserOutput
 
 end module openrsp_callback_f
 

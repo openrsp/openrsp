@@ -122,6 +122,9 @@ module OpenRSP_f
     public :: OpenRSPGetResidue_f
     public :: OpenRSPDestroy_f
 
+    ! Temporary solution for printing
+    public :: OpenRSPSetUserOutput_f
+
     interface OpenRSPWrite_f
         module procedure OpenRSPWritebyFileName_f
         module procedure OpenRSPWritebyUnit_f
@@ -349,6 +352,12 @@ module OpenRSP_f
             use, intrinsic :: iso_c_binding
             type(C_PTR), intent(inout) :: open_rsp
         end function OpenRSPDestroyFortranAdapter
+        integer(C_INT) function OpenRSPSetUserOutput(openrsp, io_output) &
+            bind(C, name="OpenRSPSetUserOutput")
+            use, intrinsic :: iso_c_binding
+            type(C_PTR), intent(inout) :: open_rsp
+            integer(kind=C_QINT), value, intent(in) :: io_output
+        end function OpenRSPSetUserOutput
     end interface
 
     contains
@@ -1476,6 +1485,14 @@ integer(kind=4), parameter :: QCSTDOUT = 6
             nullify(open_rsp%nuc_hamilton_fun)
         end if
     end function OpenRSPDestroy_f
+
+    ! Temporary solution for printing
+    function OpenRSPSetUserOutput_f(open_rsp, io_output) result(ierr)
+        integer(kind=4) :: ierr
+        type(OpenRSP), intent(inout) :: open_rsp
+        integer(kind=4), intent(in) :: io_output
+        ierr = OpenRSPSetUserOutput(open_rsp%c_rsp, io_output)
+    end function OpenRSPSetUserOutput_f
 
 end module OpenRSP_f
 
