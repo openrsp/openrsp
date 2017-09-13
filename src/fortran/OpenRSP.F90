@@ -352,10 +352,10 @@ module OpenRSP_f
             use, intrinsic :: iso_c_binding
             type(C_PTR), intent(inout) :: open_rsp
         end function OpenRSPDestroyFortranAdapter
-        integer(C_INT) function OpenRSPSetUserOutput(openrsp, io_output) &
+        integer(C_INT) function OpenRSPSetUserOutput(open_rsp, io_output) &
             bind(C, name="OpenRSPSetUserOutput")
             use, intrinsic :: iso_c_binding
-            type(C_PTR), intent(inout) :: open_rsp
+            type(C_PTR), value, intent(in) :: open_rsp
             integer(kind=C_QINT), value, intent(in) :: io_output
         end function OpenRSPSetUserOutput
     end interface
