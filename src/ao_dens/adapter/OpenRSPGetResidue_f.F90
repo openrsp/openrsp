@@ -50,7 +50,7 @@
                                    one_oper,         &
                                    two_oper,         &
                                    xc_fun,           &
-                                   !id_outp,          &
+                                   io_output,        &
                                    size_residues,    &
                                    residues)         &
                                    !len_file_tensor,  &
@@ -104,13 +104,12 @@
                 integer(kind=C_QINT), intent(out) :: num_atoms
             end function RSPNucHamiltonGetNumAtoms
         end interface
-        !integer, intent(in) :: id_outp
+        integer(kind=C_QINT), value, intent(in) :: io_output
         integer(kind=C_QINT), value, intent(in) :: size_residues
         real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
         !integer(kind=C_QINT), value, intent(in) :: len_file_tensor
         !type(C_PTR), value, intent(in) :: file_residues
         ! local variables for converting C arguments to Fortran ones
-        integer(kind=4), parameter :: STDOUT = 6
         integer(kind=QINT) num_coord
         integer(kind=QINT) num_all_pert
         integer(kind=QINT), allocatable :: f_pert_dims(:)
@@ -132,8 +131,6 @@
         integer(kind=QINT) iext
         integer(kind=4) ierr
 
-        external :: f_callback_RSPOUTPUT_PLACEHOLDER
-
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
@@ -145,17 +142,17 @@
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
+            write(io_output,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_dims"
         end if
         allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
+            write(io_output,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_first_comp"
         end if
         allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
+            write(io_output,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
             stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_tuple"
         end if
         do ipert = 1, num_all_pert
@@ -185,8 +182,8 @@
                                     order_residue),                       &
                  stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetResidue_f>> order_residue", order_residue
-            write(STDOUT,100) "OpenRSPGetResidue_f>> residue_num_pert", residue_num_pert
+            write(io_output,100) "OpenRSPGetResidue_f>> order_residue", order_residue
+            write(io_output,100) "OpenRSPGetResidue_f>> residue_num_pert", residue_num_pert
             stop "OpenRSPGetResidue_f>> failed to allocate memory for residue_spec_index"
         end if
         jpert = 0
@@ -199,7 +196,7 @@
         ! allocates memory for the frequencies of perturbations
         allocate(f_pert_freqs(size(pert_freqs)/num_excit/2), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetResidue_f>> size(pert_freqs)", &
+            write(io_output,100) "OpenRSPGetResidue_f>> size(pert_freqs)", &
                               size(pert_freqs)/num_excit/2
             stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_freqs"
         end if
@@ -226,7 +223,7 @@
         ! allocates memory for the results
         allocate(f_residues(size_residues), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,100) "OpenRSPGetResidue_f>> size_residues", size_residues
+            write(io_output,100) "OpenRSPGetResidue_f>> size_residues", size_residues
             stop "OpenRSPGetResidue_f>> failed to allocate memory for f_residues"
         end if
         f_residues = 0.0
@@ -263,19 +260,21 @@
         !                             f_callback_RSPTwoOperGetExp,               &
         !                             f_callback_RSPXCFunGetMat,                 &
         !                             f_callback_RSPXCFunGetExp,                 &
-        !                             STDOUT,                                    &
+        !                             io_output,                                    &
         !                             f_residues,                              &
         !                             f_file_tensor)
         !    ! cleans up
         !    deallocate(f_file_tensor)
         !    nullify(ptr_file_tensor)
         !else
-        
+
             mem_calibrate = .FALSE.
             ! MaR: max_mat set to very high number to take matrix limitations out of use
             ! during development of other features
             max_mat = 999999999
-        
+
+            call f_callback_SetUserOutput(io_output)
+
             jpert = 0
             do iext = 1, num_excit
                 ! gets the frequencies of perturbations
@@ -320,8 +319,8 @@
                                           f_callback_RSPTwoOperGetExp,                &
                                           f_callback_RSPXCFunGetMat,                  &
                                           f_callback_RSPXCFunGetExp,                  &
-                                          f_callback_RSPOUTPUT_PLACEHOLDER,           &
-                                          STDOUT,                                     &
+                                          f_callback_UserOutput,                      &
+                                          io_output,                                  &
                                           resize_per_excit,                           &
                                           f_residues(ipert+1:ipert+resize_per_excit), &
                                           order_residue,                              &
