@@ -1463,8 +1463,8 @@ module rsp_perturbed_sdf
           end if
           
           write(mat_str, fmt_str) 'Fp_', i
-          write(*,*) 'i', i
-          write(*,*) 'fname:', mat_str
+!           write(*,*) 'i', i
+!           write(*,*) 'fname:', mat_str
           
           j = QcMatWrite_f(Fp(i), trim(mat_str), ASCII_VIEW)
     
