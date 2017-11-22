@@ -1767,10 +1767,10 @@ module rsp_property_caching
          
          ! MaR: WARNING: CHANGED num_p_tuples ARGUMENT TO 0 BELOW; MAY PRODUCE ERRORS ELSEWHERE
          ! UPDATE: Looks like it didn't make errors, return here if there are problems anyway
-         
+
          if (present(n_rule)) then
          
-            call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 0, (/emptypert/), n_rule)
+            call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/), n_rule=n_rule)
          
          else
             
@@ -2250,8 +2250,8 @@ module rsp_property_caching
                
             else if (present(scal)) then
             
-               write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
-               write(*,*) 'val', next_element_outer%data_scal(cache_offset + cache_hard_offset)              
+               !write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
+               !write(*,*) 'val', next_element_outer%data_scal(cache_offset + cache_hard_offset)              
 
                scal(res_offset) = &
                scal(res_offset) + &
