@@ -3646,6 +3646,7 @@ module rsp_general
              
        end do
 
+       o_ctr = o_ctr + size(cache%indices, 1) * o_triang_size
               
        deallocate(blk_sizes)
        deallocate(blks_tuple_info)
