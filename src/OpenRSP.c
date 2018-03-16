@@ -680,7 +680,7 @@ void OpenRSPGetRSPFun_f(const QInt num_props,
                         RSPOneOper *one_oper,
                         RSPTwoOper *two_oper,
                         RSPXCFun *xc_fun,
-                        const QInt io_output,
+                        const int io_output,
                         const QInt size_rsp_funs,
                         QReal *rsp_funs);
 
@@ -778,7 +778,7 @@ void OpenRSPGetResidue_f(const QInt num_props,
                          RSPOneOper *one_oper,
                          RSPTwoOper *two_oper,
                          RSPXCFun *xc_fun,
-                         const QInt io_output,
+                         const int io_output,
                          const QInt size_residues,
                          QReal *residues);
 
@@ -896,7 +896,7 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
 }
 
 /* Temporary solution for printing */
-QErrorCode OpenRSPSetUserOutput(OpenRSP *open_rsp, const QInt io_output)
+QErrorCode OpenRSPSetUserOutput(OpenRSP *open_rsp, const int io_output)
 {
     open_rsp->io_output = io_output;
     return QSUCCESS;
