@@ -91,7 +91,7 @@
                 integer(kind=C_QINT), intent(out) :: num_atoms
             end function RSPNucHamiltonGetNumAtoms
         end interface
-        integer(kind=C_QINT), value, intent(in) :: io_output
+        integer(kind=4), value, intent(in) :: io_output
         integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
         real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         !integer(kind=C_QINT), value, intent(in) :: len_file_tensor
