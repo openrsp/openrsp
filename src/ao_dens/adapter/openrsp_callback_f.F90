@@ -48,7 +48,9 @@ module openrsp_callback_f
     integer(kind=4), private, parameter :: STDOUT = 6
 
     ! Temporary solution for printing
-    integer(kind=4), private, save :: IO_USER_OUTPUT = 6
+    integer, private, save :: IO_USER_OUTPUT = 6
+    integer(kind=4), parameter, public :: OUT_DEBUG = 2
+    integer(kind=4), parameter, public :: OUT_ERROR = 0
 
     ! type saving C struct's for calling C functions
     type, private :: RSP_CTX
@@ -922,7 +924,7 @@ module openrsp_callback_f
 
     ! Temporary solution for printing
     subroutine f_callback_SetUserOutput(io_output)
-        integer(kind=4), intent(in) :: io_output
+        integer, intent(in) :: io_output
         IO_USER_OUTPUT = io_output
     end subroutine f_callback_SetUserOutput
 
@@ -930,8 +932,6 @@ module openrsp_callback_f
     subroutine f_callback_UserOutput(out_str, out_level)
         character(*), intent(in) :: out_str
         integer(kind=4), intent(in) :: out_level
-        integer(kind=4), parameter :: OUT_DEBUG = 2
-        integer(kind=4), parameter :: OUT_ERROR = 0
         select case(out_level)
         case(OUT_ERROR)
             call lsquit(trim(out_str), IO_USER_OUTPUT)

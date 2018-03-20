@@ -111,7 +111,6 @@ module rsp_general
   ! get_2el_exp: Callback routine for 2-electron contributions to response properties
   ! get_xc_mat: Callback routine for exchange-correlation contributions to perturbed Fock matrices
   ! get_xc_exp: Callback routine for exchange-correlation contributions to response properties
-  ! id_output: Output stream identifier
   ! rsp_tensor: Array to hold the response properties upon calculation
   ! file_id: Custom filename for printing response properties (currently not in use)
   ! mem_calibrate_arg: Flag: OpenRSP is to be run in memory calibration mode (must then give next args.)
@@ -124,7 +123,7 @@ module rsp_general
                                  kn_rules, F_unpert, S_unpert, D_unpert, &
                                  get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, &
                                  get_1el_mat, get_1el_exp, get_2el_mat, get_2el_exp, &
-                                 get_xc_mat, get_xc_exp, out_print, id_outp, rsp_tensor_size, &
+                                 get_xc_mat, get_xc_exp, out_print, rsp_tensor_size, &
                                  rsp_tensor, residue_order, file_id, mem_calibrate, max_mat, &
                                  mem_result, residue_spec_pert, size_rsi_1, residue_spec_index, &
                                  exenerg, Xf_unpert)
@@ -134,7 +133,6 @@ module rsp_general
     integer(kind=QINT), intent(in) :: n_props
     
     integer(kind=QINT), dimension(n_props), intent(in) :: np, n_freq_cfgs
-    integer(kind=4), intent(in) :: id_outp
     integer(kind=QINT), dimension(sum(np)), intent(in) :: pert_dims, pert_first_comp
     character(4), dimension(sum(np)), intent(in) :: pert_labels
     
@@ -571,7 +569,7 @@ module rsp_general
           call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                         get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                         get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                        id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                        prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
                         mem_mgr, Xf=Xf)
                         
        else
@@ -579,7 +577,7 @@ module rsp_general
           call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                         get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                         get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                        id_outp, prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                        prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
                         mem_mgr)
                         
        end if
@@ -746,14 +744,14 @@ module rsp_general
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                       get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                      id_outp, prop_sizes, props, prog_info, rs_info, sdf_retrieved, &
+                      prop_sizes, props, prog_info, rs_info, sdf_retrieved, &
                       mem_mgr, Xf)
 
     implicit none
 
     type(mem_manager) :: mem_mgr
     logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved
-    integer :: n_props, id_outp, i, j, k
+    integer :: n_props, i, j, k
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
@@ -829,7 +827,7 @@ module rsp_general
        
           call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                        get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                       get_2el_mat, get_xc_mat, out_print, .TRUE., id_outp, &
+                       get_2el_mat, get_xc_mat, out_print, .TRUE., &
                        prog_info, rs_info, sdf_retrieved, mem_mgr, Xf=Xf)
                        
                        
@@ -837,7 +835,7 @@ module rsp_general
        
           call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                        get_rsp_sol, get_ovl_mat, get_1el_mat, &
-                       get_2el_mat, get_xc_mat, out_print, .TRUE., id_outp, &
+                       get_2el_mat, get_xc_mat, out_print, .TRUE., &
                        prog_info, rs_info, sdf_retrieved, mem_mgr)
        
        end if
@@ -1514,7 +1512,7 @@ module rsp_general
     logical :: e_knskip, dryrun, traverse_end
     type(p_tuple) :: pert
     integer, dimension(2) :: kn
-    integer :: num_p_tuples, density_order, i, j, total_num_perturbations, id_outp
+    integer :: num_p_tuples, density_order, i, j, total_num_perturbations
     integer :: p_size
     logical :: residue_skip
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
@@ -1710,7 +1708,7 @@ module rsp_general
     integer, dimension(2) :: wunit_size, wunit_maxsize
     logical :: traverse_end, intra_pair, mem_done, intra_done
     integer :: cache_offset, i, j, k, m, n, p, offset
-    integer :: id_outp, c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
+    integer :: c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
     integer :: total_outer_size_1, total_outer_size_2
     integer :: num_0, num_1, num_pert, tot_num_pert
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info
@@ -3027,7 +3025,7 @@ module rsp_general
 
     logical :: traverse_end, any_lagrange, select_terms
     integer :: cache_offset, i, j, k, m, n, p, c_ctr, c_snap, lagrange_max_n
-    integer :: id_outp, i_supsize, o_triang_size, offset, tot_num_pert, max_outer_npert
+    integer :: i_supsize, o_triang_size, offset, tot_num_pert, max_outer_npert
     integer :: o_ctr, size_lagrange, size_pulay_n
     integer :: sstr_incr
     integer, dimension(0) :: nof

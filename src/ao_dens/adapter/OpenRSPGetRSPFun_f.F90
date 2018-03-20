@@ -44,11 +44,8 @@
                                   one_oper,         &
                                   two_oper,         &
                                   xc_fun,           &
-                                  io_output,        &
                                   size_rsp_funs,    &
                                   rsp_funs)         &
-                                  !len_file_tensor,  &
-                                  !file_rsp_funs)  &
         bind(C, name="OpenRSPGetRSPFun_f")
         use, intrinsic :: iso_c_binding
         use qcmatrix_f!, only: QINT,              &
@@ -91,11 +88,8 @@
                 integer(kind=C_QINT), intent(out) :: num_atoms
             end function RSPNucHamiltonGetNumAtoms
         end interface
-        integer(kind=4), value, intent(in) :: io_output
         integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
         real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
-        !integer(kind=C_QINT), value, intent(in) :: len_file_tensor
-        !type(C_PTR), value, intent(in) :: file_rsp_funs
         ! local variables for converting C arguments to Fortran ones
         integer(kind=QINT) num_coord
         integer(kind=QINT) num_all_pert
@@ -107,15 +101,13 @@
         type(QcMat) f_S_unpert(1)
         type(QcMat) f_D_unpert(1)
         complex(kind=QREAL), allocatable :: f_rsp_funs(:)
-        !character(kind=C_CHAR), pointer :: ptr_file_tensor(:)
-        !character, allocatable :: f_file_tensor(:)
         integer(kind=QINT) ipert, jpert
         integer(kind=4) ierr
 
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call RSPNucHamiltonGetNumAtoms"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call RSPNucHamiltonGetNumAtoms", OUT_ERROR)
         end if
         num_coord = 3*num_coord
         ! gets the number of all perturbations
@@ -123,18 +115,15 @@
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims", OUT_ERROR)
         end if
         allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp", OUT_ERROR)
         end if
         allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetRSPFun_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple", OUT_ERROR)
         end if
         do ipert = 1, num_all_pert
             select case (pert_tuple(ipert))
@@ -151,8 +140,7 @@
         ! gets the frequencies of perturbations
         allocate(f_pert_freqs(size(pert_freqs)/2), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetRSPFun_f>> size(pert_freqs)", size(pert_freqs)/2
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs", OUT_ERROR)
         end if
         do ipert = 1, size(f_pert_freqs)
             f_pert_freqs(ipert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
@@ -160,15 +148,15 @@
         ! gets the matrices
         ierr = QcMat_C_F_POINTER(f_F_unpert, (/F_unpert/))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(F)"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(F)", OUT_ERROR)
         end if
         ierr = QcMat_C_F_POINTER(f_S_unpert, (/S_unpert/))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(S)"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(S)", OUT_ERROR)
         end if
         ierr = QcMat_C_F_POINTER(f_D_unpert, (/D_unpert/))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)", OUT_ERROR)
         end if
         ! sets the context of callback functions
         call RSP_CTX_Create(rsp_solver,   &
@@ -180,89 +168,44 @@
         ! allocates memory for the results
         allocate(f_rsp_funs(size_rsp_funs), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetRSPFun_f>> size_rsp_funs", size_rsp_funs
-            stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_funs"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_funs", OUT_ERROR)
         end if
         f_rsp_funs = 0.0
-        !! gets the file name of results
-        !if (c_associated(file_rsp_funs)) then
-        !    call c_f_pointer(file_rsp_funs, ptr_file_tensor, [len_file_tensor])
-        !    allocate(f_file_tensor(len_file_tensor), stat=ierr)
-        !    if (ierr/=0) then
-        !        write(6,100) "OpenRSPGetRSPFun_f>> len_file_tensor", len_file_tensor
-        !        stop "OpenRSPGetRSPFun_f>> failed to allocate memory for f_file_tensor"
-        !    end if
-        !    do ipert = 1_QINT, len_file_tensor
-        !        f_file_tensor(ipert) = ptr_rsp_funs(ipert)(1:1)
-        !    end do
-        !    ! gets the properties
-        !    call openrsp_get_property_2014(num_props,                                 &
-        !                                   len_tuple,                                 &
-        !                                   f_pert_dims,                               &
-        !                                   f_pert_first_comp,                         &
-        !                                   f_pert_tuple,                              &
-        !                                   num_freq_configs,                          &
-        !                                   f_pert_freqs,                              &
-        !                                   kn_rules,                                  &
-        !                                   f_F_unpert(1),                             &
-        !                                   f_S_unpert(1),                             &
-        !                                   f_D_unpert(1),                             &
-        !                                   f_callback_RSPSolverGetLinearRSPSolution,  &
-        !                                   f_callback_RSPNucHamiltonGetContributions, &
-        !                                   f_callback_RSPOverlapGetMat,               &
-        !                                   f_callback_RSPOverlapGetExp,               &
-        !                                   f_callback_RSPOneOperGetMat,               &
-        !                                   f_callback_RSPOneOperGetExp,               &
-        !                                   f_callback_RSPTwoOperGetMat,               &
-        !                                   f_callback_RSPTwoOperGetExp,               &
-        !                                   f_callback_RSPXCFunGetMat,                 &
-        !                                   f_callback_RSPXCFunGetExp,                 &
-        !                                   io_output,                                    &
-        !                                   f_rsp_funs,                                &
-        !                                   f_file_tensor)
-        !    ! cleans up
-        !    deallocate(f_file_tensor)
-        !    nullify(ptr_file_tensor)
-        !else
-        
-            mem_calibrate = .FALSE.
-            ! MaR: max_mat set to very high number to take matrix limitations out of use
-            ! during development of other features
-            max_mat = 999999999
 
-            call f_callback_SetUserOutput(io_output)
-            call openrsp_get_property(num_props,                                 &
-                                           len_tuple,                                 &
-                                           f_pert_dims,                               &
-                                           f_pert_first_comp,                         &
-                                           f_pert_tuple,                              &
-                                           num_freq_configs,                          &
-                                           f_pert_freqs,                              &
-                                           kn_rules,                                  &
-                                           f_F_unpert(1),                             &
-                                           f_S_unpert(1),                             &
-                                           f_D_unpert(1),                             &
-                                           f_callback_RSPSolverGetLinearRSPSolution,  &
-                                           f_callback_RSPNucHamiltonGetContributions, &
-                                           f_callback_RSPOverlapGetMat,               &
-                                           f_callback_RSPOverlapGetExp,               &
-                                           f_callback_RSPOneOperGetMat,               &
-                                           f_callback_RSPOneOperGetExp,               &
-                                           f_callback_RSPTwoOperGetMat,               &
-                                           f_callback_RSPTwoOperGetExp,               &
-                                           f_callback_RSPXCFunGetMat,                 &
-                                           f_callback_RSPXCFunGetExp,                 &
-                                           f_callback_UserOutput,                     &
-                                           io_output,                                 &
-                                           size(f_rsp_funs),                          &
-                                           f_rsp_funs,                                &
-                                           0,                                         &
-                                           mem_calibrate=mem_calibrate,               &
-                                           max_mat=max_mat,                           &
-                                           mem_result=mem_result)
+        mem_calibrate = .FALSE.
+        ! MaR: max_mat set to very high number to take matrix limitations out of use
+        ! during development of other features
+        max_mat = 999999999
 
+        call openrsp_get_property(num_props,                                 &
+                                  len_tuple,                                 &
+                                  f_pert_dims,                               &
+                                  f_pert_first_comp,                         &
+                                  f_pert_tuple,                              &
+                                  num_freq_configs,                          &
+                                  f_pert_freqs,                              &
+                                  kn_rules,                                  &
+                                  f_F_unpert(1),                             &
+                                  f_S_unpert(1),                             &
+                                  f_D_unpert(1),                             &
+                                  f_callback_RSPSolverGetLinearRSPSolution,  &
+                                  f_callback_RSPNucHamiltonGetContributions, &
+                                  f_callback_RSPOverlapGetMat,               &
+                                  f_callback_RSPOverlapGetExp,               &
+                                  f_callback_RSPOneOperGetMat,               &
+                                  f_callback_RSPOneOperGetExp,               &
+                                  f_callback_RSPTwoOperGetMat,               &
+                                  f_callback_RSPTwoOperGetExp,               &
+                                  f_callback_RSPXCFunGetMat,                 &
+                                  f_callback_RSPXCFunGetExp,                 &
+                                  f_callback_UserOutput,                     &
+                                  size(f_rsp_funs),                          &
+                                  f_rsp_funs,                                &
+                                  0,                                         &
+                                  mem_calibrate=mem_calibrate,               &
+                                  max_mat=max_mat,                           &
+                                  mem_result=mem_result)
 
-        !end if
         ! assigns the results
         jpert = 0
         do ipert = 1, size_rsp_funs
@@ -274,15 +217,15 @@
         ! cleans up
         ierr = QcMat_C_NULL_PTR(A=f_F_unpert)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(F)"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(F)", OUT_ERROR)
         end if
         ierr = QcMat_C_NULL_PTR(A=f_S_unpert)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(S)"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(S)", OUT_ERROR)
         end if
         ierr = QcMat_C_NULL_PTR(A=f_D_unpert)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(D)"
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(D)", OUT_ERROR)
         end if
         deallocate(f_pert_dims)
         deallocate(f_pert_first_comp)
