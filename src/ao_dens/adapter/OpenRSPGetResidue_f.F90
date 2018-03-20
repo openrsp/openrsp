@@ -50,11 +50,8 @@
                                    one_oper,         &
                                    two_oper,         &
                                    xc_fun,           &
-                                   io_output,        &
                                    size_residues,    &
                                    residues)         &
-                                   !len_file_tensor,  &
-                                   !file_residues)  &
         bind(C, name="OpenRSPGetResidue_f")
         use, intrinsic :: iso_c_binding
         use qcmatrix_f!, only: QINT,              &
@@ -104,11 +101,8 @@
                 integer(kind=C_QINT), intent(out) :: num_atoms
             end function RSPNucHamiltonGetNumAtoms
         end interface
-        integer(kind=4), value, intent(in) :: io_output
         integer(kind=C_QINT), value, intent(in) :: size_residues
         real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
-        !integer(kind=C_QINT), value, intent(in) :: len_file_tensor
-        !type(C_PTR), value, intent(in) :: file_residues
         ! local variables for converting C arguments to Fortran ones
         integer(kind=QINT) num_coord
         integer(kind=QINT) num_all_pert
@@ -134,7 +128,7 @@
         ! gets the number of coordinates
         ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call RSPNucHamiltonGetNumAtoms"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call RSPNucHamiltonGetNumAtoms", OUT_ERROR)
         end if
         num_coord = 3*num_coord
         ! gets the number of all perturbations
@@ -142,18 +136,15 @@
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_dims"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to allocate memory for f_pert_dims", OUT_ERROR)
         end if
         allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_first_comp"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to allocate memory for f_pert_first_comp", OUT_ERROR)
         end if
         allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetResidue_f>> num_all_pert", num_all_pert
-            stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_tuple"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to allocate memory for f_pert_tuple", OUT_ERROR)
         end if
         do ipert = 1, num_all_pert
             select case (pert_tuple(ipert))
@@ -169,22 +160,20 @@
         end do
         ! gets the indices of perturbations w.r.t. residue is calculated
         if (num_props/=1) then
-            stop "FIXME>> openrsp_get_residue() does not support multiple properties"
+            call f_callback_UserOutput("FIXME>> openrsp_get_residue() does not support multiple properties", OUT_ERROR)
         end if
         ! C memory: [num_props][num_excit][num_freq_configs][pert_tuple][2]
         ! and num_props==1
         resize_per_excit = size_residues/num_excit
         if (order_residue>2) then
-            stop "OpenRSPGetResidue_f>> only supports single and double residues"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> only supports single and double residues", OUT_ERROR)
         end if
         allocate(residue_spec_index(max(residue_num_pert(1),              &
                                         residue_num_pert(order_residue)), &
                                     order_residue),                       &
                  stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetResidue_f>> order_residue", order_residue
-            write(io_output,100) "OpenRSPGetResidue_f>> residue_num_pert", residue_num_pert
-            stop "OpenRSPGetResidue_f>> failed to allocate memory for residue_spec_index"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to allocate memory for residue_spec_index", OUT_ERROR)
         end if
         jpert = 0
         do iext = 1, order_residue
@@ -196,22 +185,20 @@
         ! allocates memory for the frequencies of perturbations
         allocate(f_pert_freqs(size(pert_freqs)/num_excit/2), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetResidue_f>> size(pert_freqs)", &
-                              size(pert_freqs)/num_excit/2
-            stop "OpenRSPGetResidue_f>> failed to allocate memory for f_pert_freqs"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to allocate memory for f_pert_freqs", OUT_ERROR)
         end if
         ! gets the matrices
         ierr = QcMat_C_F_POINTER(f_F_unpert, (/F_unpert/))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(F)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(F)", OUT_ERROR)
         end if
         ierr = QcMat_C_F_POINTER(f_S_unpert, (/S_unpert/))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(S)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(S)", OUT_ERROR)
         end if
         ierr = QcMat_C_F_POINTER(f_D_unpert, (/D_unpert/))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(D)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(D)", OUT_ERROR)
         end if
         ! sets the context of callback functions
         call RSP_CTX_Create(rsp_solver,   &
@@ -223,118 +210,73 @@
         ! allocates memory for the results
         allocate(f_residues(size_residues), stat=ierr)
         if (ierr/=0) then
-            write(io_output,100) "OpenRSPGetResidue_f>> size_residues", size_residues
-            stop "OpenRSPGetResidue_f>> failed to allocate memory for f_residues"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to allocate memory for f_residues", OUT_ERROR)
         end if
         f_residues = 0.0
-        !! gets the file name of results
-        !if (c_associated(file_residues)) then
-        !    call c_f_pointer(file_residues, ptr_file_tensor, [len_file_tensor])
-        !    allocate(f_file_tensor(len_file_tensor), stat=ierr)
-        !    if (ierr/=0) then
-        !        write(6,100) "OpenRSPGetResidue_f>> len_file_tensor", len_file_tensor
-        !        stop "OpenRSPGetResidue_f>> failed to allocate memory for f_file_tensor"
-        !    end if
-        !    do ipert = 1_QINT, len_file_tensor
-        !        f_file_tensor(ipert) = ptr_residues(ipert)(1:1)
-        !    end do
-        !    ! gets the properties
-        !    call openrsp_get_residue(num_props,                                 &
-        !                             len_tuple,                                 &
-        !                             f_pert_dims,                               &
-        !                             f_pert_first_comp,                         &
-        !                             f_pert_tuple,                              &
-        !                             num_freq_configs,                          &
-        !                             f_pert_freqs,                              &
-        !                             kn_rules,                                  &
-        !                             f_F_unpert(1),                             &
-        !                             f_S_unpert(1),                             &
-        !                             f_D_unpert(1),                             &
-        !                             f_callback_RSPSolverGetLinearRSPSolution,  &
-        !                             f_callback_RSPNucHamiltonGetContributions, &
-        !                             f_callback_RSPOverlapGetMat,               &
-        !                             f_callback_RSPOverlapGetExp,               &
-        !                             f_callback_RSPOneOperGetMat,               &
-        !                             f_callback_RSPOneOperGetExp,               &
-        !                             f_callback_RSPTwoOperGetMat,               &
-        !                             f_callback_RSPTwoOperGetExp,               &
-        !                             f_callback_RSPXCFunGetMat,                 &
-        !                             f_callback_RSPXCFunGetExp,                 &
-        !                             io_output,                                    &
-        !                             f_residues,                              &
-        !                             f_file_tensor)
-        !    ! cleans up
-        !    deallocate(f_file_tensor)
-        !    nullify(ptr_file_tensor)
-        !else
 
-            mem_calibrate = .FALSE.
-            ! MaR: max_mat set to very high number to take matrix limitations out of use
-            ! during development of other features
-            max_mat = 999999999
+        mem_calibrate = .FALSE.
+        ! MaR: max_mat set to very high number to take matrix limitations out of use
+        ! during development of other features
+        max_mat = 999999999
 
-            call f_callback_SetUserOutput(io_output)
-
-            jpert = 0
-            do iext = 1, num_excit
-                ! gets the frequencies of perturbations
-                do ipert = 1, size(f_pert_freqs)
-                    jpert = jpert+1
-                    f_pert_freqs(ipert) = cmplx(pert_freqs(2*jpert-1), &
-                                                pert_freqs(2*jpert),   &
-                                                kind=QREAL)
-                end do
-                ! gets the excitation energies and eigenvectors
-                offset_residue = (iext-1)*order_residue
-                do ipert = 1, order_residue
-                    exenerg(ipert) = cmplx(excit_energy(offset_residue+ipert), &
-                                           kind=QREAL)
-                end do
-                ierr = QcMat_C_F_POINTER(X_unpert(1:order_residue),     &
-                                         eigen_vector(offset_residue+1: &
-                                                      offset_residue+order_residue))
-                if (ierr/=QSUCCESS) then
-                    stop "OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(X)"
-                end if
-                ! calculates residues for the current excited state
-                ipert = (iext-1)*resize_per_excit
-                call openrsp_get_property(num_props,                                  &
-                                          len_tuple,                                  &
-                                          f_pert_dims,                                &
-                                          f_pert_first_comp,                          &
-                                          f_pert_tuple,                               &
-                                          num_freq_configs,                           &
-                                          f_pert_freqs,                               &
-                                          kn_rules,                                   &
-                                          f_F_unpert(1),                              &
-                                          f_S_unpert(1),                              &
-                                          f_D_unpert(1),                              &
-                                          f_callback_RSPSolverGetLinearRSPSolution,   &
-                                          f_callback_RSPNucHamiltonGetContributions,  &
-                                          f_callback_RSPOverlapGetMat,                &
-                                          f_callback_RSPOverlapGetExp,                &
-                                          f_callback_RSPOneOperGetMat,                &
-                                          f_callback_RSPOneOperGetExp,                &
-                                          f_callback_RSPTwoOperGetMat,                &
-                                          f_callback_RSPTwoOperGetExp,                &
-                                          f_callback_RSPXCFunGetMat,                  &
-                                          f_callback_RSPXCFunGetExp,                  &
-                                          f_callback_UserOutput,                      &
-                                          io_output,                                  &
-                                          resize_per_excit,                           &
-                                          f_residues(ipert+1:ipert+resize_per_excit), &
-                                          order_residue,                              &
-                                          mem_calibrate=mem_calibrate,                &
-                                          max_mat=max_mat,                            &
-                                          mem_result=mem_result,                      &
-                                          residue_spec_pert=residue_num_pert,         &
-                                          size_rsi_1=size(residue_spec_index, 1),     &
-                                          residue_spec_index=residue_spec_index,      &
-                                          exenerg=exenerg,                            &
-                                          Xf_unpert=X_unpert)
+        jpert = 0
+        do iext = 1, num_excit
+            ! gets the frequencies of perturbations
+            do ipert = 1, size(f_pert_freqs)
+                jpert = jpert+1
+                f_pert_freqs(ipert) = cmplx(pert_freqs(2*jpert-1), &
+                                            pert_freqs(2*jpert),   &
+                                            kind=QREAL)
             end do
+            ! gets the excitation energies and eigenvectors
+            offset_residue = (iext-1)*order_residue
+            do ipert = 1, order_residue
+                exenerg(ipert) = cmplx(excit_energy(offset_residue+ipert), &
+                                       kind=QREAL)
+            end do
+            ierr = QcMat_C_F_POINTER(X_unpert(1:order_residue),     &
+                                     eigen_vector(offset_residue+1: &
+                                                  offset_residue+order_residue))
+            if (ierr/=QSUCCESS) then
+                call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_F_POINTER(X)", OUT_ERROR)
+            end if
+            ! calculates residues for the current excited state
+            ipert = (iext-1)*resize_per_excit
+            call openrsp_get_property(num_props,                                  &
+                                      len_tuple,                                  &
+                                      f_pert_dims,                                &
+                                      f_pert_first_comp,                          &
+                                      f_pert_tuple,                               &
+                                      num_freq_configs,                           &
+                                      f_pert_freqs,                               &
+                                      kn_rules,                                   &
+                                      f_F_unpert(1),                              &
+                                      f_S_unpert(1),                              &
+                                      f_D_unpert(1),                              &
+                                      f_callback_RSPSolverGetLinearRSPSolution,   &
+                                      f_callback_RSPNucHamiltonGetContributions,  &
+                                      f_callback_RSPOverlapGetMat,                &
+                                      f_callback_RSPOverlapGetExp,                &
+                                      f_callback_RSPOneOperGetMat,                &
+                                      f_callback_RSPOneOperGetExp,                &
+                                      f_callback_RSPTwoOperGetMat,                &
+                                      f_callback_RSPTwoOperGetExp,                &
+                                      f_callback_RSPXCFunGetMat,                  &
+                                      f_callback_RSPXCFunGetExp,                  &
+                                      f_callback_UserOutput,                      &
+                                      resize_per_excit,                           &
+                                      f_residues(ipert+1:ipert+resize_per_excit), &
+                                      order_residue,                              &
+                                      mem_calibrate=mem_calibrate,                &
+                                      max_mat=max_mat,                            &
+                                      mem_result=mem_result,                      &
+                                      residue_spec_pert=residue_num_pert,         &
+                                      size_rsi_1=size(residue_spec_index, 1),     &
+                                      residue_spec_index=residue_spec_index,      &
+                                      exenerg=exenerg,                            &
+                                      Xf_unpert=X_unpert)
+        end do
 
-        !end if
         ! assigns the results
         jpert = 0
         do ipert = 1, size_residues
@@ -346,19 +288,19 @@
         ! cleans up
         ierr = QcMat_C_NULL_PTR(A=f_F_unpert)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(F)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(F)", OUT_ERROR)
         end if
         ierr = QcMat_C_NULL_PTR(A=f_S_unpert)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(S)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(S)", OUT_ERROR)
         end if
         ierr = QcMat_C_NULL_PTR(A=f_D_unpert)
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(D)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(D)", OUT_ERROR)
         end if
         ierr = QcMat_C_NULL_PTR(A=X_unpert(1:order_residue))
         if (ierr/=QSUCCESS) then
-            stop "OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(X)"
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call QcMat_C_NULL_PTR(X)", OUT_ERROR)
         end if
         deallocate(f_pert_dims)
         deallocate(f_pert_first_comp)
