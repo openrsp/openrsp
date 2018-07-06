@@ -431,6 +431,48 @@ module rsp_general
           call out_print(out_str, 1)
           write(out_str, *) ' '
           call out_print(out_str, 1)
+          
+          
+          ! MaR: Rounding down nearly zero frequencies to zero
+          ! This is done to avoid size and indexing issues for cases where a perturbation which should
+          ! be zero was wrongly set to nearly zero due to float precision issues
+          
+          do m = 1, np(i)
+          
+             if (abs(real(p_tuples(k)%freq(m))) < xtiny) then
+             
+               write(out_str, *) 'WARNING: The real part of frequency', np(i), 'of property ', m, 'is nearly zero'
+               call out_print(out_str, 1)
+               write(out_str, *) 'The value is ', real(p_tuples(k)%freq(m))
+               call out_print(out_str, 1)
+               write(out_str, *) 'Manually set to zero to avoid tensor size and indexing issues'
+               call out_print(out_str, 1)
+               write(out_str, *) ' '
+               call out_print(out_str, 1)
+             
+               p_tuples(k)%freq(m) = cmplx(0.0d0, aimag(p_tuples(k)%freq(m)))
+             
+             end if
+             
+             if (abs(aimag(p_tuples(k)%freq(m))) < xtiny) then
+             
+               write(out_str, *) 'WARNING: The imaginary part of frequency', np(i), 'of property ', m, 'is nearly zero'
+               call out_print(out_str, 1)
+               write(out_str, *) 'The value is ', aimag(p_tuples(k)%freq(m))
+               call out_print(out_str, 1)
+               write(out_str, *) 'Manually set to zero to avoid tensor size and indexing issues'
+               call out_print(out_str, 1)
+               write(out_str, *) ' '
+               call out_print(out_str, 1)
+             
+               p_tuples(k)%freq(m) = cmplx(real(p_tuples(k)%freq(m)), 0.0d0)
+             
+             end if
+          
+          
+          end do
+          
+          
        
                     
           num_blks(k) = get_num_blks(p_tuples(k))
@@ -467,6 +509,7 @@ module rsp_general
               
     end do
 
+        
     
     
     call prog_incr(prog_info, 1)
@@ -1851,7 +1894,7 @@ module rsp_general
        call get_nucpot(num_pert, pert_ext, size(contrib_0), contrib_0)
        
        write(out_str, *) 'Density matrix-independent contribution (sample)', &
-       contrib_0(1:min(1000,size(contrib_0)))
+       contrib_0(1:min(10,size(contrib_0)))
        call out_print(out_str, 2)
        
     end if
@@ -2005,7 +2048,7 @@ module rsp_general
        
        
              write(out_str, *) 'First-order density matrix-dependent contribution (sample)', &
-             contrib_1(1:min(1000,size(contrib_1)))
+             contrib_1(1:min(10,size(contrib_1)))
              call out_print(out_str, 2)
               
           end if
@@ -2408,12 +2451,12 @@ module rsp_general
                   outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 1), LHS_dmat_2, & 
                   outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2), RHS_dmat_2, &
                   cache%blks_triang_size*this_outer_size, &               
-                  contrib_2(contrib_offset:contrib_offset + this_outer_size))
-       
+                  contrib_2(contrib_offset:contrib_offset + cache%blks_triang_size*this_outer_size - 1))
+      
              write(out_str, *) 'Second-order density matrix-dependent contribution(sample)', &
-             contrib_2(1:min(1000,size(contrib_2)))
+             contrib_2(1:min(10,size(contrib_2)))
              call out_print(out_str, 2)
-             
+            
           end if
                
           contrib_offset = contrib_offset + this_outer_size
@@ -2505,7 +2548,7 @@ module rsp_general
                   contrib_2_tmp)
                   
              write(out_str, *) 'Second-order density matrix-dependent contribution (sample)', &
-             contrib_2_tmp(1:min(1000,size(contrib_2_tmp)))
+             contrib_2_tmp(1:min(10,size(contrib_2_tmp)))
              call out_print(out_str, 2)
                   
           
