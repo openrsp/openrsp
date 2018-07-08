@@ -450,7 +450,7 @@ module rsp_general
                write(out_str, *) ' '
                call out_print(out_str, 1)
              
-               p_tuples(k)%freq(m) = cmplx(0.0d0, aimag(p_tuples(k)%freq(m)))
+               p_tuples(k)%freq(m) = cmplx(0.0d0, aimag(p_tuples(k)%freq(m)), kind=8)
              
              end if
              
@@ -465,7 +465,7 @@ module rsp_general
                write(out_str, *) ' '
                call out_print(out_str, 1)
              
-               p_tuples(k)%freq(m) = cmplx(real(p_tuples(k)%freq(m)), 0.0d0)
+               p_tuples(k)%freq(m) = cmplx(real(p_tuples(k)%freq(m)), 0.0d0, kind=8)
              
              end if
           
