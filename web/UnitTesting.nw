@@ -495,52 +495,53 @@ void get_pert_concatenation(const QInt pert_label,
 }
 @
 
-The following header and C files implement the callback function for nuclear
-Hamiltonian:
-<<OpenRSPNucHamiltonCallback.h>>=
+The following header and C files implement the callback function for
+zero-electron operator (nuclear Hamiltonian):
+<<OpenRSPZeroOperCallback.h>>=
 /*
   <<OpenRSPLicense>>
 
-  This header file contains callback function for nuclear Hamiltonian.
+  This header file contains callback function for zero-electron operator
+  (nuclear Hamiltonian).
 
   2015-10-16, Bin Gao:
   * first version
 */
 
-#if !defined(OPENRSP_NUC_HAMILTON_CALLBACK_H)
-#define OPENRSP_NUC_HAMILTON_CALLBACK_H
+#if !defined(OPENRSP_ZERO_OPER_CALLBACK_H)
+#define OPENRSP_ZERO_OPER_CALLBACK_H
 
 #include "OpenRSP.h"
 
 #if defined(OPENRSP_C_USER_CONTEXT)
-#define NUC_HAMILTON_CONTEXT "NUC_HAMILTON"
+#define ZERO_OPER_CONTEXT "ZERO_OPER"
 #endif
 
-extern void get_nuc_contrib(const QInt,
-                            const QcPertInt*,
-                            const QInt*,
+extern void get_zero_oper_contrib(const QInt,
+                                  const QcPertInt*,
+                                  const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                            void*,
+                                  void*,
 #endif
-                            const QInt,
-                            QReal*);
+                                  const QInt,
+                                  QReal*);
 
 #endif
-<<OpenRSPNucHamiltonCallback.c>>=
+<<OpenRSPZeroOperCallback.c>>=
 /*
   <<OpenRSPLicense>>
 */
 
-#include "OpenRSPNucHamiltonCallback.h"
+#include "OpenRSPZeroOperCallback.h"
 
-void get_nuc_contrib(const QInt nuc_num_pert,
-                     const QcPertInt *nuc_pert_labels,
-                     const QInt *nuc_pert_orders,
+void get_zero_oper_contrib(const QInt oper_num_pert,
+                           const QcPertInt *oper_pert_labels,
+                           const QInt *oper_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                     void *user_ctx,
+                           void *user_ctx,
 #endif
-                     const QInt size_pert,
-                     QReal *val_nuc)
+                           const QInt size_pert,
+                           QReal *val_oper)
 {
 /*FIXME: to implement*/
 }
@@ -1718,7 +1719,7 @@ QErrorCode OpenRSPDMatTest(OpenRSP *open_rsp, FILE *fp_log)
 
 #include "OpenRSPTestPerturbations.h"
 #include "OpenRSPPertCallback.h"
-#include "OpenRSPNucHamiltonCallback.h"
+#include "OpenRSPZeroOperCallback.h"
 #include "OpenRSPDMatTest.h"
 
 #if !defined(OPENRSP_TEST_EXECUTABLE)
@@ -1755,7 +1756,7 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     QErrorCode ierr;   /* error information */
 
     /* creates the context of response theory calculations */
-    ierr = OpenRSPCreate(&open_rsp);
+    ierr = OpenRSPCreate(&open_rsp, NUM_ATOMS);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate()");
     fprintf(fp_log, "OpenRSPTest>> OpenRSPCreate() passed\n");
 
@@ -1772,18 +1773,17 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetPerturbations()");
     fprintf(fp_log, "OpenRSPTest>> OpenRSPSetPerturbations() passed\n");
 
-    /* sets the nuclear Hamiltonian */
-    ierr = OpenRSPSetNucHamilton(&open_rsp,
-                                 NUM_ALL_PERT,
-                                 ALL_PERT_LABELS,
-                                 ALL_PERT_MAX_ORDERS,
-#if defined(OPENRSP_C_USER_CONTEXT)   
-                                 (void *)NUC_HAMILTON_CONTEXT,
+    /* adds the nuclear Hamiltonian */
+    ierr = OpenRSPAddZeroOper(&open_rsp,
+                              NUM_ALL_PERT,
+                              ALL_PERT_LABELS,
+                              ALL_PERT_MAX_ORDERS,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              (void *)ZERO_OPER_CONTEXT,
 #endif
-                                 &get_nuc_contrib,
-                                 NUM_ATOMS);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucHamilton()");
-    fprintf(fp_log, "OpenRSPTest>> OpenRSPSetNucHamilton() passed\n");
+                              &get_zero_oper_contrib);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddZeroOper()");
+    fprintf(fp_log, "OpenRSPTest>> OpenRSPAddZeroOper() passed\n");
 
     /* tests the density matrix-based response theory */
     ierr = OpenRSPDMatTest(&open_rsp, fp_log);

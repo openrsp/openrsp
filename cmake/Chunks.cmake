@@ -5,12 +5,12 @@ set(OPENRSP_HEADER_CHUNKS
     RSPOneOper.h
     RSPTwoOper.h
     RSPXCFun.h
-    RSPNucHamilton.h
+    RSPZeroOper.h
     RSPSolver.h
     OpenRSP.h
     OpenRSPTestPerturbations.h
     OpenRSPPertCallback.h
-    OpenRSPNucHamiltonCallback.h
+    OpenRSPZeroOperCallback.h
     OpenRSPDMatCallback.h
     OpenRSPDMatTest.h
     OpenRSPTest.h)
@@ -20,14 +20,14 @@ set(OPENRSP_C_CHUNKS
     RSPOneOper.c
     RSPTwoOper.c
     RSPXCFun.c
-    RSPNucHamilton.c
+    RSPZeroOper.c
     RSPSolver.c
     OpenRSP.c)
 set(OPENRSP_C_TEST_CHUNKS
     OpenRSPTestPerturbations.c
     OpenRSPPertCallback.c
     OpenRSPTestData.c
-    OpenRSPNucHamiltonCallback.c
+    OpenRSPZeroOperCallback.c
     OpenRSPDMatCallback.c
     OpenRSPDMatTest.c
     OpenRSPTest.c)
@@ -38,7 +38,7 @@ set(OPENRSP_FORTRAN_CHUNKS
     RSPOneOper.F90
     RSPTwoper.F90
     RSPXCFun.F90
-    RSPNucHamilton.F90
+    RSPZeroOper.F90
     RSPSolver.F90
     OpenRSPFortranAdapter.c
     OpenRSP.F90)

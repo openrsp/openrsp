@@ -21,29 +21,18 @@
   You should have received a copy of the GNU Lesser General Public
   License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
-
-  This header file contains callback function for nuclear Hamiltonian.
-
-  2015-10-16, Bin Gao:
-  * first version
 */
 
-#if !defined(OPENRSP_NUC_HAMILTON_CALLBACK_H)
-#define OPENRSP_NUC_HAMILTON_CALLBACK_H
+#include "OpenRSPZeroOperCallback.h"
 
-#include "OpenRSP.h"
-
+void get_zero_oper_contrib(const QInt oper_num_pert,
+                           const QcPertInt *oper_pert_labels,
+                           const QInt *oper_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-#define NUC_HAMILTON_CONTEXT "NUC_HAMILTON"
+                           void *user_ctx,
 #endif
-
-extern void get_nuc_contrib(const QInt,
-                            const QcPertInt*,
-                            const QInt*,
-#if defined(OPENRSP_C_USER_CONTEXT)
-                            void*,
-#endif
-                            const QInt,
-                            QReal*);
-
-#endif
+                           const QInt size_pert,
+                           QReal *val_oper)
+{
+/*FIXME: to implement*/
+}
