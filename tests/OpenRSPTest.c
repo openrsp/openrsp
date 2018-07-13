@@ -46,7 +46,7 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     QErrorCode ierr;   /* error information */
 
     /* creates the context of response theory calculations */
-    ierr = OpenRSPCreate(&open_rsp);
+    ierr = OpenRSPCreate(&open_rsp, NUM_ATOMS);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate()");
     fprintf(fp_log, "OpenRSPTest>> OpenRSPCreate() passed\n");
 
@@ -63,18 +63,17 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetPerturbations()");
     fprintf(fp_log, "OpenRSPTest>> OpenRSPSetPerturbations() passed\n");
 
-    /* sets the nuclear Hamiltonian */
-    ierr = OpenRSPSetNucHamilton(&open_rsp,
-                                 NUM_ALL_PERT,
-                                 ALL_PERT_LABELS,
-                                 ALL_PERT_MAX_ORDERS,
-#if defined(OPENRSP_C_USER_CONTEXT)   
-                                 (void *)NUC_HAMILTON_CONTEXT,
+    /* adds the nuclear Hamiltonian */
+    ierr = OpenRSPAddZeroOper(&open_rsp,
+                              NUM_ALL_PERT,
+                              ALL_PERT_LABELS,
+                              ALL_PERT_MAX_ORDERS,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              (void *)ZERO_OPER_CONTEXT,
 #endif
-                                 &get_nuc_contrib,
-                                 NUM_ATOMS);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPSetNucHamilton()");
-    fprintf(fp_log, "OpenRSPTest>> OpenRSPSetNucHamilton() passed\n");
+                              &get_zero_oper_contrib);
+    QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPAddZeroOper()");
+    fprintf(fp_log, "OpenRSPTest>> OpenRSPAddZeroOper() passed\n");
 
     /* tests the density matrix-based response theory */
     ierr = OpenRSPDMatTest(&open_rsp, fp_log);

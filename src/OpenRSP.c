@@ -28,9 +28,12 @@
 /* <function name='OpenRSPCreate' author='Bin Gao' date='2014-01-28'>
      Creates the OpenRSP context
      <param name='open_rsp' direction='inout'>The OpenRSP context</param>
+     <param name='num_atoms' direction='in'>
+       Number of atoms
+     </param>
      <return>Error information</return>
    </function> */
-QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
+QErrorCode OpenRSPCreate(OpenRSP *open_rsp, const QInt num_atoms)
 {
     open_rsp->assembled = QFALSE;
     open_rsp->rsp_pert = NULL;
@@ -40,8 +43,10 @@ QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
     open_rsp->one_oper = NULL;
     open_rsp->two_oper = NULL;
     open_rsp->xc_fun = NULL;
-    open_rsp->nuc_hamilton = NULL;
+    open_rsp->zero_oper = NULL;
     open_rsp->rsp_solver = NULL;
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    open_rsp->num_atoms = num_atoms;
     return QSUCCESS;
 }
 
@@ -88,10 +93,10 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunAssemble()");
     }
     /* assembles nuclear Hamiltonian */
-    if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonAssemble(open_rsp->nuc_hamilton,
+    if (open_rsp->zero_oper!=NULL) {
+        ierr = RSPZeroOperAssemble(open_rsp->zero_oper,
                                       open_rsp->rsp_pert);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonAssemble()");
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperAssemble()");
     }
     /* assembles linear response equation solver */
     if (open_rsp->rsp_solver!=NULL) {
@@ -144,15 +149,19 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, FILE *fp_rsp)
         ierr = RSPXCFunWrite(open_rsp->xc_fun, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunWrite()");
     }
-    if (open_rsp->nuc_hamilton!=NULL) {
+    if (open_rsp->zero_oper!=NULL) {
         fprintf(fp_rsp, "OpenRSPWrite>> nuclear Hamiltonian\n");
-        ierr = RSPNucHamiltonWrite(open_rsp->nuc_hamilton, fp_rsp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonWrite()");
+        ierr = RSPZeroOperWrite(open_rsp->zero_oper, fp_rsp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperWrite()");
     }
     if (open_rsp->rsp_solver!=NULL) {
         ierr = RSPSolverWrite(open_rsp->rsp_solver, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverWrite()");
     }
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    fprintf(fp_rsp,
+            "OpenRSPWrite>> number of atoms %"QINT_FMT"\n",
+            open_rsp->num_atoms);
     return QSUCCESS;
 }
 
@@ -200,11 +209,9 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunDestroy()");
     }
     /* destroys the context of nuclear Hamiltonian */
-    if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonDestroy(open_rsp->nuc_hamilton);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonDestroy()");
-        free(open_rsp->nuc_hamilton);
-        open_rsp->nuc_hamilton = NULL;
+    if (open_rsp->zero_oper!=NULL) {
+        ierr = RSPZeroOperDestroy(&open_rsp->zero_oper);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperDestroy()");
     }
     /* destroys the context of linear response equation sovler */
     if (open_rsp->rsp_solver!=NULL) {
@@ -558,14 +565,14 @@ QErrorCode OpenRSPAddXCFun(OpenRSP *open_rsp,
     return QSUCCESS;
 }
 
-/* <function name='OpenRSPSetNucHamilton' author='Bin Gao' date='2015-02-12'>
-     Set the context of nuclear Hamiltonian
+/* <function name='OpenRSPAddZeroOper' author='Bin Gao' date='2015-02-12'>
+     Add a zero-electron operator to the Hamiltonian
      <param name='open_rsp' direction='inout'>
        The context of response theory calculations
      </param>
      <param name='num_pert_lab' direction='in'>
        Number of all different perturbation labels that can act on the
-       nuclear Hamiltonian
+       zero-electron operator
      </param>
      <param name='pert_labels' direction='in'>
        All the different perturbation labels involved
@@ -577,49 +584,47 @@ QErrorCode OpenRSPAddXCFun(OpenRSP *open_rsp,
      <param name='user_ctx' direction='in'>
        User-defined callback function context
      </param>
-     <param name='get_nuc_contrib' direction='in'>
-       User-specified callback function to calculate nuclear contributions
-     </param>
-     <param name='num_atoms' direction='in'>
-       Number of atoms
+     <param name='get_zero_oper_contrib' direction='in'>
+       User-specified callback function to calculate contributions from the
+       zero-electron operator
      </param>
      <return>Error information</return>
    </function> */
-QErrorCode OpenRSPSetNucHamilton(OpenRSP *open_rsp,
-                                 const QInt num_pert_lab,
-                                 const QcPertInt *pert_labels,
-                                 const QInt *pert_max_orders,
+QErrorCode OpenRSPAddZeroOper(OpenRSP *open_rsp,
+                              const QInt num_pert_lab,
+                              const QcPertInt *pert_labels,
+                              const QInt *pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                 void *user_ctx,
+                              void *user_ctx,
 #endif
 
-                                 const GetNucContrib get_nuc_contrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                 const QInt num_atoms)
+                              const GetZeroOperContrib get_zero_oper_contrib)
 {
     QErrorCode ierr;  /* error information */
-    /* creates the context of nuclear Hamiltonian */
-    if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonDestroy(open_rsp->nuc_hamilton);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonDestroy()");
-    }
-    else {
-        open_rsp->nuc_hamilton = (RSPNucHamilton *)malloc(sizeof(RSPNucHamilton));
-        if (open_rsp->nuc_hamilton==NULL) {
-            QErrorExit(FILE_AND_LINE, "allocates memory for nuclear Hamiltonian");
-        }
-    }
-    ierr = RSPNucHamiltonCreate(open_rsp->nuc_hamilton,
-                                num_pert_lab,
-                                pert_labels,
-                                pert_max_orders,
+    /* creates the linked list of zero-electron operators */
+    if (open_rsp->zero_oper==NULL) {
+        ierr = RSPZeroOperCreate(&open_rsp->zero_oper,
+                                 num_pert_lab,
+                                 pert_labels,
+                                 pert_max_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                user_ctx,
+                                 user_ctx,
 #endif
-                                get_nuc_contrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                num_atoms);
-    QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonCreate()");
+                                 get_zero_oper_contrib);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperCreate()");
+    }
+    /* adds the zero-electron operator to the linked list */
+    else {
+        ierr = RSPZeroOperAdd(open_rsp->zero_oper,
+                              num_pert_lab,
+                              pert_labels,
+                              pert_max_orders,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                              user_ctx,
+#endif
+                              get_zero_oper_contrib);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperAdd()");
+    }
     return QSUCCESS;
 }
 
@@ -663,7 +668,9 @@ QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP *open_rsp,
     return QSUCCESS;
 }
 
-void OpenRSPGetRSPFun_f(const QInt num_props,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+void OpenRSPGetRSPFun_f(const QInt num_atoms,
+                        const QInt num_props,
                         const QInt *len_tuple,
                         const QcPertInt *pert_tuple,
                         const QInt *num_freq_configs,
@@ -673,7 +680,7 @@ void OpenRSPGetRSPFun_f(const QInt num_props,
                         const QcMat *ref_overlap,
                         const QcMat *ref_state,
                         RSPSolver *rsp_solver,
-                        RSPNucHamilton *nuc_hamilton,
+                        RSPZeroOper *zero_oper,
                         RSPOverlap *overlap,
                         RSPOneOper *one_oper,
                         RSPTwoOper *two_oper,
@@ -721,7 +728,8 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     //switch (open_rsp->elec_wav_type) {
     ///* density matrix-based response theory */
     //case ELEC_AO_D_MATRIX:
-        OpenRSPGetRSPFun_f(num_props,
+        OpenRSPGetRSPFun_f(open_rsp->num_atoms,
+                           num_props,
                            len_tuple,
                            pert_tuple,
                            num_freq_configs,
@@ -731,11 +739,12 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                            ref_overlap,
                            ref_state,
                            open_rsp->rsp_solver,
-                           open_rsp->nuc_hamilton,
+                           open_rsp->zero_oper,
                            open_rsp->overlap,
                            open_rsp->one_oper,
                            open_rsp->two_oper,
                            open_rsp->xc_fun,
+                           //id_outp,
                            size_rsp_funs,
                            rsp_funs);
     //    break;
@@ -753,7 +762,9 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     return QSUCCESS;
 }
 
-void OpenRSPGetResidue_f(const QInt num_props,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+void OpenRSPGetResidue_f(const QInt num_atoms,
+                         const QInt num_props,
                          const QInt *len_tuple,
                          const QcPertInt *pert_tuple,
                          const QInt *residue_num_pert,
@@ -769,7 +780,7 @@ void OpenRSPGetResidue_f(const QInt num_props,
                          const QReal *excit_energy,
                          QcMat *eigen_vector[],
                          RSPSolver *rsp_solver,
-                         RSPNucHamilton *nuc_hamilton,
+                         //RSPZeroOper *zero_oper,
                          RSPOverlap *overlap,
                          RSPOneOper *one_oper,
                          RSPTwoOper *two_oper,
@@ -851,7 +862,8 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
     //switch (open_rsp->elec_wav_type) {
     ///* density matrix-based response theory */
     //case ELEC_AO_D_MATRIX:
-        OpenRSPGetResidue_f(num_props,
+        OpenRSPGetResidue_f(open_rsp->num_atoms,
+                            num_props,
                             len_tuple,
                             pert_tuple,
                             residue_num_pert,
@@ -867,11 +879,12 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
                             excit_energy,
                             eigen_vector,
                             open_rsp->rsp_solver,
-                            open_rsp->nuc_hamilton,
+                            //open_rsp->zero_oper,
                             open_rsp->overlap,
                             open_rsp->one_oper,
                             open_rsp->two_oper,
                             open_rsp->xc_fun,
+                            //id_outp,
                             size_residues,
                             residues);
     //    break;
@@ -888,3 +901,4 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
     //}
     return QSUCCESS;
 }
+
