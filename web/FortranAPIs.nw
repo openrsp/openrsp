@@ -76,9 +76,9 @@ module OpenRSP_f
     use RSPXCFun_f, only: XCFunFun_f,       &
                           RSPXCFunCreate_f, &
                           RSPXCFunDestroy_f
-    use RSPNucHamilton_f, only: NucHamiltonFun_f,       &
-                                RSPNucHamiltonCreate_f, &
-                                RSPNucHamiltonDestroy_f
+    use RSPZeroOper_f, only: ZeroOperFun_f,       &
+                             RSPZeroOperCreate_f, &
+                             RSPZeroOperDestroy_f
 
     implicit none
 
@@ -86,6 +86,12 @@ module OpenRSP_f
     integer(kind=QINT), parameter, public :: ELEC_AO_D_MATRIX = 0
     integer(kind=QINT), parameter, public :: ELEC_MO_C_MATRIX = 1
     integer(kind=QINT), parameter, public :: ELEC_COUPLED_CLUSTER = 2
+
+    ! linked list of context of callback subroutines of zero-electron operators
+    type, private :: ZeroOperList_f
+        type(ZeroOperFun_f), pointer :: zero_oper_fun => null()
+        type(ZeroOperList_f), pointer :: next_zero_oper => null()
+    end type ZeroOperList_f
 
     ! linked list of context of callback subroutines of one-electron operators
     type, private :: OneOperList_f
@@ -115,7 +121,7 @@ module OpenRSP_f
         type(OneOperList_f), pointer :: list_one_oper => null()
         type(TwoOperList_f), pointer :: list_two_oper => null()
         type(XCFunList_f), pointer :: list_xc_fun => null()
-        type(NucHamiltonFun_f), pointer :: nuc_hamilton_fun => null()
+        type(ZeroOperList_f), pointer :: list_zero_oper => null()
     end type OpenRSP
 
     ! functions provided by the Fortran APIs
@@ -127,12 +133,15 @@ module OpenRSP_f
     public :: OpenRSPAddOneOper_f
     public :: OpenRSPAddTwoOper_f
     public :: OpenRSPAddXCFun_f
-    public :: OpenRSPSetNucHamilton_f
+    public :: OpenRSPAddZeroOper_f
     public :: OpenRSPAssemble_f
     public :: OpenRSPWrite_f
     public :: OpenRSPGetRSPFun_f
     public :: OpenRSPGetResidue_f
     public :: OpenRSPDestroy_f
+
+    ! Temporary solution for printing
+    public :: OpenRSPSetUserOutput_f
 
     interface OpenRSPWrite_f
         module procedure OpenRSPWritebyFileName_f
@@ -140,10 +149,12 @@ module OpenRSP_f
     end interface OpenRSPWrite_f
 
     interface 
-        integer(C_INT) function OpenRSPCreateFortranAdapter(open_rsp) &
+        integer(C_INT) function OpenRSPCreateFortranAdapter(open_rsp,  &
+                                                            num_atoms) &
             bind(C, name="OpenRSPCreateFortranAdapter")
             use, intrinsic :: iso_c_binding
             type(C_PTR), intent(inout) :: open_rsp
+            integer(kind=C_QINT), value, intent(in) :: num_atoms
         end function OpenRSPCreateFortranAdapter
         !integer(C_INT) function f_api_OpenRSPSetElecEOM(open_rsp,      &
         !                                                elec_EOM_type) &
@@ -251,14 +262,13 @@ module OpenRSP_f
             type(C_FUNPTR), value, intent(in) :: get_xc_fun_mat
             type(C_FUNPTR), value, intent(in) :: get_xc_fun_exp
         end function OpenRSPAddXCFun
-        integer(C_INT) function OpenRSPSetNucHamilton(open_rsp,        &
-                                                      num_pert_lab,    &
-                                                      pert_labels,     &
-                                                      pert_max_orders, &
-                                                      user_ctx,        &
-                                                      get_nuc_contrib, &
-                                                      num_atoms)       &
-            bind(C, name="OpenRSPSetNucHamilton")
+        integer(C_INT) function OpenRSPAddZeroOper(open_rsp,              &
+                                                   num_pert_lab,          &
+                                                   pert_labels,           &
+                                                   pert_max_orders,       &
+                                                   user_ctx,              &
+                                                   get_zero_oper_contrib) &
+            bind(C, name="OpenRSPAddZeroOper")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             type(C_PTR), value, intent(in) :: open_rsp
@@ -266,9 +276,8 @@ module OpenRSP_f
             integer(kind=C_QCPERTINT), intent(in) :: pert_labels(num_pert_lab)
             integer(kind=C_QINT), intent(in) :: pert_max_orders(num_pert_lab)
             type(C_PTR), value, intent(in) :: user_ctx
-            type(C_FUNPTR), value, intent(in) :: get_nuc_contrib
-            integer(kind=C_QINT), value, intent(in) :: num_atoms
-        end function OpenRSPSetNucHamilton
+            type(C_FUNPTR), value, intent(in) :: get_zero_oper_contrib
+        end function OpenRSPAddZeroOper
         integer(C_INT) function OpenRSPAssemble(open_rsp) &
             bind(C, name="OpenRSPAssemble")
             use, intrinsic :: iso_c_binding
@@ -365,17 +374,18 @@ module OpenRSP_f
 
     contains
 
-    function OpenRSPCreate_f(open_rsp) result(ierr)
+    function OpenRSPCreate_f(open_rsp, num_atoms) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
-        ierr = OpenRSPCreateFortranAdapter(open_rsp%c_rsp)
+        integer(kind=QINT), intent(in) :: num_atoms
+        ierr = OpenRSPCreateFortranAdapter(open_rsp%c_rsp, num_atoms)
         nullify(open_rsp%solver_fun)
         nullify(open_rsp%pert_fun)
         nullify(open_rsp%overlap_fun)
         nullify(open_rsp%list_one_oper)
         nullify(open_rsp%list_two_oper)
         nullify(open_rsp%list_xc_fun)
-        nullify(open_rsp%nuc_hamilton_fun)
+        nullify(open_rsp%list_zero_oper)
     end function OpenRSPCreate_f
 
     !function OpenRSPSetElecEOM_f(open_rsp, elec_EOM_type) result(ierr)
@@ -1155,15 +1165,14 @@ module OpenRSP_f
                                c_funloc(RSPXCFunGetExp_f))
     end function OpenRSPAddXCFun_f
 
-    function OpenRSPSetNucHamilton_f(open_rsp,        &
-                                     num_pert_lab,    &
-                                     pert_labels,     &
-                                     pert_max_orders, &
+    function OpenRSPAddZeroOper_f(open_rsp,        &
+                                  num_pert_lab,    &
+                                  pert_labels,     &
+                                  pert_max_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                     user_ctx,        &
+                                  user_ctx,        &
 #endif
-                                     get_nuc_contrib, &
-                                     num_atoms) result(ierr)
+                                  get_zero_oper_contrib) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
         integer(kind=QINT), intent(in) :: num_pert_lab
@@ -1172,65 +1181,73 @@ module OpenRSP_f
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1), intent(in) :: user_ctx(:)
 #endif
-        integer(kind=QINT), intent(in) :: num_atoms
         interface
-            subroutine get_nuc_contrib(nuc_num_pert,    &
-                                       nuc_pert_labels, &
-                                       nuc_pert_orders, &
+            subroutine get_zero_oper_contrib(oper_num_pert,    &
+                                             oper_pert_labels, &
+                                             oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,         &
-                                       user_ctx,        &
+                                             len_ctx,         &
+                                             user_ctx,        &
 #endif
-                                       size_pert,       &
-                                       val_nuc)
+                                             size_pert,       &
+                                             val_oper)
                 use qcmatrix_f, only: QINT,QREAL
                 use RSPPertBasicTypes_f, only: QcPertInt
-                integer(kind=QINT), intent(in) :: nuc_num_pert
-                integer(kind=QcPertInt), intent(in) :: nuc_pert_labels(nuc_num_pert)
-                integer(kind=QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
+                integer(kind=QINT), intent(in) :: oper_num_pert
+                integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+                integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
-                real(kind=QREAL), intent(inout) :: val_nuc(2*size_pert)
-            end subroutine get_nuc_contrib
-            subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
-                                                        nuc_pert_labels, &
-                                                        nuc_pert_orders, &
-                                                        user_ctx,        &
-                                                        size_pert,       &
-                                                        val_nuc)         &
-                bind(C, name="RSPNucHamiltonGetContributions_f")
+                real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
+            end subroutine get_zero_oper_contrib
+            subroutine RSPZeroOperGetContribution_f(oper_num_pert,    &
+                                                    oper_pert_labels, &
+                                                    oper_pert_orders, &
+                                                    user_ctx,         &
+                                                    size_pert,        &
+                                                    val_oper)         &
+                bind(C, name="RSPZeroOperGetContribution_f")
                 use, intrinsic :: iso_c_binding
                 use RSPPertBasicTypes_f, only: C_QCPERTINT
-                integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
-                integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_labels(nuc_num_pert)
-                integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
+                integer(kind=C_QINT), value, intent(in) :: oper_num_pert
+                integer(kind=C_QCPERTINT), intent(in) :: oper_pert_labels(oper_num_pert)
+                integer(kind=C_QINT), intent(in) :: oper_pert_orders(oper_num_pert)
                 type(C_PTR), value, intent(in) :: user_ctx
                 integer(kind=C_QINT), value, intent(in) :: size_pert
-                real(kind=C_QREAL), intent(inout) :: val_nuc(2*size_pert)
-            end subroutine RSPNucHamiltonGetContributions_f
+                real(kind=C_QREAL), intent(inout) :: val_oper(2*size_pert)
+            end subroutine RSPZeroOperGetContribution_f
         end interface
-        if (associated(open_rsp%nuc_hamilton_fun)) then
-            call RSPNucHamiltonDestroy_f(open_rsp%nuc_hamilton_fun)
+        type(ZeroOperList_f), pointer :: cur_zero_oper  !current zero-electron operator
+        ! inserts the context of callback functions to the tail of the linked list
+        if (associated(open_rsp%list_zero_oper)) then
+            cur_zero_oper => open_rsp%list_zero_oper
+            do while (associated(cur_zero_oper%next_zero_oper))
+                cur_zero_oper => cur_zero_oper%next_zero_oper
+            end do
+            allocate(cur_zero_oper%next_zero_oper)
+            cur_zero_oper => cur_zero_oper%next_zero_oper
         else
-            allocate(open_rsp%nuc_hamilton_fun)
+            allocate(open_rsp%list_zero_oper)
+            cur_zero_oper => open_rsp%list_zero_oper
         end if
-        ! adds context of callback function of the nuclear Hamiltonian
-        call RSPNucHamiltonCreate_f(open_rsp%nuc_hamilton_fun, &
+        allocate(cur_zero_oper%zero_oper_fun)
+        nullify(cur_zero_oper%next_zero_oper)
+        ! adds context of callback function of the new zero-electron operator
+        call RSPZeroOperCreate_f(cur_zero_oper%zero_oper_fun, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                    user_ctx,                  &
+                                 user_ctx,                    &
 #endif
-                                    get_nuc_contrib)
-        ierr = OpenRSPSetNucHamilton(open_rsp%c_rsp,                             &
-                                     num_pert_lab,                               &
-                                     pert_labels,                                &
-                                     pert_max_orders,                            &
-                                     c_loc(open_rsp%nuc_hamilton_fun),           &
-                                     c_funloc(RSPNucHamiltonGetContributions_f), &
-                                     num_atoms)
-    end function OpenRSPSetNucHamilton_f
+                                 get_zero_oper_contrib)
+        ierr = OpenRSPAddZeroOper(open_rsp%c_rsp,                     &
+                                  num_pert_lab,                       &
+                                  pert_labels,                        &
+                                  pert_max_orders,                    &
+                                  c_loc(cur_zero_oper%zero_oper_fun), &
+                                  c_funloc(RSPZeroOperGetContribution_f))
+    end function OpenRSPAddZeroOper_f
 
     function OpenRSPAssemble_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr
@@ -1417,12 +1434,14 @@ integer(kind=4), parameter :: QCSTDOUT = 6
     function OpenRSPDestroy_f(open_rsp) result(ierr)
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
-        type(OneOperList_f), pointer :: cur_one_oper   !current one-electron operator
-        type(OneOperList_f), pointer :: next_one_oper  !next one-electron operator
-        type(TwoOperList_f), pointer :: cur_two_oper   !current two-electron operator
-        type(TwoOperList_f), pointer :: next_two_oper  !next two-electron operator
-        type(XCFunList_f), pointer :: cur_xc_fun       !current XC functional
-        type(XCFunList_f), pointer :: next_xc_fun      !next XC functional
+        type(OneOperList_f), pointer :: cur_one_oper     !current one-electron operator
+        type(OneOperList_f), pointer :: next_one_oper    !next one-electron operator
+        type(TwoOperList_f), pointer :: cur_two_oper     !current two-electron operator
+        type(TwoOperList_f), pointer :: next_two_oper    !next two-electron operator
+        type(XCFunList_f), pointer :: cur_xc_fun         !current XC functional
+        type(XCFunList_f), pointer :: next_xc_fun        !next XC functional
+        type(ZeroOperList_f), pointer :: cur_zero_oper   !current zero-electron operator
+        type(ZeroOperList_f), pointer :: next_zero_oper  !next zero-electron operator
         ierr = OpenRSPDestroyFortranAdapter(open_rsp%c_rsp)
         ! cleans up callback subroutine of response equation solver
         if (associated(open_rsp%solver_fun)) then
@@ -1481,13 +1500,27 @@ integer(kind=4), parameter :: QCSTDOUT = 6
             nullify(cur_xc_fun)
             cur_xc_fun => next_xc_fun
         end do
-        ! cleans up callback subroutine of nuclear Hamiltonian
-        if (associated(open_rsp%nuc_hamilton_fun)) then
-            call RSPNucHamiltonDestroy_f(open_rsp%nuc_hamilton_fun)
-            deallocate(open_rsp%nuc_hamilton_fun)
-            nullify(open_rsp%nuc_hamilton_fun)
-        end if
+        ! cleans up the linked list of context of callback subroutines of zero-electron operators
+        cur_zero_oper => open_rsp%list_zero_oper
+        do while (associated(cur_zero_oper))
+            next_zero_oper => cur_zero_oper%next_zero_oper
+            if (associated(cur_zero_oper%zero_oper_fun)) then
+                call RSPZeroOperDestroy_f(cur_zero_oper%zero_oper_fun)
+                deallocate(cur_zero_oper%zero_oper_fun)
+                nullify(cur_zero_oper%zero_oper_fun)
+            end if
+            deallocate(cur_zero_oper)
+            nullify(cur_zero_oper)
+            cur_zero_oper => next_zero_oper
+        end do
     end function OpenRSPDestroy_f
+
+    ! Temporary solution for printing
+    subroutine OpenRSPSetUserOutput_f(io_output)
+        use openrsp_callback_f, only: f_callback_SetUserOutput
+        integer, intent(in) :: io_output
+        call f_callback_SetUserOutput(io_output)
+    end subroutine OpenRSPSetUserOutput_f
 
 end module OpenRSP_f
 
@@ -3156,7 +3189,7 @@ end module RSPXCFun_f
 
 #undef OPENRSP_API_SRC
 
-<<RSPNucHamilton.F90>>=
+<<RSPZeroOper.F90>>=
 <<OpenRSPLicenseFortran>>
 
 !!  2015-06-23, Bin Gao
@@ -3165,9 +3198,9 @@ end module RSPXCFun_f
 ! basic data types
 #include "api/qcmatrix_c_type.h"
 
-#define OPENRSP_API_SRC "src/fortran/RSPNucHamilton.F90"
+#define OPENRSP_API_SRC "src/fortran/RSPZeroOper.F90"
 
-module RSPNucHamilton_f
+module RSPZeroOper_f
 
     use, intrinsic :: iso_c_binding
     use qcmatrix_f, only: QINT,QREAL
@@ -3180,31 +3213,31 @@ module RSPNucHamilton_f
 
     ! user specified callback subroutine
     abstract interface
-        subroutine NucHamiltonGetContrib_f(nuc_num_pert,    &
-                                           nuc_pert_labels, &
-                                           nuc_pert_orders, &
+        subroutine ZeroOperGetContrib_f(oper_num_pert,    &
+                                        oper_pert_labels, &
+                                        oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           len_ctx,         &
-                                           user_ctx,        &
+                                        len_ctx,         &
+                                        user_ctx,        &
 #endif
-                                           size_pert,       &
-                                           val_nuc)
+                                        size_pert,       &
+                                        val_oper)
             use qcmatrix_f, only: QINT,QREAL
             use RSPPertBasicTypes_f, only: QcPertInt
-            integer(kind=QINT), intent(in) :: nuc_num_pert
-            integer(kind=QcPertInt), intent(in) :: nuc_pert_labels(nuc_num_pert)
-            integer(kind=QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
+            integer(kind=QINT), intent(in) :: oper_num_pert
+            integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+            integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
             integer(kind=QINT), intent(in) :: len_ctx
             character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
             integer(kind=QINT), intent(in) :: size_pert
-            real(kind=QREAL), intent(inout) :: val_nuc(2*size_pert)
-        end subroutine NucHamiltonGetContrib_f
+            real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
+        end subroutine ZeroOperGetContrib_f
     end interface
 
-    ! context of callback subroutine of nuclear Hamiltonian
-    type, public :: NucHamiltonFun_f
+    ! context of callback subroutine of zero-electron operator
+    type, public :: ZeroOperFun_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
@@ -3212,120 +3245,120 @@ module RSPNucHamilton_f
         character(len=1), allocatable :: user_ctx(:)
 #endif
         ! callback function
-        procedure(NucHamiltonGetContrib_f), nopass, pointer :: get_nuc_contrib
-    end type NucHamiltonFun_f
+        procedure(ZeroOperGetContrib_f), nopass, pointer :: get_zero_oper_contrib
+    end type ZeroOperFun_f
 
-    public :: RSPNucHamiltonCreate_f
-    public :: RSPNucHamiltonGetContributions_f
-    public :: RSPNucHamiltonDestroy_f
+    public :: RSPZeroOperCreate_f
+    public :: RSPZeroOperGetContribution_f
+    public :: RSPZeroOperDestroy_f
 
     contains
 
-    !% \brief creates the context of callback subroutine of nuclear Hamiltonian
+    !% \brief creates the context of callback subroutine of zero-electron operator
     !  \author Bin Gao
     !  \date 2015-06-23
-    !  \param[NucHamiltonFun_f:type]{inout} nuc_hamilton_fun the context of callback subroutine
+    !  \param[ZeroOperFun_f:type]{inout} zero_oper_fun the context of callback subroutine
     !  \param[character]{in} user_ctx user-defined callback function context
-    !  \param[subroutine]{in} get_nuc_contrib user specified function for
-    !%     getting nuclear contributions
-    subroutine RSPNucHamiltonCreate_f(nuc_hamilton_fun, &
+    !  \param[subroutine]{in} get_zero_oper_contrib user specified function for
+    !%     getting zero-electron operator contributions
+    subroutine RSPZeroOperCreate_f(zero_oper_fun, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      user_ctx,         &
+                                   user_ctx,      &
 #endif
-                                      get_nuc_contrib)
-        type(NucHamiltonFun_f), intent(inout) :: nuc_hamilton_fun
+                                   get_zero_oper_contrib)
+        type(ZeroOperFun_f), intent(inout) :: zero_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
         character(len=1), intent(in) :: user_ctx(:)
 #endif
         interface
-            subroutine get_nuc_contrib(nuc_num_pert,    &
-                                       nuc_pert_labels, &
-                                       nuc_pert_orders, &
+            subroutine get_zero_oper_contrib(oper_num_pert,    &
+                                             oper_pert_labels, &
+                                             oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,         &
-                                       user_ctx,        &
+                                             len_ctx,          &
+                                             user_ctx,         &
 #endif
-                                       size_pert,       &
-                                       val_nuc)
+                                             size_pert,        &
+                                             val_oper)
                 use qcmatrix_f, only: QINT,QREAL
                 use RSPPertBasicTypes_f, only: QcPertInt
-                integer(kind=QINT), intent(in) :: nuc_num_pert
-                integer(kind=QcPertInt), intent(in) :: nuc_pert_labels(nuc_num_pert)
-                integer(kind=QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
+                integer(kind=QINT), intent(in) :: oper_num_pert
+                integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
+                integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
                 integer(kind=QINT), intent(in) :: len_ctx
                 character(len=1), intent(in) :: user_ctx(len_ctx)
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
-                real(kind=QREAL), intent(inout) :: val_nuc(2*size_pert)
-            end subroutine get_nuc_contrib
+                real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
+            end subroutine get_zero_oper_contrib
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
         integer(kind=4) ierr  !error information
-        nuc_hamilton_fun%len_ctx = size(user_ctx)
-        allocate(nuc_hamilton_fun%user_ctx(nuc_hamilton_fun%len_ctx), stat=ierr)
+        zero_oper_fun%len_ctx = size(user_ctx)
+        allocate(zero_oper_fun%user_ctx(zero_oper_fun%len_ctx), stat=ierr)
         if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPNucHamiltonCreate_f>> length", nuc_hamilton_fun%len_ctx
-            stop "RSPNucHamiltonCreate_f>> failed to allocate memory for user_ctx"
+            write(STDOUT,"(A,I8)") "RSPZeroOperCreate_f>> length", zero_oper_fun%len_ctx
+            stop "RSPZeroOperCreate_f>> failed to allocate memory for user_ctx"
         end if
-        nuc_hamilton_fun%user_ctx = user_ctx
+        zero_oper_fun%user_ctx = user_ctx
 #endif
-        nuc_hamilton_fun%get_nuc_contrib => get_nuc_contrib
-    end subroutine RSPNucHamiltonCreate_f
+        zero_oper_fun%get_zero_oper_contrib => get_zero_oper_contrib
+    end subroutine RSPZeroOperCreate_f
 
-    !% \brief calls Fortran callback subroutine to get nuclear contributions
+    !% \brief calls Fortran callback subroutine to get zero-electron operator contributions
     !  \author Bin Gao
     !  \date 2015-06-23
-    !  \param[integer]{in} len_tuple length of perturbation tuple on the nuclear Hamiltonian
-    !  \param[integer]{in} pert_tuple perturbation tuple on the nuclear Hamiltonian
+    !  \param[integer]{in} len_tuple length of perturbation tuple on the zero-electron operator
+    !  \param[integer]{in} pert_tuple perturbation tuple on the zero-electron operator
     !  \param[C_PTR:type]{in} user_ctx user-defined callback function context
-    !  \param[integer]{in} size_pert size of the perturbations on the nuclear Hamiltonian
-    !% \param[real]{out} val_nuc the nuclear contributions
-    subroutine RSPNucHamiltonGetContributions_f(nuc_num_pert,    &
-                                                nuc_pert_labels, &
-                                                nuc_pert_orders, &
-                                                user_ctx,        &
-                                                size_pert,       &
-                                                val_nuc)         &
-        bind(C, name="RSPNucHamiltonGetContributions_f")
-        integer(kind=C_QINT), value, intent(in) :: nuc_num_pert
-        integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_labels(nuc_num_pert)
-        integer(kind=C_QINT), intent(in) :: nuc_pert_orders(nuc_num_pert)
+    !  \param[integer]{in} size_pert size of the perturbations on the zero-electron operator
+    !% \param[real]{out} val_oper the zero-electron operator contributions
+    subroutine RSPZeroOperGetContribution_f(oper_num_pert,    &
+                                            oper_pert_labels, &
+                                            oper_pert_orders, &
+                                            user_ctx,         &
+                                            size_pert,        &
+                                            val_oper)         &
+        bind(C, name="RSPZeroOperGetContribution_f")
+        integer(kind=C_QINT), value, intent(in) :: oper_num_pert
+        integer(kind=C_QCPERTINT), intent(in) :: oper_pert_labels(oper_num_pert)
+        integer(kind=C_QINT), intent(in) :: oper_pert_orders(oper_num_pert)
         type(C_PTR), value, intent(in) :: user_ctx
         integer(kind=C_QINT), value, intent(in) :: size_pert
-        real(C_QREAL), intent(inout) :: val_nuc(2*size_pert)
-        type(NucHamiltonFun_f), pointer :: nuc_hamilton_fun  !context of callback subroutine
+        real(C_QREAL), intent(inout) :: val_oper(2*size_pert)
+        type(ZeroOperFun_f), pointer ::  zero_oper_fun !context of callback subroutine
         ! gets the Fortran callback subroutine
-        call c_f_pointer(user_ctx, nuc_hamilton_fun)
-        ! invokes Fortran callback subroutine to calculate the nuclear contributions
-        call nuc_hamilton_fun%get_nuc_contrib(nuc_num_pert,              &
-                                              nuc_pert_labels,           &
-                                              nuc_pert_orders,           &
+        call c_f_pointer(user_ctx, zero_oper_fun)
+        ! invokes Fortran callback subroutine to calculate the zero-electron operator contributions
+        call zero_oper_fun%get_zero_oper_contrib(oper_num_pert,          &
+                                                 oper_pert_labels,       &
+                                                 oper_pert_orders,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                              nuc_hamilton_fun%len_ctx,  &
-                                              nuc_hamilton_fun%user_ctx, &
+                                                 zero_oper_fun%len_ctx,  &
+                                                 zero_oper_fun%user_ctx, &
 #endif
-                                              size_pert,                 &
-                                              val_nuc)
+                                                 size_pert,              &
+                                                 val_oper)
         ! cleans up
-        nullify(nuc_hamilton_fun)
+        nullify(zero_oper_fun)
         return
-    end subroutine RSPNucHamiltonGetContributions_f
+    end subroutine RSPZeroOperGetContribution_f
 
-    !% \brief cleans the context of callback subroutine of nuclear Hamiltonian
+    !% \brief cleans the context of callback subroutine of zero-electron operator
     !  \author Bin Gao
     !  \date 2015-06-23
-    !% \param[NucHamiltonFun_f:type]{inout} nuc_hamilton_fun the context of callback subroutine
-    subroutine RSPNucHamiltonDestroy_f(nuc_hamilton_fun)
-        type(NucHamiltonFun_f), intent(inout) :: nuc_hamilton_fun
+    !% \param[ZeroOperFun_f:type]{inout} zero_oper_fun the context of callback subroutine
+    subroutine RSPZeroOperDestroy_f(zero_oper_fun)
+        type(ZeroOperFun_f), intent(inout) :: zero_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        nuc_hamilton_fun%len_ctx = 0
-        deallocate(nuc_hamilton_fun%user_ctx)
+        zero_oper_fun%len_ctx = 0
+        deallocate(zero_oper_fun%user_ctx)
 #endif
-        nullify(nuc_hamilton_fun%get_nuc_contrib)
-    end subroutine RSPNucHamiltonDestroy_f
+        nullify(zero_oper_fun%get_zero_oper_contrib)
+    end subroutine RSPZeroOperDestroy_f
 
-end module RSPNucHamilton_f
+end module RSPZeroOper_f
 
 #undef OPENRSP_API_SRC
 
@@ -3549,7 +3582,7 @@ Furthermoe, we implement the following Fortran adapters:
 
 #include "OpenRSP.h"
 
-QErrorCode OpenRSPCreateFortranAdapter(void **open_rsp)
+QErrorCode OpenRSPCreateFortranAdapter(void **open_rsp, const QInt num_atoms)
 {
     OpenRSP *c_open_rsp;
     QErrorCode ierr;
@@ -3557,7 +3590,7 @@ QErrorCode OpenRSPCreateFortranAdapter(void **open_rsp)
     if (c_open_rsp==NULL) {
         QErrorExit(FILE_AND_LINE, "failed to allocate memory for c_open_rsp");
     }
-    ierr = OpenRSPCreate(c_open_rsp);
+    ierr = OpenRSPCreate(c_open_rsp, num_atoms);
     *open_rsp = (void *)(c_open_rsp);
     return ierr;
 }

@@ -42,8 +42,8 @@
 #include "RSPTwoOper.h"
 /* exchange-correlation (XC) functionals */
 #include "RSPXCFun.h"
-/* nuclear Hamiltonian */
-#include "RSPNucHamilton.h"
+/* zero-electron operators */
+#include "RSPZeroOper.h"
 /* linear response equation solver */
 #include "RSPSolver.h"
 
@@ -56,11 +56,13 @@ typedef struct {
     RSPOneOper *one_oper;          /* one-electron operators */
     RSPTwoOper *two_oper;          /* two-electron operators */
     RSPXCFun *xc_fun;              /* XC functionals */
-    RSPNucHamilton *nuc_hamilton;  /* nuclear Hamiltonian */
+    RSPZeroOper *zero_oper;        /* zero-electron operators */
     RSPSolver *rsp_solver;         /* linear response equation solver */
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    QInt num_atoms;
 } OpenRSP;
 
-extern QErrorCode OpenRSPCreate(OpenRSP*);
+extern QErrorCode OpenRSPCreate(OpenRSP*,const QInt);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
                                           const QInt,
                                           const QcPertInt*,
@@ -107,16 +109,14 @@ extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
 #endif
                                   const GetXCFunMat,
                                   const GetXCFunExp);
-extern QErrorCode OpenRSPSetNucHamilton(OpenRSP*,
-                                        const QInt,
-                                        const QcPertInt*,
-                                        const QInt*,
+extern QErrorCode OpenRSPAddZeroOper(OpenRSP*,
+                                     const QInt,
+                                     const QcPertInt*,
+                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                        void*,
+                                     void*,
 #endif 
-                                        const GetNucContrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                        const QInt);
+                                     const GetZeroOperContrib);
 extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                             void*,
@@ -155,6 +155,7 @@ extern QErrorCode OpenRSPGetResidue(OpenRSP*,
                                     const QInt,
                                     QReal*);
 extern QErrorCode OpenRSPDestroy(OpenRSP*);
+
 
 #endif
 

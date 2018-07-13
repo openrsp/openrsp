@@ -3,7 +3,9 @@
 
 Users can use the following API to get the response functions:
 <<OpenRSP.c>>=
-void OpenRSPGetRSPFun_f(const QInt num_props,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+void OpenRSPGetRSPFun_f(const QInt num_atoms,
+                        const QInt num_props,
                         const QInt *len_tuple,
                         const QcPertInt *pert_tuple,
                         const QInt *num_freq_configs,
@@ -13,7 +15,7 @@ void OpenRSPGetRSPFun_f(const QInt num_props,
                         const QcMat *ref_overlap,
                         const QcMat *ref_state,
                         RSPSolver *rsp_solver,
-                        RSPNucHamilton *nuc_hamilton,
+                        RSPZeroOper *zero_oper,
                         RSPOverlap *overlap,
                         RSPOneOper *one_oper,
                         RSPTwoOper *two_oper,
@@ -61,7 +63,8 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
     //switch (open_rsp->elec_wav_type) {
     ///* density matrix-based response theory */
     //case ELEC_AO_D_MATRIX:
-        OpenRSPGetRSPFun_f(num_props,
+        OpenRSPGetRSPFun_f(open_rsp->num_atoms,
+                           num_props,
                            len_tuple,
                            pert_tuple,
                            num_freq_configs,
@@ -71,7 +74,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                            ref_overlap,
                            ref_state,
                            open_rsp->rsp_solver,
-                           open_rsp->nuc_hamilton,
+                           open_rsp->zero_oper,
                            open_rsp->overlap,
                            open_rsp->one_oper,
                            open_rsp->two_oper,

@@ -29,7 +29,8 @@
 ! data types between C/Fortran
 #include "api/qcmatrix_c_type.h"
 
-    subroutine OpenRSPGetResidue_f(num_props,        &
+    subroutine OpenRSPGetResidue_f(num_atoms,        &
+                                   num_props,        &
                                    len_tuple,        &
                                    pert_tuple,       &
                                    residue_num_pert, &
@@ -45,7 +46,7 @@
                                    excit_energy,     &
                                    eigen_vector,     &
                                    rsp_solver,       &
-                                   nuc_hamilton,     &
+                                   !zero_oper,        &
                                    overlap,          &
                                    one_oper,         &
                                    two_oper,         &
@@ -69,6 +70,7 @@
         implicit none
         logical :: mem_calibrate
         integer :: max_mat, mem_result
+        integer(kind=C_QINT), value, intent(in) :: num_atoms
         integer(kind=C_QINT), value, intent(in) :: num_props
         integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
         integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(sum(len_tuple))
@@ -86,21 +88,11 @@
         real(kind=C_QREAL), intent(in) :: excit_energy(order_residue*num_excit)
         type(C_PTR), intent(in) :: eigen_vector(order_residue*num_excit)
         type(C_PTR), value, intent(in) :: rsp_solver
-        type(C_PTR), value, intent(in) :: nuc_hamilton
+        !type(C_PTR), value, intent(in) :: zero_oper
         type(C_PTR), value, intent(in) :: overlap
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
-        interface
-            integer(C_INT) function RSPNucHamiltonGetNumAtoms(nuc_hamilton, &
-                                                              num_atoms)    &
-                bind(C, name="RSPNucHamiltonGetNumAtoms")
-                use, intrinsic :: iso_c_binding
-                implicit none
-                type(C_PTR), value, intent(in) :: nuc_hamilton
-                integer(kind=C_QINT), intent(out) :: num_atoms
-            end function RSPNucHamiltonGetNumAtoms
-        end interface
         integer(kind=C_QINT), value, intent(in) :: size_residues
         real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
         ! local variables for converting C arguments to Fortran ones
@@ -126,11 +118,7 @@
         integer(kind=4) ierr
 
         ! gets the number of coordinates
-        ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
-        if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetResidue_f>> failed to call RSPNucHamiltonGetNumAtoms", OUT_ERROR)
-        end if
-        num_coord = 3*num_coord
+        num_coord = 3*num_atoms
         ! gets the number of all perturbations
         num_all_pert = sum(len_tuple)
         ! gets the dimensions and labels of perturbations
@@ -254,7 +242,7 @@
                                       f_S_unpert(1),                              &
                                       f_D_unpert(1),                              &
                                       f_callback_RSPSolverGetLinearRSPSolution,   &
-                                      f_callback_RSPNucHamiltonGetContributions,  &
+                                      f_callback_RSPZeroOperGetContribution,      &
                                       f_callback_RSPOverlapGetMat,                &
                                       f_callback_RSPOverlapGetExp,                &
                                       f_callback_RSPOneOperGetMat,                &

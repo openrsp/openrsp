@@ -3,7 +3,9 @@
 
 Users can use the following API to get the residues:
 <<OpenRSP.c>>=
-void OpenRSPGetResidue_f(const QInt num_props,
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+void OpenRSPGetResidue_f(const QInt num_atoms,
+                         const QInt num_props,
                          const QInt *len_tuple,
                          const QcPertInt *pert_tuple,
                          const QInt *residue_num_pert,
@@ -19,7 +21,7 @@ void OpenRSPGetResidue_f(const QInt num_props,
                          const QReal *excit_energy,
                          QcMat *eigen_vector[],
                          RSPSolver *rsp_solver,
-                         RSPNucHamilton *nuc_hamilton,
+                         //RSPZeroOper *zero_oper,
                          RSPOverlap *overlap,
                          RSPOneOper *one_oper,
                          RSPTwoOper *two_oper,
@@ -101,7 +103,8 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
     //switch (open_rsp->elec_wav_type) {
     ///* density matrix-based response theory */
     //case ELEC_AO_D_MATRIX:
-        OpenRSPGetResidue_f(num_props,
+        OpenRSPGetResidue_f(open_rsp->num_atoms,
+                            num_props,
                             len_tuple,
                             pert_tuple,
                             residue_num_pert,
@@ -117,7 +120,7 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
                             excit_energy,
                             eigen_vector,
                             open_rsp->rsp_solver,
-                            open_rsp->nuc_hamilton,
+                            //open_rsp->zero_oper,
                             open_rsp->overlap,
                             open_rsp->one_oper,
                             open_rsp->two_oper,
