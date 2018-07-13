@@ -56,7 +56,7 @@ module openrsp_callback_f
     type, private :: RSP_CTX
         private
         type(C_PTR) :: rsp_solver = C_NULL_PTR
-        type(C_PTR) :: nuc_hamilton = C_NULL_PTR
+        type(C_PTR) :: zero_oper = C_NULL_PTR
         type(C_PTR) :: overlap = C_NULL_PTR
         type(C_PTR) :: one_oper = C_NULL_PTR
         type(C_PTR) :: two_oper = C_NULL_PTR
@@ -68,7 +68,7 @@ module openrsp_callback_f
     public :: RSP_CTX_Create
     public :: RSP_CTX_Destroy
     public :: f_callback_RSPSolverGetLinearRSPSolution
-    public :: f_callback_RSPNucHamiltonGetContributions
+    public :: f_callback_RSPZeroOperGetContribution
     public :: f_callback_RSPOverlapGetMat
     public :: f_callback_RSPOverlapGetExp
     public :: f_callback_RSPOneOperGetMat
@@ -100,21 +100,21 @@ module openrsp_callback_f
             type(C_PTR), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
             type(C_PTR), intent(in) :: rsp_param(dot_product(num_comps,num_freq_sums))
         end function RSPSolverGetLinearRSPSolution
-        integer(C_INT) function RSPNucHamiltonGetContributions(nuc_hamilton,   &
-                                                               nuc_len_tuple,  &
-                                                               nuc_pert_tuple, &
-                                                               size_pert,      &
-                                                               val_nuc)        &
-            bind(C, name="RSPNucHamiltonGetContributions")
+        integer(C_INT) function RSPZeroOperGetContribution(zero_oper,       &
+                                                           oper_len_tuple,  &
+                                                           oper_pert_tuple, &
+                                                           size_pert,       &
+                                                           val_oper)        &
+            bind(C, name="RSPZeroOperGetContribution")
             use, intrinsic :: iso_c_binding
             use RSPPertBasicTypes_f, only: C_QCPERTINT
             implicit none
-            type(C_PTR), value, intent(in) :: nuc_hamilton
-            integer(kind=C_QINT), value, intent(in) :: nuc_len_tuple
-            integer(kind=C_QCPERTINT), intent(in) :: nuc_pert_tuple(nuc_len_tuple)
+            type(C_PTR), value, intent(in) :: zero_oper
+            integer(kind=C_QINT), value, intent(in) :: oper_len_tuple
+            integer(kind=C_QCPERTINT), intent(in) :: oper_pert_tuple(oper_len_tuple)
             integer(kind=C_QINT), value, intent(in) :: size_pert
-            real(kind=C_QREAL), intent(inout) :: val_nuc(2*size_pert)
-        end function RSPNucHamiltonGetContributions
+            real(kind=C_QREAL), intent(inout) :: val_oper(2*size_pert)
+        end function RSPZeroOperGetContribution
         integer(C_INT) function RSPOverlapGetMat(overlap,         &
                                                  bra_len_tuple,   &
                                                  bra_pert_tuple,  &
@@ -304,20 +304,20 @@ module openrsp_callback_f
     contains
 
     ! creates the context for calling C functions
-    subroutine RSP_CTX_Create(rsp_solver,   &
-                              nuc_hamilton, &
-                              overlap,      &
-                              one_oper,     &
-                              two_oper,     &
+    subroutine RSP_CTX_Create(rsp_solver, &
+                              zero_oper,  &
+                              overlap,    &
+                              one_oper,   &
+                              two_oper,   &
                               xc_fun)
         type(C_PTR), value, intent(in) :: rsp_solver
-        type(C_PTR), value, intent(in) :: nuc_hamilton
+        type(C_PTR), value, intent(in) :: zero_oper
         type(C_PTR), value, intent(in) :: overlap
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
         ctx_saved%rsp_solver = rsp_solver
-        ctx_saved%nuc_hamilton = nuc_hamilton
+        ctx_saved%zero_oper = zero_oper
         ctx_saved%overlap = overlap
         ctx_saved%one_oper = one_oper
         ctx_saved%two_oper = two_oper
@@ -327,7 +327,7 @@ module openrsp_callback_f
     ! cleans up the context for calling C functions
     subroutine RSP_CTX_Destroy()
         ctx_saved%rsp_solver = C_NULL_PTR
-        ctx_saved%nuc_hamilton = C_NULL_PTR
+        ctx_saved%zero_oper = C_NULL_PTR
         ctx_saved%overlap = C_NULL_PTR
         ctx_saved%one_oper = C_NULL_PTR
         ctx_saved%two_oper = C_NULL_PTR
@@ -405,42 +405,42 @@ module openrsp_callback_f
     end subroutine f_callback_RSPSolverGetLinearRSPSolution
 
     ! callback subroutine to get nuclear contributions
-    subroutine f_callback_RSPNucHamiltonGetContributions(nuc_len_tuple,  &
-                                                         nuc_pert_tuple, &
-                                                         size_pert,      &
-                                                         val_nuc)
-        integer(kind=QINT), intent(in) :: nuc_len_tuple
-        integer(kind=QcPertInt), intent(in) :: nuc_pert_tuple(nuc_len_tuple)
+    subroutine f_callback_RSPZeroOperGetContribution(oper_len_tuple,  &
+                                                     oper_pert_tuple, &
+                                                     size_pert,       &
+                                                     val_oper)
+        integer(kind=QINT), intent(in) :: oper_len_tuple
+        integer(kind=QcPertInt), intent(in) :: oper_pert_tuple(oper_len_tuple)
         integer(kind=QINT), intent(in) :: size_pert
-        complex(kind=QREAL), intent(inout) :: val_nuc(size_pert)
-        real(kind=QREAL), allocatable :: c_val_nuc(:)
+        complex(kind=QREAL), intent(inout) :: val_oper(size_pert)
+        real(kind=QREAL), allocatable :: c_val_oper(:)
         integer(kind=QINT) ival
         integer(kind=4) ierr
-        if (c_associated(ctx_saved%nuc_hamilton)) then
+        if (c_associated(ctx_saved%zero_oper)) then
 #if defined(OPENRSP_DEBUG)
-            write(STDOUT,100) "size", nuc_len_tuple, size_pert
+            write(STDOUT,100) "size", oper_len_tuple, size_pert
 #endif
-            allocate(c_val_nuc(2*size_pert), stat=ierr)
+            allocate(c_val_oper(2*size_pert), stat=ierr)
             if (ierr/=0) then
-                write(STDOUT,100) "failed to allocate memory for c_val_nuc", &
+                write(STDOUT,100) "failed to allocate memory for c_val_oper", &
                                   size_pert
                 call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             end if
-            c_val_nuc = 0.0
-            ierr = RSPNucHamiltonGetContributions(ctx_saved%nuc_hamilton, &
-                                                  nuc_len_tuple,          &
-                                                  nuc_pert_tuple,         &
-                                                  size_pert,              &
-                                                  c_val_nuc)
+            c_val_oper = 0.0
+            ierr = RSPZeroOperGetContribution(ctx_saved%zero_oper, &
+                                              oper_len_tuple,      &
+                                              oper_pert_tuple,     &
+                                              size_pert,           &
+                                              c_val_oper)
             call QErrorCheckCode(STDOUT, ierr, __LINE__, OPENRSP_AO_DENS_CALLBACK)
             do ival = 1, size_pert
-                val_nuc(ival) = val_nuc(ival) &
-                              + cmplx(c_val_nuc(2*ival-1), c_val_nuc(2*ival), kind=QREAL)
+                val_oper(ival) = val_oper(ival) &
+                               + cmplx(c_val_oper(2*ival-1), c_val_oper(2*ival), kind=QREAL)
             end do
-            deallocate(c_val_nuc)
+            deallocate(c_val_oper)
         end if
-100     format("f_callback_RSPNucHamiltonGetContributions>> ",A,2I12)
-    end subroutine f_callback_RSPNucHamiltonGetContributions
+100     format("f_callback_RSPZeroOperGetContribution>> ",A,2I12)
+    end subroutine f_callback_RSPZeroOperGetContribution
 
     ! callback subroutine to get (perturbed) overlap integral matrices
     subroutine f_callback_RSPOverlapGetMat(bra_len_tuple,   &

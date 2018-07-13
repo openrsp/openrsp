@@ -21,18 +21,30 @@
   You should have received a copy of the GNU Lesser General Public
   License along with OpenRSP. If not, see <http://www.gnu.org/licenses/>.
 
+
+  This header file contains callback function for zero-electron operator
+  (nuclear Hamiltonian).
+
+  2015-10-16, Bin Gao:
+  * first version
 */
 
-#include "OpenRSPNucHamiltonCallback.h"
+#if !defined(OPENRSP_ZERO_OPER_CALLBACK_H)
+#define OPENRSP_ZERO_OPER_CALLBACK_H
 
-void get_nuc_contrib(const QInt nuc_num_pert,
-                     const QcPertInt *nuc_pert_labels,
-                     const QInt *nuc_pert_orders,
+#include "OpenRSP.h"
+
 #if defined(OPENRSP_C_USER_CONTEXT)
-                     void *user_ctx,
+#define ZERO_OPER_CONTEXT "ZERO_OPER"
 #endif
-                     const QInt size_pert,
-                     QReal *val_nuc)
-{
-/*FIXME: to implement*/
-}
+
+extern void get_zero_oper_contrib(const QInt,
+                                  const QcPertInt*,
+                                  const QInt*,
+#if defined(OPENRSP_C_USER_CONTEXT)
+                                  void*,
+#endif
+                                  const QInt,
+                                  QReal*);
+
+#endif

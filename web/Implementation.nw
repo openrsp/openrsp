@@ -29,8 +29,8 @@ their codes:
 #include "RSPTwoOper.h"
 /* exchange-correlation (XC) functionals */
 #include "RSPXCFun.h"
-/* nuclear Hamiltonian */
-#include "RSPNucHamilton.h"
+/* zero-electron operators */
+#include "RSPZeroOper.h"
 /* linear response equation solver */
 #include "RSPSolver.h"
 
@@ -88,8 +88,10 @@ typedef struct {
     RSPOneOper *one_oper;          /* one-electron operators */
     RSPTwoOper *two_oper;          /* two-electron operators */
     RSPXCFun *xc_fun;              /* XC functionals */
-    RSPNucHamilton *nuc_hamilton;  /* nuclear Hamiltonian */
+    RSPZeroOper *zero_oper;        /* zero-electron operators */
     RSPSolver *rsp_solver;         /* linear response equation solver */
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    QInt num_atoms;
 } OpenRSP;
 @ where we have used types, macros and APIs implemented in the
 \textsc{QcMatrix} library and one should be familiar with them first.
@@ -97,7 +99,7 @@ typedef struct {
 Users should use the \LibName context and the following APIs to access the
 functionalities of \LibName:
 <<OpenRSPAPIs>>=
-extern QErrorCode OpenRSPCreate(OpenRSP*);
+extern QErrorCode OpenRSPCreate(OpenRSP*,const QInt);
 extern QErrorCode OpenRSPSetPerturbations(OpenRSP*,
                                           const QInt,
                                           const QcPertInt*,
@@ -144,16 +146,14 @@ extern QErrorCode OpenRSPAddXCFun(OpenRSP*,
 #endif
                                   const GetXCFunMat,
                                   const GetXCFunExp);
-extern QErrorCode OpenRSPSetNucHamilton(OpenRSP*,
-                                        const QInt,
-                                        const QcPertInt*,
-                                        const QInt*,
+extern QErrorCode OpenRSPAddZeroOper(OpenRSP*,
+                                     const QInt,
+                                     const QcPertInt*,
+                                     const QInt*,
 #if defined(OPENRSP_C_USER_CONTEXT)
-                                        void*,
+                                     void*,
 #endif 
-                                        const GetNucContrib,
-/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
-                                        const QInt);
+                                     const GetZeroOperContrib);
 extern QErrorCode OpenRSPSetLinearRSPSolver(OpenRSP*,
 #if defined(OPENRSP_C_USER_CONTEXT)
                                             void*,
@@ -227,9 +227,12 @@ of the context\index{[[OpenRSPCreate()]]}:
 /* <function name='OpenRSPCreate' author='Bin Gao' date='2014-01-28'>
      Creates the OpenRSP context
      <param name='open_rsp' direction='inout'>The OpenRSP context</param>
+     <param name='num_atoms' direction='in'>
+       Number of atoms
+     </param>
      <return>Error information</return>
    </function> */
-QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
+QErrorCode OpenRSPCreate(OpenRSP *open_rsp, const QInt num_atoms)
 {
     open_rsp->assembled = QFALSE;
     open_rsp->rsp_pert = NULL;
@@ -239,8 +242,10 @@ QErrorCode OpenRSPCreate(OpenRSP *open_rsp)
     open_rsp->one_oper = NULL;
     open_rsp->two_oper = NULL;
     open_rsp->xc_fun = NULL;
-    open_rsp->nuc_hamilton = NULL;
+    open_rsp->zero_oper = NULL;
     open_rsp->rsp_solver = NULL;
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    open_rsp->num_atoms = num_atoms;
     return QSUCCESS;
 }
 
@@ -294,10 +299,10 @@ QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunAssemble()");
     }
     /* assembles nuclear Hamiltonian */
-    if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonAssemble(open_rsp->nuc_hamilton,
+    if (open_rsp->zero_oper!=NULL) {
+        ierr = RSPZeroOperAssemble(open_rsp->zero_oper,
                                       open_rsp->rsp_pert);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonAssemble()");
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperAssemble()");
     }
     /* assembles linear response equation solver */
     if (open_rsp->rsp_solver!=NULL) {
@@ -350,15 +355,19 @@ QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, FILE *fp_rsp)
         ierr = RSPXCFunWrite(open_rsp->xc_fun, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunWrite()");
     }
-    if (open_rsp->nuc_hamilton!=NULL) {
+    if (open_rsp->zero_oper!=NULL) {
         fprintf(fp_rsp, "OpenRSPWrite>> nuclear Hamiltonian\n");
-        ierr = RSPNucHamiltonWrite(open_rsp->nuc_hamilton, fp_rsp);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonWrite()");
+        ierr = RSPZeroOperWrite(open_rsp->zero_oper, fp_rsp);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperWrite()");
     }
     if (open_rsp->rsp_solver!=NULL) {
         ierr = RSPSolverWrite(open_rsp->rsp_solver, fp_rsp);
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPSolverWrite()");
     }
+/*FIXME: num_atoms to be removed after perturbation free scheme implemented*/
+    fprintf(fp_rsp,
+            "OpenRSPWrite>> number of atoms %"QINT_FMT"\n",
+            open_rsp->num_atoms);
     return QSUCCESS;
 }
 
@@ -406,11 +415,9 @@ QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
         QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPXCFunDestroy()");
     }
     /* destroys the context of nuclear Hamiltonian */
-    if (open_rsp->nuc_hamilton!=NULL) {
-        ierr = RSPNucHamiltonDestroy(open_rsp->nuc_hamilton);
-        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPNucHamiltonDestroy()");
-        free(open_rsp->nuc_hamilton);
-        open_rsp->nuc_hamilton = NULL;
+    if (open_rsp->zero_oper!=NULL) {
+        ierr = RSPZeroOperDestroy(&open_rsp->zero_oper);
+        QErrorCheckCode(ierr, FILE_AND_LINE, "calling RSPZeroOperDestroy()");
     }
     /* destroys the context of linear response equation sovler */
     if (open_rsp->rsp_solver!=NULL) {

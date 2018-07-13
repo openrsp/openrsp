@@ -29,7 +29,8 @@
 ! data types between C/Fortran
 #include "api/qcmatrix_c_type.h"
 
-    subroutine OpenRSPGetRSPFun_f(num_props,        &
+    subroutine OpenRSPGetRSPFun_f(num_atoms,        &
+                                  num_props,        &
                                   len_tuple,        &
                                   pert_tuple,       &
                                   num_freq_configs, &
@@ -39,7 +40,7 @@
                                   S_unpert,         &
                                   D_unpert,         &
                                   rsp_solver,       &
-                                  nuc_hamilton,     &
+                                  zero_oper,        &
                                   overlap,          &
                                   one_oper,         &
                                   two_oper,         &
@@ -63,6 +64,7 @@
         implicit none
         logical :: mem_calibrate
         integer :: max_mat, mem_result
+        integer(kind=C_QINT), value, intent(in) :: num_atoms
         integer(kind=C_QINT), value, intent(in) :: num_props
         integer(kind=C_QINT), intent(in) :: len_tuple(num_props)
         integer(kind=C_QCPERTINT), intent(in) :: pert_tuple(sum(len_tuple))
@@ -73,21 +75,11 @@
         type(C_PTR), value, intent(in) :: S_unpert
         type(C_PTR), value, intent(in) :: D_unpert
         type(C_PTR), value, intent(in) :: rsp_solver
-        type(C_PTR), value, intent(in) :: nuc_hamilton
+        type(C_PTR), value, intent(in) :: zero_oper
         type(C_PTR), value, intent(in) :: overlap
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
-        interface
-            integer(C_INT) function RSPNucHamiltonGetNumAtoms(nuc_hamilton, &
-                                                              num_atoms)    &
-                bind(C, name="RSPNucHamiltonGetNumAtoms")
-                use, intrinsic :: iso_c_binding
-                implicit none
-                type(C_PTR), value, intent(in) :: nuc_hamilton
-                integer(kind=C_QINT), intent(out) :: num_atoms
-            end function RSPNucHamiltonGetNumAtoms
-        end interface
         integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
         real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         ! local variables for converting C arguments to Fortran ones
@@ -105,11 +97,7 @@
         integer(kind=4) ierr
 
         ! gets the number of coordinates
-        ierr = RSPNucHamiltonGetNumAtoms(nuc_hamilton, num_coord)
-        if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call RSPNucHamiltonGetNumAtoms", OUT_ERROR)
-        end if
-        num_coord = 3*num_coord
+        num_coord = 3*num_atoms
         ! gets the number of all perturbations
         num_all_pert = sum(len_tuple)
         ! gets the dimensions and labels of perturbations
@@ -159,11 +147,11 @@
             call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)", OUT_ERROR)
         end if
         ! sets the context of callback functions
-        call RSP_CTX_Create(rsp_solver,   &
-                            nuc_hamilton, &
-                            overlap,      &
-                            one_oper,     &
-                            two_oper,     &
+        call RSP_CTX_Create(rsp_solver, &
+                            zero_oper,  &
+                            overlap,    &
+                            one_oper,   &
+                            two_oper,   &
                             xc_fun)
         ! allocates memory for the results
         allocate(f_rsp_funs(size_rsp_funs), stat=ierr)
@@ -189,7 +177,7 @@
                                   f_S_unpert(1),                             &
                                   f_D_unpert(1),                             &
                                   f_callback_RSPSolverGetLinearRSPSolution,  &
-                                  f_callback_RSPNucHamiltonGetContributions, &
+                                  f_callback_RSPZeroOperGetContribution,     &
                                   f_callback_RSPOverlapGetMat,               &
                                   f_callback_RSPOverlapGetExp,               &
                                   f_callback_RSPOneOperGetMat,               &
