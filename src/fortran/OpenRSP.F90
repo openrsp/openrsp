@@ -293,6 +293,7 @@ module OpenRSP_f
                                                  num_freq_configs, &
                                                  pert_freqs,       &
                                                  kn_rules,         &
+                                                 r_flag,           &
                                                  size_rsp_funs,    &
                                                  rsp_funs)         &
             bind(C, name="OpenRSPGetRSPFun")
@@ -309,6 +310,7 @@ module OpenRSP_f
             real(kind=C_QREAL), intent(in) :: &
                 pert_freqs(2*dot_product(len_tuple,num_freq_configs))
             integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
+            integer(kind=C_QINT), intent(in) :: r_flag
             integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
             real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         end function OpenRSPGetRSPFun
@@ -328,6 +330,7 @@ module OpenRSP_f
                                                   num_freq_configs, &
                                                   pert_freqs,       &
                                                   kn_rules,         &
+                                                  r_flag,           &
                                                   size_residues,    &
                                                   residues)         &
             bind(C, name="OpenRSPGetResidue")
@@ -350,6 +353,7 @@ module OpenRSP_f
             real(kind=C_QREAL), intent(in) :: &
                 pert_freqs(2*dot_product(len_tuple,num_freq_configs)*num_excit)
             integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
+            integer(kind=C_QINT), intent(in) :: r_flag
             integer(kind=C_QINT), value, intent(in) :: size_residues
             real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
         end function OpenRSPGetResidue
@@ -1297,6 +1301,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                 num_freq_configs, &
                                 pert_freqs,       &
                                 kn_rules,         &
+                                r_flag,           &
                                 size_rsp_funs,    &
                                 rsp_funs) result(ierr)
         integer(kind=4) :: ierr
@@ -1311,6 +1316,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
         real(kind=QREAL), intent(in) :: &
             pert_freqs(2*dot_product(len_tuple,num_freq_configs))
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
+        integer(kind=QINT), intent(in) :: r_flag
         integer(kind=QINT), intent(in) :: size_rsp_funs
         real(kind=QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         type(C_PTR) c_ref_ham(1)
@@ -1332,6 +1338,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                 num_freq_configs,  &
                                 pert_freqs,        &
                                 kn_rules,          &
+                                r_flag,            &
                                 size_rsp_funs,     &
                                 rsp_funs)
         c_ref_ham(1) = C_NULL_PTR
@@ -1355,6 +1362,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                  num_freq_configs, &
                                  pert_freqs,       &
                                  kn_rules,         &
+                                 r_flag,           &
                                  size_residues,    &
                                  residues) result(ierr)
         integer(kind=4) :: ierr
@@ -1375,6 +1383,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
         real(kind=QREAL), intent(in) :: &
             pert_freqs(2*dot_product(len_tuple,num_freq_configs)*num_excit)
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
+        integer(kind=QINT), intent(in) :: r_flag
         integer(kind=QINT), intent(in) :: size_residues
         real(kind=QREAL), intent(out) :: residues(2*size_residues)
         type(C_PTR) c_ref_ham(1)
@@ -1408,6 +1417,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                  num_freq_configs,  &
                                  pert_freqs,        &
                                  kn_rules,          &
+                                 r_flag,            &
                                  size_residues,     &
                                  residues)
         c_ref_ham(1) = C_NULL_PTR
