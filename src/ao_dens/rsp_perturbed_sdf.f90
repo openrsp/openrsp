@@ -24,7 +24,7 @@ module rsp_perturbed_sdf
   ! Main routine for managing calculation of perturbed Fock, density and overlap matrices
   subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
                                get_1el_mat, get_2el_mat, get_xc_mat, out_print, dryrun, &
-                               prog_info, rs_info, sdf_retrieved, mem_mgr, Xf)
+                               prog_info, rs_info, r_flag, sdf_retrieved, mem_mgr, Xf)
 
     implicit none
 
@@ -38,6 +38,7 @@ module rsp_perturbed_sdf
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     integer :: i, j, k, max_order, max_npert, o_size, lof_mem_total
+    integer :: r_flag
     integer, allocatable, dimension(:) :: size_i
     type(QcMat) :: Fp_dum
     type(contrib_cache_outer) :: F, D, S
@@ -69,9 +70,9 @@ module rsp_perturbed_sdf
 
 
     ! Check if this stage passed previously and if so, then retrieve and skip execution
-    call prog_incr(prog_info, 2)
+    call prog_incr(prog_info, r_flag, 2)
         
-    if (rs_check(prog_info, rs_info, lvl=2)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
           
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -101,12 +102,12 @@ module rsp_perturbed_sdf
           end do
        end do
 
-       call contrib_cache_store(cache, 'OPENRSP_FDS_ID')
+       call contrib_cache_store(cache, r_flag, 'OPENRSP_FDS_ID')
        
     end if
 
     ! NOTE: Something may be wrong about this progress increase, revisit if problems
-    call prog_incr(prog_info, 2)
+    call prog_incr(prog_info, r_flag, 2)
     
     cache_next => cache
     
@@ -153,7 +154,7 @@ module rsp_perturbed_sdf
        end if
              
        ! Check if this stage passed previously and if so, then retrieve and skip execution       
-       if (rs_check(prog_info, rs_info, lvl=2)) then
+       if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
           
           write(out_str, *) ' '
           call out_print(out_str, 1)
@@ -203,15 +204,15 @@ module rsp_perturbed_sdf
          
           end do
           
-          call contrib_cache_store(lof_cache, 'OPENRSP_LOF_CACHE')
+          call contrib_cache_store(lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
        
        end if
        
        ! Check if this stage passed previously and if so, then retrieve and skip execution
-       call prog_incr(prog_info, 2)
+       call prog_incr(prog_info, r_flag, 2)
        
        
-       if (rs_check(prog_info, rs_info, lvl=2)) then
+       if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
           
           write(out_str, *) ' '
           call out_print(out_str, 1)
@@ -253,7 +254,7 @@ module rsp_perturbed_sdf
           do while (.NOT.(termination))
        
              ! Check if this stage passed previously and if so, then retrieve and skip execution
-             if (rs_check(prog_info, rs_info, lvl=3)) then
+             if (rs_check(prog_info, rs_info, r_flag, lvl=3)) then
              
                 write(out_str, *) ' '
                 call out_print(out_str, 1)
@@ -283,13 +284,13 @@ module rsp_perturbed_sdf
                 
                 if (.NOT.(mem_mgr%calibrate)) then
                 
-                   call contrib_cache_store(lof_next, 'OPENRSP_LOF_CACHE')
+                   call contrib_cache_store(lof_next, r_flag, 'OPENRSP_LOF_CACHE')
                    
                 end if
                 
              end if
              
-             call prog_incr(prog_info, 3)
+             call prog_incr(prog_info, r_flag, 3)
              
              termination = (lof_next%last)
              lof_next => lof_next%next
@@ -304,10 +305,10 @@ module rsp_perturbed_sdf
 
       
        ! Check if this stage passed previously and if so, then retrieve and skip execution
-       call prog_incr(prog_info, 2)
+       call prog_incr(prog_info, r_flag, 2)
        
        
-       if (rs_check(prog_info, rs_info, lvl=2)) then
+       if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
           
           write(out_str, *) ' '
           call out_print(out_str, 1)
@@ -347,14 +348,14 @@ module rsp_perturbed_sdf
           
              call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
                   get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, lof_next, &
-                  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr, Xf=Xf)
+                  rsp_eqn_retrieved, prog_info, rs_info, r_flag, mem_mgr, Xf=Xf)
                
                
           else
           
              call rsp_sdf_calculate(cache_outer_next, cache_next%num_outer, size_i,&
                   get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, lof_next, &
-                  rsp_eqn_retrieved, prog_info, rs_info, mem_mgr)
+                  rsp_eqn_retrieved, prog_info, rs_info, r_flag, mem_mgr)
           
           
           end if
@@ -367,9 +368,9 @@ module rsp_perturbed_sdf
           
           if (.NOT.(mem_mgr%calibrate)) then
           
-             call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
-             call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
-             call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
+             call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
+             call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
+             call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE', r_flag)
              
           end if
        
@@ -379,7 +380,7 @@ module rsp_perturbed_sdf
        deallocate(lof_cache)
        call mem_decr(mem_mgr, lof_mem_total)
        
-       call prog_incr(prog_info, 2)
+       call prog_incr(prog_info, r_flag, 2)
        
           
     end do
@@ -1157,12 +1158,12 @@ module rsp_perturbed_sdf
   ! Do main part of perturbed S, D, F calculation at one order
   subroutine rsp_sdf_calculate(cache_outer, num_outer, size_i, &
   get_rsp_sol, get_ovl_mat, get_2el_mat, get_xc_mat, out_print, F, D, S, &
-  lof_cache, rsp_eqn_retrieved, prog_info, rs_info, mem_mgr, Xf)
+  lof_cache, rsp_eqn_retrieved, prog_info, rs_info, r_flag, mem_mgr, Xf)
   
     implicit none
     
     type(mem_manager) :: mem_mgr
-    integer :: mctr, mcurr, miter, msize, octr, mem_track
+    integer :: mctr, mcurr, miter, msize, octr, r_flag, mem_track
     logical :: termination, rsp_eqn_retrieved, residue_select, residualization
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
     integer :: i, j, k, m, w, nblks
@@ -1451,23 +1452,23 @@ module rsp_perturbed_sdf
        
        end if
        
-           do i = 1, size(Fp)
-    
-          if (i < 10) then
-             fmt_str = "(A3, I1)"
-          else if (i < 100) then
-             fmt_str = "(A3, I2)"
-          else
-             fmt_str = "(A3, I3)"
-          end if
-          
-          write(mat_str, fmt_str) 'Fp_', i
-!           write(*,*) 'i', i
-!           write(*,*) 'fname:', mat_str
-          
-          j = QcMatWrite_f(Fp(i), trim(mat_str), ASCII_VIEW)
-    
-    end do
+!     do i = 1, size(Fp)
+!     
+!           if (i < 10) then
+!              fmt_str = "(A3, I1)"
+!           else if (i < 100) then
+!              fmt_str = "(A3, I2)"
+!           else
+!              fmt_str = "(A3, I3)"
+!           end if
+!           
+!           write(mat_str, fmt_str) 'Fp_', i
+! !           write(*,*) 'i', i
+! !           write(*,*) 'fname:', mat_str
+!           
+!           j = QcMatWrite_f(Fp(i), trim(mat_str), ASCII_VIEW)
+!     
+!     end do
        
        ! Calculate Dp for all components and add to cache
        
@@ -1741,7 +1742,7 @@ module rsp_perturbed_sdf
                 first = (i - 1) * m + 1
                 last = min(i * m, size_i(k))
                 
-                if (rs_check(prog_info, rs_info, lvl=3)) then
+                if (rs_check(prog_info, rs_info, r_flag, lvl=3)) then
                 
                    write(out_str, *) 'Response equation solution batch was completed'
                    call out_print(out_str, 1)
@@ -1799,14 +1800,14 @@ module rsp_perturbed_sdf
   
                       end if
                   
-                      call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', &
+                      call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', r_flag, &
                            mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
                     
                    end if
                    
                 end if
                 
-                call prog_incr(prog_info, 3)
+                call prog_incr(prog_info, r_flag, 3)
                 
              end if
        
@@ -1815,7 +1816,7 @@ module rsp_perturbed_sdf
         else
        
           ! Check if this stage passed previously and if so, then retrieve and skip execution
-          if (rs_check(prog_info, rs_info, lvl=3)) then
+          if (rs_check(prog_info, rs_info, r_flag, lvl=3)) then
           
              write(out_str, *) 'Response equation solution batch was completed'
              call out_print(out_str, 1)
@@ -1858,14 +1859,14 @@ module rsp_perturbed_sdf
                                  RHS(ind_ctr:ind_ctr+size_i(k)-1),     &
                                  X(ind_ctr:ind_ctr+size_i(k)-1))
           
-                call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', &
+                call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', r_flag, &
                            mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
                            
              end if
                    
           end if
           
-          call prog_incr(prog_info, 3)
+          call prog_incr(prog_info, r_flag, 3)
           
           
     

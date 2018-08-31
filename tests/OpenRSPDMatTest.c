@@ -193,6 +193,7 @@ QErrorCode OpenRSPDMatTest(OpenRSP *open_rsp, FILE *fp_log)
                             ALPHA_NUM_FREQ_CONFIGS,
                             ALPHA_PERT_FREQS,
                             ALPHA_KN_RULES,
+                            0,
                             size_rsp_funs,
                             rsp_funs);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPGetRSPFun()");
