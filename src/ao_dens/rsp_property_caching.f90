@@ -103,28 +103,34 @@ module rsp_property_caching
  
  
     
-  ! Initialize progress/restarting framework
-  subroutine prog_init(rs_info)
+  ! Initialize progress/restarting framework if dictated
+  ! by restart flag r_flag
+  subroutine prog_init(rs_info, r_flag)
   
     implicit none
     
     integer, dimension(3) :: rs_info
+    integer :: r_flag
     logical :: r_exist
     
-    inquire(file='OPENRSP_RESTART', exist=r_exist)
+    if (r_flag == 3) then
     
-    if (r_exist) then
+       inquire(file='OPENRSP_RESTART', exist=r_exist)
     
-       open(unit=260, file='OPENRSP_RESTART', action='read') 
-       read(260,*) rs_info(1)
-       read(260,*) rs_info(2)
-       read(260,*) rs_info(3)
-       close(260)
+       if (r_exist) then
+       
+          open(unit=260, file='OPENRSP_RESTART', action='read') 
+          read(260,*) rs_info(1)
+          read(260,*) rs_info(2)
+          read(260,*) rs_info(3)
+          close(260)
     
-    else
+       else
     
-       rs_info = (/0, 0, 0/)
+          rs_info = (/0, 0, 0/)
     
+       end if
+       
     end if
     
   end subroutine
@@ -133,56 +139,65 @@ module rsp_property_caching
   ! Return true if checkpoint not passed, false if passed
   ! If optional argument 'lvl' specified, only check progress at that level
   ! Currently, only 'lvl' style check implemented
-  function rs_check(prog_info, rs_info, lvl)
+  function rs_check(prog_info, rs_info, r_flag, lvl)
   
     implicit none
     
     logical :: rs_check, rs_past
     integer, dimension(3) :: prog_info, rs_info
-    integer :: i
+    integer :: i, r_flag
     integer, optional :: lvl
     
     rs_check = .FALSE.
     rs_past = .FALSE.
     
-    if (present(lvl)) then
+    if (r_flag == 0) then
     
-       do i = 1, lvl
+       rs_check = .FALSE.
+    
+    else if (r_flag == 3) then
+    
+       if (present(lvl)) then
+    
+          do i = 1, lvl
        
-          if (prog_info(i) > rs_info(i)) then
+             if (prog_info(i) > rs_info(i)) then
           
-             rs_past = .TRUE.
+                rs_past = .TRUE.
              
-          end if
-             
-          if (.NOT.(rs_past)) then
-          
-             if (rs_info(i) > prog_info(i)) then
-          
-                rs_check = .TRUE.
-                   
              end if
-             
-          end if
+               
+             if (.NOT.(rs_past)) then
+            
+                if (rs_info(i) > prog_info(i)) then
           
-       end do   
+                   rs_check = .TRUE.
+                   
+                end if
+             
+             end if
+        
+          end do   
     
-    else
+       else
     
-       write(*,*) 'ERROR: lvl keyword must be present for restart check'
+          write(*,*) 'ERROR: lvl keyword must be present for restart check'
            
+       end if
+   
     end if
     
   end function
   
   
-  ! Increment calculation progress counter at level 'lvl' and store in file
-  subroutine prog_incr(prog_info, lvl)
+  ! Increment calculation progress counter prog_info at level 'lvl'
+  ! and store in file if dictated by restarting setup flag r_flag 
+  subroutine prog_incr(prog_info, r_flag, lvl)
     
     implicit none
     
     integer, dimension(3) :: prog_info
-    integer :: lvl, i
+    integer :: lvl, i, r_flag
         
     prog_info(lvl) = prog_info(lvl) + 1
     
@@ -192,65 +207,77 @@ module rsp_property_caching
     
     end do
     
-    open(unit=260, file='OPENRSP_RESTART', status='replace', action='write') 
-    write(260,*) prog_info(1)
-    write(260,*) prog_info(2)
-    write(260,*) prog_info(3)
-    close(260)
+    if (r_flag == 3) then
+    
+       open(unit=260, file='OPENRSP_RESTART', status='replace', action='write') 
+       write(260,*) prog_info(1)
+       write(260,*) prog_info(2)
+       write(260,*) prog_info(3)
+       close(260)
+       
+    end if
     
   end subroutine
  
  ! Store array of matrices or scalars in file fname
- subroutine mat_scal_store(array_size, fname, mat, scal, start_pos)
+ subroutine mat_scal_store(array_size, fname, r_flag, mat, scal, start_pos)
  
    implicit none
    
    character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
-   integer :: array_size, funit, i, k, first_i
+   integer :: array_size, funit, i, k, first_i, r_flag
    integer, optional :: start_pos
    complex(8), dimension(array_size), optional :: scal
    type(QcMat), dimension(array_size), optional :: mat
  
-   funit = 260
-   
-   if (present(scal)) then
+   if (r_flag == 0) then
+    
+      ! "No restarting or storing" case
+    
+   elseif (r_flag == 3) then
  
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-           form='unformatted', status='replace', action='write')
+      funit = 260
    
-      write(funit) array_size
-      write(funit) scal(1:array_size)
+      if (present(scal)) then
+ 
+         open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+              form='unformatted', status='replace', action='write')
+   
+         write(funit) array_size
+         write(funit) scal(1:array_size)
         
-      close(funit)
+         close(funit)
       
-    elseif (present(mat)) then
+      elseif (present(mat)) then
     
-       fid_fmt = '(I10.10)'
+         fid_fmt = '(I10.10)'
           
        
-       if (present(start_pos)) then
+         if (present(start_pos)) then
        
-          first_i = start_pos
+            first_i = start_pos
           
-       else 
+         else 
        
-          first_i = 1
-          
-       end if
+            first_i = 1
+           
+         end if
        
     
-       do i = 1, array_size
+         do i = 1, array_size
        
-          write(str_fid, fid_fmt) i + first_i - 1
+            write(str_fid, fid_fmt) i + first_i - 1
        
-          k = QcMatWrite_f(mat(i), trim(adjustl(fname)) // '_MAT_' // &
-                           trim(str_fid) // '.DAT', BINARY_VIEW)
+            k = QcMatWrite_f(mat(i), trim(adjustl(fname)) // '_MAT_' // &
+                             trim(str_fid) // '.DAT', BINARY_VIEW)
        
-       end do
+         end do
     
-    end if
+      end if
+    
+   end if
  
  end subroutine
  
@@ -296,174 +323,180 @@ module rsp_property_caching
  end subroutine
  
  ! Store contribution cache structure (including outer attached instances) in file fname
- subroutine contrib_cache_store(cache, fname)
+ subroutine contrib_cache_store(cache, r_flag, fname)
  
    implicit none
    
    logical :: termination
-   integer :: num_entries, i, j, k, funit, mat_acc
+   integer :: num_entries, i, j, k, funit, mat_acc, r_flag
    character(*) :: fname
   
    type(contrib_cache), target :: cache
    type(contrib_cache), pointer :: cache_next
    type(contrib_cache_outer), pointer :: outer_next
  
+   if (r_flag == 0) then
+   
+      ! "No restarting or storing" case
+      
+   else if (r_flag == 3) then
  
-   mat_acc = 0
+      mat_acc = 0
  
-   funit = 260
+      funit = 260
  
-   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='replace', action='write')
    
-   ! Cycle to start
-   cache_next => cache
-   do while(.NOT.(cache_next%last))
-      cache_next => cache_next%next
-   end do
-   cache_next => cache_next%next
-   cache_next => cache_next%next
-   
-   num_entries = 0
-   
-   ! Traverse to get number of entries
-   termination = .FALSE.
-   do while(.NOT.(termination))
-   
-      num_entries = num_entries + 1
-   
-      termination = cache_next%last
-      cache_next => cache_next%next
-   
-   end do
-   
-   write(funit) num_entries
-   
-   ! Cycle to start
-   do while(.NOT.(cache_next%last))
-      cache_next => cache_next%next
-   end do
-   cache_next => cache_next%next
-   cache_next => cache_next%next
-   
-      
-   ! Traverse and store
-   termination = .FALSE.
-   do i = 1, num_entries
-   
-      write(funit) cache_next%last
-      write(funit) cache_next%p_inner%npert
-      do j = 1, cache_next%p_inner%npert
-      
-         write(funit) cache_next%p_inner%pdim(j)
-         write(funit) cache_next%p_inner%plab(j)
-         write(funit) cache_next%p_inner%pid(j)
-         write(funit) cache_next%p_inner%freq(j)
-      
+      ! Cycle to start
+      cache_next => cache
+      do while(.NOT.(cache_next%last))
+         cache_next => cache_next%next
       end do
-      
-      ! MaR: New code for residue handling
-      
-      write(funit) cache_next%p_inner%do_residues
-      write(funit) cache_next%p_inner%n_pert_res_max
-      write(funit) cache_next%p_inner%n_states
-      
-      if (cache_next%p_inner%do_residues > 0) then
-      
-         if (allocated(cache_next%p_inner%states)) then
-         
-            write(funit) .TRUE.
-            write(funit) size(cache_next%p_inner%states)
-         
-            do j = 1, size(cache_next%p_inner%states)
-         
-               write(funit) cache_next%p_inner%states(j)
-               
-            end do
-            
-         else
-         
-            write(funit) .FALSE.
-         
-         end if
-         
-         if (allocated(cache_next%p_inner%exenerg)) then
-         
-            write(funit) .TRUE.
-            write(funit) size(cache_next%p_inner%exenerg)
-         
-            do j = 1, size(cache_next%p_inner%exenerg)
-         
-               write(funit) cache_next%p_inner%exenerg(j)
-               
-            end do
-            
-         else
-         
-            write(funit) .FALSE.
-         
-         end if
-         
-         
-         if (allocated(cache_next%p_inner%part_of_residue)) then
-         
-            write(funit) .TRUE.
-            write(funit) size(cache_next%p_inner%part_of_residue, 1)
-            write(funit) size(cache_next%p_inner%part_of_residue, 2)
-         
-            do j = 1, size(cache_next%p_inner%part_of_residue, 1)
-            
-               do k = 1, size(cache_next%p_inner%part_of_residue, 2)
-         
-                  write(funit) cache_next%p_inner%part_of_residue(j, k)
-                  
-               end do
-               
-            end do
-            
-         else
-         
-            write(funit) .FALSE.
-         
-         end if
-         
-      end if
-      
-      
-      ! End new
-      
-      
-      write(funit) cache_next%num_outer
-      write(funit) cache_next%nblks
-      
-      write(funit) size(cache_next%blk_sizes)
-      write(funit) cache_next%blk_sizes
-      
-      write(funit) cache_next%blks_triang_size
-
-      write(funit) size(cache_next%blk_info, 1)
-      write(funit) size(cache_next%blk_info, 2)
-      write(funit) cache_next%blk_info
-     
-      write(funit) size(cache_next%indices, 1)
-      write(funit) size(cache_next%indices, 2)
-      write(funit) cache_next%indices
-      
-         
-      
-      outer_next => cache_next%contribs_outer
-      
-      ! num_outer may not be well-defined; consider 
-      ! switching to traversal with termination instead
-         
-      call contrib_cache_outer_put(outer_next, fname, funit, mat_acc_in=mat_acc)
-   
+      cache_next => cache_next%next
       cache_next => cache_next%next
    
-   end do
+      num_entries = 0
    
+      ! Traverse to get number of entries
+      termination = .FALSE.
+      do while(.NOT.(termination))
    
-   close(funit)
+         num_entries = num_entries + 1
+   
+         termination = cache_next%last
+         cache_next => cache_next%next
+   
+      end do
+   
+      write(funit) num_entries
+   
+      ! Cycle to start
+      do while(.NOT.(cache_next%last))
+         cache_next => cache_next%next
+      end do
+      cache_next => cache_next%next
+      cache_next => cache_next%next
+   
+      
+      ! Traverse and store
+      termination = .FALSE.
+      do i = 1, num_entries
+   
+         write(funit) cache_next%last
+         write(funit) cache_next%p_inner%npert
+         do j = 1, cache_next%p_inner%npert
+      
+            write(funit) cache_next%p_inner%pdim(j)
+            write(funit) cache_next%p_inner%plab(j)
+            write(funit) cache_next%p_inner%pid(j)
+            write(funit) cache_next%p_inner%freq(j)
+      
+         end do
+      
+         ! MaR: New code for residue handling
+      
+         write(funit) cache_next%p_inner%do_residues
+         write(funit) cache_next%p_inner%n_pert_res_max
+         write(funit) cache_next%p_inner%n_states
+      
+         if (cache_next%p_inner%do_residues > 0) then
+      
+            if (allocated(cache_next%p_inner%states)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache_next%p_inner%states)
+         
+               do j = 1, size(cache_next%p_inner%states)
+         
+                  write(funit) cache_next%p_inner%states(j)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+            if (allocated(cache_next%p_inner%exenerg)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache_next%p_inner%exenerg)
+         
+               do j = 1, size(cache_next%p_inner%exenerg)
+         
+                  write(funit) cache_next%p_inner%exenerg(j)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         
+            if (allocated(cache_next%p_inner%part_of_residue)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache_next%p_inner%part_of_residue, 1)
+               write(funit) size(cache_next%p_inner%part_of_residue, 2)
+         
+               do j = 1, size(cache_next%p_inner%part_of_residue, 1)
+            
+                  do k = 1, size(cache_next%p_inner%part_of_residue, 2)
+         
+                     write(funit) cache_next%p_inner%part_of_residue(j, k)
+                  
+                  end do
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         end if
+      
+      
+         ! End new
+      
+      
+         write(funit) cache_next%num_outer
+         write(funit) cache_next%nblks
+      
+         write(funit) size(cache_next%blk_sizes)
+         write(funit) cache_next%blk_sizes
+      
+         write(funit) cache_next%blks_triang_size
+
+         write(funit) size(cache_next%blk_info, 1)
+         write(funit) size(cache_next%blk_info, 2)
+         write(funit) cache_next%blk_info
+     
+         write(funit) size(cache_next%indices, 1)
+         write(funit) size(cache_next%indices, 2)
+         write(funit) cache_next%indices
+      
+         
+      
+         outer_next => cache_next%contribs_outer
+      
+         ! num_outer may not be well-defined; consider 
+         ! switching to traversal with termination instead
+         
+         call contrib_cache_outer_put(outer_next, fname, funit, mat_acc_in=mat_acc)
+   
+         cache_next => cache_next%next
+   
+      end do
+
+      close(funit)
+ 
+   end if
  
  end subroutine
  
@@ -675,29 +708,37 @@ module rsp_property_caching
  end subroutine
  
  ! Wrapper: Store outer type contribution cache element in file fname
- subroutine contrib_cache_outer_store(cache, fname, mat_acc_in)
+ subroutine contrib_cache_outer_store(cache, fname, r_flag, mat_acc_in)
  
    implicit none
    
    type(contrib_cache_outer) :: cache
    character(*) :: fname
    integer, optional :: mat_acc_in
-   integer :: funit, mat_acc
+   integer :: funit, mat_acc, r_flag
    
-   mat_acc = 0
-   if (present(mat_acc_in)) then
-      mat_acc = mat_acc_in
-   end if   
+   if (r_flag == 0) then
    
-   funit = 260
+      ! "No restarting or storing" case
+      
+   else if (r_flag == 3) then
+   
+      mat_acc = 0
+      if (present(mat_acc_in)) then
+         mat_acc = mat_acc_in
+      end if   
+   
+      funit = 260
  
-   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-        form='unformatted', status='replace', action='write')
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+           form='unformatted', status='replace', action='write')
         
-   call contrib_cache_outer_put(cache, fname, funit, mat_acc_in=mat_acc)
+      call contrib_cache_outer_put(cache, fname, funit, mat_acc_in=mat_acc)
         
         
-   close(funit)
+      close(funit)
+ 
+   end if
  
  
  end subroutine

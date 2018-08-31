@@ -135,6 +135,7 @@ extern QErrorCode OpenRSPGetRSPFun(OpenRSP*,
                                    const QReal*,
                                    const QInt*,
                                    const QInt,
+                                   const QInt,
                                    QReal*);
 extern QErrorCode OpenRSPGetResidue(OpenRSP*,
                                     const QcMat*,
@@ -152,6 +153,7 @@ extern QErrorCode OpenRSPGetResidue(OpenRSP*,
                                     const QInt*,
                                     const QReal*,
                                     const QInt*,
+                                    const QInt,
                                     const QInt,
                                     QReal*);
 extern QErrorCode OpenRSPDestroy(OpenRSP*);
