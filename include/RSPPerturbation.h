@@ -55,9 +55,12 @@
 //typedef unsigned long QcPertInt;
 //#define QCPERTINT_MAX ULONG_MAX
 //#define QCPERTINT_FMT "lu"
-typedef unsigned int QcPertInt;
-#define QCPERTINT_MAX UINT_MAX
-#define QCPERTINT_FMT "u"
+//typedef unsigned int QcPertInt;
+//#define QCPERTINT_MAX UINT_MAX
+//#define QCPERTINT_FMT "u"
+typedef QInt QcPertInt;
+#define QCPERTINT_MAX INT_MAX
+#define QCPERTINT_FMT QINT_FMT
 /* <constant name='OPENRSP_PERT_LABEL_MAX'>
      Maximal value for perturbation labels
    </constant>
@@ -86,7 +89,7 @@ typedef struct {
     QInt *pert_num_comps;               /* $[N_{j}^{k_{j}}]$, where
                                            $1\le k_{j}\le n_{j}$ and $1\le j\le p$ */
     QcPertInt *pert_labels;             /* $a_{1},a_{2},\cdots,a_{p}$ */
-#if defined(OPENRSP_C_USER_CONTEXT)     
+#if defined(OPENRSP_C_USER_CONTEXT)
     void *user_ctx;                     /* user-defined callback function context */
 #endif
     GetPertCat get_pert_concatenation;  /* user-specified function for getting

@@ -123,7 +123,7 @@ module rsp_general
                                  kn_rules, F_unpert, S_unpert, D_unpert, &
                                  get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, &
                                  get_1el_mat, get_1el_exp, get_2el_mat, get_2el_exp, &
-                                 get_xc_mat, get_xc_exp, out_print, rsp_tensor_size, &
+                                 get_xc_mat, get_xc_exp, out_print, r_flag_in, rsp_tensor_size, &
                                  rsp_tensor, residue_order, file_id, mem_calibrate, max_mat, &
                                  mem_result, residue_spec_pert, size_rsi_1, residue_spec_index, &
                                  exenerg, Xf_unpert)
@@ -162,9 +162,6 @@ module rsp_general
 
     type(contrib_cache_outer), pointer :: S, D, F, Xf
     integer :: kn(2)
-    logical :: r_exist, sdf_retrieved
-    integer, dimension(3) :: rs_info, rs_calibrate_save
-    integer, dimension(3) :: prog_info
     character(30) :: fmt_str
     real, parameter :: xtiny=1.0d-8
     
@@ -185,6 +182,32 @@ module rsp_general
     integer, allocatable, dimension(:,:) :: indices
     real :: write_threshold
     integer :: p
+    integer(kind=QINT) :: r_flag_in
+    
+    ! Restarting data
+    
+    ! To be connected to API: Flag to determine the restarting setup
+    ! Meaning:
+    ! 0: Do not load/use any existing restarting data and do not save any new restarting data
+    ! (UNUSED) 1: Load and use all existing restarting data but do not save any new restarting data
+    ! (UNUSED) 2: Do not load/use any existing restarting data but save all new restarting data 
+    ! (overwriting any existing restarting data)
+    ! 3: Use any existing restarting data and extend existing restarting data with all new restarting data
+    ! Host program must tell setup to use - no default choice in OpenRSP core
+    integer :: r_flag
+    
+    logical :: r_exist, sdf_retrieved
+    integer, dimension(3) :: rs_info, rs_calibrate_save
+    integer, dimension(3) :: prog_info
+
+    ! MaR: Temporarily setting restart flag manually while waiting for API change
+    ! Remove after API change
+    
+    r_flag = r_flag_in
+    
+    write(*,*) 'WARNING: Restart flag manually set inside OpenRSP - remove assignment after API change'
+    
+    
     
     if (present(mem_calibrate)) then
     
@@ -227,9 +250,10 @@ module rsp_general
     ! Start progress counter
     
     prog_info = (/0,0,0/)
-    call prog_init(rs_info)
+    call prog_init(rs_info, r_flag)
     
     ! Circumvent restarting mechanism for calibration run
+    ! by pretending that last run did not progress beyond the beginning
     if (mem_mgr%calibrate) then
     
        rs_calibrate_save = rs_info
@@ -237,13 +261,7 @@ module rsp_general
     
     end if
     
-    ! MaR: Disable restarting functionality during development of other features
-    ! Remove next two lines to reinstate
-!     rs_calibrate_save = rs_info
-!     rs_info = (/0,0,0/)
-    
-    
-    call prog_incr(prog_info, 1)       
+    call prog_incr(prog_info, r_flag, 1)       
 
     ! Present calculation and initialize perturbation tuple datatypes and
     ! associated size/indexing information
@@ -512,7 +530,7 @@ module rsp_general
         
     
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
     if (mem_mgr%calibrate) then
        
@@ -533,7 +551,7 @@ module rsp_general
        ! Check if this stage passed previously and if so, then retrieve and skip execution
     
        sdf_retrieved = .FALSE.
-       if (rs_check(prog_info, rs_info, lvl=1)) then
+       if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
 
           write(out_str, *) ' '
           call out_print(out_str, 1)
@@ -576,16 +594,16 @@ module rsp_general
          call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/F_unpert/))
                
-         call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE')
-         call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE')
-         call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE')
+         call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
+         call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
+         call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE', r_flag)
          
          if (residue_order > 0) then
        
              call contrib_cache_outer_allocate(Xf)
              call contrib_cache_outer_add_element(Xf, .FALSE., 1, (/get_emptypert()/), &
                   data_size = 1, data_mat=(/Xf_unpert(1)/))
-             call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE')
+             call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE', r_flag)
           
           end if
        
@@ -612,7 +630,7 @@ module rsp_general
           call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                         get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                         get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                        prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                        prop_sizes, rsp_tensor, prog_info, rs_info, r_flag, sdf_retrieved, &
                         mem_mgr, Xf=Xf)
                         
        else
@@ -620,7 +638,7 @@ module rsp_general
           call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                         get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                         get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                        prop_sizes, rsp_tensor, prog_info, rs_info, sdf_retrieved, &
+                        prop_sizes, rsp_tensor, prog_info, rs_info, r_flag, sdf_retrieved, &
                         mem_mgr)
                         
        end if
@@ -646,7 +664,7 @@ module rsp_general
        if (.NOT.(all(rs_calibrate_save == (/0,0,0/)))) then
           
           rs_calibrate_save(1) = rs_calibrate_save(1) - 1
-          call prog_incr(rs_calibrate_save, 1)
+          call prog_incr(rs_calibrate_save, r_flag, 1)
           
        end if
     
@@ -787,7 +805,7 @@ module rsp_general
   subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                       get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
-                      prop_sizes, props, prog_info, rs_info, sdf_retrieved, &
+                      prop_sizes, props, prog_info, rs_info, r_flag, sdf_retrieved, &
                       mem_mgr, Xf)
 
     implicit none
@@ -795,6 +813,7 @@ module rsp_general
     type(mem_manager) :: mem_mgr
     logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved
     integer :: n_props, i, j, k
+    integer :: r_flag
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
@@ -815,14 +834,14 @@ module rsp_general
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
 
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
   
     ! Check if this stage passed previously and if so, then retrieve and skip execution
   
     contrib_retrieved = .FALSE.
     props_retrieved = .FALSE.
   
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -871,7 +890,7 @@ module rsp_general
           call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                        get_rsp_sol, get_ovl_mat, get_1el_mat, &
                        get_2el_mat, get_xc_mat, out_print, .TRUE., &
-                       prog_info, rs_info, sdf_retrieved, mem_mgr, Xf=Xf)
+                       prog_info, rs_info, r_flag, sdf_retrieved, mem_mgr, Xf=Xf)
                        
                        
        else
@@ -879,7 +898,7 @@ module rsp_general
           call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
                        get_rsp_sol, get_ovl_mat, get_1el_mat, &
                        get_2el_mat, get_xc_mat, out_print, .TRUE., &
-                       prog_info, rs_info, sdf_retrieved, mem_mgr)
+                       prog_info, rs_info, r_flag, sdf_retrieved, mem_mgr)
        
        end if
                     
@@ -905,9 +924,9 @@ module rsp_general
     
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -970,15 +989,15 @@ module rsp_general
        end do
     
 
-       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
 
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -1038,7 +1057,7 @@ module rsp_general
           call out_print(out_str, 1)
        
           ! Check if this stage passed previously and if so, then skip execution
-          if (rs_check(prog_info, rs_info, lvl=2)) then
+          if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
           
              write(out_str, *) ' '
              call out_print(out_str, 1)
@@ -1061,11 +1080,11 @@ module rsp_general
           
              end if
           
-             call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+             call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
              
           end if
           
-          call prog_incr(prog_info, 2)
+          call prog_incr(prog_info, r_flag, 2)
           
           
           if (cache_next%last) then
@@ -1087,15 +1106,15 @@ module rsp_general
        write(out_str, *) ' '
        call out_print(out_str, 1)
        
-       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
     
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -1159,7 +1178,7 @@ module rsp_general
         
           end do
        
-          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
        
        end if
 
@@ -1175,9 +1194,9 @@ module rsp_general
     
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
    
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -1238,7 +1257,7 @@ module rsp_general
        
           end do
        
-          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
        
        end if
 
@@ -1253,9 +1272,9 @@ module rsp_general
     
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -1318,15 +1337,15 @@ module rsp_general
        
        end do
     
-       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
     
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -1386,7 +1405,7 @@ module rsp_general
           call out_print(out_str, 1)
        
           ! Check if this stage passed previously and if so, then skip execution
-          if (rs_check(prog_info, rs_info, lvl=2)) then
+          if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
              
              write(out_str, *) ' '
              call out_print(out_str, 1)
@@ -1408,11 +1427,11 @@ module rsp_general
           
              end if             
              
-             call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+             call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
           
           end if
           
-          call prog_incr(prog_info, 2)
+          call prog_incr(prog_info, r_flag, 2)
           
           
           if (cache_next%last) then
@@ -1434,14 +1453,14 @@ module rsp_general
        write(out_str, *) ' '
        call out_print(out_str, 1)
        
-       call contrib_cache_store(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
        
     end if
 
     ! Check if this stage passed previously and if so, then retrieve and skip execution
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
     
-    if (rs_check(prog_info, rs_info, lvl=1)) then
+    if (rs_check(prog_info, rs_info, r_flag, lvl=1)) then
     
        write(out_str, *) ' '
        call out_print(out_str, 1)
@@ -1504,7 +1523,7 @@ module rsp_general
        
           end do
        
-          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
        
        end if
   
@@ -1539,7 +1558,7 @@ module rsp_general
        
     end if
     
-    call prog_incr(prog_info, 1)
+    call prog_incr(prog_info, r_flag, 1)
    
     
   end subroutine

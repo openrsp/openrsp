@@ -45,6 +45,7 @@
                                   one_oper,         &
                                   two_oper,         &
                                   xc_fun,           &
+                                  r_flag,           &
                                   size_rsp_funs,    &
                                   rsp_funs)         &
         bind(C, name="OpenRSPGetRSPFun_f")
@@ -80,6 +81,7 @@
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
+        integer(kind=C_QINT) r_flag
         integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
         real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         ! local variables for converting C arguments to Fortran ones
@@ -187,6 +189,7 @@
                                   f_callback_RSPXCFunGetMat,                 &
                                   f_callback_RSPXCFunGetExp,                 &
                                   f_callback_UserOutput,                     &
+                                  r_flag,                                    &
                                   size(f_rsp_funs),                          &
                                   f_rsp_funs,                                &
                                   0,                                         &
