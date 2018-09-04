@@ -94,7 +94,7 @@
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
-        integer(kind=C_QINT) r_flag
+        integer(kind=C_QINT), value :: r_flag
         integer(kind=C_QINT), value, intent(in) :: size_residues
         real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
         ! local variables for converting C arguments to Fortran ones
