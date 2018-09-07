@@ -148,7 +148,7 @@ module OpenRSP_f
         module procedure OpenRSPWritebyUnit_f
     end interface OpenRSPWrite_f
 
-    interface 
+    interface
         integer(C_INT) function OpenRSPCreateFortranAdapter(open_rsp,  &
                                                             num_atoms) &
             bind(C, name="OpenRSPCreateFortranAdapter")
@@ -407,7 +407,8 @@ module OpenRSP_f
         integer(kind=4) :: ierr
         type(OpenRSP), intent(inout) :: open_rsp
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in):: user_ctx
 #endif
         interface
             subroutine get_linear_rsp_solution(num_pert,      &
@@ -416,10 +417,13 @@ module OpenRSP_f
                                                freq_sums,     &
                                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                               len_ctx,       &
+                                               !len_ctx,       &
                                                user_ctx,      &
 #endif
                                                rsp_param)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: num_comps(num_pert)
@@ -427,8 +431,9 @@ module OpenRSP_f
                 real(kind=QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
                 type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
             end subroutine get_linear_rsp_solution
@@ -482,7 +487,8 @@ module OpenRSP_f
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert_lab)
         integer(kind=QINT), intent(in) :: pert_num_comps(:)
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_pert_concatenation(pert_label,     &
@@ -491,10 +497,13 @@ module OpenRSP_f
                                               num_sub_tuples, &
                                               len_sub_tuples, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                              len_ctx,        &
+                                              !len_ctx,        &
                                               user_ctx,       &
 #endif
                                               rank_sub_comps)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QcPertInt), intent(in) :: pert_label
@@ -503,8 +512,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_sub_tuples
                 integer(kind=QINT), intent(in) :: len_sub_tuples(num_sub_tuples)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(out) :: rank_sub_comps(num_sub_tuples*num_cat_comps)
             end subroutine get_pert_concatenation
@@ -562,7 +572,8 @@ module OpenRSP_f
         integer(kind=QcPertInt), intent(in) :: pert_labels(num_pert_lab)
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert_lab)
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_overlap_mat(bra_num_pert,     &
@@ -575,11 +586,14 @@ module OpenRSP_f
                                        oper_pert_labels, &
                                        oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,          &
+                                       !len_ctx,          &
                                        user_ctx,         &
 #endif
                                        num_int,          &
                                        val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: bra_num_pert
@@ -592,8 +606,9 @@ module OpenRSP_f
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -610,11 +625,14 @@ module OpenRSP_f
                                        num_dmat,         &
                                        dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,          &
+                                       !len_ctx,          &
                                        user_ctx,         &
 #endif
                                        num_exp,          &
                                        val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: bra_num_pert
@@ -629,8 +647,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -732,26 +751,31 @@ module OpenRSP_f
         integer(kind=QcPertInt), intent(in) :: pert_labels(num_pert_lab)
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert_lab)
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_one_oper_mat(oper_num_pert,    &
                                         oper_pert_labels, &
                                         oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_int,          &
                                         val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -762,11 +786,14 @@ module OpenRSP_f
                                         num_dmat,         &
                                         dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_exp,          &
                                         val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -775,8 +802,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -864,7 +892,8 @@ module OpenRSP_f
         integer(kind=QcPertInt), intent(in) :: pert_labels(num_pert_lab)
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert_lab)
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_two_oper_mat(oper_num_pert,    &
@@ -873,11 +902,14 @@ module OpenRSP_f
                                         num_dmat,         &
                                         dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_int,          &
                                         val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -886,8 +918,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -901,11 +934,14 @@ module OpenRSP_f
                                         num_RHS_dmat,     &
                                         RHS_dens_mat,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_exp,          &
                                         val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -917,8 +953,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
                 type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -1016,7 +1053,8 @@ module OpenRSP_f
         integer(kind=QcPertInt), intent(in) :: pert_labels(num_pert_lab)
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert_lab)
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_xc_fun_mat(xc_len_tuple,       &
@@ -1028,11 +1066,14 @@ module OpenRSP_f
                                       num_dmat,           &
                                       dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      len_ctx,            &
+                                      !len_ctx,            &
                                       user_ctx,           &
 #endif
                                       num_int,            &
                                       val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: xc_len_tuple
@@ -1045,8 +1086,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -1060,11 +1102,14 @@ module OpenRSP_f
                                       num_dmat,           &
                                       dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      len_ctx,            &
+                                      !len_ctx,            &
                                       user_ctx,           &
 #endif
                                       num_exp,            &
                                       val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: xc_len_tuple
@@ -1077,8 +1122,9 @@ module OpenRSP_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -1183,26 +1229,31 @@ module OpenRSP_f
         integer(kind=QcPertInt), intent(in) :: pert_labels(num_pert_lab)
         integer(kind=QINT), intent(in) :: pert_max_orders(num_pert_lab)
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_zero_oper_contrib(oper_num_pert,    &
                                              oper_pert_labels, &
                                              oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                             len_ctx,         &
+                                             !len_ctx,         &
                                              user_ctx,        &
 #endif
                                              size_pert,       &
                                              val_oper)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
                 real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
@@ -1589,10 +1640,13 @@ module RSPPerturbation_f
                                           num_sub_tuples, &
                                           len_sub_tuples, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                          len_ctx,        &
+                                          !len_ctx,        &
                                           user_ctx,       &
 #endif
                                           rank_sub_comps)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QcPertInt), intent(in) :: pert_label
@@ -1601,8 +1655,9 @@ module RSPPerturbation_f
             integer(kind=QINT), intent(in) :: num_sub_tuples
             integer(kind=QINT), intent(in) :: len_sub_tuples(num_sub_tuples)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(out) :: rank_sub_comps(num_sub_tuples*num_cat_comps)
         end subroutine GetPertConcatenation_f
@@ -1613,8 +1668,9 @@ module RSPPerturbation_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(GetPertConcatenation_f), nopass, pointer :: get_pert_concatenation
@@ -1640,7 +1696,8 @@ module RSPPerturbation_f
                                get_pert_concatenation)
         type(PertFun_f), intent(inout) :: pert_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_pert_concatenation(pert_label,     &
@@ -1649,10 +1706,13 @@ module RSPPerturbation_f
                                               num_sub_tuples, &
                                               len_sub_tuples, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                              len_ctx,        &
+                                              !len_ctx,        &
                                               user_ctx,       &
 #endif
                                               rank_sub_comps)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QcPertInt), intent(in) :: pert_label
@@ -1661,20 +1721,21 @@ module RSPPerturbation_f
                 integer(kind=QINT), intent(in) :: num_sub_tuples
                 integer(kind=QINT), intent(in) :: len_sub_tuples(num_sub_tuples)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(out) :: rank_sub_comps(num_sub_tuples*num_cat_comps)
             end subroutine get_pert_concatenation
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        pert_fun%len_ctx = size(user_ctx)
-        allocate(pert_fun%user_ctx(pert_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPPertCreate_f>> length", pert_fun%len_ctx
-            stop "RSPPertCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !pert_fun%len_ctx = size(user_ctx)
+        !allocate(pert_fun%user_ctx(pert_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPPertCreate_f>> length", pert_fun%len_ctx
+        !    stop "RSPPertCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         pert_fun%user_ctx = user_ctx
 #endif
         pert_fun%get_pert_concatenation => get_pert_concatenation
@@ -1715,7 +1776,7 @@ module RSPPerturbation_f
                                              num_sub_tuples,    &
                                              len_sub_tuples,    &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                             pert_fun%len_ctx,  &
+                                             !pert_fun%len_ctx,  &
                                              pert_fun%user_ctx, &
 #endif
                                              rank_sub_comps)
@@ -1730,10 +1791,10 @@ module RSPPerturbation_f
     !% \param[PertFun_f:type]{inout} pert_fun the context of callback subroutines
     subroutine RSPPertDestroy_f(pert_fun)
         type(PertFun_f), intent(inout) :: pert_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        pert_fun%len_ctx = 0
-        deallocate(pert_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        pert_fun%len_ctx = 0
+!        deallocate(pert_fun%user_ctx)
+!#endif
         nullify(pert_fun%get_pert_concatenation)
     end subroutine RSPPertDestroy_f
 
@@ -1773,11 +1834,14 @@ module RSPOverlap_f
                                    oper_pert_labels, &
                                    oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_int,          &
                                    val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: bra_num_pert
@@ -1790,8 +1854,9 @@ module RSPOverlap_f
             integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
             integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
@@ -1808,11 +1873,14 @@ module RSPOverlap_f
                                    num_dmat,         &
                                    dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_exp,          &
                                    val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: bra_num_pert
@@ -1827,8 +1895,9 @@ module RSPOverlap_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_exp
             real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -1840,8 +1909,9 @@ module RSPOverlap_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(OverlapGetMat_f), nopass, pointer :: get_overlap_mat
@@ -1872,7 +1942,8 @@ module RSPOverlap_f
                                   get_overlap_exp)
         type(OverlapFun_f), intent(inout) :: overlap_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_overlap_mat(bra_num_pert,     &
@@ -1885,11 +1956,14 @@ module RSPOverlap_f
                                        oper_pert_labels, &
                                        oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,          &
+                                       !len_ctx,          &
                                        user_ctx,         &
 #endif
                                        num_int,          &
                                        val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: bra_num_pert
@@ -1902,8 +1976,9 @@ module RSPOverlap_f
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -1920,11 +1995,14 @@ module RSPOverlap_f
                                        num_dmat,         &
                                        dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,          &
+                                       !len_ctx,          &
                                        user_ctx,         &
 #endif
                                        num_exp,          &
                                        val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: bra_num_pert
@@ -1939,21 +2017,22 @@ module RSPOverlap_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_overlap_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        overlap_fun%len_ctx = size(user_ctx)
-        allocate(overlap_fun%user_ctx(overlap_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPOverlapCreate_f>> length", overlap_fun%len_ctx
-            stop "RSPOverlapCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !overlap_fun%len_ctx = size(user_ctx)
+        !allocate(overlap_fun%user_ctx(overlap_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPOverlapCreate_f>> length", overlap_fun%len_ctx
+        !    stop "RSPOverlapCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         overlap_fun%user_ctx = user_ctx
 #endif
         overlap_fun%get_overlap_mat => get_overlap_mat
@@ -2021,7 +2100,7 @@ module RSPOverlap_f
                                          oper_pert_labels,     &
                                          oper_pert_orders,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                         overlap_fun%len_ctx,  &
+                                         !overlap_fun%len_ctx,  &
                                          overlap_fun%user_ctx, &
 #endif
                                          num_int,              &
@@ -2102,7 +2181,7 @@ module RSPOverlap_f
                                          num_dmat,             &
                                          f_dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                         overlap_fun%len_ctx,  &
+                                         !overlap_fun%len_ctx,  &
                                          overlap_fun%user_ctx, &
 #endif
                                          num_exp,              &
@@ -2121,10 +2200,10 @@ module RSPOverlap_f
     !% \param[OverlapFun_f:type]{inout} overlap_fun the context of callback subroutines
     subroutine RSPOverlapDestroy_f(overlap_fun)
         type(OverlapFun_f), intent(inout) :: overlap_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        overlap_fun%len_ctx = 0
-        deallocate(overlap_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        overlap_fun%len_ctx = 0
+!        deallocate(overlap_fun%user_ctx)
+!#endif
         nullify(overlap_fun%get_overlap_mat)
         nullify(overlap_fun%get_overlap_exp)
     end subroutine RSPOverlapDestroy_f
@@ -2161,19 +2240,23 @@ module RSPOneOper_f
                                    oper_pert_labels, &
                                    oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_int,          &
                                    val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
             integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
             integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
@@ -2184,11 +2267,14 @@ module RSPOneOper_f
                                    num_dmat,         &
                                    dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_exp,          &
                                    val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
@@ -2197,8 +2283,9 @@ module RSPOneOper_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_exp
             real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -2210,8 +2297,9 @@ module RSPOneOper_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(OneOperGetMat_f), nopass, pointer :: get_one_oper_mat
@@ -2242,26 +2330,31 @@ module RSPOneOper_f
                                   get_one_oper_exp)
         type(OneOperFun_f), intent(inout) :: one_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_one_oper_mat(oper_num_pert,    &
                                         oper_pert_labels, &
                                         oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_int,          &
                                         val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -2272,11 +2365,14 @@ module RSPOneOper_f
                                         num_dmat,         &
                                         dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_exp,          &
                                         val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -2285,21 +2381,22 @@ module RSPOneOper_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_one_oper_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        one_oper_fun%len_ctx = size(user_ctx)
-        allocate(one_oper_fun%user_ctx(one_oper_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPOneOperCreate_f>> length", one_oper_fun%len_ctx
-            stop "RSPOneOperCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !one_oper_fun%len_ctx = size(user_ctx)
+        !allocate(one_oper_fun%user_ctx(one_oper_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPOneOperCreate_f>> length", one_oper_fun%len_ctx
+        !    stop "RSPOneOperCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         one_oper_fun%user_ctx = user_ctx
 #endif
         one_oper_fun%get_one_oper_mat => get_one_oper_mat
@@ -2346,7 +2443,7 @@ module RSPOneOper_f
                                            oper_pert_labels,      &
                                            oper_pert_orders,      &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           one_oper_fun%len_ctx,  &
+                                           !one_oper_fun%len_ctx,  &
                                            one_oper_fun%user_ctx, &
 #endif
                                            num_int,               &
@@ -2406,7 +2503,7 @@ module RSPOneOper_f
                                            num_dmat,              &
                                            f_dens_mat,            &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           one_oper_fun%len_ctx,  &
+                                           !one_oper_fun%len_ctx,  &
                                            one_oper_fun%user_ctx, &
 #endif
                                            num_exp,               &
@@ -2425,10 +2522,10 @@ module RSPOneOper_f
     !% \param[OneOperFun_f:type]{inout} one_oper_fun the context of callback subroutines
     subroutine RSPOneOperDestroy_f(one_oper_fun)
         type(OneOperFun_f), intent(inout) :: one_oper_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        one_oper_fun%len_ctx = 0
-        deallocate(one_oper_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        one_oper_fun%len_ctx = 0
+!        deallocate(one_oper_fun%user_ctx)
+!#endif
         nullify(one_oper_fun%get_one_oper_mat)
         nullify(one_oper_fun%get_one_oper_exp)
     end subroutine RSPOneOperDestroy_f
@@ -2467,11 +2564,14 @@ module RSPTwoOper_f
                                    num_dmat,         &
                                    dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_int,          &
                                    val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
@@ -2480,8 +2580,9 @@ module RSPTwoOper_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
@@ -2495,11 +2596,14 @@ module RSPTwoOper_f
                                    num_RHS_dmat,     &
                                    RHS_dens_mat,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_exp,          &
                                    val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
@@ -2511,8 +2615,9 @@ module RSPTwoOper_f
             integer(kind=QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
             type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_exp
             real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -2524,8 +2629,9 @@ module RSPTwoOper_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(TwoOperGetMat_f), nopass, pointer :: get_two_oper_mat
@@ -2556,7 +2662,8 @@ module RSPTwoOper_f
                                   get_two_oper_exp)
         type(TwoOperFun_f), intent(inout) :: two_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_two_oper_mat(oper_num_pert,    &
@@ -2565,11 +2672,14 @@ module RSPTwoOper_f
                                         num_dmat,         &
                                         dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_int,          &
                                         val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -2578,8 +2688,9 @@ module RSPTwoOper_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -2593,11 +2704,14 @@ module RSPTwoOper_f
                                         num_RHS_dmat,     &
                                         RHS_dens_mat,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_exp,          &
                                         val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -2609,21 +2723,22 @@ module RSPTwoOper_f
                 integer(kind=QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
                 type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_two_oper_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        two_oper_fun%len_ctx = size(user_ctx)
-        allocate(two_oper_fun%user_ctx(two_oper_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPTwoOperCreate_f>> length", two_oper_fun%len_ctx
-            stop "RSPTwoOperCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !two_oper_fun%len_ctx = size(user_ctx)
+        !allocate(two_oper_fun%user_ctx(two_oper_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPTwoOperCreate_f>> length", two_oper_fun%len_ctx
+        !    stop "RSPTwoOperCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         two_oper_fun%user_ctx = user_ctx
 #endif
         two_oper_fun%get_two_oper_mat => get_two_oper_mat
@@ -2686,7 +2801,7 @@ module RSPTwoOper_f
                                            num_dmat,              &
                                            f_dens_mat,            &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           two_oper_fun%len_ctx,  &
+                                           !two_oper_fun%len_ctx,  &
                                            two_oper_fun%user_ctx, &
 #endif
                                            num_int,               &
@@ -2775,7 +2890,7 @@ module RSPTwoOper_f
                                            num_RHS_dmat,          &
                                            f_RHS_dens_mat,        &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           two_oper_fun%len_ctx,  &
+                                           !two_oper_fun%len_ctx,  &
                                            two_oper_fun%user_ctx, &
 #endif
                                            num_exp,               &
@@ -2797,10 +2912,10 @@ module RSPTwoOper_f
     !% \param[TwoOperFun_f:type]{inout} two_oper_fun the context of callback subroutines
     subroutine RSPTwoOperDestroy_f(two_oper_fun)
         type(TwoOperFun_f), intent(inout) :: two_oper_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        two_oper_fun%len_ctx = 0
-        deallocate(two_oper_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        two_oper_fun%len_ctx = 0
+!        deallocate(two_oper_fun%user_ctx)
+!#endif
         nullify(two_oper_fun%get_two_oper_mat)
         nullify(two_oper_fun%get_two_oper_exp)
     end subroutine RSPTwoOperDestroy_f
@@ -2842,12 +2957,14 @@ module RSPXCFun_f
                                  num_dmat,           &
                                  dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                 len_ctx,            &
+                                 !len_ctx,            &
                                  user_ctx,           &
 #endif
                                  num_int,            &
                                  val_int)
-
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: xc_len_tuple
@@ -2860,8 +2977,9 @@ module RSPXCFun_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
@@ -2875,11 +2993,14 @@ module RSPXCFun_f
                                  num_dmat,           &
                                  dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                 len_ctx,            &
+                                 !len_ctx,            &
                                  user_ctx,           &
 #endif
                                  num_exp,            &
                                  val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: xc_len_tuple
@@ -2892,8 +3013,9 @@ module RSPXCFun_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_exp
             real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -2905,8 +3027,9 @@ module RSPXCFun_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(XCFunGetMat_f), nopass, pointer :: get_xc_fun_mat
@@ -2937,7 +3060,8 @@ module RSPXCFun_f
                                 get_xc_fun_exp)
         type(XCFunFun_f), intent(inout) :: xcfun_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_xc_fun_mat(xc_len_tuple,       &
@@ -2949,11 +3073,14 @@ module RSPXCFun_f
                                       num_dmat,           &
                                       dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      len_ctx,            &
+                                      !len_ctx,            &
                                       user_ctx,           &
 #endif
                                       num_int,            &
                                       val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: xc_len_tuple
@@ -2966,8 +3093,9 @@ module RSPXCFun_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -2981,11 +3109,14 @@ module RSPXCFun_f
                                       num_dmat,           &
                                       dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      len_ctx,            &
+                                      !len_ctx,            &
                                       user_ctx,           &
 #endif
                                       num_exp,            &
                                       val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: xc_len_tuple
@@ -2998,21 +3129,22 @@ module RSPXCFun_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_xc_fun_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        xcfun_fun%len_ctx = size(user_ctx)
-        allocate(xcfun_fun%user_ctx(xcfun_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPXCFunCreate_f>> length", xcfun_fun%len_ctx
-            stop "RSPXCFunCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !xcfun_fun%len_ctx = size(user_ctx)
+        !allocate(xcfun_fun%user_ctx(xcfun_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPXCFunCreate_f>> length", xcfun_fun%len_ctx
+        !    stop "RSPXCFunCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         xcfun_fun%user_ctx = user_ctx
 #endif
         xcfun_fun%get_xc_fun_mat => get_xc_fun_mat
@@ -3093,7 +3225,7 @@ module RSPXCFun_f
                                       num_dmat,           &
                                       f_dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      xcfun_fun%len_ctx,  &
+                                      !xcfun_fun%len_ctx,  &
                                       xcfun_fun%user_ctx, &
 #endif
                                       num_int,            &
@@ -3174,7 +3306,7 @@ module RSPXCFun_f
                                       num_dmat,           &
                                       f_dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                      xcfun_fun%len_ctx,  &
+                                      !xcfun_fun%len_ctx,  &
                                       xcfun_fun%user_ctx, &
 #endif
                                       num_exp,            &
@@ -3193,10 +3325,10 @@ module RSPXCFun_f
     !% \param[XCFunFun_f:type]{inout} xcfun_fun the context of callback subroutines
     subroutine RSPXCFunDestroy_f(xcfun_fun)
         type(XCFunFun_f), intent(inout) :: xcfun_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        xcfun_fun%len_ctx = 0
-        deallocate(xcfun_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        xcfun_fun%len_ctx = 0
+!        deallocate(xcfun_fun%user_ctx)
+!#endif
         nullify(xcfun_fun%get_xc_fun_mat)
         nullify(xcfun_fun%get_xc_fun_exp)
     end subroutine RSPXCFunDestroy_f
@@ -3233,19 +3365,23 @@ module RSPZeroOper_f
                                         oper_pert_labels, &
                                         oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,         &
+                                        !len_ctx,         &
                                         user_ctx,        &
 #endif
                                         size_pert,       &
                                         val_oper)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
             integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
             integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: size_pert
             real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
@@ -3257,8 +3393,9 @@ module RSPZeroOper_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback function
         procedure(ZeroOperGetContrib_f), nopass, pointer :: get_zero_oper_contrib
@@ -3284,39 +3421,44 @@ module RSPZeroOper_f
                                    get_zero_oper_contrib)
         type(ZeroOperFun_f), intent(inout) :: zero_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_zero_oper_contrib(oper_num_pert,    &
                                              oper_pert_labels, &
                                              oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                             len_ctx,          &
+                                             !len_ctx,          &
                                              user_ctx,         &
 #endif
                                              size_pert,        &
                                              val_oper)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
                 real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
             end subroutine get_zero_oper_contrib
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        zero_oper_fun%len_ctx = size(user_ctx)
-        allocate(zero_oper_fun%user_ctx(zero_oper_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPZeroOperCreate_f>> length", zero_oper_fun%len_ctx
-            stop "RSPZeroOperCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !zero_oper_fun%len_ctx = size(user_ctx)
+        !allocate(zero_oper_fun%user_ctx(zero_oper_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPZeroOperCreate_f>> length", zero_oper_fun%len_ctx
+        !    stop "RSPZeroOperCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         zero_oper_fun%user_ctx = user_ctx
 #endif
         zero_oper_fun%get_zero_oper_contrib => get_zero_oper_contrib
@@ -3351,7 +3493,7 @@ module RSPZeroOper_f
                                                  oper_pert_labels,       &
                                                  oper_pert_orders,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                                 zero_oper_fun%len_ctx,  &
+                                                 !zero_oper_fun%len_ctx,  &
                                                  zero_oper_fun%user_ctx, &
 #endif
                                                  size_pert,              &
@@ -3367,10 +3509,10 @@ module RSPZeroOper_f
     !% \param[ZeroOperFun_f:type]{inout} zero_oper_fun the context of callback subroutine
     subroutine RSPZeroOperDestroy_f(zero_oper_fun)
         type(ZeroOperFun_f), intent(inout) :: zero_oper_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        zero_oper_fun%len_ctx = 0
-        deallocate(zero_oper_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        zero_oper_fun%len_ctx = 0
+!        deallocate(zero_oper_fun%user_ctx)
+!#endif
         nullify(zero_oper_fun%get_zero_oper_contrib)
     end subroutine RSPZeroOperDestroy_f
 
@@ -3406,10 +3548,13 @@ module RSPSolver_f
                                freq_sums,     &
                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                               len_ctx,       &
+                               !len_ctx,       &
                                user_ctx,      &
 #endif
                                rsp_param)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             integer(kind=QINT), intent(in) :: num_pert
             integer(kind=QINT), intent(in) :: num_comps(num_pert)
@@ -3417,8 +3562,9 @@ module RSPSolver_f
             real(kind=QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
             type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
         end subroutine SolverRun_f
@@ -3429,8 +3575,9 @@ module RSPSolver_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback function
         procedure(SolverRun_f), nopass, pointer :: get_linear_rsp_solution
@@ -3456,7 +3603,8 @@ module RSPSolver_f
                                  get_linear_rsp_solution)
         type(SolverFun_f), intent(inout) :: solver_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_linear_rsp_solution(num_pert,      &
@@ -3465,10 +3613,13 @@ module RSPSolver_f
                                                freq_sums,     &
                                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                               len_ctx,       &
+                                               !len_ctx,       &
                                                user_ctx,      &
 #endif
                                                rsp_param)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: num_comps(num_pert)
@@ -3476,20 +3627,21 @@ module RSPSolver_f
                 real(kind=QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
                 type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
             end subroutine get_linear_rsp_solution
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        solver_fun%len_ctx = size(user_ctx)
-        allocate(solver_fun%user_ctx(solver_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPSolverCreate_f>> length", solver_fun%len_ctx
-            stop "RSPSolverCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !solver_fun%len_ctx = size(user_ctx)
+        !allocate(solver_fun%user_ctx(solver_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPSolverCreate_f>> length", solver_fun%len_ctx
+        !    stop "RSPSolverCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         solver_fun%user_ctx = user_ctx
 #endif
         solver_fun%get_linear_rsp_solution => get_linear_rsp_solution
@@ -3554,7 +3706,7 @@ module RSPSolver_f
                                                 freq_sums,           &
                                                 f_RHS_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                                solver_fun%len_ctx,  &
+                                                !solver_fun%len_ctx,  &
                                                 solver_fun%user_ctx, &
 #endif
                                                 f_rsp_param)
@@ -3575,10 +3727,10 @@ module RSPSolver_f
     !% \param[SolverFun_f:type]{inout} solver_fun the context of callback subroutine
     subroutine RSPSolverDestroy_f(solver_fun)
         type(SolverFun_f), intent(inout) :: solver_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        solver_fun%len_ctx = 0
-        deallocate(solver_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        solver_fun%len_ctx = 0
+!        deallocate(solver_fun%user_ctx)
+!#endif
         nullify(solver_fun%get_linear_rsp_solution)
     end subroutine RSPSolverDestroy_f
 

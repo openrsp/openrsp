@@ -46,19 +46,23 @@ module RSPZeroOper_f
                                         oper_pert_labels, &
                                         oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,         &
+                                        !len_ctx,         &
                                         user_ctx,        &
 #endif
                                         size_pert,       &
                                         val_oper)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
             integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
             integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: size_pert
             real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
@@ -70,8 +74,9 @@ module RSPZeroOper_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback function
         procedure(ZeroOperGetContrib_f), nopass, pointer :: get_zero_oper_contrib
@@ -97,39 +102,44 @@ module RSPZeroOper_f
                                    get_zero_oper_contrib)
         type(ZeroOperFun_f), intent(inout) :: zero_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_zero_oper_contrib(oper_num_pert,    &
                                              oper_pert_labels, &
                                              oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                             len_ctx,          &
+                                             !len_ctx,          &
                                              user_ctx,         &
 #endif
                                              size_pert,        &
                                              val_oper)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: size_pert
                 real(kind=QREAL), intent(inout) :: val_oper(2*size_pert)
             end subroutine get_zero_oper_contrib
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        zero_oper_fun%len_ctx = size(user_ctx)
-        allocate(zero_oper_fun%user_ctx(zero_oper_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPZeroOperCreate_f>> length", zero_oper_fun%len_ctx
-            stop "RSPZeroOperCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !zero_oper_fun%len_ctx = size(user_ctx)
+        !allocate(zero_oper_fun%user_ctx(zero_oper_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPZeroOperCreate_f>> length", zero_oper_fun%len_ctx
+        !    stop "RSPZeroOperCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         zero_oper_fun%user_ctx = user_ctx
 #endif
         zero_oper_fun%get_zero_oper_contrib => get_zero_oper_contrib
@@ -164,7 +174,7 @@ module RSPZeroOper_f
                                                  oper_pert_labels,       &
                                                  oper_pert_orders,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                                 zero_oper_fun%len_ctx,  &
+                                                 !zero_oper_fun%len_ctx,  &
                                                  zero_oper_fun%user_ctx, &
 #endif
                                                  size_pert,              &
@@ -180,10 +190,10 @@ module RSPZeroOper_f
     !% \param[ZeroOperFun_f:type]{inout} zero_oper_fun the context of callback subroutine
     subroutine RSPZeroOperDestroy_f(zero_oper_fun)
         type(ZeroOperFun_f), intent(inout) :: zero_oper_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        zero_oper_fun%len_ctx = 0
-        deallocate(zero_oper_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        zero_oper_fun%len_ctx = 0
+!        deallocate(zero_oper_fun%user_ctx)
+!#endif
         nullify(zero_oper_fun%get_zero_oper_contrib)
     end subroutine RSPZeroOperDestroy_f
 

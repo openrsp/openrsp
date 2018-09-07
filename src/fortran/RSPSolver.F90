@@ -46,10 +46,13 @@ module RSPSolver_f
                                freq_sums,     &
                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                               len_ctx,       &
+                               !len_ctx,       &
                                user_ctx,      &
 #endif
                                rsp_param)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             integer(kind=QINT), intent(in) :: num_pert
             integer(kind=QINT), intent(in) :: num_comps(num_pert)
@@ -57,8 +60,9 @@ module RSPSolver_f
             real(kind=QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
             type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
         end subroutine SolverRun_f
@@ -69,8 +73,9 @@ module RSPSolver_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback function
         procedure(SolverRun_f), nopass, pointer :: get_linear_rsp_solution
@@ -96,7 +101,8 @@ module RSPSolver_f
                                  get_linear_rsp_solution)
         type(SolverFun_f), intent(inout) :: solver_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_linear_rsp_solution(num_pert,      &
@@ -105,10 +111,13 @@ module RSPSolver_f
                                                freq_sums,     &
                                                RHS_mat,       &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                               len_ctx,       &
+                                               !len_ctx,       &
                                                user_ctx,      &
 #endif
                                                rsp_param)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 integer(kind=QINT), intent(in) :: num_pert
                 integer(kind=QINT), intent(in) :: num_comps(num_pert)
@@ -116,20 +125,21 @@ module RSPSolver_f
                 real(kind=QREAL), intent(in) :: freq_sums(2*sum(num_freq_sums))
                 type(QcMat), intent(in) :: RHS_mat(dot_product(num_comps,num_freq_sums))
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 type(QcMat), intent(inout) :: rsp_param(dot_product(num_comps,num_freq_sums))
             end subroutine get_linear_rsp_solution
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        solver_fun%len_ctx = size(user_ctx)
-        allocate(solver_fun%user_ctx(solver_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPSolverCreate_f>> length", solver_fun%len_ctx
-            stop "RSPSolverCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !solver_fun%len_ctx = size(user_ctx)
+        !allocate(solver_fun%user_ctx(solver_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPSolverCreate_f>> length", solver_fun%len_ctx
+        !    stop "RSPSolverCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         solver_fun%user_ctx = user_ctx
 #endif
         solver_fun%get_linear_rsp_solution => get_linear_rsp_solution
@@ -194,7 +204,7 @@ module RSPSolver_f
                                                 freq_sums,           &
                                                 f_RHS_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                                solver_fun%len_ctx,  &
+                                                !solver_fun%len_ctx,  &
                                                 solver_fun%user_ctx, &
 #endif
                                                 f_rsp_param)
@@ -215,10 +225,10 @@ module RSPSolver_f
     !% \param[SolverFun_f:type]{inout} solver_fun the context of callback subroutine
     subroutine RSPSolverDestroy_f(solver_fun)
         type(SolverFun_f), intent(inout) :: solver_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        solver_fun%len_ctx = 0
-        deallocate(solver_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        solver_fun%len_ctx = 0
+!        deallocate(solver_fun%user_ctx)
+!#endif
         nullify(solver_fun%get_linear_rsp_solution)
     end subroutine RSPSolverDestroy_f
 
