@@ -48,11 +48,14 @@ module RSPTwoOper_f
                                    num_dmat,         &
                                    dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_int,          &
                                    val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
@@ -61,8 +64,9 @@ module RSPTwoOper_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
@@ -76,11 +80,14 @@ module RSPTwoOper_f
                                    num_RHS_dmat,     &
                                    RHS_dens_mat,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_exp,          &
                                    val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: oper_num_pert
@@ -92,8 +99,9 @@ module RSPTwoOper_f
             integer(kind=QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
             type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_exp
             real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -105,8 +113,9 @@ module RSPTwoOper_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(TwoOperGetMat_f), nopass, pointer :: get_two_oper_mat
@@ -137,7 +146,8 @@ module RSPTwoOper_f
                                   get_two_oper_exp)
         type(TwoOperFun_f), intent(inout) :: two_oper_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_two_oper_mat(oper_num_pert,    &
@@ -146,11 +156,14 @@ module RSPTwoOper_f
                                         num_dmat,         &
                                         dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_int,          &
                                         val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -159,8 +172,9 @@ module RSPTwoOper_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -174,11 +188,14 @@ module RSPTwoOper_f
                                         num_RHS_dmat,     &
                                         RHS_dens_mat,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                        len_ctx,          &
+                                        !len_ctx,          &
                                         user_ctx,         &
 #endif
                                         num_exp,          &
                                         val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: oper_num_pert
@@ -190,21 +207,22 @@ module RSPTwoOper_f
                 integer(kind=QINT), intent(in) :: num_RHS_dmat(dmat_len_tuple)
                 type(QcMat), intent(in) :: RHS_dens_mat(sum(num_RHS_dmat))
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_two_oper_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        two_oper_fun%len_ctx = size(user_ctx)
-        allocate(two_oper_fun%user_ctx(two_oper_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPTwoOperCreate_f>> length", two_oper_fun%len_ctx
-            stop "RSPTwoOperCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !two_oper_fun%len_ctx = size(user_ctx)
+        !allocate(two_oper_fun%user_ctx(two_oper_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPTwoOperCreate_f>> length", two_oper_fun%len_ctx
+        !    stop "RSPTwoOperCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         two_oper_fun%user_ctx = user_ctx
 #endif
         two_oper_fun%get_two_oper_mat => get_two_oper_mat
@@ -267,7 +285,7 @@ module RSPTwoOper_f
                                            num_dmat,              &
                                            f_dens_mat,            &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           two_oper_fun%len_ctx,  &
+                                           !two_oper_fun%len_ctx,  &
                                            two_oper_fun%user_ctx, &
 #endif
                                            num_int,               &
@@ -356,7 +374,7 @@ module RSPTwoOper_f
                                            num_RHS_dmat,          &
                                            f_RHS_dens_mat,        &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                           two_oper_fun%len_ctx,  &
+                                           !two_oper_fun%len_ctx,  &
                                            two_oper_fun%user_ctx, &
 #endif
                                            num_exp,               &
@@ -378,10 +396,10 @@ module RSPTwoOper_f
     !% \param[TwoOperFun_f:type]{inout} two_oper_fun the context of callback subroutines
     subroutine RSPTwoOperDestroy_f(two_oper_fun)
         type(TwoOperFun_f), intent(inout) :: two_oper_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        two_oper_fun%len_ctx = 0
-        deallocate(two_oper_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        two_oper_fun%len_ctx = 0
+!        deallocate(two_oper_fun%user_ctx)
+!#endif
         nullify(two_oper_fun%get_two_oper_mat)
         nullify(two_oper_fun%get_two_oper_exp)
     end subroutine RSPTwoOperDestroy_f
