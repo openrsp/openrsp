@@ -52,11 +52,14 @@ module RSPOverlap_f
                                    oper_pert_labels, &
                                    oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_int,          &
                                    val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: bra_num_pert
@@ -69,8 +72,9 @@ module RSPOverlap_f
             integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
             integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_int
             type(QcMat), intent(inout) :: val_int(num_int)
@@ -87,11 +91,14 @@ module RSPOverlap_f
                                    num_dmat,         &
                                    dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                   len_ctx,          &
+                                   !len_ctx,          &
                                    user_ctx,         &
 #endif
                                    num_exp,          &
                                    val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT,QREAL,QcMat
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QINT), intent(in) :: bra_num_pert
@@ -106,8 +113,9 @@ module RSPOverlap_f
             integer(kind=QINT), intent(in) :: num_dmat
             type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(in) :: num_exp
             real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
@@ -119,8 +127,9 @@ module RSPOverlap_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(OverlapGetMat_f), nopass, pointer :: get_overlap_mat
@@ -151,7 +160,8 @@ module RSPOverlap_f
                                   get_overlap_exp)
         type(OverlapFun_f), intent(inout) :: overlap_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_overlap_mat(bra_num_pert,     &
@@ -164,11 +174,14 @@ module RSPOverlap_f
                                        oper_pert_labels, &
                                        oper_pert_orders, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,          &
+                                       !len_ctx,          &
                                        user_ctx,         &
 #endif
                                        num_int,          &
                                        val_int)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: bra_num_pert
@@ -181,8 +194,9 @@ module RSPOverlap_f
                 integer(kind=QcPertInt), intent(in) :: oper_pert_labels(oper_num_pert)
                 integer(kind=QINT), intent(in) :: oper_pert_orders(oper_num_pert)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_int
                 type(QcMat), intent(inout) :: val_int(num_int)
@@ -199,11 +213,14 @@ module RSPOverlap_f
                                        num_dmat,         &
                                        dens_mat,         &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                       len_ctx,          &
+                                       !len_ctx,          &
                                        user_ctx,         &
 #endif
                                        num_exp,          &
                                        val_exp)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT,QREAL,QcMat
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QINT), intent(in) :: bra_num_pert
@@ -218,21 +235,22 @@ module RSPOverlap_f
                 integer(kind=QINT), intent(in) :: num_dmat
                 type(QcMat), intent(in) :: dens_mat(num_dmat)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(in) :: num_exp
                 real(kind=QREAL), intent(inout) :: val_exp(2*num_exp)
             end subroutine get_overlap_exp
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        overlap_fun%len_ctx = size(user_ctx)
-        allocate(overlap_fun%user_ctx(overlap_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPOverlapCreate_f>> length", overlap_fun%len_ctx
-            stop "RSPOverlapCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !overlap_fun%len_ctx = size(user_ctx)
+        !allocate(overlap_fun%user_ctx(overlap_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPOverlapCreate_f>> length", overlap_fun%len_ctx
+        !    stop "RSPOverlapCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         overlap_fun%user_ctx = user_ctx
 #endif
         overlap_fun%get_overlap_mat => get_overlap_mat
@@ -300,7 +318,7 @@ module RSPOverlap_f
                                          oper_pert_labels,     &
                                          oper_pert_orders,     &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                         overlap_fun%len_ctx,  &
+                                         !overlap_fun%len_ctx,  &
                                          overlap_fun%user_ctx, &
 #endif
                                          num_int,              &
@@ -381,7 +399,7 @@ module RSPOverlap_f
                                          num_dmat,             &
                                          f_dens_mat,           &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                         overlap_fun%len_ctx,  &
+                                         !overlap_fun%len_ctx,  &
                                          overlap_fun%user_ctx, &
 #endif
                                          num_exp,              &
@@ -400,10 +418,10 @@ module RSPOverlap_f
     !% \param[OverlapFun_f:type]{inout} overlap_fun the context of callback subroutines
     subroutine RSPOverlapDestroy_f(overlap_fun)
         type(OverlapFun_f), intent(inout) :: overlap_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        overlap_fun%len_ctx = 0
-        deallocate(overlap_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        overlap_fun%len_ctx = 0
+!        deallocate(overlap_fun%user_ctx)
+!#endif
         nullify(overlap_fun%get_overlap_mat)
         nullify(overlap_fun%get_overlap_exp)
     end subroutine RSPOverlapDestroy_f

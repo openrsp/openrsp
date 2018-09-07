@@ -46,10 +46,13 @@ module RSPPerturbation_f
                                           num_sub_tuples, &
                                           len_sub_tuples, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                          len_ctx,        &
+                                          !len_ctx,        &
                                           user_ctx,       &
 #endif
                                           rank_sub_comps)
+#if defined(OPENRSP_F_USER_CONTEXT)
+            use, intrinsic :: iso_c_binding
+#endif
             use qcmatrix_f, only: QINT
             use RSPPertBasicTypes_f, only: QcPertInt
             integer(kind=QcPertInt), intent(in) :: pert_label
@@ -58,8 +61,9 @@ module RSPPerturbation_f
             integer(kind=QINT), intent(in) :: num_sub_tuples
             integer(kind=QINT), intent(in) :: len_sub_tuples(num_sub_tuples)
 #if defined(OPENRSP_F_USER_CONTEXT)
-            integer(kind=QINT), intent(in) :: len_ctx
-            character(len=1), intent(in) :: user_ctx(len_ctx)
+            !integer(kind=QINT), intent(in) :: len_ctx
+            !character(len=1), intent(in) :: user_ctx(len_ctx)
+            type(C_PTR), intent(in) :: user_ctx
 #endif
             integer(kind=QINT), intent(out) :: rank_sub_comps(num_sub_tuples*num_cat_comps)
         end subroutine GetPertConcatenation_f
@@ -70,8 +74,9 @@ module RSPPerturbation_f
         private
 #if defined(OPENRSP_F_USER_CONTEXT)
         ! user-defined callback function context
-        integer(kind=QINT) :: len_ctx = 0
-        character(len=1), allocatable :: user_ctx(:)
+        !integer(kind=QINT) :: len_ctx = 0
+        !character(len=1), allocatable :: user_ctx(:)
+        type(C_PTR) :: user_ctx
 #endif
         ! callback functions
         procedure(GetPertConcatenation_f), nopass, pointer :: get_pert_concatenation
@@ -97,7 +102,8 @@ module RSPPerturbation_f
                                get_pert_concatenation)
         type(PertFun_f), intent(inout) :: pert_fun
 #if defined(OPENRSP_F_USER_CONTEXT)
-        character(len=1), intent(in) :: user_ctx(:)
+        !character(len=1), intent(in) :: user_ctx(:)
+        type(C_PTR), intent(in) :: user_ctx
 #endif
         interface
             subroutine get_pert_concatenation(pert_label,     &
@@ -106,10 +112,13 @@ module RSPPerturbation_f
                                               num_sub_tuples, &
                                               len_sub_tuples, &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                              len_ctx,        &
+                                              !len_ctx,        &
                                               user_ctx,       &
 #endif
                                               rank_sub_comps)
+#if defined(OPENRSP_F_USER_CONTEXT)
+                use, intrinsic :: iso_c_binding
+#endif
                 use qcmatrix_f, only: QINT
                 use RSPPertBasicTypes_f, only: QcPertInt
                 integer(kind=QcPertInt), intent(in) :: pert_label
@@ -118,20 +127,21 @@ module RSPPerturbation_f
                 integer(kind=QINT), intent(in) :: num_sub_tuples
                 integer(kind=QINT), intent(in) :: len_sub_tuples(num_sub_tuples)
 #if defined(OPENRSP_F_USER_CONTEXT)
-                integer(kind=QINT), intent(in) :: len_ctx
-                character(len=1), intent(in) :: user_ctx(len_ctx)
+                !integer(kind=QINT), intent(in) :: len_ctx
+                !character(len=1), intent(in) :: user_ctx(len_ctx)
+                type(C_PTR), intent(in) :: user_ctx
 #endif
                 integer(kind=QINT), intent(out) :: rank_sub_comps(num_sub_tuples*num_cat_comps)
             end subroutine get_pert_concatenation
         end interface
 #if defined(OPENRSP_F_USER_CONTEXT)
-        integer(kind=4) ierr  !error information
-        pert_fun%len_ctx = size(user_ctx)
-        allocate(pert_fun%user_ctx(pert_fun%len_ctx), stat=ierr)
-        if (ierr/=0) then
-            write(STDOUT,"(A,I8)") "RSPPertCreate_f>> length", pert_fun%len_ctx
-            stop "RSPPertCreate_f>> failed to allocate memory for user_ctx"
-        end if
+        !integer(kind=4) ierr  !error information
+        !pert_fun%len_ctx = size(user_ctx)
+        !allocate(pert_fun%user_ctx(pert_fun%len_ctx), stat=ierr)
+        !if (ierr/=0) then
+        !    write(STDOUT,"(A,I8)") "RSPPertCreate_f>> length", pert_fun%len_ctx
+        !    stop "RSPPertCreate_f>> failed to allocate memory for user_ctx"
+        !end if
         pert_fun%user_ctx = user_ctx
 #endif
         pert_fun%get_pert_concatenation => get_pert_concatenation
@@ -172,7 +182,7 @@ module RSPPerturbation_f
                                              num_sub_tuples,    &
                                              len_sub_tuples,    &
 #if defined(OPENRSP_F_USER_CONTEXT)
-                                             pert_fun%len_ctx,  &
+                                             !pert_fun%len_ctx,  &
                                              pert_fun%user_ctx, &
 #endif
                                              rank_sub_comps)
@@ -187,10 +197,10 @@ module RSPPerturbation_f
     !% \param[PertFun_f:type]{inout} pert_fun the context of callback subroutines
     subroutine RSPPertDestroy_f(pert_fun)
         type(PertFun_f), intent(inout) :: pert_fun
-#if defined(OPENRSP_F_USER_CONTEXT)
-        pert_fun%len_ctx = 0
-        deallocate(pert_fun%user_ctx)
-#endif
+!#if defined(OPENRSP_F_USER_CONTEXT)
+!        pert_fun%len_ctx = 0
+!        deallocate(pert_fun%user_ctx)
+!#endif
         nullify(pert_fun%get_pert_concatenation)
     end subroutine RSPPertDestroy_f
 
