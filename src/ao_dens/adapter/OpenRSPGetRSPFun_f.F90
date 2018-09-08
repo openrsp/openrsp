@@ -46,6 +46,7 @@
                                   two_oper,         &
                                   xc_fun,           &
                                   r_flag,           &
+                                  write_threshold,  &
                                   size_rsp_funs,    &
                                   rsp_funs)         &
         bind(C, name="OpenRSPGetRSPFun_f")
@@ -81,7 +82,8 @@
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
-        integer(kind=C_QINT), value :: r_flag
+        integer(kind=C_QINT), value, intent(in) :: r_flag
+        real(kind=C_QREAL), value, intent(in) :: write_threshold
         integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
         real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         ! local variables for converting C arguments to Fortran ones
@@ -166,7 +168,7 @@
         ! MaR: max_mat set to very high number to take matrix limitations out of use
         ! during development of other features
         max_mat = 999999999
-
+        
         call openrsp_get_property(num_props,                                 &
                                   len_tuple,                                 &
                                   f_pert_dims,                               &
@@ -190,6 +192,7 @@
                                   f_callback_RSPXCFunGetExp,                 &
                                   f_callback_UserOutput,                     &
                                   r_flag,                                    &
+                                  write_threshold,                           &
                                   size(f_rsp_funs),                          &
                                   f_rsp_funs,                                &
                                   0,                                         &
