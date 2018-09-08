@@ -294,6 +294,7 @@ module OpenRSP_f
                                                  pert_freqs,       &
                                                  kn_rules,         &
                                                  r_flag,           &
+                                                 write_threshold,  &
                                                  size_rsp_funs,    &
                                                  rsp_funs)         &
             bind(C, name="OpenRSPGetRSPFun")
@@ -310,7 +311,8 @@ module OpenRSP_f
             real(kind=C_QREAL), intent(in) :: &
                 pert_freqs(2*dot_product(len_tuple,num_freq_configs))
             integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
-            integer(kind=C_QINT), intent(in) :: r_flag
+            integer(kind=C_QINT), value, intent(in) :: r_flag
+            real(kind=C_QREAL), value, intent(in) :: write_threshold
             integer(kind=C_QINT), value, intent(in) :: size_rsp_funs
             real(kind=C_QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         end function OpenRSPGetRSPFun
@@ -331,6 +333,7 @@ module OpenRSP_f
                                                   pert_freqs,       &
                                                   kn_rules,         &
                                                   r_flag,           &
+                                                  write_threshold,  &
                                                   size_residues,    &
                                                   residues)         &
             bind(C, name="OpenRSPGetResidue")
@@ -353,7 +356,8 @@ module OpenRSP_f
             real(kind=C_QREAL), intent(in) :: &
                 pert_freqs(2*dot_product(len_tuple,num_freq_configs)*num_excit)
             integer(kind=C_QINT), intent(in) :: kn_rules(num_props)
-            integer(kind=C_QINT), intent(in) :: r_flag
+            integer(kind=C_QINT), value, intent(in) :: r_flag
+            real(kind=C_QREAL), value, intent(in) :: write_threshold
             integer(kind=C_QINT), value, intent(in) :: size_residues
             real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
         end function OpenRSPGetResidue
@@ -1353,6 +1357,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                 pert_freqs,       &
                                 kn_rules,         &
                                 r_flag,           &
+                                write_threshold,  &
                                 size_rsp_funs,    &
                                 rsp_funs) result(ierr)
         integer(kind=4) :: ierr
@@ -1368,6 +1373,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
             pert_freqs(2*dot_product(len_tuple,num_freq_configs))
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
         integer(kind=QINT), intent(in) :: r_flag
+         real(kind=QREAL), intent(in) :: write_threshold
         integer(kind=QINT), intent(in) :: size_rsp_funs
         real(kind=QREAL), intent(out) :: rsp_funs(2*size_rsp_funs)
         type(C_PTR) c_ref_ham(1)
@@ -1390,6 +1396,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                 pert_freqs,        &
                                 kn_rules,          &
                                 r_flag,            &
+                                write_threshold,   &
                                 size_rsp_funs,     &
                                 rsp_funs)
         c_ref_ham(1) = C_NULL_PTR
@@ -1414,6 +1421,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                  pert_freqs,       &
                                  kn_rules,         &
                                  r_flag,           &
+                                 write_threshold,  &
                                  size_residues,    &
                                  residues) result(ierr)
         integer(kind=4) :: ierr
@@ -1435,6 +1443,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
             pert_freqs(2*dot_product(len_tuple,num_freq_configs)*num_excit)
         integer(kind=QINT), intent(in) :: kn_rules(num_props)
         integer(kind=QINT), intent(in) :: r_flag
+        real(kind=QREAL), intent(in) :: write_threshold
         integer(kind=QINT), intent(in) :: size_residues
         real(kind=QREAL), intent(out) :: residues(2*size_residues)
         type(C_PTR) c_ref_ham(1)
@@ -1469,6 +1478,7 @@ integer(kind=4), parameter :: QCSTDOUT = 6
                                  pert_freqs,        &
                                  kn_rules,          &
                                  r_flag,            &
+                                 write_threshold,   &
                                  size_residues,     &
                                  residues)
         c_ref_ham(1) = C_NULL_PTR

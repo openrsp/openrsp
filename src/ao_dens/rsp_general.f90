@@ -123,10 +123,10 @@ module rsp_general
                                  kn_rules, F_unpert, S_unpert, D_unpert, &
                                  get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, &
                                  get_1el_mat, get_1el_exp, get_2el_mat, get_2el_exp, &
-                                 get_xc_mat, get_xc_exp, out_print, r_flag_in, rsp_tensor_size, &
-                                 rsp_tensor, residue_order, file_id, mem_calibrate, max_mat, &
-                                 mem_result, residue_spec_pert, size_rsi_1, residue_spec_index, &
-                                 exenerg, Xf_unpert)
+                                 get_xc_mat, get_xc_exp, out_print, r_flag_in, write_threshold, &
+                                 rsp_tensor_size, rsp_tensor, residue_order, file_id, mem_calibrate, &
+                                 max_mat, mem_result, residue_spec_pert, size_rsi_1, &
+                                 residue_spec_index, exenerg, Xf_unpert)
     implicit none
 
     
@@ -180,7 +180,7 @@ module rsp_general
     type(QcMat), optional, dimension(*) :: Xf_unpert 
     
     integer, allocatable, dimension(:,:) :: indices
-    real :: write_threshold
+    real(kind=QREAL) :: write_threshold
     integer :: p
     integer(kind=QINT) :: r_flag_in
     
@@ -687,9 +687,7 @@ module rsp_general
        write(260,*) 'NUM_PROPERTIES'
        write(260,*) n_props
 
-       ! NOTE: TENSOR ELEMENTS WITH ABSOLUTE VALUE BELOW THIS VALUE WILL NOT BE OUTPUT
-       write_threshold = 1.0e-10
-       
+   
        
        k = 1
        p = 0
@@ -764,7 +762,7 @@ module rsp_general
                   
              do n = 1, size(indices, 1)
              
-             
+                ! NOTE: TENSOR ELEMENTS WITH ABSOLUTE VALUE BELOW write_threshold WILL NOT BE OUTPUT
                 if (abs(real(rsp_tensor(p + n))) > write_threshold) then
                 
                    write(260,*) indices(n,:)

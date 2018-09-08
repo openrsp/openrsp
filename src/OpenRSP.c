@@ -686,6 +686,7 @@ void OpenRSPGetRSPFun_f(const QInt num_atoms,
                         RSPTwoOper *two_oper,
                         RSPXCFun *xc_fun,
                         const QInt r_flag,
+                        const QReal write_threshold,
                         const QInt size_rsp_funs,
                         QReal *rsp_funs);
 
@@ -720,6 +721,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                             const QReal *pert_freqs,
                             const QInt *kn_rules,
                             const QInt r_flag,
+                            const QReal write_threshold,
                             const QInt size_rsp_funs,
                             QReal *rsp_funs)
 {
@@ -748,6 +750,7 @@ QErrorCode OpenRSPGetRSPFun(OpenRSP *open_rsp,
                            open_rsp->xc_fun,
                            //id_outp,
                            r_flag,
+                           write_threshold,
                            size_rsp_funs,
                            rsp_funs);
     //    break;
@@ -789,6 +792,7 @@ void OpenRSPGetResidue_f(const QInt num_atoms,
                          RSPTwoOper *two_oper,
                          RSPXCFun *xc_fun,
                          const QInt r_flag,
+                         const QReal write_threshold,
                          const QInt size_residues,
                          QReal *residues);
 
@@ -857,6 +861,7 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
                              const QReal *pert_freqs,
                              const QInt *kn_rules,
                              const QInt r_flag,
+                             const QReal write_threshold,
                              const QInt size_residues,
                              QReal *residues)
 {
@@ -891,6 +896,7 @@ QErrorCode OpenRSPGetResidue(OpenRSP *open_rsp,
                             open_rsp->xc_fun,
                             //id_outp,
                             r_flag,
+                            write_threshold,
                             size_residues,
                             residues);
     //    break;
