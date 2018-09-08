@@ -52,6 +52,7 @@
                                    two_oper,         &
                                    xc_fun,           &
                                    r_flag,           &
+                                   write_threshold,  &
                                    size_residues,    &
                                    residues)         &
         bind(C, name="OpenRSPGetResidue_f")
@@ -94,7 +95,8 @@
         type(C_PTR), value, intent(in) :: one_oper
         type(C_PTR), value, intent(in) :: two_oper
         type(C_PTR), value, intent(in) :: xc_fun
-        integer(kind=C_QINT), value :: r_flag
+        integer(kind=C_QINT), value, intent(in) :: r_flag
+        real(kind=C_QREAL), value, intent(in) :: write_threshold
         integer(kind=C_QINT), value, intent(in) :: size_residues
         real(kind=C_QREAL), intent(out) :: residues(2*size_residues)
         ! local variables for converting C arguments to Fortran ones
@@ -256,6 +258,7 @@
                                       f_callback_RSPXCFunGetExp,                  &
                                       f_callback_UserOutput,                      &
                                       r_flag,                                     &
+                                      write_threshold,                            &
                                       resize_per_excit,                           &
                                       f_residues(ipert+1:ipert+resize_per_excit), &
                                       order_residue,                              &
