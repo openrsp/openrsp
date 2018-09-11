@@ -31,8 +31,6 @@ Files and Directories of OpenRSP
 
 #. ``setup.cfg``: Python setup configuration file.
 
-#. ``setup.py``: Python setup script.
-
 #. ``src``: Source codes (generated from ``web/*.nw``).
 
    #. ``ao_dens``: atomic orbital density-matrix based response theory.
