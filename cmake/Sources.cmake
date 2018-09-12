@@ -40,20 +40,3 @@ foreach(CHUNK ${OPENRSP_FORTRAN_CHUNKS})
         ${OPENRSP_FORTRAN_FILES}
         ${OPENRSP_FORTRAN_DIR}/${CHUNK})
 endforeach()
-
-# Fortran recursive codes and adapters between OpenRSP APIs
-set(OPENRSP_AO_DENS_SRCS
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_choose_rule.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_contribs.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_field_tuple.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_general.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_indices_and_addressing.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_lof_caching_tmp.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_perturbed_matrices.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_perturbed_sdf.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_property_caching.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_sdf_caching.f90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/rsp_pert_table.F90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/openrsp_callback_f.F90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/OpenRSPGetRSPFun_f.F90
-    ${LIB_OPENRSP_PATH}/src/ao_dens/adapter/OpenRSPGetResidue_f.F90)

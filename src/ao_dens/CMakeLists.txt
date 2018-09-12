@@ -1,0 +1,15 @@
+target_sources(
+  openrsp
+  PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_choose_rule.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_contribs.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_field_tuple.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_general.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_indices_and_addressing.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_lof_caching_tmp.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_perturbed_matrices.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_perturbed_sdf.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_property_caching.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_sdf_caching.f90
+    ${CMAKE_CURRENT_LIST_DIR}/rsp_pert_table.F90
+  )
