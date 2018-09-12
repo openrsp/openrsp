@@ -1,5 +1,18 @@
 # Required version of CMake
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+
+# Project name
+project(OpenRSP C CXX Fortran)
+
+# Host program could include this file by setting LIB_OPENRSP_PATH
+if("${LIB_OPENRSP_PATH}" STREQUAL "")
+    set(LIB_OPENRSP_PATH ${PROJECT_SOURCE_DIR})
+endif()
+
+# Adds cmake directory to CMake module
+set(CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH}
+    ${LIB_OPENRSP_PATH}/cmake)
 
 # Sets the build mode: if the user specifies -DCMAKE_BUILD_TYPE on the command
 # line, take their definition and dump it in the cache along with proper
@@ -15,20 +28,8 @@ else()
         FORCE)
 endif()
 
-# Project name
-project(OpenRSP C CXX Fortran)
-
-# Host program could include this file by setting LIB_OPENRSP_PATH
-if("${LIB_OPENRSP_PATH}" STREQUAL "")
-    set(LIB_OPENRSP_PATH ${PROJECT_SOURCE_DIR})
-endif()
-
-# Adds cmake directory to CMake module
-set(CMAKE_MODULE_PATH
-    ${CMAKE_MODULE_PATH}
-    ${LIB_OPENRSP_PATH}/cmake)
-
 # Options for making the library
+include(cmake/custom/user_context.cmake)
 include(Options)
 
 # ConfigParentSettings.cmake configures directories where to place module files
@@ -164,6 +165,19 @@ endif()
 
 # Header files and Fortran module files
 include_directories(${OPENRSP_HEADER_DIR})
+
+option(OPENRSP_FORTRAN_API "Build Fortran 2003 APIs." OFF)
+if(OPENRSP_FORTRAN_API)
+    set(QCMATRIX_MODULE_DIR None
+        CACHE STRING "Directory of Fortran modules of QcMatrix library.")
+    include_directories(${QCMATRIX_MODULE_DIR})
+    # OpenRSP Fortran APIs need to enable user context of OpenRSP C parts
+    add_definitions(-DOPENRSP_C_USER_CONTEXT)
+    if(OPENRSP_USER_CONTEXT)
+        add_definitions(-DOPENRSP_F_USER_CONTEXT)
+    endif()
+endif()
+
 if(OPENRSP_FORTRAN_API)
     if("${CMAKE_Fortran_MODULE_DIRECTORY}" STREQUAL "")
         set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
@@ -175,6 +189,7 @@ endif()
 include(OpenRSPTestData)
 
 # Builds test suite as executables
+option(OPENRSP_TEST_EXECUTABLE "Build test suite as excutables." ON)
 if(OPENRSP_TEST_EXECUTABLE)
     add_definitions(-DOPENRSP_TEST_EXECUTABLE)
     if(OPENRSP_FORTRAN_API)
@@ -182,12 +197,12 @@ if(OPENRSP_TEST_EXECUTABLE)
                     ${OPENRSP_HEADER_FILES}
                     ${OPENRSP_FORTRAN_FILES}
                     ${OPENRSP_C_FILES}
-                    ${OPENRSP_AO_DENS_SRCS})
+          )
     else()
         add_library(openrsp
                     ${OPENRSP_HEADER_FILES}
                     ${OPENRSP_C_FILES}
-                    ${OPENRSP_AO_DENS_SRCS})
+          )
     endif()
     add_executable(openrsp_c_test ${OPENRSP_C_TEST_FILES})
     target_link_libraries(openrsp_c_test
@@ -201,15 +216,18 @@ else()
                     ${OPENRSP_FORTRAN_FILES}
                     ${OPENRSP_C_FILES}
                     ${OPENRSP_C_TEST_FILES}
-                    ${OPENRSP_AO_DENS_SRCS})
+          )
     else()
         add_library(openrsp
                     ${OPENRSP_HEADER_FILES}
                     ${OPENRSP_C_FILES}
                     ${OPENRSP_C_TEST_FILES}
-                    ${OPENRSP_AO_DENS_SRCS})
+          )
     endif()
 endif()
+
+include(src/ao_dens/CMakeLists.txt)
+include(src/ao_dens/adapter/CMakeLists.txt)
 
 # Installs the static library, header files and Fortran module files
 install(TARGETS openrsp
