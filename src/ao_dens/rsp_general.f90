@@ -147,11 +147,11 @@ module rsp_general
     integer, allocatable, dimension(:) :: blk_sizes
     integer, allocatable, dimension(:,:) :: blk_info
     complex(8), dimension(dot_product(np, n_freq_cfgs)), intent(in) :: pert_freqs
-    integer :: residualization
     
     integer(kind=QINT) num_perts
     real :: timing_start, timing_end
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
+
     external :: get_rsp_sol, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, get_nucpot
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     external :: out_print
@@ -387,7 +387,10 @@ module rsp_general
              ! Loop over the number of perturbations which contribute to residualization
              do m = 1, residue_order
                 p_tuples(k)%exenerg(m) = exenerg(m)
-                p_tuples(k)%states(m) = residualization  
+                ! MaR: NOTE that the RHS of the below line used the (uninitialized)
+                ! 'residualization' variable. For now set to zero as this line will not
+                ! be relevant until possible use for double residues.
+                p_tuples(k)%states(m) = 0
 
                 do l = 1, max(residue_spec_pert(1),residue_spec_pert(residue_order))
                 
@@ -572,7 +575,7 @@ module rsp_general
           
           if (residue_order > 0) then
        
-             allocate(Xf) 
+             allocate(Xf)
              call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
           
           end if
@@ -586,6 +589,7 @@ module rsp_general
          call contrib_cache_outer_allocate(S)
          call contrib_cache_outer_allocate(D)
          call contrib_cache_outer_allocate(F)
+
       
          call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/S_unpert/))
