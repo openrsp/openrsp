@@ -767,7 +767,7 @@ module rsp_general
              do n = 1, size(indices, 1)
              
                 ! NOTE: TENSOR ELEMENTS WITH ABSOLUTE VALUE BELOW write_threshold WILL NOT BE OUTPUT
-                if (abs(real(rsp_tensor(p + n))) > write_threshold) then
+                if (abs(real(rsp_tensor(p + n))) >= write_threshold) then
                 
                    write(260,*) indices(n,:)
                    write(260,*) real(rsp_tensor(p + n))
