@@ -730,16 +730,26 @@ end if
        return
     end if
 
+    if (tuple%npert > 0) then
+
     emptytuple%n_states = tuple%n_states
     emptytuple%n_pert_res_max = tuple%n_pert_res_max
     emptytuple%do_residues = tuple%do_residues
+
+    end if
 
     allocate(emptytuple%states(emptytuple%do_residues))
     allocate(emptytuple%exenerg(emptytuple%do_residues))
 
     do i = 1, emptytuple%do_residues
-      emptytuple%states(i)=tuple%states(i)
-      emptytuple%exenerg(i)=tuple%exenerg(i)
+
+      if (tuple%npert > 0) then
+
+         emptytuple%states(i)=tuple%states(i)
+         emptytuple%exenerg(i)=tuple%exenerg(i)
+
+      end if
+
     end do
 
   end subroutine
@@ -758,16 +768,28 @@ end if
     allocate(p2%pid(p1%npert))
     allocate(p2%freq(p1%npert))
 
-    p2%pdim = p1%pdim
-    p2%plab = p1%plab
-    p2%pid = p1%pid
-    p2%freq = p1%freq
-    p2%do_residues = p1%do_residues
+    if (p1%npert > 0) then
+
+       p2%pdim = p1%pdim
+       p2%plab = p1%plab
+       p2%pid = p1%pid
+       p2%freq = p1%freq
+
+       p2%do_residues = p1%do_residues
+
+    end if
+
     call p_tuple_add_stateinfo(p2,p1)
 
     if (p2%do_residues.gt.0) then
       allocate(p2%part_of_residue(p2%npert,p2%do_residues))
-      p2%part_of_residue = p1%part_of_residue
+ 
+      if (p1%npert > 0) then
+
+         p2%part_of_residue = p1%part_of_residue
+
+      end if      
+
     end if
 
   end subroutine
@@ -1128,17 +1150,12 @@ end if
     implicit none
 
     integer :: num_p_tuples
-    type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_st
+    type(p_tuple), dimension(:), allocatable :: p_tuples_st
+    type(p_tuple), dimension(num_p_tuples), intent(inout) :: p_tuples
     type(p_tuple) :: temporary_pert
-    integer :: i, j, k, new_minimum, max_order_curr
-    integer :: temporary_pdim, temporary_pid, current_first_position, &
-               current_last_position
-    character(4) :: temporary_plab
-    character(4), dimension(:), allocatable :: min_plab_curr
-    complex(8) :: temporary_freq
-    complex(8), dimension(:), allocatable :: current_minimum_freq
+    integer :: i, j, new_minimum
 
-
+    allocate(p_tuples_st(num_p_tuples))
 
     do i = 1, num_p_tuples
 

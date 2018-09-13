@@ -1527,16 +1527,19 @@ module rsp_property_caching
    else
    
       call contrib_cache_outer_allocate(new_element%contribs_outer)
+
+      ! MaR: Passing empty perturbation tuple as dummy argument since there should
+      ! be no outer perturbation tuples in this case; revisit if problems.
       
       if (present(n_rule)) then
          
          call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
-                                              p_tuples(2:num_p_tuples), n_rule=n_rule)
+                                              (/get_emptypert()/), n_rule=n_rule)
          
       else
       
          call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
-                                              p_tuples(2:num_p_tuples))
+                                              (/get_emptypert()/))
          
       end if
       
@@ -1944,7 +1947,9 @@ module rsp_property_caching
    
    next_element => current_element
    passedlast = 0
+
    p_tuples_ord = p_tuples_standardorder(num_dmat, p_tuples_outer)
+
    contrib_cache_already_outer = .FALSE.
 
    ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
