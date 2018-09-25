@@ -11,7 +11,7 @@ author: >
     Kenneth Ruud,
     Andreas Thorvaldsen
 email: >
-    radovan.bast@gmail.com,
+    radovan.bast@uit.no,
     daniel.h.friese@uit.no,
     bin.gao@uit.no,
     dan.jonsson@uit.no,
@@ -21,7 +21,7 @@ email: >
 copyright: >
     2015-2016 Radovan Bast, Daniel H. Friese, Bin Gao, Dan J. Jonsson,
     Magnus Ringholm, Kenneth Ruud, Andreas Thorvaldsen
-license: Version 3 of the GNU Lesser General Public License
+license: Version 2.1 of the GNU Lesser General Public License
 category: ComputChem
 description: >
     Library to predict molecular properties (response properties) as formulated
