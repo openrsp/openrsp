@@ -1,8 +1,10 @@
 ! Copyright 2012      Gao Bin
 !           2012      Radovan Bast
 !           2009-2012 Andreas J. Thorvaldsen
-! This file is made available under the terms of the
-! GNU Lesser General Public License version 3.
+! This source code form is subject to the terms of the
+! GNU Lesser General Public License, version 2.1.
+! If a copy of the GNU LGPL v2.1 was not distributed with this
+! code, you can obtain one at https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html.
 
 !> @file Contains module rsp_contribs
 
