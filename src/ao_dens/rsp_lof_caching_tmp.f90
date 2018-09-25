@@ -1,7 +1,9 @@
 ! Copyright 2012      Magnus Ringholm
 !
-! This file is made available under the terms of the
-! GNU Lesser General Public License version 3.
+! This source code form is subject to the terms of the
+! GNU Lesser General Public License, version 2.1.
+! If a copy of the GNU LGPL v2.1 was not distributed with this
+! code, you can obtain one at https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html.
 
 ! Contains routines/functions and definitions related to fock_lowerorder datatype
 ! in which (perturbed) overlap, density and Fock matrices are stored.

@@ -13,7 +13,7 @@ contributions are still used) consist of (alphabetical order of surname):
      - Email
    * - Radovan Bast
      - UiT The Arctic University of Norway
-     - radovan.bast@gmail.com
+     - radovan.bast@uit.no
    * - Daniel H. Friese
      - UiT The Arctic University of Norway
      - daniel.h.friese@uit.no
