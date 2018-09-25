@@ -9,7 +9,7 @@ Files and Directories of OpenRSP
 
 #. ``cmake`` and ``CMakeLists.txt``: CMake files.
 
-#. ``COPYING`` and ``COPYING.LESSER``: The license.
+#. ``LICENSE``: The license.
 
 #. ``doc``: OpenRSP Manual and Tutorial.
 

@@ -7,7 +7,7 @@ include src/* src/*/*
 include tests/c/* tests/c/*/*
 include tests/f90/* tests/f90/*/*
 include tests/python/* tests/python/*/*
-include AUTHORS COPYING COPYING.LESSER ChangeLog
+include AUTHORS LICENSE ChangeLog
 include INSTALL MANIFEST.in NEWS README.rst RULES TODO
 include CMakeLists.txt CTestConfig.cmake
 include setup.cfg
