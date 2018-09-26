@@ -1,7 +1,0 @@
-    integer(kind=QINT), parameter :: NUM_ALL_PERT = 3_QINT
-    integer(kind=QINT), parameter :: PERT_GEOMETRIC = 1_QINT
-    integer(kind=QINT), parameter :: PERT_DIPOLE = 2_QINT
-    integer(kind=QINT), parameter :: PERT_MAGNETIC = 5_QINT
-    integer(kind=QINT), parameter :: MAX_ORDER_GEOMETRIC = 7_QINT
-    integer(kind=QINT), parameter :: MAX_ORDER_DIPOLE = 1_QINT
-    integer(kind=QINT), parameter :: MAX_ORDER_MAGNETIC = 7_QINT
