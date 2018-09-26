@@ -17,8 +17,6 @@ Files and Directories of OpenRSP
 
 #. ``INSTALL.rst``: Installation instruction.
 
-#. ``MANIFEST.in``: Python manifest template for source distribution.
-
 #. ``NEWS.rst``: List of user-visible changes.
 
 #. ``PKG-INFO.yml``: PKG-INFO metadata file.
@@ -28,8 +26,6 @@ Files and Directories of OpenRSP
 #. ``README.rst``: A very important file ;-).
 
 #. ``RULES.rst``: Rules for contribution.
-
-#. ``setup.cfg``: Python setup configuration file.
 
 #. ``src``: Source codes (generated from ``web/*.nw``).
 
