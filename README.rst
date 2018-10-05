@@ -25,11 +25,7 @@ Please refer to ``RULES.rst`` if you would like to contribute.
 If you have used OpenRSP and found it is useful, please consider to cite the
 references in ``openrsp.bib``.
 
-
-A pointer to the project website (if it has one)
-------------------------------------------------
-
-https://gitlab.com/openrsp
+Project website: http://openrsp.org
 
 
 Important files and subdirectories
