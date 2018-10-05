@@ -27,11 +27,6 @@ A pointer to the project website (if it has one)
 
 https://gitlab.com/openrsp
 
-Notes on the developer's build environment and potential portability problems
------------------------------------------------------------------------------
-
-Not known yet.
-
 Important files and subdirectories
 ----------------------------------
 
