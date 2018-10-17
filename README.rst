@@ -1,3 +1,5 @@
+.. image:: https://img.shields.io/badge/license-%20LGPLv2.1-blue.svg
+   :target: LICENSE
 
 
 OpenRSP: open-ended response theory
