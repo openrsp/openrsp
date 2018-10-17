@@ -762,7 +762,6 @@ void get_two_oper_exp(const QInt oper_num_pert,
     char *two_oper_context;
 #endif
     QBool zero_int;
-    QErrorCode ierr;
     QInt ilab;
 #if defined(OPENRSP_C_USER_CONTEXT)
     two_oper_context = (char *)user_ctx;

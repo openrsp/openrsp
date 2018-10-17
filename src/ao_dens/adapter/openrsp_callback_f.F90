@@ -926,7 +926,12 @@ module openrsp_callback_f
         integer(kind=4), intent(in) :: out_level
         select case(out_level)
         case(OUT_ERROR)
+#if defined(BUILT_IN_LSDALTON)
             call lsquit(trim(out_str), IO_USER_OUTPUT)
+#else
+            write(IO_USER_OUTPUT, "(2A)") "[ERROR]-> ", trim(out_str)
+            call QErrorExit(STDOUT, __LINE__, OPENRSP_AO_DENS_CALLBACK)
+#endif
         case default
             if (out_level<OUT_DEBUG) then
                 write(IO_USER_OUTPUT, "(2A)") "[OUT]-> ", trim(out_str)
