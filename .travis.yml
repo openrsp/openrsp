@@ -1,0 +1,55 @@
+language: cpp
+sudo: false
+dist: trusty
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      addons: &1
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - cmake
+            - g++-7
+            - gcc-7
+            - gfortran-7
+            - libatlas-dev
+env:
+  global:
+    - CTEST_OUTPUT_ON_FAILURE='1'
+
+# build qcmatrix
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      test -n $CC && unset CC && export CC=gcc-7;
+      test -n $CXX && unset CXX && export CXX=g++-7;
+      test -n $FC && unset FC && export FC=gfortran-7;
+    else
+      test -n $CC && unset CC && export CC=gcc;
+      test -n $CXX && unset CXX && export CXX=g++;
+      test -n $FC && unset FC && export FC=gfortran;
+    fi
+  - cd $TRAVIS_BUILD_DIR
+  - git clone https://gitlab.com/bingao/qcmatrix.git
+  - cd qcmatrix
+  - git checkout 77529cd2705e76ea5f5635a78b45f2eaf361ea4d
+  - mkdir build
+  - cd build
+  - cmake .. -DQCMATRIX_ENABLE_VIEW=F03 -DQCMATRIX_ENABLE_VIEW=ON -DQCMATRIX_TEST_EXECUTABLE=OFF -DQCMATRIX_Fortran_API=F03
+  - cmake --build .
+
+# build openrsp
+install:
+  - cd $TRAVIS_BUILD_DIR
+  - mkdir build
+  - cd build
+  - cmake .. -DOPENRSP_TEST_EXECUTABLE=ON -DOPENRSP_FORTRAN_API=ON -DQCMATRIX_HEADER_DIR="$TRAVIS_BUILD_DIR/qcmatrix/include;$TRAVIS_BUILD_DIR/qcmatrix/build" -DQCMATRIX_MODULE_DIR="$TRAVIS_BUILD_DIR/qcmatrix/build" -DQCMATRIX_LIB="$TRAVIS_BUILD_DIR/qcmatrix/build/libqcmatrix.a;/usr/lib/libblas.a"
+  - cmake --build .
+
+# run the test(s)
+script:
+  - ctest
+
+notifications:
+  email: false

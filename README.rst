@@ -1,3 +1,5 @@
+.. image:: https://travis-ci.org/openrsp/openrsp.svg?branch=master
+   :target: https://travis-ci.org/openrsp/openrsp/builds
 .. image:: https://img.shields.io/badge/license-%20LGPLv2.1-blue.svg
    :target: LICENSE
 

@@ -208,6 +208,11 @@ if(OPENRSP_TEST_EXECUTABLE)
     target_link_libraries(openrsp_c_test
                           openrsp
                           ${QCMATRIX_LIB})
+    enable_testing()
+    add_test(
+      NAME openrsp_c_test
+      COMMAND $<TARGET_FILE:openrsp_c_test>
+      )
 # Test suite is included into the library as functions
 else()
     if(OPENRSP_FORTRAN_API)
