@@ -17,10 +17,6 @@ for the explanation of the arguments with the same names, or
 Chapter 3 "**OPENRSP API REFERENCE**" of the OpenRSP Manual for
 the description of :c:func:`OpenRSPGetResidue`.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 In the following, we will focus on the arguments that have not appeared in
 response function calculations by :c:func:`OpenRSPGetRSPFun`, as three groups:
 
@@ -32,10 +28,6 @@ The arguments ``size_residues`` and ``residues`` are merely the size of the
 calculated residues and the residues, whose description can be found in
 Chapter 3 "**OPENRSP API REFERENCE**" of the OpenRSP Manual.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 First, ``order_residue`` is simple, it is the order of residues. That is,
 there will be ``order_residue`` frequencies (in ``pert_freqs``) of
 perturbation labels (or sums of frequencies of perturbation labels)
@@ -46,10 +38,6 @@ The excitation energies will be in ``excit_energy``, corresponding to
 the possibility that calculations of the same order residues several
 "excitation tuples" may save time, OpenRSP will therefore accept for
 multiple "excitation tuples" for residue calculations.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 Let us make an example: we want to calculate double residuces, that is,
 ``order_residue=2``, and we have two excited states ``r1`` and ``s1``
@@ -63,20 +51,12 @@ that will be used for double residue calculations, we could set
 The ``excit_energy`` and ``eigen_vector`` will contain excitation energies
 and eigenvectors of all the excited states:
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 #. ``excit_energy[order_residue*num_excit]={energy_r1,energy_s1, energy_r2,energy_s2, energy_r3,energy_s3}``,
 #. ``eigen_vector[2*3]={eigvec_r1,eigvec_s1, eigvec_r2,eigvec_s2, eigvec_r3,eigvec_s3}``.
 
 The last group of arguments ``residue_num_pert`` and ``residue_idx_pert``
 contain the information, **per property**, of perturbation labels whose
 (sums of) frequencies equal to the excitation energies.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 For instance, we have two properties to calculate ``num_props=2``, and
 the lengths of perturbation tuples for them are ``len_tuple[2]={4,5}``.
@@ -86,19 +66,11 @@ For the first property, we want (for every excitation tuple):
 * frequency of the first perturbation label :math:`=` the first excitation energy,
 * frequency of the third perturbation label :math:`=` the second excitation energy.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 For the second property, we want (for every excitation tuple):
 
 * frequency of the first perturbation label :math:`=` the first excitation energy,
 * sums of frequencies of the third and fourth perturbation labels
   :math:`=` the second excitation energy.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 So, we will have:
 
@@ -109,10 +81,6 @@ or in zero-based numbering:
 
 #. ``residue_num_pert[order_residue*num_props]={1,1, 1,2}``,
 #. ``residue_idx_pert[sum(residue_num_pert)]={0,2, 0,2,3}``.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 Last but not least, it is apparent that the (sums of) frequencies
 (``pert_freqs``) of perturbation labels specified by ``residue_idx_pert``

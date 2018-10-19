@@ -20,10 +20,6 @@ different one-electron functions for different operators. If they do not
 want to provide OpenRSP a general callback function, instead they can
 call the following API **several times**:
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 .. c:function:: QErrorCode OpenRSPAddOneOper(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_one_oper_mat, get_one_oper_exp)
 
 to **add several one-electron operators** to the electronic Hamiltonian.
@@ -34,10 +30,6 @@ in which each node corresponds to a one-electron operator.
 The arguments of this API are similar to those of the overlap integrals
 :c:func:`OpenRSPSetPDBS`, and has been described in Chapter 3
 "**OPENRSP API REFERENCE**" of the OpenRSP Manual.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The callback functions ``get_one_oper_mat`` and ``get_one_oper_exp`` are
 presented in Chapter 4 "**OPENRSP CALLBACK FUNCTIONS**" of the OpenRSP

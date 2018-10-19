@@ -23,10 +23,6 @@ the compiling of OpenRSP:
   of the user defined context to account the times of callback
   functions being invoked.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 * ``LIB_OPENRSP_NAME`` specifies the name of compiled OpenRSP
   library so that the OpenRSP library will be ``lib|LIB_OPENRSP_NAME|.a``,
   where the specified name will substitute ``|LIB_OPENRSP_NAME|``.
@@ -40,10 +36,6 @@ the compiling of OpenRSP:
   can be run directly for OpenRSP unit testing; otherwise, the unit testing
   will still be compiled but put into the OpenRSP library that can be invoked
   by user to do test.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The following CMake parameters provide the information of the QcMatrix
 library:
