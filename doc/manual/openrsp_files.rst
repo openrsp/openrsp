@@ -17,8 +17,6 @@ Files and Directories of OpenRSP
 
 #. ``INSTALL.rst``: Installation instruction.
 
-#. ``NEWS.rst``: List of user-visible changes.
-
 #. ``PKG-INFO.yml``: PKG-INFO metadata file.
 
 #. ``openrsp.bib``: OpenRSP citation.
