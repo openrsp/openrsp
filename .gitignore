@@ -10,3 +10,4 @@
 *.swp
 *.toc
 build*/
+venv/
