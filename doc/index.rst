@@ -60,3 +60,5 @@ properties to arbitrary order. The program is not yet ready for public release.
    equations.rst
    sphinx.rst
    keywords.rst
+   modularization.rst
+   pseudocode.rst
