@@ -19,6 +19,19 @@ properties to arbitrary order. The program is not yet ready for public release.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Manual
+
+   manual/openrsp_introduction.rst
+   manual/openrsp_installation.rst
+   manual/openrsp_api.rst
+   manual/openrsp_callback.rst
+   manual/openrsp_developers.rst
+   manual/openrsp_files.rst
+   manual/openrsp_limitation.rst
+
+
+.. toctree::
+   :maxdepth: 1
    :caption: Documentation for developers
 
    compilation.rst
