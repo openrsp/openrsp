@@ -20,10 +20,6 @@ or (Fortran code)::
   type(OpenRSP) open_rsp
   integer(kind=4) ierr
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 Afterwards, you could creat the OpenRSP context::
 
   ierr = OpenRSPCreate(&open_rsp);
@@ -35,10 +31,6 @@ We will only show the C code here, because the difference between C and
 Fortran is not much. Users can refer to Section
 "**3.2 Functions of OpenRSP API (Fortran version)**" of the OpenRSP Manual
 for the use of OpenRSP Fortran APIs.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 After creating the OpenRSP context, users could set: 
 
@@ -54,10 +46,6 @@ After creating the OpenRSP context, users could set:
 .. [#] Users may not need all these 4 APIs. For instance, Hartree-Fock
        calculations do not need to call :c:func:`OpenRSPAddXCFun`.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 3. nuclear Hamiltonian by calling :c:func:`OpenRSPSetNucContributions`;
 4. Linear response equation solver by calling
    :c:func:`OpenRSPSetLinearRSPSolver`.
@@ -65,10 +53,6 @@ After creating the OpenRSP context, users could set:
 After setting the above information, users **must** call :c:func:`OpenRSPAssemble`
 to examine if the context of OpenRSP has been set correctly. Otherwise,
 calculations could have problems during running.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 After calling :c:func:`OpenRSPAssemble`, users could consider using
 :c:func:`OpenRSPWrite` to write the OpenRSP context (in a readable
@@ -82,10 +66,6 @@ If everything is OK, users can then:
 
 #. call :c:func:`OpenRSPGetRSPFun` to calculate response functions, and/or
 #. call :c:func:`OpenRSPGetResidue` to calculate residues.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 After all calculations performed, users should call :c:func:`OpenRSPDestroy`
 to release the memory used by the OpenRSP context.

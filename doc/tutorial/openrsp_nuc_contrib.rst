@@ -17,10 +17,6 @@ API once to set up the nuclear Hamiltonian for its contributions:
 
 .. c:function:: QErrorCode OpenRSPSetNucContributions(open_rsp, num_pert, pert_labels, pert_max_orders, user_ctx, get_nuc_contrib, num_atoms)
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 Please see Chapter 3 "**OPENRSP API REFERENCE**" and Chapter 4
 "**OPENRSP CALLBACK FUNCTIONS**" in the OpenRSP Manual for the description
 of this API and the callback function ``get_nuc_contrib``.

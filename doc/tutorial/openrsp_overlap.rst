@@ -25,10 +25,6 @@ However, one should note that OpenRSP will only ask for
 or :math:`\left\langle\tilde{\chi}_{\mu}\left|\tilde{\chi}_{\nu}\right.\right\rangle^{ab\cdots}`
 instead of the more general case as aforementioned.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 To send such callback functions and different perturbation labels
 that can act as perturbations on the basis sets to OpenRSP, users
 can call the following OpenRSP API:
@@ -41,19 +37,11 @@ functions if the perturbation tuples (:math:`a_{\mu}b_{\mu}\cdots`,
 :math:`a_{\nu}b_{\nu}\cdots` and :math:`ab\cdots`) result in zero
 overlap integrals.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 The callback functions should take the following form:
 
 .. c:function:: QVoid get_overlap_mat(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, user_ctx, num_int, val_int)
 
 .. c:function:: QVoid get_overlap_exp(bra_len_tuple, bra_pert_tuple, ket_len_tuple, ket_pert_tuple, len_tuple, pert_tuple, num_dmat, dens_mat, user_ctx, num_exp, val_exp)
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 These callback functions are described in the OpenRSP Manual,
 Chapter 4 "**OPENRSP CALLBACK FUNCTIONS**". Again, the names

@@ -17,10 +17,6 @@ The host program can specify the routine of this solver by calling:
 
 and the last argument is the callback function of the solver.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 The requirement for this callback function ``get_linear_rsp_solution`` has
 been discussed in Chapter 4 "**OPENRSP CALLBACK FUNCTIONS**" of the OpenRSP
 Manual.

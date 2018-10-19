@@ -25,10 +25,6 @@ the first hyperpolarizability :math:`\beta` at different frequencies:
 * That means we have two properties to calculate (:math:`\alpha` and
   :math:`\beta`) so we should set ``num_props=2``.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 The perturbation tuples for :math:`\alpha` and :math:`\beta` are
 presented by integers, let them be ``{EL,EL}`` and ``{EL,EL,EL}``,
 so that
@@ -47,10 +43,6 @@ as such:
 
 and the frequency of perturbation :math:`a` not needed.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 The argument ``kn_rules`` contains the number :math:`k` of :math:`(k,n)`
 rule for each property. If we choose :math:`(0,1)` and :math:`(1,1)`
 rules for :math:`\alpha` and :math:`\beta` respectively, we have
@@ -63,10 +55,6 @@ for instance in:
 #. Magnus Ringholm, *et al.*, J. Comput. Chem., 35, 622 (2014).
 #. Andreas J. Thorvaldsen, *et al.*, J. Chem. Phys., 129, 214108 (2008).
 #. Kasper Kristensen, *et al.*, J. Chem. Phys., 129, 214103 (2008).
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The calculated results are in ``rsp_funs``, whose size is twice of
 ``size_rsp_funs`` (because OpenRSP represents a complex number
@@ -88,10 +76,6 @@ as
 
 :math:`6\times2` (for :math:`\alpha`) :math:`+` :math:`10\times3`
 (for :math:`\beta`) :math:`=42`.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The results ``rsp_funs`` are in a one-dimensional array, and are arranged
 in memory as:
@@ -121,10 +105,6 @@ that is (where the frequency of perturbation :math:`a` is neglected):
   :math:`\cdots`,
   :math:`\mathrm{Re}(\beta_{zzz}(\omega_{7},\omega_{8}))`,
   :math:`\mathrm{Im}(\beta_{zzz}(\omega_{7},\omega_{8}))` ``]``.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 Last but not least, to perform such calculations, users have to provide
 OpenRSP the knowledge of reference state (usually the ground state) by

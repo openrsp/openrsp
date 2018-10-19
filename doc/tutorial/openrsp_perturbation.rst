@@ -17,10 +17,6 @@ To make OpenRSP a perturbation free library:
    runtime, to generate necessary perturbation tuples during calculations,
    and such a order is named as **canonical order**.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 3. OpenRSP will also use canonical order when preparing a collection of
    perturbation tuples, that for instance could be sent to the callback
    functions of exchange-correlation functionals.
@@ -30,10 +26,6 @@ All these can be done by first calling the API
 .. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_concatenation)
 
 to set up all the different perturbation labels involved in calculations.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 For instance, if we have electric, magnetic and geometric perturbations
 in our calculations. We will use three different integers to distinguish
@@ -48,10 +40,6 @@ instead of 6 (:math:`xx,xy,xz,yy,yz,zz`), and :math:`9N_{\text{atoms}}^{2}`
 and :math:`27N_{\text{atoms}}^{3}` second and third order geometric
 derivatives, where :math:`N_{\text{atoms}}` is the number of atoms.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 Therefore, we can set:
 
 #. ``num_pert=3``,
@@ -62,10 +50,6 @@ Therefore, we can set:
 where ``N`` is the number of atoms and should be defined. So ``pert_num_comps``
 actually tells OpenRSP the number of components of different perturbation labels
 from the first order up to their maximum order.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The last argument is a callback function
 
@@ -79,10 +63,6 @@ be anything else.
 This callback function has been discussed in Chapter 4
 "**OPENRSP CALLBACK FUNCTIONS**" of the OpenRSP Manual. Here we will
 show an example.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 For instance, during the calculations, OpenRSP may need to calculate
 quantities of the second order magnetic derivatives from those of the
@@ -98,10 +78,6 @@ or, if we rank these derivatives (zero-based numbering):
 * :math:`1+0\rightarrow 3`, :math:`1+1\rightarrow 4`, :math:`1+2\rightarrow 5`,
 * :math:`2+0\rightarrow 6`, :math:`2+1\rightarrow 7`, :math:`2+2\rightarrow 8`.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 That means, if OpenRSP sends:
 
 #. ``pert_label=MAG``,
@@ -114,10 +90,6 @@ the callback function :c:func:`get_pert_concatenation` should return:
 ``rank_sub_comps[2*9]={0,0, 0,1, 0,2, 1,0, 1,1, 1,2, 2,0, 2,1, 2,2}``,
 or other correct way to construct the second derivatives.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 The use of the callback function :c:func:`get_pert_concatenation` makes
 it possible for the hose program to choose different formats of derivatives.
 
@@ -126,10 +98,6 @@ i.e. there will be 6 components for the second order magnetic derivatives
 (:math:`xx,xy,xz,yy,yz,zz`), and :math:`\frac{3N_{\text{atoms}}(3N_{\text{atoms}}+1)}{2}`
 and :math:`\frac{3N_{\text{atoms}}(3N_{\text{atoms}}+1)(3N_{\text{atoms}}+2)}{6}`
 second and third order geometric derivatives.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 For the non-redundant second order magnetic derivatives, OpenRSP could send:
 
@@ -142,10 +110,6 @@ For the non-redundant second order magnetic derivatives, OpenRSP could send:
 and get:
 
 ``rank_sub_comps[2*6]={0,0, 0,1, 0,2, 1,1, 1,2, 2,2}``.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 Therefore, the use of the callback function :c:func:`get_pert_concatenation`
 makes host programs fully control the components of different derivatives,
