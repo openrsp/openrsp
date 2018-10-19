@@ -1,7 +1,7 @@
 
 
-About the OpenRSP project
-=========================
+OpenRSP: open-ended response theory
+===================================
 
 OpenRSP is a program for the open-ended calculation of response properties. It
 connects to response equation solution routines, routines for differentiated
