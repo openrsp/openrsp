@@ -5,7 +5,7 @@ Files and Directories of OpenRSP
 
 #. ``AUTHORS.rst``: Author information.
 
-#. ``ChangeLog``: Changes made.
+#. ``ChangeLog.rst``: Changes made.
 
 #. ``cmake`` and ``CMakeLists.txt``: CMake files.
 
