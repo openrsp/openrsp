@@ -32,6 +32,25 @@ properties to arbitrary order. The program is not yet ready for public release.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Tutorial
+
+   tutorial/openrsp_introduction.rst
+   tutorial/openrsp_installation.rst
+   tutorial/openrsp_context.rst
+   tutorial/openrsp_perturbation.rst
+   tutorial/openrsp_overlap.rst
+   tutorial/openrsp_one_oper.rst
+   tutorial/openrsp_two_oper.rst
+   tutorial/openrsp_xc_fun.rst
+   tutorial/openrsp_nuc_contrib.rst
+   tutorial/openrsp_solver.rst
+   tutorial/openrsp_rsp_fun.rst
+   tutorial/openrsp_residue.rst
+   tutorial/openrsp_examples.rst
+
+
+.. toctree::
+   :maxdepth: 1
    :caption: Documentation for developers
 
    compilation.rst
