@@ -17,10 +17,3 @@ To be done before release:
    and LSDALTON, and removes/merges files in ``src/legacy`` and ``src/TODO``
 #. Prepares tutorial and finish documentation
 #. Adds PCM and PE contributions (in host programs)
-
-Long-term
----------
-
-#. Changes to perturbation free scheme
-#. Implements the symbolic operations
-#. Adds response theory based on molecular orbital coefficients? coupled cluster?
