@@ -15,8 +15,6 @@ Files and Directories of OpenRSP
 
 #. ``include``: Header files.
 
-#. ``INSTALL.rst``: Installation instruction.
-
 #. ``NEWS.rst``: List of user-visible changes.
 
 #. ``PKG-INFO.yml``: PKG-INFO metadata file.
