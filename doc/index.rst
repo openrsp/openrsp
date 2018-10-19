@@ -9,22 +9,17 @@ one-electron and two-electron integral contributions, and routines for
 exchange/correlation contributions to enable the calculation of response
 properties to arbitrary order. The program is not yet ready for public release.
 
-
-The people behind OpenRSP
-=========================
-
 .. toctree::
    :maxdepth: 1
+   :caption: The people behind OpenRSP
 
    authors.rst
    publications.rst
 
 
-Documentation for developers
-============================
-
 .. toctree::
    :maxdepth: 1
+   :caption: Documentation for developers
 
    compilation.rst
    testing.rst
