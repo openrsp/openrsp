@@ -15,9 +15,9 @@ The people behind OpenRSP
 
 .. toctree::
    :maxdepth: 1
- 
-   doc/authors.rst
-   doc/publications.rst
+
+   authors.rst
+   publications.rst
 
 
 Documentation for developers
@@ -25,11 +25,11 @@ Documentation for developers
 
 .. toctree::
    :maxdepth: 1
- 
-   doc/compilation.rst
-   doc/testing.rst
-   doc/issues.rst
-   doc/coding_standards.rst
-   doc/equations.rst
-   doc/sphinx.rst
-   doc/keywords.rst
+
+   compilation.rst
+   testing.rst
+   issues.rst
+   coding_standards.rst
+   equations.rst
+   sphinx.rst
+   keywords.rst
