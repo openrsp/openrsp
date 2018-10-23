@@ -7,6 +7,7 @@
                  Magnus Ringholm,
                  Kenneth Ruud,
                  Andreas Thorvaldsen
+
   This source code form is subject to the terms of the
   GNU Lesser General Public License, version 2.1.
   If a copy of the GNU LGPL v2.1 was not distributed with this
@@ -28,8 +29,9 @@
 #define MAX_ORDER_GEOMETRIC 7
 #define MAX_ORDER_DIPOLE 1
 #define MAX_ORDER_MAGNETIC 7
+#define NUM_ATOMS 4
 
-extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_SIZES[15];
-extern const QInt NUM_ATOMS;
+//extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
+//extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
+//extern const QInt ALL_PERT_SIZES[15];
+//extern const QInt NUM_ATOMS;

@@ -24,7 +24,6 @@ set(OPENRSP_C_CHUNKS
     RSPSolver.c
     OpenRSP.c)
 set(OPENRSP_C_TEST_CHUNKS
-    OpenRSPTestPerturbations.c
     OpenRSPPertCallback.c
     OpenRSPTestData.c
     OpenRSPZeroOperCallback.c
