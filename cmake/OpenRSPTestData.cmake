@@ -45,14 +45,14 @@ file(APPEND
 # two-electron integrals contracted with perturbed AO-based density matrices
 # for solving polarizability at frequency as 0.072
 get_filename_component(ALPHA_GMAT_AO_HF
-                       ${LIB_OPENRSP_PATH}/tests/AlphaGMatAOHF.dat
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/AlphaGMatAOHF.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
      "#define ALPHA_GMAT_AO_HF \"${ALPHA_GMAT_AO_HF}\"\n")
 # response parameters for solving polarizability at frequency as 0.072
 get_filename_component(ALPHA_RSPARAM_AO_HF
-                       ${LIB_OPENRSP_PATH}/tests/AlphaRSParamAOHF.dat
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/AlphaRSParamAOHF.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
