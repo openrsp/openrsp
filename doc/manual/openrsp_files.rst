@@ -37,6 +37,4 @@ Files and Directories of OpenRSP
 
    #. ``fortran``: Source codes of Fortran test suite.
 
-#. ``TODO.rst``: Todo list.
-
 #. ``web``: WEB files of literate programming.
