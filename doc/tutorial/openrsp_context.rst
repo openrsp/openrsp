@@ -22,10 +22,6 @@ All the OpenRSP APIs (application programming interface) can be invoked as::
   QErrorCode ierr;
   ierr = OpenRSP...(&openrsp, ...);
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 or for Fortran users as::
 
   type(OpenRSP) open_rsp
@@ -59,10 +55,6 @@ in which :c:func:`OpenRSPCreate` and :c:func:`OpenRSPDestroy`
 must be called respectively **at the beginning** and **at the end**
 of the calculations, to create and destroy the context of the
 OpenRSP library. They should be called **only once**.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The API :c:func:`OpenRSPAssemble` should be called **after** all
 ingredients (see :ref:`slide-ingredients`) have been set, and

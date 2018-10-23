@@ -42,10 +42,6 @@ Briefly, to use OpenRSP, one has to provide:
 The reference state (usually the ground state), and excited states
 (if calculating residues) are sent to OpenRSP APIs as input arguments.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 Within the above ingredients, one does not need to provide both
 one-electron operators, two-electron operators and exchange-correlation
 functionals.
@@ -72,10 +68,6 @@ following quantities needed
 #. (perturbed) exchange-correlation functionals,
 #. (perturbed) nuclear Hamiltonian,
 #. response parameters solved from the linear response equation.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 The use of callback functions make one freely choose the appropriate
 functions during runtime to calculate molecular properties.
@@ -119,10 +111,6 @@ that users should be keep in mind [#]_:
 .. [#] These requirements can be found at the beginning of Chapter 4
        "**OPENRSP CALLBACK FUNCTIONS**" of the OpenRSP Manual, with
        much detail.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 2. OpenRSP requires that calculated integral matrices and expectation values
    should **be added to the returned argument**. OpenRSP will zero the entries

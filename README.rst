@@ -42,9 +42,5 @@ in the directory ``include``, C source codes and Fortran APIs in the directory
 generated.
 
 
-Please see ``INSTALL.rst`` for installation instructions
---------------------------------------------------------
-
-
 Please see ``AUTHORS.rst`` for the maintainers list
 ---------------------------------------------------
