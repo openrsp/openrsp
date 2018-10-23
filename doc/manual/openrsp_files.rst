@@ -5,7 +5,7 @@ Files and Directories of OpenRSP
 
 #. ``AUTHORS.rst``: Author information.
 
-#. ``ChangeLog``: Changes made.
+#. ``ChangeLog.rst``: Changes made.
 
 #. ``cmake`` and ``CMakeLists.txt``: CMake files.
 
@@ -14,8 +14,6 @@ Files and Directories of OpenRSP
 #. ``doc``: OpenRSP Manual and Tutorial.
 
 #. ``include``: Header files.
-
-#. ``NEWS.rst``: List of user-visible changes.
 
 #. ``PKG-INFO.yml``: PKG-INFO metadata file.
 
@@ -34,7 +32,5 @@ Files and Directories of OpenRSP
 #. ``tests``: Source codes of OpenRSP test suite.
 
    #. ``fortran``: Source codes of Fortran test suite.
-
-#. ``TODO.rst``: Todo list.
 
 #. ``web``: WEB files of literate programming.
