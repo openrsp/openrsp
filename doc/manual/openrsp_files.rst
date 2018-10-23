@@ -15,8 +15,6 @@ Files and Directories of OpenRSP
 
 #. ``include``: Header files.
 
-#. ``INSTALL.rst``: Installation instruction.
-
 #. ``PKG-INFO.yml``: PKG-INFO metadata file.
 
 #. ``openrsp.bib``: OpenRSP citation.

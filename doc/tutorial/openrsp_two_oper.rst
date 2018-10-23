@@ -21,10 +21,6 @@ Each node in the linked list corresponds to a two-electron operator. During
 calculations, OpenRSP will walk through the linked list to get correct
 contributions from the two-electron part.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 This API and its callback functions have been described in Chapter 3
 "**OPENRSP API REFERENCE**" and Chapter 4 "**OPENRSP CALLBACK FUNCTIONS**"
 respectively in the OpenRSP Manual. Users can also find examples in the
@@ -34,10 +30,6 @@ The arguments ``num_pert``, ``pert_labels`` and ``pert_max_orders`` are
 used in a similar way as those of overlap, one-electron integrals, that
 OpenRSP will not invoke the callback functions if a perturbation tuple
 already results in zero two-electron integrals.
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 In this tutorial, we will further discuss the callback function
 :c:func:`get_two_oper_exp`:
@@ -52,10 +44,6 @@ The calculations of two-electron integrals are most time-consuming, and
 different host programs may have different strategies to calculate the
 two-electron integrals.
 
-.. nextslide::
-   :increment:
-.. include:: background.rst
-
 OpenRSP therefore sends both the left hand side and right hand side arrays of
 density matrices to the callback function, and the host program can decide how
 the expectation values will be calculated.
@@ -67,10 +55,6 @@ For instance, if OpenRSP sends:
 #. ``LHS_dens_mat[3]={D1,D2, D3,D4}``,
 #. ``num_RHS_dmat[2]={2, 3}``,
 #. ``RHS_dens_mat[5]={D5,D6, D7,D8,D9}``,
-
-.. nextslide::
-   :increment:
-.. include:: background.rst
 
 which means OpenRSP wants the following expectation values back:
 
