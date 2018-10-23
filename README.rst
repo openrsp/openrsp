@@ -48,7 +48,3 @@ Please see ``INSTALL.rst`` for installation instructions
 
 Please see ``AUTHORS.rst`` for the maintainers list
 ---------------------------------------------------
-
-
-Please see ``NEWS.rst`` for recent project news
------------------------------------------------
