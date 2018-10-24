@@ -60,7 +60,7 @@ QErrorCode OpenRSPTestReadMat(const char *file_mat,
     QErrorCode ierr;       /* error information */
     /* parameters for setting matrices */
     const QInt NUM_BLOCKS=1;
-#if defined(ZERO_BASED_NUMBERING)
+#if defined(OPENRSP_ZERO_BASED)
     const QInt IDX_BLOCK_ROW[]={0};
     const QInt IDX_BLOCK_COL[]={0};
     const QInt IDX_FIRST_ROW=0;
@@ -220,7 +220,7 @@ QErrorCode OpenRSPTestZeroMat(const QInt num_mat, QcMat *mat_zero[])
     QErrorCode ierr;  /* error information */
     /* parameters for setting matrices */
     const QInt NUM_BLOCKS=1;
-#if defined(ZERO_BASED_NUMBERING)
+#if defined(OPENRSP_ZERO_BASED)
     const QInt IDX_BLOCK_ROW[]={0};
     const QInt IDX_BLOCK_COL[]={0};
 #else
