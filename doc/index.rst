@@ -1,64 +1,88 @@
 
-
 OpenRSP: open-ended response theory
 ===================================
 
-OpenRSP is a program for the open-ended calculation of response properties. It
-connects to response equation solution routines, routines for differentiated
-one-electron and two-electron integral contributions, and routines for
-exchange/correlation contributions to enable the calculation of response
-properties to arbitrary order. The program is not yet ready for public release.
+OpenRSP is a computer program that uses recursive routines to identify and
+assemble contributions to molecular properties ("response properties") as they
+are formulated in the theory "response theory" which is used in theoretical
+chemistry.
+
+By its recursive structure, OpenRSP should make it possible to calculate
+molecular properties (hereafter just "properties") of arbitrary complexity in
+an analytical manner. "An analytical manner" means that the program does not
+resort to so-called numerical mathematical methods for the calculation of these
+properties. Such numerical methods are regarded by the inventors as less suited
+for this type of calculation because they, in comparison with analytical
+methods, are associated with a greater degree of uncertaintly related to
+accuracy and practical feasibility of the calculation.
+
+Today's programs written for this purpose either do not have a recursive
+structure, or they use numerical methods to different extents, or both. In the
+cases where existing programs use an analytical approach, they are either not
+recursive (which means that a new program subroutine must be written for each
+new property for which calculation is desired), or they can only be used for a
+limited category of properties. The structure of OpenRSP solves the task of
+identifying and assemble contributions to molecular properties "once and for
+all".
+
+The OpenRSP project has been under development since the mid-2000's, but did
+not feature a recursive structure from the beginning. The development of the
+approach used in today's recursive structure was started in the autumn of 2011,
+and the first results (i.e. the first molecular properties calculated and
+regarded as suitable for publication) were obtained about one year later (close
+to the end of 2012/beginning of 2013). Since then, work on developing a version
+of the program suitable for publication has been ongoing. This new work has for
+example entailed making it possible to calculate other categories of properties
+(so-called residues of response properties) and to write code to make OpenRSP
+more modular (i.e. cleanly separated from other programs) and able to more
+easily communicate with other programs to which it could be feasible to connect
+it. It is estimated that a finished version could be completed during the
+course of 2018.
 
 .. toctree::
    :maxdepth: 1
    :caption: The people behind OpenRSP
 
    authors.rst
-   publications.rst
-
+   citations.rst
+   change_log.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Manual
 
-   manual/openrsp_introduction.rst
-   manual/openrsp_installation.rst
-   manual/openrsp_api.rst
-   manual/openrsp_callback.rst
-   manual/openrsp_developers.rst
-   manual/openrsp_files.rst
-   manual/openrsp_limitation.rst
-
+   manual/notations_and_conventions.rst
+   manual/installation.rst
+   manual/unit_testing.rst
+   manual/sphinx.rst
+   manual/api_reference.rst
+   manual/callback_functions.rst
+   manual/limitations.rst
+   manual/future_plans.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Tutorial
 
-   tutorial/openrsp_introduction.rst
-   tutorial/openrsp_installation.rst
+   tutorial/getting_started.rst
    tutorial/openrsp_context.rst
-   tutorial/openrsp_perturbation.rst
-   tutorial/openrsp_overlap.rst
-   tutorial/openrsp_one_oper.rst
-   tutorial/openrsp_two_oper.rst
-   tutorial/openrsp_xc_fun.rst
-   tutorial/openrsp_nuc_contrib.rst
-   tutorial/openrsp_solver.rst
-   tutorial/openrsp_rsp_fun.rst
-   tutorial/openrsp_residue.rst
-   tutorial/openrsp_examples.rst
-
+   tutorial/perturbations.rst
+   tutorial/overlap_operator.rst
+   tutorial/one_elec_oper.rst
+   tutorial/two_elec_oper.rst
+   tutorial/xc_fun.rst
+   tutorial/zero_elec_oper.rst
+   tutorial/response_solver.rst
+   tutorial/response_functions.rst
+   tutorial/residues.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Documentation for developers
 
-   compilation.rst
-   testing.rst
-   issues.rst
-   coding_standards.rst
-   equations.rst
-   sphinx.rst
-   keywords.rst
-   modularization.rst
-   pseudocode.rst
+   developer/background_and_rationale.rst
+   developer/openrsp_design.rst
+   developer/pseudocode.rst
+   developer/rules.rst
+   developer/coding_standards.rst
+   developer/files_and_directories.rst
