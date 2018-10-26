@@ -13,34 +13,30 @@ Magnus Ringholm, Kenneth Ruud, Andreas Thorvaldsen**
 The code is distributed under the LGPL v2.1 license, see
 https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html.
 
-
-A brief description of the project
-----------------------------------
-
 OpenRSP is a computer program that uses recursive routines to identify
 and assemble contributions to molecular properties ("response properties")
 as they are formulated in the theory "response theory" which is used in
 theoretical chemistry.
 
-Please refer to ``doc/manual`` and ``doc/tutorial`` for more details.
+#. Project website: http://openrsp.org
 
-Please refer to ``RULES.rst`` if you would like to contribute.
+#. Please refer to ``doc/authors.rst`` for the maintainers list.
 
-If you have used OpenRSP and found it is useful, please consider to cite the
-references in ``openrsp.bib``.
+#. Please refer to ``doc/manual/installation.rst`` and
+   ``doc/manual/unit_testing.rst`` for how to install OpenRSP and its unit
+   testing.
 
-Project website: http://openrsp.org
+#. OpenRSP documentation can be built by following ``doc/manual/sphinx.rst``.
 
+#. Please refer to ``doc/manual`` and ``doc/tutorial`` for how to use OpenRSP.
 
-Important files and subdirectories
-----------------------------------
+#. Limitations and known problems of OpenRSP, and our future plans can be found
+   in ``doc/manual/limitations.rst`` and ``doc/manual/future_plans.rst``.
 
-Important WEB files are in the directory ``web``, from which the API source
-codes and OpenRSP developer manual (``doc/OpenRSPDeveloper.pdf``, header files
-in the directory ``include``, C source codes and Fortran APIs in the directory
-``src`` and C and Fortran source codes in the directory ``tests``) are
-generated.
+#. If you have used OpenRSP and found it is useful, please consider to cite the
+   references in ``doc/citations.rst``.
 
+#. Please refer to ``doc/developer`` if you would like to contribute.
 
-Please see ``AUTHORS.rst`` for the maintainers list
----------------------------------------------------
+#. Important files and directories are described in
+   ``doc/developer/files_and_directories.rst``.
