@@ -21,7 +21,7 @@ programming in OpenRSP.
 Symbolic Computations (not implemented)
 ---------------------------------------
 
-The recursive programming techniques described in Ref. [Ringholm2014_] make it
+The recursive programming techniques described in Ref. [Ringholm2014]_ make it
 possible to calculate molecular properties of arbitrary complexity in an
 analytical manner. But if we are going to implement MO and CC based response
 theories, it may mess up or not be easy to (re)use the already developed codes.
@@ -141,10 +141,10 @@ Implementation of Fortran APIs
 OpenRSP APIs that host programs will use to talk to OpenRSP are written in C
 language, with Fortran support by using Fortran 2003 language. The source codes
 are in ``web/FortranAPIs.nw``, and the framework of OpenRSP used in a Fortran
-host program is shown in the following figure:
+host program is shown in the following picture:
 
-.. figure:: /_static/openrsp_fortran_api.png
-   :scale: 100 %
+.. image:: /_static/openrsp_fortran_api.png
+   :scale: 40 %
    :align: center
 
 Two new parts are needed for the use of OpenRSP in a Fortran program:

@@ -3,7 +3,7 @@
 Unit Testing
 ============
 
-After successfully building OpenRSP (see :ref:`chapter_installtion`), we recommend
+After successfully building OpenRSP (see :ref:`chapter_installation`), we recommend
 users perform the unit testing of OpenRSP.
 
 If ``OPENRSP_TEST_EXECUTABLE`` enabled, you will have an executable
@@ -11,4 +11,7 @@ If ``OPENRSP_TEST_EXECUTABLE`` enabled, you will have an executable
 for unit testing.
 
 If ``OPENRSP_TEST_EXECUTABLE`` disabled, you need to call the function
-:c:func:`QErrorCode OpenRSPTest(FILE *fp_log)` to perform unit testing.
+
+.. c:function:: QErrorCode OpenRSPTest(FILE *fp_log)
+
+to perform the unit testing.

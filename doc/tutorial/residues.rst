@@ -3,11 +3,8 @@
 Residues
 ========
 
-The residues can be calculated by calling:
-
-.. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, order_residue, num_excit, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, residue_num_pert, residue_idx_pert, num_freq_configs, pert_freqs, kn_rules, r_flag, write_threshold, size_residues, residues)
-
-It can be noted that this API takes similar arguments as those of
+The residues can be calculated by calling :c:func:`OpenRSPGetResidue`. It can
+be noted that this API takes similar arguments as those of
 :c:func:`OpenRSPGetRSPFun`. Users can therefore refer to
 :ref:`chapter_response_function` for the explanation of the arguments with the
 same names, or :ref:`chapter_api_reference` for the description of
