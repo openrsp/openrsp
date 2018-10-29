@@ -6,11 +6,11 @@ API Reference
 In order to use OpenRSP, C users should first include the header file
 of OpenRSP in their codes::
 
-  #inclde "openrsp.h"
+  #inclde "OpenRSP.h"
 
 while Fortran users should use the OpenRSP module::
 
-  use openrsp_f
+  use OpenRSP_f
 
 In this chapter, we will describe all the functions defined in OpenRSP
 API for users. These functions should be invoked as::
@@ -286,7 +286,7 @@ release; OpenRSP will use it after the perturbation free scheme implmented.
        restarting data with all new restarting data"
    :type r_flag: const QInt
    :param write_threshold: tensor elements with absolute value below
-       `write_threshold` will not be output by OpenRSP
+       ``write_threshold`` will not be output by OpenRSP
    :type write_threshold: const QReal
    :param size_rsp_funs: size of the response functions, equals to the sum of
        the size of each property to calculate---which is the product of the
@@ -303,8 +303,7 @@ release; OpenRSP will use it after the perturbation free scheme implmented.
    :rtype: QErrorCode
 
 .. [#] The description of the :math:`(k,n)` rule can be found, for instance,
-       in Magnus Ringholm, Dan Jonsson and Kenneth Ruud, J. Comput. Chem.
-       35, 622 (2014).
+       in [Ringholm2014]_.
 
 .. c:function:: QErrorCode OpenRSPGetResidue(open_rsp, ref_ham, ref_state, ref_overlap, order_residue, num_excit, excit_energy, eigen_vector, num_props, len_tuple, pert_tuple, residue_num_pert, residue_idx_pert, num_freq_configs, pert_freqs, kn_rules, r_flag, write_threshold, size_residues, residues)
 
@@ -384,7 +383,7 @@ release; OpenRSP will use it after the perturbation free scheme implmented.
        restarting data with all new restarting data"
    :type r_flag: const QInt
    :param write_threshold: tensor elements with absolute value below
-       `write_threshold` will not be output by OpenRSP
+       ``write_threshold`` will not be output by OpenRSP
    :type write_threshold: const QReal
    :param size_residues: size of the residues, equals to the sum of the
        size of each property to calculate---which is the product of the

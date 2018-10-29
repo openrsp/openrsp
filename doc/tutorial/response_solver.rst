@@ -7,11 +7,9 @@ Both in the response function and the residue calculations, OpenRSP needs to
 solve the linear response equation, that will be accomplished by the linear
 response equation solver from the host program.
 
-The host program can specify the solver by calling:
-
-.. c:function:: QErrorCode OpenRSPSetLinearRSPSolver(open_rsp, user_ctx, get_linear_rsp_solution)
-
-where the last argument is the callback function of the solver.
+The host program can specify the solver by calling
+:c:func:`OpenRSPSetLinearRSPSolver`, where the last argument is the callback
+function of the solver.
 
 The requirement for this callback function :c:func:`get_linear_rsp_solution`
 has been discussed in :ref:`chapter_callback_functions`.

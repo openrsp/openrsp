@@ -3,9 +3,7 @@
 Response Functions
 ==================
 
-The response functions can be calculated by calling:
-
-.. c:function:: QErrorCode OpenRSPGetRSPFun(open_rsp, ref_ham, ref_state, ref_overlap, num_props, len_tuple, pert_tuple, num_freq_configs, pert_freqs, kn_rules, r_flag, write_threshold, size_rsp_funs, rsp_funs)
+The response functions can be calculated by calling :c:func:`OpenRSPGetRSPFun`.
 
 Suppose we want to calculate the polarizability :math:`\alpha` and the first
 hyperpolarizability :math:`\beta` at different frequencies:
@@ -42,11 +40,10 @@ for each property. If we choose :math:`(0,1)` and :math:`(1,1)` rules for
 
 The choice of appropriate :math:`(k,n)` rule usually affect the efficiency of
 calculations. Detailed discussion of the :math:`(k,n)` rule can be found, for
-instance in:
+instance in [Thorvaldsen2008]_, [Ringholm2014]_, and
 
-#. Magnus Ringholm, *et al.*, J. Comput. Chem. 35, 622 (2014).
-#. Andreas J. Thorvaldsen, *et al.*, J. Chem. Phys. 129, 214108 (2008).
-#. Kasper Kristensen, *et al.*, J. Chem. Phys. 129, 214103 (2008).
+.. [Kristensen2008] Kasper Kristensen, Poul Jørgensen, Andreas J. Thorvaldsen,
+   and Trygve Helgaker, J. Chem. Phys. 129, 214103 (2008).
 
 ``r_flag`` and ``write_threshold`` respectively controls the restarting scheme
 and threshold of tensor element writing (by OpenRSP). Please refer to

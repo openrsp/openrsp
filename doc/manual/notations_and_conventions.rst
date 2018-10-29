@@ -95,19 +95,15 @@ Canonical order
 
      #. When taking a new perturbation into consideration, always do so in
         alphabetical order (and begin with the empty set);
-     #. When taking a new perturbation is taken into consideration, the new
-        subsets are created by making the union of all previous subsets
-        (including the empty set) and the new perturbation (putting the new
-        perturbation at the end).
+     #. When taking a new perturbation into consideration, the new subsets are
+        created by making the union of all previous subsets (including the
+        empty set) and the new perturbation (putting the new perturbation
+        at the end).
 
 Perturbation :math:`a`
   The first perturbation label in the tuple sent to OpenRSP APIs
   :c:func:`OpenRSPGetRSPFun` or :c:func:`OpenRSPGetResidue`, are the
-  perturbation :math:`a` [#]_.
-
-.. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,
-       Poul Jørgensen and Sonia Coriani, J. Chem. Phys. 129,
-       214108 (2008).
+  perturbation :math:`a` [Thorvaldsen2008]_.
 
 Perturbation addressing
   #. The addressing of perturbation labels in a tuple is decided by
@@ -143,4 +139,3 @@ Perturbation addressing
      one-dimensional array) is ``{1,[a],[b],[a][b],[c],[a][c],[b][c],[a][b][c]}``
      for :math:`(0,a,b,ab,c,ac,bc,abc)`, where as aforementioned the
      first one is the unperturbed quantities.
-
