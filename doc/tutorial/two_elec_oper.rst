@@ -4,19 +4,16 @@ Two-Electron Operators
 ======================
 
 Similar to :ref:`chapter_one_elec_oper`, the two-electron operators will be
-saved in a linked list in OpenRSP. Users can call the following API:
-
-.. c:function:: QErrorCode OpenRSPAddTwoOper(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_two_oper_mat, get_two_oper_exp)
-
-**several times** to add several two-electron operators to the electronic
-Hamiltonian.
+saved in a linked list in OpenRSP. Users can call the API
+:c:func:`OpenRSPAddTwoOper` **several times** to add several two-electron
+operators to the electronic Hamiltonian.
 
 Each node in the linked list corresponds to a two-electron operator. During
 calculations, OpenRSP will walk through the linked list to get correct
 contributions from the two-electron part.
 
 This API and its callback functions have been described in
-:ref:`chapter_api_reference` and :ref:`chapter_callback_functions`.  Users can
+:ref:`chapter_api_reference` and :ref:`chapter_callback_functions`. Users can
 also find examples in the OpenRSP unit testing (files in the directory
 ``tests``).
 
@@ -26,11 +23,7 @@ will not invoke the callback functions if a perturbation tuple already results
 in zero two-electron integrals.
 
 In this tutorial, we will further discuss the callback function
-:c:func:`get_two_oper_exp`:
-
-.. c:function:: QVoid get_two_oper_exp(oper_num_pert, oper_pert_labels, oper_pert_orders, dmat_len_tuple, num_LHS_dmat, LHS_dens_mat, num_RHS_dmat, RHS_dens_mat, user_ctx, num_exp, val_exp)
-
-to calculate the expectation values
+:c:func:`get_two_oper_exp` to calculate the expectation values
 :math:`\mathrm{Tr}[\boldsymbol{G}^{abc\cdots}(\boldsymbol{D}_{\text{LHS}}^{a''b''c''\cdots})
 \boldsymbol{D}_{\text{RHS}}^{a'b'c'\cdots}]`.
 

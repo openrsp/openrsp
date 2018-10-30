@@ -22,10 +22,8 @@ To make OpenRSP a perturbation free library:
    functions of exchange-correlation functionals.
 
 All these can be done by first calling the API
-
-.. c:function:: QErrorCode OpenRSPSetPerturbations(open_rsp, num_pert, pert_labels, pert_max_orders, pert_num_comps, user_ctx, get_pert_concatenation)
-
-to set up all the different perturbation labels involved in calculations.
+:c:func:`OpenRSPSetPerturbations` to set up all the different perturbation
+labels involved in calculations.
 
 For instance, if we have electric, magnetic and geometric perturbations in our
 calculations. We will use three different integers to distinguish them, let us
@@ -52,11 +50,8 @@ where ``N`` is the number of atoms and should be defined. So ``pert_num_comps``
 actually tells OpenRSP the number of components of different perturbation
 labels from the first order up to their maximum order.
 
-The last argument is a callback function
-
-.. c:function:: QVoid get_pert_concatenation(pert_label, first_cat_comp, num_cat_comps, num_sub_tuples, len_sub_tuples, user_ctx, rank_sub_comps)
-
-for getting the ranks of components of sub-perturbation tuples (with same
+The last argument is a callback function :c:func:`get_pert_concatenation` for
+getting the ranks of components of sub-perturbation tuples (with same
 perturbation label) for given components of the corresponding concatenated
 perturbation tuple. Here the name of the function can be anything else.
 

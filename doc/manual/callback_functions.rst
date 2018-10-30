@@ -376,7 +376,7 @@ release so that users can use a "faked" function for it.
        :math:`\boldsymbol{D}^{bc}`), and with the :math:`(0,2)` rule, the
        relevant density matrix perturbation tuples become (:math:`\boldsymbol{D}`,
        :math:`\boldsymbol{D}^{b}`, :math:`\boldsymbol{D}^{c}`,
-       :math:`\boldsymbol{D}^{bc}`) that gives the ``dmat_num_tuple`` as 4
+       :math:`\boldsymbol{D}^{bc}`) that gives the ``dmat_num_tuple`` as `4`
    :type dmat_num_tuple: QInt
    :param dmat_idx_tuple: indices of the density matrix perturbation tuples
        passed (canonically ordered), size is ``dmat_num_tuple``; sticking with

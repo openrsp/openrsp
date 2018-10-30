@@ -3,20 +3,15 @@
 Getting Started
 ===============
 
-OpenRSP is a computer library that uses recursive routines [#]_ to identify and
-assemble contributions to molecular properties ("response functions" or
-"residues") based on the density matrix-based response theory [#]_.
+OpenRSP is a computer library that uses recursive routines [Ringholm2014]_ to
+identify and assemble contributions to molecular properties ("response
+functions" or "residues") based on the density matrix-based response theory
+[Thorvaldsen2008]_.
 
 Therefore, OpenRSP extensively bases on the matrix operations, which are built
 on top of the `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_. Please
 refer to the manual and tutorial of this library if you are not familiar with
 it.
-
-.. [#] Magnus Ringholm, Dan Jonsson and Kenneth Ruud,
-       J. Comput. Chem. 35, 622 (2014).
-.. [#] Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen,
-       Poul Jørgensen and Sonia Coriani, J. Chem. Phys. 129,
-       214108 (2008).
 
 Briefly, to use OpenRSP, one has to provide:
 
@@ -107,7 +102,7 @@ To summarize, you first need to declare the OpenRSP context and error handler
 
 or (Fortran code)::
 
-  use openrsp_f
+  use OpenRSP_f
   type(OpenRSP) open_rsp
   integer(kind=4) ierr
 

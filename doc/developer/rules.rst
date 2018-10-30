@@ -6,20 +6,20 @@ Tentative Rules for Developers
 Short-version
 -------------
 
-1. First analyze the problem, then design the code (data and algorithm
+#. First analyze the problem, then design the code (data and algorithm
    structures), prepare test suite. Last, write the code.
 
-2. Make everything as simple as possible. For instance, make the data and
+#. Make everything as simple as possible. For instance, make the data and
    algorithm structures simple, make the interface of functions/subroutines
    simple, make the couplings between different functions/subroutines simple,
    make the use of the code simple.
 
-3. Do your best to prepare a readable document.
+#. Do your best to prepare a readable document.
 
 Long-version
 ------------
 
-1. First of all, please write explicitly what you would like to implement in
+#. First of all, please write explicitly what you would like to implement in
    ``doc``! Describe your idea using formulas and/or words. Then translate them
    into algorithms and data structure. Please do write what
    objects/types/variables you will define and their corresponding public and
@@ -30,7 +30,8 @@ Long-version
    error? If yes, how to prevent or how to know if the results are reasonable?
 
    In this stage, you may refer to some rules in object-oriented programming
-   (OOP).  For instance, when you define a module/class etc.:
+   (OOP). For instance, when you define a module/class etc.:
+
    #. it should be open for extension but closed for modification (Open Closed
       Principle, OCP),
    #. subclasses should be substitutable for their base classes (Liskov
@@ -43,7 +44,8 @@ Long-version
       closed for changes (from "Developing Chemical Information Systems: An
       Object-Oriented Approach Using Enterprise Java", Fan Li).
 
-2. Writes the codes. During this stage, we would be happy if you could:
+#. Writes the codes. During this stage, we would be happy if you could:
+
    #. write comments (in english, one line for each 10-20 line of codes at
       least),
    #. try to use descriptive names for your classes and methods,
@@ -55,7 +57,7 @@ Long-version
    Moreover, it would be even better if your codes could be portable and used
    in other languages, such as C/C++/Fortran/Python etc..
 
-3. This is very important, and should be considered and implemented during the
+#. This is very important, and should be considered and implemented during the
    aforementioned two steps:
 
    Please **ALWAYS** provide test suite for each function/subroutine/module

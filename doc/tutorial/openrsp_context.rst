@@ -6,11 +6,11 @@ OpenRSP Context
 In order to use OpenRSP, C users should first include the header file of
 OpenRSP in their codes::
 
-  #inclde "openrsp.h"
+  #inclde "OpenRSP.h"
 
 while Fortran users should use the OpenRSP module::
 
-  use openrsp_f
+  use OpenRSP_f
 
 All the OpenRSP APIs (application programming interface) can be invoked as::
 
@@ -39,11 +39,9 @@ Basic OpenRSP APIs
 There are several OpenRSP APIs only take the OpenRSP context ``open_rsp`` as
 the argument and must be invoked by the users during calculations:
 
-.. c:function:: QErrorCode OpenRSPCreate(OpenRSP *open_rsp, const QInt num_atoms)
-
-.. c:function:: QErrorCode OpenRSPAssemble(OpenRSP *open_rsp)
-
-.. c:function:: QErrorCode OpenRSPDestroy(OpenRSP *open_rsp)
+#. :c:func:`OpenRSPCreate`
+#. :c:func:`OpenRSPAssemble`
+#. :c:func:`OpenRSPDestroy`
 
 in which :c:func:`OpenRSPCreate` and :c:func:`OpenRSPDestroy` must be called
 respectively **at the beginning** and **at the end** of the calculations, to
@@ -66,10 +64,8 @@ must be called **at least once**.
 Check the OpenRSP context
 -------------------------
 
-Often users would like to see how the OpenRSP context has been set
-in a readable manner, that can be done by calling:
-
-.. c:function:: QErrorCode OpenRSPWrite(const OpenRSP *open_rsp, FILE *fp_rsp)
+Often users would like to see how the OpenRSP context has been set in a
+readable manner, that can be done by calling :c:func:`OpenRSPWrite`.
 
 The OpenRSP context will be written (or more exactly **appended**) into the end
 of the file pointed by ``fp_rsp``, which can be read and sent to the OpenRSP
