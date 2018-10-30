@@ -91,7 +91,7 @@ Therefore, a full picture of OpenRSP used in a C host program can be
 :ref:`section_fortran_api_impl`):
 
 .. image:: /_static/openrsp_framework.png
-   :scale: 40 %
+   :scale: 30 %
    :align: center
 
 As shown in the above picture, the OpenRSP library is divided into three parts:
