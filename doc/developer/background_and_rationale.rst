@@ -13,30 +13,21 @@ Theoretical Background
 
 The density matrix-based quasienergy formulation of the Kohn-Sham density
 functional response theory using perturbation- and time-dependent basis sets
-can be found in:
+can be found in [Thorvaldsen2008]_ and
 
-1. Andreas J. Thorvaldsen, Kenneth Ruud, Kasper Kristensen, Poul Jørgensen
-   and Sonia Coriani, J. Chem. Phys. 129(21), 214108 (2008).
-2. Radovan Bast, Ulf Ekström, Bin Gao, Trygve Helgaker, Kenneth Ruud and
-   Andreas J. Thorvaldsena, Phys. Chem. Chem. Phys. 13, 2627-2651 (2011).
+.. [Bast2011] Radovan Bast, Ulf Ekström, Bin Gao, Trygve Helgaker, Kenneth Ruud
+   and Andreas J. Thorvaldsena, Phys. Chem. Chem. Phys. 13, 2627-2651 (2011).
 
 A relativistic implementation can be found in:
 
-3. Radovan Bast, Andreas J. Thorvaldsen, Magnus Ringholm and Kenneth Ruud,
+.. [Bast2009] Radovan Bast, Andreas J. Thorvaldsen, Magnus Ringholm and Kenneth Ruud,
    Chem. Phys. 356(1-3), 177-186 (2009).
 
-The recursive programming techniques implemented in OpenRSP can be found in:
-
-.. _Ringholm2014:
-
-4. Magnus Ringholm, Dan Jonsson and Kenneth Ruud, J. Comput. Chem. 35(8),
-   622-633 (2014).
+The recursive programming techniques implemented in OpenRSP can be found in
+[Ringholm2014]_.
 
 The recursive programming techniques used for the first order residues can be
-found in:
-
-5. Daniel H. Friese, Maarten T. P. Beerepoot, Magnus Ringholm and Kenneth Ruud,
-   J. Chem. Theory Comput. 11(3), 1129-1144 (2015).
+found in [Friese2015]_.
 
 Rationale behind OpenRSP
 ------------------------
@@ -99,8 +90,8 @@ Therefore, a full picture of OpenRSP used in a C host program can be
 (the use of OpenRSP in a Fortran host program can be found in Secion
 :ref:`section_fortran_api_impl`):
 
-.. figure:: /_static/openrsp_framework.png
-   :scale: 100 %
+.. image:: /_static/openrsp_framework.png
+   :scale: 40 %
    :align: center
 
 As shown in the above picture, the OpenRSP library is divided into three parts:

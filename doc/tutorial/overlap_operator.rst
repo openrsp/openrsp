@@ -19,23 +19,16 @@ However, one should note that OpenRSP will only ask for
 instead of the more general case as aforementioned.
 
 To send such callback functions and different perturbation labels that can act
-as perturbations on the basis sets to OpenRSP, users can call the following
-OpenRSP API:
+as perturbations on the basis sets to OpenRSP, users can call the OpenRSP API
+:c:func:`OpenRSPSetOverlap`.
 
-.. c:function:: QErrorCode OpenRSPSetOverlap(open_rsp, num_pert_lab, pert_labels, pert_max_orders, user_ctx, get_overlap_mat, get_overlap_exp)
+In this API, arguments ``num_pert_lab``, ``pert_labels`` and
+``pert_max_orders`` will be used in such a way that OpenRSP will not invoke the
+callback functions if the perturbation tuples (:math:`a_{\mu}b_{\mu}\cdots`,
+:math:`a_{\nu}b_{\nu}\cdots` and :math:`ab\cdots`) result in zero overlap
+integrals.
 
-The ``num_pert_lab``, ``pert_labels`` and ``pert_max_orders`` will be used in
-such a way that OpenRSP will not invoke the callback functions if the
-perturbation tuples (:math:`a_{\mu}b_{\mu}\cdots`, :math:`a_{\nu}b_{\nu}\cdots`
-and :math:`ab\cdots`) result in zero overlap integrals.
-
-The callback functions should take the following form:
-
-.. c:function:: QVoid get_overlap_mat(bra_num_pert, bra_pert_labels, bra_pert_orders, ket_num_pert, ket_pert_labels, ket_pert_orders, oper_num_pert, oper_pert_labels, oper_pert_orders, user_ctx, num_int, val_int)
-
-.. c:function:: QVoid get_overlap_exp(bra_num_pert, bra_pert_labels, bra_pert_orders, ket_num_pert, ket_pert_labels, ket_pert_orders, oper_num_pert, oper_pert_labels, oper_pert_orders, num_dmat, dens_mat, user_ctx, num_exp, val_exp)
-
-These callback functions are described in :ref:`chapter_callback_functions`.
-Users could refer to this chapter and the OpenRSP unit testing (files in
+Other two arguments, the callback functions :c:func:`get_overlap_mat` and
+:c:func:`get_overlap_exp` are presented in :ref:`chapter_callback_functions`.
+Users can refer to this chapter and the OpenRSP unit testing (files in
 ``tests``) to prepare their own callabck functions and to use this API.
-
