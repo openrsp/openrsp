@@ -19,8 +19,6 @@ Files and Directories of OpenRSP
 
    #. ``fortran``: Fortran 2003 APIs (generated from ``web/*.nw``).
 
-   #. ``input``: **unused? can be removed?**
-
 #. ``tests``: Source codes and data of OpenRSP unit testing (generated from ``web/*.nw``).
 
 #. ``web``: WEB files of literate programming.
