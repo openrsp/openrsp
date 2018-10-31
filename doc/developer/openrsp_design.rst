@@ -144,7 +144,7 @@ are in ``web/FortranAPIs.nw``, and the framework of OpenRSP used in a Fortran
 host program is shown in the following picture:
 
 .. image:: /_static/openrsp_fortran_api.png
-   :scale: 40 %
+   :scale: 30 %
    :align: center
 
 Two new parts are needed for the use of OpenRSP in a Fortran program:

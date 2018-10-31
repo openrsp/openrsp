@@ -144,8 +144,8 @@ of sub-perturbation tuples (with the same perturbation label) for given
 components of the corresponding concatenated perturbation tuple. The type of
 this callback function is defined as follows:
 <<RSPPertCallback>>=
-typedef void (*GetPertCat)(const QInt,
-                           const QcPertInt,
+typedef void (*GetPertCat)(const QcPertInt,
+                           const QInt,
                            const QInt,
                            const QInt,
                            const QInt*,
