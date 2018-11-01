@@ -1236,9 +1236,9 @@ module rsp_general
 
              call cpu_time(time_start)
              call rsp_xc_wrapper(n_freq_cfgs(i), p_tuples(k:k+n_freq_cfgs(i)-1), kn_rule(k,:), &
-                  D, get_xc_exp, out_print, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1) - 1), mem_mgr, &
+                  D, get_xc_exp, out_print, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1)), mem_mgr, &
                   prop=props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1 : &
-                        sum(prop_sizes(1:k+n_freq_cfgs(i) - 1) - 1)))
+                        sum(prop_sizes(1:k+n_freq_cfgs(i) - 1))))
              call cpu_time(time_end)
 
              write(out_str, *) ' '
