@@ -2516,7 +2516,7 @@ module rsp_perturbed_sdf
        call out_print(out_str, 3)
        write(out_str, *) 'prop_size_total', prop_size_total
        call out_print(out_str, 3)
-           
+
     ! Invoke callback routine
     
     if (present(fock)) then
