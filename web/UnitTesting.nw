@@ -110,14 +110,14 @@ file(APPEND
 # two-electron integrals contracted with perturbed AO-based density matrices
 # for solving polarizability at frequency as 0.072
 get_filename_component(ALPHA_GMAT_AO_HF
-                       ${LIB_OPENRSP_PATH}/tests/AlphaGMatAOHF.dat
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/AlphaGMatAOHF.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
      "#define ALPHA_GMAT_AO_HF \"${ALPHA_GMAT_AO_HF}\"\n")
 # response parameters for solving polarizability at frequency as 0.072
 get_filename_component(ALPHA_RSPARAM_AO_HF
-                       ${LIB_OPENRSP_PATH}/tests/AlphaRSParamAOHF.dat
+                       ${LIB_OPENRSP_PATH}/tests/DMatHF/AlphaRSParamAOHF.dat
                        ABSOLUTE)
 file(APPEND
      ${OPENRSP_TEST_DATA}
@@ -174,7 +174,7 @@ QErrorCode OpenRSPTestReadMat(const char *file_mat,
     QErrorCode ierr;       /* error information */
     /* parameters for setting matrices */
     const QInt NUM_BLOCKS=1;
-#if defined(ZERO_BASED_NUMBERING)
+#if defined(OPENRSP_ZERO_BASED)
     const QInt IDX_BLOCK_ROW[]={0};
     const QInt IDX_BLOCK_COL[]={0};
     const QInt IDX_FIRST_ROW=0;
@@ -359,7 +359,7 @@ QErrorCode OpenRSPTestZeroMat(const QInt num_mat, QcMat *mat_zero[])
     QErrorCode ierr;  /* error information */
     /* parameters for setting matrices */
     const QInt NUM_BLOCKS=1;
-#if defined(ZERO_BASED_NUMBERING)
+#if defined(OPENRSP_ZERO_BASED)
     const QInt IDX_BLOCK_ROW[]={0};
     const QInt IDX_BLOCK_COL[]={0};
 #else
@@ -416,32 +416,12 @@ We first implement perturbations and its callback function for unit testing:
 #define MAX_ORDER_GEOMETRIC 7
 #define MAX_ORDER_DIPOLE 1
 #define MAX_ORDER_MAGNETIC 7
+#define NUM_ATOMS 4
 
-extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
-extern const QInt ALL_PERT_SIZES[15];
-extern const QInt NUM_ATOMS;
-<<OpenRSPTestPerturbations.c>>=
-/*
-  <<OpenRSPLicense>>
-*/
-
-#include "OpenRSPTestPerturbations.h"
-
-/* labels of all perturbations */
-const QcPertInt ALL_PERT_LABELS[]={PERT_GEOMETRIC,
-                                   PERT_DIPOLE,
-                                   PERT_MAGNETIC};
-/* allowed maximal orders of all perturbations */
-const QInt ALL_PERT_MAX_ORDERS[]={MAX_ORDER_GEOMETRIC,
-                                  MAX_ORDER_DIPOLE,
-                                  MAX_ORDER_MAGNETIC};
-/* sizes of all perturbations up to their maximal orders */
-const QInt ALL_PERT_SIZES[]={
-    12,78,364,1365,4368,12376,31824,  /* geometric derivatives (4 atoms) */
-    3,                                /* electric dipole */
-    3,6,10,15,21,28,36};              /* magnetic derivatives */
-const QInt NUM_ATOMS=4;
+//extern const QcPertInt ALL_PERT_LABELS[NUM_ALL_PERT];
+//extern const QInt ALL_PERT_MAX_ORDERS[NUM_ALL_PERT];
+//extern const QInt ALL_PERT_SIZES[15];
+//extern const QInt NUM_ATOMS;
 @ Here we have used three different perturbation labels for geometric, dipole
 length and magnetic perturbations.
 <<OpenRSPPertCallback.h>>=
@@ -1412,7 +1392,6 @@ void get_two_oper_exp(const QInt oper_num_pert,
     char *two_oper_context;
 #endif
     QBool zero_int;
-    QErrorCode ierr;
     QInt ilab;
 #if defined(OPENRSP_C_USER_CONTEXT)
     two_oper_context = (char *)user_ctx;
@@ -1757,6 +1736,25 @@ QErrorCode OpenRSPTest(FILE *fp_log)
     OpenRSP open_rsp;  /* context of response theory calculations */
     QErrorCode ierr;   /* error information */
 
+    /* labels of all perturbations */
+    const QcPertInt ALL_PERT_LABELS[]={PERT_GEOMETRIC,
+                                       PERT_DIPOLE,
+                                       PERT_MAGNETIC};
+    /* allowed maximal orders of all perturbations */
+    const QInt ALL_PERT_MAX_ORDERS[]={MAX_ORDER_GEOMETRIC,
+                                      MAX_ORDER_DIPOLE,
+                                      MAX_ORDER_MAGNETIC};
+    /* sizes of all perturbations up to their maximal orders */
+    const QInt ALL_PERT_SIZES[]={
+        12,78,364,1365,4368,12376,31824,  /* geometric derivatives (4 atoms) */
+        3,                                /* electric dipole */
+        3,6,10,15,21,28,36};              /* magnetic derivatives */
+
+    /* Nuclear Hamiltonian */
+    QInt nucham_num_pert=3;
+    QcPertInt nucham_pert_labels[]={PERT_GEOMETRIC,PERT_DIPOLE,PERT_MAGNETIC};
+    QInt nucham_pert_orders[]={MAX_ORDER_GEOMETRIC,MAX_ORDER_DIPOLE,MAX_ORDER_MAGNETIC};
+
     /* creates the context of response theory calculations */
     ierr = OpenRSPCreate(&open_rsp, NUM_ATOMS);
     QErrorCheckCode(ierr, FILE_AND_LINE, "calling OpenRSPCreate()");
@@ -1777,9 +1775,9 @@ QErrorCode OpenRSPTest(FILE *fp_log)
 
     /* adds the nuclear Hamiltonian */
     ierr = OpenRSPAddZeroOper(&open_rsp,
-                              NUM_ALL_PERT,
-                              ALL_PERT_LABELS,
-                              ALL_PERT_MAX_ORDERS,
+                              nucham_num_pert,
+                              nucham_pert_labels,
+                              nucham_pert_orders,
 #if defined(OPENRSP_C_USER_CONTEXT)
                               (void *)ZERO_OPER_CONTEXT,
 #endif

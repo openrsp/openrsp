@@ -7,6 +7,7 @@
                  Magnus Ringholm,
                  Kenneth Ruud,
                  Andreas Thorvaldsen
+
   This source code form is subject to the terms of the
   GNU Lesser General Public License, version 2.1.
   If a copy of the GNU LGPL v2.1 was not distributed with this
@@ -762,7 +763,6 @@ void get_two_oper_exp(const QInt oper_num_pert,
     char *two_oper_context;
 #endif
     QBool zero_int;
-    QErrorCode ierr;
     QInt ilab;
 #if defined(OPENRSP_C_USER_CONTEXT)
     two_oper_context = (char *)user_ctx;

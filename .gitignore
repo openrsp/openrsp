@@ -1,4 +1,3 @@
-.*
 *.a
 *.aux
 *.bbl
@@ -11,3 +10,4 @@
 *.swp
 *.toc
 build*/
+venv/
