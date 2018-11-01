@@ -2517,16 +2517,6 @@ module rsp_perturbed_sdf
        write(out_str, *) 'prop_size_total', prop_size_total
        call out_print(out_str, 3)
 
-       write(*, *) 'XC wrapper argument summary:'
-       write(*, *) 'pert(1)%npert', pert(1)%npert
-       write(*, *) 'pert_ext', pert_ext
-       write(*, *) 'n_freq_cfgs', n_freq_cfgs
-       write(*, *) 'pert freq category', pert_freq_category
-       write(*, *) 'dmat_length', dmat_length
-       write(*, *) 'pert_ids', pert_ids
-       write(*, *) 'dmat_total_size', dmat_total_size
-       write(*, *) 'prop_size_total', prop_size_total
-       
     ! Invoke callback routine
     
     if (present(fock)) then
