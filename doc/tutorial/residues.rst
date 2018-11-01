@@ -21,10 +21,10 @@ The arguments ``size_residues`` and ``residues`` are merely the size of the
 calculated residues and the residues, whose description can be found in
 :ref:`chapter_api_reference`.
 
-First, ``order_residue`` is simple, it is the order of residues. That is, there
-will be ``order_residue`` frequencies (in ``pert_freqs``) of perturbation
-labels (or sums of frequencies of perturbation labels) respectively equal to
-the ``order_residue`` excitation energies.
+First, ``order_residue`` is simply the order of residues. That is, there will
+be ``order_residue`` frequencies (in ``pert_freqs``) of perturbation labels (or
+sums of frequencies of perturbation labels) respectively equal to the
+``order_residue`` excitation energies.
 
 The excitation energies will be in ``excit_energy``, corresponding to
 ``order_residue`` excitations (we say an "excitation tuple"). Considering the
