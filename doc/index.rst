@@ -94,7 +94,7 @@ an official version of OpenRSP in 2018.
 
    developer/background_and_rationale.rst
    developer/openrsp_design.rst
-   developer/pseudocode.rst
    developer/rules.rst
    developer/coding_standards.rst
    developer/files_and_directories.rst
+.. developer/pseudocode.rst
