@@ -3,8 +3,7 @@
 Authors
 =======
 
-The main developing team of OpenRSP program and previous authors (if their
-contributions are still used) consist of (alphabetical order of surname):
+The main developers of OpenRSP and their current affiliation:
 
 .. tabularcolumns:: |p{0.3\textwidth}|p{0.7\textwidth}|
 .. list-table:: OpenRSP authors
