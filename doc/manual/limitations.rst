@@ -23,4 +23,5 @@ Limitations or Known Problems
   For the time being, we do not suggest that users change the type of
   ``QcPertInt``, because other integer types are not supported by OpenRSP yet.
 
-**To Daniel: what is the limitation for residue calculations? Only single and double residues supported?**
+* The current implementation of residues is just tested for electric field
+  perturbations and single residues.
