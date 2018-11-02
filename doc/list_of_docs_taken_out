@@ -1,0 +1,34 @@
+This is a list of documents not linked to on the website: They are kept because they may eventually be linked to again or their information may be reused in other documents. If their information is reused and any remaining text is not relevant, they should be removed from the archive.
+
+Name						Reason
+
+change_log.rst 					Information may be moved to GitHub page
+manual/limitations.rst
+
+
+manual/notations_and_conventions.rst		To be processed during present work
+manual/installation.rst
+manual/unit_testing.rst
+manual/sphinx.rst
+manual/api_reference.rst
+manual/callback_functions.rst
+manual/future_plans.rst
+
+tutorial/getting_started.rst			To be processed during present work
+tutorial/openrsp_context.rst
+tutorial/perturbations.rst
+tutorial/overlap_operator.rst
+tutorial/one_elec_oper.rst
+tutorial/two_elec_oper.rst
+tutorial/xc_fun.rst
+tutorial/zero_elec_oper.rst
+tutorial/response_solver.rst
+tutorial/response_functions.rst
+tutorial/residues.rst
+
+developer/background_and_rationale.rst		To be processed during present work
+developer/openrsp_design.rst
+developer/rules.rst
+developer/coding_standards.rst
+developer/files_and_directories.rst
+developer/pseudocode.rst
