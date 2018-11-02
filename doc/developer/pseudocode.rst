@@ -175,7 +175,7 @@ last 10 objects optional
 
 -  Determine some arrays concerning the number of perturbations:
 
-   -  ``num_blks`` :math:`\rightarrow` No. of block (’’races’’) of
+   -  ``num_blks`` :math:`\rightarrow` No. of blocks of
       perturbations depending on freq. and operator
 
    -  ``blk_info`` :math:`\rightarrow` Array containing the start index,
