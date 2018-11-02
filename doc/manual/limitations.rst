@@ -3,10 +3,15 @@
 Limitations or Known Problems
 =============================
 
-**Are the following two issues also true for OpenRSP?**
-
-* Not safe to use "regular" DFT on Dalton's openrsp branch.
-* vibgamma test broken on GNU.
+* "T matrix contributions" - i.e. contributions from the perturbed
+  "half-time-differentiated" overlap matrix - are not yet supported in the
+  newest version of the code. These contributions are only nonzero for
+  perturbations that both a) affect the basis set and b) have frequencies other
+  than zero. The most relevant such kind of perturbation is the magnetic dipole
+  perturbations using London atomic orbitals. Properties consisting of only
+  other kinds of perturbations - such as geometric displacement of the nuclei
+  or electric dipole perturbations - are unaffected by the lack of T matrix
+  contributions.
 
 * Currently we use ``QcPertInt`` (defined as ``QInt`` type in
   ``include/RSPPerturbation.h``, and ``src/fortran/RSPPertBasicTypes.F90`` for
@@ -18,4 +23,5 @@ Limitations or Known Problems
   For the time being, we do not suggest that users change the type of
   ``QcPertInt``, because other integer types are not supported by OpenRSP yet.
 
-**To Daniel: what is the limitation for residue calculations? Only single and double residues supported?**
+* The current implementation of residues is just tested for electric field
+  perturbations and single residues.

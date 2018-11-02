@@ -155,7 +155,7 @@ release; OpenRSP will use it after the perturbation free scheme implmented.
    :vartype open_rsp: OpenRSP\*
    :param num_pert_lab: number of all *different* perturbation labels that can
        act on the two-electron operator
-   :type num_pert: const QInt
+   :type num_pert_lab: const QInt
    :param pert_labels: all the *different* perturbation labels involved
    :type pert_labels: const QcPertInt\*
    :param pert_max_orders: allowed maximal order of a perturbation described by
