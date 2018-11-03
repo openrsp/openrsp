@@ -2,7 +2,7 @@
 OpenRSP
 =======
 
-Welcome to the website of the program library OpenRSP for the open-ended, analytic calculation of molecular properties! Please choose a topic to learn more about what OpenRSP is, who is involved it it, how you can use it or how you can get involved.
+Welcome to the website of OpenRSP - a program library for the open-ended, analytic calculation of molecular properties! Please choose a topic to learn more about what OpenRSP is, who is involved it it, how you can use it or how you can get involved.
 
 .. toctree::
    :maxdepth: 1
