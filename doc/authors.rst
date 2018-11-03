@@ -3,7 +3,7 @@
 Authors
 =======
 
-The main developers of OpenRSP and their current affiliation:
+This table lists the main developers of OpenRSP and their current affiliation:
 
 .. tabularcolumns:: |p{0.3\textwidth}|p{0.7\textwidth}|
 .. list-table:: OpenRSP authors
