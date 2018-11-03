@@ -7,6 +7,14 @@ OpenRSP is a program library that uses recursive routines to identify and
 assemble contributions to response properties - that is, molecular properties
 as they are expressed in the theory called "response theory" from theoretical chemistry.
 
+The name of OpenRSP reflects the following features:
+
+* It is a library for the **open**-ended calculation of **r**e**sp**onse properties: It
+  can be used for the calculation of reponse properties to arbitrary order.
+* It is **open**-source and is available under the LGPL v2.1 license.
+* It has an application programming interface that **open**s it to connection with other programs
+  that wish to make use of its functionality.
+
 
 What are response properties?
 -----------------------------
