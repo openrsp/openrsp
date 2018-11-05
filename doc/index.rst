@@ -14,25 +14,14 @@ Welcome to the website of OpenRSP - a program library for the open-ended, analyt
    history.rst
    programs_with_openrsp.rst
    papers_openrsp_all.rst
+   theoretical_background.rst
 
 .. toctree::
    :maxdepth: 1
-   :caption: Theoretical background
+   :caption: Accessing OpenRSP
 
-   papers_openrsp_theory.rst
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: How to get and run OpenRSP
-
-.. toctree::
-   :maxdepth: 1
-   :caption: How to add OpenRSP to a quantum chemistry program
-
-
-.. toctree::
-   :maxdepth: 1
-   :caption: How to get involved with developing OpenRSP
+   getting_running_openrsp.rst
+   add_openrsp_to_host_program.rst
+   get_involved_development.rst
 
 
