@@ -13,7 +13,7 @@ Welcome to the website of OpenRSP - a program library for the open-ended, analyt
    citations.rst
    history.rst
    programs_with_openrsp.rst
-   papers_openrsp_calcs.rst
+   papers_openrsp_all.rst
 
 .. toctree::
    :maxdepth: 1
