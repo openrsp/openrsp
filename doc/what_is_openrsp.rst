@@ -9,10 +9,10 @@ as they are expressed in the theory called "response theory" from theoretical ch
 
 The name of OpenRSP reflects the following features:
 
-* It is a library for the **open**-ended calculation of **r**e**sp**onse properties: It
+* It is a library for the **Open**-ended calculation of **R**\ e\ **SP**\ onse properties: It
   can be used for the calculation of reponse properties to arbitrary order.
-* It is **open**-source and is available under the LGPL v2.1 license.
-* It has an application programming interface that **open**s it to connection with other programs
+* It is **Open**-source and `is publicly available <https://github.com/openrsp/openrsp>`_  under the LGPL v2.1 license.
+* It has an application programming interface that **Open**\ s it to connection with other programs
   that wish to make use of its functionality.
 
 
@@ -59,7 +59,7 @@ extents, or both. In the cases where existing programs use an analytical
 approach, they are either not recursive (which typically means that a new
 program routine must be written for each new property for which calculation is
 desired), or they can only be used for a limited category of properties. 
-As the complexity of the expressions that must be evaluated an analytic approach
+As the complexity of the expressions that must be evaluated in an analytical approach
 to yield the desired response property increases rapidly with the order of 
 response, such analytic calculation of high-order response properties can
 quickly become a very complicated task and the implementation of *ad hoc* program

@@ -33,7 +33,7 @@ interfaces between OpenRSP and other codes, the use of callback routines
 in order to abstract the way in which the OpenRSP core asks for contributions from external libraries,
 and the development of the TMatrix library to abstract and mediate matrix operations so 
 that OpenRSP is agnostic to the underlying implementation of such operations. The first host program
-to make use of this modular functionality is the LSDalton quantum chemistry program.
+to make use of this modular functionality is the `LSDalton <http://daltonprogram.org/>`_ quantum chemistry program.
 
 
 Libraries for external contributions
@@ -47,14 +47,14 @@ or solution of so-called response equations. Therefore, the development of libra
 can provide such functionality at a sufficient level of generality - although not
 necessarily driven by the demands of OpenRSP - has nevertheless been an important
 concurrent task and has resulted in sophisticated software without which
-OpenRSP would not be able to do what it does best. Some of the libraries that are presently or have been used
-by OpenRSP are listed below:
+OpenRSP would not be able to do what it does best. Some of the libraries that are
+presently or have been used by OpenRSP are listed below:
 
-* Response equation solver by Coriani et al.
 * Gen1Int for the calculation of perturbed one-electron integrals
 * cgto-diff-eri for the calculation of perturbed two-electron integrals
 * HODI for the calculation of perturbed integrals
 * XCint and XCfun for the calculation of exchange-correlation contributions
+* A linear response equation solver by Coriani et al.
 * FraME for a polarizable embedding description of molecular surroundings
 * PCMSolver for a polarizable continuum description of molecular surroundings
 
