@@ -10,7 +10,8 @@ you do not violate this software license, but us present :ref:`chapter_authors` 
 would of course also like to get in touch with you.
 
 We are still working on a documentation of the OpenRSP code and API, and this will be made 
-available on this website when ready.
+available on this website when ready. A style guide and contribution guidelines are also under
+development.
 
 
 

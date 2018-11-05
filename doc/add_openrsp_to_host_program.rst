@@ -12,7 +12,7 @@ OpenRSP application programming interface (API) to give OpenRSP access to contri
 perturbed one- and two electron integrals, exchange-correlation contributions if calculations at
 the density-functional theory (DFT) level is desired, or solution routines for response equations.
 Please note that OpenRSP is a program library that manages the calculation of response properties,
-and it **cannot** calculate these properties without getting contributions like the ones
+and it **cannot** carry out this task without getting contributions like the ones
 mentioned here from program routines that are external to OpenRSP.
 
 A description of the API is under development and will be made available on this website.
