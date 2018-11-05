@@ -3,7 +3,7 @@
 Papers involving OpenRSP
 ========================
 
-This is a list of papers 
+This is a list of scientific articles where OpenRSP is involved in some capacity, either pertaining to theoretical development related to the core functionality or related functionality, or as having been applied to produce computational results.
 
 
 2018
