@@ -11,17 +11,20 @@ This table lists the main developers of OpenRSP and their current affiliation:
 
    * - Name
      - Affiliation
-   * - Radovan Bast
+   * - **Radovan Bast**
      - UiT The Arctic University of Norway
    * - Daniel H. Friese
      - Heinrich-Heine-Universität Düsseldorf
-   * - Bin Gao
+   * - **Bin Gao**
      - UiT The Arctic University of Norway
    * - Dan J. Jonsson
      - UiT The Arctic University of Norway
-   * - Magnus Ringholm
+   * - **Magnus Ringholm**
      - UiT The Arctic University of Norway
    * - Kenneth Ruud
      - UiT The Arctic University of Norway
    * - Andreas J. Thorvaldsen
      - Science [&] Technology AS
+
+Requests or comments should primarily be directed to authors listed in **boldface** whose e-mail
+addresses are all in the format *firstname.lastname@uit.no*.
