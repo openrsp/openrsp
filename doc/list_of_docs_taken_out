@@ -1,0 +1,34 @@
+This is a list of documents not linked to on the website: They are kept because they may eventually be linked to again or their information may be reused in other documents. If their information is reused and any remaining text is not relevant, they should be removed from the archive.
+
+Name						Reason						Remark
+
+change_log.rst 					Information may be moved to GitHub page
+manual/limitations.rst
+
+
+manual/notations_and_conventions.rst		To be processed during present work
+manual/installation.rst				To be processed during present work
+manual/unit_testing.rst				To be processed during present work
+manual/sphinx.rst				To be processed during present work
+manual/api_reference.rst			To be processed during present work
+manual/callback_functions.rst			To be processed during present work
+manual/future_plans.rst				To be processed during present work
+
+tutorial/getting_started.rst			To be processed during present work
+tutorial/openrsp_context.rst			To be processed during present work
+tutorial/perturbations.rst			To be processed during present work
+tutorial/overlap_operator.rst			To be processed during present work
+tutorial/one_elec_oper.rst			To be processed during present work
+tutorial/two_elec_oper.rst			To be processed during present work
+tutorial/xc_fun.rst				To be processed during present work
+tutorial/zero_elec_oper.rst			To be processed during present work
+tutorial/response_solver.rst			To be processed during present work
+tutorial/response_functions.rst			To be processed during present work
+tutorial/residues.rst				To be processed during present work
+
+developer/background_and_rationale.rst		To be processed during present work		
+developer/openrsp_design.rst			To be processed during present work
+developer/rules.rst				To be processed during present work
+developer/coding_standards.rst			To be processed during present work
+developer/files_and_directories.rst		To be processed during present work
+developer/pseudocode.rst			To be processed during present work
