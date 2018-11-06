@@ -53,12 +53,12 @@ greater degree of uncertainty related to accuracy and practical feasibility of
 the calculation, and we therefore think that analytical calculation should be used
 whenever it is practical. 
 
-Today's programs written for the calculation of response properties either do
-not have a recursive structure, or they use numerical methods to different
+Today's programs written for the calculation of response properties may either
+not have a recursive structure, or may use numerical methods to different
 extents, or both. In the cases where existing programs use an analytical
-approach, they are either not recursive (which typically means that a new
+approach, they may either be not recursive (which typically means that a new
 program routine must be written for each new property for which calculation is
-desired), or they can only be used for a limited category of properties. 
+desired), or they may only be usable for a limited category of properties. 
 As the complexity of the expressions that must be evaluated in an analytical approach
 to yield the desired response property increases rapidly with the order of 
 response, such analytic calculation of high-order response properties can
@@ -69,5 +69,9 @@ The structure of OpenRSP, using recursion as a core tool, solves the task of
 identifying and assembling contributions to response properties "once and for all".
 When combined with program libraries that can provide the contributions that 
 OpenRSP identifies, any response property can be calculated fully analytically 
-as long as those libraries can provide the necessary contributions.
+as long as those libraries can provide the necessary contributions. We note, however,
+that the present version of the code is still awaiting the completion of functionality
+to handle perturbations that both change the basis set and have a nonzero frequency
+associated with them, but that such extension is within the scope of the present underlying
+theory.
 

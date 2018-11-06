@@ -46,15 +46,15 @@ exchange-correlation contributions if a density-functional theory calculation is
 or solution of so-called response equations. Therefore, the development of libraries that 
 can provide such functionality at a sufficient level of generality - although not
 necessarily driven by the demands of OpenRSP - has nevertheless been an important
-concurrent task and has resulted in sophisticated software without which
+concurrent task, and has resulted in the creation of sophisticated software without which
 OpenRSP would not be able to do what it does best. Some of the libraries that are
-presently or have been used by OpenRSP are listed below:
+presently used or have been used by OpenRSP are listed below:
 
 * Gen1Int for the calculation of perturbed one-electron integrals
 * cgto-diff-eri for the calculation of perturbed two-electron integrals
 * HODI for the calculation of perturbed integrals
 * XCint and XCfun for the calculation of exchange-correlation contributions
-* A linear response equation solver by Coriani et al.
+* A linear response equation solver by Sonia Coriani et al.
 * FraME for a polarizable embedding description of molecular surroundings
 * PCMSolver for a polarizable continuum description of molecular surroundings
 
