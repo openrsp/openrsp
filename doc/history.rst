@@ -31,7 +31,7 @@ quantum chemistry program - or *host program* - work began in 2013 on developing
 application programming interface (API) for OpenRSP, involving the creation of clearly defined
 interfaces between OpenRSP and other codes, the use of callback routines
 in order to abstract the way in which the OpenRSP core asks for contributions from external libraries,
-and the development of the TMatrix library to abstract and mediate matrix operations so 
+and the development of the QcMatrix library to abstract and mediate matrix operations so 
 that OpenRSP is agnostic to the underlying implementation of such operations. The first host program
 to make use of this modular functionality is the `LSDalton <http://daltonprogram.org/>`_ quantum chemistry program.
 
