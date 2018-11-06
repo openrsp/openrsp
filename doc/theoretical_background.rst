@@ -5,7 +5,7 @@ Theoretical background
 
 We are working on a documentation of the OpenRSP core routines and its application programming
 interface (API), and this, together with a introduction of the underlying theory of OpenRSP 
-intended to be accessible will be made available on this website once ready.
+intended to be accessible, will be made available on this website once ready.
 
 In the meantime, for a technical explanation of the theoretical background of OpenRSP, the 
 following references may prove informative:

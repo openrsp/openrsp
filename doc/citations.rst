@@ -15,3 +15,6 @@ citation of the following reference is expected in addition to the references
 listed above:
 
 * Daniel H. Friese, Maarten T. P. Beerepoot, Magnus Ringholm and Kenneth Ruud, *J. Chem. Theory Comput.* **11**, 1129-1144 (2015).
+
+Please also note that host programs into which OpenRSP is incorporated may have their own
+citation guidelines or requirements to be observed if such programs are used.
