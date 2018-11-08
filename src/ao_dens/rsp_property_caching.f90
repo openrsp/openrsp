@@ -27,6 +27,8 @@ module rsp_property_caching
  public contrib_cache_getdata
  public contrib_cache_allocate
  public contrib_cache_outer_allocate
+ public contrib_cache_deallocate
+ public contrib_cache_outer_deallocate
  public contrib_cache_store
  public contrib_cache_retrieve
  public contrib_cache_outer_store
@@ -1422,6 +1424,145 @@ module rsp_property_caching
    next_element => current_element%next
 
  end function
+ 
+  ! Cycle through a contribution cache and 
+  ! deallocate any array-type data in it
+  ! Also deallocate any associated outer caches 
+  subroutine contrib_cache_deallocate(current_element)
+
+    implicit none
+
+    type(contrib_cache), pointer :: current_element
+    integer :: i
+    logical :: last_loop_finished
+   
+    current_element => contrib_cache_cycle_first(current_element)
+    
+    last_loop_finished = .FALSE.
+    
+    do while (last_loop_finished .eqv. .FALSE.)
+   
+       if (associated(current_element%contribs_outer)) then
+       
+          call contrib_cache_outer_deallocate(current_element%contribs_outer)
+    
+       end if
+   
+       call p_tuple_deallocate(current_element%p_inner)
+          
+       if (allocated(current_element%blk_sizes)) then
+          deallocate(current_element%blk_sizes)
+       end if
+          
+       if (allocated(current_element%blk_info)) then
+          deallocate(current_element%blk_info)
+       end if
+
+       if (allocated(current_element%indices)) then
+          deallocate(current_element%indices)
+       end if
+  
+       if (current_element%last) then
+          last_loop_finished = .TRUE.
+       end if
+   
+       current_element => current_element%next
+
+    end do
+    
+    deallocate(current_element)
+   
+  end subroutine
+ 
+ 
+  ! Cycle through an outer contribution cache and 
+  ! deallocate any array-type data in it
+  subroutine contrib_cache_outer_deallocate(current_element)
+
+    implicit none
+
+    type(contrib_cache_outer), pointer :: current_element
+    integer :: i
+    logical :: last_loop, last_loop_finished
+    
+    current_element => contrib_cache_outer_cycle_first(current_element)
+         
+    if (current_element%dummy_entry) then
+       current_element => current_element%next
+    end if
+   
+    last_loop = .FALSE.
+    last_loop_finished = .FALSE.
+   
+    do while (last_loop_finished .eqv. .FALSE.)
+   
+       if (last_loop) then
+          last_loop_finished = .TRUE.
+       end if
+   
+   
+       if (allocated(current_element%p_tuples)) then
+          do i = 1, size(current_element%p_tuples)
+             call p_tuple_deallocate(current_element%p_tuples(i))
+          end do
+          deallocate(current_element%p_tuples)
+       end if
+   
+       if (allocated(current_element%nblks_tuple)) then
+          deallocate(current_element%nblks_tuple)
+       end if
+
+       if (allocated(current_element%blk_sizes)) then
+          deallocate(current_element%blk_sizes)
+       end if
+          
+       if (allocated(current_element%indices)) then
+          deallocate(current_element%indices)
+       end if
+          
+       if (allocated(current_element%blks_tuple_info)) then
+          deallocate(current_element%blks_tuple_info)
+       end if
+          
+       if (allocated(current_element%blks_tuple_triang_size)) then
+          deallocate(current_element%blks_tuple_triang_size)
+       end if
+   
+       if (allocated(current_element%data_scal)) then
+          deallocate(current_element%data_scal)
+       end if
+    
+       if (allocated(current_element%data_mat)) then
+          do i = 1, size(current_element%data_mat)
+             call QcMatDst(current_element%data_mat(i))
+          end do
+          deallocate(current_element%data_mat)
+             
+       end if
+       
+       if (current_element%last) then
+          last_loop = .TRUE.
+       end if
+    
+       current_element => current_element%next
+   
+    end do
+   
+    if (allocated(current_element%data_scal)) then
+       deallocate(current_element%data_scal)
+    end if
+    
+    if (allocated(current_element%data_mat)) then
+       do i = 1, size(current_element%data_mat)
+          call QcMatDst(current_element%data_mat(i))
+       end do
+       deallocate(current_element%data_mat)
+    end if
+    
+    deallocate(current_element)
+   
+  end subroutine
+ 
  
   ! Allocate and set up new contribution cache element
   subroutine contrib_cache_allocate(current_element)

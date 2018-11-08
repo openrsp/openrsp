@@ -48,7 +48,7 @@ module rsp_general
                                   contrib_cache,                       &
                                   contrib_cache_initialize,            &
                                   contrib_cache_next_element,          &
-                                  contrib_cache_outer_allocate,     &
+                                  contrib_cache_outer_allocate,        &
                                   contrib_cache_outer_add_element,     &
                                   contrib_cache_outer_next_element,    &
                                   contrib_cache_outer_cycle_first,     &
@@ -62,6 +62,8 @@ module rsp_general
                                   contrib_cache_outer_retrieve, &
                                   contrib_cache_outer_store, &
                                   contrib_cache_store, &
+                                  contrib_cache_deallocate,        &
+                                  contrib_cache_outer_deallocate,        &
                                   mat_scal_store, &
                                   mat_scal_retrieve, &
                                   rs_check, &
@@ -171,6 +173,7 @@ module rsp_general
     
     logical, optional :: mem_calibrate
     integer, optional :: max_mat, mem_result
+    logical :: xf_was_allocated
     type(mem_manager) :: mem_mgr
     
     integer(kind=QINT), intent(in), optional :: residue_spec_pert(residue_order)
@@ -200,6 +203,9 @@ module rsp_general
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
 
+    
+    xf_was_allocated = .FALSE.
+    
     ! MaR: Temporarily setting restart flag manually while waiting for API change
     ! Remove after API change
     
@@ -544,6 +550,7 @@ module rsp_general
        if (residue_order > 0) then
        
           allocate(Xf) 
+          xf_was_allocated = .TRUE.
           
        end if
       
@@ -790,6 +797,14 @@ module rsp_general
        
        close(260)
        
+    end if
+    
+    
+    call contrib_cache_outer_deallocate(F)
+    call contrib_cache_outer_deallocate(D)
+    call contrib_cache_outer_deallocate(S)
+    if (xf_was_allocated) then
+       call contrib_cache_outer_deallocate(Xf)
     end if
     
     write(out_str, *) 'OpenRSP library: Normal termination, returning...'
