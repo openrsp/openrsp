@@ -377,13 +377,16 @@ module rsp_perturbed_sdf
        end if
        
        deallocate(size_i)
-       deallocate(lof_cache)
+       
        call mem_decr(mem_mgr, lof_mem_total)
        
        call prog_incr(prog_info, r_flag, 2)
        
           
     end do
+    
+    call contrib_cache_deallocate(cache)
+    call contrib_cache_deallocate(lof_cache)
     
     deallocate(p_dummy_orders)
     
