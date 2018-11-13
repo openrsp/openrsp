@@ -9,8 +9,7 @@ OpenRSP: open-ended response theory
 
 Copyright 2015-2018 `OpenRSP authors <http://www.openrsp.org/en/latest/authors.html>`__.
 
-The code is distributed under the LGPL v2.1 license, see
-https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html.
+The code is distributed under the `LGPL v2.1 <https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html>`__.
 
 OpenRSP is a computer program that uses recursive routines to identify
 and assemble contributions to molecular properties ("response properties")
