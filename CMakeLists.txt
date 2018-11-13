@@ -149,18 +149,6 @@ if(OPENRSP_BUILD_WEB)
         ${OPENRSP_DEVELOPER_WEAVED_TEX}
         ${OPENRSP_MAKE_DIRS})
     set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${OPENRSP_WEB_CLEAN}")
-    # Makes package using CPack
-    set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
-        "Common functions and data (types) for quantum chemistry")
-    set(CPACK_PACKAGE_VENDOR "Bin Gao")
-    set(CPACK_PACKAGE_VERSION "0.1.0")
-    set(CPACK_PACKAGE_DESCRIPTION_FILE "${LIB_OPENRSP_PATH}/README.rst")
-    set(CPACK_RESOURCE_FILE_LICENSE "${LIB_OPENRSP_PATH}/LICENSE")
-    set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${LIB_OPENRSP_PATH};/.")
-    set(CPACK_SOURCE_IGNORE_FILES
-        "/\\\\.git/;\\\\.gitignore$;\\\\.swp$;${CMAKE_BINARY_DIR}")
-    include(CPack)
 endif()
 
 # Header files and Fortran module files
