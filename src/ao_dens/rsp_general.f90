@@ -206,14 +206,7 @@ module rsp_general
     
     xf_was_allocated = .FALSE.
     
-    ! MaR: Temporarily setting restart flag manually while waiting for API change
-    ! Remove after API change
-    
     r_flag = r_flag_in
-    
-    write(*,*) 'WARNING: Restart flag manually set inside OpenRSP - remove assignment after API change'
-    
-    
     
     if (present(mem_calibrate)) then
     
