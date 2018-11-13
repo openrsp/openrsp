@@ -461,7 +461,7 @@ module rsp_general
           
              if (abs(real(p_tuples(k)%freq(m))) < xtiny) then
              
-               write(out_str, *) 'WARNING: The real part of frequency', np(i), 'of property ', m, 'is nearly zero'
+               write(out_str, *) 'NOTE: The real part of frequency', m, 'of property ', i, 'is zero or nearly zero'
                call out_print(out_str, 1)
                write(out_str, *) 'The value is ', real(p_tuples(k)%freq(m))
                call out_print(out_str, 1)
@@ -476,7 +476,7 @@ module rsp_general
              
              if (abs(aimag(p_tuples(k)%freq(m))) < xtiny) then
              
-               write(out_str, *) 'WARNING: The imaginary part of frequency', np(i), 'of property ', m, 'is nearly zero'
+               write(out_str, *) 'NOTE: The imaginary part of frequency', m, 'of property ', i, 'is zero or nearly zero'
                call out_print(out_str, 1)
                write(out_str, *) 'The value is ', aimag(p_tuples(k)%freq(m))
                call out_print(out_str, 1)
