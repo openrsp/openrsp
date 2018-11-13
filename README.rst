@@ -7,8 +7,7 @@
 OpenRSP: open-ended response theory
 ===================================
 
-**Copyright 2015 Radovan Bast, Daniel H. Friese, Bin Gao, Dan J. Jonsson,
-Magnus Ringholm, Kenneth Ruud, Andreas Thorvaldsen**
+Copyright 2015-2018 `OpenRSP authors <http://www.openrsp.org/en/latest/authors.html>`__.
 
 The code is distributed under the LGPL v2.1 license, see
 https://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html.
