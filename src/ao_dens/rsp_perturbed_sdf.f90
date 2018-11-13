@@ -386,7 +386,12 @@ module rsp_perturbed_sdf
     end do
     
     call contrib_cache_deallocate(cache)
-    call contrib_cache_deallocate(lof_cache)
+    
+    if (max_order > 0) then
+    
+       call contrib_cache_deallocate(lof_cache)
+       
+    end if   
     
     deallocate(p_dummy_orders)
     
