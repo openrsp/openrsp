@@ -1,4 +1,4 @@
-.. _chapter_history:
+
 
 A brief history
 ===============
@@ -13,6 +13,10 @@ foundation of response theory on which OpenRSP was based was developed and used 
 program routines that were connected to the Dalton quantum chemistry program. This version
 of the code was used to compute several response properties for which analytic calculation had not
 been carried out before.
+
+In 2008, we have generalized OpenRSP for the DIRAC program package which enabled us to access
+a wealth of response properties at the 4-component relativistic level.
+
 In 2011, work was started on a version - then still a part of Dalton - where recursion was used to
 achieve an open-ended implementation of the theory, so that one set of routines
 could be used to manage the calculation of any response property. This version forms the
@@ -57,5 +61,3 @@ presently used or have been used by OpenRSP are listed below:
 * A linear response equation solver by Sonia Coriani et al.
 * FraME for a polarizable embedding description of molecular surroundings
 * PCMSolver for a polarizable continuum description of molecular surroundings
-
-
