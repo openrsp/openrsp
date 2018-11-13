@@ -24,4 +24,8 @@ Welcome to the website of OpenRSP - a program library for the open-ended, analyt
    add_openrsp_to_host_program.rst
    get_involved_development.rst
 
+.. toctree::
+   :maxdepth: 1
+   :caption: For OpenRSP developers
 
+   manual/sphinx.rst

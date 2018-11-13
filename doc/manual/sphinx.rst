@@ -1,4 +1,4 @@
-.. _chapter_sphinx:
+
 
 How Sphinx works
 ================
@@ -8,28 +8,26 @@ RST/Sphinx, please read http://sphinx-doc.org/rest.html. RST is a subset of
 Sphinx. Sphinx is RST with some extensions.
 
 
-How to modify the webpages
---------------------------
+How to modify the website
+-------------------------
 
-You can modify these pages by cloning our public documentation repository::
-
-  git clone git@gitlab.com:openrsp/website.git
-
-Once you commit and push, a post-receive hook
-updates the documentation on http://openrsp.readthedocs.org.
+The website is generated from RST sources under ``doc/``.
+Once a pull request is merged, a post-receive hook
+updates the documentation on https://openrsp.readthedocs.io.
 This typically takes less than a minute.
-Our main page http://openrsp.org redirects to http://openrsp.readthedocs.org.
+Our main page http://openrsp.org redirects to https://openrsp.readthedocs.io.
+
 
 How to locally test changes
 ---------------------------
 
 You don't have to push to see and test your changes.
 You can test them locally.
-For this install python-sphinx and python-matplotlib.
+For this install the Python packages ``sphinx`` and ``sphinx_rtd_theme``.
 Then build the pages with::
 
-  make html
+  $ sphinx-build doc/ _build
 
-Then point your browser to _build/html/index.html.
+Then point your browser to ``_build/html/index.html``.
 The style is not the same but the content is what you
-would see after the git push.
+would see after a successful pull request merge.
