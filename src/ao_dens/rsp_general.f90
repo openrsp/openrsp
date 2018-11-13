@@ -206,14 +206,7 @@ module rsp_general
     
     xf_was_allocated = .FALSE.
     
-    ! MaR: Temporarily setting restart flag manually while waiting for API change
-    ! Remove after API change
-    
     r_flag = r_flag_in
-    
-    write(*,*) 'WARNING: Restart flag manually set inside OpenRSP - remove assignment after API change'
-    
-    
     
     if (present(mem_calibrate)) then
     
@@ -468,7 +461,7 @@ module rsp_general
           
              if (abs(real(p_tuples(k)%freq(m))) < xtiny) then
              
-               write(out_str, *) 'WARNING: The real part of frequency', np(i), 'of property ', m, 'is nearly zero'
+               write(out_str, *) 'NOTE: The real part of frequency', m, 'of property ', i, 'is zero or nearly zero'
                call out_print(out_str, 1)
                write(out_str, *) 'The value is ', real(p_tuples(k)%freq(m))
                call out_print(out_str, 1)
@@ -483,7 +476,7 @@ module rsp_general
              
              if (abs(aimag(p_tuples(k)%freq(m))) < xtiny) then
              
-               write(out_str, *) 'WARNING: The imaginary part of frequency', np(i), 'of property ', m, 'is nearly zero'
+               write(out_str, *) 'NOTE: The imaginary part of frequency', m, 'of property ', i, 'is zero or nearly zero'
                call out_print(out_str, 1)
                write(out_str, *) 'The value is ', aimag(p_tuples(k)%freq(m))
                call out_print(out_str, 1)
