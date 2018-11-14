@@ -47,8 +47,6 @@ Long-version
    #. try to use descriptive names for your classes and methods,
    #. do your best to avoid global variables,
    #. try to re-use code and try to use libraries,
-   #. use ``fixme`` or ``FIXME`` to identify the codes needed to be modified or
-      fixed later.
 
 #. This is very important, and should be considered and implemented during the
    aforementioned two steps:
