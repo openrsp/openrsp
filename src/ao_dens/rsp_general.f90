@@ -217,7 +217,7 @@ module rsp_general
           if (.NOT.(present(mem_result))) then
 
              write(out_str, *) 'ERROR: Result holder "mem_result" must be given for memory calibration run'
-             call out_print(out_str, 0)
+             call out_print(out_str, -1)
 
              return
              
@@ -285,7 +285,7 @@ module rsp_general
        write(out_str, *) 'The only currently supported residues are single residues'
        call out_print(out_str, 0)
        write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP library'
-       call out_print(out_str, 0)
+       call out_print(out_str, -1)
     
        return
     
@@ -296,7 +296,7 @@ module rsp_general
        write(out_str, *) 'The only currently supported residues are single residues'
        call out_print(out_str, 0)
        write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP library'
-       call out_print(out_str, 0)
+       call out_print(out_str, -1)
     
        return
     
@@ -360,7 +360,7 @@ module rsp_general
              write(out_str, *) 'Valid choices of n are such that k + n =', np(i) - 1
              call out_print(out_str, 0)
              write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP lib'
-             call out_print(out_str, 0)
+             call out_print(out_str, -1)
                           
              return
  
@@ -427,7 +427,7 @@ module rsp_general
                 write(out_str, *) 'The residue calculation is therefore indeterminate'
                 call out_print(out_str, 0)
                 write(out_str, *) 'Cannot proceed with calculation: Exiting OpenRSP library'
-                call out_print(out_str, 0)
+                call out_print(out_str, -1)
 
                 return             
                          
@@ -2824,7 +2824,7 @@ module rsp_general
              else
              
                 write(out_str, *) 'ERROR: Inner perturbation tuple is empty'
-                call out_print(out_str, 0)
+                call out_print(out_str, -1)
                        
              end if
           
@@ -2975,7 +2975,7 @@ module rsp_general
                 write(out_str, *) 'W', p12(2)%pid
                 call out_print(out_str, 0)
                 write(out_str, *) ' '
-                call out_print(out_str, 0)
+                call out_print(out_str, -1)
 
              end if
 
@@ -3074,7 +3074,7 @@ module rsp_general
                 write(out_str, *) 'B', p12(2)%pid
                 call out_print(out_str, 0)
                 write(out_str, *) ' '
-                call out_print(out_str, 0)
+                call out_print(out_str, -1)
              
              end if
           
