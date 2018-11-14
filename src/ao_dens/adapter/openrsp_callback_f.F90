@@ -18,8 +18,6 @@
 !!  2014-12-10, Bin Gao
 !!  * first version
 
-#define OPENRSP_DEBUG
-
 ! basic data types
 #include "api/qcmatrix_c_type.h"
 
