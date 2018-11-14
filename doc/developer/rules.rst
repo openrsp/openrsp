@@ -1,4 +1,3 @@
-.. _chapter_rules:
 
 Tentative Rules for Developers
 ==============================
@@ -9,10 +8,7 @@ Short-version
 #. First analyze the problem, then design the code (data and algorithm
    structures), prepare test suite. Last, write the code.
 
-#. Make everything as simple as possible. For instance, make the data and
-   algorithm structures simple, make the interface of functions/subroutines
-   simple, make the couplings between different functions/subroutines simple,
-   make the use of the code simple.
+#. Make everything as simple as possible.
 
 #. Do your best to prepare a readable document.
 
@@ -44,7 +40,7 @@ Long-version
       closed for changes (from "Developing Chemical Information Systems: An
       Object-Oriented Approach Using Enterprise Java", Fan Li).
 
-#. Writes the codes. During this stage, we would be happy if you could:
+#. Write the codes. During this stage, we would be happy if you could:
 
    #. write comments (in english, one line for each 10-20 line of codes at
       least),
@@ -54,12 +50,9 @@ Long-version
    #. use ``fixme`` or ``FIXME`` to identify the codes needed to be modified or
       fixed later.
 
-   Moreover, it would be even better if your codes could be portable and used
-   in other languages, such as C/C++/Fortran/Python etc..
-
 #. This is very important, and should be considered and implemented during the
    aforementioned two steps:
 
-   Please **ALWAYS** provide test suite for each function/subroutine/module
+   Always provide a test suite for each function/subroutine/module
    etc., unless you are 100% sure what you did is right. Integration testing
    will also be required in some cases.
