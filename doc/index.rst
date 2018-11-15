@@ -29,3 +29,4 @@ Welcome to the website of OpenRSP - a program library for the open-ended, analyt
    :caption: For OpenRSP developers
 
    manual/sphinx.rst
+   developer/rules.rst
