@@ -344,7 +344,7 @@ module openrsp_callback_f
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%rsp_solver)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", num_pert, num_comps, num_freq_sums
 #endif
             allocate(c_freq_sums(2*sum(num_freq_sums)), stat=ierr)
@@ -408,7 +408,7 @@ module openrsp_callback_f
         integer(kind=QINT) ival
         integer(kind=4) ierr
         if (c_associated(ctx_saved%zero_oper)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", oper_len_tuple, size_pert
 #endif
             allocate(c_val_oper(2*size_pert), stat=ierr)
@@ -454,7 +454,7 @@ module openrsp_callback_f
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", bra_len_tuple, ket_len_tuple, oper_len_tuple, num_int
 #endif
             allocate(c_val_int(num_int), stat=ierr)
@@ -508,7 +508,7 @@ module openrsp_callback_f
         integer(kind=QINT) ival
         integer(kind=4) ierr
         if (c_associated(ctx_saved%overlap)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", bra_len_tuple, ket_len_tuple, oper_len_tuple, num_dmat, num_exp
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
@@ -562,7 +562,7 @@ module openrsp_callback_f
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", oper_len_tuple, num_int
 #endif
             allocate(c_val_int(num_int), stat=ierr)
@@ -604,7 +604,7 @@ module openrsp_callback_f
         integer(kind=QINT) ival
         integer(kind=4) ierr
         if (c_associated(ctx_saved%one_oper)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", oper_len_tuple, num_dmat, num_exp
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
@@ -659,7 +659,7 @@ module openrsp_callback_f
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", oper_len_tuple, num_dmat, num_int
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
@@ -722,7 +722,7 @@ module openrsp_callback_f
         integer(kind=QINT) ival
         integer(kind=4) ierr
         if (c_associated(ctx_saved%two_oper)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", oper_len_tuple, sum(num_LHS_dmat), sum(num_RHS_dmat), num_exp
 #endif
             allocate(c_LHS_dens_mat(sum(num_LHS_dmat)), stat=ierr)
@@ -802,7 +802,7 @@ module openrsp_callback_f
         integer(kind=QINT) imat
         integer(kind=4) ierr
         if (c_associated(ctx_saved%xc_fun)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", xc_len_tuple, num_dmat, num_int
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
@@ -871,7 +871,7 @@ module openrsp_callback_f
         integer(kind=QINT) ival
         integer(kind=4) ierr
         if (c_associated(ctx_saved%xc_fun)) then
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             write(STDOUT,100) "size", xc_len_tuple, num_dmat, num_exp
 #endif
             allocate(c_dens_mat(num_dmat), stat=ierr)
@@ -936,7 +936,7 @@ module openrsp_callback_f
         case default
             if (out_level<OUT_DEBUG) then
                 write(IO_USER_OUTPUT, "(2A)") "[OUT]-> ", trim(out_str)
-#if defined(OPENRSP_DEBUG)
+#if defined(DEBUG)
             else
                 write(IO_USER_OUTPUT, "(2A)") "[DEBUG]-> ", trim(out_str)
 #endif
