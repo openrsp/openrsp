@@ -624,7 +624,7 @@ module rsp_perturbed_sdf
              else
              
                 write(out_str, *) 'ERROR: Wanted lower-order perturbed Fock matrix contribution but it was not in cache'
-                call out_print(out_str, 0)
+                call out_print(out_str, -1)
              
              end if
           
@@ -1852,9 +1852,9 @@ module rsp_perturbed_sdf
                 if (residualization) then 
                 
                    write(out_str, *) 'ERROR: No residualization yet for 2nd solver call in rsp_sdf_calc'
-                   call out_print(out_str, 1)
+                   call out_print(out_str, 0)
                    write(out_str, *) 'Cannot proceed with calculation, halting'
-                   call out_print(out_str, 1)
+                   call out_print(out_str, -1)
                 
                    stop 
                 
@@ -2255,7 +2255,7 @@ module rsp_perturbed_sdf
              else
              
                 write(out_str, *) 'ERROR: Null density matrices required but not present'
-                call out_print(out_str, 3)
+                call out_print(out_str, -1)
                 
              end if
 
@@ -2265,7 +2265,7 @@ module rsp_perturbed_sdf
           if (.NOT.(n_freq_cfgs == 1)) then
           
              write(out_str, *) 'ERROR: Null treatment needs only one freq cfg, currently', n_freq_cfgs
-             call out_print(out_str, 3)
+             call out_print(out_str, -1)
           
           else
           

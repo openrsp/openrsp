@@ -41,6 +41,7 @@ module openrsp_callback_f
     integer, private, save :: IO_USER_OUTPUT = 6
     integer(kind=4), parameter, public :: OUT_DEBUG = 2
     integer(kind=4), parameter, public :: OUT_ERROR = 0
+    integer(kind=4), parameter, public :: ERROR_EXIT = -1
 
     ! type saving C struct's for calling C functions
     type, private :: RSP_CTX
@@ -924,6 +925,8 @@ module openrsp_callback_f
         integer(kind=4), intent(in) :: out_level
         select case(out_level)
         case(OUT_ERROR)
+            write(IO_USER_OUTPUT, "(2A)") "[ERROR]-> ", trim(out_str)
+        case(ERROR_EXIT)
 #if defined(BUILT_IN_LSDALTON)
             call lsquit(trim(out_str), IO_USER_OUTPUT)
 #else
