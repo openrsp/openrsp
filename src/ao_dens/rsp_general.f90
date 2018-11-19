@@ -6,7 +6,6 @@
 !> response function tensors.
 module rsp_general
 
-  use rsp_contribs, only: rsp_ovlave_t_matrix_2014
   use rsp_field_tuple, only: p_tuple,                &
                              p_tuple_standardorder,  &
                              p_tuple_remove_first,   &
