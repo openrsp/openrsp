@@ -6,7 +6,7 @@ Authors
 This table lists the main developers of OpenRSP and their current affiliation:
 
 .. tabularcolumns:: |p{0.3\textwidth}|p{0.7\textwidth}|
-.. list-table:: OpenRSP authors
+.. list-table:: OpenRSP authors (alphabetical order of surname)
    :header-rows: 1
 
    * - Name
@@ -21,6 +21,8 @@ This table lists the main developers of OpenRSP and their current affiliation:
      - UiT The Arctic University of Norway
    * - **Magnus Ringholm**
      - UiT The Arctic University of Norway
+   * - Simen S. Reine
+     - University of Oslo
    * - Kenneth Ruud
      - UiT The Arctic University of Norway
    * - Andreas J. Thorvaldsen
