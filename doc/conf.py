@@ -65,7 +65,8 @@ with open(os.path.join(_here, '..', 'VERSION'), 'r') as f:
     # The full version, including alpha/beta/rc tags.
     release = f.read().strip()
 
-_major, _minor, *_ = release.split('.')
+_major, = release.split('.')[0]
+_minor, = release.split('.')[1]
 
 # The short X.Y version.
 version = '{0}.{1}'.format(_major, _minor)
