@@ -711,7 +711,7 @@ module rsp_general
           end do
           
           
-          write(260,*) 'NUM COMPONENTS'
+          write(260,*) 'NUM_COMPONENTS'
           do j = 1, p_tuples(k)%npert
           
              write(260,*) p_tuples(k)%pdim(j)          
