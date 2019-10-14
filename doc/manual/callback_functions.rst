@@ -1,7 +1,7 @@
-.. _chapter_callback_functions:
+.. _subsection_callback_functions:
 
 Callback Function Scheme
-========================
+------------------------
 
 To use OpenRSP, users should also prepare different callback functions
 needed by OpenRSP. These callback functions will be invoked by OpenRSP
@@ -15,9 +15,10 @@ It should be noted that the arguments in the following callback functions are
 over complete. For instance, from the knowledge of perturbations
 (``oper_num_pert``, ``oper_pert_labels`` and ``oper_pert_orders``), the
 dimension of integral matrices ``num_int`` in the callback function
-:c:func:`get_one_oper_mat` can be computed. The need of this argument
-``num_int`` is kind of technical issue, and we will give detailed explanation
-in Section :ref:`section_fortran_api_impl`.
+:c:func:`get_one_oper_mat` can be computed.
+
+.. The need of this argument ``num_int`` is kind of technical issue, and we will
+.. give detailed explanation in Section :ref:`section_fortran_api_impl`.
 
 **Last but not least, users should be aware that:**
 
@@ -46,7 +47,7 @@ in Section :ref:`section_fortran_api_impl`.
    #. :c:func:`get_zero_oper_contrib`
 
 OpenRSP Callback Functions (C version)
---------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Examples of C callback functions can be found in these files
 ``tests/OpenRSP*Callback.c``. The detailed information of these callback
@@ -519,12 +520,12 @@ release so that users can use a "faked" function for it.
    :rtype: void
 
 OpenRSP Callback Subroutines (Fortran version)
-----------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The callback subroutines of Fortran codes take almost the exact arguments as
 the callback functions of C codes. One difference is the type convention
 between C and Fortran, which has been discussed in Secion
-:ref:`section_fortran_convention`.  Moreover, the pointers of basic types
+:ref:`subsubsection_fortran_convention`.  Moreover, the pointers of basic types
 (integer and real numbers) in the C codes should be converted to corresponding
 array in Fortran. The array of ``QcMat`` pointers should be converted to an
 array of ``type(QcMat)`` in Fortran. Last, the user-defined callback

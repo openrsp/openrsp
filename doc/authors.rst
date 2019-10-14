@@ -1,4 +1,4 @@
-.. _chapter_authors:
+.. _section_authors:
 
 Authors
 =======

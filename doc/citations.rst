@@ -1,4 +1,4 @@
-.. _chapter_citations:
+.. _section_citations:
 
 Citation guide
 ==============
@@ -10,11 +10,12 @@ references:
 * Magnus Ringholm, Dan Jonsson and Kenneth Ruud, *J. Comput. Chem.* **35**, 622-633 (2014).
 * [OpenRSP] OpenRSP, an open-ended response property library, www.openrsp.org
 
-If the use of OpenRSP involved the calculation of single residues of response properties,
-citation of the following reference is expected in addition to the references
-listed above:
+If the use of OpenRSP involved the calculation of single residues of response
+properties, citation of the following reference is expected in addition to the
+references listed above:
 
 * Daniel H. Friese, Maarten T. P. Beerepoot, Magnus Ringholm and Kenneth Ruud, *J. Chem. Theory Comput.* **11**, 1129-1144 (2015).
 
-Please also note that host programs into which OpenRSP is incorporated may have their own
-citation guidelines or requirements to be observed if such programs are used.
+Please also note that host programs into which OpenRSP is incorporated may have
+their own citation guidelines or requirements to be observed if such programs
+are used.

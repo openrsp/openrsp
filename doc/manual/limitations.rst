@@ -1,7 +1,7 @@
-.. _chapter_limitations:
+.. _subsection_limitations:
 
 Limitations or Known Problems
-=============================
+-----------------------------
 
 * "T matrix contributions" - i.e. contributions from the perturbed
   "half-time-differentiated" overlap matrix - are not yet supported in the
@@ -16,9 +16,9 @@ Limitations or Known Problems
 * Currently we use ``QcPertInt`` (defined as ``QInt`` type in
   ``include/RSPPerturbation.h``, and ``src/fortran/RSPPertBasicTypes.F90`` for
   Fortran APIs) to reprenset several perturbation labels (see
-  :ref:`chapter_notations_and_conventions`), in which one label is described by
-  ``OPENRSP_PERT_LABEL_BIT`` bits (that can be modified during the step
-  ``ccmake``, see :ref:`chapter_installation`).
+  :ref:`subsection_notations_and_conventions`), in which one label is described
+  by ``OPENRSP_PERT_LABEL_BIT`` bits (that can be modified during the step
+  ``ccmake``, see :ref:`subsection_compile`).
 
   For the time being, we do not suggest that users change the type of
   ``QcPertInt``, because other integer types are not supported by OpenRSP yet.
