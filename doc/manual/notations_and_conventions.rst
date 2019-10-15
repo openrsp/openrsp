@@ -1,7 +1,7 @@
-.. _chapter_notations_and_conventions:
+.. _subsection_notations_and_conventions:
 
 OpenRSP Notations and Conventions
-=================================
+---------------------------------
 
 The following notations and conventions will be used through the OpenRSP
 program and the documentation:

@@ -1,9 +1,9 @@
-.. _chapter_installation:
+.. _subsection_compile:
 
-Installation
-============
+Compile OpenRP
+--------------
 
-Before installing OpenRSP, you need to make sure the following programs are
+Before compiling OpenRSP, you need to make sure the following programs are
 installed on your computer:
 
 #. Git,

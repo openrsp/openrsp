@@ -1,7 +1,7 @@
-.. _chapter_api_reference:
+.. _subsection_api_reference:
 
 API Reference
-=============
+-------------
 
 In order to use OpenRSP, C users should first include the header file
 of OpenRSP in their codes::
@@ -24,7 +24,7 @@ was error happened in the invoked function, and the calculations should
 stop.
 
 Functions of OpenRSP API (C version)
-------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. c:function:: QErrorCode OpenRSPCreate(open_rsp, num_atoms)
 
@@ -409,15 +409,15 @@ release; OpenRSP will use it after the perturbation free scheme implmented.
    :vartype open_rsp: OpenRSP\*
    :rtype: QErrorCode
 
-.. _section_fortran_convention:
+.. _subsubsection_fortran_convention:
 
 Functions of OpenRSP API (Fortran version)
-------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Functions of OpenRSP API (Fortran) are similar to those of the C version, except
 that an extra ``_f`` should be appended to each function. Other differences are
 the (ii) argument types and (iii) callback functions (subroutines for Fortran).
-The latter will be described in Chapter :ref:`chapter_callback_functions`. The
+The latter will be described in Chapter :ref:`subsection_callback_functions`. The
 former relates to the convention of types in Fortran, please refer to the manual
 of `QcMatrix library <https://gitlab.com/bingao/qcmatrix>`_ and the following
 table for the convention:

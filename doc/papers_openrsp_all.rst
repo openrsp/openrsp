@@ -1,10 +1,12 @@
-.. _chapter_papers_openrsp_all:
+.. _section_papers_openrsp_all:
 
 Papers involving OpenRSP
 ========================
 
-This is a list of scientific articles where OpenRSP is involved in some capacity, either pertaining to theoretical development related to the core functionality or related functionality, or as having been applied to produce computational results.
-
+This is a list of scientific articles where OpenRSP is involved in some
+capacity, either pertaining to theoretical development related to the core
+functionality or related functionality, or as having been applied to produce
+computational results.
 
 2018
 ----
@@ -84,6 +86,3 @@ This is a list of scientific articles where OpenRSP is involved in some capacity
    functional response theory using perturbation- and time-dependent basis sets
    Thorvaldsen, Andreas J.; Ruud, Kenneth; Kristensen, Kasper; et al.
    J. Chem. Phys. 129 (21), 214108 (2008)
-
-
-
