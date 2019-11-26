@@ -25,8 +25,6 @@ This table lists the main developers of OpenRSP and their current affiliation:
      - University of Oslo
    * - Kenneth Ruud
      - UiT The Arctic University of Norway
-   * - Andreas J. Thorvaldsen
-     - Science [&] Technology AS
 
 Requests or comments should primarily be directed to authors listed in **boldface** whose e-mail
 addresses are all in the format *firstname.lastname@uit.no*.

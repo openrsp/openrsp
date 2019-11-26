@@ -4,8 +4,7 @@
 !!                 Bin Gao,
 !!                 Dan J. Jonsson,
 !!                 Magnus Ringholm,
-!!                 Kenneth Ruud,
-!!                 Andreas Thorvaldsen
+!!                 Kenneth Ruud
 !!
 !!  This source code form is subject to the terms of the
 !!  GNU Lesser General Public License, version 2.1.
