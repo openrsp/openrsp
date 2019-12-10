@@ -883,7 +883,7 @@ module rsp_general
        
        if (present(Xf)) then
        
-          call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
+          call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, size(D), F, D, S, &
                        get_rsp_sol, get_ovl_mat, get_1el_mat, &
                        get_2el_mat, get_xc_mat, out_print, .TRUE., &
                        prog_info, rs_info, r_flag, sdf_retrieved, mem_mgr, Xf=Xf)
@@ -891,7 +891,7 @@ module rsp_general
                        
        else
        
-          call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, &
+          call rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, size(D), F, D, S, &
                        get_rsp_sol, get_ovl_mat, get_1el_mat, &
                        get_2el_mat, get_xc_mat, out_print, .TRUE., &
                        prog_info, rs_info, r_flag, sdf_retrieved, mem_mgr)
@@ -964,7 +964,7 @@ module rsp_general
 
              call cpu_time(time_start)
              call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
-                  0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .TRUE., &
+                  0, size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .TRUE., &
                   contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
              call cpu_time(time_end)

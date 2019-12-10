@@ -22,7 +22,7 @@ module rsp_perturbed_sdf
   contains
     
   ! Main routine for managing calculation of perturbed Fock, density and overlap matrices
-  subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, get_ovl_mat, &
+  subroutine rsp_fds(n_props, n_freq_cfgs, p_tuples, kn_rule, len_sdf, F, D, S, get_rsp_sol, get_ovl_mat, &
                                get_1el_mat, get_2el_mat, get_xc_mat, out_print, dryrun, &
                                prog_info, rs_info, r_flag, sdf_retrieved, mem_mgr, Xf)
 
@@ -37,15 +37,23 @@ module rsp_perturbed_sdf
     logical :: residue_select
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
-    integer :: i, j, k, max_order, max_npert, o_size, lof_mem_total
+    integer :: i, j, k, m, max_order, max_npert, o_size, lof_mem_total
     integer :: r_flag
+    integer :: lof_c
+    integer :: len_cache, len_sdf
     integer, allocatable, dimension(:) :: size_i
     type(QcMat) :: Fp_dum
-    type(contrib_cache_outer) :: F, D, S
-    type(contrib_cache_outer), optional :: Xf
-    type(contrib_cache), pointer :: cache
+    type(contrib_cache_outer), dimension(len_cache) :: F, D, S
+    type(contrib_cache_outer), dimension(len_cache) , optional :: Xf
+    
+    
+    type(contrib_cache), allocatable, dimension(:) :: cache, lof_cache
+    
+    
     type(contrib_cache), pointer :: cache_next, lof_cache, lof_next
     type(contrib_cache_outer), pointer :: cache_outer_next, lof_outer_next
+    
+    
     external :: get_rsp_sol, get_ovl_mat, get_1el_mat,  get_2el_mat, get_xc_mat
     
     external :: out_print
@@ -96,7 +104,9 @@ module rsp_perturbed_sdf
        do i = 1, n_props
           do j = 1, n_freq_cfgs(i)
           
-             call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, cache, out_print)
+             len_cache = size(cache)
+          
+             call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, len_cache, cache, out_print)
              k = k + 1
 
           end do
@@ -109,8 +119,6 @@ module rsp_perturbed_sdf
     ! NOTE: Something may be wrong about this progress increase, revisit if problems
     call prog_incr(prog_info, r_flag, 2)
     
-    cache_next => cache
-    
     lof_retrieved = .FALSE.
     rsp_eqn_retrieved = .FALSE.
     
@@ -119,40 +127,36 @@ module rsp_perturbed_sdf
     
        lof_mem_total = 0
     
-       ! Cycle until order reached
-       do while(.NOT.(cache_next%p_inner%freq(1) == 1.0*i))
-          cache_next => cache_next%next
-       end do
-      
-       ! Contains number of components of perturbed matrices for each perturbation
-       allocate(size_i(cache_next%num_outer))       
-       k = 1
+       ! Find entry for this order
+       do m = 1, size(cache)
        
-       ! Cycle until at start of outer cache
-       cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
-       if (cache_outer_next%dummy_entry) then
-          cache_outer_next => cache_outer_next%next
-       end if
-
-       ! Traverse to set up size information
-       termination = .FALSE.
-
-       do while(.NOT.(termination))
-          ! Get number of perturbed matrices for this tuple
-          size_i(k) = cache_outer_next%blks_tuple_triang_size(1)
-          k = k + 1
-
-          termination = cache_outer_next%last
-          cache_outer_next => cache_outer_next%next
+          if (cache(m)%p_inner%freq(1) == 1.0*i) then
           
+             lof_c = m
+          
+             exit
+             
+          end if
+       
        end do
        
-       ! Cycle until at start of outer cache
-       cache_outer_next => contrib_cache_outer_cycle_first(cache_next%contribs_outer)
-       if (cache_outer_next%dummy_entry) then
-          cache_outer_next => cache_outer_next%next
-       end if
-             
+       ! Contains number of components of perturbed matrices for each perturbation
+       allocate(size_i(cache(lof_c)%num_outer))
+       
+       ! Traverse to set up size information
+       k = 1
+       do m = 1, size(cache(lof_c)%contribs_outer)
+       
+          ! Skip the dummy entry, who cares
+          if (cache(lof_c)%contribs_outer(m)%dummy_entry) then
+             cycle
+          end if
+          
+          size_i(k) = cache(lof_c)%contribs_outer(m)%blks_tuple_triang_size(1)
+          k = k + 1
+       
+       end do
+       
        ! Check if this stage passed previously and if so, then retrieve and skip execution       
        if (rs_check(prog_info, rs_info, r_flag, lvl=2)) then
           
@@ -167,10 +171,7 @@ module rsp_perturbed_sdf
        
           if (.NOT.(lof_retrieved)) then
           
-             allocate(lof_cache)
-          
              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
-             lof_next => lof_cache
              lof_retrieved = .TRUE.
              
           end if
@@ -183,25 +184,33 @@ module rsp_perturbed_sdf
              call contrib_cache_allocate(lof_cache)
              
           end if
-       
+          
+          
           ! Traverse all elements of outer cache of present cache element
-          termination = .FALSE.
-          do while(.NOT.(termination))
+          k = 1
+          do m = 1, size(cache(lof_c)%contribs_outer)
+       
+             ! Skip the dummy entry
+             if (cache(lof_c)%contribs_outer(m)%dummy_entry) then
+                cycle
+             end if
+          
+             residue_select = .FALSE.
+             residue_select = .NOT.find_complete_residualization( & 
+                      cache(lof_c)%contribs_outer(m)%p_tuples(1)) &
+                     .AND.find_residue_info(cache(lof_c)%contribs_outer(m)%p_tuples(1))
 
-             residue_select = .false.
-             residue_select = .not.find_complete_residualization(cache_outer_next%p_tuples(1)) &
-                     .and.find_residue_info(cache_outer_next%p_tuples(1))
-
+             len_lof_cache = size(lof_cache)
+             
              ! Recurse to identify lower-order Fock matrix contributions
              ! The p_tuples attribute should always be length 1 here, so OK to take the first element
-             call rsp_lof_recurse(cache_outer_next%p_tuples(1), cache_outer_next%p_tuples(1)%npert, &
-                                         1, (/get_emptypert()/), .TRUE., lof_cache, 1, (/Fp_dum/), &
-                                         out_print,residue_select)
-
+             call rsp_lof_recurse(cache(lof_c)%contribs_outer(m)%p_tuples(1), &
+                                  cache(lof_c)%contribs_outer(m)%p_tuples(1)%npert, &
+                                  1, (/get_emptypert()/), .TRUE., len_lof_cache, lof_cache, &
+                                  1, (/Fp_dum/), out_print, residue_select)
              
-             termination = cache_outer_next%last
-             cache_outer_next => cache_outer_next%next
-         
+             k = k + 1
+       
           end do
           
           call contrib_cache_store(lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
@@ -225,10 +234,7 @@ module rsp_perturbed_sdf
                     
           if (.NOT.(lof_retrieved)) then
           
-             allocate(lof_cache)
-         
              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
-             lof_next => lof_cache
              lof_retrieved = .TRUE.
              
           end if
@@ -236,23 +242,17 @@ module rsp_perturbed_sdf
        
        else
        
-          lof_next => lof_cache
-      
-          ! Cycle lower-order Fock cache until at start
-          do while(.NOT.(lof_next%last))
-             lof_next => lof_next%next
-          end do
-          lof_next => lof_next%next
-          if (lof_next%p_inner%npert == 0) then
-!             write(*,*) 'cycling dummy'
-             lof_next => lof_next%next
-          end if
-
-       
           ! Traverse lower-order Fock cache and precalculate elements
-          termination = .FALSE.
-          do while (.NOT.(termination))
+          k = 1
+          len_lof_cache = size(lof_cache)
        
+          do m = 1, len(lof_cache)
+       
+             ! Skip the dummy entry, who cares
+             if (cache(lof_c)%contribs_outer(m)%dummy_entry) then
+                cycle
+             end if
+          
              ! Check if this stage passed previously and if so, then retrieve and skip execution
              if (rs_check(prog_info, rs_info, r_flag, lvl=3)) then
              
@@ -264,37 +264,36 @@ module rsp_perturbed_sdf
                 call out_print(out_str, 1)
                 write(out_str, *) ' '
                 call out_print(out_str, 1)
-          
+           
                 ! Note: No cache retrieval here: In order to get to this position, the
                 ! cache would already have been retrieved
           
              else
        
-       
                 o_size = 0
-                call rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, &
-                                       lof_next, o_size, mem_mgr)
+                call rsp_lof_calculate(size(D), D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, &
+                                       len_lof_cache, lof_cache(k), o_size, mem_mgr)
+
                 if (mem_exceed(mem_mgr)) then
                 
                    return
                 
                 end if
                 
-                lof_mem_total = lof_mem_total + lof_next%blks_triang_size * o_size
+                lof_mem_total = lof_mem_total + lof_cache(k)%blks_triang_size * o_size
                 
                 if (.NOT.(mem_mgr%calibrate)) then
                 
-                   call contrib_cache_store(lof_next, r_flag, 'OPENRSP_LOF_CACHE')
+                   call contrib_cache_store(lof_cache(k), r_flag, 'OPENRSP_LOF_CACHE')
                    
                 end if
                 
              end if
              
              call prog_incr(prog_info, r_flag, 3)
-             
-             termination = (lof_next%last)
-             lof_next => lof_next%next
-          
+            
+             k = k + 1
+       
           end do
        
        end if
@@ -398,17 +397,18 @@ module rsp_perturbed_sdf
   end subroutine
 
   ! Recursive routine to identify necessary perturbed F, D, S
-  recursive subroutine rsp_fds_recurse(pert, kn, max_npert, p_dummy_orders, contribution_cache, out_print)
+  recursive subroutine rsp_fds_recurse(pert, kn, max_npert, p_dummy_orders, &
+                       len_cache, contribution_cache, out_print)
 
     implicit none
 
-    integer :: n_props, max_npert
+    integer :: n_props, max_npert, len_cache
     type(p_tuple) :: pert
     type(p_tuple), dimension(pert%npert) :: psub
     type(p_tuple), dimension(max_npert) :: p_dummy_orders
     integer, dimension(2) :: kn
     integer :: i, j, k
-    type(contrib_cache) :: contribution_cache
+    type(contrib_cache), dimension(len_cache) :: contribution_cache
     external :: out_print
     character(len=2047) :: out_str
     
@@ -420,10 +420,10 @@ module rsp_perturbed_sdf
  
        do i = 1, size(psub)
        
-          if (contrib_cache_already(contribution_cache, 2, (/p_dummy_orders(psub(i)%npert), &
+          if (contrib_cache_already(len_cache, contribution_cache, 2, (/p_dummy_orders(psub(i)%npert), &
                               p_tuple_standardorder(psub(i))/)) .eqv. .FALSE.) then
 
-             call rsp_fds_recurse(psub(i), kn, max_npert, p_dummy_orders, contribution_cache, out_print)
+             call rsp_fds_recurse(psub(i), kn, max_npert, p_dummy_orders, len_cache, contribution_cache, out_print)
 
           end if
 
@@ -432,7 +432,7 @@ module rsp_perturbed_sdf
     end if
 
     ! See if already identified, if not and if keeping, then store element
-    if (contrib_cache_already(contribution_cache, 2, (/p_dummy_orders(pert%npert), &
+    if (contrib_cache_already(len_cache, contribution_cache, 2, (/p_dummy_orders(pert%npert), &
                               p_tuple_standardorder(pert)/)) .eqv. .FALSE.) then
          
        if (kn_skip(pert%npert, pert%pid, kn) .eqv. .FALSE.) then
@@ -451,7 +451,7 @@ module rsp_perturbed_sdf
              k = k + 1
           end do
           
-          call contrib_cache_add_element(contribution_cache, 2, (/p_dummy_orders(pert%npert), &
+          call contrib_cache_add_element(len_cache, contribution_cache, 2, (/p_dummy_orders(pert%npert), &
                                                                   p_tuple_standardorder(pert)/))
 
        end if
@@ -463,7 +463,8 @@ module rsp_perturbed_sdf
   ! Recursive routine to identify (dryrun == .TRUE.) or assemble (dryrun == .FALSE.) 
   ! lower-order perturbed Fock matrix terms
   recursive subroutine rsp_lof_recurse(pert, total_num_perturbations, &
-                       num_p_tuples, p_tuples, dryrun, fock_lowerorder_cache, &
+                       num_p_tuples, p_tuples, dryrun, len_lof_cache, &
+                       fock_lowerorder_cache, &
                        fp_size, Fp, out_print, residue_select)
 
     implicit none
@@ -474,6 +475,7 @@ module rsp_perturbed_sdf
     type(p_tuple) :: pert
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations
     integer :: fp_size
+    integer :: len_lof_cache
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
     type(contrib_cache) :: fock_lowerorder_cache
     type(QcMat), dimension(fp_size) :: Fp
@@ -493,15 +495,16 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
-               dryrun, fock_lowerorder_cache, fp_size, Fp, out_print,residue_select)
+               dryrun, len_lof_cache, fock_lowerorder_cache, fp_size, &
+               Fp, out_print,residue_select)
 
        else
 
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
                (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
-               p_tuples(2:size(p_tuples))/), dryrun, fock_lowerorder_cache, &
-               fp_size, Fp, out_print,residue_select)
+               p_tuples(2:size(p_tuples))/), dryrun, len_lof_cache, &
+               fock_lowerorder_cache, fp_size, Fp, out_print,residue_select)
 
        end if
     
@@ -519,8 +522,8 @@ module rsp_perturbed_sdf
 
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
-               t_new, dryrun, fock_lowerorder_cache, fp_size, Fp,&
-               out_print,residue_select)
+               t_new, dryrun, len_lof_cache, fock_lowerorder_cache, &
+               fp_size, Fp, out_print,residue_select)
 
        end do
 
@@ -532,7 +535,8 @@ module rsp_perturbed_sdf
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples + 1, &
                (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
-               fock_lowerorder_cache, fp_size, Fp, out_print, residue_select)
+               len_lof_cache, fock_lowerorder_cache, fp_size, Fp, &
+               out_print, residue_select)
                
        end if
 
@@ -558,7 +562,7 @@ module rsp_perturbed_sdf
        if ( (density_order_skip .EQV. .FALSE.).AND. &
             (residue_skip .EQV. .FALSE.) ) then
        
-          if (contrib_cache_already(fock_lowerorder_cache, &
+          if (contrib_cache_already(len_lof_cache, fock_lowerorder_cache, &
           num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples))) then
 
              ! If in cache and not dryrun, then put precalculated data in answer array
@@ -583,8 +587,8 @@ module rsp_perturbed_sdf
                    
                 end do
              
-                call contrib_cache_getdata(fock_lowerorder_cache, num_p_tuples, p_tuples, &
-                contrib_size=fp_size, ind_len=0, mat=Fp)
+                call contrib_cache_getdata(len_lof_cache, fock_lowerorder_cache, &
+                num_p_tuples, p_tuples, contrib_size=fp_size, ind_len=0, mat=Fp)
              
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
@@ -618,8 +622,8 @@ module rsp_perturbed_sdf
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
                 
-                call contrib_cache_add_element(fock_lowerorder_cache, num_p_tuples, &
-                     p_tuples_standardorder(num_p_tuples, p_tuples))
+                call contrib_cache_add_element(len_lof_cache, fock_lowerorder_cache, &
+                     num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples))
                 
              else
              
@@ -637,8 +641,8 @@ module rsp_perturbed_sdf
   end subroutine
   
   ! Calculate lower-order Fock contributions for a given inner perturbation tuple
-  subroutine rsp_lof_calculate(D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, cache, &
-                               total_outer_size_1, mem_mgr)
+  subroutine rsp_lof_calculate(len_d, D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, &
+                               len_cache, cache, total_outer_size_1, mem_mgr)
 
     implicit none
 
@@ -648,10 +652,11 @@ module rsp_perturbed_sdf
     integer :: cache_offset, i, j, k, m, n, s, p
     integer :: total_outer_size_1, c1_ctr, lhs_ctr_1, num_pert
     integer :: num_0, num_1, tot_num_pert, offset
+    integer :: len_d, len_cache
     character(30) :: mat_str, fmt_str
-    type(contrib_cache) :: cache
-    type(contrib_cache_outer) :: D
-    type(contrib_cache_outer), pointer :: outer_next
+    type(contrib_cache), dimension(len_cache) :: cache
+    type(contrib_cache_outer), dimension(len_d) :: D
+    
     type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
     type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, contrib_0, contrib_1
     type(QcMat) :: D_unp

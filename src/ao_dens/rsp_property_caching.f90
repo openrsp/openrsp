@@ -87,7 +87,7 @@ module rsp_property_caching
    integer, allocatable, dimension(:,:) :: indices
          
    ! Associated outer cache instances
-   type(contrib_cache_outer_array), allocatable, dimension(:) :: contribs_outer
+   type(contrib_cache_outer), allocatable, dimension(:) :: contribs_outer
 
  end type 
  
@@ -1658,30 +1658,28 @@ module rsp_property_caching
    
   end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
  
   ! Allocate and set up new contribution cache element
   subroutine contrib_cache_allocate(current_element)
 
    implicit none
 
-   type(contrib_cache), pointer :: current_element
-   allocate(current_element)
+   type(contrib_cache), allocatable, dimension(:) :: current_element
 
-   current_element%next => current_element
-   current_element%last = .TRUE.
+   allocate(current(element(1)))
 
    current_element%p_inner%npert = 0
    
-   allocate(current_element%p_inner%pdim(1))
-   allocate(current_element%p_inner%plab(1))
-   allocate(current_element%p_inner%pid(1))
-   allocate(current_element%p_inner%freq(1))
+   allocate(current_element(1)%p_inner%pdim(1))
+   allocate(current_element(1)%p_inner%plab(1))
+   allocate(current_element(1)%p_inner%pid(1))
+   allocate(current_element(1)%p_inner%freq(1))
    
-   current_element%p_inner%pdim = (/0/)
-   current_element%p_inner%plab = (/'NUTN'/)
-   current_element%p_inner%pid = (/0/)
-   current_element%p_inner%freq = (/0.0/)
+   current_element(1)%p_inner%pdim = (/0/)
+   current_element(1)%p_inner%plab = (/'NUTN'/)
+   current_element(1)%p_inner%pid = (/0/)
+   current_element(1)%p_inner%freq = (/0.0/)
    
    call contrib_cache_outer_allocate(current_element%contribs_outer)
    
@@ -1719,7 +1717,7 @@ module rsp_property_caching
 
   end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
   
  ! Initialize contribution cache (and associated outer contribution cache)
  ! as specified by perturbation tuples 'p_tuples'
@@ -1732,7 +1730,6 @@ module rsp_property_caching
    type(contrib_cache) :: new_element
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
 
-   new_element%last = .TRUE.
    call p1_cloneto_p2(p_tuples(1), new_element%p_inner)
    
    new_element%nblks = get_num_blks(new_element%p_inner)
@@ -1756,13 +1753,15 @@ module rsp_property_caching
 
       if (present(n_rule)) then
       
-         call contrib_cache_outer_add_element(new_element%contribs_outer, &
+         call contrib_cache_outer_add_element(size(new_element%contribs_outer), &
+               new_element%contribs_outer, &
               .NOT.( p_tuples(2)%npert > 0), num_p_tuples - 1, &
                p_tuples(2:num_p_tuples), n_rule=n_rule)   
          
       else
          
-         call contrib_cache_outer_add_element(new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
+         call contrib_cache_outer_add_element(size(new_element%contribs_outer), &
+               new_element%contribs_outer, .FALSE., num_p_tuples - 1, &
                                               p_tuples(2:num_p_tuples))   
          
       end if
@@ -1776,12 +1775,14 @@ module rsp_property_caching
       
       if (present(n_rule)) then
          
-         call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
+         call contrib_cache_outer_add_element(size(new_element%contribs_outer), &
+              new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
                                               (/get_emptypert()/), n_rule=n_rule)
          
       else
       
-         call contrib_cache_outer_add_element(new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
+         call contrib_cache_outer_add_element(size(new_element%contribs_outer), &
+              new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
                                               (/get_emptypert()/))
          
       end if
@@ -1951,8 +1952,7 @@ module rsp_property_caching
    
       ! Create the new entry
       call contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
-      new_element_ptr => new_element
-   
+         
       ! Fill it with data if provided  
       if(present(data_mat)) then
       
@@ -2004,32 +2004,33 @@ module rsp_property_caching
       
  end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
  
  ! Add contribution cache element to existing linked list
- subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples, n_rule)
+ subroutine contrib_cache_add_element(len_cache, cache, num_p_tuples, p_tuples, n_rule)
 
    implicit none
 
    logical :: empty_outer
-   integer :: num_p_tuples, i
+   integer :: num_p_tuples, i, len_cache
+   integer :: found_loc
    integer, optional :: n_rule
-   type(contrib_cache), target :: current_element
-   type(contrib_cache), pointer :: new_element
-   type(contrib_cache), pointer :: new_element_ptr
-   type(contrib_cache), pointer :: next_element
+   type(contrib_cache), dimension(len_cache) :: cache
+   type(contrib_cache), allocatable, dimension(:) :: cache_store
+   type(contrib_cache) :: new_element
+   
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
    type(p_tuple) :: emptypert
 
    ! If cache element for inner perturbations already exists, just add outer
-   if (contrib_cache_already_inner(current_element, p_tuples(1))) then
+   if (contrib_cache_already_inner(len_cache, cache, p_tuples(1))) then
    
-      next_element => current_element
+      found_loc = 1
    
-      ! Skip to cache element for this inner
-      do while (p_tuple_compare(next_element%p_inner, p_tuples(1)) .EQV. .FALSE.)
+      ! Locate cache element for this inner
+      do while (p_tuple_compare(cache(found_loc)%p_inner, p_tuples(1)) .EQV. .FALSE.)
 
-         next_element => next_element%next
+         found_loc = found_loc + 1
           
       end do
       
@@ -2042,16 +2043,18 @@ module rsp_property_caching
          if (p_tuples(2)%npert > 0) then
          
             empty_outer = .FALSE.
-            next_element%num_outer = next_element%num_outer + 1
+            cache(found_loc)%num_outer = cache(found_loc)%num_outer + 1
      
             if (present(n_rule)) then
                
-               call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+               call contrib_cache_outer_add_element(size(cache(found_loc)%contribs_outer), &
+                    cache(found_loc)%contribs_outer, .FALSE., &
                     num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule=n_rule)
          
             else
          
-               call contrib_cache_outer_add_element(next_element%contribs_outer, .FALSE., &
+               call contrib_cache_outer_add_element(size(cache(found_loc)%contribs_outer), &
+                    cache(found_loc)%contribs_outer, .FALSE., &
                     num_p_tuples - 1, p_tuples(2:num_p_tuples))
          
             end if
@@ -2062,7 +2065,7 @@ module rsp_property_caching
             
       if (empty_outer) then
      
-         next_element%num_outer = next_element%num_outer + 1
+         cache(found_loc)%num_outer = cache(found_loc)%num_outer + 1
 
          call empty_p_tuple(emptypert)
          
@@ -2071,11 +2074,13 @@ module rsp_property_caching
 
          if (present(n_rule)) then
          
-            call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 1, (/emptypert/), n_rule=n_rule)
+            call contrib_cache_outer_add_element(size(cache(found_loc)%contribs_outer), &
+                    cache(found_loc)%contribs_outer, .TRUE., 1, (/emptypert/), n_rule=n_rule)
          
          else
             
-            call contrib_cache_outer_add_element(next_element%contribs_outer, .TRUE., 0, (/emptypert/))
+            call contrib_cache_outer_add_element(size(cache(found_loc)%contribs_outer), &
+                    cache(found_loc)%contribs_outer, .TRUE., 0, (/emptypert/))
          
          end if
        
@@ -2099,51 +2104,55 @@ module rsp_property_caching
       end if
          
       new_element%num_outer = 1
-      new_element_ptr => new_element
-
-      do while (next_element%last .EQV. .FALSE.)
-         next_element => contrib_cache_next_element(next_element)
-      end do
-
-      next_element%last = .FALSE.
-      new_element%next => next_element%next
-      next_element%next => new_element
+      
+      allocate(cache_store(len_cache))
+      
+      ! FIXME: May be necessary to copy element by element
+      ! But I think that the default assignment method will work here
+      cache_store = cache
+      
+      deallocate(cache)
+      
+      allocate(cache(len_cache + 1))
+      
+      ! FIXME: May be necessary to copy element by element
+      ! But I think that the default assignment method will work here
+      cache(1:len_cache) = cache_store
+      cache(len_cache + 1) = new_element
+      
+      deallocate(cache_store)
+      
       
    end if
 
  end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
  
  ! Check if element (inner + outer combination) as specified by 'p_tuples' (and possible 'n_rule')
  ! already exists in cache
- function contrib_cache_already(current_element, num_p_tuples, p_tuples, n_rule)
+ function contrib_cache_already(len_cache, cache, num_p_tuples, p_tuples, n_rule)
 
    implicit none
 
    logical :: contrib_cache_already
-   integer :: passedlast, passedlast_outer, num_p_tuples, i
+   integer :: num_p_tuples, i, len_cache
    integer, optional :: n_rule
-   type(contrib_cache), target :: current_element
-   type(contrib_cache), pointer :: next_element
+   
+   type(contrib_cache), dimension(len_cache) :: cache
+   
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
    type(p_tuple) :: emptypert, p_tuple_ord, p_tmp_ord
 
-   next_element => current_element
-   passedlast = 0
-   
+
    p_tuple_ord = p_tuple_standardorder(p_tuples(1))
    contrib_cache_already = .FALSE.
 
    call empty_p_tuple(emptypert)
    
-   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-   ! COULD THIS BE DONE IN ANOTHER WAY?
-   do while ((passedlast < 2) .AND. (contrib_cache_already .eqv. .FALSE.))
-
-      next_element => contrib_cache_next_element(next_element)
-      p_tmp_ord = p_tuple_standardorder(next_element%p_inner)
-      
+   do i = 1, len_cache
+   
+      p_tmp_ord = p_tuple_standardorder(cache%p_inner)
       contrib_cache_already = p_tuple_compare(p_tmp_ord, p_tuple_ord)
       
       if (contrib_cache_already) then
@@ -2152,14 +2161,22 @@ module rsp_property_caching
          
             if (present(n_rule)) then
             
-               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+               contrib_cache_already = contrib_cache_already_outer(size(cache%contribs_outer), &
+                                       cache%contribs_outer, &
                                        num_p_tuples - 1, p_tuples(2:num_p_tuples), n_rule=n_rule)
             
             else
 
-               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
+               contrib_cache_already = contrib_cache_already_outer(size(cache%contribs_outer), &
+                                       cache%contribs_outer, &
                                        num_p_tuples - 1, p_tuples(2:num_p_tuples))
             
+            end if
+            
+            if (contrib_cache_already) then
+            
+               exit
+               
             end if
 
             
@@ -2167,30 +2184,31 @@ module rsp_property_caching
          
             if (present(n_rule)) then
             
-               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
-                                       0, (/emptypert/), n_rule=n_rule)
+               contrib_cache_already = contrib_cache_already_outer(size(cache%contribs_outer), &
+                                       cache%contribs_outer, 0, (/emptypert/), n_rule=n_rule)
             
             else
             
-               contrib_cache_already = contrib_cache_already_outer(next_element%contribs_outer, &
-                                       0, (/emptypert/))
+               contrib_cache_already = contrib_cache_already_outer(size(cache%contribs_outer), &
+                                       cache%contribs_outer, 0, (/emptypert/))
             
-            end if            
+            end if    
             
+            if (contrib_cache_already) then
+            
+               exit
+               
+            end if
                       
          end if
       
       end if
-
-      if (next_element%last .eqv. .TRUE.) then
-         passedlast = passedlast + 1
-      end if
-
+      
    end do
-
+   
  end function
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
   
  ! Check if element of outer contribution cache as specified by 'p_tuples_outer'
  ! (and possible 'n_rule') exists in linked list
@@ -2199,7 +2217,7 @@ module rsp_property_caching
    implicit none
 
    logical :: contrib_cache_already_outer
-   integer :: passedlast, passedlast_outer, num_dmat, i
+   integer :: num_dmat, i
    integer :: len_cache
    integer, optional :: n_rule
    type(contrib_cache_outer), dimension(len_cache) :: cache
@@ -2225,6 +2243,12 @@ module rsp_property_caching
          
                                  
       end if
+      
+      if (contrib_cache_already_outer) then
+      
+         exit
+         
+      end if
    
    end do
    
@@ -2234,43 +2258,37 @@ end function
 
  ! Check if contribution cache (inner only) element (as specified by 'p_inner') 
  ! already exists in linked list 
- function contrib_cache_already_inner(current_element, p_inner)
+ function contrib_cache_already_inner(len_cache, cache, p_inner)
 
    implicit none
 
    logical :: contrib_cache_already_inner
-   integer :: passedlast,  i
-   type(contrib_cache), target :: current_element
-   type(contrib_cache), pointer :: next_element
+   integer :: passedlast, i, len_cache
+   type(contrib_cache), dimension(len_cache) :: cache
+   
    type(p_tuple) :: p_inner, p_tuple_ord
    
-   next_element => current_element
-   passedlast = 0
    p_tuple_ord = p_tuple_standardorder(p_inner)
    contrib_cache_already_inner = .FALSE.
 
-   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-   ! COULD THIS BE DONE IN ANOTHER WAY?
-   do while ((passedlast < 2) .AND. (contrib_cache_already_inner .eqv. .FALSE.))
-
-   ! Make sure the tuples that need to be ordered are ordered
+   do i = 1, len_cache
    
-      next_element => contrib_cache_next_element(next_element)
-     
-      contrib_cache_already_inner = p_tuple_compare(next_element%p_inner, p_tuple_ord)
-
-      if (next_element%last .eqv. .TRUE.) then
-         passedlast = passedlast + 1
+      contrib_cache_already_inner = p_tuple_compare(cache(i)%p_inner, p_tuple_ord)
+      
+      if (contrib_cache_already_inner) then
+      
+         exit
+         
       end if
-
+   
    end do
-
+   
  end function
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine: FIXME:UPD
  
  ! Get data from outer contribution cache element    
- subroutine contrib_cache_getdata_outer(cache, num_p_tuples, p_tuples, &
+ subroutine contrib_cache_getdata_outer(len_cache, cache, num_p_tuples, p_tuples, &
             from_inner, contrib_size, ind_len, ind_unsorted, hard_offset, mat, mat_sing, &
             scal, n_rule)
 
@@ -2282,6 +2300,7 @@ end function
               ind_len, nblks, offset, cache_hard_offset
    integer, optional :: hard_offset, n_rule
    integer :: contrib_size
+   integer :: len_cache, loc_found
    integer, allocatable, dimension(:) :: pids_in_cache, pids_current_contrib, & 
                                          p_tuples_dimensions, &
                                          p_tuples_dimensions_cacheorder, &
@@ -2296,8 +2315,7 @@ end function
    type(p_tuple), allocatable, dimension(:) :: p_tuples_srch, p_tuples_srch_ord
    type(p_tuple) :: merged_p_tuple
    integer, dimension(ind_len), optional ::  ind_unsorted
-   type(contrib_cache_outer), target :: cache
-   type(contrib_cache_outer), pointer :: next_element_outer
+   type(contrib_cache_outer), dimension(len_cache) :: cache
    type(QcMat), optional, dimension(contrib_size) :: mat
    type(QcMat), optional :: mat_sing
    complex(8), optional, dimension(contrib_size) :: scal
@@ -2344,43 +2362,46 @@ end function
    
    p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
   
-      next_element_outer => cache
-      passedlast = 0
-      found = .FALSE.
-
-   do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
-
+   found = .FALSE.
+      
+   do i = 1, len_cache
    
-      next_element_outer => contrib_cache_outer_next_element(next_element_outer)
-
-         if ((size(p_tuples_srch_ord) == 0) .AND. &
-             (size(next_element_outer%p_tuples) == 1) ) then
+      if (cache(i)%dummy_entry) then
+      
+         cycle
+         
+      end if
+   
+      if ((size(p_tuples_srch_ord) == 0) .AND. &
+          (size(cache(i)%p_tuples) == 1) ) then
              
-            if ((next_element_outer%p_tuples(1)%npert == 0)) then
+         if ((cache(i)%p_tuples(1)%npert == 0)) then
             
-                found = .TRUE.
-            
-            end if
+            found = .TRUE.
             
          end if
+            
+      end if
       
-      if (size(next_element_outer%p_tuples) == size(p_tuples_srch_ord)) then
-         found = p_tuples_compare(num_p_tuples - inner_rm, next_element_outer%p_tuples, &
+      if (size(cache(i)%p_tuples) == size(p_tuples_srch_ord)) then
+         found = p_tuples_compare(num_p_tuples - inner_rm, cache(i)%p_tuples, &
                                   p_tuples_srch_ord)
       end if   
                                
                                   
       if (present(n_rule)) then
       
-         found = found .AND. (n_rule == next_element_outer%n_rule)
+         found = found .AND. (n_rule == cache(i)%n_rule)
       
       end if
 
-      if (next_element_outer%last) then
-         passedlast = passedlast + 1
-      end if
-
+      if (found) then
+      
+         loc_found = i
+      
+      exit
    end do
+
    
    if (.NOT.(found)) then
    
@@ -2543,7 +2564,7 @@ end function
             
             if (present(mat)) then
             
-               call QcMatRAXPY(1.0d0, next_element_outer%data_mat(cache_offset + &
+               call QcMatRAXPY(1.0d0, cache(loc_found)%data_mat(cache_offset + &
                                cache_hard_offset), mat(res_offset))
                
             else if (present(scal)) then
@@ -2553,7 +2574,7 @@ end function
 
                scal(res_offset) = &
                scal(res_offset) + &
-               next_element_outer%data_scal(cache_offset + cache_hard_offset)              
+               cache(loc_found)%data_scal(cache_offset + cache_hard_offset)              
             
             end if
 
@@ -2613,7 +2634,7 @@ end function
    
       if (found) then
       
-         call QcMatAEqB(mat_sing, next_element_outer%data_mat(offset + cache_hard_offset))
+         call QcMatAEqB(mat_sing, cache(loc_found)%data_mat(offset + cache_hard_offset))
          
       else
 
@@ -2625,14 +2646,14 @@ end function
 
  end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
  
  ! Get data from contribution cache
  ! Will search linked list for appropriate inner entry, then
  ! search associated outer contribution cache linked list
  ! and retrieve with contrib_cache_getdata_outer
  ! Assumes that p_tuples is in standard order
- subroutine contrib_cache_getdata(cache, num_p_tuples, p_tuples, contrib_size, &
+ subroutine contrib_cache_getdata(len_cache, cache, num_p_tuples, p_tuples, contrib_size, &
                                   ind_len, ind_unsorted, hard_offset, mat, mat_sing, scal, n_rule)
 
    implicit none
@@ -2642,11 +2663,11 @@ end function
               contrib_size, total_num_perturbations, pr_offset, cache_offset, &
               merged_triang_size, merged_nblks, res_offset, ind_len, &
               cache_hard_offset
+   integer :: loc_found
    integer, optional :: hard_offset, n_rule
    integer, optional, dimension(ind_len) :: ind_unsorted
-   type(contrib_cache), target :: cache
-   type(contrib_cache), pointer :: next_element
-   type(contrib_cache_outer), pointer :: next_element_outer
+   type(contrib_cache), dimension(len_cache) :: cache
+
    type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_ord
    type(p_tuple) :: merged_p_tuple
    type(QcMat), optional, dimension(contrib_size) :: mat
@@ -2666,25 +2687,28 @@ end function
    
 
    ! Search inner cache for entry
-   
-   next_element => cache
-   passedlast = 0
    found = .FALSE.
-
-
    p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
 
-   do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
-
-      next_element => contrib_cache_next_element(next_element)
-
-      found = p_tuple_compare(next_element%p_inner, p_tuples_ord(1))
-
-      if (next_element%last) then
-         passedlast = passedlast + 1
+   do i = 1, len_cache
+   
+      if (cache(i)%dummy_entry) then
+      
+         cycle
+         
       end if
-
+   
+      found = p_tuple_compare(cache(i)%p_inner, p_tuples_ord(1))
+      
+      if (found) then
+      
+         loc_found = i
+         exit
+         
+      end if   
+      
    end do
+   
 
    ! If found, move to search (and retrieve) from outer cache
    ! Several cases depending on which type of data is requested,
@@ -2692,17 +2716,22 @@ end function
    ! is a discriminating factor in search (the latter typical for two-factor terms)
    if (found) then
    
+      outer_size = size(cache(loc_found)%contribs_outer)
+   
+   
       if (present(mat)) then
 
          if (present(n_rule)) then
              
-            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+            call contrib_cache_getdata_outer(outer_size, cache(loc_found)%contribs_outer, &
+                 num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, hard_offset, &
                  mat=mat, n_rule=n_rule)
        
          else
          
-            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+            call contrib_cache_getdata_outer(outer_size, cache(loc_found)%contribs_outer, &
+                 num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, hard_offset, mat=mat)
          
          end if
@@ -2711,13 +2740,15 @@ end function
       
          if (present(n_rule)) then
        
-            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+            call contrib_cache_getdata_outer(outer_size, cache(loc_found)%contribs_outer, &
+                 num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
                  mat_sing=mat_sing, n_rule=n_rule)
        
          else
          
-            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+            call contrib_cache_getdata_outer(outer_size, cache(loc_found)%contribs_outer, &
+                 num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
                  mat_sing=mat_sing)
                  
@@ -2727,13 +2758,15 @@ end function
       
          if (present(n_rule)) then
          
-            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+            call contrib_cache_getdata_outer(outer_size, cache(loc_found)%contribs_outer, &
+                 num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
                  scal=scal, n_rule=n_rule)       
        
          else
          
-            call contrib_cache_getdata_outer(next_element%contribs_outer, num_p_tuples, &
+            call contrib_cache_getdata_outer(outer_size, cache(loc_found)%contribs_outer, &
+                 num_p_tuples, &
                  p_tuples, .TRUE., contrib_size, ind_len, ind_unsorted, cache_hard_offset, &
                  scal=scal)
          
