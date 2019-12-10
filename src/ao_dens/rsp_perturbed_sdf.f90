@@ -248,11 +248,6 @@ module rsp_perturbed_sdf
        
           do m = 1, len(lof_cache)
        
-             ! Skip the dummy entry, who cares
-             if (cache(lof_c)%contribs_outer(m)%dummy_entry) then
-                cycle
-             end if
-          
              ! Check if this stage passed previously and if so, then retrieve and skip execution
              if (rs_check(prog_info, rs_info, r_flag, lvl=3)) then
              
@@ -272,7 +267,7 @@ module rsp_perturbed_sdf
        
                 o_size = 0
                 call rsp_lof_calculate(size(D), D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, &
-                                       len_lof_cache, lof_cache(k), o_size, mem_mgr)
+                                       lof_cache(k), o_size, mem_mgr)
 
                 if (mem_exceed(mem_mgr)) then
                 
@@ -284,14 +279,15 @@ module rsp_perturbed_sdf
                 
                 if (.NOT.(mem_mgr%calibrate)) then
                 
-                   call contrib_cache_store(lof_cache(k), r_flag, 'OPENRSP_LOF_CACHE')
+                   call contrib_cache_store(lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
                    
                 end if
                 
+                 
+                
              end if
-             
+                      
              call prog_incr(prog_info, r_flag, 3)
-            
              k = k + 1
        
           end do
@@ -335,6 +331,8 @@ module rsp_perturbed_sdf
           sdf_retrieved = .TRUE.
        
        else
+       
+          ! DEC 19: CONTINUE HERE
        
           write(out_str, *) 'Calculating perturbed S, D, F at order', i
           call out_print(out_str, 1)
@@ -642,7 +640,7 @@ module rsp_perturbed_sdf
   
   ! Calculate lower-order Fock contributions for a given inner perturbation tuple
   subroutine rsp_lof_calculate(len_d, D, get_1el_mat, get_ovl_mat, get_2el_mat, out_print, &
-                               len_cache, cache, total_outer_size_1, mem_mgr)
+                               cache, total_outer_size_1, mem_mgr)
 
     implicit none
 
@@ -652,9 +650,9 @@ module rsp_perturbed_sdf
     integer :: cache_offset, i, j, k, m, n, s, p
     integer :: total_outer_size_1, c1_ctr, lhs_ctr_1, num_pert
     integer :: num_0, num_1, tot_num_pert, offset
-    integer :: len_d, len_cache
+    integer :: len_d
     character(30) :: mat_str, fmt_str
-    type(contrib_cache), dimension(len_cache) :: cache
+    type(contrib_cache) :: cache
     type(contrib_cache_outer), dimension(len_d) :: D
     
     type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
@@ -675,7 +673,6 @@ module rsp_perturbed_sdf
     call out_print(out_str, 1)
     
     call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
-    outer_next => cache%contribs_outer
 
     allocate(outer_contract_sizes_1(cache%num_outer))    
    
@@ -685,39 +682,36 @@ module rsp_perturbed_sdf
     
        call QCMatInit(D_unp)
 
-       call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/get_emptypert()/), .FALSE., &
             contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
 
     end if
    
-   
-    ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
-    traverse_end = .FALSE.
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-       
     total_outer_size_1 = 0
     num_1 = 0
-        
     k = 1
+   
+    ! Traversal: Find number of density matrices for contraction for 1-el, 2-el cases
+    do m = 1, size(cache%contribs_outer)
     
-    do while (traverse_end .EQV. .FALSE.)
-  
+       if (cache%contribs_outer(m)%dummy_entry) then
+       
+          cycle
+    
+       end if
+       
        ! No chain rule application: Both 1-el and 2-el contributions
-       if (outer_next%num_dmat == 0) then
+       if (cache%contribs_outer(m)%num_dmat == 0) then
 
           outer_contract_sizes_1(k) = 1
           total_outer_size_1 = total_outer_size_1 + 1
        
        ! One chain rule application: Only 2-el contributions
-       else if (outer_next%num_dmat == 1) then
+       else if (cache%contribs_outer(m)%num_dmat == 1) then
        
           num_1 = num_1 + 1
-          outer_contract_sizes_1(k) = outer_next%blks_tuple_triang_size(1)
-          total_outer_size_1 = total_outer_size_1 + outer_next%blks_tuple_triang_size(1)
+          outer_contract_sizes_1(k) = cache%contribs_outer(m)%blks_tuple_triang_size(1)
+          total_outer_size_1 = total_outer_size_1 + cache%contribs_outer(m)%blks_tuple_triang_size(1)
 
        end if
        
@@ -731,14 +725,14 @@ module rsp_perturbed_sdf
        end if
        
        call mem_incr(mem_mgr, cache%blks_triang_size*outer_contract_sizes_1(k))
-       allocate(outer_next%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
+       allocate(cache%contribs_outer(m)%data_mat(cache%blks_triang_size*outer_contract_sizes_1(k)))
        
        if (.NOT.(mem_mgr%calibrate)) then
        
           do i = 1, cache%blks_triang_size*outer_contract_sizes_1(k)
     
-             call QcMatInit(outer_next%data_mat(i), D_unp)
-             call QcMatZero(outer_next%data_mat(i))
+             call QcMatInit(cache%contribs_outer(m)%data_mat(i), D_unp)
+             call QcMatZero(cache%contribs_outer(m)%data_mat(i))
                 
           end do
           
@@ -759,7 +753,7 @@ module rsp_perturbed_sdf
        
        do i = 1, outer_next%num_dmat
           
-          write(out_str, *) 'D', outer_next%p_tuples(i)%plab
+          write(out_str, *) 'D', cache%contribs_outer(m)%p_tuples(i)%plab
           call out_print(out_str, 1)
        
        end do
@@ -767,7 +761,7 @@ module rsp_perturbed_sdf
        write(out_str, *) ' '
        call out_print(out_str, 1)
     
-       if (outer_next%last) then
+       if (cache%contribs_outer(m)%last) then
     
           traverse_end = .TRUE.
     
@@ -775,10 +769,10 @@ module rsp_perturbed_sdf
     
        k = k + 1
     
-       outer_next => outer_next%next
-    
     end do
+    
 
+  
     ! Memory savings loop start
     ! Additional needed for non-savings: size_inner * (2 + total_outer_size_1) (+ additions from callback)
     ! Savings: if > size_inner*2: Do "all inner" first, then appropriate number of outer
@@ -863,6 +857,8 @@ module rsp_perturbed_sdf
           end do
       
        end if
+       
+       ! DEC 19: CONTINUE HERE
        
        
        ! Traversal: Get matrices for contraction from cache

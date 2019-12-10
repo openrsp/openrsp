@@ -918,6 +918,8 @@ module rsp_general
        
     end if
     
+    ! DEC 19: CONTINUE HERE AFTER RETURNING FROM SDF
+    
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, r_flag, 1)
