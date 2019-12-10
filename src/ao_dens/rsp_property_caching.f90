@@ -41,8 +41,61 @@ module rsp_property_caching
   
  ! Define contrib cache datatypes
  
- ! "Outer" type: can be "independent" or attached to inner
+ ! New "outer" type
+ ! An instance of this is one cache entry to be used in array of such
  type contrib_cache_outer
+ 
+   logical :: dummy_entry
+   ! Number of chain rule applications
+   integer :: num_dmat
+   ! Perturbation tuples
+   type(p_tuple), allocatable, dimension(:) :: p_tuples
+   
+   integer :: contrib_type = 0
+   ! Choice of n rule for contribution (for use in two-factor terms)
+   integer :: n_rule = 0
+   ! Size of contribution data
+   integer :: contrib_size = 0
+   ! Perturbation block information
+   integer, allocatable, dimension(:) :: nblks_tuple
+   integer, allocatable, dimension(:,:) :: blk_sizes
+   integer, allocatable, dimension(:,:) :: indices
+   integer, allocatable, dimension(:,:,:) :: blks_tuple_info
+   integer, allocatable, dimension(:) :: blks_tuple_triang_size
+   ! Matrix data (if used)
+   type(QcMat), allocatable, dimension(:) :: data_mat 
+   ! Scalar data (if used)
+   complex(8), allocatable, dimension(:) :: data_scal
+ 
+ ! New "inner" type
+ 
+ ! "Inner" type: For use in e.g. perturbed Fock and energy-type terms
+ ! An instance of this is one cache entry to be used in array of such
+ ! Attaches to one or more outer cache instances
+ type contrib_cache
+
+   ! Perturbation tuple
+   type(p_tuple) :: p_inner
+
+   ! Number of outer cache instances attached to this inner
+   integer :: num_outer
+   ! Perturbation block/indices information
+   integer :: nblks
+   integer, allocatable, dimension(:) :: blk_sizes
+   integer :: blks_triang_size
+   integer, allocatable, dimension(:,:) :: blk_info
+   integer, allocatable, dimension(:,:) :: indices
+         
+   ! Associated outer cache instances
+   type(contrib_cache_outer_array), allocatable, dimension(:) :: contribs_outer
+
+ end type 
+ 
+ 
+ ! FIXME: OLD TYPES TO BE RMD
+ 
+ ! "Outer" type: can be "independent" or attached to inner
+ type contrib_cache_outer_old
 
    type(contrib_cache_outer), pointer :: next
    logical :: last
@@ -75,7 +128,7 @@ module rsp_property_caching
 
  ! "Inner" type: For use in e.g. perturbed Fock and energy-type terms
  ! Attaches to one or more outer cache instances
- type contrib_cache
+ type contrib_cache_old
 
    type(contrib_cache), pointer :: next
    logical :: last
@@ -95,6 +148,8 @@ module rsp_property_caching
    type(contrib_cache_outer), pointer :: contribs_outer
 
  end type 
+ 
+ ! END FIXME: OLD TYPES
 
  
  contains
@@ -106,6 +161,7 @@ module rsp_property_caching
   
  
  
+  ! FIXME: No ll-to-array chgs needed for this routine
     
   ! Initialize progress/restarting framework if dictated
   ! by restart flag r_flag
@@ -138,6 +194,8 @@ module rsp_property_caching
     end if
     
   end subroutine
+     
+  ! FIXME: No ll-to-array chgs needed for this routine     
      
   ! Check progress counter against restart checkpoint
   ! Return true if checkpoint not passed, false if passed
@@ -193,6 +251,7 @@ module rsp_property_caching
     
   end function
   
+  ! FIXME: No ll-to-array chgs needed for this routine
   
   ! Increment calculation progress counter prog_info at level 'lvl'
   ! and store in file if dictated by restarting setup flag r_flag 
@@ -222,6 +281,8 @@ module rsp_property_caching
     end if
     
   end subroutine
+ 
+! FIXME: Maybe ll-to-array chgs needed for this routine
  
  ! Store array of matrices or scalars in file fname
  subroutine mat_scal_store(array_size, fname, r_flag, mat, scal, start_pos)
@@ -285,6 +346,8 @@ module rsp_property_caching
  
  end subroutine
  
+ ! FIXME: Maybe ll-to-array chgs needed for this routine
+ 
  ! Retrieve array of matrices or scalars from file fname
  subroutine mat_scal_retrieve(array_size, fname, mat, scal)
  
@@ -325,6 +388,8 @@ module rsp_property_caching
     end if
  
  end subroutine
+ 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Store contribution cache structure (including outer attached instances) in file fname
  subroutine contrib_cache_store(cache, r_flag, fname)
@@ -504,6 +569,8 @@ module rsp_property_caching
  
  end subroutine
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
+ 
  ! Retrieve contribution cache structure (including outer attached instances) from file fname
  subroutine contrib_cache_retrieve(cache, fname)
  
@@ -569,6 +636,8 @@ module rsp_property_caching
  
  end subroutine
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
+ 
  ! Wrapper: Get one inner contribution cache instance from file fname
  subroutine contrib_cache_retrieve_one_inner(cache_new, fname, funit)
  
@@ -583,6 +652,8 @@ module rsp_property_caching
     call contrib_cache_read_one_inner(cache_new, fname, funit)
 
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
  ! Read one inner contribution cache instance from file fname
  subroutine contrib_cache_read_one_inner(cache, fname, funit)
@@ -710,6 +781,8 @@ module rsp_property_caching
       read(funit) cache%indices
       
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
  ! Wrapper: Store outer type contribution cache element in file fname
  subroutine contrib_cache_outer_store(cache, fname, r_flag, mat_acc_in)
@@ -746,6 +819,8 @@ module rsp_property_caching
  
  
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Write one outer contribution cache element to file fname
  ! Assumes file 'fname' is already opened with I/O unit 'funit'
@@ -977,6 +1052,10 @@ module rsp_property_caching
  
  
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ ! Need to change to do first allocation here
+ ! Don't know what to do about mem mgr update yet
  
  ! Wrapper 1: Get outer contribution cache instance from file fname
  ! Add condition to handle "not from inner"
@@ -1052,6 +1131,7 @@ module rsp_property_caching
  
  end subroutine
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Wrapper 2: Get one outer cache element from file fname
  subroutine contrib_cache_retrieve_one_outer(cache, fname, funit, mat_acc_in)
@@ -1081,6 +1161,8 @@ module rsp_property_caching
    end if
  
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
  ! Read one outer contribution cache element from file fname
  subroutine contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in)
@@ -1287,6 +1369,7 @@ module rsp_property_caching
    
  end subroutine
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine, maybe RM altogether
  
  ! Cycle outer instances attached to 'current_element' until specified
  ! element is reached
@@ -1364,6 +1447,8 @@ module rsp_property_caching
    
 
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine, maybe RM altogether 
  
  ! Cycle contribution cache until first element reached
  function contrib_cache_cycle_first(current_element) result(next_element)
@@ -1383,6 +1468,8 @@ module rsp_property_caching
 
  end function
 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine, maybe RM altogether 
+ 
  ! Cycle outer contribution cache element until first element reached
  function contrib_cache_outer_cycle_first(current_element) result(next_element)
 
@@ -1401,6 +1488,8 @@ module rsp_property_caching
 
  end function
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine, maybe RM altogether 
+ 
  ! Return next element in contribution cache linked list
  function contrib_cache_next_element(current_element) result(next_element)
 
@@ -1413,6 +1502,8 @@ module rsp_property_caching
 
  end function
 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine, maybe RM altogether 
+ 
  ! Return next element in outer contribution cache linked list
  function contrib_cache_outer_next_element(current_element) result(next_element)
 
@@ -1424,6 +1515,8 @@ module rsp_property_caching
    next_element => current_element%next
 
  end function
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
   ! Cycle through a contribution cache and 
   ! deallocate any array-type data in it
@@ -1474,6 +1567,8 @@ module rsp_property_caching
    
   end subroutine
  
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
   ! Cycle through an outer contribution cache and 
   ! deallocate any array-type data in it
@@ -1563,6 +1658,7 @@ module rsp_property_caching
    
   end subroutine
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
  
   ! Allocate and set up new contribution cache element
   subroutine contrib_cache_allocate(current_element)
@@ -1590,37 +1686,41 @@ module rsp_property_caching
    call contrib_cache_outer_allocate(current_element%contribs_outer)
    
  end subroutine
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
  
- ! Allocate and set up new outer contribution cache element
+ ! Set up new outer contribution cache
+ ! This creates a one-entry cache with a dummy entry 
+ ! The cache can then later be extended
  subroutine contrib_cache_outer_allocate(current_element)
 
     implicit none
 
-    type(contrib_cache_outer), pointer :: current_element
-
-    allocate(current_element)
-
-    current_element%next => current_element
-    current_element%num_dmat = 0
-    current_element%last = .TRUE.
-    current_element%dummy_entry = .TRUE.
-
-    allocate(current_element%p_tuples(1))
-
-    current_element%p_tuples(1)%npert = 0
-
-    allocate(current_element%p_tuples(1)%pdim(1))
-    allocate(current_element%p_tuples(1)%plab(1))
-    allocate(current_element%p_tuples(1)%pid(1))
-    allocate(current_element%p_tuples(1)%freq(1))
+    type(contrib_cache_outer), allocatable, dimension(:) :: current_element
+    
+    allocate(current(element(1)))
+    
+    current_element(1)%dummy_entry = .TRUE.
+    current_element(1)%num_dmat = 0
         
-   current_element%p_tuples(1)%pdim = (/0/)
-   current_element%p_tuples(1)%plab = (/'NUTN'/)
-   current_element%p_tuples(1)%pid = (/0/)
-   current_element%p_tuples(1)%freq = (/0.0/)
+    allocate(current_element(1)%p_tuples(1))
+
+    current_element(1)%p_tuples(1)%npert = 0
+
+    allocate(current_element(1)%p_tuples(1)%pdim(1))
+    allocate(current_element(1)%p_tuples(1)%plab(1))
+    allocate(current_element(1)%p_tuples(1)%pid(1))
+    allocate(current_element(1)%p_tuples(1)%freq(1))
+        
+    current_element(1)%p_tuples(1)%pdim = (/0/)
+    current_element(1)%p_tuples(1)%plab = (/'NUTN'/)
+    current_element(1)%p_tuples(1)%pid = (/0/)
+    current_element(1)%p_tuples(1)%freq = (/0.0/)
 
   end subroutine
- 
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine  
+  
  ! Initialize contribution cache (and associated outer contribution cache)
  ! as specified by perturbation tuples 'p_tuples'
  subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples, n_rule)
@@ -1691,7 +1791,9 @@ module rsp_property_caching
  end subroutine
  
  
- ! Initialize outer contribution cache as specified by perturbation tuples 'outer_p_tuples'
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME: UPD
+ 
+ ! Initialize outer contribution cache element as specified by perturbation tuples 'outer_p_tuples'
  ! 'unperturbed' flag signifies empty perturbation tuple (typically used for 'all inner' case)
  subroutine contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
 
@@ -1703,7 +1805,6 @@ module rsp_property_caching
    type(p_tuple), dimension(num_dmat) :: outer_p_tuples
 
    new_element%num_dmat = num_dmat
-   new_element%last = .TRUE.
    new_element%dummy_entry = .FALSE.
    
    if (.NOT.(unperturbed)) then
@@ -1759,15 +1860,10 @@ module rsp_property_caching
    
       new_element%p_tuples%npert = 0
    
-      allocate(new_element%p_tuples(1)%pdim(1))
-      allocate(new_element%p_tuples(1)%plab(1))
-      allocate(new_element%p_tuples(1)%pid(1))
-      allocate(new_element%p_tuples(1)%freq(1))
-      
-      new_element%p_tuples(1)%pdim = (/0/)
-      new_element%p_tuples(1)%plab = (/'NUTN'/)
-      new_element%p_tuples(1)%pid = (/0/)
-      new_element%p_tuples(1)%freq = (/0.0/)
+      allocate(new_element%p_tuples(1)%pdim(0))
+      allocate(new_element%p_tuples(1)%plab(0))
+      allocate(new_element%p_tuples(1)%pid(0))
+      allocate(new_element%p_tuples(1)%freq(0))
       
       ! MaR: Creating indices for unperturbed entry: Return here if problems arise
       
@@ -1778,20 +1874,24 @@ module rsp_property_caching
       
  end subroutine
    
+
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME: UPD
    
- ! Add outer contribution cache element to existing linked list
- subroutine contrib_cache_outer_add_element(curr_element, unperturbed, num_dmat, &
+ ! Add new element to outer contribution cache
+ subroutine contrib_cache_outer_add_element(len_cache, cache, unperturbed, num_dmat, &
             outer_p_tuples, data_size, data_mat, data_scal, n_rule)
 
    implicit none
 
-   logical :: unperturbed, found_element, already
+   logical :: unperturbed, already, found_element
    integer :: num_dmat, i, j, passedlast
    integer, optional :: data_size, n_rule
-   type(contrib_cache_outer), target :: curr_element
-   type(contrib_cache_outer), pointer :: new_element
-   type(contrib_cache_outer), pointer :: new_element_ptr
-   type(contrib_cache_outer), pointer :: next_element
+   integer :: len_cache, found_loc
+   type(contrib_cache_outer), dimension(len_cache) :: cache
+   type(contrib_cache_outer), allocatable, dimension(:) :: cache_store
+   type(contrib_cache_outer) :: new_element
+  
+
    type(p_tuple), dimension(num_dmat) :: outer_p_tuples, p_tuples_st_order
    
    type(Qcmat), optional, dimension(*) :: data_mat
@@ -1799,63 +1899,61 @@ module rsp_property_caching
 
    if (present(n_rule)) then
    
-      already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples, n_rule=n_rule)
+      already = contrib_cache_already_outer(len_cache, cache, num_dmat, outer_p_tuples, n_rule=n_rule)
    
    else
    
-      already = contrib_cache_already_outer(curr_element, num_dmat, outer_p_tuples)
+      already = contrib_cache_already_outer(len_cache, cache, num_dmat, outer_p_tuples)
    
    end if
    
+   ! If an entry for these pert. tuples already exists in cache, then locate it
+   ! and update the data there
    if (already) then
    
-      next_element => curr_element
-      passedlast = 0
-      p_tuples_st_order = p_tuples_standardorder(num_dmat, outer_p_tuples)
       found_element = .FALSE.
-
-      do while ((passedlast < 2) .AND. (found_element .eqv. .FALSE.))
+      p_tuples_st_order = p_tuples_standardorder(num_dmat, outer_p_tuples)
+   
+      do i = 1, len_cache
       
-         next_element => next_element%next
-         
-         if (next_element%num_dmat == num_dmat .AND. .NOT.(next_element%dummy_entry)) then
-            found_element = p_tuples_compare(next_element%num_dmat, &
-            p_tuples_standardorder(next_element%num_dmat, &
-            next_element%p_tuples), p_tuples_st_order)
+         if (cache(i)%num_dmat == num_dmat .AND. .NOT.(cache(i)%dummy_entry)) then
+            found_element = p_tuples_compare(cache(i)%num_dmat, &
+            p_tuples_standardorder(cache(i)%num_dmat, &
+            cache(i)%p_tuples), p_tuples_st_order)
+            
+            if (found_element .EQUIV. .TRUE.) then
+               found_loc = i
+               exit
+            end if
+            
          end if
             
-         if (next_element%last .eqv. .TRUE.) then
-            passedlast = passedlast + 1
-         end if
-
       end do
-      
+   
+      ! Update matrix data
       if(present(data_mat)) then
       
          do i = 1, data_size
          
-            call QcMatAEqB(next_element%data_mat(i),  data_mat(i))
+            call QcMatAEqB(cache(found_loc)%data_mat(i), data_mat(i))
            
          end do
    
       end if
    
+      ! Update scalar data: Currently not used
       if (present(data_scal)) then
    
       end if
-      
    
+   ! Otherwise, if an entry doesn't exist, then make a new entry in the cache
    else
    
-      next_element => curr_element
-      allocate(new_element)
+      ! Create the new entry
       call contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
       new_element_ptr => new_element
    
-      do while (next_element%last .eqv. .FALSE.)
-         next_element => contrib_cache_outer_next_element(next_element)
-      end do
-   
+      ! Fill it with data if provided  
       if(present(data_mat)) then
       
          if (.NOT.(allocated(new_element%data_mat))) then
@@ -1874,6 +1972,7 @@ module rsp_property_caching
    
       end if
    
+      ! Scalar data not presently used in this part of the code
       if (present(data_scal)) then
    
       end if
@@ -1884,13 +1983,28 @@ module rsp_property_caching
       
       end if
 
-      next_element%last = .FALSE.
-      new_element%next => next_element%next
-      next_element%next => new_element
+      allocate(cache_store(len_cache))
+      
+      ! FIXME: May be necessary to copy element by element
+      ! But I think that the default assignment method will work here
+      cache_store = cache
+      
+      deallocate(cache)
+      
+      allocate(cache(len_cache + 1))
+      
+      ! FIXME: May be necessary to copy element by element
+      ! But I think that the default assignment method will work here
+      cache(1:len_cache) = cache_store
+      cache(len_cache + 1) = new_element
+      
+      deallocate(cache_store)
    
    end if
       
  end subroutine
+ 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
  ! Add contribution cache element to existing linked list
  subroutine contrib_cache_add_element(current_element, num_p_tuples, p_tuples, n_rule)
@@ -1999,6 +2113,8 @@ module rsp_property_caching
 
  end subroutine
  
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ 
  ! Check if element (inner + outer combination) as specified by 'p_tuples' (and possible 'n_rule')
  ! already exists in cache
  function contrib_cache_already(current_element, num_p_tuples, p_tuples, n_rule)
@@ -2074,56 +2190,47 @@ module rsp_property_caching
 
  end function
  
- 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
+  
  ! Check if element of outer contribution cache as specified by 'p_tuples_outer'
  ! (and possible 'n_rule') exists in linked list
- function contrib_cache_already_outer(current_element, num_dmat, p_tuples_outer, n_rule)
+ function contrib_cache_already_outer(len_cache, cache, num_dmat, p_tuples_outer, n_rule)
 
    implicit none
 
    logical :: contrib_cache_already_outer
    integer :: passedlast, passedlast_outer, num_dmat, i
+   integer :: len_cache
    integer, optional :: n_rule
-   type(contrib_cache_outer), target :: current_element
-   type(contrib_cache_outer), pointer :: next_element
+   type(contrib_cache_outer), dimension(len_cache) :: cache
+   
    type(p_tuple), dimension(num_dmat) :: p_tuples_outer, p_tuples_ord
    
-   next_element => current_element
-   passedlast = 0
-
    p_tuples_ord = p_tuples_standardorder(num_dmat, p_tuples_outer)
 
    contrib_cache_already_outer = .FALSE.
 
-   ! NOTE (MaR): WHILE LOOP POTENTIALLY NON-TERMINATING
-   ! COULD THIS BE DONE IN ANOTHER WAY?
-   do while ((passedlast < 2) .AND. (contrib_cache_already_outer .eqv. .FALSE.))
-
-   ! Make sure the tuples that need to be ordered are ordered
+   do i = 1, len_cache
    
-      next_element => contrib_cache_outer_next_element(next_element)
-      
-      if (next_element%num_dmat == num_dmat .AND. .NOT.(next_element%dummy_entry)) then
+      if (cache(i)%num_dmat == num_dmat .AND. .NOT.(cache(i)%dummy_entry)) then
       
          contrib_cache_already_outer = p_tuples_compare(num_dmat, &
-                                       next_element%p_tuples, p_tuples_ord)
+                                       cache(i)%p_tuples, p_tuples_ord)
                                     
          if (present(n_rule)) then
       
-            contrib_cache_already_outer = contrib_cache_already_outer .AND. (n_rule == next_element%n_rule)
+            contrib_cache_already_outer = contrib_cache_already_outer .AND. (n_rule == cache(i)%n_rule)
 
          end if
          
                                  
       end if
-
-      if (next_element%last .eqv. .TRUE.) then
-         passedlast = passedlast + 1
-      end if
-
+   
    end do
-
- end function
+   
+end function
+ 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
 
  ! Check if contribution cache (inner only) element (as specified by 'p_inner') 
  ! already exists in linked list 
@@ -2159,6 +2266,8 @@ module rsp_property_caching
    end do
 
  end function
+ 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine 
  
  ! Get data from outer contribution cache element    
  subroutine contrib_cache_getdata_outer(cache, num_p_tuples, p_tuples, &
@@ -2515,6 +2624,8 @@ module rsp_property_caching
     end if
 
  end subroutine
+ 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Get data from contribution cache
  ! Will search linked list for appropriate inner entry, then

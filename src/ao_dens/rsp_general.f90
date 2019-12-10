@@ -161,7 +161,7 @@ module rsp_general
     complex(8), dimension(rsp_tensor_size) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
 
-    type(contrib_cache_outer), pointer :: S, D, F, Xf
+    type(contrib_cache_outer) :: S, D, F, Xf
     integer :: kn(2)
     character(30) :: fmt_str
     real, parameter :: xtiny=1.0d-8
@@ -535,17 +535,6 @@ module rsp_general
     
     if (mem_mgr%calibrate) then
        
-       allocate(S)
-       allocate(D)
-       allocate(F)
-       
-       if (residue_order > 0) then
-       
-          allocate(Xf) 
-          xf_was_allocated = .TRUE.
-          
-       end if
-      
        call mem_incr(mem_mgr, 3 + residue_order, p=prog_info)
     
     else
@@ -564,10 +553,7 @@ module rsp_general
           write(out_str, *) ' '
           call out_print(out_str, 1)
 
-          allocate(S)
-          allocate(D)
-          allocate(F)
-    
+
           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
@@ -590,11 +576,11 @@ module rsp_general
          call contrib_cache_outer_allocate(F)
 
       
-         call contrib_cache_outer_add_element(S, .FALSE., 1, (/get_emptypert()/), &
+         call contrib_cache_outer_add_element(size(S), S, .TRUE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/S_unpert/))
-         call contrib_cache_outer_add_element(D, .FALSE., 1, (/get_emptypert()/), &
+         call contrib_cache_outer_add_element(size(D), D, .TRUE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/D_unpert/))
-         call contrib_cache_outer_add_element(F, .FALSE., 1, (/get_emptypert()/), &
+         call contrib_cache_outer_add_element(size(D), F, .TRUE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/F_unpert/))
                
          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
@@ -604,7 +590,8 @@ module rsp_general
          if (residue_order > 0) then
        
              call contrib_cache_outer_allocate(Xf)
-             call contrib_cache_outer_add_element(Xf, .FALSE., 1, (/get_emptypert()/), &
+             xf_was_allocated = .TRUE.
+             call contrib_cache_outer_add_element(size(Xf), Xf, .TRUE., 1, (/get_emptypert()/), &
                   data_size = 1, data_mat=(/Xf_unpert(1)/))
              call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE', r_flag)
           
@@ -792,11 +779,11 @@ module rsp_general
     end if
     
     
-    call contrib_cache_outer_deallocate(F)
-    call contrib_cache_outer_deallocate(D)
-    call contrib_cache_outer_deallocate(S)
+    deallocate(F)
+    deallocate(D)
+    deallocate(S)
     if (xf_was_allocated) then
-       call contrib_cache_outer_deallocate(Xf)
+       deallocate(Xf)
     end if
     
     write(out_str, *) 'OpenRSP library: Normal termination, returning...'
@@ -811,7 +798,7 @@ module rsp_general
     
    
   ! Main property calculation routine - Get perturbed F, D, S and then calculate the properties
-  subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, F, D, S, get_rsp_sol, &
+  subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, len_fds, F, D, S, get_rsp_sol, &
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                       get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                       prop_sizes, props, prog_info, rs_info, r_flag, sdf_retrieved, &
@@ -823,6 +810,7 @@ module rsp_general
     logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved
     integer :: n_props, i, j, k
     integer :: r_flag
+    integer :: len_fds
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
@@ -833,9 +821,11 @@ module rsp_general
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: props
+    
+    type(contrib_cache_outer), dimension(len_fds) :: F, D, S
+    type(contrib_cache_outer), optional, dimension(len_fds) :: Xf
+    
     type(contrib_cache), pointer :: contribution_cache, cache_next
-    type(contrib_cache_outer) :: F, D, S
-    type(contrib_cache_outer), optional :: Xf
     
     external :: out_print
     character(len=1048576) :: out_str
@@ -875,9 +865,6 @@ module rsp_general
                  
        end if
        
-       
-       
-          
        sdf_retrieved = .TRUE.
   
     else
