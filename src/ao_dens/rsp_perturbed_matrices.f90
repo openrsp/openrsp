@@ -182,7 +182,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed W matrix
   subroutine rsp_get_matrix_w(superstructure_size, &
            deriv_struct, total_num_perturbations, which_index_is_pid, &
-           indices_len, ind, F, D, S, W)
+           indices_len, ind, len_f, F, len_d, D, len_s, S, W)
 
     implicit none
 
@@ -190,7 +190,10 @@ module rsp_perturbed_matrices
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
-    type(contrib_cache_outer) :: F, D, S
+    integer :: len_f, len_d, len_s
+    type(contrib_cache_outer), dimension(len_f) :: F
+    type(contrib_cache_outer), dimension(len_d) :: D
+    type(contrib_cache_outer), dimension(len_S) :: S
     type(QcMat) :: W, A, B, C, T
     logical :: calc_contrib
 
@@ -202,13 +205,13 @@ module rsp_perturbed_matrices
     
     do i = 1, superstructure_size
 
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-       call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)                
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)       
 
@@ -223,13 +226,13 @@ module rsp_perturbed_matrices
          if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-          call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)                
-          call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)               
                
@@ -245,13 +248,13 @@ module rsp_perturbed_matrices
          elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
                       (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-          call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)                
-          call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)               
 
@@ -265,13 +268,13 @@ module rsp_perturbed_matrices
          elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                       (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
                
-          call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)                
-          call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)                
 
@@ -295,7 +298,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Y matrix
   subroutine rsp_get_matrix_y(superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Y, select_terms_arg)
+           ind, len_f, F, len_d, D, len_s, S, Y, select_terms_arg)
 
     implicit none
 
@@ -305,7 +308,10 @@ module rsp_perturbed_matrices
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
-    type(contrib_cache_outer) :: F, D, S
+    integer :: len_f, len_d, len_s
+    type(contrib_cache_outer), dimension(len_f) :: F
+    type(contrib_cache_outer), dimension(len_d) :: D
+    type(contrib_cache_outer), dimension(len_S) :: S
     type(QcMat) :: Y, A, B, C, T
 
     call QcMatInit(A)
@@ -331,13 +337,13 @@ module rsp_perturbed_matrices
          calc_contrib = .not.find_residue_info(deriv_struct(i,3))
        end if
 
-       call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)             
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)             
-       call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
@@ -354,7 +360,7 @@ module rsp_perturbed_matrices
           else
             calc_contrib = .not.(find_residue_info(deriv_struct(i,1)).or.find_residue_info(deriv_struct(i,3)))
           end if
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)
 
@@ -372,10 +378,10 @@ module rsp_perturbed_matrices
        else 
           calc_contrib = .not.find_residue_info(deriv_struct(i,1))
        end if
-       call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
-       call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
                        
@@ -396,10 +402,10 @@ module rsp_perturbed_matrices
           ! MaR: MAKE SURE THAT THESE (AND B) ARE ACTUALLY THE CORRECT 
           ! MATRICES TO USE HERE AND BELOW
 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
        
@@ -416,10 +422,10 @@ module rsp_perturbed_matrices
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
              (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
                
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
 
@@ -432,10 +438,10 @@ module rsp_perturbed_matrices
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
                
-          call contrib_cache_getdata_outer(S, 1, (/ deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/ deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)  
                
@@ -460,7 +466,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Z matrix
   subroutine rsp_get_matrix_z(superstructure_size, deriv_struct, kn, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Z, select_terms_arg)
+           ind, len_f, F, len_d, D, len_s, S, Z, select_terms_arg)
 
     implicit none
 
@@ -472,7 +478,10 @@ module rsp_perturbed_matrices
     integer, dimension(2) :: kn
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
-    type(contrib_cache_outer) :: F, D, S
+    integer :: len_f, len_d, len_s
+    type(contrib_cache_outer), dimension(len_f) :: F
+    type(contrib_cache_outer), dimension(len_d) :: D
+    type(contrib_cache_outer), dimension(len_S) :: S
     type(QcMat) :: Z, A, B, C, T
 
     call QcMatInit(A)
@@ -499,13 +508,13 @@ module rsp_perturbed_matrices
          calc_contrib = .not.find_residue_info(deriv_struct(i,2))
        end if
 
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-       call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)             
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)
             
@@ -521,7 +530,7 @@ module rsp_perturbed_matrices
 
     if (kn_skip(total_num_perturbations, merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-       call contrib_cache_getdata_outer(D, 1, (/merged_p_tuple/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/merged_p_tuple/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_p_tuple, &
         total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
             
@@ -542,7 +551,8 @@ module rsp_perturbed_matrices
 
   ! Calculate a perturbed Lambda matrix
   subroutine rsp_get_matrix_lambda(p_tuple_a, superstructure_size, deriv_struct, &
-           total_num_perturbations, which_index_is_pid, indices_len, ind, D, S, L,&
+           total_num_perturbations, which_index_is_pid, indices_len, &
+           ind, len_d, D, len_s, S, L,&
            select_terms_arg)
 
     implicit none
@@ -552,7 +562,9 @@ module rsp_perturbed_matrices
     type(p_tuple), dimension(superstructure_size, 3) :: deriv_struct
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
-    type(contrib_cache_outer) :: D, S
+    integer :: len_d, len_s
+    type(contrib_cache_outer), dimension(len_d) :: D
+    type(contrib_cache_outer), dimension(len_S) :: S
     type(QcMat) :: L, A, B, C, T
     logical :: calc_contrib, select_terms
     logical, optional :: select_terms_arg
@@ -589,13 +601,13 @@ module rsp_perturbed_matrices
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
 
-       call contrib_cache_getdata_outer(D, 1, (/merged_A/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-       call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B) 
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)    
             
@@ -603,10 +615,10 @@ module rsp_perturbed_matrices
        call QcMatkABC(1.0d0, A, B, C, T)
        call QcMatRAXPY(1.0d0, T, L)            
             
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-       call contrib_cache_getdata_outer(D, 1, (/merged_B/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/merged_B/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_B, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)             
 
@@ -633,7 +645,7 @@ module rsp_perturbed_matrices
   ! Calculate a perturbed Zeta matrix
   subroutine rsp_get_matrix_zeta(p_tuple_a, kn, superstructure_size, deriv_struct, &
            total_num_perturbations, which_index_is_pid, indices_len, &
-           ind, F, D, S, Zeta, select_terms_arg)
+           ind, len_f, F, len_d, D, len_s, S, Zeta, select_terms_arg)
 
     implicit none
 
@@ -643,7 +655,10 @@ module rsp_perturbed_matrices
     integer, dimension(2) :: kn
     integer, dimension(total_num_perturbations) :: which_index_is_pid
     integer, dimension(indices_len) :: ind
-    type(contrib_cache_outer) :: F, D, S
+    integer :: len_f, len_d, len_s
+    type(contrib_cache_outer), dimension(len_f) :: F
+    type(contrib_cache_outer), dimension(len_d) :: D
+    type(contrib_cache_outer), dimension(len_S) :: S
     type(QcMat) :: Zeta, A, B, C, T
     logical :: calc_contrib, select_terms
     logical, optional :: select_terms_arg
@@ -677,13 +692,13 @@ module rsp_perturbed_matrices
        merged_A = merge_p_tuple(p_tuple_a, deriv_struct(i,1))
        merged_B = merge_p_tuple(p_tuple_a, deriv_struct(i,3))
 
-       call contrib_cache_getdata_outer(F, 1, (/merged_A/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)   
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B)
-       call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)            
      
@@ -701,10 +716,10 @@ module rsp_perturbed_matrices
 
      if (calc_contrib) then
  
-       call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)          
-       call contrib_cache_getdata_outer(S, 1, (/merged_B/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/merged_B/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_B, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C)       
             
@@ -726,7 +741,7 @@ module rsp_perturbed_matrices
        if (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
                
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)                     
 
@@ -739,7 +754,7 @@ module rsp_perturbed_matrices
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,1)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)  
 
@@ -750,7 +765,7 @@ module rsp_perturbed_matrices
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,1)) == 0.0)) then
 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A)                 
 
@@ -770,13 +785,13 @@ module rsp_perturbed_matrices
 
      if (calc_contrib) then
 
-       call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,1)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,1), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-       call contrib_cache_getdata_outer(D, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_d, D, 1, (/deriv_struct(i,2)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,2), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=B) 
-       call contrib_cache_getdata_outer(F, 1, (/merged_B/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/merged_B/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_B, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
             
@@ -794,10 +809,10 @@ module rsp_perturbed_matrices
 
       if (calc_contrib) then
                  
-       call contrib_cache_getdata_outer(S, 1, (/merged_A/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_s, S, 1, (/merged_A/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_A, &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
-       call contrib_cache_getdata_outer(F, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
             total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
@@ -818,7 +833,7 @@ module rsp_perturbed_matrices
        if (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
            .not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
                     
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
@@ -831,7 +846,7 @@ module rsp_perturbed_matrices
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,3)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,2)) == 0.0)) then
 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
@@ -842,7 +857,7 @@ module rsp_perturbed_matrices
        elseif (.not.(frequency_zero_or_sum(deriv_struct(i,2)) == 0.0) .and. &
                     (frequency_zero_or_sum(deriv_struct(i,3)) == 0.0)) then
 
-          call contrib_cache_getdata_outer(S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
+          call contrib_cache_getdata_outer(len_s, S, 1, (/deriv_struct(i,3)/), .FALSE., contrib_size=1, &
                ind_len=indices_len, ind_unsorted=(/get_fds_data_index(deriv_struct(i,3), &
                total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=C) 
 
@@ -867,7 +882,7 @@ module rsp_perturbed_matrices
     if (kn_skip(merged_p_tuple%npert, &
         merged_p_tuple%pid, kn) .eqv. .FALSE.) then
 
-       call contrib_cache_getdata_outer(F, 1, (/merged_p_tuple/), .FALSE., contrib_size=1, &
+       call contrib_cache_getdata_outer(len_f, F, 1, (/merged_p_tuple/), .FALSE., contrib_size=1, &
             ind_len=indices_len, ind_unsorted=(/get_fds_data_index(merged_p_tuple, & 
        total_num_perturbations, which_index_is_pid, indices_len, ind)/), mat_sing=A) 
             
