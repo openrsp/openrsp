@@ -3331,27 +3331,28 @@ module rsp_general
        
        traverse_end = .FALSE.
        
-       outer_next => contrib_cache_outer_cycle_first(outer_next)
-       if (outer_next%dummy_entry) then
-          outer_next => outer_next%next
-       end if
-     
        o_ctr = 1
        mctr = 0
        
        k = 1
        
        ! Traverse to get W matrices
-       do while (traverse_end .EQV. .FALSE.)
+       do m = 1, size(cache%contribs_outer)
+    
+          if (cache%contribs_outer(m)%dummy_entry) then
+       
+             cycle
+          
+          end if
      
              allocate(d_struct_o(o_supsize(k), 3))
              allocate(d_struct_o_prime(o_supsize_prime(k), 3))
              
              which_index_is_pid = 0
              
-             do j = 1, outer_next%p_tuples(1)%npert
+             do j = 1, cache%contribs_outer(m)%p_tuples(1)%npert
              
-                which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
+                which_index_is_pid(cache%contribs_outer(m)%p_tuples(1)%pid(j)) = j
              
              end do
              
@@ -3359,12 +3360,14 @@ module rsp_general
    
              ! Get derivative superstructures according to whether contribution
              ! is n or Lagrange
-             if(outer_next%p_tuples(1)%npert ==0) then
+             if(cache%contribs_outer(m)%p_tuples(1)%npert ==0) then
              
-                if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then
+                if (cache%contribs_outer(m)%contrib_type == 1 .OR. &
+                    cache%contribs_outer(m)%contrib_type == 4) then
                        
                    call derivative_superstructure(get_emptypert(), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .FALSE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                    o_supsize(k), sstr_incr, d_struct_o)
                    
@@ -3372,10 +3375,12 @@ module rsp_general
                 
                 end if
                
-                if (outer_next%contrib_type == 3 .OR. outer_next%contrib_type == 4) then
+                if (cache%contribs_outer(m)%contrib_type == 3 .OR. &
+                    cache%contribs_outer(m)%contrib_type == 4) then
                 
                    call derivative_superstructure(get_emptypert(), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .TRUE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                    o_supsize_prime(k), sstr_incr, d_struct_o)
                       
@@ -3387,10 +3392,12 @@ module rsp_general
              
              else
          
-                if (outer_next%contrib_type == 1 .OR. outer_next%contrib_type == 4) then             
+                if (cache%contribs_outer(m)%contrib_type == 1 .OR. &
+                    cache%contribs_outer(m)%contrib_type == 4) then             
          
-                   call derivative_superstructure(outer_next%p_tuples(1), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+                   call derivative_superstructure(cache%contribs_outer(m)%p_tuples(1), &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .FALSE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                    o_supsize(k), sstr_incr, d_struct_o)
                    
@@ -3398,10 +3405,12 @@ module rsp_general
                 
                 end if
       
-               if (outer_next%contrib_type == 3 .OR. outer_next%contrib_type == 4) then
+               if (cache%contribs_outer(m)%contrib_type == 3 .OR. &
+                   cache%contribs_outer(m)%contrib_type == 4) then
                 
-                   call derivative_superstructure(outer_next%p_tuples(1), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   call derivative_superstructure(cache%contribs_outer(m)%p_tuples(1), &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .TRUE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                    o_supsize_prime(k), sstr_incr, d_struct_o_prime)
                    
@@ -3409,7 +3418,7 @@ module rsp_general
                    
                 end if
      
-                o_triang_size = size(outer_next%indices, 1)
+                o_triang_size = size(cache%contribs_outer(m)%indices, 1)
                 
              end if
      
@@ -3418,7 +3427,7 @@ module rsp_general
              
                 if ((o_ctr == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
                 
-                   select case (outer_next%contrib_type)
+                   select case (cache%contribs_outer(m)%contrib_type)
                 
                    ! Only Pulay n
                    case (1)
@@ -3428,10 +3437,12 @@ module rsp_general
                       if (.NOT.(mem_mgr%calibrate)) then
                 
                          call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
-                              outer_next%p_tuples(1)%npert, &
+                              cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
-                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
+                              cache%contribs_outer(m)%p_tuples(1)%npert), &
+                              size(cache%contribs_outer(m)%indices(j,:)), &
+                              cache%contribs_outer(m)%indices(j,:), &
+                              size(F), F, size(D), D, size(S), S, W(mctr + 1))
                       
                       end if
                            
@@ -3445,10 +3456,11 @@ module rsp_general
                       if (.NOT.(mem_mgr%calibrate)) then                
                 
                          call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
-                              cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
+                              cache%p_inner%npert + cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
-                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
+                              cache%contribs_outer(m)%p_tuples(1)%npert), & size(cache%contribs_outer(m)%indices(j,:)), &
+                              cache%contribs_outer(m)%indices(j,:), &
+                              size(F), F, size(D), D, size(S), S, W(mctr + 1))
                            
                       end if
                            
@@ -3462,10 +3474,11 @@ module rsp_general
                       if (.NOT.(mem_mgr%calibrate)) then                     
                    
                          call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
-                              outer_next%p_tuples(1)%npert, &
+                              cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
-                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
+                              cache%contribs_outer(m)%p_tuples(1)%npert), & size(cache%contribs_outer(m)%indices(j,:)), &
+                              cache%contribs_outer(m)%indices(j,:), &
+                              size(F), F, size(D), D, size(S), S, W(mctr + 1))
                            
                       end if
                            
@@ -3482,7 +3495,7 @@ module rsp_general
              end do
              
              ! If contribution type is 4, loop to get Pulay Lagrange matrices
-             if (outer_next%contrib_type == 4) then
+             if (cache%contribs_outer(m)%contrib_type == 4) then
              
                 ! Calculate matrices
                 do j = 1, o_triang_size
@@ -3494,10 +3507,11 @@ module rsp_general
                       if (.NOT.(mem_mgr%calibrate)) then   
                          
                          call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
-                              cache%p_inner%npert + outer_next%p_tuples(1)%npert, &
+                              cache%p_inner%npert + cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
-                              outer_next%p_tuples(1)%npert), size(outer_next%indices(j,:)), &
-                              outer_next%indices(j,:), F, D, S, W(mctr + 1))
+                              cache%contribs_outer(m)%p_tuples(1)%npert), & size(cache%contribs_outer(m)%indices(j,:)), &
+                              cache%contribs_outer(m)%indices(j,:), &
+                              size(F), F, size(D), D, size(S), S, W(mctr + 1))
                               
                       end if
                            
@@ -3516,16 +3530,8 @@ module rsp_general
           
              deallocate(d_struct_o)
              deallocate(d_struct_o_prime)
-          
-          if (outer_next%last) then
-       
-             traverse_end = .TRUE.
-       
-          end if
-       
+                
           k = k + 1
-       
-          outer_next => outer_next%next
        
        end do
        
@@ -3558,47 +3564,47 @@ module rsp_general
     
     end do
     ! End memory management loop 1
-    
-    
    
     contrib_pulay = -2.0 * contrib_pulay
-    
     
     ! Traversal: Store Pulay contributions
     
     traverse_end = .FALSE.
     
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-    
     k = 1
     o_ctr = 0
     
-    do while (traverse_end .EQV. .FALSE.)
+    ! Traversal: Store Pulay contributions
+    do m = 1, size(cache%contribs_outer)
+    
+       if (cache%contribs_outer(m)%dummy_entry) then
+       
+          cycle
+          
+       end if
 
        c_ctr = 0
     
-       if (outer_next%p_tuples(1)%npert ==0) then
+       if (cache%contribs_outer(m)%p_tuples(1)%npert ==0) then
           
           o_triang_size = 1
           
        else
       
-          o_triang_size = size(outer_next%indices, 1)
+          o_triang_size = size(cache%contribs_outer(m)%indices, 1)
              
        end if
        
        ! Set up block information for indexing
        
        tot_num_pert = cache%p_inner%npert + &
-       sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+       sum((/(cache%contribs_outer(m)%p_tuples(m)%npert, m = 1, &
+              cache%contribs_outer(m)%num_dmat)/))
                    
-       allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
-       allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+       allocate(blks_tuple_info(cache%contribs_outer(m)%num_dmat + 1,tot_num_pert, 3))
+       allocate(blk_sizes(cache%contribs_outer(m)%num_dmat + 1, tot_num_pert))
                
-       do j = 1, outer_next%num_dmat + 1
+       do j = 1, cache%contribs_outer(m)%num_dmat + 1
           
           if (j == 1) then
              
@@ -3612,22 +3618,24 @@ module rsp_general
           
           else
              
-             if (size(outer_next%p_tuples) > 0) then
+             if (size(cache%contribs_outer(m)%p_tuples) > 0) then
                 
-                if (outer_next%p_tuples(1)%npert > 0) then
+                if (cache%contribs_outer(m)%p_tuples(1)%npert > 0) then
                    
-                   do m = 1, outer_next%nblks_tuple(j - 1)
+                   do m = 1, cache%contribs_outer(m)%nblks_tuple(j - 1)
                       
                       do p = 1, 3
                          
-                         blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                         blks_tuple_info(j, m, :) = &
+                         cache%contribs_outer(m)%blks_tuple_info(j - 1, m, :)
                       
                       end do
                    
                    end do
                    
-                   blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
-                   outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                   blk_sizes(j, 1:cache%contribs_outer(m)%nblks_tuple(j-1)) = &
+                   cache%contribs_outer(m)%blk_sizes(j-1, &
+                   1:cache%contribs_outer(m)%nblks_tuple(j-1))
                 
                 end if
              
@@ -3644,17 +3652,18 @@ module rsp_general
           
           do j = 1, size(cache%indices, 1)
                
-             if (size(outer_next%p_tuples) > 0) then
+             if (size(cache%contribs_outer(m)%p_tuples) > 0) then
              
-                if (outer_next%p_tuples(1)%npert > 0) then
+                if (cache%contribs_outer(m)%p_tuples(1)%npert > 0) then
 
                    offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
-                   (/cache%nblks, outer_next%nblks_tuple(1)/), &
-                   (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
+                   (/cache%nblks, cache%contribs_outer(m)%nblks_tuple(1)/), &
+                   (/cache%p_inner%npert, cache%contribs_outer(m)%p_tuples(1)%npert/), &
                    blks_tuple_info, &
                    blk_sizes, &
-                   (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
-                   (/cache%indices(j, :), outer_next%indices(i, :)/))
+                   (/cache%blks_triang_size, &
+                   (/cache%contribs_outer(m)%blks_tuple_triang_size(1)/), &
+                   (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/))
                       
                 else
                    
@@ -3664,25 +3673,26 @@ module rsp_general
                    
              end if
                 
-             if (outer_next%contrib_type == 1) then
+             if (cache%contribs_outer(m)%contrib_type == 1) then
                 
-                outer_next%data_scal(offset) = contrib_pulay(j + &
+                cache%contribs_outer(m)%data_scal(offset) = contrib_pulay(j + &
                 size(cache%indices, 1) * (i - 1) + o_ctr)
                 c_ctr = c_ctr + 1
                    
-             else if (outer_next%contrib_type == 3) then
+             else if (cache%contribs_outer(m)%contrib_type == 3) then
 
-                outer_next%data_scal(offset) = contrib_pulay(j + &
+                cache%contribs_outer(m)%data_scal(offset) = contrib_pulay(j + &
                 size(cache%indices, 1) * (i - 1) + o_ctr)
                 c_ctr = c_ctr + 1
                    
-             else if (outer_next%contrib_type == 4) then
+             else if (cache%contribs_outer(m)%contrib_type == 4) then
                 
-                outer_next%data_scal(offset) = contrib_pulay(j + &
+                cache%contribs_outer(m)%data_scal(offset) = contrib_pulay(j + &
                 size(cache%indices, 1) * (i - 1) + o_ctr)
                    
                 ! Skip one block to store Pulay Lagrange when both Pulay n and Lagrange
-                outer_next%data_scal(offset + size(cache%indices, 1) * o_triang_size) = &
+                cache%contribs_outer(m)%data_scal(offset + &
+                size(cache%indices, 1) * o_triang_size) = &
                 contrib_pulay(j + size(cache%indices, 1) * (i - 1) + &
                 size(cache%indices, 1) * o_triang_size  + o_ctr)
                 c_ctr = c_ctr + 2
@@ -3699,16 +3709,8 @@ module rsp_general
        deallocate(blk_sizes)
        deallocate(blks_tuple_info)
        
-       if (outer_next%last) then
-    
-          traverse_end = .TRUE.
-    
-       end if
-       
        k = k + 1
        
-       outer_next => outer_next%next
-    
     end do
     
     deallocate(contrib_pulay)
@@ -3796,14 +3798,15 @@ module rsp_general
                      lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), &
-                     cache%indices(mcurr + i - 1,:), F, D, S, Zeta(i), &
+                     cache%indices(mcurr + i - 1,:), size(F), F, size(D), D, &
+                     size(S), S, Zeta(i), &
                      select_terms_arg = select_terms)
                      
                 call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
                      d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), cache%indices(mcurr + i - 1,:), &
-                     D, S, Lambda(i), select_terms_arg = select_terms)
+                     size(D), D, size(S), S, Lambda(i), select_terms_arg = select_terms)
       
              end do
              
@@ -3811,16 +3814,6 @@ module rsp_general
        
           
          
-
-         
-         ! Traversal: Calculate/store idempotency/SCFE contributions
-          
-          traverse_end = .FALSE.
-          
-          outer_next => contrib_cache_outer_cycle_first(outer_next)
-          if (outer_next%dummy_entry) then
-             outer_next => outer_next%next
-          end if
           
           call mem_incr(mem_mgr, 1)
           call mem_incr(mem_mgr, 1)
@@ -3836,30 +3829,40 @@ module rsp_general
           
           k = 1
           o_ctr = 0
+
+          ! Traversal: Calculate/store idempotency/SCFE contributions
+          do m = 1, size(cache%contribs_outer)
+    
+             if (cache%contribs_outer(m)%dummy_entry) then
+       
+                cycle
+          
+             end if
           
           do while (traverse_end .EQV. .FALSE.)
       
              c_ctr = 0
           
-             if (outer_next%p_tuples(1)%npert ==0) then
+             if (cache%contribs_outer(m)%p_tuples(1)%npert ==0) then
                 
                 o_triang_size = 1
                
              else
             
-               o_triang_size = size(outer_next%indices, 1)
+               o_triang_size = size(cache%contribs_outer(m)%indices, 1)
                    
              end if
              
              ! Set up block information for indexing
              
              tot_num_pert = cache%p_inner%npert + &
-             sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+             sum((/(cache%contribs_outer(m)%p_tuples(m)%npert, m = 1, &
+             cache%contribs_outer(m)%num_dmat)/))
                          
-             allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
-             allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+             allocate(blks_tuple_info(cache%contribs_outer(m)%num_dmat + 1,tot_num_pert, 3))
+             allocate(blk_sizes(cache%contribs_outer(m)%num_dmat + 1, tot_num_pert))
                      
-             do j = 1, outer_next%num_dmat + 1
+             do j = 1, cache%contribs_outer(m)%num_dmat + 1
                 
                 if (j == 1) then
                    
@@ -3873,22 +3876,24 @@ module rsp_general
                 
                 else
                
-                   if (size(outer_next%p_tuples) > 0) then
+                   if (size(cache%contribs_outer(m)%p_tuples) > 0) then
                       
-                      if (outer_next%p_tuples(1)%npert > 0) then
+                      if (cache%contribs_outer(m)%p_tuples(1)%npert > 0) then
                          
-                         do m = 1, outer_next%nblks_tuple(j - 1)
+                         do m = 1, cache%contribs_outer(m)%nblks_tuple(j - 1)
                            
                             do p = 1, 3
                                
-                              blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                              blks_tuple_info(j, m, :) = &
+                              cache%contribs_outer(m)%blks_tuple_info(j - 1, m, :)
                             
                             end do
                          
                          end do
                          
-                         blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
-                         outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                         blk_sizes(j, 1:cache%contribs_outer(m)%nblks_tuple(j-1)) = &
+                         cache%contribs_outer(m)%blk_sizes(j-1, &
+                         1:cache%contribs_outer(m)%nblks_tuple(j-1))
                       
                       end if
                   
@@ -3900,11 +3905,12 @@ module rsp_general
              
              ! Set up counters to store idempotency, SCFE terms in correct positions
              
-             if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 3)) then
+             if ((cache%contribs_outer(m)%contrib_type == 1) .OR. &
+             (cache%contribs_outer(m)%contrib_type == 3)) then
              
                 c_snap = o_triang_size * size(cache%indices,1)
       
-             else if (outer_next%contrib_type == 4) then
+             else if (cache%contribs_outer(m)%contrib_type == 4) then
       
                 c_snap = 2 * o_triang_size * size(cache%indices,1)
                       
@@ -3913,33 +3919,36 @@ module rsp_general
              o_ctr = o_ctr + c_snap
             
              ! Calculate and store idempotency and SCFE terms
-             if ((outer_next%contrib_type == 3) .OR. (outer_next%contrib_type == 4)) then
+             if ((cache%contribs_outer(m)%contrib_type == 3) .OR. &
+             (cache%contribs_outer(m)%contrib_type == 4)) then
            
                 allocate(d_struct_o(o_supsize_prime(k), 3))
         
                 
                 which_index_is_pid = 0
                 
-                do j = 1, outer_next%p_tuples(1)%npert
+                do j = 1, cache%contribs_outer(m)%p_tuples(1)%npert
                 
-                   which_index_is_pid(outer_next%p_tuples(1)%pid(j)) = j
+                   which_index_is_pid(cache%contribs_outer(m)%p_tuples(1)%pid(j)) = j
                  
                 end do
                 
                 sstr_incr = 0
                 
                 ! Get derivative superstructures
-                if(outer_next%p_tuples(1)%npert ==0) then
+                if(cache%contribs_outer(m)%p_tuples(1)%npert ==0) then
                 
                    call derivative_superstructure(get_emptypert(), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .TRUE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                    o_supsize_prime(k), sstr_incr, d_struct_o)
                    
                  else
             
-                   call derivative_superstructure(outer_next%p_tuples(1), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .TRUE., &
+                   call derivative_superstructure(cache%contribs_outer(m)%p_tuples(1), &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .TRUE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/), &
                    o_supsize_prime(k), sstr_incr, d_struct_o)
                   
@@ -3954,10 +3963,12 @@ module rsp_general
         
                       call QcMatZero(Y)
                       call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, cache%p_inner%npert + &
-                           outer_next%p_tuples(1)%npert, &
+                           cache%contribs_outer(m)%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
-                           outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Y, select_terms_arg = .FALSE.)
+                           cache%contribs_outer(m)%p_tuples(1)%npert), &
+                           size(cache%contribs_outer(m)%indices(i,:)), &
+                           cache%contribs_outer(m)%indices(i,:), &
+                           size(F), F, size(D), D, size(S), S, Y, select_terms_arg = .FALSE.)
                            
                    end if
                    
@@ -3971,11 +3982,13 @@ module rsp_general
                       ! have another look if something goes wrong
                       call QcMatZero(Z)
                       call rsp_get_matrix_z(o_supsize_prime(k), d_struct_o, &
-                           (/outer_next%n_rule, outer_next%n_rule/), cache%p_inner%npert + &
-                           outer_next%p_tuples(1)%npert, &
+                           (/cache%contribs_outer(m)%n_rule, cache%contribs_outer(m)%n_rule/), &
+                           cache%p_inner%npert + &
+                           cache%contribs_outer(m)%p_tuples(1)%npert, &
                            which_index_is_pid(1:cache%p_inner%npert + &
-                           outer_next%p_tuples(1)%npert), size(outer_next%indices(i,:)), outer_next%indices(i,:), &
-                           F, D, S, Z, select_terms_arg = .FALSE.)
+                           cache%contribs_outer(m)%p_tuples(1)%npert), & size(cache%contribs_outer(m)%indices(i,:)), &
+                           cache%contribs_outer(m)%indices(i,:), &
+                           size(F), F, size(D), D, size(S), S, Z, select_terms_arg = .FALSE.)
                            
                    end if
                   
@@ -3983,16 +3996,17 @@ module rsp_general
                                          
                    do j = mcurr, mcurr + msize - 1
                  
-                      if (size(outer_next%p_tuples) > 0) then
-                         if (outer_next%p_tuples(1)%npert > 0) then
+                      if (size(cache%contribs_outer(m)%p_tuples) > 0) then
+                         if (cache%contribs_outer(m)%p_tuples(1)%npert > 0) then
         
                             offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
-                            (/cache%nblks, outer_next%nblks_tuple(1)/), &
-                            (/cache%p_inner%npert, outer_next%p_tuples(1)%npert/), &
+                            (/cache%nblks, cache%contribs_outer(m)%nblks_tuple(1)/), &
+                            (/cache%p_inner%npert, cache%contribs_outer(m)%p_tuples(1)%npert/), &
                             blks_tuple_info, &
                             blk_sizes, &
-                            (/cache%blks_triang_size, outer_next%blks_tuple_triang_size(1)/), &
-                            (/cache%indices(j, :), outer_next%indices(i, :)/))
+                            (/cache%blks_triang_size, &
+                            (/cache%contribs_outer(m)%blks_tuple_triang_size(1)/), &
+                            (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/))
                          
                          else
                       
@@ -4006,16 +4020,18 @@ module rsp_general
                       
 !                          write(*,*) 'Saving element', j, 'of data in', offset
                       
-                         call QcMatTraceAB(Zeta(j), Z, outer_next%data_scal(c_snap + offset))
-                         call QcMatTraceAB(Lambda(j), Y, outer_next%data_scal(c_snap + &
+                         call QcMatTraceAB(Zeta(j), Z, &
+                         cache%contribs_outer(m)%data_scal(c_snap + offset))
+                         call QcMatTraceAB(Lambda(j), Y, &
+                         cache%contribs_outer(m)%data_scal(c_snap + &
                          cache%blks_triang_size*o_triang_size + offset))
                    
-                         outer_next%data_scal(c_snap + offset) = &
-                         -2.0 * outer_next%data_scal(c_snap + offset)
+                         cache%contribs_outer(m)%data_scal(c_snap + offset) = &
+                         -2.0 * cache%contribs_outer(m)%data_scal(c_snap + offset)
                    
-                         outer_next%data_scal(c_snap + &
+                         cache%contribs_outer(m)%data_scal(c_snap + &
                          cache%blks_triang_size*o_triang_size + offset) = &
-                         -2.0 * outer_next%data_scal(c_snap + &
+                         -2.0 * cache%contribs_outer(m)%data_scal(c_snap + &
                          cache%blks_triang_size*o_triang_size + offset)
                          
                       end if
@@ -4031,16 +4047,8 @@ module rsp_general
              deallocate(blk_sizes)
              deallocate(blks_tuple_info)
           
-             if (outer_next%last) then
-    
-                traverse_end = .TRUE.
-    
-             end if
-       
              k = k + 1
        
-             outer_next => outer_next%next
-
           end do
           
           if (.NOT.(mem_mgr%calibrate)) then
