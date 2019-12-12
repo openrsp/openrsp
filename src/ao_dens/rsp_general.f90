@@ -815,6 +815,7 @@ module rsp_general
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
+    integer :: len_cache
     type(p_tuple) :: emptypert
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), dimension(2) :: emptyp_tuples
@@ -825,7 +826,7 @@ module rsp_general
     type(contrib_cache_outer), dimension(len_fds) :: F, D, S
     type(contrib_cache_outer), optional, dimension(len_fds) :: Xf
     
-    type(contrib_cache), pointer :: contribution_cache, cache_next
+    type(contrib_cache), allocatable, dimension(:) :: contribution_cache
     
     external :: out_print
     character(len=1048576) :: out_str
@@ -918,8 +919,6 @@ module rsp_general
        
     end if
     
-    ! DEC 19: CONTINUE HERE AFTER RETURNING FROM SDF
-    
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, r_flag, 1)
@@ -936,9 +935,7 @@ module rsp_general
        call out_print(out_str, 1)
     
        if (.NOT.(contrib_retrieved)) then
-       
-          allocate(contribution_cache)
-    
+         
           call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
           contrib_retrieved = .TRUE.
           
@@ -949,6 +946,8 @@ module rsp_general
        ! For each property and freq. cfg.: Recurse to identify HF energy-type contributions, store in cache
     
        call contrib_cache_allocate(contribution_cache)
+    
+       len_cache = size(contribution_cache)
     
        k = 1
 
@@ -963,11 +962,13 @@ module rsp_general
              call out_print(out_str, 1)
              write(out_str, *) ' '
              call out_print(out_str, 1)
+             
+             len_cache = size(contribution_cache)
 
              call cpu_time(time_start)
              call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
                   0, size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .TRUE., &
-                  contribution_cache, prop_sizes(k), &
+                  len_cache, contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
              call cpu_time(time_end)
 
@@ -986,8 +987,9 @@ module rsp_general
        
        end do
     
-
-       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+       len_cache = size(contribution_cache)
+    
+       call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
 
@@ -1028,28 +1030,23 @@ module rsp_general
     
        call cpu_time(time_start)
     
-       traverse_end = .FALSE.
-
-       cache_next => contribution_cache
-
-       ! Cycle cache
-       do while (cache_next%last .eqv. .FALSE.)
-          cache_next => cache_next%next
-       end do
-       
-       cache_next => cache_next%next
-       
-       if (cache_next%p_inner%npert == 0) then
-          cache_next => cache_next%next
-       end if
-       
+       len_cache = size(contribution_cache)
+    
        ! Traverse linked list and calculate
-       do while (traverse_end .eqv. .FALSE.)
+       do k = 1, len_cache
        
-          if(cache_next%p_inner%plab(1).eq.'NUTN') stop 'empty perturbation in rsp_general!'
+          if (contribution_cache(k)%p_inner%npert == 0) then
+          
+             cycle
+             
+          end if   
+  
+          ! MaR: Don't know where this line comes from, reinstate if needed
+          ! if(contribution_cache(k)%p_inner%plab(1).eq.'NUTN') stop 'empty perturbation in rsp_general!'
+
           write(out_str, *) 'Calculating contribution for inner perturbation tuple with labels:'
           call out_print(out_str, 1)
-          write(out_str, *) cache_next%p_inner%plab
+          write(out_str, *) contribution_cache(k)%p_inner%plab
           call out_print(out_str, 1)
           write(out_str, *) ' '
           call out_print(out_str, 1)
@@ -1069,8 +1066,8 @@ module rsp_general
           
           else
 
-             call rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
-                  out_print, cache_next, mem_mgr)
+             call rsp_energy_calculate(size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
+                  out_print, contribution_cache(k), mem_mgr)
              
              if (mem_exceed(mem_mgr)) then
        
@@ -1083,13 +1080,6 @@ module rsp_general
           end if
           
           call prog_incr(prog_info, r_flag, 2)
-          
-          
-          if (cache_next%last) then
-             traverse_end = .TRUE.
-          end if
-          
-          cache_next => cache_next%next
           
        end do
 
@@ -1152,8 +1142,8 @@ module rsp_general
 
                 call cpu_time(time_start)
                 call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
-                     0, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .FALSE., &
-                     contribution_cache, prop_sizes(k), &
+                     0, size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .FALSE., &
+                     len_cache, contribution_cache, prop_sizes(k), &
                      props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
                 call cpu_time(time_end)
                 
@@ -1232,7 +1222,7 @@ module rsp_general
 
              call cpu_time(time_start)
              call rsp_xc_wrapper(n_freq_cfgs(i), p_tuples(k:k+n_freq_cfgs(i)-1), kn_rule(k,:), &
-                  D, get_xc_exp, out_print, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1)), mem_mgr, &
+                  size(D), D, get_xc_exp, out_print, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1)), mem_mgr, &
                   prop=props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1 : &
                         sum(prop_sizes(1:k+n_freq_cfgs(i) - 1))))
              call cpu_time(time_end)
@@ -1299,6 +1289,7 @@ module rsp_general
        k  = 1
     
        call contrib_cache_allocate(contribution_cache)
+       len_cache = size(contribution_cache)
     
        do i = 1, n_props
     
@@ -1315,7 +1306,7 @@ module rsp_general
           
              call rsp_twofact_recurse(p_tuples(k), &
                   kn_rule(k,:), (/emptypert, emptypert/), out_print, &
-                  .TRUE., contribution_cache, prop_sizes(k), &
+                  .TRUE., len_cache, contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
              call cpu_time(time_end)
@@ -1335,7 +1326,8 @@ module rsp_general
        
        end do
     
-       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+       len_cache = size(contribution_cache)
+       call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
     
@@ -1375,29 +1367,22 @@ module rsp_general
 
        call cpu_time(time_start)
     
-       traverse_end = .FALSE.
-
-       cache_next => contribution_cache
-
-       ! Cycle cache
-       do while (cache_next%last .eqv. .FALSE.)
-          cache_next => cache_next%next
-       end do
-
-       cache_next => cache_next%next
-       
-       if (cache_next%p_inner%npert == 0) then
-          cache_next => cache_next%next
-       end if
-       
+       len_cache = size(contribution_cache)
+    
        ! Traverse linked list and calculate
-       do while (traverse_end .eqv. .FALSE.)
+       do k = 1, len_cache
+       
+          if (contribution_cache(k)%p_inner%npert == 0) then
+          
+             cycle
+             
+          end if   
        
           write(out_str, *) ' '
           call out_print(out_str, 1)
           write(out_str, *) 'Calculating contribution for factor 1 tuple perturbation labels:'
           call out_print(out_str, 1)
-          write(out_str, *) cache_next%p_inner%plab
+          write(out_str, *) contribution_cache(k)%p_inner%plab
           call out_print(out_str, 1)
           write(out_str, *) ' '
           call out_print(out_str, 1)
@@ -1417,7 +1402,8 @@ module rsp_general
           
           else
 
-             call rsp_twofact_calculate(S, D, F, get_ovl_exp, out_print, cache_next, mem_mgr)
+             call rsp_twofact_calculate(size(S), S, size(D), D, size(F), F, get_ovl_exp, &
+                                        out_print, contribution_cache(k), mem_mgr)
              
              if (mem_exceed(mem_mgr)) then
        
@@ -1430,13 +1416,6 @@ module rsp_general
           end if
           
           call prog_incr(prog_info, r_flag, 2)
-          
-          
-          if (cache_next%last) then
-             traverse_end = .TRUE.
-          end if
-          
-          cache_next => cache_next%next
           
        end do
 
@@ -1496,12 +1475,14 @@ module rsp_general
                 call out_print(out_str, 1)
                 write(out_str, *) ' '
                 call out_print(out_str, 1)
-                
+          
+                len_cache = size(contribution_cache)
+          
                 call cpu_time(time_start)
           
                 call rsp_twofact_recurse(p_tuples(k), &
                      kn_rule(k,:), (/emptypert, emptypert/), out_print, &
-                     .FALSE., contribution_cache, prop_sizes(k), &
+                     .FALSE., len_cache, contribution_cache, prop_sizes(k), &
                      props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
                 call cpu_time(time_end)
@@ -1564,8 +1545,8 @@ module rsp_general
    ! Recurse to identify (dryrun == .TRUE.) or assemble (dryrun == .FALSE.) energy-type contributions
    
    recursive subroutine rsp_energy_recurse(pert, total_num_perturbations, kn, num_p_tuples, &
-                                  p_tuples, density_order, D, get_nucpot, get_1el_exp, &
-                                  get_t_exp, get_2el_exp, out_print, dryrun, cache, p_size, prop)
+                                  p_tuples, density_order, len_d, D, get_nucpot, get_1el_exp, &
+                                  get_t_exp, get_2el_exp, out_print, dryrun, len_cache, cache, p_size, prop)
 
     implicit none
 
@@ -1596,16 +1577,16 @@ module rsp_general
 
        call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
        kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
-       density_order, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
-       dryrun, cache, p_size=p_size, prop=prop)
+       density_order, len_d, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
+       dryrun, len_cache, p_size=p_size, prop=prop)
 
     else
 
        call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations,  &
        kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
-       p_tuples(2:size(p_tuples))/), density_order, D,  &
+       p_tuples(2:size(p_tuples))/), density_order, len_D,  &
        get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
-       dryrun, cache, p_size=p_size, prop=prop)
+       dryrun, len_cache, p_size=p_size, prop=prop)
 
     end if
     
@@ -1628,9 +1609,9 @@ module rsp_general
           end if
 
           call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
-          kn, num_p_tuples, t_new, density_order + 1, D, &
+          kn, num_p_tuples, t_new, density_order + 1, len_d, D, &
           get_nucpot, get_1el_exp, get_t_exp, get_2el_exp , out_print, &
-          dryrun, cache, p_size=p_size, prop=prop)
+          dryrun, len_cache, cache, p_size=p_size, prop=prop)
 
        end do
 
@@ -1644,8 +1625,8 @@ module rsp_general
 
           call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
           kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
-          density_order + 1, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
-          dryrun, cache, p_size=p_size, prop=prop)
+          density_order + 1, len_d, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
+          dryrun, len_cache, cache, p_size=p_size, prop=prop)
 
        end if
 
@@ -1710,7 +1691,7 @@ module rsp_general
              
                 ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
                 ! THIS CALL (LIKE property_cache_getdata ASSUMES)
-                call contrib_cache_getdata(cache, num_p_tuples, &
+                call contrib_cache_getdata(len_cache, cache, num_p_tuples, &
                    p_tuples_standardorder(num_p_tuples, p_tuples), p_size, 0, scal=prop)
 
              end if
@@ -1742,7 +1723,7 @@ module rsp_general
                 call out_print(out_str, 2)
              
              
-                call contrib_cache_add_element(cache, num_p_tuples, &
+                call contrib_cache_add_element(len_cache, cache, num_p_tuples, &
                      p_tuples_standardorder(num_p_tuples, p_tuples))
 
              end if
@@ -1756,7 +1737,7 @@ module rsp_general
   end subroutine
 
 
-  subroutine rsp_energy_calculate(D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
+  subroutine rsp_energy_calculate(len_d, D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
              out_print, cache, mem_mgr)
 
     implicit none
@@ -1766,16 +1747,18 @@ module rsp_general
     integer :: dctr, contrib_offset, any_heavy, curr_remain, this_outer_size
     integer, dimension(3) :: curr_pickup, next_pickup
     integer, dimension(2) :: wunit_size, wunit_maxsize
-    logical :: traverse_end, intra_pair, mem_done, intra_done
+    logical :: intra_pair, mem_done, intra_done
     integer :: cache_offset, i, j, k, m, n, p, offset
     integer :: c1_ctr, c2_ctr, lhs_ctr_1, lhs_ctr_2, rhs_ctr_2
     integer :: total_outer_size_1, total_outer_size_2
     integer :: num_0, num_1, num_pert, tot_num_pert
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info
     character(30) :: mat_str, fmt_str
-    type(contrib_cache_outer) :: D
+    
+    integer :: len_d
+    type(contrib_cache_outer), dimension(len_d) :: D
     type(contrib_cache) :: cache
-    type(contrib_cache_outer), pointer :: outer_next
+    
     type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
     type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, LHS_dmat_2, RHS_dmat_2
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
@@ -1791,25 +1774,14 @@ module rsp_general
     
     call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
     
-    outer_next => cache%contribs_outer
-    
     write(out_str, *) 'Number of outer contributions for this inner tuple:', cache%num_outer
     call out_print(out_str, 1)
-    
    
     allocate(outer_contract_sizes_1(cache%num_outer))
     allocate(outer_contract_sizes_2(cache%num_outer,2))
    
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
     
-    traverse_end = .FALSE.
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-       
-      
     total_outer_size_1 = 0
     total_outer_size_2 = 0
     num_0 = 0
@@ -1817,14 +1789,20 @@ module rsp_general
         
     k = 1
     
-    do while (traverse_end .EQV. .FALSE.)
-  
+    do m = 1, size(cache%contribs_outer)
+    
+       if (cache%contribs_outer(m)%dummy_entry) then
+       
+          cycle
+       
+       end if
+       
        write(out_str, *) 'Outer contribution', k
        call out_print(out_str, 1)
        
-       do i = 1, outer_next%num_dmat
+       do i = 1, cache%contribs_outer(m)%num_dmat
        
-          write(out_str, *) 'D', outer_next%p_tuples(i)%pid
+          write(out_str, *) 'D', cache%contribs_outer(m)%p_tuples(i)%pid
           call out_print(out_str, 1)
                  
        end do
@@ -1834,7 +1812,7 @@ module rsp_general
        
   
        ! If this is the case, then there are no outer perturbations (no chain rule applications)
-       if (outer_next%num_dmat == 0) then
+       if (cache%contribs_outer(m)%num_dmat == 0) then
 
           num_0 = 1
           num_1 = num_1 + 1
@@ -1845,39 +1823,37 @@ module rsp_general
           total_outer_size_2 = total_outer_size_2 + 1
        
        ! One chain rule application: No nuc-nuc terms, only 1-el and 2-el terms
-       else if (outer_next%num_dmat == 1) then
+       else if (cache%contribs_outer(m)%num_dmat == 1) then
        
           num_1 = num_1 + 1
        
-          outer_contract_sizes_1(k) = outer_next%blks_tuple_triang_size(1)
-          outer_contract_sizes_2(k, :) = (/outer_next%blks_tuple_triang_size(1),1/)
+          outer_contract_sizes_1(k) = cache%contribs_outer(m)%blks_tuple_triang_size(1)
+          outer_contract_sizes_2(k, :) = &
+          (/cache%contribs_outer(m)%blks_tuple_triang_size(1),1/)
           
-          total_outer_size_1 = total_outer_size_1 + outer_next%blks_tuple_triang_size(1)
-          total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1)
+          total_outer_size_1 = total_outer_size_1 + &
+          cache%contribs_outer(m)%blks_tuple_triang_size(1)
+          total_outer_size_2 = total_outer_size_2 + &
+          cache%contribs_outer(m)%blks_tuple_triang_size(1)
        
        ! Two chain rule applications: Only 2-el terms
-       else if (outer_next%num_dmat == 2) then
+       else if (cache%contribs_outer(m)%num_dmat == 2) then
        
           outer_contract_sizes_1(k) = 0
-          outer_contract_sizes_2(k, :) = (/outer_next%blks_tuple_triang_size(1), &
-                                         outer_next%blks_tuple_triang_size(2)/)
+          outer_contract_sizes_2(k, :) = &
+          (/cache%contribs_outer(m)%blks_tuple_triang_size(1), &
+          cache%contribs_outer(m)%blks_tuple_triang_size(2)/)
           
-          total_outer_size_2 = total_outer_size_2 + outer_next%blks_tuple_triang_size(1) * &
-                                                    outer_next%blks_tuple_triang_size(2)
+          total_outer_size_2 = total_outer_size_2 + &
+          cache%contribs_outer(m)%blks_tuple_triang_size(1) * &
+          cache%contribs_outer(m)%blks_tuple_triang_size(2)
        
        end if
        
-       if (outer_next%last) then
-    
-          traverse_end = .TRUE.
-    
-       end if
-    
        k = k + 1
     
-       outer_next => outer_next%next
-    
     end do
+    
  
     ! Make collapsed contraction sizes array for 1-electron routine call
  
@@ -1965,29 +1941,28 @@ module rsp_general
        
        end if
        
-       traverse_end = .FALSE.
-       
-       outer_next => contrib_cache_outer_cycle_first(outer_next)
-       if (outer_next%dummy_entry) then
-          outer_next => outer_next%next
-       end if
-          
+
        k = 1
        lhs_ctr_1 = 1
        mctr = 0
-          
+       
        ! Traverse and fetch matrices
-       do while (traverse_end .EQV. .FALSE.)
+       do m = 1, size(cache%contribs_outer)
+    
+          if (cache%contribs_outer(m)%dummy_entry) then
        
+             cycle
        
+          end if
+              
           ! No chain rule applications
-          if (outer_next%num_dmat == 0) then
+          if (cache%contribs_outer(m)%num_dmat == 0) then
              
              if ((lhs_ctr_1 == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
              
                 if (.NOT.(mem_mgr%calibrate)) then
           
-                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_1(mctr + 1))
                      
                 end if
@@ -1997,7 +1972,7 @@ module rsp_general
              end if
     
           ! One chain rule application
-          else if (outer_next%num_dmat == 1) then
+          else if (cache%contribs_outer(m)%num_dmat == 1) then
           
           
              do m = 1, outer_contract_sizes_1(k) 
@@ -2006,9 +1981,11 @@ module rsp_general
                
                    if (.NOT.(mem_mgr%calibrate)) then
                
-                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                           1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
-                           mat_sing=LHS_dmat_1(mctr + 1))
+                      call contrib_cache_getdata_outer(size(D), D, 1, &
+                      (/cache%contribs_outer(m)%p_tuples(1)/), .FALSE., &
+                      1, ind_len=size(cache%contribs_outer(m)%indices, 2), &
+                      ind_unsorted=cache%contribs_outer(m)%indices(m, :), &
+                      mat_sing=LHS_dmat_1(mctr + 1))
                            
                    end if
                            
@@ -2019,19 +1996,10 @@ module rsp_general
              end do
           
           end if
-          
-                
-          
-      
-          if (outer_next%last) then
-             traverse_end = .TRUE.
-          end if
     
           lhs_ctr_1 = lhs_ctr_1 + outer_contract_sizes_1(k)
           k = k + 1
-          
-          outer_next => outer_next%next
-    
+   
        end do
        
        
@@ -2370,73 +2338,75 @@ module rsp_general
        end if
            
        
-       traverse_end = .FALSE.
+! Not sure about if my ll to array changes work as intended here
+! Next lines are prev version of code kept for reference for potential debugging
+!        k = 1
+!        
+!        ! Cycle cache until at correct outer element
+!        do i = 1, curr_pickup(1) - 1
+!           outer_next => outer_next%next
+!           k = k + 1
+!        end do
        
-       outer_next => contrib_cache_outer_cycle_first(outer_next)
-       if (outer_next%dummy_entry) then
-          outer_next => outer_next%next
-       end if
-          
        
-       k = 1
-       
-       ! Cycle cache until at correct outer element
-       do i = 1, curr_pickup(1) - 1
-          outer_next => outer_next%next
-          k = k + 1
-       end do
-       
+
        
        
        lhs_ctr_2 = 1
        rhs_ctr_2 = 1
 
        if (.NOT.(intra_pair)) then
-       
+
+          ! FIXME: Loop assumes that there is a dummy entry in position 1 of array
           ! Traverse outer elements and fetch matrices
-          do i = curr_pickup(1), next_pickup(1) - 1
-          
+          do i = curr_pickup(1) + 1, next_pickup(1)
+
              if (.NOT.(mem_mgr%calibrate)) then
           
                 ! No chain rule applications
-                if (outer_next%num_dmat == 0) then
+                if (cache%contribs_outer(i)%num_dmat == 0) then
            
-                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
-                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
    
                 ! One chain rule application
-                else if (outer_next%num_dmat == 1) then
+                else if (cache%contribs_outer(i)%num_dmat == 1) then
           
                    do m = 1, outer_contract_sizes_2(i, 1) 
-                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                           1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+                      call contrib_cache_getdata_outer(size(D), D, 1, &
+                           (/cache%contribs_outer(i)%p_tuples(1)/), .FALSE., &
+                           1, ind_len=size(cache%contribs_outer(i)%indices, 2), &
+                           ind_unsorted=cache%contribs_outer(i)%indices(m, :), &
                            mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
                    end do
              
-                   call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
           
                 ! Two chain rule applications
-                else if (outer_next%num_dmat == 2) then
+                else if (cache%contribs_outer(i)%num_dmat == 2) then
             
                    do m = 1, outer_contract_sizes_2(i, 1) 
               
-                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                           1, ind_len=outer_next%p_tuples(1)%npert, &
-                           ind_unsorted=outer_next%indices(1 + &
-                           (m - 1) * outer_next%blks_tuple_triang_size(2), &
-                           1:outer_next%p_tuples(1)%npert), &
+                      call contrib_cache_getdata_outer(size(D), D, 1, (/cache%contribs_outer(i)%p_tuples(1)/), .FALSE., &
+                           1, ind_len=cache%contribs_outer(i)%p_tuples(1)%npert, &
+                           ind_unsorted=cache%contribs_outer(i)%indices(1 + &
+                           (m - 1) * cache%contribs_outer(i)%blks_tuple_triang_size(2), &
+                           1:cache%contribs_outer(i)%p_tuples(1)%npert), &
                            mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
                    end do
              
                    do n = 1, outer_contract_sizes_2(i, 2) 
              
-                      call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
-                           1, ind_len=outer_next%p_tuples(2)%npert, &
-                           ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
-                           outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
+                      call contrib_cache_getdata_outer(size(D), D, 1, &
+                      (/cache%contribs_outer(i)%p_tuples(2)/), .FALSE., &
+                           1, ind_len=cache%contribs_outer(i)%p_tuples(2)%npert, &
+                           ind_unsorted=cache%contribs_outer(i)%indices(n, &
+                           cache%contribs_outer(i)%p_tuples(1)%npert + 1: &
+                           cache%contribs_outer(i)%p_tuples(1)%npert + &
+                           cache%contribs_outer(i)%p_tuples(2)%npert), &
                            mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
                    end do          
           
@@ -2445,8 +2415,6 @@ module rsp_general
                 lhs_ctr_2 = lhs_ctr_2 + outer_contract_sizes_2(i, 1)
                 rhs_ctr_2 = rhs_ctr_2 + outer_contract_sizes_2(i, 2)
           
-                outer_next => outer_next%next
-        
              end if
         
           end do
@@ -2477,132 +2445,133 @@ module rsp_general
           end if
                
           contrib_offset = contrib_offset + this_outer_size
-                       
-    
-          
 
+       ! FIXME: I (MaR) don't know if this else condition has ever been tested or encountered
+       ! I don't see clearly how this would have worked with the ll scheme and I therefore
+       ! don't know how to adapt it for the array cache scheme
+       ! I will therefore comment it out and return to it later if relevant
        else
-          
-          if (.NOT.(mem_mgr%calibrate)) then
-          
-             ! No chain rule applications
-             if (outer_next%num_dmat == 0) then
-              
-                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-                     1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(1))
-                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-                     1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(1))
-      
-             ! One chain rule application
-             else if (outer_next%num_dmat == 1) then
-             
-                dctr = 1
-                
-                do m = curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
-                
-                   call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                        1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
-                        mat_sing=LHS_dmat_2(dctr))
-                        
-                   dctr = dctr + 1
-                        
-                end do
-                
-                call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
-                     1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(1))
-             
-             ! Two chain rule applications
-             else if (outer_next%num_dmat == 2) then
-         
-                dctr = 1
-            
-                do m = 1, curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
-                
-                   call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
-                        1, ind_len=outer_next%p_tuples(1)%npert, &
-                        ind_unsorted=outer_next%indices(1 + &
-                        (m - 1) * outer_next%blks_tuple_triang_size(2), &
-                        1:outer_next%p_tuples(1)%npert), &
-                        mat_sing=LHS_dmat_2(dctr))
-                        
-                   dctr = dctr + 1
-                   
-                end do
-                
-                dctr = 1
-                
-                do n = 1, curr_pickup(3), curr_pickup(3) + wunit_size(2) - 1
-                
-                   call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
-                        1, ind_len=outer_next%p_tuples(2)%npert, &
-                        ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
-                        outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
-                        mat_sing=RHS_dmat_2(dctr))
-                        
-                   dctr = dctr + 1
-                   
-                end do
-             
-             end if
-             
-          end if
-
-          ! Make temporary contrib_2 array to hold return values
-          allocate(contrib_2_tmp(cache%blks_triang_size * wunit_size(1) * wunit_size(2)))
-          
-          if (.NOT.(mem_mgr%calibrate)) then
-          
-             write(out_str, *) 'Calculating second-order density matrix-dependent contribution'
-             call out_print(out_str, 1)
-             write(out_str, *) ' '
-             call out_print(out_str, 1)
-          
-             ! Calculate two-electron contributions
-             call get_2el_exp(num_pert, pert_ext, 1, &
-                  (/wunit_size(1)/), LHS_dmat_2, & 
-                  (/wunit_size(2)/), RHS_dmat_2, &
-                  cache%blks_triang_size * wunit_size(1) * wunit_size(2), &               
-                  contrib_2_tmp)
-                  
-             write(out_str, *) 'Second-order density matrix-dependent contribution (sample)', &
-             contrib_2_tmp(1:min(10,size(contrib_2_tmp)))
-             call out_print(out_str, 2)
-                  
-          
-             ! Put temporary array data into contrib_2 in the appropriate places
-          
-             dctr = 0
-          
-             do m = curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
-             
-                do n = curr_pickup(3), curr_pickup(3) + wunit_size(2) - 1
-             
-                   contrib_2(contrib_offset +  &
-                             (m - 1) * outer_contract_sizes_2(k, 2) * cache%blks_triang_size + &
-                             (n - 1) * cache%blks_triang_size : &
-                             contrib_offset + &
-                             (m - 1) * outer_contract_sizes_2(k, 2) * cache%blks_triang_size + &
-                             (n) * cache%blks_triang_size - 1) = &
-                   contrib_2_tmp(cache%blks_triang_size * dctr + 1: &
-                                 cache%blks_triang_size * (dctr + 1))
-             
-                   dctr = dctr + 1
-             
-                end do
-             
-             end do
-          
-          end if
-          
-          ! Increment contribution offset if this was the last workunit of this outer pair
-          if (next_pickup(1) - curr_pickup(1) > 0) then
-          
-             contrib_offset = contrib_offset + cache%blks_triang_size * &
-                              outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) 
-          
-          end if
-          
-          deallocate(contrib_2_tmp)
+!           
+!           if (.NOT.(mem_mgr%calibrate)) then
+!           
+!              ! No chain rule applications
+!              if (outer_next%num_dmat == 0) then
+!               
+!                 call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+!                      1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(1))
+!                 call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+!                      1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(1))
+!       
+!              ! One chain rule application
+!              else if (outer_next%num_dmat == 1) then
+!              
+!                 dctr = 1
+!                 
+!                 do m = curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
+!                 
+!                    call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+!                         1, ind_len=size(outer_next%indices, 2), ind_unsorted=outer_next%indices(m, :), &
+!                         mat_sing=LHS_dmat_2(dctr))
+!                         
+!                    dctr = dctr + 1
+!                         
+!                 end do
+!                 
+!                 call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+!                      1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(1))
+!              
+!              ! Two chain rule applications
+!              else if (outer_next%num_dmat == 2) then
+!          
+!                 dctr = 1
+!             
+!                 do m = 1, curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
+!                 
+!                    call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(1)/), .FALSE., &
+!                         1, ind_len=outer_next%p_tuples(1)%npert, &
+!                         ind_unsorted=outer_next%indices(1 + &
+!                         (m - 1) * outer_next%blks_tuple_triang_size(2), &
+!                         1:outer_next%p_tuples(1)%npert), &
+!                         mat_sing=LHS_dmat_2(dctr))
+!                         
+!                    dctr = dctr + 1
+!                    
+!                 end do
+!                 
+!                 dctr = 1
+!                 
+!                 do n = 1, curr_pickup(3), curr_pickup(3) + wunit_size(2) - 1
+!                 
+!                    call contrib_cache_getdata_outer(D, 1, (/outer_next%p_tuples(2)/), .FALSE., &
+!                         1, ind_len=outer_next%p_tuples(2)%npert, &
+!                         ind_unsorted=outer_next%indices(n, outer_next%p_tuples(1)%npert + 1: &
+!                         outer_next%p_tuples(1)%npert + outer_next%p_tuples(2)%npert), &
+!                         mat_sing=RHS_dmat_2(dctr))
+!                         
+!                    dctr = dctr + 1
+!                    
+!                 end do
+!              
+!              end if
+!              
+!           end if
+! 
+!           ! Make temporary contrib_2 array to hold return values
+!           allocate(contrib_2_tmp(cache%blks_triang_size * wunit_size(1) * wunit_size(2)))
+!           
+!           if (.NOT.(mem_mgr%calibrate)) then
+!           
+!              write(out_str, *) 'Calculating second-order density matrix-dependent contribution'
+!              call out_print(out_str, 1)
+!              write(out_str, *) ' '
+!              call out_print(out_str, 1)
+!           
+!              ! Calculate two-electron contributions
+!              call get_2el_exp(num_pert, pert_ext, 1, &
+!                   (/wunit_size(1)/), LHS_dmat_2, & 
+!                   (/wunit_size(2)/), RHS_dmat_2, &
+!                   cache%blks_triang_size * wunit_size(1) * wunit_size(2), &               
+!                   contrib_2_tmp)
+!                   
+!              write(out_str, *) 'Second-order density matrix-dependent contribution (sample)', &
+!              contrib_2_tmp(1:min(10,size(contrib_2_tmp)))
+!              call out_print(out_str, 2)
+!                   
+!           
+!              ! Put temporary array data into contrib_2 in the appropriate places
+!           
+!              dctr = 0
+!           
+!              do m = curr_pickup(2), curr_pickup(2) + wunit_size(1) - 1
+!              
+!                 do n = curr_pickup(3), curr_pickup(3) + wunit_size(2) - 1
+!              
+!                    contrib_2(contrib_offset +  &
+!                              (m - 1) * outer_contract_sizes_2(k, 2) * cache%blks_triang_size + &
+!                              (n - 1) * cache%blks_triang_size : &
+!                              contrib_offset + &
+!                              (m - 1) * outer_contract_sizes_2(k, 2) * cache%blks_triang_size + &
+!                              (n) * cache%blks_triang_size - 1) = &
+!                    contrib_2_tmp(cache%blks_triang_size * dctr + 1: &
+!                                  cache%blks_triang_size * (dctr + 1))
+!              
+!                    dctr = dctr + 1
+!              
+!                 end do
+!              
+!              end do
+!           
+!           end if
+!           
+!           ! Increment contribution offset if this was the last workunit of this outer pair
+!           if (next_pickup(1) - curr_pickup(1) > 0) then
+!           
+!              contrib_offset = contrib_offset + cache%blks_triang_size * &
+!                               outer_contract_sizes_2(k, 1) * outer_contract_sizes_2(k, 2) 
+!           
+!           end if
+!           
+!           deallocate(contrib_2_tmp)
           
           
           
@@ -2661,25 +2630,24 @@ module rsp_general
     
     if (.NOT.(mem_mgr%calibrate)) then
      
-       traverse_end = .FALSE.
-     
-       outer_next => contrib_cache_outer_cycle_first(outer_next)
-       if (outer_next%dummy_entry) then
-          outer_next => outer_next%next
-       end if
-       
        k = 1
      
        c1_ctr = 1
        c2_ctr = 1
        
+            ! Traverse and fetch matrices
+       do m = 1, size(cache%contribs_outer)
+    
+          if (cache%contribs_outer(m)%dummy_entry) then
        
-       do while (traverse_end .EQV. .FALSE.)
-     
+             cycle
+       
+          end if
+       
           ! Nuc-nuc, one-el and two-el contribution
-          if (outer_next%num_dmat == 0) then
+          if (cache%contribs_outer(m)%num_dmat == 0) then
           
-             allocate(outer_next%data_scal(cache%blks_triang_size))
+             allocate(cache%contribs_outer(m)%data_scal(cache%blks_triang_size))
              allocate(data_tmp(cache%blks_triang_size))
        
              ! Factor 0.5 for two-el because no chain rule applications
@@ -2694,9 +2662,10 @@ module rsp_general
              c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
      
           ! One-el and two-el contribution
-          else if (outer_next%num_dmat == 1) then
+          else if (cache%contribs_outer(m)%num_dmat == 1) then
           
-             allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+             allocate(cache%contribs_outer(m)%data_scal(cache%blks_triang_size * &
+                      outer_contract_sizes_2(k, 1) * &
                       outer_contract_sizes_2(k, 2)))
              allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                       outer_contract_sizes_2(k, 2)))
@@ -2713,9 +2682,10 @@ module rsp_general
              c2_ctr = c2_ctr + cache%blks_triang_size * outer_contract_sizes_2(k, 1)
                       
           ! Only two-electron contribution
-          else if (outer_next%num_dmat == 2) then
+          else if (cache%contribs_outer(m)%num_dmat == 2) then
           
-             allocate(outer_next%data_scal(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
+             allocate(cache%contribs_outer(m)%data_scal(cache%blks_triang_size * &
+                      outer_contract_sizes_2(k, 1) * &
                       outer_contract_sizes_2(k, 2)))
              allocate(data_tmp(cache%blks_triang_size * outer_contract_sizes_2(k, 1) * &
                       outer_contract_sizes_2(k, 2)))
@@ -2727,10 +2697,10 @@ module rsp_general
                       outer_contract_sizes_2(k, 2)
           end if
           
-          if (outer_next%num_dmat == 0) then
+          if (cache%contribs_outer(m)%num_dmat == 0) then
           
           
-             outer_next%data_scal = data_tmp
+             cache%contribs_outer(m)%data_scal = data_tmp
              
           else
        
@@ -2739,15 +2709,16 @@ module rsp_general
              if (cache%p_inner%npert > 0) then
              
                 tot_num_pert = cache%p_inner%npert + &
-                sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/))
+                sum((/(cache%contribs_outer(m)%p_tuples(m)%npert, m = 1,  &
+                cache%contribs_outer(m)%num_dmat)/))
                       
-                allocate(blks_tuple_info(outer_next%num_dmat + 1,tot_num_pert, 3))
-                allocate(blk_sizes(outer_next%num_dmat + 1, tot_num_pert))
+                allocate(blks_tuple_info(cache%contribs_outer(m)%num_dmat + 1,tot_num_pert, 3))
+                allocate(blk_sizes(cache%contribs_outer(m)%num_dmat + 1, tot_num_pert))
              
                 blks_tuple_info = 0
                 blk_sizes = 0
                    
-                do j = 1, outer_next%num_dmat + 1
+                do j = 1, cache%contribs_outer(m)%num_dmat + 1
                    
                    if (j == 1) then
                    
@@ -2762,18 +2733,20 @@ module rsp_general
                    
                    else
                    
-                      do m = 1, outer_next%nblks_tuple(j - 1)
+                      do m = 1, cache%contribs_outer(m)%nblks_tuple(j - 1)
                    
                          do p = 1, 3
                       
-                            blks_tuple_info(j, m, :) = outer_next%blks_tuple_info(j - 1, m, :)
+                            blks_tuple_info(j, m, :) = &
+                            cache%contribs_outer(m)%blks_tuple_info(j - 1, m, :)
                       
                          end do
                    
                       end do
                    
-                      blk_sizes(j, 1:outer_next%nblks_tuple(j-1)) = &
-                      outer_next%blk_sizes(j-1, 1:outer_next%nblks_tuple(j-1))
+                      blk_sizes(j, 1:cache%contribs_outer(m)%nblks_tuple(j-1)) = &
+                      cache%contribs_outer(m)%blk_sizes(j-1,
+                      1:cache%contribs_outer(m)%nblks_tuple(j-1))
                       
                    end if
                    
@@ -2781,26 +2754,31 @@ module rsp_general
           
                 ! Go through elements of data_tmp and store in appropriate cache position
           
-                do i = 1, size(outer_next%indices, 1)
+                do i = 1, size(cache%contribs_outer(m)%indices, 1)
              
                    do j = 1, size(cache%indices, 1)
       
-                      offset = get_triang_blks_tuple_offset(outer_next%num_dmat + 1, &
-                      cache%p_inner%npert + sum((/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)), &
-                      (/cache%nblks, (/(outer_next%nblks_tuple(m), m = 1, outer_next%num_dmat) /) /), &
-                      (/cache%p_inner%npert, (/(outer_next%p_tuples(m)%npert, m = 1, outer_next%num_dmat)/)/), &
+                      offset = get_triang_blks_tuple_offset(cache%contribs_outer(m)%num_dmat + 1, &
+                      cache%p_inner%npert + sum((/(cache%contribs_outer(m)%p_tuples(m)%npert, &
+                      m = 1, cache%contribs_outer(m)%num_dmat)/)), &
+                      (/cache%nblks, (/(cache%contribs_outer(m)%nblks_tuple(m), m = 1, &
+                      cache%contribs_outer(m)%num_dmat) /) /), &
+                      (/cache%p_inner%npert, (/(cache%contribs_outer(m)%p_tuples(m)%npert, &
+                      m = 1, cache%contribs_outer(m)%num_dmat)/)/), &
                       blks_tuple_info, &
                       blk_sizes, &
                       (/cache%blks_triang_size, &
-                      (/(outer_next%blks_tuple_triang_size(m), m = 1, outer_next%num_dmat)/)/), &
-                      (/cache%indices(j, :), outer_next%indices(i, :)/))
+                      (/(cache%contribs_outer(m)%blks_tuple_triang_size(m), m = 1, &
+                      cache%contribs_outer(m)%num_dmat)/)/), &
+                      (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/))
                    
-!                       write(*,*) 'Index tuple:', (/cache%indices(j, :), outer_next%indices(i, :)/)
+!                       write(*,*) 'Index tuple:', (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/)
 !                       write(*,*) 'Saving element', j + size(cache%indices, 1) * (i - 1), &
 !                       'of data in cache element', offset
 !                       write(*,*) 'data is',  data_tmp(j + size(cache%indices, 1) * (i - 1))
                    
-                      outer_next%data_scal(offset) = data_tmp(j + size(cache%indices, 1) * (i - 1))
+                      cache%contribs_outer(m)%data_scal(offset) = data_tmp(j + &
+                      size(cache%indices, 1) * (i - 1))
                       
                    end do
              
@@ -2821,15 +2799,7 @@ module rsp_general
           
           deallocate(data_tmp)
       
-          if (outer_next%last) then
-       
-             traverse_end = .TRUE.
-       
-          end if
-    
           k = k + 1
-       
-          outer_next => outer_next%next
        
        end do
      
@@ -2847,15 +2817,16 @@ module rsp_general
   end subroutine
 
    ! Recurse to identify (dryrun == .TRUE.) or assemble (dryrun == .FALSE.) two-factor contributions
-   recursive subroutine rsp_twofact_recurse(pert, kn, p12, out_print, dryrun, cache, p_size, prop)
+   recursive subroutine rsp_twofact_recurse(pert, kn, p12, out_print, dryrun, len_cache, cache, p_size, prop)
 
     implicit none
 
     logical :: dryrun, lag_eligible
     type(p_tuple) :: pert, merged_p_tuple
     type(p_tuple), dimension(2) :: p12
-    type(contrib_cache) :: cache
-    type(contrib_cache_outer), pointer :: curr_outer
+    integer :: len_cache
+    integer, dimension(2) :: cache_loc
+    type(contrib_cache), dimension(len_cache) :: cache
     integer ::  i, j
     integer :: hard_offset
     integer, dimension(2) :: kn
@@ -2871,11 +2842,11 @@ module rsp_general
 
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
        (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), out_print, dryrun, &
-       cache, p_size, prop)
+       len_cache, cache, p_size, prop)
        
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
        (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), out_print, dryrun, &
-       cache, p_size, prop)
+       len_cache, cache, p_size, prop)
 
     ! If at end of recursion, process
     else
@@ -2906,7 +2877,7 @@ module rsp_general
        ! If not skipping
        if (kn_skip(p12(2)%npert, p12(2)%pid, kn) .EQV. .FALSE.) then
 
-          if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
+          if (contrib_cache_already(len_cache, cache, 2, p12, n_rule=kn(2))) then
 
              if (.NOT.(dryrun)) then
              
@@ -2919,17 +2890,18 @@ module rsp_general
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
                 
-                call contrib_cache_getdata(cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
+                call contrib_cache_getdata(len_cache, cache, 2, p12, p_size, 0, scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
              else
              
                 ! If previously identified as Lagrangian type contribution, change flag to
                 ! also include Pulay n contribution
-                call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
-                if (curr_outer%contrib_type == 3) then
+                cache_loc = contrib_cache_locate(size(cache), cache, 2, p12, n_rule=kn(2))
                 
-                   curr_outer%contrib_type = 4
+                if (cache(cache_loc(1))%contribs_outer(cache_loc(2))%contrib_type == 3) then
+                
+                   cache(cache_loc(1))%contribs_outer(cache_loc(2))%contrib_type = 4
                 
                 end if
              
@@ -2947,11 +2919,13 @@ module rsp_general
                 call out_print(out_str, 2)
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
-                             
-                call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
-                call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
+
+                len_cache = size(cache)
+                call contrib_cache_add_element(len_cache, cache, 2, p12, n_rule=kn(2))
+                
+                cache_loc = contrib_cache_locate(size(cache), cache, 2, p12, n_rule=kn(2))
                 ! Flag contribution as Pulay n type
-                curr_outer%contrib_type = 1
+                cache(cache_loc(1))%contribs_outer(cache_loc(2))%contrib_type = 1
                 
              
              else
@@ -2987,8 +2961,10 @@ module rsp_general
        ! If not skipping
        if ((kn_skip(p12(1)%npert, p12(1)%pid, kn) .EQV. .FALSE.) .AND. &
            (p12(1)%npert > 0) .AND. lag_eligible) then
+           
+          len_cache = size(cache) 
 
-          if (contrib_cache_already(cache, 2, p12, n_rule=kn(2))) then
+          if (contrib_cache_already(len_cache, cache, 2, p12, n_rule=kn(2))) then
 
              if (.NOT.(dryrun)) then
              
@@ -3000,23 +2976,25 @@ module rsp_general
                 call out_print(out_str, 2)
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
+                
+                len_cache = size(cache)
              
                 ! Pulay Lagrange contribution
-                call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
+                call contrib_cache_getdata(len_cache, cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
 !                 write(*,*) 'Prop after Pulay Lagrange retrieval', prop(1:min(12, size(prop)))
                 
 !                 Idempotency Lagrange contribution
-                call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
+                call contrib_cache_getdata(len_cache, cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 hard_offset = hard_offset + block_size
                 
 !                 write(*,*) 'Prop after idempotency Lagrange retrieval', prop(1:min(12, size(prop)))
 
 !                 SCFE Lagrange contribution
-                call contrib_cache_getdata(cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
+                call contrib_cache_getdata(len_cache, cache, 2, p12, p_size, 0, hard_offset=hard_offset, &
                 scal=prop, n_rule=kn(2))
                 
 !                 write(*,*) 'Prop after SCFE Lagrange retrieval', prop(1:min(12, size(prop)))
@@ -3025,13 +3003,14 @@ module rsp_general
              
                 ! If previously identified as Pulay n type contribution, change flag to
                 ! also include Lagrangian type contribution
-                call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
-                if (curr_outer%contrib_type == 1) then
+                cache_loc = contrib_cache_locate(size(cache), cache, 2, p12, n_rule=kn(2))
                 
-                   curr_outer%contrib_type = 4
+                if (cache(cache_loc(1))%contribs_outer(cache_loc(2))%contrib_type == 1) then
+                
+                   cache(cache_loc(1))%contribs_outer(cache_loc(2))%contrib_type = 4
                 
                 end if
-            
+                
              end if
        
           else
@@ -3047,12 +3026,13 @@ module rsp_general
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
                 
-                call contrib_cache_add_element(cache, 2, p12, n_rule=kn(2))
+                len_cache = size(cache)
+                call contrib_cache_add_element(len_cache, cache, 2, p12, n_rule=kn(2))
                 
-                call contrib_cache_cycle_outer(cache, 2, p12, curr_outer, n_rule=kn(2))
                 ! Flag contribution as Lagrangian type
-                curr_outer%contrib_type = 3
-             
+                cache_loc = contrib_cache_locate(size(cache), cache, 2, p12, n_rule=kn(2))
+                cache(cache_loc(1))%contribs_outer(cache_loc(2))%contrib_type = 3
+                
              else
               
                 write(out_str, *) 'ERROR: Expected to find Lagrange contributions but they were not present'
@@ -3075,7 +3055,8 @@ module rsp_general
   end subroutine
   
   ! Calculate two-factor contributions (Pulay n and Pulay, idempotency and SCFE Lagrangian)
-  subroutine rsp_twofact_calculate(S, D, F, get_ovl_exp, out_print, cache, mem_mgr)
+  subroutine rsp_twofact_calculate(size_s, S, size_d, D, size_f, F, &
+             get_ovl_exp, out_print, cache, mem_mgr)
 
     implicit none
     
@@ -3083,7 +3064,7 @@ module rsp_general
     logical :: mem_done
     integer :: mctr, mcurr, msize, mem_track
 
-    logical :: traverse_end, any_lagrange, select_terms
+    logical :: any_lagrange, select_terms
     integer :: cache_offset, i, j, k, m, n, p, c_ctr, c_snap, lagrange_max_n
     integer :: i_supsize, o_triang_size, offset, tot_num_pert, max_outer_npert
     integer :: o_ctr, size_lagrange, size_pulay_n
@@ -3097,9 +3078,16 @@ module rsp_general
     character(30) :: mat_str, fmt_str
     type(p_tuple) :: p_inner
     type(p_tuple), allocatable, dimension(:,:) :: d_struct_inner, d_struct_o, d_struct_o_prime
-    type(contrib_cache_outer) :: S, D, F
+    
+    integer :: size_s
+    type(contrib_cache_outer), dimension(size_s) :: S
+    integer :: size_d
+    type(contrib_cache_outer), dimension(size_s) :: D
+    integer :: size_F
+    type(contrib_cache_outer), dimension(size_s) :: F
+    
     type(contrib_cache) :: cache
-    type(contrib_cache_outer), pointer :: outer_next
+
     type(QcMat), allocatable, dimension(:) :: Lambda, Zeta, W
     type(QcMat) :: Y, Z, D_unp
            
@@ -3124,7 +3112,7 @@ module rsp_general
     
        call QCMatInit(D_unp)
 
-       call contrib_cache_getdata_outer(D, 1, (/get_emptypert()/), .FALSE., &
+       call contrib_cache_getdata_outer(size_d, D, 1, (/get_emptypert()/), .FALSE., &
             contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
             
     end if
@@ -3135,8 +3123,6 @@ module rsp_general
     ! Update: Seems OK
     call p_tuple_to_external_tuple(cache%p_inner, cache%p_inner%npert, pert_ext)
     
-    outer_next => cache%contribs_outer
-
     i_supsize = 0
 
     ! Size arrays for derivative superstructures
@@ -3165,45 +3151,44 @@ module rsp_general
     ! Traversal: Determine number of matrices/terms for contraction
     
     any_lagrange = .FALSE.
-    lagrange_max_n = 0    
+    lagrange_max_n = 0
     
-    traverse_end = .FALSE.
-    
-    outer_next => contrib_cache_outer_cycle_first(outer_next)
-    if (outer_next%dummy_entry) then
-       outer_next => outer_next%next
-    end if
-        
     size_pulay_n = 0
     size_lagrange = 0
     
     k = 1
     
-    do while (traverse_end .EQV. .FALSE.)
+    do m = 1, size(cache%contribs_outer)
     
-       if (outer_next%p_tuples(1)%npert > max_outer_npert) then
+       if (cache%contribs_outer(m)%dummy_entry) then
        
-          max_outer_npert = outer_next%p_tuples(1)%npert
+          cycle
+          
+       end if    
+    
+       if (cache%contribs_outer(m)%p_tuples(1)%npert > max_outer_npert) then
+       
+          max_outer_npert = cache%contribs_outer(m)%p_tuples(1)%npert
        
        end if
   
-       if (outer_next%p_tuples(1)%npert == 0) then
+       if (cache%contribs_outer(m)%p_tuples(1)%npert == 0) then
        
           o_triang_size = 1
        
        else
        
-          o_triang_size = outer_next%blks_tuple_triang_size(1)
+          o_triang_size = cache%contribs_outer(m)%blks_tuple_triang_size(1)
        
        end if
   
   
-       write(out_str, *) 'Outer contribution, type', outer_next%contrib_type
+       write(out_str, *) 'Outer contribution, type', cache%contribs_outer(m)%contrib_type
        call out_print(out_str, 1)
 
-       do i = 1, outer_next%num_dmat
+       do i = 1, cache%contribs_outer(m)%num_dmat
           
-          write(out_str, *) 'B', outer_next%p_tuples(i)%plab
+          write(out_str, *) 'B', cache%contribs_outer(m)%p_tuples(i)%plab
           call out_print(out_str, 1)
           
        end do
@@ -3216,36 +3201,41 @@ module rsp_general
        
        ! Get derivative superstructure sizes
        
-       o_supsize(k) = derivative_superstructure_getsize(outer_next%p_tuples(1), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+       o_supsize(k) = derivative_superstructure_getsize( &
+                   cache%contribs_outer(m)%p_tuples(1), &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .FALSE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/))
                    
        ! FIXME: Change .FALSE. to .TRUE. below since this is a primed term?
-       o_supsize_prime(k) = derivative_superstructure_getsize(outer_next%p_tuples(1), &
-                   (/outer_next%n_rule, outer_next%n_rule/), .FALSE., &
+       o_supsize_prime(k) = derivative_superstructure_getsize( &
+                   cache%contribs_outer(m)%p_tuples(1), &
+                   (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/), .FALSE., &
                    (/get_emptypert(), get_emptypert(), get_emptypert()/))
    
        
-       o_size(k) = outer_next%contrib_type * o_triang_size
+       o_size(k) = cache%contribs_outer(m)%contrib_type * o_triang_size
        
        ! If contribution includes Pulay n terms, increase size accordingly
-       if ((outer_next%contrib_type == 1) .OR. (outer_next%contrib_type == 4)) then
+       if ((cache%contribs_outer(m)%contrib_type == 1) .OR. &
+           (cache%contribs_outer(m)%contrib_type == 4)) then
        
           size_pulay_n = size_pulay_n + o_triang_size
               
        end if
        
        ! If contribution includes Lagrangian type terms, increase size accordingly
-       if (outer_next%contrib_type >= 3) then
+       if (cache%contribs_outer(m)%contrib_type >= 3) then
        
           size_lagrange = size_lagrange + 3 * o_triang_size
           
           any_lagrange = .TRUE.
           
           ! Possibly update max n rule for bound in matrix calls
-          if (outer_next%n_rule > lagrange_max_n) then
+          if (cache%contribs_outer(m)%n_rule > lagrange_max_n) then
           
-             lagrange_max_n = outer_next%n_rule            
+             lagrange_max_n = cache%contribs_outer(m)%n_rule            
           
           end if
        
@@ -3258,11 +3248,11 @@ module rsp_general
        ! 3: SCFE Lagrange contributions
        ! 4: Idempotency Lagrange contributions
       
-       allocate(outer_next%data_scal(o_size(k) * cache%blks_triang_size))
+       allocate(cache%contribs_outer(m)%data_scal(o_size(k) * cache%blks_triang_size))
        
-       outer_next%data_scal = 0.0
+       cache%contribs_outer(m)%data_scal = 0.0
          
-       if (outer_next%last) then
+       if (cache%contribs_outer(m)%last) then
     
           traverse_end = .TRUE.
     
@@ -3270,8 +3260,6 @@ module rsp_general
     
        k = k + 1
     
-       outer_next => outer_next%next
-     
     end do
     
     allocate(which_index_is_pid(cache%p_inner%npert + max_outer_npert))
@@ -3336,6 +3324,8 @@ module rsp_general
           end do
        
        end if
+       
+       ! DEC 19: CONTINUE HERE
        
        ! Traversal: Make W matrices and store
        

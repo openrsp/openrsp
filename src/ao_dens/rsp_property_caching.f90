@@ -1371,68 +1371,79 @@ module rsp_property_caching
  
  ! FIXME: Definitely ll-to-array chgs needed for this routine, maybe RM altogether
  
- ! Cycle outer instances attached to 'current_element' until specified
- ! element is reached
- subroutine contrib_cache_cycle_outer(current_element, num_p_tuples, p_tuples, &
-            next_outer, n_rule)
+ ! Locate which inner and outer cache element matches the perturbation tuples
+ function contrib_cache_locate(len_cache, cache, num_p_tuples, p_tuples, n_rule)
 
    implicit none
 
-   integer :: num_p_tuples, i, passedlast
+   integer, dimension(2) :: contrib_cache_locate
+   integer :: num_p_tuples, i, j, k
    logical :: found
    integer, optional :: n_rule
-   type(contrib_cache), target :: current_element
-   type(contrib_cache), pointer :: new_element
-   type(contrib_cache), pointer :: next_element
-   type(contrib_cache_outer), pointer :: next_outer
+   integer :: len_cache
+   type(contrib_cache) :: cache
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
    type(p_tuple) :: emptypert
 
    ! If cache element for inner perturbations already exists, just add outer
-   if (contrib_cache_already_inner(current_element, p_tuples(1))) then
-   
-      next_element => current_element
+   if (contrib_cache_already_inner(len_cache, cache, p_tuples(1))) then
+     
+      do i = 1, len_cache
       
-      ! Skip to cache element for this inner
-      do while (p_tuple_compare(next_element%p_inner, p_tuples(1)) .EQV. .FALSE.)
-
-        next_element => next_element%next
+         if (p_tuple_compare(cache(i)%p_inner, p_tuples(1))) then
          
+            contrib_cache_locate(1) = i
+            exit
+         
+         end if
+      
       end do
       
-      next_outer => next_element%contribs_outer
+      found = .false.
       
-      passedlast = 0
-      found = .FALSE.
-
-      do while ((passedlast < 2) .AND. (found .eqv. .FALSE.))
-
-         next_outer => contrib_cache_outer_next_element(next_outer)
+      do i = 1, size(cache(contrib_cache_locate(1))%contribs_outer)
+      
+         if (cache(contrib_cache_locate(1))%contribs_outer(i)%dummy_entry) then
+        
+            cycle
+        
+         end if
          
          if (num_p_tuples > 1) then
          
-            found = p_tuples_compare(num_p_tuples - 1, next_outer%p_tuples, &
-                                     p_tuples(2:))
+            found = p_tuples_compare(num_p_tuples - 1, &
+            cache(contrib_cache_locate(1))%contribs_outer(i)%p_tuples, &
+            p_tuples(2:))
+            
+            if (present(n_rule)) then
+      
+               found = found .AND. (n_rule == next_outer%n_rule)
+      
+            end if
                                   
          else
          
-            found = p_tuples_compare(num_p_tuples - 1, next_outer%p_tuples, &
-                                     (/get_emptypert()/))
+            found = p_tuples_compare(num_p_tuples - 1, &
+            cache(contrib_cache_locate(1))%contribs_outer(i)%p_tuples, &
+            (/get_emptypert()/))
+
+            if (present(n_rule)) then
+      
+               found = found .AND. (n_rule == next_outer%n_rule)
+      
+            end if            
+            
+         end if
+         
+         if (found) then
+         
+            contrib_cache_locate(2) = i
+            exit
          
          end if
-         
-         if (present(n_rule)) then
       
-            found = found .AND. (n_rule == next_outer%n_rule)
-      
-         end if
-
-         if (next_outer%last) then
-            passedlast = passedlast + 1
-         end if
-
       end do
-      
+     
       if (.NOT.(found)) then
       
          write(*,*) 'ERROR: Did not find expected outer cache element'

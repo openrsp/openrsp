@@ -332,8 +332,6 @@ module rsp_perturbed_sdf
        
        else
        
-          ! DEC 19: CONTINUE HERE
-       
           write(out_str, *) 'Calculating perturbed S, D, F at order', i
           call out_print(out_str, 1)
           write(out_str, *) ' '
