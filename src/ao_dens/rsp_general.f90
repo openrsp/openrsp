@@ -554,14 +554,14 @@ module rsp_general
           call out_print(out_str, 1)
 
 
-          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
-          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
-          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
           
           if (residue_order > 0) then
        
              allocate(Xf)
-             call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+!              call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
           
           end if
           
@@ -583,9 +583,9 @@ module rsp_general
          call contrib_cache_outer_add_element(size(D), F, .TRUE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/F_unpert/))
                
-         call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
-         call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
-         call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE', r_flag)
+!          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
+!          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
+!          call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE', r_flag)
          
          if (residue_order > 0) then
        
@@ -593,7 +593,7 @@ module rsp_general
              xf_was_allocated = .TRUE.
              call contrib_cache_outer_add_element(size(Xf), Xf, .TRUE., 1, (/get_emptypert()/), &
                   data_size = 1, data_mat=(/Xf_unpert(1)/))
-             call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE', r_flag)
+!              call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE', r_flag)
           
           end if
        
@@ -854,13 +854,13 @@ module rsp_general
        
        if(.NOT.(sdf_retrieved)) then
        
-          call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
-          call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
-          call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
           
           if (present(Xf)) then
        
-          call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+!           call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
           
           end if
                  
@@ -936,7 +936,7 @@ module rsp_general
     
        if (.NOT.(contrib_retrieved)) then
          
-          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+!           call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
           contrib_retrieved = .TRUE.
           
        end if
@@ -989,7 +989,7 @@ module rsp_general
     
        len_cache = size(contribution_cache)
     
-       call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+!        call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
 
@@ -1012,7 +1012,7 @@ module rsp_general
        
           allocate(contribution_cache)
     
-          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+!           call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
           contrib_retrieved = .TRUE.
           
        end if
@@ -1075,7 +1075,7 @@ module rsp_general
           
              end if
           
-             call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+!              call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
              
           end if
           
@@ -1094,7 +1094,7 @@ module rsp_general
        write(out_str, *) ' '
        call out_print(out_str, 1)
        
-       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+!        call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
     
@@ -1115,7 +1115,7 @@ module rsp_general
     
        if (.NOT.(props_retrieved)) then
        
-          call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+!           call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
           props_retrieved = .TRUE.
           
        end if
@@ -1166,7 +1166,7 @@ module rsp_general
         
           end do
        
-          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
+!           call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
        
        end if
 
@@ -1197,7 +1197,7 @@ module rsp_general
            
        if (.NOT.(props_retrieved)) then
        
-          call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+!           call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
           props_retrieved = .TRUE.
           
        end if
@@ -1245,7 +1245,7 @@ module rsp_general
        
           end do
        
-          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
+!           call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
        
        end if
 
@@ -1277,7 +1277,7 @@ module rsp_general
        
           allocate(contribution_cache)
     
-          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+!           call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
           contrib_retrieved = .TRUE.
           
        end if
@@ -1327,7 +1327,7 @@ module rsp_general
        end do
     
        len_cache = size(contribution_cache)
-       call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+!        call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
     
@@ -1350,7 +1350,7 @@ module rsp_general
        
           allocate(contribution_cache)
     
-          call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
+!           call contrib_cache_retrieve(contribution_cache, 'OPENRSP_CONTRIB_CACHE')
           contrib_retrieved = .TRUE.
           
        end if
@@ -1411,7 +1411,7 @@ module rsp_general
           
              end if             
              
-             call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+!              call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
           
           end if
           
@@ -1430,7 +1430,7 @@ module rsp_general
        write(out_str, *) ' '
        call out_print(out_str, 1)
        
-       call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
+!        call contrib_cache_store(contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
        
     end if
 
@@ -1450,7 +1450,7 @@ module rsp_general
     
        if (.NOT.(props_retrieved)) then
        
-          call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
+!           call mat_scal_retrieve(sum(prop_sizes), 'OPENRSP_PROP_CACHE', scal=props)
           props_retrieved = .TRUE.
        
        end if
@@ -1502,7 +1502,7 @@ module rsp_general
        
           end do
        
-          call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
+!           call mat_scal_store(sum(prop_sizes), 'OPENRSP_PROP_CACHE', r_flag, scal=props)
        
        end if
   
