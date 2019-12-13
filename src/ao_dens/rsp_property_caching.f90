@@ -19,8 +19,8 @@ module rsp_property_caching
  public contrib_cache_initialize
  public contrib_cache_next_element
  public contrib_cache_outer_next_element
- public contrib_cache_outer_cycle_first
- public contrib_cache_cycle_outer
+!  public contrib_cache_outer_cycle_first
+ public contrib_cache_locate
  public contrib_cache_outer_add_element
  public contrib_cache_add_element
  public contrib_cache_already
@@ -94,60 +94,60 @@ module rsp_property_caching
  
  ! FIXME: OLD TYPES TO BE RMD
  
- ! "Outer" type: can be "independent" or attached to inner
- type contrib_cache_outer_old
-
-   type(contrib_cache_outer), pointer :: next
-   logical :: last
-   logical :: dummy_entry
-   ! Number of chain rule applications
-   integer :: num_dmat
-   ! Perturbation tuples
-   type(p_tuple), allocatable, dimension(:) :: p_tuples
-
-   ! Contribution type for two-factor terms: 1: Only Pulay n, 
-   ! 3: Only Lagrange, 4: Both Pulay and Lagrange
-   integer :: contrib_type = 0
-   
-   ! Choice of n rule for contribution (for use in two-factor terms)
-   integer :: n_rule = 0
-   ! Size of contribution data
-   integer :: contrib_size = 0
-   ! Perturbation block information
-   integer, allocatable, dimension(:) :: nblks_tuple
-   integer, allocatable, dimension(:,:) :: blk_sizes
-   integer, allocatable, dimension(:,:) :: indices
-   integer, allocatable, dimension(:,:,:) :: blks_tuple_info
-   integer, allocatable, dimension(:) :: blks_tuple_triang_size
-   ! Matrix data (if used)
-   type(QcMat), allocatable, dimension(:) :: data_mat 
-   ! Scalar data (if used)
-   complex(8), allocatable, dimension(:) :: data_scal
-
- end type 
-
- ! "Inner" type: For use in e.g. perturbed Fock and energy-type terms
- ! Attaches to one or more outer cache instances
- type contrib_cache_old
-
-   type(contrib_cache), pointer :: next
-   logical :: last
-   ! Perturbation tuple
-   type(p_tuple) :: p_inner
-
-   ! Number of outer cache instances attached to this inner
-   integer :: num_outer
-   ! Perturbation block/indices information
-   integer :: nblks
-   integer, allocatable, dimension(:) :: blk_sizes
-   integer :: blks_triang_size
-   integer, allocatable, dimension(:,:) :: blk_info
-   integer, allocatable, dimension(:,:) :: indices
-         
-   ! Pointer to attached outer cache instances
-   type(contrib_cache_outer), pointer :: contribs_outer
-
- end type 
+!  ! "Outer" type: can be "independent" or attached to inner
+!  type contrib_cache_outer_old
+! 
+!    type(contrib_cache_outer), pointer :: next
+!    logical :: last
+!    logical :: dummy_entry
+!    ! Number of chain rule applications
+!    integer :: num_dmat
+!    ! Perturbation tuples
+!    type(p_tuple), allocatable, dimension(:) :: p_tuples
+! 
+!    ! Contribution type for two-factor terms: 1: Only Pulay n, 
+!    ! 3: Only Lagrange, 4: Both Pulay and Lagrange
+!    integer :: contrib_type = 0
+!    
+!    ! Choice of n rule for contribution (for use in two-factor terms)
+!    integer :: n_rule = 0
+!    ! Size of contribution data
+!    integer :: contrib_size = 0
+!    ! Perturbation block information
+!    integer, allocatable, dimension(:) :: nblks_tuple
+!    integer, allocatable, dimension(:,:) :: blk_sizes
+!    integer, allocatable, dimension(:,:) :: indices
+!    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
+!    integer, allocatable, dimension(:) :: blks_tuple_triang_size
+!    ! Matrix data (if used)
+!    type(QcMat), allocatable, dimension(:) :: data_mat 
+!    ! Scalar data (if used)
+!    complex(8), allocatable, dimension(:) :: data_scal
+! 
+!  end type 
+! 
+!  ! "Inner" type: For use in e.g. perturbed Fock and energy-type terms
+!  ! Attaches to one or more outer cache instances
+!  type contrib_cache_old
+! 
+!    type(contrib_cache), pointer :: next
+!    logical :: last
+!    ! Perturbation tuple
+!    type(p_tuple) :: p_inner
+! 
+!    ! Number of outer cache instances attached to this inner
+!    integer :: num_outer
+!    ! Perturbation block/indices information
+!    integer :: nblks
+!    integer, allocatable, dimension(:) :: blk_sizes
+!    integer :: blks_triang_size
+!    integer, allocatable, dimension(:,:) :: blk_info
+!    integer, allocatable, dimension(:,:) :: indices
+!          
+!    ! Pointer to attached outer cache instances
+!    type(contrib_cache_outer), pointer :: contribs_outer
+! 
+!  end type 
  
  ! END FIXME: OLD TYPES
 
@@ -282,7 +282,7 @@ module rsp_property_caching
     
   end subroutine
  
-! FIXME: Maybe ll-to-array chgs needed for this routine
+! FIXME: No ll-to-array chgs needed for this routine
  
  ! Store array of matrices or scalars in file fname
  subroutine mat_scal_store(array_size, fname, r_flag, mat, scal, start_pos)
@@ -346,7 +346,7 @@ module rsp_property_caching
  
  end subroutine
  
- ! FIXME: Maybe ll-to-array chgs needed for this routine
+ ! FIXME: No ll-to-array chgs needed for this routine
  
  ! Retrieve array of matrices or scalars from file fname
  subroutine mat_scal_retrieve(array_size, fname, mat, scal)
@@ -392,179 +392,180 @@ module rsp_property_caching
  ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Store contribution cache structure (including outer attached instances) in file fname
- subroutine contrib_cache_store(cache, r_flag, fname)
+ subroutine contrib_cache_store(len_cache, cache, r_flag, fname)
  
    implicit none
    
    logical :: termination
    integer :: num_entries, i, j, k, funit, mat_acc, r_flag
+   integer :: len_cache
    character(*) :: fname
   
-   type(contrib_cache), target :: cache
-   type(contrib_cache), pointer :: cache_next
-   type(contrib_cache_outer), pointer :: outer_next
+   type(contrib_cache), dimension(len_cache) :: cache
  
    if (r_flag == 0) then
    
       ! "No restarting or storing" case
       
    else if (r_flag == 3) then
- 
-      mat_acc = 0
- 
-      funit = 260
- 
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-        form='unformatted', status='replace', action='write')
-   
-      ! Cycle to start
-      cache_next => cache
-      do while(.NOT.(cache_next%last))
-         cache_next => cache_next%next
-      end do
-      cache_next => cache_next%next
-      cache_next => cache_next%next
-   
-      num_entries = 0
-   
-      ! Traverse to get number of entries
-      termination = .FALSE.
-      do while(.NOT.(termination))
-   
-         num_entries = num_entries + 1
-   
-         termination = cache_next%last
-         cache_next => cache_next%next
-   
-      end do
-   
-      write(funit) num_entries
-   
-      ! Cycle to start
-      do while(.NOT.(cache_next%last))
-         cache_next => cache_next%next
-      end do
-      cache_next => cache_next%next
-      cache_next => cache_next%next
-   
-      
-      ! Traverse and store
-      termination = .FALSE.
-      do i = 1, num_entries
-   
-         write(funit) cache_next%last
-         write(funit) cache_next%p_inner%npert
-         do j = 1, cache_next%p_inner%npert
-      
-            write(funit) cache_next%p_inner%pdim(j)
-            write(funit) cache_next%p_inner%plab(j)
-            write(funit) cache_next%p_inner%pid(j)
-            write(funit) cache_next%p_inner%freq(j)
-      
-         end do
-      
-         ! MaR: New code for residue handling
-      
-         write(funit) cache_next%p_inner%do_residues
-         write(funit) cache_next%p_inner%n_pert_res_max
-         write(funit) cache_next%p_inner%n_states
-      
-         if (cache_next%p_inner%do_residues > 0) then
-      
-            if (allocated(cache_next%p_inner%states)) then
-         
-               write(funit) .TRUE.
-               write(funit) size(cache_next%p_inner%states)
-         
-               do j = 1, size(cache_next%p_inner%states)
-         
-                  write(funit) cache_next%p_inner%states(j)
-               
-               end do
-            
-            else
-         
-               write(funit) .FALSE.
-         
-            end if
-         
-            if (allocated(cache_next%p_inner%exenerg)) then
-         
-               write(funit) .TRUE.
-               write(funit) size(cache_next%p_inner%exenerg)
-         
-               do j = 1, size(cache_next%p_inner%exenerg)
-         
-                  write(funit) cache_next%p_inner%exenerg(j)
-               
-               end do
-            
-            else
-         
-               write(funit) .FALSE.
-         
-            end if
-         
-         
-            if (allocated(cache_next%p_inner%part_of_residue)) then
-         
-               write(funit) .TRUE.
-               write(funit) size(cache_next%p_inner%part_of_residue, 1)
-               write(funit) size(cache_next%p_inner%part_of_residue, 2)
-         
-               do j = 1, size(cache_next%p_inner%part_of_residue, 1)
-            
-                  do k = 1, size(cache_next%p_inner%part_of_residue, 2)
-         
-                     write(funit) cache_next%p_inner%part_of_residue(j, k)
-                  
-                  end do
-               
-               end do
-            
-            else
-         
-               write(funit) .FALSE.
-         
-            end if
-         
-         end if
-      
-      
-         ! End new
-      
-      
-         write(funit) cache_next%num_outer
-         write(funit) cache_next%nblks
-      
-         write(funit) size(cache_next%blk_sizes)
-         write(funit) cache_next%blk_sizes
-      
-         write(funit) cache_next%blks_triang_size
 
-         write(funit) size(cache_next%blk_info, 1)
-         write(funit) size(cache_next%blk_info, 2)
-         write(funit) cache_next%blk_info
-     
-         write(funit) size(cache_next%indices, 1)
-         write(funit) size(cache_next%indices, 2)
-         write(funit) cache_next%indices
-      
-         
-      
-         outer_next => cache_next%contribs_outer
-      
-         ! num_outer may not be well-defined; consider 
-         ! switching to traversal with termination instead
-         
-         call contrib_cache_outer_put(outer_next, fname, funit, mat_acc_in=mat_acc)
+! Old LL functionality: Rewrite together with retrieve routine into array form   
    
-         cache_next => cache_next%next
-   
-      end do
-
-      close(funit)
- 
+!       mat_acc = 0
+!  
+!       funit = 260
+!  
+!       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+!         form='unformatted', status='replace', action='write')
+!    
+!       ! Cycle to start
+!       cache_next => cache
+!       do while(.NOT.(cache_next%last))
+!          cache_next => cache_next%next
+!       end do
+!       cache_next => cache_next%next
+!       cache_next => cache_next%next
+!    
+!       num_entries = 0
+!    
+!       ! Traverse to get number of entries
+!       termination = .FALSE.
+!       do while(.NOT.(termination))
+!    
+!          num_entries = num_entries + 1
+!    
+!          termination = cache_next%last
+!          cache_next => cache_next%next
+!    
+!       end do
+!    
+!       write(funit) num_entries
+!    
+!       ! Cycle to start
+!       do while(.NOT.(cache_next%last))
+!          cache_next => cache_next%next
+!       end do
+!       cache_next => cache_next%next
+!       cache_next => cache_next%next
+!    
+!       
+!       ! Traverse and store
+!       termination = .FALSE.
+!       do i = 1, num_entries
+!    
+!          write(funit) cache_next%last
+!          write(funit) cache_next%p_inner%npert
+!          do j = 1, cache_next%p_inner%npert
+!       
+!             write(funit) cache_next%p_inner%pdim(j)
+!             write(funit) cache_next%p_inner%plab(j)
+!             write(funit) cache_next%p_inner%pid(j)
+!             write(funit) cache_next%p_inner%freq(j)
+!       
+!          end do
+!       
+!          ! MaR: New code for residue handling
+!       
+!          write(funit) cache_next%p_inner%do_residues
+!          write(funit) cache_next%p_inner%n_pert_res_max
+!          write(funit) cache_next%p_inner%n_states
+!       
+!          if (cache_next%p_inner%do_residues > 0) then
+!       
+!             if (allocated(cache_next%p_inner%states)) then
+!          
+!                write(funit) .TRUE.
+!                write(funit) size(cache_next%p_inner%states)
+!          
+!                do j = 1, size(cache_next%p_inner%states)
+!          
+!                   write(funit) cache_next%p_inner%states(j)
+!                
+!                end do
+!             
+!             else
+!          
+!                write(funit) .FALSE.
+!          
+!             end if
+!          
+!             if (allocated(cache_next%p_inner%exenerg)) then
+!          
+!                write(funit) .TRUE.
+!                write(funit) size(cache_next%p_inner%exenerg)
+!          
+!                do j = 1, size(cache_next%p_inner%exenerg)
+!          
+!                   write(funit) cache_next%p_inner%exenerg(j)
+!                
+!                end do
+!             
+!             else
+!          
+!                write(funit) .FALSE.
+!          
+!             end if
+!          
+!          
+!             if (allocated(cache_next%p_inner%part_of_residue)) then
+!          
+!                write(funit) .TRUE.
+!                write(funit) size(cache_next%p_inner%part_of_residue, 1)
+!                write(funit) size(cache_next%p_inner%part_of_residue, 2)
+!          
+!                do j = 1, size(cache_next%p_inner%part_of_residue, 1)
+!             
+!                   do k = 1, size(cache_next%p_inner%part_of_residue, 2)
+!          
+!                      write(funit) cache_next%p_inner%part_of_residue(j, k)
+!                   
+!                   end do
+!                
+!                end do
+!             
+!             else
+!          
+!                write(funit) .FALSE.
+!          
+!             end if
+!          
+!          end if
+!       
+!       
+!          ! End new
+!       
+!       
+!          write(funit) cache_next%num_outer
+!          write(funit) cache_next%nblks
+!       
+!          write(funit) size(cache_next%blk_sizes)
+!          write(funit) cache_next%blk_sizes
+!       
+!          write(funit) cache_next%blks_triang_size
+! 
+!          write(funit) size(cache_next%blk_info, 1)
+!          write(funit) size(cache_next%blk_info, 2)
+!          write(funit) cache_next%blk_info
+!      
+!          write(funit) size(cache_next%indices, 1)
+!          write(funit) size(cache_next%indices, 2)
+!          write(funit) cache_next%indices
+!       
+!          
+!       
+!          outer_next => cache_next%contribs_outer
+!       
+!          ! num_outer may not be well-defined; consider 
+!          ! switching to traversal with termination instead
+!          
+!          call contrib_cache_outer_put(outer_next, fname, funit, mat_acc_in=mat_acc)
+!    
+!          cache_next => cache_next%next
+!    
+!       end do
+! 
+!       close(funit)
+!  
    end if
  
  end subroutine
@@ -572,88 +573,91 @@ module rsp_property_caching
  ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Retrieve contribution cache structure (including outer attached instances) from file fname
- subroutine contrib_cache_retrieve(cache, fname)
+ subroutine contrib_cache_retrieve(len_cache, cache, fname)
  
    implicit none
    
    logical :: termination, cache_ext
    integer :: num_entries, i, j, funit
+   integer :: len_cache
    character(*) :: fname
   
-   type(contrib_cache), target :: cache
-   type(contrib_cache), pointer :: cache_next, cache_new, cache_orig
-   type(contrib_cache_outer), pointer :: outer_next
- 
-   inquire(file=fname // '.DAT', exist=cache_ext)
-   
-   if (.NOT.(cache_ext)) then
-   
-      write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
-      stop
-   
-   end if
- 
-   funit = 260
- 
-   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-        form='unformatted', status='old', action='read')
-   
-   read(funit) num_entries
+   type(contrib_cache), dimension(len_cache) :: cache
 
-   ! Cache allocation may need own subroutine because of target/pointer issues
-   ! Set up first element of cache
+   ! Old LL functionality: Rewrite together with store routine into array form   
    
-   ! NOTE: DEALLOCATION/ALLOCATION MAY BE PROBLEMATIC   
-    
-   cache_next => cache
-   
-   call contrib_cache_read_one_inner(cache_next, fname, funit)
-   
-   allocate(cache_next%contribs_outer)
-   outer_next => cache_next%contribs_outer
-   call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
-   
-   cache_orig => cache_next
-   
-   ! Get all remaining elements
-   do i = 1, num_entries - 1
-   
-      call contrib_cache_retrieve_one_inner(cache_next%next, fname, funit)
-      
-      cache_next => cache_next%next
-      allocate(cache_next%contribs_outer)
-      outer_next => cache_next%contribs_outer
-         
-      call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
-      
-   end do
-   
-   ! Bite the tail
-   cache_next%next => cache_orig
-   
-   
-   close(funit)
+!    inquire(file=fname // '.DAT', exist=cache_ext)
+! 
+!    if (.NOT.(cache_ext)) then
+!    
+!       write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+!       stop
+!    
+!    end if
+!  
+!    funit = 260
+!  
+!    open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+!         form='unformatted', status='old', action='read')
+!    
+!    read(funit) num_entries
+! 
+!    ! Cache allocation may need own subroutine because of target/pointer issues
+!    ! Set up first element of cache
+!    
+!    ! NOTE: DEALLOCATION/ALLOCATION MAY BE PROBLEMATIC   
+!     
+!    cache_next => cache
+!    
+!    call contrib_cache_read_one_inner(cache_next, fname, funit)
+!    
+!    allocate(cache_next%contribs_outer)
+!    outer_next => cache_next%contribs_outer
+!    call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
+!    
+!    cache_orig => cache_next
+!    
+!    ! Get all remaining elements
+!    do i = 1, num_entries - 1
+!    
+!       call contrib_cache_retrieve_one_inner(cache_next%next, fname, funit)
+!       
+!       cache_next => cache_next%next
+!       allocate(cache_next%contribs_outer)
+!       outer_next => cache_next%contribs_outer
+!          
+!       call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
+!       
+!    end do
+!    
+!    ! Bite the tail
+!    cache_next%next => cache_orig
+!    
+!    
+!    close(funit)
  
  end subroutine
  
  ! FIXME: Definitely ll-to-array chgs needed for this routine
  
- ! Wrapper: Get one inner contribution cache instance from file fname
+ ! Wrapper: Get one inner contribution cache instance from file fname  FIXME: UPD BUT INCOMPLETE
  subroutine contrib_cache_retrieve_one_inner(cache_new, fname, funit)
  
     implicit none
  
     integer :: funit 
     character(*) :: fname
-    type(contrib_cache), pointer :: cache_new
+    type(contrib_cache) :: cache_new
+
+! Old code to be revisited
  
-    allocate(cache_new)
- 
-    call contrib_cache_read_one_inner(cache_new, fname, funit)
+!     allocate(cache_new)
+!  
+!     call contrib_cache_read_one_inner(cache_new, fname, funit)
 
  end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
+ ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME: UPD BUT MAY BE INCOMPLETE
  
  ! Read one inner contribution cache instance from file fname
  subroutine contrib_cache_read_one_inner(cache, fname, funit)
@@ -665,7 +669,7 @@ module rsp_property_caching
    character(*) :: fname
    logical :: alloc_indic
   
-   type(contrib_cache), pointer :: cache
+   type(contrib_cache) :: cache
    
    read(funit) cache%last
    read(funit) cache%p_inner%npert
@@ -820,235 +824,237 @@ module rsp_property_caching
  
  end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine
+ ! FIXME: Definitely ll-to-array chgs needed for this routine:
  
  ! Write one outer contribution cache element to file fname
  ! Assumes file 'fname' is already opened with I/O unit 'funit'
- subroutine contrib_cache_outer_put(cache, fname, funit, mat_acc_in)
+ subroutine contrib_cache_outer_put(len_cache, cache, fname, funit, mat_acc_in)
  
    implicit none
    
    logical :: termination
    integer :: num_entries, i, j, k, m, mat_scal_none, funit, mat_acc
    integer, optional :: mat_acc_in
+   integer :: len_cache
    character(*) :: fname
    character(10) :: str_fid
    character(8) :: fid_fmt
   
-   type(contrib_cache_outer), target :: cache
-   type(contrib_cache_outer), pointer :: cache_next
+   type(contrib_cache_outer), dimension(len_cache) :: cache
  
-   mat_acc = 0
-   if (present(mat_acc_in)) then
-      mat_acc = mat_acc_in
-   end if
-   
+! Old LL functionality: Rewrite 
  
-   ! Cycle to start
-   cache_next => cache
-   do while(.NOT.(cache_next%last))
-      cache_next => cache_next%next
-   end do
-   cache_next => cache_next%next
-   cache_next => cache_next%next
-   
-   num_entries = 0
-   
-   ! Traverse to get number of entries
-   termination = .FALSE.
-   do while(.NOT.(termination))
-   
-      num_entries = num_entries + 1
-   
-      termination = cache_next%last
-      cache_next => cache_next%next
-   
-   end do
-   
-   write(funit) num_entries
-   
-   ! Cycle to start
-   do while(.NOT.(cache_next%last))
-      cache_next => cache_next%next
-   end do
-   cache_next => cache_next%next
-   cache_next => cache_next%next
-  
-   ! Traverse and store
-   do i = 1, num_entries
-   
-      write(funit) size(cache_next%p_tuples)
-      do j = 1, size(cache_next%p_tuples)
-      
-         write(funit) cache_next%p_tuples(j)%npert
-         
-         do k = 1, cache_next%p_tuples(j)%npert
-         
-            write(funit) cache_next%p_tuples(j)%pdim(k)
-            write(funit) cache_next%p_tuples(j)%plab(k)
-            write(funit) cache_next%p_tuples(j)%pid(k)
-            write(funit) cache_next%p_tuples(j)%freq(k)
-         
-         end do
-         
-      
-      
-         ! MaR: New code for residue handling
-      
-         write(funit) cache_next%p_tuples(j)%do_residues
-         write(funit) cache_next%p_tuples(j)%n_pert_res_max
-         write(funit) cache_next%p_tuples(j)%n_states
-      
-         if (cache_next%p_tuples(j)%do_residues > 0) then
-      
-            if (allocated(cache_next%p_tuples(j)%states)) then
-         
-               write(funit) .TRUE.
-               write(funit) size(cache_next%p_tuples(j)%states)
-         
-               do k = 1, size(cache_next%p_tuples(j)%states)
-         
-                  write(funit) cache_next%p_tuples(j)%states(k)
-               
-               end do
-            
-            else
-         
-               write(funit) .FALSE.
-         
-            end if
-         
-            if (allocated(cache_next%p_tuples(j)%exenerg)) then
-         
-               write(funit) .TRUE.
-               write(funit) size(cache_next%p_tuples(j)%exenerg)
-         
-               do k = 1, size(cache_next%p_tuples(j)%exenerg)
-         
-                  write(funit) cache_next%p_tuples(j)%exenerg(k)
-               
-               end do
-            
-            else
-         
-               write(funit) .FALSE.
-         
-            end if
-         
-         
-            if (allocated(cache_next%p_tuples(j)%part_of_residue)) then
-         
-               write(funit) .TRUE.
-               write(funit) size(cache_next%p_tuples(j)%part_of_residue, 1)
-               write(funit) size(cache_next%p_tuples(j)%part_of_residue, 2)
-         
-               do k = 1, size(cache_next%p_tuples(j)%part_of_residue, 1)
-            
-                  do m = 1, size(cache_next%p_tuples(j)%part_of_residue, 2)
-         
-                     write(funit) cache_next%p_tuples(j)%part_of_residue(k, m)
-                  
-                  end do
-               
-               end do
-            
-            else
-         
-               write(funit) .FALSE.
-         
-            end if
-         
-         end if
-      
-      
-      ! End new
-      
-      end do
-      
-   
-      write(funit) cache_next%last
-      write(funit) cache_next%dummy_entry
-      write(funit) cache_next%num_dmat
-      write(funit) cache_next%contrib_type
-      write(funit) cache_next%n_rule
-      write(funit) cache_next%contrib_size
-      
-      if (cache_next%p_tuples(1)%npert > 0) then
-      
-         write(funit) size(cache_next%nblks_tuple)
-         write(funit) cache_next%nblks_tuple
-      
-         write(funit) size(cache_next%blk_sizes, 1)
-         write(funit) size(cache_next%blk_sizes, 2)
-         do j = 1, size(cache_next%blk_sizes, 1)
-            write(funit) cache_next%blk_sizes(j, :)
-         end do
-      
-         write(funit) size(cache_next%indices, 1)
-         write(funit) size(cache_next%indices, 2)
-         
-         do j = 1, size(cache_next%indices, 1)
-            write(funit) cache_next%indices(j,:)
-         end do
-      
-         write(funit) size(cache_next%blks_tuple_info, 1)
-         write(funit) size(cache_next%blks_tuple_info, 2)
-         write(funit) size(cache_next%blks_tuple_info, 3)
-      
-         do j = 1, size(cache_next%blks_tuple_info, 1)
-            do k = 1, size(cache_next%blks_tuple_info, 2)
-               write(funit) cache_next%blks_tuple_info(j, k, :)
-            end do
-         end do
-      
-         write(funit) size(cache_next%blks_tuple_triang_size)
-         write(funit) cache_next%blks_tuple_triang_size
-      
-      end if
-      
-      if (allocated(cache_next%data_mat)) then
-      
-         mat_scal_none = 0
-         write(funit) mat_scal_none
-         write(funit) size(cache_next%data_mat)
-         
-         fid_fmt = '(I10.10)'
-         
-         do j = 1, size(cache_next%data_mat)
-            
-            write(str_fid, fid_fmt) j + mat_acc
-         
-            k = QcMatWrite_f(cache_next%data_mat(j), trim(adjustl(fname)) // '_MAT_' // &
-                 trim(str_fid) // '.DAT', BINARY_VIEW)
-         
-         end do
-         
-         mat_acc = mat_acc + size(cache_next%data_mat)
-         
-      
-      elseif (allocated(cache_next%data_scal)) then
-      
-         mat_scal_none = 1
-         write(funit) mat_scal_none
-         write(funit) size(cache_next%data_scal)
-         write(funit) cache_next%data_scal
-         
-      
-      else
-      
-         mat_scal_none = 2 
-         write(funit) mat_scal_none
-      
-      end if
-            
-      cache_next => cache_next%next
-   
-   
-   end do
- 
-   if (present(mat_acc_in)) then
-      mat_acc_in = mat_acc
-   end if
+!    mat_acc = 0
+!    if (present(mat_acc_in)) then
+!       mat_acc = mat_acc_in
+!    end if
+!    
+!  
+!    ! Cycle to start
+!    cache_next => cache
+!    do while(.NOT.(cache_next%last))
+!       cache_next => cache_next%next
+!    end do
+!    cache_next => cache_next%next
+!    cache_next => cache_next%next
+!    
+!    num_entries = 0
+!    
+!    ! Traverse to get number of entries
+!    termination = .FALSE.
+!    do while(.NOT.(termination))
+!    
+!       num_entries = num_entries + 1
+!    
+!       termination = cache_next%last
+!       cache_next => cache_next%next
+!    
+!    end do
+!    
+!    write(funit) num_entries
+!    
+!    ! Cycle to start
+!    do while(.NOT.(cache_next%last))
+!       cache_next => cache_next%next
+!    end do
+!    cache_next => cache_next%next
+!    cache_next => cache_next%next
+!   
+!    ! Traverse and store
+!    do i = 1, num_entries
+!    
+!       write(funit) size(cache_next%p_tuples)
+!       do j = 1, size(cache_next%p_tuples)
+!       
+!          write(funit) cache_next%p_tuples(j)%npert
+!          
+!          do k = 1, cache_next%p_tuples(j)%npert
+!          
+!             write(funit) cache_next%p_tuples(j)%pdim(k)
+!             write(funit) cache_next%p_tuples(j)%plab(k)
+!             write(funit) cache_next%p_tuples(j)%pid(k)
+!             write(funit) cache_next%p_tuples(j)%freq(k)
+!          
+!          end do
+!          
+!       
+!       
+!          ! MaR: New code for residue handling
+!       
+!          write(funit) cache_next%p_tuples(j)%do_residues
+!          write(funit) cache_next%p_tuples(j)%n_pert_res_max
+!          write(funit) cache_next%p_tuples(j)%n_states
+!       
+!          if (cache_next%p_tuples(j)%do_residues > 0) then
+!       
+!             if (allocated(cache_next%p_tuples(j)%states)) then
+!          
+!                write(funit) .TRUE.
+!                write(funit) size(cache_next%p_tuples(j)%states)
+!          
+!                do k = 1, size(cache_next%p_tuples(j)%states)
+!          
+!                   write(funit) cache_next%p_tuples(j)%states(k)
+!                
+!                end do
+!             
+!             else
+!          
+!                write(funit) .FALSE.
+!          
+!             end if
+!          
+!             if (allocated(cache_next%p_tuples(j)%exenerg)) then
+!          
+!                write(funit) .TRUE.
+!                write(funit) size(cache_next%p_tuples(j)%exenerg)
+!          
+!                do k = 1, size(cache_next%p_tuples(j)%exenerg)
+!          
+!                   write(funit) cache_next%p_tuples(j)%exenerg(k)
+!                
+!                end do
+!             
+!             else
+!          
+!                write(funit) .FALSE.
+!          
+!             end if
+!          
+!          
+!             if (allocated(cache_next%p_tuples(j)%part_of_residue)) then
+!          
+!                write(funit) .TRUE.
+!                write(funit) size(cache_next%p_tuples(j)%part_of_residue, 1)
+!                write(funit) size(cache_next%p_tuples(j)%part_of_residue, 2)
+!          
+!                do k = 1, size(cache_next%p_tuples(j)%part_of_residue, 1)
+!             
+!                   do m = 1, size(cache_next%p_tuples(j)%part_of_residue, 2)
+!          
+!                      write(funit) cache_next%p_tuples(j)%part_of_residue(k, m)
+!                   
+!                   end do
+!                
+!                end do
+!             
+!             else
+!          
+!                write(funit) .FALSE.
+!          
+!             end if
+!          
+!          end if
+!       
+!       
+!       ! End new
+!       
+!       end do
+!       
+!    
+!       write(funit) cache_next%last
+!       write(funit) cache_next%dummy_entry
+!       write(funit) cache_next%num_dmat
+!       write(funit) cache_next%contrib_type
+!       write(funit) cache_next%n_rule
+!       write(funit) cache_next%contrib_size
+!       
+!       if (cache_next%p_tuples(1)%npert > 0) then
+!       
+!          write(funit) size(cache_next%nblks_tuple)
+!          write(funit) cache_next%nblks_tuple
+!       
+!          write(funit) size(cache_next%blk_sizes, 1)
+!          write(funit) size(cache_next%blk_sizes, 2)
+!          do j = 1, size(cache_next%blk_sizes, 1)
+!             write(funit) cache_next%blk_sizes(j, :)
+!          end do
+!       
+!          write(funit) size(cache_next%indices, 1)
+!          write(funit) size(cache_next%indices, 2)
+!          
+!          do j = 1, size(cache_next%indices, 1)
+!             write(funit) cache_next%indices(j,:)
+!          end do
+!       
+!          write(funit) size(cache_next%blks_tuple_info, 1)
+!          write(funit) size(cache_next%blks_tuple_info, 2)
+!          write(funit) size(cache_next%blks_tuple_info, 3)
+!       
+!          do j = 1, size(cache_next%blks_tuple_info, 1)
+!             do k = 1, size(cache_next%blks_tuple_info, 2)
+!                write(funit) cache_next%blks_tuple_info(j, k, :)
+!             end do
+!          end do
+!       
+!          write(funit) size(cache_next%blks_tuple_triang_size)
+!          write(funit) cache_next%blks_tuple_triang_size
+!       
+!       end if
+!       
+!       if (allocated(cache_next%data_mat)) then
+!       
+!          mat_scal_none = 0
+!          write(funit) mat_scal_none
+!          write(funit) size(cache_next%data_mat)
+!          
+!          fid_fmt = '(I10.10)'
+!          
+!          do j = 1, size(cache_next%data_mat)
+!             
+!             write(str_fid, fid_fmt) j + mat_acc
+!          
+!             k = QcMatWrite_f(cache_next%data_mat(j), trim(adjustl(fname)) // '_MAT_' // &
+!                  trim(str_fid) // '.DAT', BINARY_VIEW)
+!          
+!          end do
+!          
+!          mat_acc = mat_acc + size(cache_next%data_mat)
+!          
+!       
+!       elseif (allocated(cache_next%data_scal)) then
+!       
+!          mat_scal_none = 1
+!          write(funit) mat_scal_none
+!          write(funit) size(cache_next%data_scal)
+!          write(funit) cache_next%data_scal
+!          
+!       
+!       else
+!       
+!          mat_scal_none = 2 
+!          write(funit) mat_scal_none
+!       
+!       end if
+!             
+!       cache_next => cache_next%next
+!    
+!    
+!    end do
+!  
+!    if (present(mat_acc_in)) then
+!       mat_acc_in = mat_acc
+!    end if
  
  
  end subroutine
@@ -1068,66 +1074,65 @@ module rsp_property_caching
    integer, optional :: funit_in, mat_acc_in
    integer :: num_entries
    character(*) :: fname
-   type(contrib_cache_outer), target :: cache
-   type(contrib_cache_outer), pointer :: cache_next, cache_orig
+   type(contrib_cache_outer) :: cache
    
-   mat_acc = 0
-   if (present(mat_acc_in)) then
-      mat_acc = mat_acc_in
-   end if
-   
-
-   funit = 260
-   if (present(funit_in)) then
-      funit = funit_in
-   end if
-   
-   
-   ! If not as part of inner cache, then open file
-   if (.NOT.(from_inner)) then
-   
-      inquire(file=fname // '.DAT', exist=cache_ext)
-      
-      if (.NOT.(cache_ext)) then
-   
-         write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
-         stop
-   
-      end if
-      
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-           form='unformatted', status='old', action='read')
-           
-   end if
-   
-   
-   
-   read(funit) num_entries
-   
-   call contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in=mat_acc)
-
-   cache_next => cache
-   cache_orig => cache
-   
-   do i = 1, num_entries - 1
-   
-      call contrib_cache_retrieve_one_outer(cache_next, fname, funit, mat_acc_in=mat_acc)
-      cache_next => cache_next%next
-    
-   end do
-
-   cache_next%next => cache_orig
-   
-   
-   if (.NOT.(from_inner)) then
-      
-      close(260)
-      
-   end if
-   
-   if (present(mat_acc_in)) then
-      mat_acc_in = mat_acc
-   end if
+!    mat_acc = 0
+!    if (present(mat_acc_in)) then
+!       mat_acc = mat_acc_in
+!    end if
+!    
+! 
+!    funit = 260
+!    if (present(funit_in)) then
+!       funit = funit_in
+!    end if
+!    
+!    
+!    ! If not as part of inner cache, then open file
+!    if (.NOT.(from_inner)) then
+!    
+!       inquire(file=fname // '.DAT', exist=cache_ext)
+!       
+!       if (.NOT.(cache_ext)) then
+!    
+!          write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+!          stop
+!    
+!       end if
+!       
+!       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+!            form='unformatted', status='old', action='read')
+!            
+!    end if
+!    
+!    
+!    
+!    read(funit) num_entries
+!    
+!    call contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in=mat_acc)
+! 
+!    cache_next => cache
+!    cache_orig => cache
+!    
+!    do i = 1, num_entries - 1
+!    
+!       call contrib_cache_retrieve_one_outer(cache_next, fname, funit, mat_acc_in=mat_acc)
+!       cache_next => cache_next%next
+!     
+!    end do
+! 
+!    cache_next%next => cache_orig
+!    
+!    
+!    if (.NOT.(from_inner)) then
+!       
+!       close(260)
+!       
+!    end if
+!    
+!    if (present(mat_acc_in)) then
+!       mat_acc_in = mat_acc
+!    end if
  
  end subroutine
  
@@ -1141,24 +1146,23 @@ module rsp_property_caching
    integer :: funit, mat_acc
    integer, optional :: mat_acc_in
    character(*) :: fname
-   type(contrib_cache_outer), target :: cache
-   type(contrib_cache_outer), pointer :: cache_new
+   type(contrib_cache_outer):: cache
    
-   mat_acc = 0
-   if (present(mat_acc_in)) then
-      mat_acc = mat_acc_in
-   end if
-   
-   allocate(cache_new)
-   
-   call contrib_cache_read_one_outer(cache_new, fname, funit, mat_acc_in=mat_acc)
-   
-   cache%next => cache_new
-  
- 
-   if (present(mat_acc_in)) then
-      mat_acc_in = mat_acc
-   end if
+!    mat_acc = 0
+!    if (present(mat_acc_in)) then
+!       mat_acc = mat_acc_in
+!    end if
+!    
+!    allocate(cache_new)
+!    
+!    call contrib_cache_read_one_outer(cache_new, fname, funit, mat_acc_in=mat_acc)
+!    
+!    cache%next => cache_new
+!   
+!  
+!    if (present(mat_acc_in)) then
+!       mat_acc_in = mat_acc
+!    end if
  
  end subroutine
 
@@ -1182,190 +1186,190 @@ module rsp_property_caching
    type(contrib_cache_outer) :: cache
    
    
-   mat_acc = 0
-   if (present(mat_acc_in)) then
-      mat_acc = mat_acc_in
-   end if
-  
-   
-   read(funit) size_i
-   allocate(cache%p_tuples(size_i))
-   
-   do j = 1, size(cache%p_tuples)
-      
-      read(funit) cache%p_tuples(j)%npert
-         
-      allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
-      allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
-      allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
-      allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
-         
-      do k = 1, cache%p_tuples(j)%npert
-         
-         read(funit) cache%p_tuples(j)%pdim(k)
-         read(funit) cache%p_tuples(j)%plab(k)
-         read(funit) cache%p_tuples(j)%pid(k)
-         read(funit) cache%p_tuples(j)%freq(k)
-         
-      end do
-         
-   
-      
-      ! MaR: New code for residue handling
-      ! NOTE: Potential size_i conflict - likely no problem 
-      ! but revisit if there are issues
-      
-      read(funit) cache%p_tuples(j)%do_residues
-      read(funit) cache%p_tuples(j)%n_pert_res_max
-      read(funit) cache%p_tuples(j)%n_states
-      
-      if (cache%p_tuples(j)%do_residues > 0) then
-      
-         read(funit) alloc_indic
-       
-         if (alloc_indic) then
-         
-            read(funit) size_i
-            allocate(cache%p_tuples(j)%states(size_i))
-         
-            do i = 1, size_i
-         
-               read(funit) cache%p_tuples(j)%states(i)
-               
-            end do
-            
-         end if
-         
-         read(funit) alloc_indic
-      
-         if (alloc_indic) then
-         
-            read(funit) size_i
-            allocate(cache%p_tuples(j)%exenerg(size_i))
-         
-            do i = 1, size_i
-         
-               read(funit) cache%p_tuples(j)%exenerg(i)
-               
-            end do
-            
-         end if
-         
-         read(funit) alloc_indic
-       
-         if (alloc_indic) then
-         
-            read(funit) size_i
-            read(funit) size_j
-            allocate(cache%p_tuples(j)%part_of_residue(size_i, size_j))
-         
-            do i = 1, size_i
-            
-               do k = 1, size_j
-         
-                  read(funit) cache%p_tuples(j)%part_of_residue(i, k)
-               
-               end do
-               
-            end do
-            
-         end if
-         
-      end if
-      
-      
-      ! End new
-      
-   end do   
-   
-  
-   read(funit) cache%last
-   read(funit) cache%dummy_entry
-   read(funit) cache%num_dmat
-   read(funit) cache%contrib_type
-   read(funit) cache%n_rule
-   read(funit) cache%contrib_size
-   
-   if (cache%p_tuples(1)%npert > 0) then
-   
-      read(funit) size_i
-      allocate(cache%nblks_tuple(size_i))
-      read(funit) cache%nblks_tuple
-      
-      read(funit) size_i
-      read(funit) size_j
-      allocate(cache%blk_sizes(size_i, size_j))
-      do j = 1, size_i
-         read(funit) cache%blk_sizes(j, :)
-      end do   
-     
-      read(funit) size_i
-      read(funit) size_j
-      allocate(cache%indices(size_i, size_j))
-      do j = 1, size_i
-         read(funit) cache%indices(j,:)
-      end do
-      
-      read(funit) size_i
-      read(funit) size_j
-      read(funit) size_k
-      allocate(cache%blks_tuple_info(size_i, size_j, size_k))
-      do j = 1, size_i
-         do k = 1, size_j
-            read(funit) cache%blks_tuple_info(j, k, :)
-         end do
-      end do
-      
-      read(funit) size_i
-      allocate(cache%blks_tuple_triang_size(size_i))
-      read(funit) cache%blks_tuple_triang_size
-      
-   else
-   
-      allocate(cache%indices(1,1))
-      cache%indices(1,1) = 1
-      
-   
-   end if
-   
-   read(funit) mat_scal_none
-      
-      
-   if (mat_scal_none == 0) then
-   
-      fid_fmt = '(I10.10)'
-   
-      read(funit) size_i
-      
-      allocate(cache%data_mat(size_i))
-      
-      do i = 1, size_i
-      
-         write(str_fid, fid_fmt) i + mat_acc
-         
-         write(*,*) 'Reading matrix data from', trim(adjustl(fname)) // '_MAT_' // &
-                          trim(str_fid) // '.DAT'
-      
-         call QcMatInit(cache%data_mat(i))
-         k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
-                          trim(str_fid) // '.DAT', BINARY_VIEW)
-      
-      end do
-      
-      mat_acc = mat_acc + size_i
-   
-   
-   elseif (mat_scal_none == 1) then
-   
-      read(funit) size_i
-      allocate(cache%data_scal(size_i))
-      read(funit) cache%data_scal
-   
-   end if
-      
-   if (present(mat_acc_in)) then
-      mat_acc_in = mat_acc
-   end if
+!    mat_acc = 0
+!    if (present(mat_acc_in)) then
+!       mat_acc = mat_acc_in
+!    end if
+!   
+!    
+!    read(funit) size_i
+!    allocate(cache%p_tuples(size_i))
+!    
+!    do j = 1, size(cache%p_tuples)
+!       
+!       read(funit) cache%p_tuples(j)%npert
+!          
+!       allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
+!       allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
+!       allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
+!       allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
+!          
+!       do k = 1, cache%p_tuples(j)%npert
+!          
+!          read(funit) cache%p_tuples(j)%pdim(k)
+!          read(funit) cache%p_tuples(j)%plab(k)
+!          read(funit) cache%p_tuples(j)%pid(k)
+!          read(funit) cache%p_tuples(j)%freq(k)
+!          
+!       end do
+!          
+!    
+!       
+!       ! MaR: New code for residue handling
+!       ! NOTE: Potential size_i conflict - likely no problem 
+!       ! but revisit if there are issues
+!       
+!       read(funit) cache%p_tuples(j)%do_residues
+!       read(funit) cache%p_tuples(j)%n_pert_res_max
+!       read(funit) cache%p_tuples(j)%n_states
+!       
+!       if (cache%p_tuples(j)%do_residues > 0) then
+!       
+!          read(funit) alloc_indic
+!        
+!          if (alloc_indic) then
+!          
+!             read(funit) size_i
+!             allocate(cache%p_tuples(j)%states(size_i))
+!          
+!             do i = 1, size_i
+!          
+!                read(funit) cache%p_tuples(j)%states(i)
+!                
+!             end do
+!             
+!          end if
+!          
+!          read(funit) alloc_indic
+!       
+!          if (alloc_indic) then
+!          
+!             read(funit) size_i
+!             allocate(cache%p_tuples(j)%exenerg(size_i))
+!          
+!             do i = 1, size_i
+!          
+!                read(funit) cache%p_tuples(j)%exenerg(i)
+!                
+!             end do
+!             
+!          end if
+!          
+!          read(funit) alloc_indic
+!        
+!          if (alloc_indic) then
+!          
+!             read(funit) size_i
+!             read(funit) size_j
+!             allocate(cache%p_tuples(j)%part_of_residue(size_i, size_j))
+!          
+!             do i = 1, size_i
+!             
+!                do k = 1, size_j
+!          
+!                   read(funit) cache%p_tuples(j)%part_of_residue(i, k)
+!                
+!                end do
+!                
+!             end do
+!             
+!          end if
+!          
+!       end if
+!       
+!       
+!       ! End new
+!       
+!    end do   
+!    
+!   
+!    read(funit) cache%last
+!    read(funit) cache%dummy_entry
+!    read(funit) cache%num_dmat
+!    read(funit) cache%contrib_type
+!    read(funit) cache%n_rule
+!    read(funit) cache%contrib_size
+!    
+!    if (cache%p_tuples(1)%npert > 0) then
+!    
+!       read(funit) size_i
+!       allocate(cache%nblks_tuple(size_i))
+!       read(funit) cache%nblks_tuple
+!       
+!       read(funit) size_i
+!       read(funit) size_j
+!       allocate(cache%blk_sizes(size_i, size_j))
+!       do j = 1, size_i
+!          read(funit) cache%blk_sizes(j, :)
+!       end do   
+!      
+!       read(funit) size_i
+!       read(funit) size_j
+!       allocate(cache%indices(size_i, size_j))
+!       do j = 1, size_i
+!          read(funit) cache%indices(j,:)
+!       end do
+!       
+!       read(funit) size_i
+!       read(funit) size_j
+!       read(funit) size_k
+!       allocate(cache%blks_tuple_info(size_i, size_j, size_k))
+!       do j = 1, size_i
+!          do k = 1, size_j
+!             read(funit) cache%blks_tuple_info(j, k, :)
+!          end do
+!       end do
+!       
+!       read(funit) size_i
+!       allocate(cache%blks_tuple_triang_size(size_i))
+!       read(funit) cache%blks_tuple_triang_size
+!       
+!    else
+!    
+!       allocate(cache%indices(1,1))
+!       cache%indices(1,1) = 1
+!       
+!    
+!    end if
+!    
+!    read(funit) mat_scal_none
+!       
+!       
+!    if (mat_scal_none == 0) then
+!    
+!       fid_fmt = '(I10.10)'
+!    
+!       read(funit) size_i
+!       
+!       allocate(cache%data_mat(size_i))
+!       
+!       do i = 1, size_i
+!       
+!          write(str_fid, fid_fmt) i + mat_acc
+!          
+!          write(*,*) 'Reading matrix data from', trim(adjustl(fname)) // '_MAT_' // &
+!                           trim(str_fid) // '.DAT'
+!       
+!          call QcMatInit(cache%data_mat(i))
+!          k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
+!                           trim(str_fid) // '.DAT', BINARY_VIEW)
+!       
+!       end do
+!       
+!       mat_acc = mat_acc + size_i
+!    
+!    
+!    elseif (mat_scal_none == 1) then
+!    
+!       read(funit) size_i
+!       allocate(cache%data_scal(size_i))
+!       read(funit) cache%data_scal
+!    
+!    end if
+!       
+!    if (present(mat_acc_in)) then
+!       mat_acc_in = mat_acc
+!    end if
    
  end subroutine
  

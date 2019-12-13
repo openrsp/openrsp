@@ -161,7 +161,7 @@ module rsp_general
     complex(8), dimension(rsp_tensor_size) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
 
-    type(contrib_cache_outer) :: S, D, F, Xf
+    type(contrib_cache_outer), allocatable, dimension(:) :: S, D, F, Xf
     integer :: kn(2)
     character(30) :: fmt_str
     real, parameter :: xtiny=1.0d-8
