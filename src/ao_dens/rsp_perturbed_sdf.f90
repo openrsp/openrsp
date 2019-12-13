@@ -144,6 +144,8 @@ module rsp_perturbed_sdf
        k = 1
        do m = 1, size(cache(c_ord)%contribs_outer)
        
+          write(*,*) 'm is', m
+       
           ! Skip the dummy entry, who cares
           if (cache(c_ord)%contribs_outer(m)%dummy_entry) then
              cycle

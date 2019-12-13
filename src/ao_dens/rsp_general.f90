@@ -576,7 +576,7 @@ module rsp_general
               data_size = 1, data_mat=(/S_unpert/))
          call contrib_cache_outer_add_element(size(D), D, .TRUE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/D_unpert/))
-         call contrib_cache_outer_add_element(size(D), F, .TRUE., 1, (/get_emptypert()/), &
+         call contrib_cache_outer_add_element(size(F), F, .TRUE., 1, (/get_emptypert()/), &
               data_size = 1, data_mat=(/F_unpert/))
                
 !          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)

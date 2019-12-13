@@ -1803,7 +1803,15 @@ module rsp_property_caching
       
       deallocate(cache)
       
+      write(*,*) 'len_cache arg is', len_cache
+      
+      write(*,*) 'cache size is', size(cache)
+      write(*,*) 'cache store is len', size(cache_store)
+      
+      
       allocate(cache(len_cache + 1))
+      
+      write(*,*) 'I allocated', len_cache + 1
       
       ! FIXME: May be necessary to copy element by element
       ! But I think that the default assignment method will work here
@@ -1903,7 +1911,7 @@ module rsp_property_caching
    else
    
 
-!       call contrib_cache_allocate(new_element)
+      allocate(new_element(1))
       
       if (present(n_rule)) then
          
