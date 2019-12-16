@@ -99,9 +99,12 @@ module rsp_perturbed_sdf
           do j = 1, n_freq_cfgs(i)
           
              len_cache = size(cache)
+             write(*,*) 'about to call cache recurse, size is', size(cache)
           
              call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, len_cache, cache, out_print)
              k = k + 1
+             
+             write(*,*) 'came back from recurse, size is now', size(cache)
 
           end do
        end do
@@ -119,9 +122,11 @@ module rsp_perturbed_sdf
     ! For each order of perturbation identified (lowest to highest):
     do i = 1, max_order
     
+       write(*,*) 'beginning order', i
+    
        lof_mem_total = 0
        
-       ! Will be determined below, this to avoir maybe-uninitialized warning
+       ! Will be determined below, this to avoid maybe-uninitialized warning
        c_ord = 0
     
        ! Find entry for this order
@@ -137,8 +142,12 @@ module rsp_perturbed_sdf
        
        end do
        
+       write(*,*) 'c ord after determination is', c_ord
+       
        ! Contains number of components of perturbed matrices for each perturbation
        allocate(size_i(cache(c_ord)%num_outer))
+       
+       write(*,*) 'before loop, size is', size(cache(c_ord)%contribs_outer)
        
        ! Traverse to set up size information
        k = 1
@@ -148,6 +157,8 @@ module rsp_perturbed_sdf
        
           ! Skip the dummy entry, who cares
           if (cache(c_ord)%contribs_outer(m)%dummy_entry) then
+          
+             write(*,*) 'I cycled for m =', m
              cycle
           end if
           
@@ -382,16 +393,11 @@ module rsp_perturbed_sdf
        
        call prog_incr(prog_info, r_flag, 2)
        
-          
+       deallocate(lof_cache)
+       
     end do
     
     deallocate(cache)
-    
-    if (max_order > 0) then
-    
-       deallocate(lof_cache)
-       
-    end if   
     
     deallocate(p_dummy_orders)
     
@@ -445,6 +451,10 @@ module rsp_perturbed_sdf
           write(out_str, *) ' '
           call out_print(out_str, 2)
                  
+          write(*, *) 'Identified perturbed S, D, F for calculation with labels ', pert%plab, &
+                            'and perturbation id ', pert%pid, ' with frequencies (real part)', &
+                             real(pert%freq)                  
+                 
           k = 1
 
           do j = 1, pert%npert
@@ -452,9 +462,15 @@ module rsp_perturbed_sdf
              k = k + 1
           end do
           
+          write(*,*) 'len cache before is', len_cache
+          write(*,*) 'actual size before is', size(contribution_cache)
+          
           call contrib_cache_add_element(len_cache, contribution_cache, 2, (/p_dummy_orders(pert%npert), &
                                                                   p_tuple_standardorder(pert)/))
 
+          write(*,*) 'len cache after is', len_cache
+          write(*,*) 'actual size after is', size(contribution_cache)
+                                                                  
        end if
 
     end if

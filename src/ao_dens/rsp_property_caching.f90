@@ -1493,7 +1493,7 @@ module rsp_property_caching
    current_element(1)%p_inner%pid = (/0/)
    current_element(1)%p_inner%freq = (/0.0/)
    
-   call contrib_cache_outer_allocate(current_element(1)%contribs_outer)
+  call contrib_cache_outer_allocate(current_element(1)%contribs_outer)
    
  end subroutine
 
@@ -1941,6 +1941,8 @@ module rsp_property_caching
       cache(len_cache + 1) = new_element(1)
       
       deallocate(cache_store)
+      
+      len_cache = len_cache + 1
       
       
    end if
