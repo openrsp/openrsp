@@ -232,10 +232,16 @@ module rsp_general
        mem_mgr%max_mat = max_mat
        mem_mgr%remain = max_mat
        mem_mgr%limited = .TRUE.
+       
+       write(*,*) 'mem manager active, total avail', max_mat 
           
     else
        
+       write(*,*) 'mem manager not active'
+       
        mem_mgr%limited = .FALSE.
+       
+       write(*,*) 'then remaining is set to', mem_mgr%remain
           
     end if
     
@@ -920,6 +926,8 @@ module rsp_general
        
     end if
     
+    write(*,*) 'got back from sdf, now remaining mem is', mem_mgr%remain
+    
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
     call prog_incr(prog_info, r_flag, 1)
@@ -993,6 +1001,8 @@ module rsp_general
 !        call contrib_cache_store(len_cache, contribution_cache, r_flag, 'OPENRSP_CONTRIB_CACHE')
     
     end if
+    
+    write(*,*) 'got back from hf id, now remaining mem is', mem_mgr%remain
 
     ! Check if this stage passed previously and if so, then retrieve and skip execution
     
@@ -1802,11 +1812,13 @@ module rsp_general
        end if
        
        write(out_str, *) 'Outer contribution', k
+       write(*, *) 'Outer contribution', k
        call out_print(out_str, 1)
        
        do i = 1, cache%contribs_outer(m)%num_dmat
        
           write(out_str, *) 'D', cache%contribs_outer(m)%p_tuples(i)%pid
+          write(*, *) 'D', cache%contribs_outer(m)%p_tuples(i)%pid
           call out_print(out_str, 1)
                  
        end do
@@ -1858,6 +1870,7 @@ module rsp_general
     
     end do
     
+    write(*,*) 'outer contract sizes 2', outer_contract_sizes_2
  
     ! Make collapsed contraction sizes array for 1-electron routine call
  
@@ -1920,6 +1933,8 @@ module rsp_general
        return
     
     end if
+    
+    write(*,*) 'mem remain a', mem_mgr%remain
     
     ! Begin memory savings loop 1
     
@@ -2061,7 +2076,7 @@ module rsp_general
        
        call mem_decr(mem_mgr, msize)
        
-       
+       write(*,*) 'mem remain b', mem_mgr%remain
        
     end do
        
@@ -2076,6 +2091,11 @@ module rsp_general
     
        ! Possible to run in non-savings mode
        mem_track = sum(outer_contract_sizes_2(:, 1)) + sum(outer_contract_sizes_2(:, 2))
+       
+       write(*,*) 'can run in non-savings mode', mem_track
+       write(*,*) 'ocs2 1', outer_contract_sizes_2(:, 1)
+       write(*,*) 'ocs2 2', outer_contract_sizes_2(:, 2)
+       
 
     elseif (mem_enough(mem_mgr, 2)) then
 
@@ -2093,7 +2113,7 @@ module rsp_general
     
     end if
     
-    
+    write(*,*) 'mem remain c', mem_mgr%remain
     ! Begin memory savings loop 2
     
     
@@ -2119,6 +2139,8 @@ module rsp_general
        ! improvement here but it is more difficult to make
        
        curr_remain = mem_track
+       
+       write(*,*) 'curr remain is', curr_remain
    
        ! If at start of one outer pair (i.e. not currently in a pair separated into workunits)
        if (.NOT.(intra_pair)) then
@@ -2342,7 +2364,7 @@ module rsp_general
        end if
            
        
-! Not sure about if my ll to array changes work as intended here
+! Not sure if my ll to array changes work as intended here
 ! Next lines are prev version of code kept for reference for potential debugging
 !        k = 1
 !        
@@ -2353,7 +2375,7 @@ module rsp_general
 !        end do
        
        
-
+! DEC 19: CONTINUE HERE
        
        
        lhs_ctr_2 = 1
@@ -2363,54 +2385,79 @@ module rsp_general
 
           ! FIXME: Loop assumes that there is a dummy entry in position 1 of array
           ! Traverse outer elements and fetch matrices
-          do i = curr_pickup(1) + 1, next_pickup(1)
+          
+          write(*,*) 'i to run from', curr_pickup(1), 'to', next_pickup(1) - 1
+          
+          do i = curr_pickup(1), next_pickup(1) - 1
+          
+             write(*,*) 'i is', i
+             write(*,*) 'encountered dummy?', cache%contribs_outer(i + 1)%dummy_entry
 
              if (.NOT.(mem_mgr%calibrate)) then
           
                 ! No chain rule applications
-                if (cache%contribs_outer(i)%num_dmat == 0) then
+                if (cache%contribs_outer(i + 1)%num_dmat == 0) then
            
                    call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
                    call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+                        
+                   write(*,*) '0cr asking to put lh mat sing elem', lhs_ctr_2
+                   write(*,*) '0cr size of lhs dmat 2', size(LHS_dmat_2)     
+                   write(*,*) '0cr asking to put rh mat sing elem', rhs_ctr_2
+                   write(*,*) '0cr size of rhs dmat 2', size(RHS_dmat_2)
    
                 ! One chain rule application
-                else if (cache%contribs_outer(i)%num_dmat == 1) then
+                else if (cache%contribs_outer(i + 1)%num_dmat == 1) then
           
                    do m = 1, outer_contract_sizes_2(i, 1) 
+                   
+                      write(*,*) '1cr asking to put lh mat sing elem', lhs_ctr_2 + m  - 1
+                      write(*,*) '1cr size of lhs dmat 2', size(LHS_dmat_2)
+                   
                       call contrib_cache_getdata_outer(size(D), D, 1, &
-                           (/cache%contribs_outer(i)%p_tuples(1)/), .FALSE., &
-                           1, ind_len=size(cache%contribs_outer(i)%indices, 2), &
-                           ind_unsorted=cache%contribs_outer(i)%indices(m, :), &
+                           (/cache%contribs_outer(i + 1)%p_tuples(1)/), .FALSE., &
+                           1, ind_len=size(cache%contribs_outer(i + 1)%indices, 2), &
+                           ind_unsorted=cache%contribs_outer(i + 1)%indices(m, :), &
                            mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
                    end do
+                   
+                   write(*,*) '1cr asking to put rh mat sing elem', rhs_ctr_2
+                   write(*,*) '1cr size of rhs dmat 2', size(RHS_dmat_2)
              
                    call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
                         1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
           
                 ! Two chain rule applications
-                else if (cache%contribs_outer(i)%num_dmat == 2) then
+                else if (cache%contribs_outer(i + 1)%num_dmat == 2) then
             
                    do m = 1, outer_contract_sizes_2(i, 1) 
+                   
+                      write(*,*) '2cr asking to put lh mat sing elem', lhs_ctr_2 + m  - 1
+                      write(*,*) '2cr size of lhs dmat 2', size(LHS_dmat_2)
               
-                      call contrib_cache_getdata_outer(size(D), D, 1, (/cache%contribs_outer(i)%p_tuples(1)/), .FALSE., &
-                           1, ind_len=cache%contribs_outer(i)%p_tuples(1)%npert, &
-                           ind_unsorted=cache%contribs_outer(i)%indices(1 + &
-                           (m - 1) * cache%contribs_outer(i)%blks_tuple_triang_size(2), &
-                           1:cache%contribs_outer(i)%p_tuples(1)%npert), &
+                      call contrib_cache_getdata_outer(size(D), D, 1, &
+                           (/cache%contribs_outer(i + 1)%p_tuples(1)/), .FALSE., &
+                           1, ind_len=cache%contribs_outer(i + 1)%p_tuples(1)%npert, &
+                           ind_unsorted=cache%contribs_outer(i + 1)%indices(1 + &
+                           (m - 1) * cache%contribs_outer(i + 1)%blks_tuple_triang_size(2), &
+                           1:cache%contribs_outer(i + 1)%p_tuples(1)%npert), &
                            mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
                    end do
              
                    do n = 1, outer_contract_sizes_2(i, 2) 
+                   
+                      write(*,*) '2cr asking to put rh mat sing elem', rhs_ctr_2 + n  - 1
+                      write(*,*) '2cr size of rhs dmat 2', size(RHS_dmat_2)
              
                       call contrib_cache_getdata_outer(size(D), D, 1, &
-                      (/cache%contribs_outer(i)%p_tuples(2)/), .FALSE., &
-                           1, ind_len=cache%contribs_outer(i)%p_tuples(2)%npert, &
-                           ind_unsorted=cache%contribs_outer(i)%indices(n, &
-                           cache%contribs_outer(i)%p_tuples(1)%npert + 1: &
-                           cache%contribs_outer(i)%p_tuples(1)%npert + &
-                           cache%contribs_outer(i)%p_tuples(2)%npert), &
+                      (/cache%contribs_outer(i + 1)%p_tuples(2)/), .FALSE., &
+                           1, ind_len=cache%contribs_outer(i + 1)%p_tuples(2)%npert, &
+                           ind_unsorted=cache%contribs_outer(i + 1)%indices(n, &
+                           cache%contribs_outer(i + 1)%p_tuples(1)%npert + 1: &
+                           cache%contribs_outer(i + 1)%p_tuples(1)%npert + &
+                           cache%contribs_outer(i + 1)%p_tuples(2)%npert), &
                            mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
                    end do          
           
