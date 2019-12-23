@@ -33,9 +33,11 @@ module rsp_perturbed_sdf
     integer, dimension(n_props) :: n_freq_cfgs
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), allocatable, dimension(:) :: p_dummy_orders
+    type(p_tuple), dimension(1) :: empty_tuple
     logical :: termination, dryrun, lof_retrieved, sdf_retrieved, rsp_eqn_retrieved, traverse_end
     logical :: residue_select
     integer, dimension(3) :: prog_info, rs_info
+    integer, dimension(2) :: this_kn
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     integer :: i, j, k, m, max_order, max_npert, o_size, lof_mem_total
     integer :: r_flag
@@ -43,7 +45,7 @@ module rsp_perturbed_sdf
     integer :: len_curr_outer, len_d, len_lof_cache
     integer :: len_cache, len_sdf
     integer, allocatable, dimension(:) :: size_i
-    type(QcMat) :: Fp_dum
+    type(QcMat), dimension(1) :: Fp_dum
     type(contrib_cache_outer), allocatable, dimension(:) :: F, D, S
     type(contrib_cache_outer), allocatable, dimension(:) , optional :: Xf
     type(contrib_cache), allocatable, dimension(:) :: cache, lof_cache
@@ -100,7 +102,9 @@ module rsp_perturbed_sdf
           
              len_cache = size(cache)
           
-             call rsp_fds_recurse(p_tuples(k), kn_rule(k, :), max_npert, p_dummy_orders, len_cache, cache, out_print)
+             this_kn = kn_rule(k, :)
+
+             call rsp_fds_recurse(p_tuples(k), this_kn, max_npert, p_dummy_orders, len_cache, cache, out_print)
              k = k + 1
              
           end do
@@ -198,13 +202,15 @@ module rsp_perturbed_sdf
                      .AND.find_residue_info(cache(c_ord)%contribs_outer(m)%p_tuples(1))
 
              len_lof_cache = size(lof_cache)
+
+             call empty_p_tuple(empty_tuple(1))
              
              ! Recurse to identify lower-order Fock matrix contributions
              ! The p_tuples attribute should always be length 1 here, so OK to take the first element
              call rsp_lof_recurse(cache(c_ord)%contribs_outer(m)%p_tuples(1), &
                                   cache(c_ord)%contribs_outer(m)%p_tuples(1)%npert, &
-                                  1, (/get_emptypert()/), .TRUE., len_lof_cache, lof_cache, &
-                                  1, (/Fp_dum/), out_print, residue_select)
+                                  1, empty_tuple, .TRUE., len_lof_cache, lof_cache, &
+                                  1, Fp_dum, out_print, residue_select)
              
              k = k + 1
        
@@ -398,7 +404,9 @@ module rsp_perturbed_sdf
 
     integer :: n_props, max_npert, len_cache
     type(p_tuple) :: pert
-    type(p_tuple), dimension(pert%npert) :: psub
+    type(p_tuple), dimension(pert%npert) :: psub, psub_st
+    type(p_tuple), dimension(2) :: ptup_for_alr
+    
     type(p_tuple), dimension(max_npert) :: p_dummy_orders
     integer, dimension(2) :: kn
     integer :: i, j, k
@@ -411,11 +419,13 @@ module rsp_perturbed_sdf
     if (pert%npert > 1) then
 
        call make_p_tuple_subset(pert, psub)
- 
+
        do i = 1, size(psub)
+
+          ptup_for_alr(1) = p_dummy_orders(psub(i)%npert)
+          ptup_for_alr(2) = p_tuple_standardorder(psub(i))
        
-          if (contrib_cache_already(len_cache, contribution_cache, 2, (/p_dummy_orders(psub(i)%npert), &
-                              p_tuple_standardorder(psub(i))/)) .eqv. .FALSE.) then
+          if (contrib_cache_already(len_cache, contribution_cache, 2, ptup_for_alr) .eqv. .FALSE.) then
 
              call rsp_fds_recurse(psub(i), kn, max_npert, p_dummy_orders, len_cache, contribution_cache, out_print)
 
@@ -425,9 +435,11 @@ module rsp_perturbed_sdf
 
     end if
 
+    ptup_for_alr(1) = p_dummy_orders(pert%npert)
+    ptup_for_alr(2) = p_tuple_standardorder(pert)
+
     ! See if already identified, if not and if keeping, then store element
-    if (contrib_cache_already(len_cache, contribution_cache, 2, (/p_dummy_orders(pert%npert), &
-                              p_tuple_standardorder(pert)/)) .eqv. .FALSE.) then
+    if (contrib_cache_already(len_cache, contribution_cache, 2, ptup_for_alr) .eqv. .FALSE.) then
          
        if (kn_skip(pert%npert, pert%pid, kn) .eqv. .FALSE.) then
 
@@ -449,8 +461,7 @@ module rsp_perturbed_sdf
              k = k + 1
           end do
           
-          call contrib_cache_add_element(len_cache, contribution_cache, 2, (/p_dummy_orders(pert%npert), &
-                                                                  p_tuple_standardorder(pert)/))
+          call contrib_cache_add_element(len_cache, contribution_cache, 2, ptup_for_alr)
 
        end if
 
@@ -474,7 +485,8 @@ module rsp_perturbed_sdf
     integer :: num_p_tuples, density_order, i, j, total_num_perturbations
     integer :: fp_size
     integer :: len_lof_cache
-    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
+    type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new, p_tuples_ord, p_tuples_rec
+    type(p_tuple), dimension(num_p_tuples + 1) :: p_tuples_rec_b
     type(contrib_cache), allocatable, dimension(:) :: fock_lowerorder_cache
     type(QcMat), dimension(fp_size) :: Fp
     
@@ -490,18 +502,23 @@ module rsp_perturbed_sdf
 
        if (p_tuples(1)%npert == 0) then
 
+          p_tuples_rec(1) = p_tuple_getone(pert, 1)
+          p_tuples_rec(2:size(p_tuples)) = p_tuples(2:size(p_tuples))
+
           call rsp_lof_recurse(p_tuple_remove_first(pert), & 
                total_num_perturbations, num_p_tuples, &
-               (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
+               p_tuples_rec, &
                dryrun, len_lof_cache, fock_lowerorder_cache, fp_size, &
                Fp, out_print,residue_select)
 
        else
 
+          p_tuples_rec(1) = p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1))
+          p_tuples_rec(2:size(p_tuples)) = p_tuples(2:size(p_tuples))
+
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples, &
-               (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
-               p_tuples(2:size(p_tuples))/), dryrun, len_lof_cache, &
+               p_tuples_rec, dryrun, len_lof_cache, &
                fock_lowerorder_cache, fp_size, Fp, out_print,residue_select)
 
        end if
@@ -529,10 +546,13 @@ module rsp_perturbed_sdf
        ! a(nother) pert D contraction)
 
        if (num_p_tuples < 2) then
+
+          p_tuples_rec_b(1:num_p_tuples) = p_tuples
+          p_tuples_rec_b(num_p_tuples + 1) = p_tuple_getone(pert, 1)
        
           call rsp_lof_recurse(p_tuple_remove_first(pert), &
                total_num_perturbations, num_p_tuples + 1, &
-               (/p_tuples(:), p_tuple_getone(pert, 1)/), dryrun, &
+               p_tuples_rec_b, dryrun, &
                len_lof_cache, fock_lowerorder_cache, fp_size, Fp, &
                out_print, residue_select)
                
@@ -541,7 +561,11 @@ module rsp_perturbed_sdf
     ! If recursion is done, proceed to cache manipulation stage
     else
 
+write(*,*) 'calling ptst'
+
        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
+write(*,*) 'back from ptst'
+
        density_order_skip = .FALSE.
        residue_skip = .FALSE.
 
@@ -559,9 +583,11 @@ module rsp_perturbed_sdf
       
        if ( (density_order_skip .EQV. .FALSE.).AND. &
             (residue_skip .EQV. .FALSE.) ) then
+
+          p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
        
           if (contrib_cache_already(len_lof_cache, fock_lowerorder_cache, &
-          num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples))) then
+          num_p_tuples, p_tuples_ord)) then
 
              ! If in cache and not dryrun, then put precalculated data in answer array
              if (.NOT.(dryrun)) then
@@ -620,8 +646,14 @@ module rsp_perturbed_sdf
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
                 
+write(*,*) 'adding cache elem'
+
+                p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
+
                 call contrib_cache_add_element(len_lof_cache, fock_lowerorder_cache, &
-                     num_p_tuples, p_tuples_standardorder(num_p_tuples, p_tuples))
+                     num_p_tuples, p_tuples_ord)
+
+write(*,*) 'added cache elem'
                 
              else
              
@@ -635,6 +667,8 @@ module rsp_perturbed_sdf
        end if
 
     end if
+
+write(*,*) 'just before end'
 
   end subroutine
   
@@ -651,11 +685,13 @@ module rsp_perturbed_sdf
     integer :: total_outer_size_1, c1_ctr, lhs_ctr_1, num_pert
     integer :: num_0, num_1, tot_num_pert, offset
     integer :: len_d
+    integer, allocatable, dimension(:) :: ind_uns
     character(30) :: mat_str, fmt_str
     type(contrib_cache) :: cache
     type(contrib_cache_outer), dimension(len_d) :: D
     
     type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
+    type(p_tuple), dimension(1) :: empty_tuple, arg_tuple
     type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, contrib_0, contrib_1
     type(QcMat) :: D_unp
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
@@ -672,6 +708,9 @@ module rsp_perturbed_sdf
     write(out_str, *) ' '
     call out_print(out_str, 1)
     
+    call empty_p_tuple(empty_tuple(1))
+
+
     call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
 
     allocate(outer_contract_sizes_1(cache%num_outer))    
@@ -682,8 +721,13 @@ module rsp_perturbed_sdf
     
        call QCMatInit(D_unp)
 
-       call contrib_cache_getdata_outer(len_d, D, 1, (/get_emptypert()/), .FALSE., &
-            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
+       allocate(ind_uns(1))
+       ind_uns(1) = 1
+
+       call contrib_cache_getdata_outer(len_d, D, 1, empty_tuple, .FALSE., &
+            contrib_size=1, ind_len=1, ind_unsorted=ind_uns, mat_sing=D_unp)
+
+       deallocate(ind_uns)
 
     end if
    
@@ -875,11 +919,19 @@ module rsp_perturbed_sdf
              
                    if (.NOT.(mem_mgr%calibrate)) then
                 
+                      arg_tuple(1) = cache%contribs_outer(m)%p_tuples(1)
+
+                      allocate(ind_uns(size(cache%contribs_outer(m)%indices, 2)))
+                      ind_uns = cache%contribs_outer(m)%indices(n, :)
+
+
                       call contrib_cache_getdata_outer(size(D), D, 1, &
-                           (/cache%contribs_outer(m)%p_tuples(1)/), .FALSE., &
+                           arg_tuple, .FALSE., &
                            contrib_size=1, ind_len=1, &
-                           ind_unsorted=cache%contribs_outer(m)%indices(n, :), &
+                           ind_unsorted=ind_uns, &
                            mat_sing=LHS_dmat_1(mctr + 1))
+
+                      deallocate(ind_uns)
                            
                    end if
                         
@@ -898,10 +950,15 @@ module rsp_perturbed_sdf
                 
                 if (.NOT.(mem_mgr%calibrate)) then
                 
-                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
-                        contrib_size=1, ind_len=1, ind_unsorted=(/1/), &
+                   allocate(ind_uns(1))
+                   ind_uns(1) = 1
+
+                   call contrib_cache_getdata_outer(size(D), D, 1, empty_tuple, .FALSE., &
+                        contrib_size=1, ind_len=1, ind_unsorted=ind_uns, &
                         mat_sing=LHS_dmat_1(mctr + 1))
                         ! Was: mat_sing=LHS_dmat_1(1)), change if problems
+
+                   deallocate(ind_uns)
                         
                 end if
                      
@@ -1170,12 +1227,15 @@ module rsp_perturbed_sdf
     integer, allocatable, dimension(:,:) :: blk_info
     integer, allocatable, dimension(:,:) :: indices
     integer, dimension(num_outer) :: size_i
+    integer, dimension(:), allocatable :: ind_uns
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
     complex(8) :: xrtm
     real(8), parameter :: xtiny=1.0d-8
     type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
+    type(p_tuple), allocatable, dimension(:) :: arg_tuple
+    
     
     integer :: len_cache_outer, len_d, len_lof_cache
     
@@ -1230,13 +1290,23 @@ module rsp_perturbed_sdf
        call QcMatInit(C)
        call QcMatInit(T)
        call QcMatInit(U)
+
+       allocate(ind_uns(1))
+       allocate(arg_tuple(1))
+
+       call empty_p_tuple(arg_tuple(1))
+       ind_uns(1) = 1
     
-       call contrib_cache_getdata_outer(len_d, D, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
-       ind_len=1, ind_unsorted=(/1/), mat_sing=A)
-       call contrib_cache_getdata_outer(len_d, S, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
-       ind_len=1, ind_unsorted=(/1/), mat_sing=B)
-       call contrib_cache_getdata_outer(len_d, F, 1, (/get_emptypert()/), .FALSE., contrib_size=1, & 
-       ind_len=1, ind_unsorted=(/1/), mat_sing=C)
+       call contrib_cache_getdata_outer(len_d, D, 1, arg_tuple, .FALSE., contrib_size=1, & 
+       ind_len=1, ind_unsorted=ind_uns, mat_sing=A)
+       call contrib_cache_getdata_outer(len_d, S, 1, arg_tuple, .FALSE., contrib_size=1, & 
+       ind_len=1, ind_unsorted=ind_uns, mat_sing=B)
+       call contrib_cache_getdata_outer(len_d, F, 1, arg_tuple, .FALSE., contrib_size=1, & 
+       ind_len=1, ind_unsorted=ind_uns, mat_sing=C)
+
+
+       deallocate(arg_tuple)
+       deallocate(ind_uns)
     
     end if
     
@@ -1322,8 +1392,14 @@ module rsp_perturbed_sdf
           
           len_d = size(S)
           
+          allocate(arg_tuple(1))
+
+          arg_tuple(1) = pert
+
           call contrib_cache_outer_add_element(len_d, S, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k), data_mat = Sp )
+               arg_tuple, data_size = size_i(k), data_mat = Sp )
+
+          deallocate(arg_tuple)
           
           do i = 1, size_i(k)
           
@@ -1419,17 +1495,29 @@ module rsp_perturbed_sdf
           call out_print(out_str, 1)
        
           len_d = size(D)
-       
+
+          allocate(arg_tuple(1))
+
+          arg_tuple(1) = pert       
+
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+
+          deallocate(arg_tuple)   
 
           ! Assemble Fp (lower-order) for all components and add to cache
  
+          allocate(arg_tuple(1))
+
+          call empty_p_tuple(arg_tuple(1))
+
           call rsp_lof_recurse(pert, pert%npert, &
-                               1, (/get_emptypert()/), .FALSE., size(lof_cache), lof_cache, size_i(k), &
+                               1, arg_tuple, .FALSE., size(lof_cache), lof_cache, size_i(k), &
                                Fp(ind_ctr:ind_ctr + size_i(k) - 1), out_print, &
                                residue_select = residue_select)
                                
+          deallocate(arg_tuple)
+
           ! XC call should go here
           
           write(out_str, *) 'Calculating intermediate exchange-correlation contributions'
@@ -1443,12 +1531,20 @@ module rsp_perturbed_sdf
           
           
           len_d = size(D)
+ 
+          allocate(arg_tuple(1))
+          allocate(ind_uns(2))
+
+          arg_tuple(1) = pert
+          ind_uns = (/pert%npert, pert%npert/)
           
           ! Currently only one freq. configuration
           ! The (k,n) rule argument is adapted for the Fock contribution case
-          call rsp_xc_wrapper(1, (/pert/), (/pert%npert, pert%npert/), len_d, D, get_xc_mat, out_print, &
+          call rsp_xc_wrapper(1, arg_tuple, ind_uns, len_d, D, get_xc_mat, out_print, &
                                 size_i(k), mem_mgr, fock=Fp(ind_ctr:ind_ctr + size_i(k) - 1))
           
+          deallocate(ind_uns)
+          deallocate(arg_tuple)
        
        end if
        
@@ -2392,8 +2488,12 @@ module rsp_perturbed_sdf
        
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
-          
-             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+
+! FIXME: UNSURE ABOUT NEXT LINE                                                                     
+! Will use just the regular index, but change back if this causes problems                          
+             dmat_perts(i)%freq(k) = pert(j)%freq(k)
+! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE  
+!             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
           
           end do
           
@@ -2454,7 +2554,11 @@ module rsp_perturbed_sdf
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
           
-             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+! FIXME: UNSURE ABOUT NEXT LINE                                                                           
+! Will use just the regular index, but change back if this causes problems                                 
+             dmat_perts(i)%freq(k) = pert(j)%freq(k)
+! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE                                  
+!             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
           
           end do
           

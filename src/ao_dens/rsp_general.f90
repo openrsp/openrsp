@@ -148,6 +148,7 @@ module rsp_general
     integer(kind=QINT) num_perts
     real :: timing_start, timing_end
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
+    type(p_tuple), dimension(1) :: empty_pert
 
     external :: get_rsp_sol, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, get_nucpot
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
@@ -156,6 +157,9 @@ module rsp_general
     integer(kind=QINT), intent(in) :: rsp_tensor_size
     complex(8), dimension(rsp_tensor_size) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
+
+    type(QcMat), dimension(1) :: S_unpert_arr, D_unpert_arr, F_unpert_arr
+    type(QcMat), dimension(1) :: Xf_unpert_arr
 
     type(contrib_cache_outer), allocatable, dimension(:) :: S, D, F, Xf
     integer :: kn(2)
@@ -198,7 +202,14 @@ module rsp_general
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
 
-    
+    call QcMatInit(S_unpert_arr(1))
+    call QcMatAEqB(S_unpert_arr(1), S_unpert)
+    call QcMatInit(D_unpert_arr(1))
+    call QcMatAEqB(D_unpert_arr(1), D_unpert)    
+    call QcMatInit(F_unpert_arr(1))
+    call QcMatAEqB(F_unpert_arr(1), F_unpert)    
+
+
     xf_was_allocated = .FALSE.
     
     r_flag = r_flag_in
@@ -571,24 +582,28 @@ module rsp_general
          call contrib_cache_outer_allocate(D)
          call contrib_cache_outer_allocate(F)
 
-      
-         call contrib_cache_outer_add_element(size(S), S, .TRUE., 1, (/get_emptypert()/), &
-              data_size = 1, data_mat=(/S_unpert/))
-         call contrib_cache_outer_add_element(size(D), D, .TRUE., 1, (/get_emptypert()/), &
-              data_size = 1, data_mat=(/D_unpert/))
-         call contrib_cache_outer_add_element(size(F), F, .TRUE., 1, (/get_emptypert()/), &
-              data_size = 1, data_mat=(/F_unpert/))
+         call empty_p_tuple(empty_pert(1))
+
+         call contrib_cache_outer_add_element(size(S), S, .TRUE., 1, empty_pert, &
+              data_size = 1, data_mat=S_unpert)
+         call contrib_cache_outer_add_element(size(D), D, .TRUE., 1, empty_pert, &
+              data_size = 1, data_mat=D_unpert)
+         call contrib_cache_outer_add_element(size(F), F, .TRUE., 1, empty_pert, &
+              data_size = 1, data_mat=F_unpert)
                
 !          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
 !          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
 !          call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE', r_flag)
          
          if (residue_order > 0) then
+
+    call QcMatInit(Xf_unpert_arr(1))
+    call QcMatAEqB(Xf_unpert_arr(1), Xf_unpert(1))    
        
              call contrib_cache_outer_allocate(Xf)
              xf_was_allocated = .TRUE.
-             call contrib_cache_outer_add_element(size(Xf), Xf, .TRUE., 1, (/get_emptypert()/), &
-                  data_size = 1, data_mat=(/Xf_unpert(1)/))
+             call contrib_cache_outer_add_element(size(Xf), Xf, .TRUE., 1, empty_pert, &
+                  data_size = 1, data_mat=Xf_unpert(1))
 !              call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE', r_flag)
           
           end if
@@ -973,6 +988,8 @@ module rsp_general
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
              call cpu_time(time_end)
 
+write(*,*) 'stage 1'
+
              write(out_str, *) ' '
              call out_print(out_str, 1)
              write(out_str, *) 'Finished identifying HF energy-type contributions'
@@ -1066,6 +1083,8 @@ module rsp_general
              ! cache would already have been retrieved
           
           else
+
+write(*,*) 'stage a'
 
              call rsp_energy_calculate(size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
                   out_print, contribution_cache(k), mem_mgr)

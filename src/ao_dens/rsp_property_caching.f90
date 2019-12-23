@@ -1541,6 +1541,7 @@ module rsp_property_caching
    integer, optional :: n_rule
    type(contrib_cache) :: new_element
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
+   type(p_tuple), dimension(1) :: empty_tuple
 
    call p1_cloneto_p2(p_tuples(1), new_element%p_inner)
    
@@ -1584,18 +1585,20 @@ module rsp_property_caching
 
       ! MaR: Passing empty perturbation tuple as dummy argument since there should
       ! be no outer perturbation tuples in this case; revisit if problems.
-      
+       
+        call empty_p_tuple(empty_tuple(1))
+
       if (present(n_rule)) then
          
          call contrib_cache_outer_add_element(size(new_element%contribs_outer), &
               new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
-                                              (/get_emptypert()/), n_rule=n_rule)
+                                             empty_tuple, n_rule=n_rule)
          
       else
       
          call contrib_cache_outer_add_element(size(new_element%contribs_outer), &
               new_element%contribs_outer, .TRUE., num_p_tuples - 1, &
-                                              (/get_emptypert()/))
+                                              empty_tuple)
          
       end if
       
@@ -1614,6 +1617,8 @@ module rsp_property_caching
 
    logical :: unperturbed
    integer :: num_dmat, i, total_npert
+   integer, dimension(:), allocatable :: blki_a, blki_b
+   integer, dimension(:,:), allocatable :: blksi_a
    type(contrib_cache_outer) :: new_element
    type(p_tuple), dimension(num_dmat) :: outer_p_tuples
 
@@ -1643,17 +1648,47 @@ module rsp_property_caching
         new_element%nblks_tuple = (/(get_num_blks(outer_p_tuples(i)), i = 1, num_dmat)/)
    
         do i = 1, num_dmat
-     
+
+write(*,*) 'setting up'
+
+           allocate(blki_a(new_element%nblks_tuple(i)))
+           allocate(blki_b(new_element%nblks_tuple(i)))
+           allocate(blksi_a(new_element%nblks_tuple(i), &
+size(new_element%blks_tuple_info, 3) ))
+
+write(*,*) 'allocd'
+      
+
            new_element%blks_tuple_info(i, :, :) = get_blk_info(new_element%nblks_tuple(i), outer_p_tuples(i))
+
+
+
+           blki_a = new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),2)
+           blki_b = new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),3)
+           blksi_a = new_element%blks_tuple_info(i, 1:new_element%nblks_tuple(i), :)
+
+write(*,*) 'assigned'
+
            new_element%blk_sizes(i, 1:new_element%nblks_tuple(i)) = &
            get_triangular_sizes(new_element%nblks_tuple(i), &
-           new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),2), &
-           new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),3))
+           blki_a, blki_b)
+
+write(*,*) 'blk info a done'
+
            new_element%blks_tuple_triang_size(i) = get_triangulated_size(new_element%nblks_tuple(i), &
-                                      new_element%blks_tuple_info(i, 1:new_element%nblks_tuple(i), :))
-                                   
+           blksi_a)
+                    
+write(*,*) 'blk info b done'
+           deallocate(blki_a)
+           deallocate(blki_b)
+           deallocate(blksi_a)
+write(*,*) 'dealloc done'
+
+               
         end do
      
+write(*,*) 'all of loop done'
+
         allocate(new_element%indices(product(new_element%blks_tuple_triang_size), total_npert))
         call make_triangulated_tuples_indices(num_dmat, total_npert, new_element%nblks_tuple, &
              new_element%blks_tuple_info, new_element%blks_tuple_triang_size, new_element%indices)
@@ -1956,13 +1991,14 @@ module rsp_property_caching
    type(contrib_cache), dimension(len_cache) :: cache
    
    type(p_tuple), dimension(num_p_tuples) :: p_tuples
-   type(p_tuple) :: emptypert, p_tuple_ord, p_tmp_ord
+   type(p_tuple) ::  p_tuple_ord, p_tmp_ord
+   type(p_tuple), dimension(1) :: emptypert
 
 
    p_tuple_ord = p_tuple_standardorder(p_tuples(1))
    contrib_cache_already = .FALSE.
 
-   call empty_p_tuple(emptypert)
+   call empty_p_tuple(emptypert(1))
    
    do i = 1, len_cache
    
@@ -1999,12 +2035,12 @@ module rsp_property_caching
             if (present(n_rule)) then
             
                contrib_cache_already = contrib_cache_already_outer(size(cache(i)%contribs_outer), &
-                                       cache(i)%contribs_outer, 0, (/emptypert/), n_rule=n_rule)
+                                       cache(i)%contribs_outer, 0, emptypert, n_rule=n_rule)
             
             else
             
                contrib_cache_already = contrib_cache_already_outer(size(cache(i)%contribs_outer), &
-                                       cache(i)%contribs_outer, 0, (/emptypert/))
+                                       cache(i)%contribs_outer, 0, emptypert)
             
             end if    
             
@@ -2123,8 +2159,10 @@ end function
    integer, dimension(num_p_tuples) :: nfields, nblks_tuple, blks_tuple_triang_size
    integer, allocatable, dimension(:,:) :: indices, blk_sizes
    integer, allocatable, dimension(:,:,:) :: blks_tuple_info, merged_blk_info
-   integer, allocatable, dimension(:,:) :: blk_info
-   integer, allocatable, dimension(:) :: blk_sizes_sing
+   integer, allocatable, dimension(:,:,:,:) :: blk_arg_iii
+   integer, allocatable, dimension(:,:) :: blk_info, blk_arg_ii
+   integer, allocatable, dimension(:) :: blk_sizes_sing, blk_arg_a, blk_arg_b
+   integer, allocatable, dimension(:) :: blk_arg_c, blk_arg_d
    type(p_tuple), dimension(num_p_tuples) :: p_tuples, p_tuples_ord
    type(p_tuple), allocatable, dimension(:) :: p_tuples_srch, p_tuples_srch_ord
    type(p_tuple) :: merged_p_tuple
@@ -2284,8 +2322,17 @@ end function
          allocate(blk_sizes(num_p_tuples, total_num_perturbations))
          allocate(blk_sizes_merged(total_num_perturbations))
 
+         allocate(blk_arg_a(merged_nblks))
+         allocate(blk_arg_b(merged_nblks))
+
+         blk_arg_a=merged_blk_info(1, 1:merged_nblks, 2)
+         blk_arg_b=merged_blk_info(1, 1:merged_nblks, 3)
+
          blk_sizes_merged(1:merged_nblks) = get_triangular_sizes(merged_nblks, &
-         merged_blk_info(1,1:merged_nblks,2), merged_blk_info(1,1:merged_nblks,3))
+         blk_arg_a, blk_arg_b)
+
+         deallocate(blk_arg_a)
+         deallocate(blk_arg_b)
 
          allocate(indices(contrib_size, total_num_perturbations))
 
@@ -2319,27 +2366,82 @@ end function
 
          do i = 1, num_p_tuples
 
+
+
             nfields(i) = p_tuples_ord(i)%npert
             nblks_tuple(i) = get_num_blks(p_tuples_ord(i))
             blks_tuple_info(i, :, :) = get_blk_info(nblks_tuple(i), p_tuples_ord(i))
+
+            allocate(blk_arg_a(nblks_tuple(i)))
+            allocate(blk_arg_b(nblks_tuple(i)))
+            allocate(blk_arg_ii(nblks_tuple(i), size(blks_tuple_info, 3)))
+
+            blk_arg_a = blks_tuple_info(i, 1:nblks_tuple(i), 2)
+            blk_arg_b = blks_tuple_info(i, 1:nblks_tuple(i), 3)
+            blk_arg_ii = blks_tuple_info(i, 1:nblks_tuple(i), :)
+
+
             blks_tuple_triang_size(i) = get_triangulated_size(nblks_tuple(i), &
-                                        blks_tuple_info(i,1:nblks_tuple(i),:))
+                                        blk_arg_ii)
             blk_sizes(i, 1:nblks_tuple(i)) = get_triangular_sizes(nblks_tuple(i), &
-            blks_tuple_info(i,1:nblks_tuple(i),2), blks_tuple_info(i,1:nblks_tuple(i),3))
+            blk_arg_a, blk_arg_b)
+
+            deallocate(blk_arg_a)
+            deallocate(blk_arg_b)
+            deallocate(blk_arg_ii)
 
          end do
 
          ! Loop over indices, get appropriate offsets and put data in return array
          do i = 1, size(indices, 1)
 
+!            allocate(blk_arg_iii(size(merged_blk_info, 1), size(merged_blk_info, 2), &
+!                                 size(merged_blk_info, 3), 1))
+!
+!            blk_arg_iii(:, :, :, 1) = merged_blk_info
+!
+!            res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
+!            (/merged_nblks/), & 
+!            (/total_num_perturbations/), (/merged_blk_info/), blk_sizes_merged, &
+!            (/merged_triang_size/), &
+!            (/indices(i, : )/) )
+
+            allocate(blk_arg_a(1))
+            allocate(blk_arg_b(1))
+            allocate(blk_arg_c(1))
+            allocate(blk_arg_d(size(indices, 2)))
+         
+
+            blk_arg_a(1) = merged_nblks
+            blk_arg_b(1) = total_num_perturbations
+            blk_arg_c(1) = merged_triang_size
+            blk_arg_d = indices(i, :)
+
             res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
-            (/merged_nblks/), & 
-            (/total_num_perturbations/), (/merged_blk_info/), blk_sizes_merged, &
-            (/merged_triang_size/), &
-            (/indices(i, : )/) )
+            blk_arg_a, & 
+            blk_arg_b, merged_blk_info, blk_sizes_merged, &
+            blk_arg_c, &
+            blk_arg_d )
+
+            deallocate(blk_arg_d)
+            deallocate(blk_arg_c)
+            deallocate(blk_arg_b)
+            deallocate(blk_arg_a)
+
+            write(*,*) 'total num_pert', total_num_perturbations
 
             do j = 1, total_num_perturbations
-               translated_index(j) = indices(i,pids_current_contrib(j))
+
+               write(*,*) 'j', j
+               write(*,*) 'indices', indices
+               write(*,*) 'i', i
+               write(*,*) 'pids curr contr', pids_current_contrib
+
+! FIXME: UNSURE ABOUT NEXT LINE
+! Will use just the regular index, but change back if this causes problems
+               translated_index(j) = indices(i,j)
+! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE
+!               translated_index(j) = indices(i,pids_current_contrib(j))
             end do
 
             if (p_tuples(1)%npert == 0) then

@@ -923,8 +923,16 @@ module rsp_perturbed_matrices
        allocate(get_fds_data_index(pert_tuple%npert))
 
        do i = 1, pert_tuple%npert
+! FIXME: UNSURE ABOUT NEXT LINE                                                                              
+! Will use just the regular index, but change back if this causes problems                         
+          get_fds_data_index(i) = indices(i)
 
-          get_fds_data_index(i) = indices(which_index_is_pid(pert_tuple%pid(i)))
+! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE
+!          get_fds_data_index(i) = indices(which_index_is_pid(pert_tuple%pid(i)))          
+
+
+
+
 
        end do
 

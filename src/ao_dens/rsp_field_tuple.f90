@@ -1157,13 +1157,19 @@ end if
     type(p_tuple) :: temporary_pert
     integer :: i, j, new_minimum
 
+write(*,*) 'npt', num_p_tuples
+
     allocate(p_tuples_st(num_p_tuples))
+
+write(*,*) 'allocd'
 
     do i = 1, num_p_tuples
 
        call p1_cloneto_p2(p_tuples(i), p_tuples_st(i))
 
     end do
+
+write(*,*) 'a'
 
     do i = 2, num_p_tuples
 
@@ -1180,17 +1186,20 @@ end if
 
        end do
 
+write(*,*) 'b'
 
        if (.NOT.(new_minimum == i)) then
 
           call p1_cloneto_p2(p_tuples_st(new_minimum),temporary_pert)
           call p_tuple_deallocate(p_tuples_st(new_minimum))
 
+write(*,*) 'c'
           p_tuples_st(i) = p_tuple_standardorder(p_tuples_st(i))
 
           call p1_cloneto_p2(p_tuples_st(i),p_tuples_st(new_minimum))
           call p_tuple_deallocate(p_tuples_st(i))
 
+write(*,*) 'd'
           temporary_pert = p_tuple_standardorder(temporary_pert)
 
           call p1_cloneto_p2(temporary_pert,p_tuples_st(i))
@@ -1199,6 +1208,8 @@ end if
        end if
 
     end do
+
+write(*,*) 'e'
 
   end function
 
