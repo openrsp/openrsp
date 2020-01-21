@@ -1231,6 +1231,7 @@ write(*,*) 'just before end'
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
     complex(8) :: xrtm
+    complex(8), dimension(1) :: arg_cmplx
     real(8), parameter :: xtiny=1.0d-8
     type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
@@ -1963,13 +1964,24 @@ write(*,*) 'just before end'
                          call out_print(out_str, 2)
                          write(out_str, *) ' '
                          call out_print(out_str, 1)
+
+                         allocate(arg_int(1))
+                         allocate(arg_int_b(1))
+
+                         arg_int = (/last - first + 1/)
+                         arg_int_b = (/1/)
+
+                         arg_cmplx = dcmplx(real((/freq_sums(k)/)),0.0d0)
                    
                          call get_rsp_sol(1,                                    &
-                                          (/last-first+1/),                     &
-                                          (/1/),                                &
-                                          dcmplx(real((/freq_sums(k)/)),0.0d0), &
+                                          arg_int,                     &
+                                          arg_int_b,                                &
+                                          arg_cmplx, &
                                           RHS(ind_ctr+first-1:ind_ctr+last-1),  &
                                           X(ind_ctr+first-1:ind_ctr+last-1))
+
+                         deallocate(arg_int)
+                         deallocate(arg_int_b)
 
                       else
 
@@ -2406,7 +2418,7 @@ write(*,*) 'just before end'
     type(p_tuple), dimension(1) :: emptypert
     type(p_tuple), dimension(n_freq_cfgs), intent(in) :: pert
     type(p_tuple), dimension(:), allocatable :: dmat_perts, enc_perts, pert_arg
-    integer, dimension(:), allocatable :: pert_ids, dmat_tuple_sizes, blk_sizes
+    integer, dimension(:), allocatable :: pert_ids, dmat_tuple_sizes, blk_sizes, ind_misc
     integer, dimension(:), allocatable :: pert_freq_category, pert_ext, int_arg
     integer, dimension(:,:), allocatable ::  blk_info, curr_dmat_indices
     integer,       intent(in) :: kn(2)
@@ -2427,6 +2439,7 @@ write(*,*) 'just before end'
     
     call empty_p_tuple(emptypert(1))
 
+write(*,*) 'stage a'                  
     ! Special handling for null perturbation case
     
     if (pert(1)%npert == 1) then
@@ -2457,9 +2470,11 @@ write(*,*) 'just before end'
           
                 call QCMatInit(dmat_total_array(1))
 
-                call contrib_cache_getdata_outer(len_d, D, 1, (/get_emptypert()/), .FALSE., &
-                     contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=dmat_total_array(1))
-                  
+                ind_uns = (/1/)
+
+                call contrib_cache_getdata_outer(len_d, D, 1, emptypert, .FALSE., &
+                     contrib_size=1, ind_len=1, ind_unsorted=ind_uns, mat_sing=dmat_total_array(1))
+
                 do i = 1, prop_size_total
              
                    call QCMatInit(dmat_total_array(i + 1))
@@ -2484,8 +2499,15 @@ write(*,*) 'just before end'
           
           else
           
-             call get_xc(pert(1)%npert, pert_ext, 1, (/1/), &
-                 2, (/1, 2/), prop_size_total + 1, dmat_total_array, prop_size_total, fock)
+
+             ind_uns = (/1/)
+             allocate(ind_misc(2))
+             ind_misc = (/1, 2/)
+
+             call get_xc(pert(1)%npert, pert_ext, 1, ind_uns, &
+                 2, ind_misc, prop_size_total + 1, dmat_total_array, prop_size_total, fock)
+
+             deallocate(ind_misc)
                   
           end if
           
@@ -2511,7 +2533,7 @@ write(*,*) 'just before end'
     end if
     
     
-    
+    write(*,*) 'stage b'
 
     
     if (present(fock)) then
@@ -2537,9 +2559,9 @@ write(*,*) 'just before end'
     
 
     call p1_cloneto_p2(emptypert(1), dmat_perts(1))
-    
 
-    
+    write(*,*) 'stage c'
+
     
     pert_ids(1) = 1
     ind_dmat_perts = 1
@@ -2600,6 +2622,8 @@ write(*,*) 'just before end'
     
     dmat_total_size = 1
     
+    write(*,*) 'stage d'
+
     ! For each perturbation subset in dmat_perts:
     
     do i = 2, dmat_length
@@ -2611,12 +2635,28 @@ write(*,*) 'just before end'
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
 
-! FIXME: UNSURE ABOUT NEXT LINE                                                                     
+! FIXME: UNSURE ABOUT NEXT LINES
+
+! Originally, last line was used for both fock and prop
+! It looks like the last line goes oob for fock but is needed for prop
+! For now, just testing change
+
+if (present(fock)) then
 ! Will use just the regular index, but change back if this causes problems                          
              dmat_perts(i)%freq(k) = pert(j)%freq(k)
-! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE  
-!             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+
+elseif (present(prop)) then
+! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE FOR FOCK CONTRIB
+!             dmat_perts(i)%freq(k) = pert(j)%freq(k)
+
+             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
           
+else 
+
+write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
+
+end if
+
           end do
           
           num_blks = get_num_blks(dmat_perts(i))
@@ -2663,28 +2703,52 @@ write(*,*) 'just before end'
 
     end if
     
-        
+            write(*,*) 'stage e'
     dmat_array_ctr = 1
         
-    
+        write(*,*) 'stage ea'
     ! For each perturbation subset in dmat_perts:
    
     do i = 2, dmat_length
-    
+   
+    write(*,*) 'stage eb'
        ! For each freq config:
               
        do j = 1, n_freq_cfgs
        
+    write(*,*) 'stage ec'
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
-          
-! FIXME: UNSURE ABOUT NEXT LINE                                                                           
-! Will use just the regular index, but change back if this causes problems                                 
+    write(*,*) 'stage ed'          
+
+! FIXME: UNSURE ABOUT NEXT LINES                                                                              
+
+! Originally, last line was used for both fock and prop                                                       
+! It looks like the last line goes oob for fock but is needed for prop                                        
+! For now, just testing change                                                                                
+
+if (present(fock)) then
+! Will use just the regular index, but change back if this causes problems                                    
              dmat_perts(i)%freq(k) = pert(j)%freq(k)
-! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE                                  
-!             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
-          
+
+elseif (present(prop)) then
+! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE FOR FOCK CONTRIB                   
+!             dmat_perts(i)%freq(k) = pert(j)%freq(k)
+
+             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))                                      
+
+else
+
+write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
+
+end if
+
+
+
           end do
+
+             write(*,*) 'dmp', i,' freq', dmat_perts(i)%freq
+             write(*,*) 'pert', i,' freq', pert(j)%freq
           
           num_blks = get_num_blks(dmat_perts(i))
        
@@ -2713,11 +2777,14 @@ write(*,*) 'just before end'
 
                 pert_arg(1) = dmat_perts(i)
                 int_arg = curr_dmat_indices(k, :)
+    write(*,*) 'stage e2'
            
                 call contrib_cache_getdata_outer(len_d, D, 1, pert_arg, .FALSE., &
                               1, ind_len=size(curr_dmat_indices, 2), &
                               ind_unsorted=int_arg, &
                               mat_sing=dmat_total_array(dmat_array_ctr))
+
+    write(*,*) 'stage e3'
                               
                 deallocate(int_arg)
                 deallocate(pert_arg)
@@ -2736,6 +2803,7 @@ write(*,*) 'just before end'
     
     end do
 
+    write(*,*) 'stage f'
 
     ! Get perturbation tuple in external representation
     call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)

@@ -333,14 +333,19 @@ module rsp_indices_and_addressing
     type(QcMat) T
     integer(kind=4) :: ierr
     complex(8) :: k
-        
+    real(8), dimension(2) :: n1, n2, n3
+
+    n1 = (/dreal(k), dimag(k)/)
+    n2 = (/0.0d0, 0.0d0/)
+    n3 = (/1.0d0, 0.0d0/)
+
     call QcMatInit(T, A)
 
     ! T = kB * C
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/0.0d0, 0.0d0/), T)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n1, B, C, n2, T)
     
     ! R = A * T
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n3, A, T, n2, R)
     ierr = QcMatDestroy_f(T)
 
   end subroutine
@@ -353,14 +358,19 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B, C, R
     type(QcMat) T
     integer(kind=4) :: ierr
-    integer :: i
+
+    real(8), dimension(2) :: n1, n2, n3
     real(8) :: k
-        
+
+    n1 = (/k, 0.0d0/)
+    n2 = (/0.0d0, 0.0d0/)
+    n3 = (/1.0d0, 0.0d0/)
+
     call QcMatInit(T, A)
-    
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), B, C, (/0.0d0, 0.0d0/), T)
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
-    
+
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n1, B, C, n2, T)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n3, A, T, n2, R)
+
     ierr = QcMatDestroy_f(T)
   
   end subroutine
@@ -705,9 +715,9 @@ module rsp_indices_and_addressing
        blk_arg_ii = blks_info(i, 1:nblks_tuple(i), :)
 
        offset = offset + (get_triang_blks_offset(nblks_tuple(i), nfields(i), &
-                         blks_info(i,1:nblks_tuple(i),:), &
-                         blk_sizes(i, 1:nblks_tuple(i)),  &
-                         inds(k:k + nfields(i) - 1))  - 1 )* &
+                         blk_arg_ii, &
+                         blk_arg_i,  &
+                         blk_arg_i_b)  - 1 )* &
                          (product(blks_sizes(i:ntuple))/blks_sizes(i))
        k = k + nfields(i)
 

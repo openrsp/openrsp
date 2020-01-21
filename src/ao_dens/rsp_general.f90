@@ -827,12 +827,14 @@ module rsp_general
     integer :: n_props, i, j, k
     integer :: r_flag
     integer :: len_fds
+    integer, dimension(2) :: this_kn
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
     integer, dimension(sum(n_freq_cfgs)) :: prop_sizes
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
     integer :: len_cache
     type(p_tuple) :: emptypert
+    type(p_tuple), dimension(1) :: mpt_pert_arr
     type(p_tuple), dimension(sum(n_freq_cfgs)) :: p_tuples
     type(p_tuple), dimension(2) :: emptyp_tuples
     external :: get_rsp_sol, get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp
@@ -849,6 +851,8 @@ module rsp_general
     
     call empty_p_tuple(emptypert)
     emptyp_tuples = (/emptypert, emptypert/)
+
+    call empty_p_tuple(mpt_pert_arr(1))
 
     call prog_incr(prog_info, r_flag, 1)
   
@@ -981,8 +985,11 @@ module rsp_general
              
              len_cache = size(contribution_cache)
 
+             this_kn = kn_rule(k, :)
+
+
              call cpu_time(time_start)
-             call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
+             call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, this_kn, 1, mpt_pert_arr, &
                   0, size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .TRUE., &
                   len_cache, contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
@@ -1160,8 +1167,10 @@ write(*,*) 'stage a'
                 write(out_str, *) ' '
                 call out_print(out_str, 1)
 
+                this_kn = kn_rule(k, :)
+
                 call cpu_time(time_start)
-                call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, kn_rule(k,:), 1, (/emptypert/), &
+                call rsp_energy_recurse(p_tuples(k), p_tuples(k)%npert, this_kn, 1, mpt_pert_arr, &
                      0, size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, out_print, .FALSE., &
                      len_cache, contribution_cache, prop_sizes(k), &
                      props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
@@ -1240,8 +1249,10 @@ write(*,*) 'stage a'
              write(out_str, *) ' '
              call out_print(out_str, 1)
 
+             this_kn = kn_rule(k, :)
+
              call cpu_time(time_start)
-             call rsp_xc_wrapper(n_freq_cfgs(i), p_tuples(k:k+n_freq_cfgs(i)-1), kn_rule(k,:), &
+             call rsp_xc_wrapper(n_freq_cfgs(i), p_tuples(k:k+n_freq_cfgs(i)-1), this_kn, &
                   size(D), D, get_xc_exp, out_print, sum(prop_sizes(k:k+n_freq_cfgs(i) - 1)), mem_mgr, &
                   prop=props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1 : &
                         sum(prop_sizes(1:k+n_freq_cfgs(i) - 1))))
@@ -1578,6 +1589,7 @@ write(*,*) 'stage a'
     integer :: len_d, len_cache
     logical :: residue_skip
     type(p_tuple), dimension(num_p_tuples) :: p_tuples, t_new
+    type(p_tuple), allocatable, dimension(:) :: p_next
     type(contrib_cache_outer), dimension(len_d) :: D
     type(contrib_cache), allocatable, dimension(:) :: cache
     complex(8), dimension(p_size), optional :: prop
@@ -1595,18 +1607,30 @@ write(*,*) 'stage a'
 
     if (p_tuples(1)%npert == 0) then
 
+       allocate(p_next(num_p_tuples))
+
+       p_next = (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/)
+
        call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
-       kn, num_p_tuples, (/p_tuple_getone(pert,1), p_tuples(2:size(p_tuples))/), &
+       kn, num_p_tuples, p_next, &
        density_order, len_d, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
        dryrun, len_cache, cache, p_size=p_size, prop=prop)
 
+       deallocate(p_next)
+
     else
 
+       allocate(p_next(num_p_tuples))
+
+       p_next = (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
+       p_tuples(2:size(p_tuples))/)
+
        call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations,  &
-       kn, num_p_tuples, (/p_tuple_extend(p_tuples(1), p_tuple_getone(pert,1)), &
-       p_tuples(2:size(p_tuples))/), density_order, len_D, D, &
+       kn, num_p_tuples, p_next, density_order, len_D, D, &
        get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
        dryrun, len_cache, cache, p_size=p_size, prop=prop)
+
+       deallocate(p_next)
 
     end if
     
@@ -1643,10 +1667,16 @@ write(*,*) 'stage a'
           ! 3. Chain rule differentiate the energy w.r.t. the density (giving 
           ! a(nother) pert D contraction)
 
+          allocate(p_next(num_p_tuples + 1))
+
+          p_next = (/p_tuples(:), p_tuple_getone(pert, 1)/)
+
           call rsp_energy_recurse(p_tuple_remove_first(pert), total_num_perturbations, &
-          kn, num_p_tuples + 1, (/p_tuples(:), p_tuple_getone(pert, 1)/), &
+          kn, num_p_tuples + 1, p_next, &
           density_order + 1, len_d, D, get_nucpot, get_1el_exp, get_t_exp, get_2el_exp, out_print, &
           dryrun, len_cache, cache, p_size=p_size, prop=prop)
+
+          deallocate(p_next)
 
        end if
 
@@ -1711,8 +1741,10 @@ write(*,*) 'stage a'
              
                 ! NOTE (MaR): EVERYTHING MUST BE STANDARD ORDER IN 
                 ! THIS CALL (LIKE property_cache_getdata ASSUMES)
+                t_new = p_tuples_standardorder(num_p_tuples, p_tuples)
+
                 call contrib_cache_getdata(len_cache, cache, num_p_tuples, &
-                   p_tuples_standardorder(num_p_tuples, p_tuples), p_size, 0, scal=prop)
+                   t_new, p_size, 0, scal=prop)
 
              end if
 
@@ -1742,9 +1774,14 @@ write(*,*) 'stage a'
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
              
-             
+                allocate(p_next(num_p_tuples))
+
+                p_next = p_tuples_standardorder(num_p_tuples, p_tuples)
+
                 call contrib_cache_add_element(len_cache, cache, num_p_tuples, &
-                     p_tuples_standardorder(num_p_tuples, p_tuples))
+                     p_next)
+
+                deallocate(p_next)
 
              end if
 
@@ -1773,12 +1810,14 @@ write(*,*) 'stage a'
     integer :: total_outer_size_1, total_outer_size_2
     integer :: num_0, num_1, num_pert, tot_num_pert
     integer, allocatable, dimension(:,:,:) :: blks_tuple_info
+    integer, allocatable, dimension(:) :: ind_uns, arg_int, arg_int_b, arg_int_c, arg_int_d
     character(30) :: mat_str, fmt_str
     
     integer :: len_d
     type(contrib_cache_outer), dimension(len_d) :: D
     type(contrib_cache) :: cache
-    
+    type(p_tuple), dimension(1) :: emptytuple
+    type(p_tuple), allocatable, dimension(:) :: arg_tuple, arg_tuple_b
     type(p_tuple) :: t_mat_p_tuple, t_matrix_bra, t_matrix_ket
     type(QcMat), allocatable, dimension(:) :: LHS_dmat_1, LHS_dmat_2, RHS_dmat_2
     integer, allocatable, dimension(:) :: outer_contract_sizes_1, outer_contract_sizes_1_coll
@@ -1795,6 +1834,8 @@ write(*,*) 'stage a'
     
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
     
+    call empty_p_tuple(emptytuple(1))
+
     call p_tuple_to_external_tuple(cache%p_inner, num_pert, pert_ext)
     
     write(out_str, *) 'Number of outer contributions for this inner tuple:', cache%num_outer
@@ -1983,9 +2024,15 @@ write(*,*) 'stage a'
              if ((lhs_ctr_1 == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
              
                 if (.NOT.(mem_mgr%calibrate)) then
+
+                   allocate(ind_uns(1))
+
+                   ind_uns = (/1/)
           
-                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
-                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_1(mctr + 1))
+                   call contrib_cache_getdata_outer(size(D), D, 1, emptytuple, .FALSE., &
+                        1, ind_len=1, ind_unsorted=ind_uns, mat_sing=LHS_dmat_1(mctr + 1))
+
+                   deallocate(ind_uns)
                      
                 end if
                 
@@ -2002,12 +2049,24 @@ write(*,*) 'stage a'
                 if ((lhs_ctr_1 + n - 1 == mcurr + mctr) .AND. .NOT.(msize <= mctr)) then
                
                    if (.NOT.(mem_mgr%calibrate)) then
+         
+                      allocate(arg_tuple(1))
+
+                      arg_tuple = (/cache%contribs_outer(m)%p_tuples(1)/)
+
+                      allocate(ind_uns(size(cache%contribs_outer(m)%indices(n, :))))
                
+                      ind_uns = cache%contribs_outer(m)%indices(n, :)
+
                       call contrib_cache_getdata_outer(size(D), D, 1, &
-                      (/cache%contribs_outer(m)%p_tuples(1)/), .FALSE., &
+                      arg_tuple, .FALSE., &
                       1, ind_len=size(cache%contribs_outer(m)%indices, 2), &
-                      ind_unsorted=cache%contribs_outer(m)%indices(n, :), &
+                      ind_unsorted=ind_uns, &
                       mat_sing=LHS_dmat_1(mctr + 1))
+
+                      deallocate(ind_uns)
+
+                      deallocate(arg_tuple)
                            
                    end if
                            
@@ -2386,50 +2445,106 @@ write(*,*) 'stage a'
                 ! No chain rule applications
                 if (cache%contribs_outer(i + 1)%num_dmat == 0) then
            
-                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
-                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=LHS_dmat_2(lhs_ctr_2))
-                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
-                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+                   allocate(ind_uns(1))
+
+                   ind_uns = (/1/)
+
+                   call contrib_cache_getdata_outer(size(D), D, 1, emptytuple, .FALSE., &
+                        1, ind_len=1, ind_unsorted=ind_uns, mat_sing=LHS_dmat_2(lhs_ctr_2))
+                   call contrib_cache_getdata_outer(size(D), D, 1, emptytuple, .FALSE., &
+                        1, ind_len=1, ind_unsorted=ind_uns, mat_sing=RHS_dmat_2(rhs_ctr_2))
+
+                   deallocate(ind_uns)
                         
                 ! One chain rule application
                 else if (cache%contribs_outer(i + 1)%num_dmat == 1) then
           
                    do m = 1, outer_contract_sizes_2(i, 1) 
+                     
+                      allocate(arg_tuple(1))
+                     
+                      arg_tuple = (/cache%contribs_outer(i + 1)%p_tuples(1)/)
+
+                      allocate(ind_uns(size(cache%contribs_outer(i + 1)%indices(m, :))))
+
+                      ind_uns = cache%contribs_outer(i + 1)%indices(m, :)
                    
                       call contrib_cache_getdata_outer(size(D), D, 1, &
-                           (/cache%contribs_outer(i + 1)%p_tuples(1)/), .FALSE., &
+                           arg_tuple, .FALSE., &
                            1, ind_len=size(cache%contribs_outer(i + 1)%indices, 2), &
-                           ind_unsorted=cache%contribs_outer(i + 1)%indices(m, :), &
+                           ind_unsorted=ind_uns, &
                            mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
+
+                      deallocate(ind_uns)
+
+                      deallocate(arg_tuple)
+
                    end do
              
-                   call contrib_cache_getdata_outer(size(D), D, 1, (/get_emptypert()/), .FALSE., &
-                        1, ind_len=1, ind_unsorted=(/1/), mat_sing=RHS_dmat_2(rhs_ctr_2))
+                   allocate(ind_uns(1))
+
+                   ind_uns = (/1/)
+
+                   call contrib_cache_getdata_outer(size(D), D, 1, emptytuple, .FALSE., &
+                        1, ind_len=1, ind_unsorted=ind_uns, mat_sing=RHS_dmat_2(rhs_ctr_2))
           
+                   deallocate(ind_uns)
+
                 ! Two chain rule applications
                 else if (cache%contribs_outer(i + 1)%num_dmat == 2) then
             
                    do m = 1, outer_contract_sizes_2(i, 1) 
-              
-                      call contrib_cache_getdata_outer(size(D), D, 1, &
-                           (/cache%contribs_outer(i + 1)%p_tuples(1)/), .FALSE., &
-                           1, ind_len=cache%contribs_outer(i + 1)%p_tuples(1)%npert, &
-                           ind_unsorted=cache%contribs_outer(i + 1)%indices(1 + &
+
+                     allocate(arg_tuple(1))
+
+                     arg_tuple = (/cache%contribs_outer(i + 1)%p_tuples(1)/)
+
+                     allocate(ind_uns(size(cache%contribs_outer(i + 1)%indices(1 + &
                            (m - 1) * cache%contribs_outer(i + 1)%blks_tuple_triang_size(2), &
-                           1:cache%contribs_outer(i + 1)%p_tuples(1)%npert), &
+                           1:cache%contribs_outer(i + 1)%p_tuples(1)%npert))))
+              
+                     ind_uns = cache%contribs_outer(i + 1)%indices(1 + &
+                           (m - 1) * cache%contribs_outer(i + 1)%blks_tuple_triang_size(2), &
+                           1:cache%contribs_outer(i + 1)%p_tuples(1)%npert)
+
+                      call contrib_cache_getdata_outer(size(D), D, 1, &
+                           arg_tuple, .FALSE., &
+                           1, ind_len=cache%contribs_outer(i + 1)%p_tuples(1)%npert, &
+                           ind_unsorted=ind_uns, &
                            mat_sing=LHS_dmat_2(lhs_ctr_2 + m  - 1))
+
+                      deallocate(ind_uns)
+
+                      deallocate(arg_tuple)
+
                    end do
              
                    do n = 1, outer_contract_sizes_2(i, 2) 
+
+                      allocate(arg_tuple(1))
+
+                      arg_tuple = (/cache%contribs_outer(i + 1)%p_tuples(2)/)
              
-                      call contrib_cache_getdata_outer(size(D), D, 1, &
-                      (/cache%contribs_outer(i + 1)%p_tuples(2)/), .FALSE., &
-                           1, ind_len=cache%contribs_outer(i + 1)%p_tuples(2)%npert, &
-                           ind_unsorted=cache%contribs_outer(i + 1)%indices(n, &
+                      allocate(ind_uns(size(cache%contribs_outer(i + 1)%indices(n, &
                            cache%contribs_outer(i + 1)%p_tuples(1)%npert + 1: &
                            cache%contribs_outer(i + 1)%p_tuples(1)%npert + &
-                           cache%contribs_outer(i + 1)%p_tuples(2)%npert), &
+                           cache%contribs_outer(i + 1)%p_tuples(2)%npert))))
+
+                      ind_uns = cache%contribs_outer(i + 1)%indices(n, &
+                           cache%contribs_outer(i + 1)%p_tuples(1)%npert + 1: &
+                           cache%contribs_outer(i + 1)%p_tuples(1)%npert + &
+                           cache%contribs_outer(i + 1)%p_tuples(2)%npert)
+
+                      call contrib_cache_getdata_outer(size(D), D, 1, &
+                           arg_tuple, .FALSE., &
+                           1, ind_len=cache%contribs_outer(i + 1)%p_tuples(2)%npert, &
+                           ind_unsorted=ind_uns, &
                            mat_sing=RHS_dmat_2(rhs_ctr_2 + n  - 1))
+
+                      deallocate(ind_uns)
+
+                      deallocate(arg_tuple)
+
                    end do          
           
                 end if
@@ -2779,21 +2894,45 @@ write(*,*) 'stage a'
                 do i = 1, size(cache%contribs_outer(m)%indices, 1)
              
                    do j = 1, size(cache%indices, 1)
+
+                      allocate(arg_int(size((/cache%nblks, (/(cache%contribs_outer(m)%nblks_tuple(n), n = 1, &
+                      cache%contribs_outer(m)%num_dmat) /) /))))
+
+                      arg_int = (/cache%nblks, (/(cache%contribs_outer(m)%nblks_tuple(n), n = 1, &
+                      cache%contribs_outer(m)%num_dmat) /) /)
+
+                      allocate(arg_int_b(size((/cache%p_inner%npert, (/(cache%contribs_outer(m)%p_tuples(n)%npert, &
+                      n = 1, cache%contribs_outer(m)%num_dmat)/)/))))
+
+                      arg_int_b = (/cache%p_inner%npert, (/(cache%contribs_outer(m)%p_tuples(n)%npert, &
+                      n = 1, cache%contribs_outer(m)%num_dmat)/)/)
+
+                      allocate(arg_int_c(size((/cache%blks_triang_size, &
+                      (/(cache%contribs_outer(m)%blks_tuple_triang_size(n), n = 1, &
+                      cache%contribs_outer(m)%num_dmat)/)/))))
+
+                      arg_int_c = (/cache%blks_triang_size, &
+                      (/(cache%contribs_outer(m)%blks_tuple_triang_size(n), n = 1, &
+                      cache%contribs_outer(m)%num_dmat)/)/)
+
+                      allocate(arg_int_d(size((/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/))))
+                      
+                      arg_int_d = (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/)
       
                       offset = get_triang_blks_tuple_offset(cache%contribs_outer(m)%num_dmat + 1, &
                       cache%p_inner%npert + sum((/(cache%contribs_outer(m)%p_tuples(n)%npert, &
-                      n = 1, cache%contribs_outer(m)%num_dmat)/)), &
-                      (/cache%nblks, (/(cache%contribs_outer(m)%nblks_tuple(n), n = 1, &
-                      cache%contribs_outer(m)%num_dmat) /) /), &
-                      (/cache%p_inner%npert, (/(cache%contribs_outer(m)%p_tuples(n)%npert, &
-                      n = 1, cache%contribs_outer(m)%num_dmat)/)/), &
+                      n = 1, cache%contribs_outer(m)%num_dmat)/)), arg_int,  &
+                      arg_int_b, &
                       blks_tuple_info, &
                       blk_sizes, &
-                      (/cache%blks_triang_size, &
-                      (/(cache%contribs_outer(m)%blks_tuple_triang_size(n), n = 1, &
-                      cache%contribs_outer(m)%num_dmat)/)/), &
-                      (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/))
-                   
+                      arg_int_c, &
+                      arg_int_d)
+
+                      deallocate(arg_int_d)
+                      deallocate(arg_int_c)
+                      deallocate(arg_int_b)
+                      deallocate(arg_int)
+
 !                       write(*,*) 'Index tuple:', (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/)
 !                       write(*,*) 'Saving element', j + size(cache%indices, 1) * (i - 1), &
 !                       'of data in cache element', offset

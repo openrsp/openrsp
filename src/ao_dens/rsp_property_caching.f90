@@ -1740,7 +1740,7 @@ write(*,*) 'all of loop done'
    type(contrib_cache_outer) :: new_element
   
 
-   type(p_tuple), dimension(num_dmat) :: outer_p_tuples, p_tuples_st_order
+   type(p_tuple), dimension(num_dmat) :: outer_p_tuples, p_tuples_st_order, pstcmp
    
    type(Qcmat), optional, dimension(*) :: data_mat
    complex(8), optional, dimension(*) :: data_scal
@@ -1763,11 +1763,13 @@ write(*,*) 'all of loop done'
       p_tuples_st_order = p_tuples_standardorder(num_dmat, outer_p_tuples)
    
       do i = 1, len_cache
+
+         pstcmp = p_tuples_standardorder(cache(i)%num_dmat, &
+            cache(i)%p_tuples)
       
          if (cache(i)%num_dmat == num_dmat .AND. .NOT.(cache(i)%dummy_entry)) then
             found_element = p_tuples_compare(cache(i)%num_dmat, &
-            p_tuples_standardorder(cache(i)%num_dmat, &
-            cache(i)%p_tuples), p_tuples_st_order)
+            pstcmp, p_tuples_st_order)
             
             if (found_element) then
                found_loc = i
