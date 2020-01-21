@@ -1227,14 +1227,14 @@ write(*,*) 'just before end'
     integer, allocatable, dimension(:,:) :: blk_info
     integer, allocatable, dimension(:,:) :: indices
     integer, dimension(num_outer) :: size_i
-    integer, dimension(:), allocatable :: ind_uns
+    integer, dimension(:), allocatable :: ind_uns, arg_int, arg_int_b
     character(30) :: mat_str, fmt_str
     complex(8), dimension(num_outer) :: freq_sums
     complex(8) :: xrtm
     real(8), parameter :: xtiny=1.0d-8
     type(p_tuple) :: pert, pert_xc_null
     type(p_tuple), allocatable, dimension(:,:) :: derivative_structure
-    type(p_tuple), allocatable, dimension(:) :: arg_tuple
+    type(p_tuple), allocatable, dimension(:) :: arg_tuple, arg_tuple_b
     
     
     integer :: len_cache_outer, len_d, len_lof_cache
@@ -1553,31 +1553,59 @@ write(*,*) 'just before end'
        if (.NOT.(mem_mgr%calibrate)) then
        
           len_d = size(F)
+
+          allocate(arg_tuple(1))
+
+          arg_tuple(1) = pert
        
           call contrib_cache_outer_add_element(len_d, F, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+
+          deallocate(arg_tuple)
        
        end if
        
        
        ! Calculate Dp for all components and add to cache
        
+       allocate(arg_int(2))
+       allocate(arg_tuple_b(3))
+
+       arg_int = (/pert%npert, pert%npert/)
+       call empty_p_tuple(arg_tuple_b(1))
+       call empty_p_tuple(arg_tuple_b(2))
+       call empty_p_tuple(arg_tuple_b(3))
+
        ! Set up Z matrix calculation
        superstructure_size = derivative_superstructure_getsize(pert, &
-                          (/pert%npert, pert%npert/), &
-                          .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+                          arg_int, &
+                          .FALSE., arg_tuple_b)
 
        sstr_incr = 0
        
+       deallocate(arg_int)
+       deallocate(arg_tuple_b)
+
        allocate(derivative_structure(superstructure_size, 3))
        allocate(indices(size_i(k), pert%npert))
        allocate(ind(pert%npert))
        
+       allocate(arg_int(2))
+       allocate(arg_tuple_b(3))
+
+       arg_int = (/pert%npert, pert%npert/)
+       call empty_p_tuple(arg_tuple_b(1))
+       call empty_p_tuple(arg_tuple_b(2))
+       call empty_p_tuple(arg_tuple_b(3))
+
        call derivative_superstructure(pert, &
-            (/pert%npert, pert%npert/), .FALSE., &
-            (/get_emptypert(pert), get_emptypert(pert), get_emptypert(pert)/), &
+            arg_int, .FALSE., &
+            arg_tuple_b, &
             superstructure_size, sstr_incr, derivative_structure)
       
+       deallocate(arg_int)
+       deallocate(arg_tuple_b)
+
        call make_triangulated_indices(nblks, blk_info, size_i(k), indices)
        
        ! Calculate Z matrices and process to get Dp
@@ -1589,11 +1617,20 @@ write(*,*) 'just before end'
           
           if (.NOT.(mem_mgr%calibrate)) then
 
+             allocate(arg_int(2))
+             allocate(arg_int_b(pert%npert))
+
+             arg_int = (/pert%npert, pert%npert/)
+             arg_int_b = (/ (m, m = 1, pert%npert) /)
+
              call rsp_get_matrix_z(superstructure_size, derivative_structure, &
-                  (/pert%npert,pert%npert/), pert%npert, &
-                  (/ (m, m = 1, pert%npert) /), pert%npert, &
+                  arg_int, pert%npert, &
+                  arg_int_b, pert%npert, &
                   ind, size(F), F, size(D), D, size(S), S, Dp(ind_ctr + j - 1), &
                   select_terms_arg=residue_select)
+
+             deallocate(arg_int)
+             deallocate(arg_int_b)
 
           end if
           
@@ -1614,9 +1651,15 @@ write(*,*) 'just before end'
        
           len_d = size(D)
        
+          allocate(arg_tuple(1))
+
+          arg_tuple(1) = pert
+          
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k),  data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k),  data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
                
+          deallocate(arg_tuple)
+
        end if
        
        ! Clean up and set up next iteration
@@ -1690,13 +1733,22 @@ write(*,*) 'just before end'
        call get_2el_mat(0, noc, sum(size_i), Dp, sum(size_i), Fp)
        
      
+       allocate(arg_tuple(1))
+       allocate(arg_int(2))
+
        ! Set up null perturbation dimensionality
        pert_xc_null%pdim(1) = sum(size_i)
+
+       arg_tuple(1) = pert_xc_null
+       arg_int = (/1, 1/)
     
-       call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), size(D), D, get_xc_mat, out_print, &
+       call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
                                 sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
     
     
+       deallocate(arg_int)
+       deallocate(arg_tuple)
+
     end if
     
 !     end if
@@ -1731,18 +1783,39 @@ write(*,*) 'just before end'
        
          len_d = size(F)
         
+         allocate(arg_tuple(1))
+
+         arg_tuple(1) = pert
+
          ! Add the completed Fp to cache
            call contrib_cache_outer_add_element(len_d, F, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k),  data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k),  data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
       
+         deallocate(arg_tuple)
+
        end if
        
        ! Construct right-hand side for all components
-       
+
+       allocate(arg_int(2))
+       allocate(arg_tuple_b(3))
+
+       arg_int = (/pert%npert, pert%npert/)
+       call empty_p_tuple(arg_tuple_b(1))
+       call empty_p_tuple(arg_tuple_b(2))
+       call empty_p_tuple(arg_tuple_b(3))
+
        ! Set up Y matrix calculation
        superstructure_size = derivative_superstructure_getsize(pert, &
-                          (/pert%npert, pert%npert/), &
-                          .FALSE., (/get_emptypert(), get_emptypert(), get_emptypert()/))
+                          arg_int, &
+                          .FALSE., arg_tuple_b)
+
+       deallocate(arg_int)
+       deallocate(arg_tuple_b)
+       
+
+
+
 
        sstr_incr = 0
        
@@ -1750,10 +1823,25 @@ write(*,*) 'just before end'
        allocate(indices(size_i(k), pert%npert))
        allocate(ind(pert%npert))
        
+       allocate(arg_int(2))
+       allocate(arg_tuple_b(3))
+
+       arg_int = (/pert%npert, pert%npert/)
+       call empty_p_tuple(arg_tuple_b(1))
+       call empty_p_tuple(arg_tuple_b(2))
+       call empty_p_tuple(arg_tuple_b(3))
+
        call derivative_superstructure(pert, &
-            (/pert%npert, pert%npert/), .FALSE., &
-            (/get_emptypert(pert), get_emptypert(pert), get_emptypert(pert)/), &
+            arg_int, .FALSE., &
+            arg_tuple_b, &
             superstructure_size, sstr_incr, derivative_structure)
+
+
+       deallocate(arg_int)
+       deallocate(arg_tuple_b)
+
+
+
       
        call make_triangulated_indices(nblks, blk_info, size_i(k), indices)
        
@@ -1764,12 +1852,18 @@ write(*,*) 'just before end'
           
           call mem_incr(mem_mgr, 4)
           if (.NOT.(mem_mgr%calibrate)) then
-    
+
+             allocate(arg_int_b(pert%npert))
+
+             arg_int_b = (/ (m, m = 1, pert%npert) /)
+
              call rsp_get_matrix_y(superstructure_size, derivative_structure, &
-                  pert%npert, (/ (m, m = 1, pert%npert) /), &
+                  pert%npert, arg_int_b, &
                   pert%npert, ind, size(F), F, size(D), D, size(S), S, RHS(ind_ctr + j - 1), &
                   select_terms_arg = residue_select)
-                  
+
+             deallocate(arg_int_b)
+
           end if        
                   
           call mem_decr(mem_mgr, 4)          
@@ -1944,14 +2038,23 @@ write(*,*) 'just before end'
                    stop 
                 
                 end if    
+
+                allocate(arg_int(1))
+                allocate(arg_int_b(1))
+                
+                arg_int(1) = size_i(k)
+                arg_int_b(1) = 1
             
                 call get_rsp_sol(1,                                    &
-                                 (/size_i(k)/),                        &
-                                 (/1/),                                &
+                                 arg_int,                        &
+                                 arg_int_b,                                &
                                  dcmplx(real((/freq_sums(k)/)),0.0d0), &
                                  RHS(ind_ctr:ind_ctr+size_i(k)-1),     &
                                  X(ind_ctr:ind_ctr+size_i(k)-1))
           
+                deallocate(arg_int_b)
+                deallocate(arg_int)
+
 !                 call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', r_flag, &
 !                            mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
                            
@@ -2070,12 +2173,23 @@ write(*,*) 'just before end'
     call out_print(out_str, 1)
 
     call get_2el_mat(0, noc, sum(size_i), Dh, sum(size_i), Fp)
-          
-    ! Set up null perturbation dimensionality
-    pert_xc_null%pdim(1) = sum(size_i)
-                
-    call rsp_xc_wrapper(1, (/pert_xc_null/), (/1, 1/), size(D), D, get_xc_mat, out_print, &
-                             sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
+
+     allocate(arg_tuple(1))
+     allocate(arg_int(2))
+
+     ! Set up null perturbation dimensionality                                                                  
+     pert_xc_null%pdim(1) = sum(size_i)
+
+     arg_tuple(1) = pert_xc_null
+     arg_int = (/1, 1/)
+
+     call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
+                         sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
+
+
+     deallocate(arg_int)
+     deallocate(arg_tuple)
+
        
 !        end if
 ! 
@@ -2124,14 +2238,20 @@ write(*,*) 'just before end'
           end do
        
           len_d = size(F)
+
+          allocate(arg_tuple(1))
+
+          arg_tuple(1) = pert
        
           call contrib_cache_outer_add_element(len_d, F, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
        
           len_d = size(D)
        
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
-               (/pert/), data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+          
+          deallocate(arg_tuple)
           
           ind_ctr = ind_ctr + size_i(k)
           k = k + 1
@@ -2283,13 +2403,14 @@ write(*,*) 'just before end'
     type(mem_manager) :: mem_mgr
     integer :: n_freq_cfgs, i, j, k, m, dmat_array_ctr, rec_prog, triang_size
     integer :: dmat_length, dmat_total_size, enc_length, ind_dmat_perts, num_blks
-    type(p_tuple) :: emptypert
+    type(p_tuple), dimension(1) :: emptypert
     type(p_tuple), dimension(n_freq_cfgs), intent(in) :: pert
-    type(p_tuple), dimension(:), allocatable :: dmat_perts, enc_perts
+    type(p_tuple), dimension(:), allocatable :: dmat_perts, enc_perts, pert_arg
     integer, dimension(:), allocatable :: pert_ids, dmat_tuple_sizes, blk_sizes
-    integer, dimension(:), allocatable :: pert_freq_category, pert_ext
+    integer, dimension(:), allocatable :: pert_freq_category, pert_ext, int_arg
     integer, dimension(:,:), allocatable ::  blk_info, curr_dmat_indices
     integer,       intent(in) :: kn(2)
+    integer, dimension(1) :: ind_uns
     type(QcMat), dimension(:), allocatable :: dmat_total_array
     integer :: len_d
     type(contrib_cache_outer), dimension(len_d), intent(in) :: D
@@ -2304,6 +2425,7 @@ write(*,*) 'just before end'
     external :: out_print
     character(len=2047) :: out_str
     
+    call empty_p_tuple(emptypert(1))
 
     ! Special handling for null perturbation case
     
@@ -2413,8 +2535,8 @@ write(*,*) 'just before end'
     allocate(pert_ids(dmat_length))
     allocate(dmat_tuple_sizes(dmat_length))
     
-    emptypert = get_emptypert()
-    call p1_cloneto_p2(emptypert, dmat_perts(1))
+
+    call p1_cloneto_p2(emptypert(1), dmat_perts(1))
     
 
     
@@ -2534,8 +2656,10 @@ write(*,*) 'just before end'
     
        call QCMatInit(dmat_total_array(1))
 
-       call contrib_cache_getdata_outer(len_d, D, 1, (/get_emptypert()/), .FALSE., &
-            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=dmat_total_array(1))
+       ind_uns(1) = 1
+
+       call contrib_cache_getdata_outer(len_d, D, 1, emptypert, .FALSE., &
+            contrib_size=1, ind_len=1, ind_unsorted=ind_uns, mat_sing=dmat_total_array(1))
 
     end if
     
@@ -2583,12 +2707,21 @@ write(*,*) 'just before end'
              if (.NOT.(mem_mgr%calibrate)) then
              
                 call QCMatInit(dmat_total_array(dmat_array_ctr))
+
+                allocate(pert_arg(1))
+                allocate(int_arg(size(curr_dmat_indices, 2)))
+
+                pert_arg(1) = dmat_perts(i)
+                int_arg = curr_dmat_indices(k, :)
            
-                call contrib_cache_getdata_outer(len_d, D, 1, (/dmat_perts(i)/), .FALSE., &
+                call contrib_cache_getdata_outer(len_d, D, 1, pert_arg, .FALSE., &
                               1, ind_len=size(curr_dmat_indices, 2), &
-                              ind_unsorted=curr_dmat_indices(k, :), &
+                              ind_unsorted=int_arg, &
                               mat_sing=dmat_total_array(dmat_array_ctr))
                               
+                deallocate(int_arg)
+                deallocate(pert_arg)
+
              end if
           
           

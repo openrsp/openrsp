@@ -438,8 +438,11 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B
     integer(kind=4) :: ierr
     real(8) :: k
+    real(8), dimension(2) :: karr
+
+    karr = (/k, 0.0d0/)
     
-    ierr = QcMatAXPY_f((/k, 0.0d0/), A, B)
+    ierr = QcMatAXPY_f(karr, A, B)
   
   end subroutine
   
