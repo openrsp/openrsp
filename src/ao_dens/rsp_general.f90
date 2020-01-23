@@ -169,7 +169,8 @@ module rsp_general
     integer(kind=QINT), intent(in) :: residue_order
     
     character, optional, dimension(20) :: file_id
-    
+
+    integer, allocatable, dimension(:) :: arg_ind
     logical, optional :: mem_calibrate
     integer, optional :: max_mat, mem_result
     logical :: xf_was_allocated
@@ -771,7 +772,12 @@ module rsp_general
                 ! NOTE: TENSOR ELEMENTS WITH ABSOLUTE VALUE BELOW write_threshold WILL NOT BE OUTPUT
                 if (abs(real(rsp_tensor(p + n))) >= write_threshold) then
                 
-                   write(260,*) indices(n,:)
+                   allocate(arg_ind(size(indices(n,:))))
+
+                   write(260,*) arg_ind
+
+                   deallocate(arg_ind)
+
                    write(260,*) real(rsp_tensor(p + n))
                 
                 end if
@@ -1089,8 +1095,6 @@ module rsp_general
           
           else
 
-write(*,*) 'stage a'
-
              call rsp_energy_calculate(size(D), D, get_nucpot, get_1el_exp, get_ovl_exp, get_2el_exp, &
                   out_print, contribution_cache(k), mem_mgr)
              
@@ -1332,9 +1336,14 @@ write(*,*) 'stage a'
              call out_print(out_str, 1)
           
              call cpu_time(time_start)
+
+
+             emptyp_tuples = (/emptypert, emptypert/)
           
+             this_kn = kn_rule(k,:)
+
              call rsp_twofact_recurse(p_tuples(k), &
-                  kn_rule(k,:), (/emptypert, emptypert/), out_print, &
+                  this_kn, emptyp_tuples, out_print, &
                   .TRUE., len_cache, contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
@@ -1508,9 +1517,13 @@ write(*,*) 'stage a'
                 len_cache = size(contribution_cache)
           
                 call cpu_time(time_start)
+
+                emptyp_tuples = (/emptypert, emptypert/)
+
+                this_kn = kn_rule(k,:)
           
                 call rsp_twofact_recurse(p_tuples(k), &
-                     kn_rule(k,:), (/emptypert, emptypert/), out_print, &
+                     this_kn, emptyp_tuples, out_print, &
                      .FALSE., len_cache, contribution_cache, prop_sizes(k), &
                      props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
           
@@ -2982,7 +2995,7 @@ write(*,*) 'stage a'
 
     logical :: dryrun, lag_eligible
     type(p_tuple) :: pert, merged_p_tuple
-    type(p_tuple), dimension(2) :: p12
+    type(p_tuple), dimension(2) :: p12, p12_next_a, p12_next_b
     integer :: len_cache
     integer, dimension(2) :: cache_loc
     type(contrib_cache), allocatable, dimension(:) :: cache
@@ -2999,12 +3012,16 @@ write(*,*) 'stage a'
     ! Recurse
     if (pert%npert > 0) then
 
+       p12_next_a = (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/)
+
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
-       (/p_tuple_extend(p12(1), p_tuple_getone(pert, 1)), p12(2)/), out_print, dryrun, &
+       p12_next_a, out_print, dryrun, &
        len_cache, cache, p_size, prop)
        
+       p12_next_b = (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/)
+
        call rsp_twofact_recurse(p_tuple_remove_first(pert), kn, &
-       (/p12(1), p_tuple_extend(p12(2), p_tuple_getone(pert, 1))/), out_print, dryrun, &
+       p12_next_b, out_print, dryrun, &
        len_cache, cache, p_size, prop)
 
     ! If at end of recursion, process
@@ -3237,7 +3254,10 @@ write(*,*) 'stage a'
     character(30) :: mat_str, fmt_str
     type(p_tuple) :: p_inner
     type(p_tuple), allocatable, dimension(:,:) :: d_struct_inner, d_struct_o, d_struct_o_prime
-    
+    type(p_tuple), dimension(1) :: emptytuple
+    type(p_tuple), allocatable, dimension(:) :: arg_pert, arg_pert_b
+
+
     integer :: size_s
     type(contrib_cache_outer), dimension(size_s) :: S
     integer :: size_d
@@ -3250,12 +3270,15 @@ write(*,*) 'stage a'
     type(QcMat), allocatable, dimension(:) :: Lambda, Zeta, W
     type(QcMat) :: Y, Z, D_unp
            
-    integer, allocatable, dimension(:) :: pert_ext
+    integer, allocatable, dimension(:) :: pert_ext, ind_uns, arg_int
+    integer, allocatable, dimension(:) :: arg_int_b, arg_int_c, arg_int_d
     
     external :: get_ovl_exp
     
     external :: out_print
     character(len=2047) :: out_str
+
+    call empty_p_tuple(emptytuple(1))
 
     ! To avoid maybe-uninitialized warning
     c_snap = 0
@@ -3275,9 +3298,15 @@ write(*,*) 'stage a'
     
        call QCMatInit(D_unp)
 
-       call contrib_cache_getdata_outer(size_d, D, 1, (/get_emptypert()/), .FALSE., &
-            contrib_size=1, ind_len=1, ind_unsorted=(/1/), mat_sing=D_unp)
+       allocate(ind_uns(1))
+
+       ind_uns = (/1/)
+
+       call contrib_cache_getdata_outer(size_d, D, 1, emptytuple, .FALSE., &
+            contrib_size=1, ind_len=1, ind_unsorted=ind_uns, mat_sing=D_unp)
             
+       deallocate(ind_uns)
+
     end if
     
     ! Assume indices for inner, outer blocks are calculated earlier during the recursion
@@ -3295,19 +3324,49 @@ write(*,*) 'stage a'
 
     ! Prepare matrices for inner tuple
     
+    allocate(arg_int(2))
+
+    arg_int = (/cache%p_inner%npert, cache%p_inner%npert/)
+
+    allocate(arg_pert(3))
+
+    call empty_p_tuple(arg_pert(1))
+    call empty_p_tuple(arg_pert(2))
+    call empty_p_tuple(arg_pert(3))
+
+
     i_supsize = derivative_superstructure_getsize(p_tuple_remove_first(cache%p_inner), &
-                (/cache%p_inner%npert, cache%p_inner%npert/), .FALSE., &
-                (/get_emptypert(), get_emptypert(), get_emptypert()/))
+                arg_int, .FALSE., arg_pert)
+
+    deallocate(arg_pert)
+
+    deallocate(arg_int)
 
     allocate(d_struct_inner(i_supsize, 3))
 
     sstr_incr = 0
     
+    allocate(arg_int(2))
+
+    arg_int = (/cache%p_inner%npert, cache%p_inner%npert/)
+
+    allocate(arg_pert(3))
+
+    call empty_p_tuple(arg_pert(1))
+    call empty_p_tuple(arg_pert(2))
+    call empty_p_tuple(arg_pert(3))
+
+
     call derivative_superstructure(p_tuple_remove_first(cache%p_inner), &
-          (/cache%p_inner%npert, cache%p_inner%npert/), .FALSE., &
-          (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+          arg_int, .FALSE., arg_pert, &
           i_supsize, sstr_incr, d_struct_inner)  
           
+    deallocate(arg_pert)
+
+    deallocate(arg_int)
+
+
+
     sstr_incr = 0
 
     
@@ -3364,19 +3423,51 @@ write(*,*) 'stage a'
        
        ! Get derivative superstructure sizes
        
+       allocate(arg_int(2))
+
+       arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+       allocate(arg_pert(3))
+
+       call empty_p_tuple(arg_pert(1))
+       call empty_p_tuple(arg_pert(2))
+       call empty_p_tuple(arg_pert(3))
+
+
        o_supsize(k) = derivative_superstructure_getsize( &
                    cache%contribs_outer(m)%p_tuples(1), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .FALSE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/))
+                   arg_int, .FALSE., arg_pert)
+
+
+       deallocate(arg_pert)
+
+       deallocate(arg_int)
+
+
+       allocate(arg_int(2))
+
+       arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+       allocate(arg_pert(3))
+
+       call empty_p_tuple(arg_pert(1))
+       call empty_p_tuple(arg_pert(2))
+       call empty_p_tuple(arg_pert(3))
+
+
                    
        ! FIXME: Change .FALSE. to .TRUE. below since this is a primed term?
        o_supsize_prime(k) = derivative_superstructure_getsize( &
                    cache%contribs_outer(m)%p_tuples(1), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .FALSE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/))
-   
+                   arg_int, .FALSE., arg_pert)
+
+       deallocate(arg_pert)
+
+       deallocate(arg_int)
+
+
        
        o_size(k) = cache%contribs_outer(m)%contrib_type * o_triang_size
        
@@ -3518,25 +3609,58 @@ write(*,*) 'stage a'
              
                 if (cache%contribs_outer(m)%contrib_type == 1 .OR. &
                     cache%contribs_outer(m)%contrib_type == 4) then
-                       
-                   call derivative_superstructure(get_emptypert(), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .FALSE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+
+                   allocate(arg_pert(1))
+
+                   call empty_p_tuple(arg_pert(1))
+
+                   allocate(arg_int(2))
+
+                   arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+                   allocate(arg_pert_b(3))
+
+                   arg_pert_b = (/get_emptypert(), get_emptypert(), get_emptypert()/)
+
+                   call derivative_superstructure(arg_pert(1), &
+                   arg_int, .FALSE., arg_pert_b, &
                    o_supsize(k), sstr_incr, d_struct_o)
+
+                   deallocate(arg_pert_b)
+                   deallocate(arg_int)
+                   deallocate(arg_pert)
                    
                    sstr_incr = 0
                 
                 end if
+
+
                
                 if (cache%contribs_outer(m)%contrib_type == 3 .OR. &
                     cache%contribs_outer(m)%contrib_type == 4) then
                 
-                   call derivative_superstructure(get_emptypert(), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .TRUE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                   o_supsize_prime(k), sstr_incr, d_struct_o)
+                   allocate(arg_pert(1))
+
+                   call empty_p_tuple(arg_pert(1))
+
+                   allocate(arg_int(2))
+
+                   arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+                   allocate(arg_pert_b(3))
+
+                   arg_pert_b = (/get_emptypert(), get_emptypert(), get_emptypert()/)
+
+                   call derivative_superstructure(arg_pert(1), &
+                        arg_int, .TRUE., &
+                        arg_pert_b, o_supsize_prime(k), sstr_incr, d_struct_o)
+
+                   deallocate(arg_pert_b)
+                   deallocate(arg_int)
+                   deallocate(arg_pert)
+
                       
                    sstr_incr = 0
       
@@ -3549,11 +3673,29 @@ write(*,*) 'stage a'
                 if (cache%contribs_outer(m)%contrib_type == 1 .OR. &
                     cache%contribs_outer(m)%contrib_type == 4) then             
          
-                   call derivative_superstructure(cache%contribs_outer(m)%p_tuples(1), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .FALSE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                   o_supsize(k), sstr_incr, d_struct_o)
+
+                   allocate(arg_pert(1))
+
+                   arg_pert(1) = cache%contribs_outer(m)%p_tuples(1)
+
+                   allocate(arg_int(2))
+
+                   arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+                   allocate(arg_pert_b(3))
+
+                   arg_pert_b = (/get_emptypert(), get_emptypert(), get_emptypert()/)
+
+
+                   call derivative_superstructure(arg_pert(1), &
+                        arg_int, .FALSE., arg_pert_b, &
+                        o_supsize(k), sstr_incr, d_struct_o)
+
+                   deallocate(arg_pert_b)
+                   deallocate(arg_int)
+                   deallocate(arg_pert)
+
                    
                    sstr_incr = 0
                 
@@ -3561,13 +3703,31 @@ write(*,*) 'stage a'
       
                if (cache%contribs_outer(m)%contrib_type == 3 .OR. &
                    cache%contribs_outer(m)%contrib_type == 4) then
+
+                   allocate(arg_pert(1))
+
+                   arg_pert(1) = cache%contribs_outer(m)%p_tuples(1)
+
+                   allocate(arg_int(2))
+
+                   arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+                   allocate(arg_pert_b(3))
+
+                   arg_pert_b = (/get_emptypert(), get_emptypert(), get_emptypert()/)
+
+
                 
-                   call derivative_superstructure(cache%contribs_outer(m)%p_tuples(1), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .TRUE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
-                   o_supsize_prime(k), sstr_incr, d_struct_o_prime)
-                   
+                   call derivative_superstructure(arg_pert(1), &
+                        arg_int, .TRUE., arg_pert_b, &
+                        o_supsize_prime(k), sstr_incr, d_struct_o_prime)
+ 
+                   deallocate(arg_pert_b)
+                   deallocate(arg_int)
+                   deallocate(arg_pert)
+
+                  
                    sstr_incr = 0
                    
                 end if
@@ -3590,14 +3750,20 @@ write(*,*) 'stage a'
                 
                       if (.NOT.(mem_mgr%calibrate)) then
                 
+                         allocate(arg_int(size(cache%contribs_outer(m)%indices(j,:))))
+
+                         arg_int = cache%contribs_outer(m)%indices(j,:)
+
                          call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
                               cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               cache%contribs_outer(m)%p_tuples(1)%npert), &
                               size(cache%contribs_outer(m)%indices(j,:)), &
-                              cache%contribs_outer(m)%indices(j,:), &
+                              arg_int, &
                               size(F), F, size(D), D, size(S), S, W(mctr + 1))
                       
+                         deallocate(arg_int)
+                    
                       end if
                            
                       call mem_decr(mem_mgr, 4)
@@ -3608,15 +3774,22 @@ write(*,*) 'stage a'
                       call mem_incr(mem_mgr, 4)
                 
                       if (.NOT.(mem_mgr%calibrate)) then                
+
+                         allocate(arg_int(size(cache%contribs_outer(m)%indices(j,:))))
+
+                         arg_int = cache%contribs_outer(m)%indices(j,:)
+
                 
                          call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
                               cache%p_inner%npert + cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               cache%contribs_outer(m)%p_tuples(1)%npert), & 
                               size(cache%contribs_outer(m)%indices(j,:)), &
-                              cache%contribs_outer(m)%indices(j,:), &
+                              arg_int, &
                               size(F), F, size(D), D, size(S), S, W(mctr + 1))
                            
+                         deallocate(arg_int)
+
                       end if
                            
                       call mem_decr(mem_mgr, 4)                           
@@ -3628,14 +3801,21 @@ write(*,*) 'stage a'
                 
                       if (.NOT.(mem_mgr%calibrate)) then                     
                    
+                         allocate(arg_int(size(cache%contribs_outer(m)%indices(j,:))))
+
+                         arg_int = cache%contribs_outer(m)%indices(j,:)
+
+
                          call rsp_get_matrix_w(o_supsize(k), d_struct_o, cache%p_inner%npert + &
                               cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               cache%contribs_outer(m)%p_tuples(1)%npert), & 
                               size(cache%contribs_outer(m)%indices(j,:)), &
-                              cache%contribs_outer(m)%indices(j,:), &
+                              arg_int, &
                               size(F), F, size(D), D, size(S), S, W(mctr + 1))
                            
+                         deallocate(arg_int)
+
                       end if
                            
                       call mem_decr(mem_mgr, 4)                       
@@ -3662,14 +3842,21 @@ write(*,*) 'stage a'
                 
                       if (.NOT.(mem_mgr%calibrate)) then   
                          
+                         allocate(arg_int(size(cache%contribs_outer(m)%indices(j,:))))
+
+                         arg_int = cache%contribs_outer(m)%indices(j,:)
+
+
                          call rsp_get_matrix_w(o_supsize_prime(k), d_struct_o_prime, &
                               cache%p_inner%npert + cache%contribs_outer(m)%p_tuples(1)%npert, &
                               which_index_is_pid(1:cache%p_inner%npert + &
                               cache%contribs_outer(m)%p_tuples(1)%npert), & 
                               size(cache%contribs_outer(m)%indices(j,:)), &
-                              cache%contribs_outer(m)%indices(j,:), &
+                              arg_int, &
                               size(F), F, size(D), D, size(S), S, W(mctr + 1))
                               
+                         deallocate(arg_int)
+
                       end if
                            
                       call mem_decr(mem_mgr, 4)                                  
@@ -3811,15 +3998,41 @@ write(*,*) 'stage a'
              
                 if (cache%contribs_outer(m)%p_tuples(1)%npert > 0) then
 
+                   allocate(arg_int(size((/cache%nblks, &
+                        cache%contribs_outer(m)%nblks_tuple(1)/))))
+
+                   arg_int = (/cache%nblks, cache%contribs_outer(m)%nblks_tuple(1)/)
+
+                   allocate(arg_int_b(size((/cache%p_inner%npert, &
+                        cache%contribs_outer(m)%p_tuples(1)%npert/))))
+
+                   arg_int_b = (/cache%p_inner%npert, &
+                        cache%contribs_outer(m)%p_tuples(1)%npert/)
+
+                   allocate(arg_int_c(size((/cache%blks_triang_size, &
+                   cache%contribs_outer(m)%blks_tuple_triang_size(1)/))))
+
+                   arg_int_c = (/cache%blks_triang_size, &
+                   cache%contribs_outer(m)%blks_tuple_triang_size(1)/)
+
+                   allocate(arg_int_d(size((/cache%indices(j, :), &
+                        cache%contribs_outer(m)%indices(i, :)/))))
+
                    offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
-                   (/cache%nblks, cache%contribs_outer(m)%nblks_tuple(1)/), &
-                   (/cache%p_inner%npert, cache%contribs_outer(m)%p_tuples(1)%npert/), &
+                   arg_int, arg_int_b, &
                    blks_tuple_info, &
-                   blk_sizes, &
-                   (/cache%blks_triang_size, &
-                   cache%contribs_outer(m)%blks_tuple_triang_size(1)/), &
-                   (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/) )
+                   blk_sizes, arg_int_c, &
+                   arg_int_d)
                       
+                   deallocate(arg_int_d)
+
+                   deallocate(arg_int_c)
+
+                   deallocate(arg_int_b)
+
+                   deallocate(arg_int)
+
+
                 else
                    
                    offset = j
@@ -3949,18 +4162,28 @@ write(*,*) 'stage a'
 
                 select_terms = find_residue_info(p_tuple_getone(cache%p_inner,1))
           
-                call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), (/lagrange_max_n, &
-                     lagrange_max_n/), i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
+                allocate(arg_int(size(cache%indices(mcurr + i - 1,:))))
+
+                arg_int = cache%indices(mcurr + i - 1,:)
+
+                allocate(arg_int_b(2))
+
+                arg_int_b = (/lagrange_max_n, lagrange_max_n/)
+
+                call rsp_get_matrix_zeta(p_tuple_getone(cache%p_inner, 1), arg_int_b, &
+                     i_supsize, d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
                      size(cache%indices(mcurr + i - 1,:)), &
-                     cache%indices(mcurr + i - 1,:), size(F), F, size(D), D, &
+                     arg_int, size(F), F, size(D), D, &
                      size(S), S, Zeta(i), &
                      select_terms_arg = select_terms)
                      
+                deallocate(arg_int_b)
+
                 call rsp_get_matrix_lambda(p_tuple_getone(cache%p_inner, 1), i_supsize, &
                      d_struct_inner, maxval(cache%p_inner%pid), &
                      which_index_is_pid(1:maxval(cache%p_inner%pid)), &
-                     size(cache%indices(mcurr + i - 1,:)), cache%indices(mcurr + i - 1,:), &
+                     size(cache%indices(mcurr + i - 1,:)), arg_int, &
                      size(D), D, size(S), S, Lambda(i), select_terms_arg = select_terms)
       
              end do

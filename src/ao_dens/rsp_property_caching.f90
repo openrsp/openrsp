@@ -2451,11 +2451,24 @@ end function
                      nfields, blks_tuple_info, blk_sizes, blks_tuple_triang_size, translated_index)
 
                   else
+
+                     allocate(blk_arg_a(size(blk_sizes(1,:))))
+                     
+                     blk_arg_a = blk_sizes(1,:)
+                     
+                     allocate(blk_arg_ii(size(blks_tuple_info,2),size(blks_tuple_info,3)))
+
+                     blk_arg_ii = blks_tuple_info(1,:,:)
+
                
                      cache_offset = get_triang_blks_tuple_offset(1, &
                      total_num_perturbations, nblks_tuple(1), & 
-                     nfields(1), blks_tuple_info(1,:,:), blk_sizes(1,:), &
+                     nfields(1), blk_arg_ii, blk_arg_a, &
                      blks_tuple_triang_size(1), translated_index)
+
+                     deallocate(blk_arg_ii)
+
+                     deallocate(blk_arg_a)
                
                   end if
             
