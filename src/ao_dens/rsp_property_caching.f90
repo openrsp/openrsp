@@ -1649,46 +1649,31 @@ module rsp_property_caching
    
         do i = 1, num_dmat
 
-write(*,*) 'setting up'
-
            allocate(blki_a(new_element%nblks_tuple(i)))
            allocate(blki_b(new_element%nblks_tuple(i)))
            allocate(blksi_a(new_element%nblks_tuple(i), &
 size(new_element%blks_tuple_info, 3) ))
 
-write(*,*) 'allocd'
-      
-
            new_element%blks_tuple_info(i, :, :) = get_blk_info(new_element%nblks_tuple(i), outer_p_tuples(i))
-
 
 
            blki_a = new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),2)
            blki_b = new_element%blks_tuple_info(i,1:new_element%nblks_tuple(i),3)
            blksi_a = new_element%blks_tuple_info(i, 1:new_element%nblks_tuple(i), :)
 
-write(*,*) 'assigned'
-
            new_element%blk_sizes(i, 1:new_element%nblks_tuple(i)) = &
            get_triangular_sizes(new_element%nblks_tuple(i), &
            blki_a, blki_b)
 
-write(*,*) 'blk info a done'
-
            new_element%blks_tuple_triang_size(i) = get_triangulated_size(new_element%nblks_tuple(i), &
            blksi_a)
                     
-write(*,*) 'blk info b done'
            deallocate(blki_a)
            deallocate(blki_b)
            deallocate(blksi_a)
-write(*,*) 'dealloc done'
-
                
         end do
      
-write(*,*) 'all of loop done'
-
         allocate(new_element%indices(product(new_element%blks_tuple_triang_size), total_npert))
         call make_triangulated_tuples_indices(num_dmat, total_npert, new_element%nblks_tuple, &
              new_element%blks_tuple_info, new_element%blks_tuple_triang_size, new_element%indices)
@@ -1745,6 +1730,7 @@ write(*,*) 'all of loop done'
    type(Qcmat), optional, dimension(*) :: data_mat
    complex(8), optional, dimension(*) :: data_scal
 
+
    if (present(n_rule)) then
    
       already = contrib_cache_already_outer(len_cache, cache, num_dmat, outer_p_tuples, n_rule=n_rule)
@@ -1754,6 +1740,10 @@ write(*,*) 'all of loop done'
       already = contrib_cache_already_outer(len_cache, cache, num_dmat, outer_p_tuples)
    
    end if
+
+
+
+!   write(*,*) 'stage a'
    
    ! If an entry for these pert. tuples already exists in cache, then locate it
    ! and update the data there
@@ -1764,10 +1754,13 @@ write(*,*) 'all of loop done'
    
       do i = 1, len_cache
 
-         pstcmp = p_tuples_standardorder(cache(i)%num_dmat, &
-            cache(i)%p_tuples)
       
          if (cache(i)%num_dmat == num_dmat .AND. .NOT.(cache(i)%dummy_entry)) then
+
+         pstcmp = p_tuples_standardorder(cache(i)%num_dmat, &
+            cache(i)%p_tuples)
+
+
             found_element = p_tuples_compare(cache(i)%num_dmat, &
             pstcmp, p_tuples_st_order)
             
@@ -2103,7 +2096,7 @@ write(*,*) 'all of loop done'
       end if
    
    end do
-   
+
 end function
  
  ! FIXME: Definitely ll-to-array chgs needed for this routine 
@@ -2430,14 +2423,7 @@ end function
             deallocate(blk_arg_b)
             deallocate(blk_arg_a)
 
-            write(*,*) 'total num_pert', total_num_perturbations
-
             do j = 1, total_num_perturbations
-
-               write(*,*) 'j', j
-               write(*,*) 'indices', indices
-               write(*,*) 'i', i
-               write(*,*) 'pids curr contr', pids_current_contrib
 
 ! FIXME: UNSURE ABOUT NEXT LINE
 ! Will use just the regular index, but change back if this causes problems

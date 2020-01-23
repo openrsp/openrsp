@@ -449,10 +449,10 @@ module rsp_perturbed_sdf
           call out_print(out_str, 2)
           write(out_str, *) ' '
           call out_print(out_str, 2)
-                 
-          write(*, *) 'Identified perturbed S, D, F for calculation with labels ', pert%plab, &
-                            'and perturbation id ', pert%pid, ' with frequencies (real part)', &
-                             real(pert%freq)                  
+
+!          write(*, *) 'Identified perturbed S, D, F for calculation with labels ', pert%plab, &
+!                            'and perturbation id ', pert%pid, ' with frequencies (real part)', &
+!                             real(pert%freq)                  
                  
           k = 1
 
@@ -561,10 +561,7 @@ module rsp_perturbed_sdf
     ! If recursion is done, proceed to cache manipulation stage
     else
 
-write(*,*) 'calling ptst'
-
        p_tuples = p_tuples_standardorder(num_p_tuples, p_tuples)
-write(*,*) 'back from ptst'
 
        density_order_skip = .FALSE.
        residue_skip = .FALSE.
@@ -646,15 +643,11 @@ write(*,*) 'back from ptst'
                 write(out_str, *) ' '
                 call out_print(out_str, 2)
                 
-write(*,*) 'adding cache elem'
-
                 p_tuples_ord = p_tuples_standardorder(num_p_tuples, p_tuples)
 
                 call contrib_cache_add_element(len_lof_cache, fock_lowerorder_cache, &
                      num_p_tuples, p_tuples_ord)
 
-write(*,*) 'added cache elem'
-                
              else
              
                 write(out_str, *) 'ERROR: Wanted lower-order perturbed Fock matrix contribution but it was not in cache'
@@ -667,8 +660,6 @@ write(*,*) 'added cache elem'
        end if
 
     end if
-
-write(*,*) 'just before end'
 
   end subroutine
   
@@ -1217,7 +1208,7 @@ write(*,*) 'just before end'
     type(mem_manager) :: mem_mgr
     integer :: mctr, mcurr, miter, msize, octr, r_flag, mem_track
     logical :: termination, rsp_eqn_retrieved, residue_select, residualization
-    logical :: init_xx
+    logical :: init_xx, bool_arg
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
     integer :: i, j, k, m, n, w, nblks
     integer :: first, last, ierr
@@ -1655,9 +1646,28 @@ write(*,*) 'just before end'
           allocate(arg_tuple(1))
 
           arg_tuple(1) = pert
+
+!          write(*,*) 'pert', arg_tuple(1)%npert
+!          write(*,*) 'pdim', arg_tuple(1)%pdim
+!          write(*,*) 'plab', arg_tuple(1)%plab
+!          write(*,*) 'pid', arg_tuple(1)%pid
+!          write(*,*) 'pfreq', arg_tuple(1)%freq
+          
+
+          
+ !         write(*,*) 'before ccoae'
+
+!         write(*,*) 'len d', len_d
+!          write(*,*) 'ind start', ind_ctr
+ !        write(*,*) 'ind end', ind_ctr + size_i(k) - 1
+!         write(*,*) 'actual size', size(Dp)
           
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
-               arg_tuple, data_size = size_i(k),  data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+               arg_tuple, data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
+
+!stop
+
+ !         write(*,*) 'after ccoae'
                
           deallocate(arg_tuple)
 
@@ -1743,8 +1753,8 @@ write(*,*) 'just before end'
        arg_tuple(1) = pert_xc_null
        arg_int = (/1, 1/)
     
-       call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
-                                sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
+!       call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
+!                               sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
     
     
        deallocate(arg_int)
@@ -2195,8 +2205,8 @@ write(*,*) 'just before end'
      arg_tuple(1) = pert_xc_null
      arg_int = (/1, 1/)
 
-     call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
-                         sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
+!     call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
+!                         sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
 
 
      deallocate(arg_int)
@@ -2439,7 +2449,6 @@ write(*,*) 'just before end'
     
     call empty_p_tuple(emptypert(1))
 
-write(*,*) 'stage a'                  
     ! Special handling for null perturbation case
     
     if (pert(1)%npert == 1) then
@@ -2533,9 +2542,6 @@ write(*,*) 'stage a'
     end if
     
     
-    write(*,*) 'stage b'
-
-    
     if (present(fock)) then
     
        dmat_length = 2**pert(1)%npert
@@ -2560,9 +2566,6 @@ write(*,*) 'stage a'
 
     call p1_cloneto_p2(emptypert(1), dmat_perts(1))
 
-    write(*,*) 'stage c'
-
-    
     pert_ids(1) = 1
     ind_dmat_perts = 1
     rec_prog = 0
@@ -2622,8 +2625,6 @@ write(*,*) 'stage a'
     
     dmat_total_size = 1
     
-    write(*,*) 'stage d'
-
     ! For each perturbation subset in dmat_perts:
     
     do i = 2, dmat_length
@@ -2703,23 +2704,18 @@ end if
 
     end if
     
-            write(*,*) 'stage e'
     dmat_array_ctr = 1
         
-        write(*,*) 'stage ea'
     ! For each perturbation subset in dmat_perts:
    
     do i = 2, dmat_length
    
-    write(*,*) 'stage eb'
        ! For each freq config:
               
        do j = 1, n_freq_cfgs
        
-    write(*,*) 'stage ec'
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
-    write(*,*) 'stage ed'          
 
 ! FIXME: UNSURE ABOUT NEXT LINES                                                                              
 
@@ -2743,12 +2739,11 @@ write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
 
 end if
 
-
-
           end do
 
-             write(*,*) 'dmp', i,' freq', dmat_perts(i)%freq
-             write(*,*) 'pert', i,' freq', pert(j)%freq
+!          write(*,*) 'dmp pid', dmat_perts(i)%pid
+!             write(*,*) 'dmp', i,' freq', dmat_perts(i)%freq
+!             write(*,*) 'pert', i,' freq', pert(j)%freq
           
           num_blks = get_num_blks(dmat_perts(i))
        
@@ -2757,6 +2752,7 @@ end if
           blk_info = get_blk_info(num_blks, dmat_perts(i))
           triang_size = get_triangulated_size(num_blks, blk_info)
 
+ !         write(*,*) 'stage a'
 
           ! Allocate and make indices
           allocate(curr_dmat_indices(triang_size, dmat_perts(i)%npert))
@@ -2777,15 +2773,16 @@ end if
 
                 pert_arg(1) = dmat_perts(i)
                 int_arg = curr_dmat_indices(k, :)
-    write(*,*) 'stage e2'
+
+!                write(*,*) 'stage b'
            
                 call contrib_cache_getdata_outer(len_d, D, 1, pert_arg, .FALSE., &
                               1, ind_len=size(curr_dmat_indices, 2), &
                               ind_unsorted=int_arg, &
                               mat_sing=dmat_total_array(dmat_array_ctr))
 
-    write(*,*) 'stage e3'
-                              
+!                write(*,*) 'stage c'
+
                 deallocate(int_arg)
                 deallocate(pert_arg)
 
@@ -2802,8 +2799,6 @@ end if
        end do
     
     end do
-
-    write(*,*) 'stage f'
 
     ! Get perturbation tuple in external representation
     call p_tuple_to_external_tuple(pert(1), pert(1)%npert, pert_ext)

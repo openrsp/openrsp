@@ -153,7 +153,7 @@ module rsp_general
     external :: get_rsp_sol, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, get_nucpot
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     external :: out_print
-    character(len=2047) :: out_str
+!    character(len=2047) :: out_str
     integer(kind=QINT), intent(in) :: rsp_tensor_size
     complex(8), dimension(rsp_tensor_size) :: rsp_tensor
     type(QcMat) :: S_unpert, D_unpert, F_unpert ! NOTE: Make optional to exclude in mem. calibration mode
@@ -174,7 +174,7 @@ module rsp_general
     integer, optional :: max_mat, mem_result
     logical :: xf_was_allocated
     type(mem_manager) :: mem_mgr
-    
+   character(len=1048576) :: out_str    
     integer(kind=QINT), intent(in), optional :: residue_spec_pert(residue_order)
     integer(kind=QINT), intent(in), optional :: size_rsi_1
     integer(kind=QINT), dimension(*), optional :: residue_spec_index
@@ -271,8 +271,8 @@ module rsp_general
     ! Present calculation and initialize perturbation tuple datatypes and
     ! associated size/indexing information
 
-    write(out_str, *) ' '
-    call out_print(out_str, 1)
+   write(out_str, *) ' '
+   call out_print(out_str, 1)
     
     if (residue_order == 0) then
     
@@ -994,8 +994,6 @@ module rsp_general
                   len_cache, contribution_cache, prop_sizes(k), &
                   props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1:sum(prop_sizes(1:k))))
              call cpu_time(time_end)
-
-write(*,*) 'stage 1'
 
              write(out_str, *) ' '
              call out_print(out_str, 1)
