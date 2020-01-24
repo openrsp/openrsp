@@ -4313,20 +4313,50 @@ module rsp_general
                 
                 ! Get derivative superstructures
                 if(cache%contribs_outer(m)%p_tuples(1)%npert ==0) then
-                
-                   call derivative_superstructure(get_emptypert(), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .TRUE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+
+                   allocate(arg_pert(1))
+                   allocate(arg_pert_b(3))
+                   allocate(arg_int(2))
+
+                   call empty_p_tuple(arg_pert(1))
+
+                   call empty_p_tuple(arg_pert_b(1))
+                   call empty_p_tuple(arg_pert_b(2))
+                   call empty_p_tuple(arg_pert_b(3))
+
+                   arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
+                   call derivative_superstructure(arg_pert(1), &
+                   arg_int, .TRUE., arg_pert_b, &
                    o_supsize_prime(k), sstr_incr, d_struct_o)
+
+                   deallocate(arg_int)
+                   deallocate(arg_pert_b)
+                   deallocate(arg_pert)
+                   
                    
                  else
-            
+
+                   allocate(arg_pert_b(3))
+                   allocate(arg_int(2))
+
+
+                   call empty_p_tuple(arg_pert_b(1))
+                   call empty_p_tuple(arg_pert_b(2))
+                   call empty_p_tuple(arg_pert_b(3))
+
+                   arg_int = (/cache%contribs_outer(m)%n_rule, &
+                   cache%contribs_outer(m)%n_rule/)
+
                    call derivative_superstructure(cache%contribs_outer(m)%p_tuples(1), &
-                   (/cache%contribs_outer(m)%n_rule, &
-                   cache%contribs_outer(m)%n_rule/), .TRUE., &
-                   (/get_emptypert(), get_emptypert(), get_emptypert()/), &
+                   arg_int, .TRUE., arg_pert_b, &
                    o_supsize_prime(k), sstr_incr, d_struct_o)
+
+                   deallocate(arg_int)
+                   deallocate(arg_pert_b)
+
+
                   
                 end if
             
@@ -4336,15 +4366,27 @@ module rsp_general
                    call mem_incr(mem_mgr, 4)
         
                    if (.NOT.(mem_mgr%calibrate)) then        
+
+                      allocate(arg_int(size(which_index_is_pid(1:cache%p_inner%npert + &
+                           cache%contribs_outer(m)%p_tuples(1)%npert))))
+
+                      arg_int = which_index_is_pid(1:cache%p_inner%npert + &
+                           cache%contribs_outer(m)%p_tuples(1)%npert)
+
+                      allocate(arg_int_b(size(cache%contribs_outer(m)%indices(i,:))))
+
+                      arg_int_b = cache%contribs_outer(m)%indices(i,:)
         
                       call QcMatZero(Y)
                       call rsp_get_matrix_y(o_supsize_prime(k), d_struct_o, cache%p_inner%npert + &
                            cache%contribs_outer(m)%p_tuples(1)%npert, &
-                           which_index_is_pid(1:cache%p_inner%npert + &
-                           cache%contribs_outer(m)%p_tuples(1)%npert), &
-                           size(cache%contribs_outer(m)%indices(i,:)), &
-                           cache%contribs_outer(m)%indices(i,:), &
+                           arg_int, size(cache%contribs_outer(m)%indices(i,:)), &
+                           arg_int_b, &
                            size(F), F, size(D), D, size(S), S, Y, select_terms_arg = .FALSE.)
+
+                      deallocate(arg_int_b)
+
+                      deallocate(arg_int)
                            
                    end if
                    
@@ -4354,19 +4396,42 @@ module rsp_general
                            
                    if (.NOT.(mem_mgr%calibrate)) then
                    
+                      allocate(arg_int(size((/cache%contribs_outer(m)%n_rule, &
+                           cache%contribs_outer(m)%n_rule/))))
+
+                      allocate(arg_int_b(size(which_index_is_pid(1:cache%p_inner%npert + &
+                           cache%contribs_outer(m)%p_tuples(1)%npert))))
+
+                      allocate(arg_int_c(size(cache%contribs_outer(m)%indices(i,:))))
+
+                      arg_int = (/cache%contribs_outer(m)%n_rule, &
+                           cache%contribs_outer(m)%n_rule/)
+                      
+                      arg_int_b = which_index_is_pid(1:cache%p_inner%npert + &
+                           cache%contribs_outer(m)%p_tuples(1)%npert)
+
+                      arg_int_c = cache%contribs_outer(m)%indices(i,:)
+
                       ! NOTE: Rule choice very likely to give correct exclusion but
                       ! have another look if something goes wrong
                       call QcMatZero(Z)
                       call rsp_get_matrix_z(o_supsize_prime(k), d_struct_o, &
-                           (/cache%contribs_outer(m)%n_rule, cache%contribs_outer(m)%n_rule/), &
+                           arg_int, &
                            cache%p_inner%npert + &
                            cache%contribs_outer(m)%p_tuples(1)%npert, &
-                           which_index_is_pid(1:cache%p_inner%npert + &
-                           cache%contribs_outer(m)%p_tuples(1)%npert), &
+                           arg_int_b, &
                            size(cache%contribs_outer(m)%indices(i,:)), &
-                           cache%contribs_outer(m)%indices(i,:), &
+                           arg_int_c, &
                            size(F), F, size(D), D, size(S), S, Z, select_terms_arg = .FALSE.)
                            
+                      deallocate(arg_int_c)
+                     
+                      deallocate(arg_int_b)
+                      
+                      deallocate(arg_int)
+
+                     
+
                    end if
                   
                    call mem_decr(mem_mgr,4)
@@ -4376,14 +4441,43 @@ module rsp_general
                       if (size(cache%contribs_outer(m)%p_tuples) > 0) then
                          if (cache%contribs_outer(m)%p_tuples(1)%npert > 0) then
         
+                            allocate(arg_int(size((/cache%nblks, &
+                                 cache%contribs_outer(m)%nblks_tuple(1)/))))
+
+                            arg_int = (/cache%nblks, cache%contribs_outer(m)%nblks_tuple(1)/)
+
+                            allocate(arg_int_b(size((/cache%p_inner%npert, &
+                                 cache%contribs_outer(m)%p_tuples(1)%npert/))))
+
+                            arg_int_b = (/cache%p_inner%npert, &
+                                 cache%contribs_outer(m)%p_tuples(1)%npert/)
+                            
+                            allocate(arg_int_c(size((/cache%blks_triang_size, &
+                            cache%contribs_outer(m)%blks_tuple_triang_size(1)/))))
+                           
+                            arg_int_c = (/cache%blks_triang_size, &
+                            cache%contribs_outer(m)%blks_tuple_triang_size(1)/)
+
+                            allocate(arg_int_d(size((/cache%indices(j, :), &
+                                 cache%contribs_outer(m)%indices(i, :)/))))
+
+                            arg_int_d = (/cache%indices(j, :), &
+                                 cache%contribs_outer(m)%indices(i, :)/)
+
                             offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
-                            (/cache%nblks, cache%contribs_outer(m)%nblks_tuple(1)/), &
-                            (/cache%p_inner%npert, cache%contribs_outer(m)%p_tuples(1)%npert/), &
+                            arg_int, &
+                            arg_int_b, &
                             blks_tuple_info, &
                             blk_sizes, &
-                            (/cache%blks_triang_size, &
-                            cache%contribs_outer(m)%blks_tuple_triang_size(1)/), &
-                            (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/))
+                            arg_int_c, &
+                            arg_int_d)
+
+                            deallocate(arg_int_d)
+                            deallocate(arg_int_c)
+                            deallocate(arg_int_b)
+                            deallocate(arg_int)
+
+
                          
                          else
                       
