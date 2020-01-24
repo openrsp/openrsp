@@ -4193,6 +4193,8 @@ module rsp_general
                      size(cache%indices(mcurr + i - 1,:)), arg_int, &
                      size(D), D, size(S), S, Lambda(i), select_terms_arg = select_terms)
       
+                deallocate(arg_int)
+      
              end do
              
           end if
