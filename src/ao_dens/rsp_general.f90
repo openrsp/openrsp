@@ -586,11 +586,11 @@ module rsp_general
          call empty_p_tuple(empty_pert(1))
 
          call contrib_cache_outer_add_element(size(S), S, .TRUE., 1, empty_pert, &
-              data_size = 1, data_mat=S_unpert)
+              data_size = 1, data_mat=S_unpert_arr)
          call contrib_cache_outer_add_element(size(D), D, .TRUE., 1, empty_pert, &
-              data_size = 1, data_mat=D_unpert)
+              data_size = 1, data_mat=D_unpert_arr)
          call contrib_cache_outer_add_element(size(F), F, .TRUE., 1, empty_pert, &
-              data_size = 1, data_mat=F_unpert)
+              data_size = 1, data_mat=F_unpert_arr)
                
 !          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
 !          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
