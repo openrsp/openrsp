@@ -773,6 +773,8 @@ module rsp_general
                 if (abs(real(rsp_tensor(p + n))) >= write_threshold) then
                 
                    allocate(arg_ind(size(indices(n,:))))
+                   
+                   arg_ind = indices(n, :)
 
                    write(260,*) arg_ind
 
@@ -4017,6 +4019,9 @@ module rsp_general
 
                    allocate(arg_int_d(size((/cache%indices(j, :), &
                         cache%contribs_outer(m)%indices(i, :)/))))
+                        
+                   arg_int_d = (/cache%indices(j, :), &
+                        cache%contribs_outer(m)%indices(i, :)/)
 
                    offset = get_triang_blks_tuple_offset(2, tot_num_pert, &
                    arg_int, arg_int_b, &
@@ -4042,6 +4047,8 @@ module rsp_general
              end if
                 
              if (cache%contribs_outer(m)%contrib_type == 1) then
+                
+                write(*,*) 'my offset is', offset
                 
                 cache%contribs_outer(m)%data_scal(offset) = contrib_pulay(j + &
                 size(cache%indices, 1) * (i - 1) + o_ctr)
