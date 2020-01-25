@@ -803,9 +803,23 @@ end if
 
     p1%npert = 0
 
-    deallocate(p1%pdim) 
-    deallocate(p1%plab)
-    deallocate(p1%pid)
+    if (allocated(p1%pdim)) then
+        
+        deallocate(p1%pdim)
+        
+    end if
+    
+    if (allocated(p1%plab)) then
+        
+        deallocate(p1%plab)
+        
+    end if
+    
+    if (allocated(p1%pid)) then
+        
+        deallocate(p1%pid)
+        
+    end if
     
     if (allocated(p1%pfcomp)) then
     
@@ -813,7 +827,11 @@ end if
        
     end if    
     
-    deallocate(p1%freq)
+    if (allocated(p1%freq)) then
+    
+        deallocate(p1%freq)
+    
+    end if
     
     if (allocated(p1%states)) then
     
@@ -874,6 +892,8 @@ end if
       type(p_tuple) :: emptypert
       type(p_tuple), optional :: template
 
+      call p_tuple_deallocate(emptypert)
+      
       if (present(template)) then 
       
          call p_tuple_add_stateinfo(emptypert,template)

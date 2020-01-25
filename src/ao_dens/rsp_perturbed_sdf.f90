@@ -461,6 +461,9 @@ module rsp_perturbed_sdf
              k = k + 1
           end do
           
+          ptup_for_alr(1) = p_dummy_orders(pert%npert)
+          ptup_for_alr(2) = p_tuple_standardorder(pert)
+          
           call contrib_cache_add_element(len_cache, contribution_cache, 2, ptup_for_alr)
 
        end if
@@ -1210,7 +1213,7 @@ module rsp_perturbed_sdf
     logical :: termination, rsp_eqn_retrieved, residue_select, residualization
     logical :: init_xx, bool_arg
     integer :: num_outer, ind_ctr, npert_ext, sstr_incr, superstructure_size
-    integer :: i, j, k, m, n, w, nblks
+    integer :: i, j, k, m, n, w, nblks, v
     integer :: first, last, ierr
     integer, dimension(0) :: noc
     integer, dimension(3) :: prog_info, rs_info
@@ -1345,6 +1348,8 @@ module rsp_perturbed_sdf
        end if
        
        pert = cache_outer(m)%p_tuples(1)
+       
+       write(*,*) 'my pid is', pert%pid
 
        call mem_incr(mem_mgr, size_i(k))
        
@@ -1509,6 +1514,25 @@ module rsp_perturbed_sdf
                                residue_select = residue_select)
                                
           deallocate(arg_tuple)
+          
+                  do i = 1, size(Fp)
+    
+          if (i < 10) then
+             fmt_str = "(A3, I1)"
+          else if (i < 100) then
+             fmt_str = "(A3, I2)"
+          else
+             fmt_str = "(A3, I3)"
+          end if
+          
+          write(mat_str, fmt_str) 'Fprt', i
+          write(*,*) 'i', i
+          write(*,*) 'fname:', mat_str
+          
+          j = QcMatWrite_f(Fp(i), trim(mat_str), ASCII_VIEW)
+    
+    end do
+          
 
           ! XC call should go here
           
@@ -1613,7 +1637,9 @@ module rsp_perturbed_sdf
              allocate(arg_int_b(pert%npert))
 
              arg_int = (/pert%npert, pert%npert/)
-             arg_int_b = (/ (m, m = 1, pert%npert) /)
+             arg_int_b = (/ (v, v = 1, pert%npert) /)
+             write(*,*) 'j is', j
+             write(*,*) 'which ind is pid', arg_int_b
 
              call rsp_get_matrix_z(superstructure_size, derivative_structure, &
                   arg_int, pert%npert, &
@@ -1665,6 +1691,9 @@ module rsp_perturbed_sdf
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
                arg_tuple, data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
 
+
+
+               
 !stop
 
  !         write(*,*) 'after ccoae'
@@ -1685,7 +1714,27 @@ module rsp_perturbed_sdf
     
     end do
     
-       
+    ! Debug printing kept for later use    
+    do i = 1, size(Dp)
+    
+          if (i < 10) then
+             fmt_str = "(A3, I1)"
+          else if (i < 100) then
+             fmt_str = "(A3, I2)"
+          else
+             fmt_str = "(A3, I3)"
+          end if
+          
+          write(mat_str, fmt_str) 'Dpart_', i
+          write(*,*) 'i', i
+          write(*,*) 'fname:', mat_str
+          
+          j = QcMatWrite_f(Dp(i), trim(mat_str), ASCII_VIEW)
+    
+    end do
+
+    
+    
     
 ! ! Debug printing kept for later use    
 !     do i = 1, size(Dp)
@@ -1866,7 +1915,7 @@ module rsp_perturbed_sdf
 
              allocate(arg_int_b(pert%npert))
 
-             arg_int_b = (/ (m, m = 1, pert%npert) /)
+             arg_int_b = (/ (v, v = 1, pert%npert) /)
 
              call rsp_get_matrix_y(superstructure_size, derivative_structure, &
                   pert%npert, arg_int_b, &
@@ -2269,6 +2318,8 @@ module rsp_perturbed_sdf
                arg_tuple, data_size = size_i(k), data_mat = Fp(ind_ctr:ind_ctr + size_i(k) - 1) )
        
           len_d = size(D)
+          
+
        
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
                arg_tuple, data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
@@ -2279,6 +2330,26 @@ module rsp_perturbed_sdf
           k = k + 1
           
        end do
+       
+                 ! Debug printing kept for later use    
+    do i = 1, size(Dp)
+    
+          if (i < 10) then
+             fmt_str = "(A3, I1)"
+          else if (i < 100) then
+             fmt_str = "(A3, I2)"
+          else
+             fmt_str = "(A3, I3)"
+          end if
+          
+          write(mat_str, fmt_str) 'Dp_', i
+          write(*,*) 'i', i
+          write(*,*) 'fname:', mat_str
+          
+          j = QcMatWrite_f(Dp(i), trim(mat_str), ASCII_VIEW)
+    
+    end do
+       
        
        do i = 1, sum(size_i)
        

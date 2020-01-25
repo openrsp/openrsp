@@ -2427,9 +2427,9 @@ end function
 
 ! FIXME: UNSURE ABOUT NEXT LINE
 ! Will use just the regular index, but change back if this causes problems
-               translated_index(j) = indices(i,j)
+!                translated_index(j) = indices(i,j)
 ! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE
-!               translated_index(j) = indices(i,pids_current_contrib(j))
+              translated_index(j) = indices(i,pids_current_contrib(j))
             end do
 
             if (p_tuples(1)%npert == 0) then
@@ -2484,13 +2484,15 @@ end function
             
             if (present(mat)) then
             
+               write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
+            
                call QcMatRAXPY(1.0d0, cache(loc_found)%data_mat(cache_offset + &
                                cache_hard_offset), mat(res_offset))
                
             else if (present(scal)) then
             
-               !write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
-               !write(*,*) 'val', next_element_outer%data_scal(cache_offset + cache_hard_offset)              
+               write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
+               write(*,*) 'val', cache(loc_found)%data_scal(cache_offset + cache_hard_offset)              
 
                scal(res_offset) = &
                scal(res_offset) + &
@@ -2553,6 +2555,8 @@ end function
     end if
    
       if (found) then
+      
+!         write(*,*) 'mat sing cache offset', offset + cache_hard_offset
       
          call QcMatAEqB(mat_sing, cache(loc_found)%data_mat(offset + cache_hard_offset))
          

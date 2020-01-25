@@ -2481,6 +2481,8 @@ module rsp_general
                       allocate(ind_uns(size(cache%contribs_outer(i + 1)%indices(m, :))))
 
                       ind_uns = cache%contribs_outer(i + 1)%indices(m, :)
+                    
+                    write(*,*) 'asking for ind uns', ind_uns
                    
                       call contrib_cache_getdata_outer(size(D), D, 1, &
                            arg_tuple, .FALSE., &
@@ -2519,6 +2521,9 @@ module rsp_general
                      ind_uns = cache%contribs_outer(i + 1)%indices(1 + &
                            (m - 1) * cache%contribs_outer(i + 1)%blks_tuple_triang_size(2), &
                            1:cache%contribs_outer(i + 1)%p_tuples(1)%npert)
+                           
+                           write(*,*) 'my left ind uns', ind_uns
+                           write(*,*) 'it goes into lhs ind', lhs_ctr_2 + m  - 1
 
                       call contrib_cache_getdata_outer(size(D), D, 1, &
                            arg_tuple, .FALSE., &
@@ -2547,6 +2552,9 @@ module rsp_general
                            cache%contribs_outer(i + 1)%p_tuples(1)%npert + 1: &
                            cache%contribs_outer(i + 1)%p_tuples(1)%npert + &
                            cache%contribs_outer(i + 1)%p_tuples(2)%npert)
+                           
+                           write(*,*) 'my right ind uns', ind_uns
+                            write(*,*) 'it goes into rhs ind', rhs_ctr_2 + n  - 1
 
                       call contrib_cache_getdata_outer(size(D), D, 1, &
                            arg_tuple, .FALSE., &
@@ -2587,6 +2595,9 @@ module rsp_general
                   outer_contract_sizes_2(curr_pickup(1):next_pickup(1) - 1, 2), RHS_dmat_2, &
                   cache%blks_triang_size*this_outer_size, &               
                   contrib_2(contrib_offset:contrib_offset + cache%blks_triang_size*this_outer_size - 1))
+      
+             write(*, *) 'Second-order density matrix-dependent contribution(sample)', &
+             contrib_2(1:min(100,size(contrib_2)))
       
              write(out_str, *) 'Second-order density matrix-dependent contribution(sample)', &
              contrib_2(1:min(10,size(contrib_2)))
@@ -2946,10 +2957,10 @@ module rsp_general
                       deallocate(arg_int_b)
                       deallocate(arg_int)
 
-!                       write(*,*) 'Index tuple:', (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/)
-!                       write(*,*) 'Saving element', j + size(cache%indices, 1) * (i - 1), &
-!                       'of data in cache element', offset
-!                       write(*,*) 'data is',  data_tmp(j + size(cache%indices, 1) * (i - 1))
+                       write(*,*) 'Index tuple:', (/cache%indices(j, :), cache%contribs_outer(m)%indices(i, :)/)
+                       write(*,*) 'Saving element', j + size(cache%indices, 1) * (i - 1), &
+                       'of data in cache element', offset
+                       write(*,*) 'data is',  data_tmp(j + size(cache%indices, 1) * (i - 1))
                    
                       cache%contribs_outer(m)%data_scal(offset) = data_tmp(j + &
                       size(cache%indices, 1) * (i - 1))
