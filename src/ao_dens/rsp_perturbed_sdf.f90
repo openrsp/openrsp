@@ -450,9 +450,6 @@ module rsp_perturbed_sdf
           write(out_str, *) ' '
           call out_print(out_str, 2)
 
-!          write(*, *) 'Identified perturbed S, D, F for calculation with labels ', pert%plab, &
-!                            'and perturbation id ', pert%pid, ' with frequencies (real part)', &
-!                             real(pert%freq)                  
                  
           k = 1
 
@@ -1349,8 +1346,6 @@ module rsp_perturbed_sdf
        
        pert = cache_outer(m)%p_tuples(1)
        
-       write(*,*) 'my pid is', pert%pid
-
        call mem_incr(mem_mgr, size_i(k))
        
        if (.NOT.(mem_mgr%calibrate)) then
@@ -1515,24 +1510,6 @@ module rsp_perturbed_sdf
                                
           deallocate(arg_tuple)
           
-                  do i = 1, size(Fp)
-    
-          if (i < 10) then
-             fmt_str = "(A3, I1)"
-          else if (i < 100) then
-             fmt_str = "(A3, I2)"
-          else
-             fmt_str = "(A3, I3)"
-          end if
-          
-          write(mat_str, fmt_str) 'Fprt', i
-          write(*,*) 'i', i
-          write(*,*) 'fname:', mat_str
-          
-          j = QcMatWrite_f(Fp(i), trim(mat_str), ASCII_VIEW)
-    
-    end do
-          
 
           ! XC call should go here
           
@@ -1638,8 +1615,6 @@ module rsp_perturbed_sdf
 
              arg_int = (/pert%npert, pert%npert/)
              arg_int_b = (/ (v, v = 1, pert%npert) /)
-             write(*,*) 'j is', j
-             write(*,*) 'which ind is pid', arg_int_b
 
              call rsp_get_matrix_z(superstructure_size, derivative_structure, &
                   arg_int, pert%npert, &
@@ -1673,31 +1648,9 @@ module rsp_perturbed_sdf
 
           arg_tuple(1) = pert
 
-!          write(*,*) 'pert', arg_tuple(1)%npert
-!          write(*,*) 'pdim', arg_tuple(1)%pdim
-!          write(*,*) 'plab', arg_tuple(1)%plab
-!          write(*,*) 'pid', arg_tuple(1)%pid
-!          write(*,*) 'pfreq', arg_tuple(1)%freq
-          
-
-          
- !         write(*,*) 'before ccoae'
-
-!         write(*,*) 'len d', len_d
-!          write(*,*) 'ind start', ind_ctr
- !        write(*,*) 'ind end', ind_ctr + size_i(k) - 1
-!         write(*,*) 'actual size', size(Dp)
-          
           call contrib_cache_outer_add_element(len_d, D, .FALSE., 1, & 
                arg_tuple, data_size = size_i(k), data_mat = Dp(ind_ctr:ind_ctr + size_i(k) - 1) )
 
-
-
-               
-!stop
-
- !         write(*,*) 'after ccoae'
-               
           deallocate(arg_tuple)
 
        end if
@@ -1714,26 +1667,7 @@ module rsp_perturbed_sdf
     
     end do
     
-    ! Debug printing kept for later use    
-    do i = 1, size(Dp)
-    
-          if (i < 10) then
-             fmt_str = "(A3, I1)"
-          else if (i < 100) then
-             fmt_str = "(A3, I2)"
-          else
-             fmt_str = "(A3, I3)"
-          end if
-          
-          write(mat_str, fmt_str) 'Dpart_', i
-          write(*,*) 'i', i
-          write(*,*) 'fname:', mat_str
-          
-          j = QcMatWrite_f(Dp(i), trim(mat_str), ASCII_VIEW)
-    
-    end do
-
-    
+   
     
     
 ! ! Debug printing kept for later use    
@@ -2331,25 +2265,7 @@ module rsp_perturbed_sdf
           
        end do
        
-                 ! Debug printing kept for later use    
-    do i = 1, size(Dp)
-    
-          if (i < 10) then
-             fmt_str = "(A3, I1)"
-          else if (i < 100) then
-             fmt_str = "(A3, I2)"
-          else
-             fmt_str = "(A3, I3)"
-          end if
-          
-          write(mat_str, fmt_str) 'Dp_', i
-          write(*,*) 'i', i
-          write(*,*) 'fname:', mat_str
-          
-          j = QcMatWrite_f(Dp(i), trim(mat_str), ASCII_VIEW)
-    
-    end do
-       
+      
        
        do i = 1, sum(size_i)
        
@@ -2812,9 +2728,6 @@ end if
 
           end do
 
-!          write(*,*) 'dmp pid', dmat_perts(i)%pid
-!             write(*,*) 'dmp', i,' freq', dmat_perts(i)%freq
-!             write(*,*) 'pert', i,' freq', pert(j)%freq
           
           num_blks = get_num_blks(dmat_perts(i))
        
@@ -2822,8 +2735,6 @@ end if
           allocate(blk_sizes(num_blks))
           blk_info = get_blk_info(num_blks, dmat_perts(i))
           triang_size = get_triangulated_size(num_blks, blk_info)
-
- !         write(*,*) 'stage a'
 
           ! Allocate and make indices
           allocate(curr_dmat_indices(triang_size, dmat_perts(i)%npert))
@@ -2845,14 +2756,11 @@ end if
                 pert_arg(1) = dmat_perts(i)
                 int_arg = curr_dmat_indices(k, :)
 
-!                write(*,*) 'stage b'
-           
                 call contrib_cache_getdata_outer(len_d, D, 1, pert_arg, .FALSE., &
                               1, ind_len=size(curr_dmat_indices, 2), &
                               ind_unsorted=int_arg, &
                               mat_sing=dmat_total_array(dmat_array_ctr))
 
-!                write(*,*) 'stage c'
 
                 deallocate(int_arg)
                 deallocate(pert_arg)

@@ -536,8 +536,6 @@ module rsp_perturbed_matrices
     
     end if
  
-write(*,*) 'in z which ind is pid', which_index_is_pid 
-
     do i = 1, superstructure_size
 
        ds1(1) = deriv_struct(i,1)
@@ -548,19 +546,6 @@ write(*,*) 'in z which ind is pid', which_index_is_pid
        allocate(iu2(ds2(1)%npert))
        allocate(iu3(ds3(1)%npert))
        
-   write(*,*) 'i is', i
-   write(*,*) 'ds1 npert', ds1(1)%npert
-   write(*,*) 'ds2 npert', ds2(1)%npert
-   write(*,*) 'ds3 npert', ds3(1)%npert
-   
-   write(*,*) 'ds1 pid', ds1(1)%pid
-   write(*,*) 'ds2 pid', ds2(1)%pid
-   write(*,*) 'ds3 pid', ds3(1)%pid
-   
-      write(*,*) 'ds1 lab', ds1(1)%plab
-   write(*,*) 'ds2 lab', ds2(1)%plab
-   write(*,*) 'ds3 lab', ds3(1)%plab
-
        iu1 = get_fds_data_index(ds1(1), total_num_perturbations, which_index_is_pid, &
             indices_len, ind)
        iu2 = get_fds_data_index(ds2(1), total_num_perturbations, which_index_is_pid, &
@@ -568,11 +553,6 @@ write(*,*) 'in z which ind is pid', which_index_is_pid
        iu3 = get_fds_data_index(ds3(1), total_num_perturbations, which_index_is_pid, &
             indices_len, ind)
             
-    write(*,*) 'iu1', iu1
-    write(*,*) 'iu2', iu2
-    write(*,*) 'iu3', iu3
-
-
        if (.not.select_terms) then
          calc_contrib = .true.
        else
