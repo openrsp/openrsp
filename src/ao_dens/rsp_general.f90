@@ -2588,8 +2588,6 @@ module rsp_general
                   cache%blks_triang_size*this_outer_size, &               
                   contrib_2(contrib_offset:contrib_offset + cache%blks_triang_size*this_outer_size - 1))
       
-             write(*, *) 'Second-order density matrix-dependent contribution(sample)', &
-             contrib_2(1:min(100,size(contrib_2)))
       
              write(out_str, *) 'Second-order density matrix-dependent contribution(sample)', &
              contrib_2(1:min(10,size(contrib_2)))
