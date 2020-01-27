@@ -2631,7 +2631,8 @@ module rsp_perturbed_sdf
 
 if (present(fock)) then
 ! Will use just the regular index, but change back if this causes problems                          
-             dmat_perts(i)%freq(k) = pert(j)%freq(k)
+!              dmat_perts(i)%freq(k) = pert(j)%freq(k)
+             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
 
 elseif (present(prop)) then
 ! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE FOR FOCK CONTRIB
@@ -2712,8 +2713,10 @@ end if
 
 if (present(fock)) then
 ! Will use just the regular index, but change back if this causes problems                                    
-             dmat_perts(i)%freq(k) = pert(j)%freq(k)
-
+!              dmat_perts(i)%freq(k) = pert(j)%freq(k)
+             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+             
+             
 elseif (present(prop)) then
 ! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE FOR FOCK CONTRIB                   
 !             dmat_perts(i)%freq(k) = pert(j)%freq(k)
