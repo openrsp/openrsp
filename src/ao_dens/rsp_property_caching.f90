@@ -93,67 +93,6 @@ module rsp_property_caching
 
  end type 
  
- 
- ! FIXME: OLD TYPES TO BE RMD
- 
-!  ! "Outer" type: can be "independent" or attached to inner
-!  type contrib_cache_outer_old
-! 
-!    type(contrib_cache_outer), pointer :: next
-!    logical :: last
-!    logical :: dummy_entry
-!    ! Number of chain rule applications
-!    integer :: num_dmat
-!    ! Perturbation tuples
-!    type(p_tuple), allocatable, dimension(:) :: p_tuples
-! 
-!    ! Contribution type for two-factor terms: 1: Only Pulay n, 
-!    ! 3: Only Lagrange, 4: Both Pulay and Lagrange
-!    integer :: contrib_type = 0
-!    
-!    ! Choice of n rule for contribution (for use in two-factor terms)
-!    integer :: n_rule = 0
-!    ! Size of contribution data
-!    integer :: contrib_size = 0
-!    ! Perturbation block information
-!    integer, allocatable, dimension(:) :: nblks_tuple
-!    integer, allocatable, dimension(:,:) :: blk_sizes
-!    integer, allocatable, dimension(:,:) :: indices
-!    integer, allocatable, dimension(:,:,:) :: blks_tuple_info
-!    integer, allocatable, dimension(:) :: blks_tuple_triang_size
-!    ! Matrix data (if used)
-!    type(QcMat), allocatable, dimension(:) :: data_mat 
-!    ! Scalar data (if used)
-!    complex(8), allocatable, dimension(:) :: data_scal
-! 
-!  end type 
-! 
-!  ! "Inner" type: For use in e.g. perturbed Fock and energy-type terms
-!  ! Attaches to one or more outer cache instances
-!  type contrib_cache_old
-! 
-!    type(contrib_cache), pointer :: next
-!    logical :: last
-!    ! Perturbation tuple
-!    type(p_tuple) :: p_inner
-! 
-!    ! Number of outer cache instances attached to this inner
-!    integer :: num_outer
-!    ! Perturbation block/indices information
-!    integer :: nblks
-!    integer, allocatable, dimension(:) :: blk_sizes
-!    integer :: blks_triang_size
-!    integer, allocatable, dimension(:,:) :: blk_info
-!    integer, allocatable, dimension(:,:) :: indices
-!          
-!    ! Pointer to attached outer cache instances
-!    type(contrib_cache_outer), pointer :: contribs_outer
-! 
-!  end type 
- 
- ! END FIXME: OLD TYPES
-
- 
  contains
     
   ! Initialize progress/restarting framework if dictated
