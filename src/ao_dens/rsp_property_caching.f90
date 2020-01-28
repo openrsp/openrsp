@@ -374,7 +374,7 @@ module rsp_property_caching
  
  end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine
+ ! FIXME: Definitely ll-to-array chgs needed for this routine UPD: FIRST NEW VERSION
  
  ! Store contribution cache structure (including outer attached instances) in file fname
  subroutine contrib_cache_store(len_cache, cache, r_flag, fname)
@@ -394,8 +394,9 @@ module rsp_property_caching
       
    else if (r_flag == 3) then
 
-   ! Old LL functionality: Rewrite together with retrieve routine into array form   
-   
+      ! FIXME: I may have rmd something around mat_acc which I shouldn't have,
+      ! don't know but return to this later if problems
+
       mat_acc = 0
  
       funit = 260
@@ -777,7 +778,7 @@ module rsp_property_caching
  
  end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine:
+ ! FIXME: Definitely ll-to-array chgs needed for this routine UPD: FIRST NEW VERSION
  
  ! Write one outer contribution cache element to file fname
  ! Assumes file 'fname' is already opened with I/O unit 'funit'
@@ -794,222 +795,187 @@ module rsp_property_caching
    character(8) :: fid_fmt
   
    type(contrib_cache_outer), dimension(len_cache) :: cache
+
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
+   
+   num_entries = len_cache
+   
+   write(funit) num_entries
+   
+  
+   ! Traverse and store
+   do i = 1, num_entries
+   
+      write(funit) size(cache(i)%p_tuples)
+      do j = 1, size(cache(i)%p_tuples)
+      
+         write(funit) cache(i)%p_tuples(j)%npert
+         
+         do k = 1, cache(i)%p_tuples(j)%npert
+         
+            write(funit) cache(i)%p_tuples(j)%pdim(k)
+            write(funit) cache(i)%p_tuples(j)%plab(k)
+            write(funit) cache(i)%p_tuples(j)%pid(k)
+            write(funit) cache(i)%p_tuples(j)%freq(k)
+         
+         end do
+         
+         ! MaR: New code for residue handling
+      
+         write(funit) cache(i)%p_tuples(j)%do_residues
+         write(funit) cache(i)%p_tuples(j)%n_pert_res_max
+         write(funit) cache(i)%p_tuples(j)%n_states
+      
+         if (cache(i)%p_tuples(j)%do_residues > 0) then
+      
+            if (allocated(cache(i)%p_tuples(j)%states)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache(i)%p_tuples(j)%states)
+         
+               do k = 1, size(cache(i)%p_tuples(j)%states)
+         
+                  write(funit) cache(i)%p_tuples(j)%states(k)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+            if (allocated(cache(i)%p_tuples(j)%exenerg)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache(i)%p_tuples(j)%exenerg)
+         
+               do k = 1, size(cache(i)%p_tuples(j)%exenerg)
+         
+                  write(funit) cache(i)%p_tuples(j)%exenerg(k)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         
+            if (allocated(cache(i)%p_tuples(j)%part_of_residue)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache(i)%p_tuples(j)%part_of_residue, 1)
+               write(funit) size(cache(i)%p_tuples(j)%part_of_residue, 2)
+         
+               do k = 1, size(cache(i)%p_tuples(j)%part_of_residue, 1)
+            
+                  do m = 1, size(cache(i)%p_tuples(j)%part_of_residue, 2)
+         
+                     write(funit) cache(i)%p_tuples(j)%part_of_residue(k, m)
+                  
+                  end do
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         end if
+      
+      
+      ! End new
+      
+      end do
+      
+      write(funit) cache(i)%dummy_entry
+      write(funit) cache(i)%num_dmat
+      write(funit) cache(i)%contrib_type
+      write(funit) cache(i)%n_rule
+      write(funit) cache(i)%contrib_size
+      
+      if (cache(i)%p_tuples(1)%npert > 0) then
+      
+         write(funit) size(cache(i)%nblks_tuple)
+         write(funit) cache(i)%nblks_tuple
+      
+         write(funit) size(cache(i)%blk_sizes, 1)
+         write(funit) size(cache(i)%blk_sizes, 2)
+         do j = 1, size(cache(i)%blk_sizes, 1)
+            write(funit) cache(i)%blk_sizes(j, :)
+         end do
+      
+         write(funit) size(cache(i)%indices, 1)
+         write(funit) size(cache(i)%indices, 2)
+         
+         do j = 1, size(cache(i)%indices, 1)
+            write(funit) cache(i)%indices(j,:)
+         end do
+      
+         write(funit) size(cache(i)%blks_tuple_info, 1)
+         write(funit) size(cache(i)%blks_tuple_info, 2)
+         write(funit) size(cache(i)%blks_tuple_info, 3)
+      
+         do j = 1, size(cache(i)%blks_tuple_info, 1)
+            do k = 1, size(cache(i)%blks_tuple_info, 2)
+               write(funit) cache(i)%blks_tuple_info(j, k, :)
+            end do
+         end do
+      
+         write(funit) size(cache(i)%blks_tuple_triang_size)
+         write(funit) cache(i)%blks_tuple_triang_size
+      
+      end if
+      
+      if (allocated(cache(i)%data_mat)) then
+      
+         mat_scal_none = 0
+         write(funit) mat_scal_none
+         write(funit) size(cache(i)%data_mat)
+         
+         fid_fmt = '(I10.10)'
+         
+         do j = 1, size(cache_next%data_mat)
+            
+            write(str_fid, fid_fmt) j + mat_acc
+         
+            k = QcMatWrite_f(cache(i)%data_mat(j), trim(adjustl(fname)) // '_MAT_' // &
+                 trim(str_fid) // '.DAT', BINARY_VIEW)
+         
+         end do
+         
+         mat_acc = mat_acc + size(cache(i)%data_mat)
+         
+      
+      elseif (allocated(cache(i)%data_scal)) then
+      
+         mat_scal_none = 1
+         write(funit) mat_scal_none
+         write(funit) size(cache(i)%data_scal)
+         write(funit) cache(i)%data_scal
+         
+      
+      else
+      
+         mat_scal_none = 2 
+         write(funit) mat_scal_none
+      
+      end if
+   
+   end do
  
-! Old LL functionality: Rewrite 
- 
-!    mat_acc = 0
-!    if (present(mat_acc_in)) then
-!       mat_acc = mat_acc_in
-!    end if
-!    
-!  
-!    ! Cycle to start
-!    cache_next => cache
-!    do while(.NOT.(cache_next%last))
-!       cache_next => cache_next%next
-!    end do
-!    cache_next => cache_next%next
-!    cache_next => cache_next%next
-!    
-!    num_entries = 0
-!    
-!    ! Traverse to get number of entries
-!    termination = .FALSE.
-!    do while(.NOT.(termination))
-!    
-!       num_entries = num_entries + 1
-!    
-!       termination = cache_next%last
-!       cache_next => cache_next%next
-!    
-!    end do
-!    
-!    write(funit) num_entries
-!    
-!    ! Cycle to start
-!    do while(.NOT.(cache_next%last))
-!       cache_next => cache_next%next
-!    end do
-!    cache_next => cache_next%next
-!    cache_next => cache_next%next
-!   
-!    ! Traverse and store
-!    do i = 1, num_entries
-!    
-!       write(funit) size(cache_next%p_tuples)
-!       do j = 1, size(cache_next%p_tuples)
-!       
-!          write(funit) cache_next%p_tuples(j)%npert
-!          
-!          do k = 1, cache_next%p_tuples(j)%npert
-!          
-!             write(funit) cache_next%p_tuples(j)%pdim(k)
-!             write(funit) cache_next%p_tuples(j)%plab(k)
-!             write(funit) cache_next%p_tuples(j)%pid(k)
-!             write(funit) cache_next%p_tuples(j)%freq(k)
-!          
-!          end do
-!          
-!       
-!       
-!          ! MaR: New code for residue handling
-!       
-!          write(funit) cache_next%p_tuples(j)%do_residues
-!          write(funit) cache_next%p_tuples(j)%n_pert_res_max
-!          write(funit) cache_next%p_tuples(j)%n_states
-!       
-!          if (cache_next%p_tuples(j)%do_residues > 0) then
-!       
-!             if (allocated(cache_next%p_tuples(j)%states)) then
-!          
-!                write(funit) .TRUE.
-!                write(funit) size(cache_next%p_tuples(j)%states)
-!          
-!                do k = 1, size(cache_next%p_tuples(j)%states)
-!          
-!                   write(funit) cache_next%p_tuples(j)%states(k)
-!                
-!                end do
-!             
-!             else
-!          
-!                write(funit) .FALSE.
-!          
-!             end if
-!          
-!             if (allocated(cache_next%p_tuples(j)%exenerg)) then
-!          
-!                write(funit) .TRUE.
-!                write(funit) size(cache_next%p_tuples(j)%exenerg)
-!          
-!                do k = 1, size(cache_next%p_tuples(j)%exenerg)
-!          
-!                   write(funit) cache_next%p_tuples(j)%exenerg(k)
-!                
-!                end do
-!             
-!             else
-!          
-!                write(funit) .FALSE.
-!          
-!             end if
-!          
-!          
-!             if (allocated(cache_next%p_tuples(j)%part_of_residue)) then
-!          
-!                write(funit) .TRUE.
-!                write(funit) size(cache_next%p_tuples(j)%part_of_residue, 1)
-!                write(funit) size(cache_next%p_tuples(j)%part_of_residue, 2)
-!          
-!                do k = 1, size(cache_next%p_tuples(j)%part_of_residue, 1)
-!             
-!                   do m = 1, size(cache_next%p_tuples(j)%part_of_residue, 2)
-!          
-!                      write(funit) cache_next%p_tuples(j)%part_of_residue(k, m)
-!                   
-!                   end do
-!                
-!                end do
-!             
-!             else
-!          
-!                write(funit) .FALSE.
-!          
-!             end if
-!          
-!          end if
-!       
-!       
-!       ! End new
-!       
-!       end do
-!       
-!    
-!       write(funit) cache_next%last
-!       write(funit) cache_next%dummy_entry
-!       write(funit) cache_next%num_dmat
-!       write(funit) cache_next%contrib_type
-!       write(funit) cache_next%n_rule
-!       write(funit) cache_next%contrib_size
-!       
-!       if (cache_next%p_tuples(1)%npert > 0) then
-!       
-!          write(funit) size(cache_next%nblks_tuple)
-!          write(funit) cache_next%nblks_tuple
-!       
-!          write(funit) size(cache_next%blk_sizes, 1)
-!          write(funit) size(cache_next%blk_sizes, 2)
-!          do j = 1, size(cache_next%blk_sizes, 1)
-!             write(funit) cache_next%blk_sizes(j, :)
-!          end do
-!       
-!          write(funit) size(cache_next%indices, 1)
-!          write(funit) size(cache_next%indices, 2)
-!          
-!          do j = 1, size(cache_next%indices, 1)
-!             write(funit) cache_next%indices(j,:)
-!          end do
-!       
-!          write(funit) size(cache_next%blks_tuple_info, 1)
-!          write(funit) size(cache_next%blks_tuple_info, 2)
-!          write(funit) size(cache_next%blks_tuple_info, 3)
-!       
-!          do j = 1, size(cache_next%blks_tuple_info, 1)
-!             do k = 1, size(cache_next%blks_tuple_info, 2)
-!                write(funit) cache_next%blks_tuple_info(j, k, :)
-!             end do
-!          end do
-!       
-!          write(funit) size(cache_next%blks_tuple_triang_size)
-!          write(funit) cache_next%blks_tuple_triang_size
-!       
-!       end if
-!       
-!       if (allocated(cache_next%data_mat)) then
-!       
-!          mat_scal_none = 0
-!          write(funit) mat_scal_none
-!          write(funit) size(cache_next%data_mat)
-!          
-!          fid_fmt = '(I10.10)'
-!          
-!          do j = 1, size(cache_next%data_mat)
-!             
-!             write(str_fid, fid_fmt) j + mat_acc
-!          
-!             k = QcMatWrite_f(cache_next%data_mat(j), trim(adjustl(fname)) // '_MAT_' // &
-!                  trim(str_fid) // '.DAT', BINARY_VIEW)
-!          
-!          end do
-!          
-!          mat_acc = mat_acc + size(cache_next%data_mat)
-!          
-!       
-!       elseif (allocated(cache_next%data_scal)) then
-!       
-!          mat_scal_none = 1
-!          write(funit) mat_scal_none
-!          write(funit) size(cache_next%data_scal)
-!          write(funit) cache_next%data_scal
-!          
-!       
-!       else
-!       
-!          mat_scal_none = 2 
-!          write(funit) mat_scal_none
-!       
-!       end if
-!             
-!       cache_next => cache_next%next
-!    
-!    
-!    end do
-!  
-!    if (present(mat_acc_in)) then
-!       mat_acc_in = mat_acc
-!    end if
- 
- 
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
+   
+
  end subroutine
 
  ! FIXME: Definitely ll-to-array chgs needed for this routine 
