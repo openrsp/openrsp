@@ -479,21 +479,24 @@ module rsp_property_caching
 
    ! Old LL functionality: Rewrite together with store routine into array form   
    
-!    inquire(file=fname // '.DAT', exist=cache_ext)
-! 
-!    if (.NOT.(cache_ext)) then
-!    
-!       write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
-!       stop
-!    
-!    end if
-!  
-!    funit = 260
-!  
-!    open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-!         form='unformatted', status='old', action='read')
-!    
-!    read(funit) num_entries
+   inquire(file=fname // '.DAT', exist=cache_ext)
+
+   if (.NOT.(cache_ext)) then
+   
+      write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+      stop
+   
+   end if
+ 
+   funit = 260
+ 
+   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='old', action='read')
+   
+   read(funit) num_entries
+   
+   ! CONTINUE HERE: GET A NICE SYSTEM FOR ALLOCATING THE CACHES (ALWAYS PASS INTO HERE UNALLOCATED?)
+   ! OR ALWAYS DEALLOC THE INCOMING CACHE IF IT IS ALLOCATED AND THEN BUILD IT AGAIN FROM HERE?
 ! 
 !    ! Cache allocation may need own subroutine because of target/pointer issues
 !    ! Set up first element of cache
@@ -564,8 +567,6 @@ module rsp_property_caching
   
    type(contrib_cache) :: cache
   
-   ! CMNTD OUT IN LL 2 ARRAY WORK
-!    read(funit) cache%last
    read(funit) cache%p_inner%npert
    
    if (cache%p_inner%npert == 0) then
