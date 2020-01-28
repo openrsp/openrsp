@@ -314,9 +314,12 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B, R
     integer(kind=4) :: ierr
     real(8) :: k
+    real(8), dimension(2) :: karr
+
+    karr = (/k, 0.0d0/)
     
-    ierr = QcMatAXPY_f((/k, 0.0d0/), B, A)
-    ierr = QcMatAXPY_f((/k, 0.0d0/), A, R)
+    ierr = QcMatAXPY_f(karr, B, A)
+    ierr = QcMatAXPY_f(karr, A, R)
     
   end subroutine
   
@@ -330,14 +333,19 @@ module rsp_indices_and_addressing
     type(QcMat) T
     integer(kind=4) :: ierr
     complex(8) :: k
-        
+    real(8), dimension(2) :: n1, n2, n3
+
+    n1 = (/dreal(k), dimag(k)/)
+    n2 = (/0.0d0, 0.0d0/)
+    n3 = (/1.0d0, 0.0d0/)
+
     call QcMatInit(T, A)
 
     ! T = kB * C
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/dreal(k), dimag(k)/), B, C, (/0.0d0, 0.0d0/), T)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n1, B, C, n2, T)
     
     ! R = A * T
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n3, A, T, n2, R)
     ierr = QcMatDestroy_f(T)
 
   end subroutine
@@ -350,14 +358,19 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B, C, R
     type(QcMat) T
     integer(kind=4) :: ierr
-    integer :: i
+
+    real(8), dimension(2) :: n1, n2, n3
     real(8) :: k
-        
+
+    n1 = (/k, 0.0d0/)
+    n2 = (/0.0d0, 0.0d0/)
+    n3 = (/1.0d0, 0.0d0/)
+
     call QcMatInit(T, A)
-    
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/k, 0.0d0/), B, C, (/0.0d0, 0.0d0/), T)
-    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, (/1.0d0, 0.0d0/), A, T, (/0.0d0, 0.0d0/), R)
-    
+
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n1, B, C, n2, T)
+    ierr = QcMatGEMM_f(MAT_NO_OPERATION, MAT_NO_OPERATION, n3, A, T, n2, R)
+
     ierr = QcMatDestroy_f(T)
   
   end subroutine
@@ -435,8 +448,11 @@ module rsp_indices_and_addressing
     type(QcMat) :: A, B
     integer(kind=4) :: ierr
     real(8) :: k
+    real(8), dimension(2) :: karr
+
+    karr = (/k, 0.0d0/)
     
-    ierr = QcMatAXPY_f((/k, 0.0d0/), A, B)
+    ierr = QcMatAXPY_f(karr, A, B)
   
   end subroutine
   
@@ -681,25 +697,57 @@ module rsp_indices_and_addressing
     integer, dimension(ntuple, total_num_perturbations, 3) :: blks_info
     integer, dimension(ntuple, total_num_perturbations) :: blk_sizes
     integer, dimension(sum(nfields)) :: inds
+    integer, allocatable, dimension(:) :: blk_arg_i, blk_arg_i_b
+    integer, allocatable, dimension(:, :) :: blk_arg_ii
     
     offset = 0
     k = 1
     
     do i = 1, ntuple - 1
 
+       ! Prepared, change when covered
+       allocate(blk_arg_i(nblks_tuple(i)))
+       allocate(blk_arg_i_b(nfields(i)))
+       allocate(blk_arg_ii(nblks_tuple(i), size(blks_info, 3)))
+      
+       blk_arg_i = blk_sizes(i, 1:nblks_tuple(i))
+       blk_arg_i_b = inds(k:k + nfields(i) - 1)
+       blk_arg_ii = blks_info(i, 1:nblks_tuple(i), :)
+
        offset = offset + (get_triang_blks_offset(nblks_tuple(i), nfields(i), &
-                         blks_info(i,1:nblks_tuple(i),:), &
-                         blk_sizes(i, 1:nblks_tuple(i)),  &
-                         inds(k:k + nfields(i) - 1))  - 1 )* &
+                         blk_arg_ii, &
+                         blk_arg_i,  &
+                         blk_arg_i_b)  - 1 )* &
                          (product(blks_sizes(i:ntuple))/blks_sizes(i))
        k = k + nfields(i)
 
+       deallocate(blk_arg_ii)
+       deallocate(blk_arg_i_b)
+       deallocate(blk_arg_i)
+
     end do
+
+    allocate(blk_arg_i(nblks_tuple(ntuple)))
+    allocate(blk_arg_i_b(nfields(ntuple)))
+    allocate(blk_arg_ii(nblks_tuple(ntuple), size(blks_info, 3)))
+      
+    blk_arg_i = blk_sizes(ntuple, 1:nblks_tuple(ntuple))
+    blk_arg_i_b = inds(k:k + nfields(ntuple) - 1)
+    blk_arg_ii = blks_info(ntuple, 1:nblks_tuple(ntuple), :)
     
     offset = offset + get_triang_blks_offset(nblks_tuple(ntuple), nfields(ntuple), &
-                      blks_info(ntuple,1:nblks_tuple(ntuple),:), &
-                      blk_sizes(ntuple, 1:nblks_tuple(ntuple)),  &
-                      inds(k:k + nfields(ntuple) - 1))
+                      blk_arg_ii, & 
+                      blk_arg_i, &
+                      blk_arg_i_b)
+
+!    offset = offset + get_triang_blks_offset(nblks_tuple(ntuple), nfields(ntuple), &
+!                      blks_info(ntuple,1:nblks_tuple(ntuple),:), &
+!                      blk_sizes(ntuple, 1:nblks_tuple(ntuple)),  &
+!                      inds(k:k + nfields(ntuple) - 1))
+
+    deallocate(blk_arg_ii)
+    deallocate(blk_arg_i_b)
+    deallocate(blk_arg_i)
                       
   end function
 
@@ -891,6 +939,7 @@ module rsp_indices_and_addressing
     integer, dimension(ntuples, total_num_perturbations, 3) :: blks_tuple_info
     integer, dimension(product(blks_tuple_triang_size), & 
              total_num_perturbations) :: indices
+    integer, allocatable, dimension(:,:) :: blks_info_call
     type(triangulated_index_block), allocatable, &
          dimension(:) :: individual_block_tuple_indices
 
@@ -901,9 +950,16 @@ module rsp_indices_and_addressing
        allocate(individual_block_tuple_indices(i)%t_ind(blks_tuple_triang_size(i), &
                 sum(blks_tuple_info(i,1:nblks_tuple(i),2))))
 
+       allocate(blks_info_call(nblks_tuple(i), &
+       size(blks_tuple_info,3)))
+
+       blks_info_call = blks_tuple_info(i,1:nblks_tuple(i),:)
+
        call make_triangulated_indices(nblks_tuple(i), &
-            blks_tuple_info(i,1:nblks_tuple(i),:), blks_tuple_triang_size(i), &
+            blks_info_call, blks_tuple_triang_size(i), &
             individual_block_tuple_indices(i)%t_ind)
+
+       deallocate(blks_info_call)
 
     end do
 
