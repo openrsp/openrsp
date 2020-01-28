@@ -394,163 +394,131 @@ module rsp_property_caching
       
    else if (r_flag == 3) then
 
-! Old LL functionality: Rewrite together with retrieve routine into array form   
+   ! Old LL functionality: Rewrite together with retrieve routine into array form   
    
-!       mat_acc = 0
-!  
-!       funit = 260
-!  
-!       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-!         form='unformatted', status='replace', action='write')
-!    
-!       ! Cycle to start
-!       cache_next => cache
-!       do while(.NOT.(cache_next%last))
-!          cache_next => cache_next%next
-!       end do
-!       cache_next => cache_next%next
-!       cache_next => cache_next%next
-!    
-!       num_entries = 0
-!    
-!       ! Traverse to get number of entries
-!       termination = .FALSE.
-!       do while(.NOT.(termination))
-!    
-!          num_entries = num_entries + 1
-!    
-!          termination = cache_next%last
-!          cache_next => cache_next%next
-!    
-!       end do
-!    
-!       write(funit) num_entries
-!    
-!       ! Cycle to start
-!       do while(.NOT.(cache_next%last))
-!          cache_next => cache_next%next
-!       end do
-!       cache_next => cache_next%next
-!       cache_next => cache_next%next
-!    
-!       
-!       ! Traverse and store
-!       termination = .FALSE.
-!       do i = 1, num_entries
-!    
-!          write(funit) cache_next%last
-!          write(funit) cache_next%p_inner%npert
-!          do j = 1, cache_next%p_inner%npert
-!       
-!             write(funit) cache_next%p_inner%pdim(j)
-!             write(funit) cache_next%p_inner%plab(j)
-!             write(funit) cache_next%p_inner%pid(j)
-!             write(funit) cache_next%p_inner%freq(j)
-!       
-!          end do
-!       
-!          ! MaR: New code for residue handling
-!       
-!          write(funit) cache_next%p_inner%do_residues
-!          write(funit) cache_next%p_inner%n_pert_res_max
-!          write(funit) cache_next%p_inner%n_states
-!       
-!          if (cache_next%p_inner%do_residues > 0) then
-!       
-!             if (allocated(cache_next%p_inner%states)) then
-!          
-!                write(funit) .TRUE.
-!                write(funit) size(cache_next%p_inner%states)
-!          
-!                do j = 1, size(cache_next%p_inner%states)
-!          
-!                   write(funit) cache_next%p_inner%states(j)
-!                
-!                end do
-!             
-!             else
-!          
-!                write(funit) .FALSE.
-!          
-!             end if
-!          
-!             if (allocated(cache_next%p_inner%exenerg)) then
-!          
-!                write(funit) .TRUE.
-!                write(funit) size(cache_next%p_inner%exenerg)
-!          
-!                do j = 1, size(cache_next%p_inner%exenerg)
-!          
-!                   write(funit) cache_next%p_inner%exenerg(j)
-!                
-!                end do
-!             
-!             else
-!          
-!                write(funit) .FALSE.
-!          
-!             end if
-!          
-!          
-!             if (allocated(cache_next%p_inner%part_of_residue)) then
-!          
-!                write(funit) .TRUE.
-!                write(funit) size(cache_next%p_inner%part_of_residue, 1)
-!                write(funit) size(cache_next%p_inner%part_of_residue, 2)
-!          
-!                do j = 1, size(cache_next%p_inner%part_of_residue, 1)
-!             
-!                   do k = 1, size(cache_next%p_inner%part_of_residue, 2)
-!          
-!                      write(funit) cache_next%p_inner%part_of_residue(j, k)
-!                   
-!                   end do
-!                
-!                end do
-!             
-!             else
-!          
-!                write(funit) .FALSE.
-!          
-!             end if
-!          
-!          end if
-!       
-!       
-!          ! End new
-!       
-!       
-!          write(funit) cache_next%num_outer
-!          write(funit) cache_next%nblks
-!       
-!          write(funit) size(cache_next%blk_sizes)
-!          write(funit) cache_next%blk_sizes
-!       
-!          write(funit) cache_next%blks_triang_size
-! 
-!          write(funit) size(cache_next%blk_info, 1)
-!          write(funit) size(cache_next%blk_info, 2)
-!          write(funit) cache_next%blk_info
-!      
-!          write(funit) size(cache_next%indices, 1)
-!          write(funit) size(cache_next%indices, 2)
-!          write(funit) cache_next%indices
-!       
-!          
-!       
-!          outer_next => cache_next%contribs_outer
-!       
-!          ! num_outer may not be well-defined; consider 
-!          ! switching to traversal with termination instead
-!          
-!          call contrib_cache_outer_put(outer_next, fname, funit, mat_acc_in=mat_acc)
-!    
-!          cache_next => cache_next%next
-!    
-!       end do
-! 
-!       close(funit)
-!  
+      mat_acc = 0
+ 
+      funit = 260
+ 
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='replace', action='write')
+   
+   
+      num_entries = len_cache
+
+      write(funit) num_entries
+   
+     
+      ! Traverse and store
+      termination = .FALSE.
+      do i = 1, num_entries
+   
+         write(funit) cache(i)%p_inner%npert
+         do j = 1, cache(i)%p_inner%npert
+      
+            write(funit) cache(i)%p_inner%pdim(j)
+            write(funit) cache(i)%p_inner%plab(j)
+            write(funit) cache(i)%p_inner%pid(j)
+            write(funit) cache(i)%p_inner%freq(j)
+      
+         end do
+      
+         ! MaR: New code for residue handling
+      
+         write(funit) cache(i)%p_inner%do_residues
+         write(funit) cache(i)%p_inner%n_pert_res_max
+         write(funit) cache(i)%p_inner%n_states
+      
+         if (cache(i)%p_inner%do_residues > 0) then
+      
+            if (allocated(cache(i)%p_inner%states)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache(i)%p_inner%states)
+         
+               do j = 1, size(cache(i)%p_inner%states)
+         
+                  write(funit) cache(i)%p_inner%states(j)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+            if (allocated(cache(i)%p_inner%exenerg)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache(i)%p_inner%exenerg)
+         
+               do j = 1, size(cache(i)%p_inner%exenerg)
+         
+                  write(funit) cache(i)%p_inner%exenerg(j)
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         
+            if (allocated(cache(i)%p_inner%part_of_residue)) then
+         
+               write(funit) .TRUE.
+               write(funit) size(cache(i)%p_inner%part_of_residue, 1)
+               write(funit) size(cache(i)%p_inner%part_of_residue, 2)
+         
+               do j = 1, size(cache(i)%p_inner%part_of_residue, 1)
+            
+                  do k = 1, size(cache(i)%p_inner%part_of_residue, 2)
+         
+                     write(funit) cache(i)%p_inner%part_of_residue(j, k)
+                  
+                  end do
+               
+               end do
+            
+            else
+         
+               write(funit) .FALSE.
+         
+            end if
+         
+         end if
+      
+      
+         ! End new
+      
+      
+         write(funit) cache(i)%num_outer
+         write(funit) cache(i)%nblks
+      
+         write(funit) size(cache(i)%blk_sizes)
+         write(funit) cache(i)%blk_sizes
+      
+         write(funit) cache(i)%blks_triang_size
+
+         write(funit) size(cache(i)%blk_info, 1)
+         write(funit) size(cache(i)%blk_info, 2)
+         write(funit) cache(i)%blk_info
+     
+         write(funit) size(cache(i)%indices, 1)
+         write(funit) size(cache(i)%indices, 2)
+         write(funit) cache(i)%indices
+      
+         
+         call contrib_cache_outer_put(size(cache_next%contribs_outer), 
+              cache_next%contribs_outer, fname, funit, mat_acc_in=mat_acc)
+   
+   
+      end do
+
+      close(funit)
+
    end if
  
  end subroutine
@@ -772,8 +740,6 @@ module rsp_property_caching
       
  end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
- 
  ! Wrapper: Store outer type contribution cache element in file fname
  subroutine contrib_cache_outer_store(len_cache, cache, fname, r_flag, mat_acc_in)
  
