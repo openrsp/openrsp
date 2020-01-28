@@ -155,15 +155,6 @@ module rsp_property_caching
 
  
  contains
-
- 
-  
-  
-  
-  
- 
- 
-  ! FIXME: No ll-to-array chgs needed for this routine
     
   ! Initialize progress/restarting framework if dictated
   ! by restart flag r_flag
@@ -196,8 +187,6 @@ module rsp_property_caching
     end if
     
   end subroutine
-     
-  ! FIXME: No ll-to-array chgs needed for this routine     
      
   ! Check progress counter against restart checkpoint
   ! Return true if checkpoint not passed, false if passed
@@ -253,8 +242,6 @@ module rsp_property_caching
     
   end function
   
-  ! FIXME: No ll-to-array chgs needed for this routine
-  
   ! Increment calculation progress counter prog_info at level 'lvl'
   ! and store in file if dictated by restarting setup flag r_flag 
   subroutine prog_incr(prog_info, r_flag, lvl)
@@ -283,8 +270,6 @@ module rsp_property_caching
     end if
     
   end subroutine
- 
-! FIXME: No ll-to-array chgs needed for this routine
  
  ! Store array of matrices or scalars in file fname
  subroutine mat_scal_store(array_size, fname, r_flag, mat, scal, start_pos)
@@ -347,8 +332,6 @@ module rsp_property_caching
    end if
  
  end subroutine
- 
- ! FIXME: No ll-to-array chgs needed for this routine
  
  ! Retrieve array of matrices or scalars from file fname
  subroutine mat_scal_retrieve(array_size, fname, mat, scal)
@@ -1469,9 +1452,6 @@ module rsp_property_caching
 
  end function
 
-
-  ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
- 
   ! Allocate and set up new contribution cache element
   subroutine contrib_cache_allocate(current_element)
 
@@ -1497,8 +1477,6 @@ module rsp_property_caching
    
  end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
- 
  ! Set up new outer contribution cache
  ! This creates a one-entry cache with a dummy entry 
  ! The cache can then later be extended
@@ -1529,8 +1507,6 @@ module rsp_property_caching
 
   end subroutine
 
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
-  
  ! Initialize contribution cache (and associated outer contribution cache)
  ! as specified by perturbation tuples 'p_tuples'
  subroutine contrib_cache_initialize(new_element, num_p_tuples, p_tuples, n_rule)
@@ -1606,9 +1582,6 @@ module rsp_property_caching
       
  end subroutine
  
- 
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME: UPD
- 
  ! Initialize outer contribution cache element as specified by perturbation tuples 'outer_p_tuples'
  ! 'unperturbed' flag signifies empty perturbation tuple (typically used for 'all inner' case)
  subroutine contrib_cache_outer_initialize(new_element, unperturbed, num_dmat, outer_p_tuples)
@@ -1652,7 +1625,7 @@ module rsp_property_caching
            allocate(blki_a(new_element%nblks_tuple(i)))
            allocate(blki_b(new_element%nblks_tuple(i)))
            allocate(blksi_a(new_element%nblks_tuple(i), &
-size(new_element%blks_tuple_info, 3) ))
+                    size(new_element%blks_tuple_info, 3) ))
 
            new_element%blks_tuple_info(i, :, :) = get_blk_info(new_element%nblks_tuple(i), outer_p_tuples(i))
 
@@ -1707,9 +1680,6 @@ size(new_element%blks_tuple_info, 3) ))
       
  end subroutine
    
-
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME: UPD
-   
  ! Add new element to outer contribution cache
  subroutine contrib_cache_outer_add_element(len_cache, cache, unperturbed, num_dmat, &
             outer_p_tuples, data_size, data_mat, data_scal, n_rule)
@@ -1740,10 +1710,6 @@ size(new_element%blks_tuple_info, 3) ))
       already = contrib_cache_already_outer(len_cache, cache, num_dmat, outer_p_tuples)
    
    end if
-
-
-
-!   write(*,*) 'stage a'
    
    ! If an entry for these pert. tuples already exists in cache, then locate it
    ! and update the data there
@@ -1845,8 +1811,6 @@ size(new_element%blks_tuple_info, 3) ))
    end if
       
  end subroutine
- 
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
  
  ! Add contribution cache element to existing linked list
  subroutine contrib_cache_add_element(len_cache, cache, num_p_tuples, p_tuples, n_rule)
@@ -1971,8 +1935,6 @@ size(new_element%blks_tuple_info, 3) ))
 
  end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
- 
  ! Check if element (inner + outer combination) as specified by 'p_tuples' (and possible 'n_rule')
  ! already exists in cache
  function contrib_cache_already(len_cache, cache, num_p_tuples, p_tuples, n_rule)
@@ -2053,8 +2015,6 @@ size(new_element%blks_tuple_info, 3) ))
    
  end function
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
-  
  ! Check if element of outer contribution cache as specified by 'p_tuples_outer'
  ! (and possible 'n_rule') exists in linked list
  function contrib_cache_already_outer(len_cache, cache, num_dmat, p_tuples_outer, n_rule)
@@ -2099,8 +2059,6 @@ size(new_element%blks_tuple_info, 3) ))
 
 end function
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine 
-
  ! Check if contribution cache (inner only) element (as specified by 'p_inner') 
  ! already exists in linked list 
  function contrib_cache_already_inner(len_cache, cache, p_inner)
@@ -2129,8 +2087,6 @@ end function
    end do
    
  end function
- 
- ! FIXME: Definitely ll-to-array chgs needed for this routine: FIXME:UPD
  
  ! Get data from outer contribution cache element    
  subroutine contrib_cache_getdata_outer(len_cache, cache, num_p_tuples, p_tuples, &
@@ -2390,17 +2346,6 @@ end function
          ! Loop over indices, get appropriate offsets and put data in return array
          do i = 1, size(indices, 1)
 
-!            allocate(blk_arg_iii(size(merged_blk_info, 1), size(merged_blk_info, 2), &
-!                                 size(merged_blk_info, 3), 1))
-!
-!            blk_arg_iii(:, :, :, 1) = merged_blk_info
-!
-!            res_offset = get_triang_blks_tuple_offset(1, merged_nblks, &
-!            (/merged_nblks/), & 
-!            (/total_num_perturbations/), (/merged_blk_info/), blk_sizes_merged, &
-!            (/merged_triang_size/), &
-!            (/indices(i, : )/) )
-
             allocate(blk_arg_a(1))
             allocate(blk_arg_b(1))
             allocate(blk_arg_c(1))
@@ -2425,10 +2370,8 @@ end function
 
             do j = 1, total_num_perturbations
 
-! FIXME: UNSURE ABOUT NEXT LINE
-! Will use just the regular index, but change back if this causes problems
-!                translated_index(j) = indices(i,j)
-! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE
+            ! FIXME: NEXT LINE WENT OUT OF BOUNDS IN EARLIER TESTS, SHOULD BE OK NOW BUT
+            ! THIS COMMENT KEPT TO MARK POTENTIAL SOURCE OF LATER PROBLEMS
               translated_index(j) = indices(i,pids_current_contrib(j))
             end do
 
@@ -2489,9 +2432,6 @@ end function
                
             else if (present(scal)) then
             
-!                write(*,*) 'res, cache offset', res_offset, cache_offset + cache_hard_offset
-!                write(*,*) 'val', cache(loc_found)%data_scal(cache_offset + cache_hard_offset)              
-
                scal(res_offset) = &
                scal(res_offset) + &
                cache(loc_found)%data_scal(cache_offset + cache_hard_offset)              
@@ -2568,8 +2508,6 @@ end function
 
  end subroutine
  
- ! FIXME: Definitely ll-to-array chgs needed for this routine FIXME:UPD
- 
  ! Get data from contribution cache
  ! Will search linked list for appropriate inner entry, then
  ! search associated outer contribution cache linked list
@@ -2616,7 +2554,7 @@ end function
 
    do i = 1, len_cache
 
-! FIXME CMNTD OUT, may not be needed   
+! FIXME CMNTD OUT, LOOKS LIKE NOT NEEDED BUT KEPT FOR REVISIT IF LATER PROBLEMS
 !       if (cache(i)%dummy_entry) then
 !       
 !          cycle

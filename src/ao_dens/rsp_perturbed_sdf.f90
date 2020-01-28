@@ -832,8 +832,6 @@ module rsp_perturbed_sdf
     
     end if
     
-
-    
     mcurr = 1
     
     do while (mcurr <= total_outer_size_1)
@@ -898,8 +896,6 @@ module rsp_perturbed_sdf
              cycle
     
           end if
-       
-
        
           ! One chain rule application
           if (cache%contribs_outer(m)%num_dmat == 1) then
@@ -1736,8 +1732,8 @@ module rsp_perturbed_sdf
        arg_tuple(1) = pert_xc_null
        arg_int = (/1, 1/)
     
-!       call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
-!                               sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
+       call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
+                               sum(size_i), mem_mgr, null_dmat=Dp, fock=Fp)
     
     
        deallocate(arg_int)
@@ -2188,8 +2184,8 @@ module rsp_perturbed_sdf
      arg_tuple(1) = pert_xc_null
      arg_int = (/1, 1/)
 
-!     call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
-!                         sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
+     call rsp_xc_wrapper(1, arg_tuple, arg_int, size(D), D, get_xc_mat, out_print, &
+                         sum(size_i), mem_mgr, null_dmat=Dh, fock=Fp)
 
 
      deallocate(arg_int)
@@ -2623,28 +2619,22 @@ module rsp_perturbed_sdf
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
 
-! FIXME: UNSURE ABOUT NEXT LINES
+             if (present(fock)) then
 
-! Originally, last line was used for both fock and prop
-! It looks like the last line goes oob for fock but is needed for prop
-! For now, just testing change
+                ! FIXME: NEXT LINE FIXED AN OOB ERROR BEFORE, NOW BELIEVED TO BE FIXED
+                ! BUT KEPT FOR LATER REFERENCE IF FURTHER PROBLEMS
+                ! dmat_perts(i)%freq(k) = pert(j)%freq(k)
+                dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
 
-if (present(fock)) then
-! Will use just the regular index, but change back if this causes problems                          
-!              dmat_perts(i)%freq(k) = pert(j)%freq(k)
-             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+             elseif (present(prop)) then
 
-elseif (present(prop)) then
-! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE FOR FOCK CONTRIB
-!             dmat_perts(i)%freq(k) = pert(j)%freq(k)
-
-             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+                dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
           
-else 
+             else 
 
-write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
-
-end if
+                write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
+        
+             end if
 
           end do
           
@@ -2659,13 +2649,8 @@ end if
           
           deallocate(blk_info)
           deallocate(blk_sizes)
-       
-       
-       
     
        end do
-    
-    
     
     end do
     
@@ -2705,32 +2690,24 @@ end if
           ! Dress dmat pert tuple with freqs from present freq config
           do k = 1, dmat_perts(i)%npert
 
-! FIXME: UNSURE ABOUT NEXT LINES                                                                              
+             if (present(fock)) then
 
-! Originally, last line was used for both fock and prop                                                       
-! It looks like the last line goes oob for fock but is needed for prop                                        
-! For now, just testing change                                                                                
+             ! FIXME: NEXT LINE FIXED AN OOB ERROR BEFORE, NOW BELIEVED TO BE FIXED
+             ! BUT KEPT FOR LATER REFERENCE IF FURTHER PROBLEMS
+             !   dmat_perts(i)%freq(k) = pert(j)%freq(k)
+                dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
 
-if (present(fock)) then
-! Will use just the regular index, but change back if this causes problems                                    
-!              dmat_perts(i)%freq(k) = pert(j)%freq(k)
-             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
-             
-             
-elseif (present(prop)) then
-! NEXT LINE WAS THE ORIGINAL LINE, IT HAS GONE OUT OF BOUNDS AT LEAST ONCE FOR FOCK CONTRIB                   
-!             dmat_perts(i)%freq(k) = pert(j)%freq(k)
+             elseif (present(prop)) then
 
-             dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))                                      
+                dmat_perts(i)%freq(k) = pert(j)%freq(dmat_perts(i)%pid(k))
+          
+             else 
 
-else
+                write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
 
-write(*,*) 'ERROR: Must ask for either Fock matrix or property contribution'
-
-end if
+             end if
 
           end do
-
           
           num_blks = get_num_blks(dmat_perts(i))
        
@@ -2769,7 +2746,6 @@ end if
                 deallocate(pert_arg)
 
              end if
-          
           
           end do
           
