@@ -561,10 +561,15 @@ module rsp_general
           write(out_str, *) ' '
           call out_print(out_str, 1)
 
-
-!           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
-!           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
-!           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+          ! CONTINUE HERE, HERA AND LATER CACHE SIZES NOT TRIVIAL, ESPECIALLY IF RETRIEVED, NEED 
+          ! TO CHG ARGUMENTS TO LATER MAIN ROUTINES
+          
+           allocate(S(0))
+           allocate(D(0))
+           allocate(F(0))
+           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
+           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
+           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
           
           if (residue_order > 0) then
        

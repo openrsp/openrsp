@@ -916,18 +916,20 @@ module rsp_property_caching
  ! FIXME: Definitely ll-to-array chgs needed for this routine 
  ! Don't know what to do about mem mgr update yet
  
- ! Wrapper 1: Get outer contribution cache instance from file fname
- ! Add condition to handle "not from inner"
- subroutine contrib_cache_outer_retrieve(cache, fname, from_inner, funit_in, mat_acc_in)
+ ! Wrapper: Get outer contribution cache instance from file fname
+ ! This is the routine to call if one wants to retrieve an entire
+ ! outer cache array from a file and that outer cache is "standalone", i.e.
+ ! not part of an inner cache instance
+ subroutine contrib_cache_outer_retrieve(len_cache, cache, fname, funit_in, mat_acc_in)
  
    implicit none
    
-   logical :: from_inner, cache_ext
+   logical :: cache_ext
    integer :: funit, i, j, k, mat_acc
    integer, optional :: funit_in, mat_acc_in
-   integer :: num_entries
+   integer :: num_entries, len_cache
    character(*) :: fname
-   type(contrib_cache_outer) :: cache
+   type(contrib_cache_outer), dimension(len_cache) :: cache
    
    mat_acc = 0
    if (present(mat_acc_in)) then
