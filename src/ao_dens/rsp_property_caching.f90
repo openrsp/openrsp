@@ -428,16 +428,8 @@ module rsp_property_caching
       
          ! End new
       
-      
-         if allocated(cache(i)%contribs_outer) then
+         write(funit) size(cache(i)%contribs_outer)
          
-            write(funit) size(cache(i)%contribs_outer)
-         
-         else
-      
-            write(funit) cache(i)%num_outer
-         
-         end if
          
          write(funit) cache(i)%nblks
       
@@ -476,7 +468,7 @@ module rsp_property_caching
    
    logical :: termination, cache_ext
    integer :: num_entries, i, j, funit
-   integer :: len_cache
+   integer :: len_cache, dum
    character(*) :: fname
   
    type(contrib_cache), dimension(len_cache) :: cache
@@ -515,8 +507,17 @@ module rsp_property_caching
    do i = 1, num_entries
    
       call contrib_cache_read_one_inner(cache(i), fname, funit)
+      
+      allocate(cache(i)%contribs_outer(cache(i)%num_outer))
      
-      call contribe_cache_outer_retrieve(cache(i)%contribs_outer, fname, .TRUE., funit_in = funit)
+      do j = 1, cache(i)%num_outer
+     
+         ! Size argument already known when reading inner-outer, so dummy read it here
+         read(funit) dum
+     
+         call contrib_cache_read_one_outer(cache(i)%contribs_outer(j), fname, funit)
+      
+      end do
    
    end do
 
@@ -697,6 +698,8 @@ module rsp_property_caching
  
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='replace', action='write')
+           
+      write(funit) num_entries
         
       call contrib_cache_outer_put(size(cache), cache, fname, funit, mat_acc_in=mat_acc)
         
@@ -733,11 +736,13 @@ module rsp_property_caching
    
    num_entries = len_cache
    
-   write(funit) num_entries
+
    
   
    ! Traverse and store
    do i = 1, num_entries
+   
+      write(funit) size(cache(i)%contribs_outer)
    
       write(funit) size(cache(i)%p_tuples)
       do j = 1, size(cache(i)%p_tuples)
@@ -935,24 +940,19 @@ module rsp_property_caching
       funit = funit_in
    end if
    
-   
-   ! If not as part of inner cache, then open file
-   if (.NOT.(from_inner)) then
-   
-      inquire(file=fname // '.DAT', exist=cache_ext)
+  
+   inquire(file=fname // '.DAT', exist=cache_ext)
       
-      if (.NOT.(cache_ext)) then
+   if (.NOT.(cache_ext)) then
    
-         write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
-         stop
+      write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+      stop
    
-      end if
-      
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-           form='unformatted', status='old', action='read')
-           
    end if
-   
+      
+   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+        form='unformatted', status='old', action='read')
+  
    read(funit) num_entries
    
    if (allocated(cache)) then
@@ -969,12 +969,7 @@ module rsp_property_caching
    
    end do
    
-   
-   if (.NOT.(from_inner)) then
-      
-      close(260)
-      
-   end if
+   close(260)
    
    if (present(mat_acc_in)) then
       mat_acc_in = mat_acc
@@ -1006,7 +1001,6 @@ module rsp_property_caching
    if (present(mat_acc_in)) then
       mat_acc = mat_acc_in
    end if
-  
    
    read(funit) size_i
    allocate(cache%p_tuples(size_i))
@@ -1028,8 +1022,6 @@ module rsp_property_caching
          read(funit) cache%p_tuples(j)%freq(k)
          
       end do
-         
-   
       
       ! MaR: New code for residue handling
       ! NOTE: Potential size_i conflict - likely no problem 
