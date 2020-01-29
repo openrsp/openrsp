@@ -17,9 +17,6 @@ module rsp_property_caching
  implicit none
  
  public contrib_cache_initialize
-!  public contrib_cache_next_element
-!  public contrib_cache_outer_next_element
-!  public contrib_cache_outer_cycle_first
  public contrib_cache_locate
  public contrib_cache_outer_add_element
  public contrib_cache_add_element
@@ -27,8 +24,6 @@ module rsp_property_caching
  public contrib_cache_getdata
  public contrib_cache_allocate
  public contrib_cache_outer_allocate
-!  public contrib_cache_deallocate
-!  public contrib_cache_outer_deallocate
  public contrib_cache_store
  public contrib_cache_retrieve
  public contrib_cache_outer_store
@@ -434,7 +429,16 @@ module rsp_property_caching
          ! End new
       
       
-         write(funit) cache(i)%num_outer
+         if allocated(cache(i)%contribs_outer) then
+         
+            write(funit) size(cache(i)%contribs_outer)
+         
+         else
+      
+            write(funit) cache(i)%num_outer
+         
+         end if
+         
          write(funit) cache(i)%nblks
       
          write(funit) size(cache(i)%blk_sizes)
@@ -451,8 +455,8 @@ module rsp_property_caching
          write(funit) cache(i)%indices
       
          
-         call contrib_cache_outer_put(size(cache_next%contribs_outer), 
-              cache_next%contribs_outer, fname, funit, mat_acc_in=mat_acc)
+         call contrib_cache_outer_put(size(cache(i)%contribs_outer), 
+              cache(i)%contribs_outer, fname, funit, mat_acc_in=mat_acc)
    
    
       end do
@@ -495,42 +499,28 @@ module rsp_property_caching
    
    read(funit) num_entries
    
-   ! CONTINUE HERE: GET A NICE SYSTEM FOR ALLOCATING THE CACHES (ALWAYS PASS INTO HERE UNALLOCATED?)
-   ! OR ALWAYS DEALLOC THE INCOMING CACHE IF IT IS ALLOCATED AND THEN BUILD IT AGAIN FROM HERE?
-! 
-!    ! Cache allocation may need own subroutine because of target/pointer issues
-!    ! Set up first element of cache
-!    
-!    ! NOTE: DEALLOCATION/ALLOCATION MAY BE PROBLEMATIC   
-!     
-!    cache_next => cache
-!    
-!    call contrib_cache_read_one_inner(cache_next, fname, funit)
-!    
-!    allocate(cache_next%contribs_outer)
-!    outer_next => cache_next%contribs_outer
-!    call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
-!    
-!    cache_orig => cache_next
-!    
-!    ! Get all remaining elements
-!    do i = 1, num_entries - 1
-!    
-!       call contrib_cache_retrieve_one_inner(cache_next%next, fname, funit)
-!       
-!       cache_next => cache_next%next
-!       allocate(cache_next%contribs_outer)
-!       outer_next => cache_next%contribs_outer
-!          
-!       call contrib_cache_outer_retrieve(outer_next, fname, .TRUE., funit)
-!       
-!    end do
-!    
-!    ! Bite the tail
-!    cache_next%next => cache_orig
-!    
-!    
-!    close(funit)
+   ! NOTE: I choose to always dellocate the cache if already allocated since anything else
+   ! would tend to confuse things
+   
+   if (allocated(cache)) then
+   
+      deallocate(cache)
+   
+   end if 
+   
+   allocate(cache(num_entries))
+   
+   len_cache = num_entries
+   
+   do i = 1, num_entries
+   
+      call contrib_cache_read_one_inner(cache(i), fname, funit)
+     
+      call contribe_cache_outer_retrieve(cache(i)%contribs_outer, fname, .TRUE., funit_in = funit)
+   
+   end do
+
+   close(funit)
  
  end subroutine
  
@@ -919,7 +909,6 @@ module rsp_property_caching
  end subroutine
 
  ! FIXME: Definitely ll-to-array chgs needed for this routine 
- ! Need to change to do first allocation here
  ! Don't know what to do about mem mgr update yet
  
  ! Wrapper 1: Get outer contribution cache instance from file fname
@@ -935,93 +924,61 @@ module rsp_property_caching
    character(*) :: fname
    type(contrib_cache_outer) :: cache
    
-!    mat_acc = 0
-!    if (present(mat_acc_in)) then
-!       mat_acc = mat_acc_in
-!    end if
-!    
-! 
-!    funit = 260
-!    if (present(funit_in)) then
-!       funit = funit_in
-!    end if
-!    
-!    
-!    ! If not as part of inner cache, then open file
-!    if (.NOT.(from_inner)) then
-!    
-!       inquire(file=fname // '.DAT', exist=cache_ext)
-!       
-!       if (.NOT.(cache_ext)) then
-!    
-!          write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
-!          stop
-!    
-!       end if
-!       
-!       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-!            form='unformatted', status='old', action='read')
-!            
-!    end if
-!    
-!    
-!    
-!    read(funit) num_entries
-!    
-!    call contrib_cache_read_one_outer(cache, fname, funit, mat_acc_in=mat_acc)
-! 
-!    cache_next => cache
-!    cache_orig => cache
-!    
-!    do i = 1, num_entries - 1
-!    
-!       call contrib_cache_retrieve_one_outer(cache_next, fname, funit, mat_acc_in=mat_acc)
-!       cache_next => cache_next%next
-!     
-!    end do
-! 
-!    cache_next%next => cache_orig
-!    
-!    
-!    if (.NOT.(from_inner)) then
-!       
-!       close(260)
-!       
-!    end if
-!    
-!    if (present(mat_acc_in)) then
-!       mat_acc_in = mat_acc
-!    end if
- 
- end subroutine
- 
- ! FIXME: Definitely ll-to-array chgs needed for this routine
- 
- ! Wrapper 2: Get one outer cache element from file fname
- subroutine contrib_cache_retrieve_one_outer(cache, fname, funit, mat_acc_in)
- 
-   implicit none
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
    
-   integer :: funit, mat_acc
-   integer, optional :: mat_acc_in
-   character(*) :: fname
-   type(contrib_cache_outer):: cache
+
+   funit = 260
+   if (present(funit_in)) then
+      funit = funit_in
+   end if
    
-!    mat_acc = 0
-!    if (present(mat_acc_in)) then
-!       mat_acc = mat_acc_in
-!    end if
-!    
-!    allocate(cache_new)
-!    
-!    call contrib_cache_read_one_outer(cache_new, fname, funit, mat_acc_in=mat_acc)
-!    
-!    cache%next => cache_new
-!   
-!  
-!    if (present(mat_acc_in)) then
-!       mat_acc_in = mat_acc
-!    end if
+   
+   ! If not as part of inner cache, then open file
+   if (.NOT.(from_inner)) then
+   
+      inquire(file=fname // '.DAT', exist=cache_ext)
+      
+      if (.NOT.(cache_ext)) then
+   
+         write(*,*) 'ERROR: The expected cache file ', trim(adjustl(fname)), ' does not exist'
+         stop
+   
+      end if
+      
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+           form='unformatted', status='old', action='read')
+           
+   end if
+   
+   read(funit) num_entries
+   
+   if (allocated(cache)) then
+   
+      deallocate(cache)
+      
+   end if
+   
+   allocate(cache(num_entries))
+   
+   do i = 1, num_entries
+
+      call contrib_cache_read_one_outer(cache(i), fname, funit, mat_acc_in=mat_acc)
+   
+   end do
+   
+   
+   if (.NOT.(from_inner)) then
+      
+      close(260)
+      
+   end if
+   
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
  
  end subroutine
 
@@ -1045,190 +1002,188 @@ module rsp_property_caching
    type(contrib_cache_outer) :: cache
    
    
-!    mat_acc = 0
-!    if (present(mat_acc_in)) then
-!       mat_acc = mat_acc_in
-!    end if
-!   
-!    
-!    read(funit) size_i
-!    allocate(cache%p_tuples(size_i))
-!    
-!    do j = 1, size(cache%p_tuples)
-!       
-!       read(funit) cache%p_tuples(j)%npert
-!          
-!       allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
-!       allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
-!       allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
-!       allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
-!          
-!       do k = 1, cache%p_tuples(j)%npert
-!          
-!          read(funit) cache%p_tuples(j)%pdim(k)
-!          read(funit) cache%p_tuples(j)%plab(k)
-!          read(funit) cache%p_tuples(j)%pid(k)
-!          read(funit) cache%p_tuples(j)%freq(k)
-!          
-!       end do
-!          
-!    
-!       
-!       ! MaR: New code for residue handling
-!       ! NOTE: Potential size_i conflict - likely no problem 
-!       ! but revisit if there are issues
-!       
-!       read(funit) cache%p_tuples(j)%do_residues
-!       read(funit) cache%p_tuples(j)%n_pert_res_max
-!       read(funit) cache%p_tuples(j)%n_states
-!       
-!       if (cache%p_tuples(j)%do_residues > 0) then
-!       
-!          read(funit) alloc_indic
-!        
-!          if (alloc_indic) then
-!          
-!             read(funit) size_i
-!             allocate(cache%p_tuples(j)%states(size_i))
-!          
-!             do i = 1, size_i
-!          
-!                read(funit) cache%p_tuples(j)%states(i)
-!                
-!             end do
-!             
-!          end if
-!          
-!          read(funit) alloc_indic
-!       
-!          if (alloc_indic) then
-!          
-!             read(funit) size_i
-!             allocate(cache%p_tuples(j)%exenerg(size_i))
-!          
-!             do i = 1, size_i
-!          
-!                read(funit) cache%p_tuples(j)%exenerg(i)
-!                
-!             end do
-!             
-!          end if
-!          
-!          read(funit) alloc_indic
-!        
-!          if (alloc_indic) then
-!          
-!             read(funit) size_i
-!             read(funit) size_j
-!             allocate(cache%p_tuples(j)%part_of_residue(size_i, size_j))
-!          
-!             do i = 1, size_i
-!             
-!                do k = 1, size_j
-!          
-!                   read(funit) cache%p_tuples(j)%part_of_residue(i, k)
-!                
-!                end do
-!                
-!             end do
-!             
-!          end if
-!          
-!       end if
-!       
-!       
-!       ! End new
-!       
-!    end do   
-!    
-!   
-!    read(funit) cache%last
-!    read(funit) cache%dummy_entry
-!    read(funit) cache%num_dmat
-!    read(funit) cache%contrib_type
-!    read(funit) cache%n_rule
-!    read(funit) cache%contrib_size
-!    
-!    if (cache%p_tuples(1)%npert > 0) then
-!    
-!       read(funit) size_i
-!       allocate(cache%nblks_tuple(size_i))
-!       read(funit) cache%nblks_tuple
-!       
-!       read(funit) size_i
-!       read(funit) size_j
-!       allocate(cache%blk_sizes(size_i, size_j))
-!       do j = 1, size_i
-!          read(funit) cache%blk_sizes(j, :)
-!       end do   
-!      
-!       read(funit) size_i
-!       read(funit) size_j
-!       allocate(cache%indices(size_i, size_j))
-!       do j = 1, size_i
-!          read(funit) cache%indices(j,:)
-!       end do
-!       
-!       read(funit) size_i
-!       read(funit) size_j
-!       read(funit) size_k
-!       allocate(cache%blks_tuple_info(size_i, size_j, size_k))
-!       do j = 1, size_i
-!          do k = 1, size_j
-!             read(funit) cache%blks_tuple_info(j, k, :)
-!          end do
-!       end do
-!       
-!       read(funit) size_i
-!       allocate(cache%blks_tuple_triang_size(size_i))
-!       read(funit) cache%blks_tuple_triang_size
-!       
-!    else
-!    
-!       allocate(cache%indices(1,1))
-!       cache%indices(1,1) = 1
-!       
-!    
-!    end if
-!    
-!    read(funit) mat_scal_none
-!       
-!       
-!    if (mat_scal_none == 0) then
-!    
-!       fid_fmt = '(I10.10)'
-!    
-!       read(funit) size_i
-!       
-!       allocate(cache%data_mat(size_i))
-!       
-!       do i = 1, size_i
-!       
-!          write(str_fid, fid_fmt) i + mat_acc
-!          
-!          write(*,*) 'Reading matrix data from', trim(adjustl(fname)) // '_MAT_' // &
-!                           trim(str_fid) // '.DAT'
-!       
-!          call QcMatInit(cache%data_mat(i))
-!          k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
-!                           trim(str_fid) // '.DAT', BINARY_VIEW)
-!       
-!       end do
-!       
-!       mat_acc = mat_acc + size_i
-!    
-!    
-!    elseif (mat_scal_none == 1) then
-!    
-!       read(funit) size_i
-!       allocate(cache%data_scal(size_i))
-!       read(funit) cache%data_scal
-!    
-!    end if
-!       
-!    if (present(mat_acc_in)) then
-!       mat_acc_in = mat_acc
-!    end if
+   mat_acc = 0
+   if (present(mat_acc_in)) then
+      mat_acc = mat_acc_in
+   end if
+  
+   
+   read(funit) size_i
+   allocate(cache%p_tuples(size_i))
+   
+   do j = 1, size(cache%p_tuples)
+      
+      read(funit) cache%p_tuples(j)%npert
+         
+      allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
+      allocate(cache%p_tuples(j)%freq(cache%p_tuples(j)%npert))
+         
+      do k = 1, cache%p_tuples(j)%npert
+         
+         read(funit) cache%p_tuples(j)%pdim(k)
+         read(funit) cache%p_tuples(j)%plab(k)
+         read(funit) cache%p_tuples(j)%pid(k)
+         read(funit) cache%p_tuples(j)%freq(k)
+         
+      end do
+         
+   
+      
+      ! MaR: New code for residue handling
+      ! NOTE: Potential size_i conflict - likely no problem 
+      ! but revisit if there are issues
+      
+      read(funit) cache%p_tuples(j)%do_residues
+      read(funit) cache%p_tuples(j)%n_pert_res_max
+      read(funit) cache%p_tuples(j)%n_states
+      
+      if (cache%p_tuples(j)%do_residues > 0) then
+      
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            allocate(cache%p_tuples(j)%states(size_i))
+         
+            do i = 1, size_i
+         
+               read(funit) cache%p_tuples(j)%states(i)
+               
+            end do
+            
+         end if
+         
+         read(funit) alloc_indic
+      
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            allocate(cache%p_tuples(j)%exenerg(size_i))
+         
+            do i = 1, size_i
+         
+               read(funit) cache%p_tuples(j)%exenerg(i)
+               
+            end do
+            
+         end if
+         
+         read(funit) alloc_indic
+       
+         if (alloc_indic) then
+         
+            read(funit) size_i
+            read(funit) size_j
+            allocate(cache%p_tuples(j)%part_of_residue(size_i, size_j))
+         
+            do i = 1, size_i
+            
+               do k = 1, size_j
+         
+                  read(funit) cache%p_tuples(j)%part_of_residue(i, k)
+               
+               end do
+               
+            end do
+            
+         end if
+         
+      end if
+      
+      
+      ! End new
+      
+   end do   
+
+   read(funit) cache%dummy_entry
+   read(funit) cache%num_dmat
+   read(funit) cache%contrib_type
+   read(funit) cache%n_rule
+   read(funit) cache%contrib_size
+   
+   if (cache%p_tuples(1)%npert > 0) then
+   
+      read(funit) size_i
+      allocate(cache%nblks_tuple(size_i))
+      read(funit) cache%nblks_tuple
+      
+      read(funit) size_i
+      read(funit) size_j
+      allocate(cache%blk_sizes(size_i, size_j))
+      do j = 1, size_i
+         read(funit) cache%blk_sizes(j, :)
+      end do   
+     
+      read(funit) size_i
+      read(funit) size_j
+      allocate(cache%indices(size_i, size_j))
+      do j = 1, size_i
+         read(funit) cache%indices(j,:)
+      end do
+      
+      read(funit) size_i
+      read(funit) size_j
+      read(funit) size_k
+      allocate(cache%blks_tuple_info(size_i, size_j, size_k))
+      do j = 1, size_i
+         do k = 1, size_j
+            read(funit) cache%blks_tuple_info(j, k, :)
+         end do
+      end do
+      
+      read(funit) size_i
+      allocate(cache%blks_tuple_triang_size(size_i))
+      read(funit) cache%blks_tuple_triang_size
+      
+   else
+   
+      allocate(cache%indices(1,1))
+      cache%indices(1,1) = 1
+      
+   
+   end if
+   
+   read(funit) mat_scal_none
+      
+      
+   if (mat_scal_none == 0) then
+   
+      fid_fmt = '(I10.10)'
+   
+      read(funit) size_i
+      
+      allocate(cache%data_mat(size_i))
+      
+      do i = 1, size_i
+      
+         write(str_fid, fid_fmt) i + mat_acc
+         
+         write(*,*) 'Reading matrix data from', trim(adjustl(fname)) // '_MAT_' // &
+                          trim(str_fid) // '.DAT'
+      
+         call QcMatInit(cache%data_mat(i))
+         k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
+                          trim(str_fid) // '.DAT', BINARY_VIEW)
+      
+      end do
+      
+      mat_acc = mat_acc + size_i
+   
+   
+   elseif (mat_scal_none == 1) then
+   
+      read(funit) size_i
+      allocate(cache%data_scal(size_i))
+      read(funit) cache%data_scal
+   
+   end if
+      
+   if (present(mat_acc_in)) then
+      mat_acc_in = mat_acc
+   end if
    
  end subroutine
  
