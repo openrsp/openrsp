@@ -447,7 +447,7 @@ module rsp_property_caching
          write(funit) cache(i)%indices
       
          
-         call contrib_cache_outer_put(size(cache(i)%contribs_outer), 
+         call contrib_cache_outer_put(size(cache(i)%contribs_outer), &
               cache(i)%contribs_outer, fname, funit, mat_acc_in=mat_acc)
    
    
@@ -462,16 +462,16 @@ module rsp_property_caching
  ! FIXME: Definitely ll-to-array chgs needed for this routine
  
  ! Retrieve contribution cache structure (including outer attached instances) from file fname
- subroutine contrib_cache_retrieve(len_cache, cache, fname)
+ subroutine contrib_cache_retrieve(cache, fname)
  
    implicit none
    
    logical :: termination, cache_ext
    integer :: num_entries, i, j, funit
-   integer :: len_cache, dum
+   integer :: dum
    character(*) :: fname
   
-   type(contrib_cache), dimension(len_cache) :: cache
+   type(contrib_cache), dimension(:), allocatable :: cache
 
    ! Old LL functionality: Rewrite together with store routine into array form   
    
@@ -501,8 +501,6 @@ module rsp_property_caching
    end if 
    
    allocate(cache(num_entries))
-   
-   len_cache = num_entries
    
    do i = 1, num_entries
    
@@ -699,7 +697,7 @@ module rsp_property_caching
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='replace', action='write')
            
-      write(funit) num_entries
+      write(funit) size(cache)
         
       call contrib_cache_outer_put(size(cache), cache, fname, funit, mat_acc_in=mat_acc)
         
@@ -742,7 +740,7 @@ module rsp_property_caching
    ! Traverse and store
    do i = 1, num_entries
    
-      write(funit) size(cache(i)%contribs_outer)
+      write(funit) len_cache
    
       write(funit) size(cache(i)%p_tuples)
       do j = 1, size(cache(i)%p_tuples)
@@ -877,7 +875,7 @@ module rsp_property_caching
          
          fid_fmt = '(I10.10)'
          
-         do j = 1, size(cache_next%data_mat)
+         do j = 1, size(cache(i)%data_mat)
             
             write(str_fid, fid_fmt) j + mat_acc
          
@@ -920,16 +918,16 @@ module rsp_property_caching
  ! This is the routine to call if one wants to retrieve an entire
  ! outer cache array from a file and that outer cache is "standalone", i.e.
  ! not part of an inner cache instance
- subroutine contrib_cache_outer_retrieve(len_cache, cache, fname, funit_in, mat_acc_in)
+ subroutine contrib_cache_outer_retrieve(cache, fname, funit_in, mat_acc_in)
  
    implicit none
    
    logical :: cache_ext
    integer :: funit, i, j, k, mat_acc
    integer, optional :: funit_in, mat_acc_in
-   integer :: num_entries, len_cache
+   integer :: num_entries
    character(*) :: fname
-   type(contrib_cache_outer), dimension(len_cache) :: cache
+   type(contrib_cache_outer), dimension(:), allocatable :: cache
    
    mat_acc = 0
    if (present(mat_acc_in)) then
