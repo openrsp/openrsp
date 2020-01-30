@@ -561,20 +561,17 @@ module rsp_general
           write(out_str, *) ' '
           call out_print(out_str, 1)
 
-          ! CONTINUE HERE, HERA AND LATER CACHE SIZES NOT TRIVIAL, ESPECIALLY IF RETRIEVED, NEED 
-          ! TO CHG ARGUMENTS TO LATER MAIN ROUTINES
-          
            allocate(S(0))
            allocate(D(0))
            allocate(F(0))
-           call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
-           call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
-           call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+           call contrib_cache_outer_retrieve(size(S), S, 'OPENRSP_S_CACHE')
+           call contrib_cache_outer_retrieve(size(D), D, 'OPENRSP_D_CACHE')
+           call contrib_cache_outer_retrieve(size(F), F, 'OPENRSP_F_CACHE')
           
           if (residue_order > 0) then
        
-!              allocate(Xf)
-!              call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+             allocate(Xf(0))
+             call contrib_cache_outer_retrieve(size(Xf), Xf, 'OPENRSP_Xf_CACHE')
           
           end if
           
@@ -597,9 +594,9 @@ module rsp_general
          call contrib_cache_outer_add_element(size(F), F, .TRUE., 1, empty_pert, &
               data_size = 1, data_mat=F_unpert_arr)
                
-!          call contrib_cache_outer_store(S, 'OPENRSP_S_CACHE', r_flag)
-!          call contrib_cache_outer_store(D, 'OPENRSP_D_CACHE', r_flag)
-!          call contrib_cache_outer_store(F, 'OPENRSP_F_CACHE', r_flag)
+         call contrib_cache_outer_store(size(S), S, 'OPENRSP_S_CACHE', r_flag)
+         call contrib_cache_outer_store(size(D), D, 'OPENRSP_D_CACHE', r_flag)
+         call contrib_cache_outer_store(size(F), F, 'OPENRSP_F_CACHE', r_flag)
          
          if (residue_order > 0) then
 
@@ -610,7 +607,7 @@ module rsp_general
              xf_was_allocated = .TRUE.
              call contrib_cache_outer_add_element(size(Xf), Xf, .TRUE., 1, empty_pert, &
                   data_size = 1, data_mat=Xf_unpert(1))
-!              call contrib_cache_outer_store(Xf,'OPENRSP_Xf_CACHE', r_flag)
+             call contrib_cache_outer_store(size(Xf), Xf,'OPENRSP_Xf_CACHE', r_flag)
           
           end if
        
@@ -634,24 +631,22 @@ module rsp_general
 
        if (residue_order > 0) then
        
-          len_fds = size(F)
-          len_x = size(Xf)
        
-          call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, len_fds, F, D, S, get_rsp_sol, &
+          call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, &
+                        size(F), F, size(D), D, size(S), S, get_rsp_sol, &
                         get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                         get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                         prop_sizes, rsp_tensor, prog_info, rs_info, r_flag, sdf_retrieved, &
-                        mem_mgr, Xf=Xf)
+                        mem_mgr, size(Xf), Xf=Xf)
                         
        else
        
-          len_fds = size(F)
-       
-          call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, len_fds, F, D, S, get_rsp_sol, &
+          call get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, len_fds, &
+                        size(F), F, size(D), D, size(S), S, get_rsp_sol, &
                         get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                         get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                         prop_sizes, rsp_tensor, prog_info, rs_info, r_flag, sdf_retrieved, &
-                        mem_mgr)
+                        mem_mgr, 0)
                         
        end if
 
@@ -827,11 +822,12 @@ module rsp_general
     
    
   ! Main property calculation routine - Get perturbed F, D, S and then calculate the properties
-  subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, len_fds, F, D, S, get_rsp_sol, &
+  subroutine get_prop(n_props, n_freq_cfgs, p_tuples, kn_rule, &
+                      len_f, F, len_d, D, len_s, S, get_rsp_sol, &
                       get_nucpot, get_ovl_mat, get_ovl_exp, get_1el_mat, get_1el_exp, &
                       get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp, out_print, &
                       prop_sizes, props, prog_info, rs_info, r_flag, sdf_retrieved, &
-                      mem_mgr, Xf)
+                      mem_mgr, len_x, Xf)
 
     implicit none
 
@@ -839,7 +835,7 @@ module rsp_general
     logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved
     integer :: n_props, i, j, k
     integer :: r_flag
-    integer :: len_fds
+    integer :: len_f, len_d, len_s, len_x
     integer, dimension(2) :: this_kn
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(n_props) :: n_freq_cfgs
@@ -854,7 +850,9 @@ module rsp_general
     external :: get_2el_mat, get_2el_exp, get_xc_mat, get_xc_exp
     complex(8), dimension(*) :: props
     
-    type(contrib_cache_outer), allocatable, dimension(:) :: F, D, S
+    type(contrib_cache_outer), allocatable, dimension(len_F) :: F
+    type(contrib_cache_outer), allocatable, dimension(len_D) :: D
+    type(contrib_cache_outer), allocatable, dimension(len_S) :: S
     type(contrib_cache_outer), optional, allocatable, dimension(:) :: Xf
     
     type(contrib_cache), allocatable, dimension(:) :: contribution_cache
