@@ -4551,16 +4551,8 @@ module rsp_general
     deallocate(o_supsize)
     deallocate(o_supsize_prime)
     deallocate(o_size)
-    
-    
-    
-    
+
   end subroutine
-  
-  
-  
-  
-  
 
   ! Print tensors recursively
   recursive subroutine print_rsp_tensor(npert, lvl, pdim, prop, offset)

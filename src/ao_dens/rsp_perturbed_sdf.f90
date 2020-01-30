@@ -87,8 +87,7 @@ module rsp_perturbed_sdf
        write(out_str, *) ' '
        call out_print(out_str, 1)
           
-!        allocate(cache)
-!        call contrib_cache_retrieve(cache, 'OPENRSP_FDS_ID')
+       call contrib_cache_retrieve(cache, 'OPENRSP_FDS_ID')
        lof_retrieved = .TRUE.
              
     else
@@ -110,7 +109,8 @@ module rsp_perturbed_sdf
           end do
        end do
 
-!        call contrib_cache_store(cache, r_flag, 'OPENRSP_FDS_ID')
+       len_cache = size(cache)
+       call contrib_cache_store(len_cache, cache, r_flag, 'OPENRSP_FDS_ID')
        
     end if
 
@@ -172,7 +172,7 @@ module rsp_perturbed_sdf
        
           if (.NOT.(lof_retrieved)) then
           
-!              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
+             call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
              lof_retrieved = .TRUE.
              
           end if
@@ -215,8 +215,9 @@ module rsp_perturbed_sdf
              k = k + 1
        
           end do
-          
-!           call contrib_cache_store(lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
+
+            len_lof_cache = size(lof_cache)
+            call contrib_cache_store(len_lof_cache, lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
        
        end if
        
@@ -237,7 +238,7 @@ module rsp_perturbed_sdf
                     
           if (.NOT.(lof_retrieved)) then
           
-!              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
+             call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
              lof_retrieved = .TRUE.
              
           end if
@@ -282,11 +283,10 @@ module rsp_perturbed_sdf
                 
                 if (.NOT.(mem_mgr%calibrate)) then
                 
-!                    call contrib_cache_store(lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
+                   len_lof_cache = size(lof_cache)
+                   call contrib_cache_store(len_lof_cache, lof_cache, r_flag, 'OPENRSP_LOF_CACHE')
                    
                 end if
-                
-                 
                 
              end if
                       
@@ -300,7 +300,6 @@ module rsp_perturbed_sdf
        ! Set 'retrieved' flag to false: If retrieved at current order, state should now 
        ! be as if not restarted (i.e. as if calculated in present run)
        lof_retrieved = .FALSE.
-
       
        ! Check if this stage passed previously and if so, then retrieve and skip execution
        call prog_incr(prog_info, r_flag, 2)
@@ -319,13 +318,13 @@ module rsp_perturbed_sdf
           
           if (.NOT.(sdf_retrieved)) then
           
-!              call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE', .FALSE.)
-!              call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE', .FALSE.)
-!              call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE', .FALSE.)
+             call contrib_cache_outer_retrieve(S, 'OPENRSP_S_CACHE')
+             call contrib_cache_outer_retrieve(D, 'OPENRSP_D_CACHE')
+             call contrib_cache_outer_retrieve(F, 'OPENRSP_F_CACHE')
              
              if (present(Xf)) then
        
-!              call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE', .FALSE.)
+                call contrib_cache_outer_retrieve(Xf, 'OPENRSP_Xf_CACHE')
           
              end if
                        
@@ -370,11 +369,9 @@ module rsp_perturbed_sdf
           
           if (.NOT.(mem_mgr%calibrate)) then
           
-             len_d = size(D)
-          
-!              call contrib_cache_outer_store(len_d, S, 'OPENRSP_S_CACHE', r_flag)
-!              call contrib_cache_outer_store(len_d, D, 'OPENRSP_D_CACHE', r_flag)
-!              call contrib_cache_outer_store(len_d, F, 'OPENRSP_F_CACHE', r_flag)
+             call contrib_cache_outer_store(size(S), S, 'OPENRSP_S_CACHE', r_flag)
+             call contrib_cache_outer_store(size(D), D, 'OPENRSP_D_CACHE', r_flag)
+             call contrib_cache_outer_store(size(F), F, 'OPENRSP_F_CACHE', r_flag)
              
           end if
        
@@ -1935,7 +1932,7 @@ module rsp_perturbed_sdf
                       write(out_str, *) ' '
                       call out_print(out_str, 2)
                    
-!                       call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
+                      call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
                       rsp_eqn_retrieved = .TRUE.
                       
              
@@ -1988,8 +1985,8 @@ module rsp_perturbed_sdf
   
                       end if
                   
-!                       call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', r_flag, &
-!                            mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
+                      call mat_scal_store(last - first + 1, 'OPENRSP_MAT_RSP', r_flag, &
+                           mat=X(ind_ctr+first-1:ind_ctr+last-1), start_pos = ind_ctr+first-1)
                     
                    end if
                    
@@ -2015,7 +2012,7 @@ module rsp_perturbed_sdf
          
              if (.NOT.(rsp_eqn_retrieved)) then
           
-!                 call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
+                call mat_scal_retrieve(rs_info(3), 'OPENRSP_MAT_RSP', mat=X(1:rs_info(3)))
                 rsp_eqn_retrieved = .TRUE.
              
              end if
@@ -2056,8 +2053,8 @@ module rsp_perturbed_sdf
                 deallocate(arg_int_b)
                 deallocate(arg_int)
 
-!                 call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', r_flag, &
-!                            mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
+                call mat_scal_store(size_i(k), 'OPENRSP_MAT_RSP', r_flag, &
+                           mat=X(ind_ctr:ind_ctr+size_i(k)-1), start_pos = ind_ctr)
                            
              end if
                    
