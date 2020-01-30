@@ -315,9 +315,8 @@ module rsp_property_caching
  
    implicit none
    
-   logical :: termination
    integer :: num_entries, i, j, k, funit, mat_acc, r_flag
-   integer :: len_cache
+   integer :: len_cache, n_mpt
    character(*) :: fname
   
    type(contrib_cache), dimension(len_cache) :: cache
@@ -338,15 +337,34 @@ module rsp_property_caching
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='replace', action='write')
    
-   
+      ! Find how many unperturbed elements: They should be skippable when writing
+      ! since they were just "initialization" elements
+      n_mpt = 0
+      
       num_entries = len_cache
-
-      write(funit) num_entries
-   
-     
-      ! Traverse and store
-      termination = .FALSE.
+      
       do i = 1, num_entries
+   
+         if (cache(i)%p_inner%npert == 0) then
+         
+            n_mpt = n_mpt + 1
+           
+         end if
+   
+      end do
+
+      write(*,*) 'I found', n_mpt, 'elems in this len', num_entries, 'cache'
+      
+      write(funit) num_entries - n_mpt
+   
+      ! Traverse and store
+      do i = 1, num_entries
+      
+        if (cache(i)%p_inner%npert == 0) then
+        
+            cycle
+        
+        end if
    
          write(funit) cache(i)%p_inner%npert
          do j = 1, cache(i)%p_inner%npert
@@ -359,7 +377,7 @@ module rsp_property_caching
          end do
       
          ! MaR: New code for residue handling
-      
+
          write(funit) cache(i)%p_inner%do_residues
          write(funit) cache(i)%p_inner%n_pert_res_max
          write(funit) cache(i)%p_inner%n_states
@@ -367,7 +385,7 @@ module rsp_property_caching
          if (cache(i)%p_inner%do_residues > 0) then
       
             if (allocated(cache(i)%p_inner%states)) then
-         
+
                write(funit) .TRUE.
                write(funit) size(cache(i)%p_inner%states)
          
@@ -384,7 +402,7 @@ module rsp_property_caching
             end if
          
             if (allocated(cache(i)%p_inner%exenerg)) then
-         
+
                write(funit) .TRUE.
                write(funit) size(cache(i)%p_inner%exenerg)
          
@@ -410,7 +428,7 @@ module rsp_property_caching
                do j = 1, size(cache(i)%p_inner%part_of_residue, 1)
             
                   do k = 1, size(cache(i)%p_inner%part_of_residue, 2)
-         
+
                      write(funit) cache(i)%p_inner%part_of_residue(j, k)
                   
                   end do
@@ -418,7 +436,7 @@ module rsp_property_caching
                end do
             
             else
-         
+
                write(funit) .FALSE.
          
             end if
@@ -466,12 +484,12 @@ module rsp_property_caching
  
    implicit none
    
-   logical :: termination, cache_ext
+   logical :: cache_ext
    integer :: num_entries, i, j, funit
-   integer :: dum
+   integer :: dum, mat_acc
    character(*) :: fname
-  
-   type(contrib_cache), dimension(:), allocatable :: cache
+   
+   type(contrib_cache), dimension(:), allocatable :: cache, cache_head_elem
 
    ! Old LL functionality: Rewrite together with store routine into array form   
    
@@ -491,7 +509,7 @@ module rsp_property_caching
    
    read(funit) num_entries
    
-   ! NOTE: I choose to always dellocate the cache if already allocated since anything else
+   ! NOTE: I choose to always deallocate the cache if already allocated since anything else
    ! would tend to confuse things
    
    if (allocated(cache)) then
@@ -500,20 +518,24 @@ module rsp_property_caching
    
    end if 
    
-   allocate(cache(num_entries))
+   allocate(cache(num_entries + 1))
+   
+   call contrib_cache_allocate(cache_head_elem)
+   
+   cache(1) = cache_head_elem(1)
+   
+   mat_acc = 0
    
    do i = 1, num_entries
    
-      call contrib_cache_read_one_inner(cache(i), fname, funit)
+      call contrib_cache_read_one_inner(cache(i + 1), fname, funit)
       
-      allocate(cache(i)%contribs_outer(cache(i)%num_outer))
+      allocate(cache(i + 1)%contribs_outer(cache(i + 1)%num_outer))
      
-      do j = 1, cache(i)%num_outer
+      do j = 1, cache(i + 1)%num_outer
      
-         ! Size argument already known when reading inner-outer, so dummy read it here
-         read(funit) dum
-     
-         call contrib_cache_read_one_outer(cache(i)%contribs_outer(j), fname, funit)
+         call contrib_cache_read_one_outer(cache(i + 1)%contribs_outer(j), fname, &
+              funit, mat_acc_in=mat_acc)
       
       end do
    
@@ -645,9 +667,6 @@ module rsp_property_caching
       
       
       ! End new
-   
-   
-   
       
       read(funit) cache%num_outer
       read(funit) cache%nblks
@@ -740,7 +759,7 @@ module rsp_property_caching
    ! Traverse and store
    do i = 1, num_entries
    
-      write(funit) len_cache
+!       write(funit) len_cache
    
       write(funit) size(cache(i)%p_tuples)
       do j = 1, size(cache(i)%p_tuples)
@@ -1003,12 +1022,13 @@ module rsp_property_caching
    end if
    
    read(funit) size_i
+   
    allocate(cache%p_tuples(size_i))
    
    do j = 1, size(cache%p_tuples)
       
       read(funit) cache%p_tuples(j)%npert
-         
+      
       allocate(cache%p_tuples(j)%pdim(cache%p_tuples(j)%npert))
       allocate(cache%p_tuples(j)%plab(cache%p_tuples(j)%npert))
       allocate(cache%p_tuples(j)%pid(cache%p_tuples(j)%npert))
@@ -1153,9 +1173,6 @@ module rsp_property_caching
       
          write(str_fid, fid_fmt) i + mat_acc
          
-         write(*,*) 'Reading matrix data from', trim(adjustl(fname)) // '_MAT_' // &
-                          trim(str_fid) // '.DAT'
-      
          call QcMatInit(cache%data_mat(i))
          k = QcMatRead_f(cache%data_mat(i), trim(adjustl(fname)) // '_MAT_' // &
                           trim(str_fid) // '.DAT', BINARY_VIEW)
@@ -2245,6 +2262,10 @@ end function
             end if
             
             if (present(mat)) then
+            
+                write(*,*) 'cache, res offs', cache_offset + &
+                               cache_hard_offset, res_offset
+                write(*,*) 'sizes', size(cache(loc_found)%data_mat), size(mat)
             
                call QcMatRAXPY(1.0d0, cache(loc_found)%data_mat(cache_offset + &
                                cache_hard_offset), mat(res_offset))

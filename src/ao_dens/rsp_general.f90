@@ -596,8 +596,8 @@ module rsp_general
          
          if (residue_order > 0) then
 
-    call QcMatInit(Xf_unpert_arr(1))
-    call QcMatAEqB(Xf_unpert_arr(1), Xf_unpert(1))    
+             call QcMatInit(Xf_unpert_arr(1))
+             call QcMatAEqB(Xf_unpert_arr(1), Xf_unpert(1))    
        
              call contrib_cache_outer_allocate(Xf)
              xf_was_allocated = .TRUE.

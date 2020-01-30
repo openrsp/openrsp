@@ -240,7 +240,7 @@ module rsp_perturbed_sdf
           
              call contrib_cache_retrieve(lof_cache, 'OPENRSP_LOF_CACHE')
              lof_retrieved = .TRUE.
-             
+
           end if
        
        
@@ -251,7 +251,7 @@ module rsp_perturbed_sdf
           len_lof_cache = size(lof_cache)
        
           do m = 1, len_lof_cache
-       
+          
              ! Check if this stage passed previously and if so, then retrieve and skip execution
              if (rs_check(prog_info, rs_info, r_flag, lvl=3)) then
              
@@ -604,7 +604,26 @@ module rsp_perturbed_sdf
                    end if
                    
                 end do
+                
+                
+                                write(*, *) 'Getting lower-order Fock matrix contribution from cache:'
              
+                do i = 1, num_p_tuples
+                
+                   if (i == 1) then
+
+                      write(*, *) 'F', p_tuples(i)%plab
+
+          
+                   else
+                   
+                      write(*, *) 'D', p_tuples(i)%plab
+ 
+                      
+                   end if
+                   
+                end do
+                
                 call contrib_cache_getdata(len_lof_cache, fock_lowerorder_cache, &
                 num_p_tuples, p_tuples, contrib_size=fp_size, ind_len=0, mat=Fp)
              
@@ -2660,7 +2679,6 @@ module rsp_perturbed_sdf
 
     end if
     
-    
     ! Make the unperturbed D the first elements of the dmat holder array
     
     if (.NOT.(mem_mgr%calibrate)) then
@@ -2737,7 +2755,6 @@ module rsp_perturbed_sdf
                               1, ind_len=size(curr_dmat_indices, 2), &
                               ind_unsorted=int_arg, &
                               mat_sing=dmat_total_array(dmat_array_ctr))
-
 
                 deallocate(int_arg)
                 deallocate(pert_arg)
