@@ -605,25 +605,6 @@ module rsp_perturbed_sdf
                    
                 end do
                 
-                
-                                write(*, *) 'Getting lower-order Fock matrix contribution from cache:'
-             
-                do i = 1, num_p_tuples
-                
-                   if (i == 1) then
-
-                      write(*, *) 'F', p_tuples(i)%plab
-
-          
-                   else
-                   
-                      write(*, *) 'D', p_tuples(i)%plab
- 
-                      
-                   end if
-                   
-                end do
-                
                 call contrib_cache_getdata(len_lof_cache, fock_lowerorder_cache, &
                 num_p_tuples, p_tuples, contrib_size=fp_size, ind_len=0, mat=Fp)
              

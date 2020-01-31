@@ -353,8 +353,6 @@ module rsp_property_caching
    
       end do
 
-      write(*,*) 'I found', n_mpt, 'elems in this len', num_entries, 'cache'
-      
       write(funit) num_entries - n_mpt
    
       ! Traverse and store
@@ -448,7 +446,6 @@ module rsp_property_caching
       
          write(funit) size(cache(i)%contribs_outer)
          
-         
          write(funit) cache(i)%nblks
       
          write(funit) size(cache(i)%blk_sizes)
@@ -531,13 +528,19 @@ module rsp_property_caching
       call contrib_cache_read_one_inner(cache(i + 1), fname, funit)
       
       allocate(cache(i + 1)%contribs_outer(cache(i + 1)%num_outer))
-     
+    
       do j = 1, cache(i + 1)%num_outer
      
          call contrib_cache_read_one_outer(cache(i + 1)%contribs_outer(j), fname, &
               funit, mat_acc_in=mat_acc)
       
       end do
+      
+      ! Since I wrote it with one more outer element (maybe because of dummy)
+      ! I now need to decrease the number of outer by one to get the "acceptable"
+      ! number of outer entries which avoids indexing issues, due to idiosyncrasies 
+      ! of the current setup
+      cache(i + 1)%num_outer = cache(i + 1)%num_outer - 1
    
    end do
 
@@ -2262,10 +2265,6 @@ end function
             end if
             
             if (present(mat)) then
-            
-                write(*,*) 'cache, res offs', cache_offset + &
-                               cache_hard_offset, res_offset
-                write(*,*) 'sizes', size(cache(loc_found)%data_mat), size(mat)
             
                call QcMatRAXPY(1.0d0, cache(loc_found)%data_mat(cache_offset + &
                                cache_hard_offset), mat(res_offset))

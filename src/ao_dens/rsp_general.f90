@@ -1853,6 +1853,10 @@ module rsp_general
    
     allocate(outer_contract_sizes_1(cache%num_outer))
     allocate(outer_contract_sizes_2(cache%num_outer,2))
+    
+    outer_contract_sizes_1 = 0
+    outer_contract_sizes_2 = 0
+    
    
     ! Traversal: Find number of density matrices for contraction for nuc-nuc, 1-el, 2-el cases
     
@@ -1902,6 +1906,7 @@ module rsp_general
           num_1 = num_1 + 1
        
           outer_contract_sizes_1(k) = cache%contribs_outer(m)%blks_tuple_triang_size(1)
+         
           outer_contract_sizes_2(k, :) = &
           (/cache%contribs_outer(m)%blks_tuple_triang_size(1),1/)
           
@@ -2101,7 +2106,7 @@ module rsp_general
              call out_print(out_str, 1)
              write(out_str, *) ' '
              call out_print(out_str, 1)
-          
+             
              call get_1el_exp(num_pert, pert_ext, msize, &
                               LHS_dmat_1, cache%blks_triang_size*msize, &
                               contrib_1( (mcurr - 1) * cache%blks_triang_size + 1: &
@@ -2120,7 +2125,7 @@ module rsp_general
       !                                 (mcurr + msize - 1) * cache%blks_triang_size)
        
        
-             write(out_str, *) 'First-order density matrix-dependent contribution (sample)', &
+              write(out_str, *) 'First-order density matrix-dependent contribution (sample)', &
              contrib_1(1:min(10,size(contrib_1)))
              call out_print(out_str, 2)
               
@@ -2212,7 +2217,7 @@ module rsp_general
           
              ! Can the whole pair be done?
              if (curr_remain >= outer_contract_sizes_2(i, 1) + outer_contract_sizes_2(i, 2)) then
-                          
+             
                 ! If yes, add to workload
                 curr_remain = curr_remain - (outer_contract_sizes_2(i, 1) + &
                                              outer_contract_sizes_2(i, 2))
@@ -2442,7 +2447,7 @@ module rsp_general
           ! Traverse outer elements and fetch matrices
           
           do i = curr_pickup(1), next_pickup(1) - 1
-
+          
              if (.NOT.(mem_mgr%calibrate)) then
           
                 ! No chain rule applications
