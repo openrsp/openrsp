@@ -58,6 +58,7 @@ module rsp_general
                                   contrib_cache_outer_store, &
                                   contrib_cache_store, &
                                   contrib_cache_locate, &
+                                  contrib_cache_outer_dealloc_mat, &
                                   mat_scal_store, &
                                   mat_scal_retrieve, &
                                   rs_check, &
@@ -798,6 +799,22 @@ module rsp_general
        
     end if
     
+    call contrib_cache_outer_dealloc_mat(size(F), F)
+    call contrib_cache_outer_dealloc_mat(size(D), D)
+    call contrib_cache_outer_dealloc_mat(size(S), S)
+    
+    do i = 1, size(F_unpert_arr)
+       call QcMatDst(F_unpert_arr(i))
+    end do
+    
+    do i = 1, size(D_unpert_arr)
+       call QcMatDst(D_unpert_arr(i))
+    end do
+    
+    do i = 1, size(S_unpert_arr)
+       call QcMatDst(S_unpert_arr(i))
+    end do
+
     
     deallocate(F)
     deallocate(D)

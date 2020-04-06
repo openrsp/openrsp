@@ -28,6 +28,7 @@ module rsp_property_caching
  public contrib_cache_retrieve
  public contrib_cache_outer_store
  public contrib_cache_outer_retrieve
+ public contrib_cache_outer_dealloc_mat
  public mat_scal_store
  public mat_scal_retrieve
  public rs_check
@@ -2483,6 +2484,30 @@ end function
    end if
 
 
+ end subroutine
+ 
+ subroutine contrib_cache_outer_dealloc_mat(len_cache, cache)
+ 
+   implicit none
+ 
+   integer :: len_cache, i, j
+   type(contrib_cache_outer), dimension(len_cache) :: cache
+   
+   do i = 1, len_cache
+   
+      if (allocated(cache(i)%data_mat)) then
+      
+         do j = 1, size(cache(i)%data_mat)
+         
+            call QcMatDst(cache(i)%data_mat(j))
+         
+         end do
+      
+      end if
+   
+   end do
+ 
+ 
  end subroutine
 
 end module

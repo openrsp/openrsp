@@ -39,7 +39,7 @@ module rsp_perturbed_sdf
     integer, dimension(3) :: prog_info, rs_info
     integer, dimension(2) :: this_kn
     integer, dimension(sum(n_freq_cfgs), 2) :: kn_rule
-    integer :: i, j, k, m, max_order, max_npert, o_size, lof_mem_total
+    integer :: i, j, k, m, n, max_order, max_npert, o_size, lof_mem_total
     integer :: r_flag
     integer :: c_ord
     integer :: len_curr_outer, len_d, len_lof_cache
@@ -382,6 +382,16 @@ module rsp_perturbed_sdf
        call mem_decr(mem_mgr, lof_mem_total)
        
        call prog_incr(prog_info, r_flag, 2)
+       
+       do n = 1, size(lof_cache)
+    
+          if (allocated(lof_cache(n)%contribs_outer)) then
+    
+             call contrib_cache_outer_dealloc_mat(size(lof_cache(n)%contribs_outer), lof_cache(n)%contribs_outer)
+    
+          end if 
+    
+       end do
        
        deallocate(lof_cache)
        
