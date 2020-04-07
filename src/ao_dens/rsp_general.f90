@@ -176,7 +176,7 @@ module rsp_general
     integer, optional :: max_mat, mem_result
     logical :: xf_was_allocated
     type(mem_manager) :: mem_mgr
-   character(len=1048576) :: out_str    
+    character(len=1048576) :: out_str    
     integer(kind=QINT), intent(in), optional :: residue_spec_pert(residue_order)
     integer(kind=QINT), intent(in), optional :: size_rsi_1
     integer(kind=QINT), dimension(*), optional :: residue_spec_index
@@ -803,6 +803,11 @@ module rsp_general
     call contrib_cache_outer_dealloc_mat(size(D), D)
     call contrib_cache_outer_dealloc_mat(size(S), S)
     
+    if (residue_order > 0) then
+        call contrib_cache_outer_dealloc_mat(size(Xf), Xf)
+    end if
+    
+    
     do i = 1, size(F_unpert_arr)
        call QcMatDst(F_unpert_arr(i))
     end do
@@ -814,7 +819,14 @@ module rsp_general
     do i = 1, size(S_unpert_arr)
        call QcMatDst(S_unpert_arr(i))
     end do
-
+    
+    if (residue_order > 0) then
+    
+       do i = 1, size(Xf_unpert_arr)
+          call QcMatDst(Xf_unpert_arr(i))
+       end do
+       
+    end if
     
     deallocate(F)
     deallocate(D)
@@ -876,7 +888,7 @@ module rsp_general
     call empty_p_tuple(mpt_pert_arr(1))
 
     call prog_incr(prog_info, r_flag, 1)
-  
+
     ! Check if this stage passed previously and if so, then retrieve and skip execution
   
     contrib_retrieved = .FALSE.
