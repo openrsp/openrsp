@@ -63,7 +63,9 @@ module rsp_general
                                   mat_scal_retrieve, &
                                   rs_check, &
                                   prog_incr, &
-                                  prog_init
+                                  prog_init, &
+                                  get_safe_funit
+                                  
                                   
   
   use rsp_sdf_caching
@@ -187,6 +189,8 @@ module rsp_general
     real(kind=QREAL) :: write_threshold
     integer :: p
     integer(kind=QINT) :: r_flag_in
+    
+    integer :: funit
     
     ! Restarting data
     
@@ -684,12 +688,14 @@ module rsp_general
        ! NOTE: This routine is placed here due to access to index/addressing routines
        ! Should be moved to API level once index/addressing routines are abstracted
        
-       open(unit=260, file='rsp_tensor', status='replace', action='write') 
+       call get_safe_funit(funit)
        
-       write(260,*) 'VERSION'
-       write(260,*) '1'
-       write(260,*) 'NUM_PROPERTIES'
-       write(260,*) n_props
+       open(unit=funit, file='rsp_tensor', status='replace', action='write') 
+       
+       write(funit,*) 'VERSION'
+       write(funit,*) '1'
+       write(funit,*) 'NUM_PROPERTIES'
+       write(funit,*) n_props
 
    
        
@@ -698,37 +704,37 @@ module rsp_general
        
        do i = 1, n_props
        
-          write(260,*) 'NEW_PROPERTY'
-          write(260,*) 'ORDER'
-          write(260,*) p_tuples(k)%npert
-          write(260,*) 'NUM_FREQ_CFGS'
-          write(260,*) n_freq_cfgs(i)
+          write(funit,*) 'NEW_PROPERTY'
+          write(funit,*) 'ORDER'
+          write(funit,*) p_tuples(k)%npert
+          write(funit,*) 'NUM_FREQ_CFGS'
+          write(funit,*) n_freq_cfgs(i)
           
-          write(260,*) 'OPERATORS'
+          write(funit,*) 'OPERATORS'
           do j = 1, p_tuples(k)%npert
           
-             write(260,*) p_tuples(k)%plab(j)          
+             write(funit,*) p_tuples(k)%plab(j)          
           
           end do
           
           
-          write(260,*) 'NUM_COMPONENTS'
+          write(funit,*) 'NUM_COMPONENTS'
           do j = 1, p_tuples(k)%npert
           
-             write(260,*) p_tuples(k)%pdim(j)          
+             write(funit,*) p_tuples(k)%pdim(j)          
           
           end do
          
-          write(260,*) 'FREQUENCIES'
+          write(funit,*) 'FREQUENCIES'
           
          
           do j = 1, n_freq_cfgs(i)
           
-             write(260,*) 'CONFIGURATION'
+             write(funit,*) 'CONFIGURATION'
              
              do n = 1, p_tuples(k)%npert
              
-                write(260,*) real(p_tuples(k)%freq(n))
+                write(funit,*) real(p_tuples(k)%freq(n))
              
              end do
              
@@ -740,14 +746,14 @@ module rsp_general
           
           k = k - n_freq_cfgs(i)
          
-          write(260,*) 'VALUES'
+          write(funit,*) 'VALUES'
          
          ! FIXME: SOMETHING MAY BE OFF ABOUT THE INDICES: NOT ALL VALUES OF THE LAST PROPERTY ARE WRITTEN
          ! MaR: Update: Now likely fixed and above comment was forgotten, keep in case further problems
          
           do j = 1, n_freq_cfgs(i)
           
-             write(260,*) 'CONFIGURATION'
+             write(funit,*) 'CONFIGURATION'
              
              ! Get indices, write index-value pairs
              allocate(blk_info(num_blks(k), 3))
@@ -773,11 +779,11 @@ module rsp_general
                    
                    arg_ind = indices(n, :)
 
-                   write(260,*) arg_ind
+                   write(funit,*) arg_ind
 
                    deallocate(arg_ind)
 
-                   write(260,*) real(rsp_tensor(p + n))
+                   write(funit,*) real(rsp_tensor(p + n))
                 
                 end if
              
@@ -795,7 +801,7 @@ module rsp_general
           
        end do
        
-       close(260)
+       close(funit)
        
     end if
     
@@ -4593,7 +4599,7 @@ module rsp_general
 
     implicit none
 
-    integer :: npert, i, j, offset, lvl, new_offset
+    integer :: npert, i, j, offset, lvl, new_offset, funit
     integer, dimension(npert) :: pdim
     complex(8), dimension(product(pdim)) :: prop
 
@@ -4608,17 +4614,21 @@ module rsp_general
 
     end do
 
-    open(unit=260, file='rsp_tensor', status='old', action='write', &
+    call get_safe_funit(funit)
+    
+    open(unit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
-    write(260,*) ' '
-    close(260)
+    write(funit,*) ' '
+    close(funit)
 
     else
+    
+    call get_safe_funit(unit)
 
-    open(unit=260, file='rsp_tensor', status='old', action='write', &
+    open(unit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
-    write(260,*) real(prop(offset:offset+pdim(npert) - 1))
-    close(260)
+    write(funit,*) real(prop(offset:offset+pdim(npert) - 1))
+    close(funit)
 
     end if
 
