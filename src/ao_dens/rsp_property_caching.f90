@@ -118,7 +118,7 @@ module rsp_property_caching
     if (u_test >= u_limit) then
     
        write(*,*) 'ERROR (OpenRSP): No available file unit for I/O found up to', u_limit
-       exit
+       call exit()
         
     end if
     
