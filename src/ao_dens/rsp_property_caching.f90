@@ -107,7 +107,7 @@ module rsp_property_caching
     
     u_test = u_start - 1
     
-    do while ((is_occ .equiv. .TRUE.) .AND. (u_test <= u_limit))
+    do while ((is_occ .eqv. .TRUE.) .AND. (u_test <= u_limit))
        
        u_test = u_test + 1
     
