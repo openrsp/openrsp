@@ -4623,7 +4623,7 @@ module rsp_general
 
     else
     
-    call get_safe_funit(unit)
+    call get_safe_funit(funit)
 
     open(unit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
