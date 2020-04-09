@@ -63,8 +63,7 @@ module rsp_general
                                   mat_scal_retrieve, &
                                   rs_check, &
                                   prog_incr, &
-                                  prog_init, &
-                                  get_safe_funit
+                                  prog_init
                                   
                                   
   
@@ -688,9 +687,7 @@ module rsp_general
        ! NOTE: This routine is placed here due to access to index/addressing routines
        ! Should be moved to API level once index/addressing routines are abstracted
        
-       funit = get_safe_funit()
-       
-       open(unit=funit, file='rsp_tensor', status='replace', action='write') 
+       open(newunit=funit, file='rsp_tensor', status='replace', action='write') 
        
        write(funit,*) 'VERSION'
        write(funit,*) '1'
@@ -4614,18 +4611,14 @@ module rsp_general
 
     end do
 
-    funit = get_safe_funit()
-    
-    open(unit=funit, file='rsp_tensor', status='old', action='write', &
+    open(newunit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
     write(funit,*) ' '
     close(funit)
 
     else
     
-    funit = get_safe_funit()
-
-    open(unit=funit, file='rsp_tensor', status='old', action='write', &
+    open(newunit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
     write(funit,*) real(prop(offset:offset+pdim(npert) - 1))
     close(funit)
