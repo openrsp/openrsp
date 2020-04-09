@@ -92,11 +92,11 @@ module rsp_property_caching
  
  contains
  
-  subroutine get_safe_funit(u)
+  function get_safe_funit()
   
     implicit none
     
-    integer, intent(inout) :: u
+    integer :: get_safe_funit
     integer :: u_test, u_limit, u_start
     logical :: is_occ
     
@@ -122,9 +122,9 @@ module rsp_property_caching
         
     end if
     
-    u = u_test
+    get_safe_funit = u_test
     
-  end subroutine
+  end function
     
   ! Initialize progress/restarting framework if dictated
   ! by restart flag r_flag
@@ -142,7 +142,7 @@ module rsp_property_caching
     
        if (r_exist) then
        
-          call get_safe_funit(funit)
+          funit = get_safe_funit()
        
           open(unit=funit, file='OPENRSP_RESTART', action='read') 
           read(funit,*) rs_info(1)
@@ -233,7 +233,7 @@ module rsp_property_caching
     
     if (r_flag == 3) then
     
-       call get_safe_funit(funit)
+       funit = get_safe_funit()
     
        open(unit=funit, file='OPENRSP_RESTART', status='replace', action='write') 
        write(funit,*) prog_info(1)
@@ -264,7 +264,7 @@ module rsp_property_caching
     
    elseif (r_flag == 3) then
  
-      call get_safe_funit(funit)
+      funit = get_safe_funit()
    
       if (present(scal)) then
  
@@ -319,7 +319,7 @@ module rsp_property_caching
    complex(8), dimension(array_size), optional :: scal
    type(QcMat), dimension(array_size), optional :: mat
  
-   call get_safe_funit(funit)
+   funit = get_safe_funit()
  
    if (present(scal)) then
  
@@ -372,7 +372,7 @@ module rsp_property_caching
 
       mat_acc = 0
  
-      call get_safe_funit(funit)
+      funit = get_safe_funit()
  
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='replace', action='write')
@@ -539,7 +539,7 @@ module rsp_property_caching
    
    end if
  
-   call get_safe_funit(funit)
+   funit = get_safe_funit()
  
    open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='old', action='read')
@@ -754,7 +754,7 @@ module rsp_property_caching
          mat_acc = mat_acc_in
       end if   
    
-      call get_safe_funit(funit)
+      funit = get_safe_funit()
  
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='replace', action='write')
@@ -997,7 +997,7 @@ module rsp_property_caching
    end if
    
 
-   call get_safe_funit(funit)
+   funit = get_safe_funit()
    if (present(funit_in)) then
       funit = funit_in
    end if

@@ -688,7 +688,7 @@ module rsp_general
        ! NOTE: This routine is placed here due to access to index/addressing routines
        ! Should be moved to API level once index/addressing routines are abstracted
        
-       call get_safe_funit(funit)
+       funit = get_safe_funit()
        
        open(unit=funit, file='rsp_tensor', status='replace', action='write') 
        
@@ -4614,7 +4614,7 @@ module rsp_general
 
     end do
 
-    call get_safe_funit(funit)
+    funit = get_safe_funit()
     
     open(unit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
@@ -4623,7 +4623,7 @@ module rsp_general
 
     else
     
-    call get_safe_funit(funit)
+    funit = get_safe_funit()
 
     open(unit=funit, file='rsp_tensor', status='old', action='write', &
          position='append') 
