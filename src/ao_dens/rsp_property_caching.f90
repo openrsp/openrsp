@@ -90,7 +90,7 @@ module rsp_property_caching
  end type 
  
  contains
-    
+     
   ! Initialize progress/restarting framework if dictated
   ! by restart flag r_flag
   subroutine prog_init(rs_info, r_flag)
@@ -98,7 +98,7 @@ module rsp_property_caching
     implicit none
     
     integer, dimension(3) :: rs_info
-    integer :: r_flag
+    integer :: r_flag, funit
     logical :: r_exist
     
     if (r_flag == 3) then
@@ -107,11 +107,11 @@ module rsp_property_caching
     
        if (r_exist) then
        
-          open(unit=260, file='OPENRSP_RESTART', action='read') 
-          read(260,*) rs_info(1)
-          read(260,*) rs_info(2)
-          read(260,*) rs_info(3)
-          close(260)
+          open(newunit=funit, file='OPENRSP_RESTART', action='read') 
+          read(funit,*) rs_info(1)
+          read(funit,*) rs_info(2)
+          read(funit,*) rs_info(3)
+          close(funit)
     
        else
     
@@ -184,7 +184,7 @@ module rsp_property_caching
     implicit none
     
     integer, dimension(3) :: prog_info
-    integer :: lvl, i, r_flag
+    integer :: lvl, i, r_flag, funit
         
     prog_info(lvl) = prog_info(lvl) + 1
     
@@ -196,11 +196,11 @@ module rsp_property_caching
     
     if (r_flag == 3) then
     
-       open(unit=260, file='OPENRSP_RESTART', status='replace', action='write') 
-       write(260,*) prog_info(1)
-       write(260,*) prog_info(2)
-       write(260,*) prog_info(3)
-       close(260)
+       open(newunit=funit, file='OPENRSP_RESTART', status='replace', action='write') 
+       write(funit,*) prog_info(1)
+       write(funit,*) prog_info(2)
+       write(funit,*) prog_info(3)
+       close(funit)
        
     end if
     
@@ -225,11 +225,9 @@ module rsp_property_caching
     
    elseif (r_flag == 3) then
  
-      funit = 260
-   
       if (present(scal)) then
  
-         open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+         open(newunit=funit, file=trim(adjustl(fname)) // '.DAT', &
               form='unformatted', status='replace', action='write')
    
          write(funit) array_size
@@ -280,11 +278,9 @@ module rsp_property_caching
    complex(8), dimension(array_size), optional :: scal
    type(QcMat), dimension(array_size), optional :: mat
  
-   funit = 260
- 
    if (present(scal)) then
  
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+      open(newunit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='old', action='read')
    
       read(funit) array_size
@@ -333,9 +329,7 @@ module rsp_property_caching
 
       mat_acc = 0
  
-      funit = 260
- 
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+      open(newunit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='replace', action='write')
    
       ! Find how many unperturbed elements: They should be skippable when writing
@@ -500,9 +494,7 @@ module rsp_property_caching
    
    end if
  
-   funit = 260
- 
-   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+   open(newunit=funit, file=trim(adjustl(fname)) // '.DAT', &
         form='unformatted', status='old', action='read')
    
    read(funit) num_entries
@@ -715,9 +707,7 @@ module rsp_property_caching
          mat_acc = mat_acc_in
       end if   
    
-      funit = 260
- 
-      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+      open(newunit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='replace', action='write')
            
       write(funit) size(cache)
@@ -958,7 +948,6 @@ module rsp_property_caching
    end if
    
 
-   funit = 260
    if (present(funit_in)) then
       funit = funit_in
    end if
@@ -972,9 +961,18 @@ module rsp_property_caching
       stop
    
    end if
-      
-   open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
-        form='unformatted', status='old', action='read')
+   
+   if (present(funit_in)) then
+   
+      open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
+           form='unformatted', status='old', action='read')
+           
+   else
+
+      open(newunit=funit, file=trim(adjustl(fname)) // '.DAT', &
+           form='unformatted', status='old', action='read')
+   
+   end if
   
    read(funit) num_entries
    
@@ -992,7 +990,7 @@ module rsp_property_caching
    
    end do
    
-   close(260)
+   close(funit)
    
    if (present(mat_acc_in)) then
       mat_acc_in = mat_acc
