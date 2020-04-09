@@ -962,7 +962,7 @@ module rsp_property_caching
    
    end if
    
-   if present(funit_in) then
+   if (present(funit_in)) then
    
       open(unit=funit, file=trim(adjustl(fname)) // '.DAT', &
            form='unformatted', status='old', action='read')
