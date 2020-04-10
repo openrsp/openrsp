@@ -1312,6 +1312,8 @@ module rsp_property_caching
    current_element(1)%p_inner%freq = (/0.0/)
    
   call contrib_cache_outer_allocate(current_element(1)%contribs_outer)
+  
+  current_element(1)%num_outer = 1
    
  end subroutine
 
