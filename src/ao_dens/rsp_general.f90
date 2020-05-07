@@ -247,10 +247,18 @@ module rsp_general
        
        mem_mgr%max_mat = max_mat
        mem_mgr%remain = max_mat
-       mem_mgr%limited = .TRUE.
+
+       ! FIXME: The "limited" attribute should here be set to .TRUE.
+       ! to enable the memory management framework. The present .FALSE. setting
+       ! disables any consequences of errors in the memory bookkeeping
+       ! and should be kept at this setting until all memory bookkeeping
+       ! is free of errors.
+       mem_mgr%limited = .FALSE.
        
     else
        
+       ! Remark concerning above FIXME: The "limited" attribute should here
+       ! remain in the .FALSE. setting even after memory bookkeeping is free of errors.
        mem_mgr%limited = .FALSE.
        
     end if
