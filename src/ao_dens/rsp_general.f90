@@ -868,8 +868,8 @@ module rsp_general
     implicit none
 
     type(mem_manager) :: mem_mgr
-    logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved
-    integer :: n_props, i, j, k
+    logical :: traverse_end, sdf_retrieved, contrib_retrieved, props_retrieved, print_end
+    integer :: n_props, i, j, k, m, n, p
     integer :: r_flag
     integer, dimension(2) :: this_kn
     integer, dimension(3) :: prog_info, rs_info
@@ -1604,9 +1604,48 @@ module rsp_general
              call out_print(out_str, 2)
              write(out_str, *) 'Property', i, ', freq. config', j
              call out_print(out_str, 2)
-             write(out_str, *) props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
-                               sum(prop_sizes(1:k)))
+             write(out_str, *) 'This property has got', prop_sizes(k), 'elements'
              call out_print(out_str, 2)
+             
+             ! If the property has more than 999 elements, then break up printing
+             if (prop_sizes(k) > 999) then
+
+                write(out_str, *) 'Breaking up into several print statements'
+                call out_print(out_str, 2)
+             
+                print_end = .FALSE.
+             
+                m = 0
+                
+                do while (print_end .EQV. .FALSE.)
+                
+                   p = sum(prop_sizes(1:k)) - prop_sizes(k) + 1 + m
+                   m = min(m + 999, prop_sizes(k))
+                
+                   write(out_str, *) 'Element', p, ' to', p + m - 1
+                   call out_print(out_str, 2)
+                
+                   write(out_str, *) props(p:p + m - 1)
+                   call out_print(out_str, 2)
+                
+                   if (m >= prop_sizes(k)) then
+                   
+                      print_end = .TRUE.
+                   
+                   end if
+                
+                end do
+             
+             ! Otherwise, print all of it in one go
+             else
+             
+                write(out_str, *) props(sum(prop_sizes(1:k)) - prop_sizes(k) + 1: &
+                               sum(prop_sizes(1:k)))
+                call out_print(out_str, 2)
+             
+             end if
+             
+             
              write(out_str, *) ' '
              call out_print(out_str, 2)
           
