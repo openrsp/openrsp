@@ -1616,16 +1616,20 @@ module rsp_general
                 print_end = .FALSE.
              
                 m = 0
+                n = 0
+                p = sum(prop_sizes(1:k)) - prop_sizes(k) + 1
                 
                 do while (print_end .EQV. .FALSE.)
                 
-                   p = sum(prop_sizes(1:k)) - prop_sizes(k) + 1 + m
+                   n = m
                    m = min(m + 999, prop_sizes(k))
                 
-                   write(out_str, *) 'Element', p, ' to', p + m - 1
+                   write(out_str, *) 'Element', p + n, ' to', p + m - 1, 'of full result array'
+                   call out_print(out_str, 2)
+                   write(out_str, *) 'Element', n + 1, ' to', m, 'of this property'
                    call out_print(out_str, 2)
                 
-                   write(out_str, *) props(p:p + m - 1)
+                   write(out_str, *) props(p + n:p + m - 1)
                    call out_print(out_str, 2)
                 
                    if (m >= prop_sizes(k)) then
