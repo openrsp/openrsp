@@ -2,10 +2,8 @@
 
 ## Documents referenced herein
 
-FIXME: Link to Bin Gao's authorship criteria in more "stable" link format
-
-[1] https://gitlab.com/bingao/tglue-authorship/blob/master/AuthorshipCriteria.adoc
-[2] https://gitlab.com/bingao/tglue-authorship/blob/master/AuthorshipMore.adoc
+[1] https://gitlab.com/bingao/tglue-authorship/-/blob/0498ed51c4841bb59e2317e883bfec93ffd4c99c/AuthorshipCriteria.adoc
+[2] https://gitlab.com/bingao/tglue-authorship/-/blob/0498ed51c4841bb59e2317e883bfec93ffd4c99c/AuthorshipMore.adoc
 
 ## Definitions, standards and guidelines for authorship 
 
@@ -52,7 +50,6 @@ FIXME: Link to Bin Gao's authorship criteria in more "stable" link format
 * The prospective non-author must relinquish the copyright to their part of the work contained in OpenRSP to the OpenRSP project. A statement to this effect must be communicated in the cessation pull request.
 
 * Upon acceptance and merging of the cessation pull request, the author cessation is considered to have taken place.
-
 
 ## Process for deciding other (non-author status) matters
 

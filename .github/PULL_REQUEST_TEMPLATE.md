@@ -31,6 +31,12 @@
 - [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to change)
 
+## Contributor responsibilities
+<!--- Please change the appropriate boxes from [ ] to [x] if you confirm each of the following statements-->
+- [ ] Every person who contributed to the contents of this pull request has read and understood and agree with the terms described in the contribution guidelines and documents concerning contribution and authorship topics linked to in the contribution guidelines, and the terms dictated by the license under which OpenRSP is released, and consent to the submission of their contributions to this pull request under these terms.
+- [ ] None of the submitted content in this pull request is licensed under terms which conflict with OpenRSP's license terms.
+- [ ] No person who is not currently an OpenRSP author has contributed to the content in this pull request, or someone in this category has contributed, and I have already or will immediately after submitting this pull request communicate their name(s) and contact information to the authors of OpenRSP.
+
 ## Questions
 <!--- Questions to the developers -->
 - [ ]  Question1
