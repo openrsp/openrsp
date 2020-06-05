@@ -206,6 +206,18 @@ module rsp_general
     logical :: r_exist, sdf_retrieved
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
+    
+    if (present(residue_spec_pert)) then
+    
+       write(*,*) 'res spec pert', residue_spec_pert(1:residue_order)
+    
+    end if
+    
+    if (present(residue_spec_index)) then
+    
+       write(*,*) 'res spec ind', residue_spec_index(1:size_rsi_1*residue_order)
+    
+    end if
 
     call QcMatInit(S_unpert_arr(1))
     call QcMatAEqB(S_unpert_arr(1), S_unpert)
@@ -709,7 +721,14 @@ module rsp_general
        
        do i = 1, n_props
        
-          write(funit,*) 'NEW_PROPERTY'
+          if (residue_order = 0) then
+             write(funit,*) 'NEW_PROPERTY'
+          else if (residue_order = 1) then
+             write(funit,*) 'NEW_SINGLE_RESIDUE'
+          else if (residue_order = 2) then
+             write(funit,*) 'NEW_DOUBLE_RESIDUE'
+          end if
+             
           write(funit,*) 'ORDER'
           write(funit,*) p_tuples(k)%npert
           write(funit,*) 'NUM_FREQ_CFGS'
@@ -718,7 +737,48 @@ module rsp_general
           write(funit,*) 'OPERATORS'
           do j = 1, p_tuples(k)%npert
           
-             write(funit,*) p_tuples(k)%plab(j)          
+             part_of_r1 = .FALSE.
+             part_of_r2 = .FALSE.
+          
+             do n = 1, residue_order
+          
+                if (p_tuples(k)%part_of_residue(j, n) then)
+                
+                   if (n = 1) then
+                   
+                      part_of_r1 = .TRUE.
+                      
+                   else if (n = 2) then
+                   
+                      part_of_r2 = .TRUE.
+                      
+                   end if
+                   
+                end if
+                
+             end do   
+          
+             if (part_of_r1) then
+             
+                if (part_of_r2) then
+          
+                   write(funit,*) 'EX12'
+                   
+                else
+                
+                   write(funit,*) 'EX1 '
+                
+                end if
+             
+             else if (part_of_r2) then
+             
+                write(funit,*) 'EX2 '
+             
+             else
+             
+                write(funit,*) p_tuples(k)%plab(j)
+             
+             end if
           
           end do
           

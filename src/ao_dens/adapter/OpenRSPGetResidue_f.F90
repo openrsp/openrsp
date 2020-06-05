@@ -143,13 +143,16 @@
         end do
         ! gets the indices of perturbations w.r.t. residue is calculated
         if (num_props/=1) then
-            call f_callback_UserOutput("FIXME>> openrsp_get_residue() does not support multiple properties", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> >1 prop. in OpenRSP residue calcs. not supported", OUT_ERROR)
+        end if
+        if (num_excit>1) then
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> >1 exc. tuple in OpenRSP residue calcs. not supported", OUT_ERROR)
         end if
         ! C memory: [num_props][num_excit][num_freq_configs][pert_tuple][2]
         ! and num_props==1
         resize_per_excit = size_residues/num_excit
-        if (order_residue>2) then
-            call f_callback_UserOutput("OpenRSPGetResidue_f>> only supports single and double residues", OUT_ERROR)
+        if (order_residue>1) then
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> only supports single residues", OUT_ERROR)
         end if
         allocate(residue_spec_index(max(residue_num_pert(1),              &
                                         residue_num_pert(order_residue)), &
