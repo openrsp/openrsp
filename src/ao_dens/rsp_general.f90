@@ -203,7 +203,7 @@ module rsp_general
     ! Host program must tell setup to use - no default choice in OpenRSP core
     integer :: r_flag
     
-    logical :: r_exist, sdf_retrieved
+    logical :: r_exist, sdf_retrieved, part_of_r1, part_of_r2
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
     
@@ -721,11 +721,11 @@ module rsp_general
        
        do i = 1, n_props
        
-          if (residue_order = 0) then
+          if (residue_order == 0) then
              write(funit,*) 'NEW_PROPERTY'
-          else if (residue_order = 1) then
+          elseif (residue_order == 1) then
              write(funit,*) 'NEW_SINGLE_RESIDUE'
-          else if (residue_order = 2) then
+          elseif (residue_order == 2) then
              write(funit,*) 'NEW_DOUBLE_RESIDUE'
           end if
              
@@ -742,7 +742,7 @@ module rsp_general
           
              do n = 1, residue_order
           
-                if (p_tuples(k)%part_of_residue(j, n) then)
+                if (p_tuples(k)%part_of_residue(j, n)) then
                 
                    if (n == 1) then
                    
