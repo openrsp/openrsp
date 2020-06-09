@@ -744,11 +744,11 @@ module rsp_general
           
                 if (p_tuples(k)%part_of_residue(j, n) then)
                 
-                   if (n = 1) then
+                   if (n == 1) then
                    
                       part_of_r1 = .TRUE.
                       
-                   else if (n = 2) then
+                   elseif (n == 2) then
                    
                       part_of_r2 = .TRUE.
                       
@@ -770,7 +770,7 @@ module rsp_general
                 
                 end if
              
-             else if (part_of_r2) then
+             elseif (part_of_r2) then
              
                 write(funit,*) 'EX2 '
              
