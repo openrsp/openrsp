@@ -373,6 +373,8 @@ module rsp_general
 
           write(out_str, *) 'Note: One perturbation in this tuple plays the role of residue placeholder'
           call out_print(out_str, 1)
+          write(out_str, *) 'and will be designated with the label EX1 or EX2 in rsp_tensor'
+          call out_print(out_str, 1)
           
        end if
        
@@ -446,7 +448,7 @@ module rsp_general
              ! DaF: Does the residualized perturbation have a proper frequency?
              lfreq_match = .false.
              do l = 1, p_tuples(k)%npert
-                if (dabs(dabs(dble(p_tuples(k)%exenerg(1))) - dabs(dble(p_tuples(k)%freq(l)))).gt.xtiny) then
+                if (dabs(dabs(dble(p_tuples(k)%exenerg(1))) - dabs(dble(p_tuples(k)%freq(l)))).lt.xtiny) then
                    lfreq_match = .true.
                 end if
              end do
