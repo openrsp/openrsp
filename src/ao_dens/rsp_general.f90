@@ -167,6 +167,7 @@ module rsp_general
     integer :: kn(2)
     character(30) :: fmt_str
     real, parameter :: xtiny=1.0d-8
+    real, parameter :: xtiny_res=1.0d-6
     
     integer(kind=QINT), intent(in) :: residue_order
     
@@ -446,16 +447,22 @@ module rsp_general
           if (residue_order > 0) then
           
              ! DaF: Does the residualized perturbation have a proper frequency?
+             ! MaR: UPDATES:
+             ! - Removed taking abs val of each term in the comparison
+             ! - Added criterion where pert. with matching frequency must be designated as
+             !   "residue perturbation" - current test only valid for single residues
              lfreq_match = .false.
              do l = 1, p_tuples(k)%npert
-                if (dabs(dabs(dble(p_tuples(k)%exenerg(1))) - dabs(dble(p_tuples(k)%freq(l)))).lt.xtiny) then
-                   lfreq_match = .true.
+                if (dabs(dble(p_tuples(k)%exenerg(1)) - dble(p_tuples(k)%freq(l))).lt.xtiny_res) then
+                   if (p_tuples(k)%part_of_residue(l, 1)) then
+                      lfreq_match = .true.
+                   end if 
                 end if
              end do
              
              if (.not.lfreq_match) then
              
-                write(out_str, *) 'ERROR: No perturbation frequencies matched excitation energy'
+                write(out_str, *) 'ERROR: No residue perturbation frequency matched excitation energy'
                 call out_print(out_str, 0)
                 write(out_str, *) 'The residue calculation is therefore indeterminate'
                 call out_print(out_str, 0)
