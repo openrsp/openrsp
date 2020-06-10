@@ -208,18 +208,6 @@ module rsp_general
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
     
-    if (present(residue_spec_pert)) then
-    
-       write(*,*) 'res spec pert', residue_spec_pert(1:residue_order)
-    
-    end if
-    
-    if (present(residue_spec_index)) then
-    
-       write(*,*) 'res spec ind', residue_spec_index(1:size_rsi_1*residue_order)
-    
-    end if
-
     call QcMatInit(S_unpert_arr(1))
     call QcMatAEqB(S_unpert_arr(1), S_unpert)
     call QcMatInit(D_unpert_arr(1))
