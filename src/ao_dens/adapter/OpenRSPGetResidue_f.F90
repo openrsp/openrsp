@@ -166,6 +166,11 @@
             do ipert = 1, residue_num_pert(iext)
                 jpert = jpert+1
                 residue_spec_index(ipert,iext) = residue_idx_pert(jpert)
+                ! MaR: Note that this handling may need to be updated if extending functionality to 
+                ! allow differing numbers of perturbations having frequencies that match excitation energies
+                if (residue_idx_pert(jpert) <= 0) then
+                   call f_callback_UserOutput("OpenRSPGetResidue_f>> only > 0 residue pert. labels allowed", OUT_ERROR)
+                end if
             end do
         end do
         ! allocates memory for the frequencies of perturbations
