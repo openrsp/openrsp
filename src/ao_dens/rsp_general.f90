@@ -184,6 +184,7 @@ module rsp_general
     integer(kind=QINT), dimension(*), optional :: residue_spec_index
     complex(8), dimension(*), optional :: exenerg
     type(QcMat), optional, dimension(*) :: Xf_unpert 
+    complex(8) :: exenerg_diff
     
     integer, allocatable, dimension(:,:) :: indices
     real(kind=QREAL) :: write_threshold
@@ -394,7 +395,7 @@ module rsp_general
           allocate(p_tuples(k)%pid(np(i)))
           allocate(p_tuples(k)%freq(np(i)))
           
-          p_tuples%do_residues = residue_order
+          p_tuples(k)%do_residues = residue_order
           
           if (residue_order > 0) then
           
@@ -439,14 +440,18 @@ module rsp_general
              ! - Removed taking abs val of each term in the comparison
              ! - Added criterion where pert. with matching frequency must be designated as
              !   "residue perturbation" - current test only valid for single residues
+
+             exenerg_diff = dble(p_tuples(k)%exenerg(1))
              lfreq_match = .false.
              do l = 1, p_tuples(k)%npert
-                if (dabs(dble(p_tuples(k)%exenerg(1)) - dble(p_tuples(k)%freq(l))).lt.xtiny_res) then
                    if (p_tuples(k)%part_of_residue(l, 1)) then
-                      lfreq_match = .true.
+                      exenerg_diff = exenerg_diff - dble(p_tuples(k)%freq(l))
                    end if 
-                end if
              end do
+
+             if (dabs(exenerg_diff) < xtiny_res) then
+                      lfreq_match = .true.             
+             end if
              
              if (.not.lfreq_match) then
              
