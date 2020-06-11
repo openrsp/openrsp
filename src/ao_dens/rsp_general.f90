@@ -449,7 +449,7 @@ module rsp_general
                    end if 
              end do
 
-             if (dabs(exenerg_diff) < xtiny_res) then
+             if (abs(exenerg_diff) < xtiny_res) then
                       lfreq_match = .true.             
              end if
              
