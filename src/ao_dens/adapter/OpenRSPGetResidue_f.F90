@@ -162,6 +162,12 @@
         end if
         jpert = 0
         do iext = 1, order_residue
+            ! MaR: Note that this handling may need to be updated if extending functionality to 
+            ! allow differing numbers of perturbations having frequencies that match excitation energies
+            if (residue_num_pert(iext) > 1) then
+               call f_callback_UserOutput("OpenRSPGetResidue_f>> only one pert. freq. may match exc. energy", OUT_ERROR)
+            end if
+        
             do ipert = 1, residue_num_pert(iext)
                 jpert = jpert+1
                 residue_spec_index(ipert,iext) = residue_idx_pert(jpert)
