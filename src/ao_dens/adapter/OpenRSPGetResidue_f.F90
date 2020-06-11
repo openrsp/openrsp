@@ -154,8 +154,7 @@
         if (order_residue>1) then
             call f_callback_UserOutput("OpenRSPGetResidue_f>> only supports single residues", OUT_ERROR)
         end if
-        allocate(residue_spec_index(max(residue_num_pert(1),              &
-                                        residue_num_pert(order_residue)), &
+        allocate(residue_spec_index(maxval(residue_num_pert), &
                                     order_residue),                       &
                  stat=ierr)
         if (ierr/=0) then
