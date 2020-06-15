@@ -98,15 +98,15 @@
         ! gets the dimensions and labels of perturbations
         allocate(f_pert_dims(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_dims", ERROR_EXIT)
         end if
         allocate(f_pert_first_comp(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_first_comp", ERROR_EXIT)
         end if
         allocate(f_pert_tuple(num_all_pert), stat=ierr)
         if (ierr/=0) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_tuple", ERROR_EXIT)
         end if
         do ipert = 1, num_all_pert
             select case (pert_tuple(ipert))
@@ -123,7 +123,7 @@
         ! gets the frequencies of perturbations
         allocate(f_pert_freqs(size(pert_freqs)/2), stat=ierr)
         if (ierr/=0) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_pert_freqs", ERROR_EXIT)
         end if
         do ipert = 1, size(f_pert_freqs)
             f_pert_freqs(ipert) = cmplx(pert_freqs(2*ipert-1), pert_freqs(2*ipert), kind=QREAL)
@@ -131,15 +131,15 @@
         ! gets the matrices
         ierr = QcMat_C_F_POINTER(f_F_unpert, (/F_unpert/))
         if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(F)", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(F)", ERROR_EXIT)
         end if
         ierr = QcMat_C_F_POINTER(f_S_unpert, (/S_unpert/))
         if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(S)", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(S)", ERROR_EXIT)
         end if
         ierr = QcMat_C_F_POINTER(f_D_unpert, (/D_unpert/))
         if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_F_POINTER(D)", ERROR_EXIT)
         end if
         ! sets the context of callback functions
         call RSP_CTX_Create(rsp_solver, &
@@ -151,7 +151,7 @@
         ! allocates memory for the results
         allocate(f_rsp_funs(size_rsp_funs), stat=ierr)
         if (ierr/=0) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_funs", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to allocate memory for f_rsp_funs", ERROR_EXIT)
         end if
         f_rsp_funs = 0.0
 
@@ -202,15 +202,15 @@
         ! cleans up
         ierr = QcMat_C_NULL_PTR(A=f_F_unpert)
         if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(F)", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(F)", ERROR_EXIT)
         end if
         ierr = QcMat_C_NULL_PTR(A=f_S_unpert)
         if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(S)", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(S)", ERROR_EXIT)
         end if
         ierr = QcMat_C_NULL_PTR(A=f_D_unpert)
         if (ierr/=QSUCCESS) then
-            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(D)", OUT_ERROR)
+            call f_callback_UserOutput("OpenRSPGetRSPFun_f>> failed to call QcMat_C_NULL_PTR(D)", ERROR_EXIT)
         end if
         deallocate(f_pert_dims)
         deallocate(f_pert_first_comp)
