@@ -167,6 +167,7 @@ module rsp_general
     integer :: kn(2)
     character(30) :: fmt_str
     real, parameter :: xtiny=1.0d-8
+    real, parameter :: xtiny_res=1.0d-6
     
     integer(kind=QINT), intent(in) :: residue_order
     
@@ -183,6 +184,7 @@ module rsp_general
     integer(kind=QINT), dimension(*), optional :: residue_spec_index
     complex(8), dimension(*), optional :: exenerg
     type(QcMat), optional, dimension(*) :: Xf_unpert 
+    complex(8) :: exenerg_diff
     
     integer, allocatable, dimension(:,:) :: indices
     real(kind=QREAL) :: write_threshold
@@ -203,10 +205,10 @@ module rsp_general
     ! Host program must tell setup to use - no default choice in OpenRSP core
     integer :: r_flag
     
-    logical :: r_exist, sdf_retrieved
+    logical :: r_exist, sdf_retrieved, part_of_r1, part_of_r2
     integer, dimension(3) :: rs_info, rs_calibrate_save
     integer, dimension(3) :: prog_info
-
+    
     call QcMatInit(S_unpert_arr(1))
     call QcMatAEqB(S_unpert_arr(1), S_unpert)
     call QcMatInit(D_unpert_arr(1))
@@ -361,6 +363,8 @@ module rsp_general
 
           write(out_str, *) 'Note: One perturbation in this tuple plays the role of residue placeholder'
           call out_print(out_str, 1)
+          write(out_str, *) 'and will be designated with the label EX1 or EX2 in rsp_tensor'
+          call out_print(out_str, 1)
           
        end if
        
@@ -391,7 +395,7 @@ module rsp_general
           allocate(p_tuples(k)%pid(np(i)))
           allocate(p_tuples(k)%freq(np(i)))
           
-          p_tuples%do_residues = residue_order
+          p_tuples(k)%do_residues = residue_order
           
           if (residue_order > 0) then
           
@@ -432,16 +436,26 @@ module rsp_general
           if (residue_order > 0) then
           
              ! DaF: Does the residualized perturbation have a proper frequency?
+             ! MaR: UPDATES:
+             ! - Removed taking abs val of each term in the comparison
+             ! - Added criterion where pert. with matching frequency must be designated as
+             !   "residue perturbation" - current test only valid for single residues
+
+             exenerg_diff = dble(p_tuples(k)%exenerg(1))
              lfreq_match = .false.
              do l = 1, p_tuples(k)%npert
-                if (dabs(dabs(dble(p_tuples(k)%exenerg(1))) - dabs(dble(p_tuples(k)%freq(l)))).gt.xtiny) then
-                   lfreq_match = .true.
-                end if
+                   if (p_tuples(k)%part_of_residue(l, 1)) then
+                      exenerg_diff = exenerg_diff - dble(p_tuples(k)%freq(l))
+                   end if 
              end do
+
+             if (abs(exenerg_diff) < xtiny_res) then
+                      lfreq_match = .true.             
+             end if
              
              if (.not.lfreq_match) then
              
-                write(out_str, *) 'ERROR: No perturbation frequencies matched excitation energy'
+                write(out_str, *) 'ERROR: No residue perturbation frequency matched excitation energy'
                 call out_print(out_str, 0)
                 write(out_str, *) 'The residue calculation is therefore indeterminate'
                 call out_print(out_str, 0)
@@ -709,7 +723,14 @@ module rsp_general
        
        do i = 1, n_props
        
-          write(funit,*) 'NEW_PROPERTY'
+          if (residue_order == 0) then
+             write(funit,*) 'NEW_PROPERTY'
+          elseif (residue_order == 1) then
+             write(funit,*) 'NEW_SINGLE_RESIDUE'
+          elseif (residue_order == 2) then
+             write(funit,*) 'NEW_DOUBLE_RESIDUE'
+          end if
+             
           write(funit,*) 'ORDER'
           write(funit,*) p_tuples(k)%npert
           write(funit,*) 'NUM_FREQ_CFGS'
@@ -718,7 +739,48 @@ module rsp_general
           write(funit,*) 'OPERATORS'
           do j = 1, p_tuples(k)%npert
           
-             write(funit,*) p_tuples(k)%plab(j)          
+             part_of_r1 = .FALSE.
+             part_of_r2 = .FALSE.
+          
+             do n = 1, residue_order
+          
+                if (p_tuples(k)%part_of_residue(j, n)) then
+                
+                   if (n == 1) then
+                   
+                      part_of_r1 = .TRUE.
+                      
+                   elseif (n == 2) then
+                   
+                      part_of_r2 = .TRUE.
+                      
+                   end if
+                   
+                end if
+                
+             end do   
+          
+             if (part_of_r1) then
+             
+                if (part_of_r2) then
+          
+                   write(funit,*) 'EX12'
+                   
+                else
+                
+                   write(funit,*) 'EX1 '
+                
+                end if
+             
+             elseif (part_of_r2) then
+             
+                write(funit,*) 'EX2 '
+             
+             else
+             
+                write(funit,*) p_tuples(k)%plab(j)
+             
+             end if
           
           end do
           
