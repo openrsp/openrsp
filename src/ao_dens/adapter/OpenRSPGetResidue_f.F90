@@ -145,6 +145,10 @@
         if (num_props/=1) then
             call f_callback_UserOutput("OpenRSPGetResidue_f>> >1 prop. in OpenRSP residue calcs. not supported", ERROR_EXIT)
         end if
+        ! FIXME: Here assumes only one prop., must change this test if number of props allowed is increased
+        if (num_freq_configs(1)/=1) then
+            call f_callback_UserOutput("OpenRSPGetResidue_f>> >1 freq. cfg. in OpenRSP residue calcs. not supported", ERROR_EXIT)
+        end if
         if (num_excit>1) then
             call f_callback_UserOutput("OpenRSPGetResidue_f>> >1 exc. tuple in OpenRSP residue calcs. not supported", ERROR_EXIT)
         end if
