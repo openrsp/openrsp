@@ -1,0 +1,22 @@
+cff-version: 1.1.0
+message: If you use OpenRSP, please cite it as below.
+authors:
+  - family-names: Bast
+    given-names: Radovan
+  - family-names: Friese
+    given-names: Daniel H.
+  - family-names: Gao
+    given-names: Bin
+  - family-names: Jonsson
+    given-names: Dan J.
+  - family-names: Ringholm
+    given-names: Magnus
+  - family-names: Reine
+    given-names: Simen S.
+  - family-names: Ruud
+    given-names: Kenneth
+title: "OpenRSP: open-ended response theory"
+version: 1.0.0-alpha
+license: LGPL-2.1
+doi: 10.5281/zenodo.1491927
+date-released: 2018-11-19
