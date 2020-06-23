@@ -1,0 +1,29 @@
+{
+    "creators": [
+        {
+            "name": "Bast, Radovan"
+        },
+        {
+            "name": "Friese, Daniel H."
+        },
+        {
+            "name": "Gao, Bin"
+        },
+        {
+            "name": "Jonsson, Dan J."
+        },
+        {
+            "name": "Ringholm, Magnus"
+        },
+        {
+            "name": "Reine, Simen S."
+        },
+        {
+            "name": "Ruud, Kenneth"
+        }
+    ],
+    "license": {
+        "id": "LGPL-2.1"
+    },
+    "title": "OpenRSP: open-ended response theory"
+}
