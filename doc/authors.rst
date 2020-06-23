@@ -14,7 +14,7 @@ This table lists the main developers of OpenRSP and their current affiliation:
    * - **Radovan Bast**
      - UiT The Arctic University of Norway
    * - Daniel H. Friese
-     - Heinrich-Heine-Universität Düsseldorf
+     -
    * - **Bin Gao**
      - UiT The Arctic University of Norway
    * - Dan J. Jonsson
