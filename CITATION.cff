@@ -16,7 +16,7 @@ authors:
   - family-names: Ruud
     given-names: Kenneth
 title: "OpenRSP: open-ended response theory"
-version: 1.0.0
+version: 1.0.0-alpha
 license: LGPL-2.1
-doi: 10.5281/zenodo.xxxxxxx
-date-released: 2020-06-xx
+doi: 10.5281/zenodo.1491927
+date-released: 2018-11-19
