@@ -154,17 +154,21 @@ QErrorCode RSPPertCreate(RSPPert *rsp_pert,
     }
     for (ilab=0,icomp=0; ilab<num_pert_lab; ilab++) {
         for (iorder=1; iorder<=rsp_pert->pert_max_orders[ilab]; iorder++,icomp++) {
-            if (pert_num_comps[icomp]<1) {
-                printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\n",
-                       ilab,
-                       pert_labels[ilab]);
-                printf("RSPPertCreate>> allowed maximal order is %"QINT_FMT"\n",
-                       pert_max_orders[ilab]);
-                printf("RSPPertCreate>> %"QINT_FMT"-th No. of comps. is %"QINT_FMT"\n",
-                       iorder,
-                       pert_num_comps[icomp]);
-                QErrorExit(FILE_AND_LINE, "incorrect number of components");
-            }
+            //FIXME: temporarily disable the use of \var(pert_num_comps) as it
+            //FIXME: is not used by OpenRSP right now and it may result into
+            //FIXME: overflow or large size system and/or higher order
+            //FIXME: geometrical derivatives (Bin Gao)
+            //if (pert_num_comps[icomp]<1) {
+            //    printf("RSPPertCreate>> %"QINT_FMT"-th pert. label %"QCPERTINT_FMT"\n",
+            //           ilab,
+            //           pert_labels[ilab]);
+            //    printf("RSPPertCreate>> allowed maximal order is %"QINT_FMT"\n",
+            //           pert_max_orders[ilab]);
+            //    printf("RSPPertCreate>> %"QINT_FMT"-th No. of comps. is %"QINT_FMT"\n",
+            //           iorder,
+            //           pert_num_comps[icomp]);
+            //    QErrorExit(FILE_AND_LINE, "incorrect number of components");
+            //}
             rsp_pert->pert_num_comps[icomp] = pert_num_comps[icomp];
         }
     }
