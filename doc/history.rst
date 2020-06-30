@@ -1,5 +1,5 @@
-A brief history
-===============
+History of the project
+======================
 
 
 The OpenRSP core functionality
