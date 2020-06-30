@@ -27,7 +27,8 @@ Project website: https://openrsp.org
 #. Please refer to ``doc/manual`` and ``doc/tutorial`` for how to use OpenRSP.
 
 #. Limitations and known problems of OpenRSP, and our future plans can be found
-   in ``doc/manual/limitations.rst`` and ``doc/manual/future_plans.rst``.
+   in the release notes or in ``doc/manual/limitations.rst`` or
+   ``doc/manual/future_plans.rst``.
 
 #. If you have used OpenRSP and found it is useful, please consider to cite the
    references in https://www.openrsp.org/en/latest/citations.html.
