@@ -2,8 +2,8 @@
    :target: https://travis-ci.org/openrsp/openrsp/builds
 .. image:: https://img.shields.io/badge/license-%20LGPLv2.1-blue.svg
    :target: LICENSE
-.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1491928.svg
-   :target: https://doi.org/10.5281/zenodo.1491928
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1491927.svg
+   :target: https://doi.org/10.5281/zenodo.1491927
 
 
 OpenRSP: open-ended response theory
