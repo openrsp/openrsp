@@ -15,6 +15,7 @@ you can get involved.
    authors.rst
    citations.rst
    history.rst
+   changelog.rst
    programs_with_openrsp.rst
    papers_openrsp_all.rst
    theoretical_background.rst
