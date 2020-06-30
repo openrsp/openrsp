@@ -61,7 +61,9 @@ listed below:
 * Gen1Int for the calculation of perturbed one-electron integrals
 * cgto-diff-eri for the calculation of perturbed two-electron integrals
 * HODI for the calculation of perturbed integrals
-* XCint and XCfun for the calculation of exchange-correlation contributions
+* `XCint <https://github.com/dftlibs/xcint/>`_ and
+  `XCFun <https://github.com/dftlibs/xcfun/>`_
+  for the calculation of exchange-correlation contributions
 * A linear response equation solver by Sonia Coriani et al.
 * FraME for a polarizable embedding description of molecular surroundings
 * PCMSolver for a polarizable continuum description of molecular surroundings
