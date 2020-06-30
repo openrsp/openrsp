@@ -40,6 +40,8 @@ Known issues
   the label EX1 in the rsp_tensor file; however, its current implementation
   still results in triplication of the calculation result data due to being
   treated as having three components when in fact it has got only one
+- Does not yet support calculations involving perturbations that are both non-static and change the basis set 
+  (the foremost example of such a perturbation is the magnetic dipole perturbation with London atomic orbitals).
 
 
 
