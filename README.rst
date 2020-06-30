@@ -9,7 +9,7 @@
 OpenRSP: open-ended response theory
 ===================================
 
-Copyright 2015-2018 `OpenRSP authors <https://www.openrsp.org/en/latest/authors.html>`__.
+Copyright 2015-2020 `OpenRSP authors <https://www.openrsp.org/en/latest/authors.html>`__.
 
 OpenRSP is a computer program that uses recursive routines to identify
 and assemble contributions to molecular properties ("response properties")
