@@ -53,7 +53,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'OpenRSP'
-copyright = '2015-2018, OpenRSP authors'
+copyright = '2015-2020, OpenRSP authors'
 author = 'OpenRSP authors'
 
 # The version info for the project you're documenting, acts as replacement for
