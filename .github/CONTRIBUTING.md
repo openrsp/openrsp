@@ -61,7 +61,7 @@ and for external contributors:
   PR page.
 * The title of your pull request should be marked with `[WIP]` if it’s a work
   in progress. Feel free to use as many labels as you think necessary!
-* Update the [`ChangeLog.rst`] file. We follow the conventions and recommendations detailed at
+* Update the [doc/changelog.rst](../doc/changelog.rst) file. We follow the conventions and recommendations detailed at
   [keepachangelog.com]
 * When you're ready to be considered for merging, check the "Ready to go" box
   on the PR page to let the OpenRSP team know that the changes are complete.
@@ -91,6 +91,5 @@ and for external contributors:
 [STYLE_GUIDE.md file]: ../STYLE_GUIDE.md
 [Developer Certificate of Origin]: https://developercertificate.org/
 [pull request]: https://help.github.com/articles/using-pull-requests/
-[`ChangeLog.rst`]: ../ChangeLog.rst
 [keepachangelog.com]: https://keepachangelog.com/en/1.0.0/
 [LGPL v2.1 License]: ../LICENSE

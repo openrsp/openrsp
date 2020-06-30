@@ -1,7 +1,8 @@
 
 
-OpenRSP changelog
-=================
+Version history and changelog
+=============================
+
 
 Version 1.0.0-alpha (2018)
 --------------------------
