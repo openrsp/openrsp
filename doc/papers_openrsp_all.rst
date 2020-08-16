@@ -11,6 +11,12 @@ computational results.
 2018
 ----
 
+.. [Olsen2020] Dalton Project: A Python platform for molecular- and electronic-structure simulations 
+    of complex systems, Olsen, J. Magnus O.; Reine, Simen; et al. J. Chem. Phys. 152, 214115 (2020)
+
+2018
+----
+
 .. [Morgan2018] Geometric Energy Derivatives at the Complete Basis Set Limit: Application to the 
    Equilibrium Structure and Molecular Force Field of Formaldehyde,
    Morgan, W. James; Matthews, Devin A.; Ringholm, Magnus; et al.
