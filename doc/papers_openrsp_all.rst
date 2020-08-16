@@ -8,7 +8,7 @@ capacity, either pertaining to theoretical development related to the core
 functionality or related functionality, or as having been applied to produce
 computational results.
 
-2018
+2020
 ----
 
 .. [Olsen2020] Dalton Project: A Python platform for molecular- and electronic-structure simulations 
