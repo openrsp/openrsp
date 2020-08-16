@@ -4,8 +4,8 @@ Limitations or Known Problems
 -----------------------------
 
 * "T matrix contributions" - i.e. contributions from the perturbed
-  "half-time-differentiated" overlap matrix - are not yet supported in the
-  newest version of the code. These contributions are only nonzero for
+  "half-time-differentiated" overlap matrix - are not yet supported.
+  These contributions are only nonzero for
   perturbations that both a) affect the basis set and b) have frequencies other
   than zero. The most relevant such kind of perturbation is the magnetic dipole
   perturbations using London atomic orbitals. Properties consisting of only
@@ -23,5 +23,8 @@ Limitations or Known Problems
   For the time being, we do not suggest that users change the type of
   ``QcPertInt``, because other integer types are not supported by OpenRSP yet.
 
-* The current implementation of residues is just tested for electric field
-  perturbations and single residues.
+* The current implementation for calculation of residues of response functions
+  is significantly limited in generality. Currently, only electric dipole perturbations
+  and single residues are possible; furthermore, there are significant limitations for
+  the calculation setup. These limitations are described in further detail in the manual
+  of LSDalton in its (at the time of writing unreleased) 2020 version.
