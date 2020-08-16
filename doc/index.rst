@@ -19,6 +19,7 @@ you can get involved.
    programs_with_openrsp.rst
    papers_openrsp_all.rst
    theoretical_background.rst
+   doc/limitations.rst
 
 .. toctree::
    :maxdepth: 1
